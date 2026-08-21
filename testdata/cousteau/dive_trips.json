@@ -1,0 +1,38 @@
+{
+  "spring_north_sea": {
+    "name": "Spring North Sea",
+    "region": "@north_sea",
+    "operator": "@deep_current_charters"
+  },
+  "provence_week": {
+    "name": "Provence Week",
+    "remarks": "Two legs with one operator: a few days in the calanques, then out to the open sea.\nDates cover the travelling days at either end, so they are corrected here."
+  },
+  "provence_week_calanques": {
+    "name": "Provence Week \u2014 Calanques",
+    "parent": "@provence_week",
+    "region": "@provence",
+    "operator": "@calanque_plongee",
+    "start_date": "2025-05-28",
+    "end_date": "2025-05-31"
+  },
+  "provence_week_open_sea": {
+    "name": "Provence Week \u2014 Open sea",
+    "parent": "@provence_week",
+    "region": "@mediterranean_sea",
+    "operator": "@calanque_plongee",
+    "start_date": "2025-06-01",
+    "end_date": "2025-06-03"
+  },
+  "quarry_training_weekend": {
+    "name": "Quarry Training Weekend",
+    "region": "@netherlands",
+    "operator": "@ravensgate_quarry_desk"
+  },
+  "altitude_trial": {
+    "name": "Altitude Trial",
+    "region": "@france",
+    "operator": "@lakeside_dive_club",
+    "remarks": "Set up before any dive was logged, so it has no dates of its own yet."
+  }
+}

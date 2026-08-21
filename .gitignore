@@ -1,0 +1,24 @@
+# Nothing is built here yet. This file covers only what the current contents can
+# produce; it grows when the project does.
+
+# Editors and tooling
+.idea/
+*.iml
+.vscode/
+.zed/
+*.swp
+
+# Operating systems
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python bytecode from tool/
+__pycache__/
+*.py[cod]
+
+# Dart and Flutter build output
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies

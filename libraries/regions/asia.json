@@ -1,0 +1,978 @@
+{
+  "units": {
+    "angle": "deg"
+  },
+  "coral_triangle": {
+    "name": "Coral Triangle",
+    "category": "area",
+    "parents": [
+      "@asia",
+      "@oceania",
+      "@pacific_ocean"
+    ],
+    "west": 95,
+    "east": 170,
+    "south": -12,
+    "north": 20,
+    "remarks": "Around six hundred species of reef-building coral live here, which is roughly three quarters of every kind there is. Everything about diving in this part of the world follows from that."
+  },
+  "south_china_sea": {
+    "name": "South China Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 105,
+    "east": 122,
+    "south": 0,
+    "north": 23,
+    "remarks": "Shallow, warm, heavily fished and claimed by almost everyone with a coast on it."
+  },
+  "philippine_sea": {
+    "name": "Philippine Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 122,
+    "east": 145,
+    "south": 5,
+    "north": 25,
+    "remarks": "Contains the Mariana Trench, and with it the deepest water on the planet \u2014 nearly eleven kilometres, which is further down than most aircraft fly up."
+  },
+  "sulu_sea": {
+    "name": "Sulu Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 118,
+    "east": 123,
+    "south": 5,
+    "north": 12,
+    "remarks": "Deep water with isolated atolls rising out of it, the best known being a reef park two hours from anywhere by boat."
+  },
+  "celebes_sea": {
+    "name": "Celebes Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 117,
+    "east": 125,
+    "south": 0,
+    "north": 7,
+    "remarks": "A deep basin between three island groups, with walls dropping from the surface to well past two thousand metres."
+  },
+  "banda_sea": {
+    "name": "Banda Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 123,
+    "east": 133,
+    "south": -8,
+    "north": -4,
+    "remarks": "Deep, current-swept and volcanic. Hammerheads pass through in season, and the islands beneath were once the only source of nutmeg in the world."
+  },
+  "molucca_sea": {
+    "name": "Molucca Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 122,
+    "east": 129,
+    "south": -3,
+    "north": 4,
+    "remarks": "Where three tectonic plates meet, which accounts for both the volcanoes and the abrupt depths."
+  },
+  "java_sea": {
+    "name": "Java Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 105,
+    "east": 117,
+    "south": -7,
+    "north": -2,
+    "remarks": "Shallow throughout \u2014 mostly under fifty metres \u2014 because it is drowned land rather than proper ocean floor."
+  },
+  "flores_sea": {
+    "name": "Flores Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 117,
+    "east": 123,
+    "south": -9,
+    "north": -6,
+    "remarks": "Volcanic islands, strong tidal flow between them, and manta rays making use of it."
+  },
+  "andaman_sea": {
+    "name": "Andaman Sea",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia"
+    ],
+    "west": 92,
+    "east": 99,
+    "south": 5,
+    "north": 17,
+    "remarks": "Limestone pinnacles rising out of deep water, with visibility that swings wildly depending on which monsoon is in charge."
+  },
+  "bay_of_bengal": {
+    "name": "Bay of Bengal",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia"
+    ],
+    "west": 80,
+    "east": 95,
+    "south": 5,
+    "north": 22,
+    "remarks": "The largest bay in the world, and fed by enough river silt to make the water the colour of tea for a long way offshore."
+  },
+  "gulf_of_thailand": {
+    "name": "Gulf of Thailand",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 99,
+    "east": 105,
+    "south": 6,
+    "north": 14,
+    "remarks": "Shallow and warm, averaging under sixty metres. Where a great many people do their first open water course."
+  },
+  "strait_of_malacca": {
+    "name": "Strait of Malacca",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia"
+    ],
+    "west": 98,
+    "east": 104,
+    "south": 1,
+    "north": 6,
+    "remarks": "One of the busiest shipping lanes in the world, and shallow enough that the largest ships have to think about it."
+  },
+  "persian_gulf": {
+    "name": "Persian Gulf",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia"
+    ],
+    "west": 48,
+    "east": 57,
+    "south": 24,
+    "north": 30.5,
+    "remarks": "Shallow, hot and very salty \u2014 summer water temperatures over thirty-five degrees, which is warmer than most people find comfortable in a wetsuit or out of one."
+  },
+  "gulf_of_oman": {
+    "name": "Gulf of Oman",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia"
+    ],
+    "west": 56,
+    "east": 62,
+    "south": 22,
+    "north": 26,
+    "remarks": "The way in and out of the Persian Gulf, with seasonal upwelling that brings cold green water and whale sharks with it."
+  },
+  "east_china_sea": {
+    "name": "East China Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 120,
+    "east": 131,
+    "south": 24,
+    "north": 33,
+    "remarks": "Shallow continental shelf with the Kuroshio Current running along its edge, dragging warm water and tropical species much further north than they have any business being."
+  },
+  "sea_of_japan": {
+    "name": "Sea of Japan",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 127,
+    "east": 142,
+    "south": 34,
+    "north": 52,
+    "remarks": "Nearly enclosed, and cold enough at depth that the water below three hundred metres is a uniform one degree."
+  },
+  "yellow_sea": {
+    "name": "Yellow Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 117,
+    "east": 127,
+    "south": 32,
+    "north": 41,
+    "remarks": "Named for the silt the rivers dump into it, which is also a fair description of the visibility."
+  },
+  "sea_of_okhotsk": {
+    "name": "Sea of Okhotsk",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia"
+    ],
+    "west": 135,
+    "east": 163,
+    "south": 43,
+    "north": 62,
+    "remarks": "Freezes over in winter, which is unusual at this latitude and down to the cold air arriving off Siberia."
+  },
+  "timor_sea": {
+    "name": "Timor Sea",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia",
+      "@oceania"
+    ],
+    "west": 123,
+    "east": 133,
+    "south": -13,
+    "north": -8,
+    "remarks": "Shallow shelf with a deep trough along its northern edge, and tides that run over ten metres on the Australian side."
+  },
+  "arafura_sea": {
+    "name": "Arafura Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@asia",
+      "@oceania"
+    ],
+    "west": 130,
+    "east": 142,
+    "south": -12,
+    "north": -8,
+    "remarks": "Shallow enough that it was dry land during the last ice age, when Australia and New Guinea were joined."
+  },
+  "laccadive_sea": {
+    "name": "Laccadive Sea",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia"
+    ],
+    "west": 70,
+    "east": 80,
+    "south": 0,
+    "north": 14,
+    "remarks": "Warm water between India, the Maldives and Sri Lanka, and the corridor blue whales use through the region."
+  },
+  "afghanistan": {
+    "name": "Afghanistan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 60.5,
+    "east": 74.9,
+    "south": 29.4,
+    "north": 38.5,
+    "remarks": "Landlocked and mountainous, and about as far from a reef as it is possible to get in Asia."
+  },
+  "armenia": {
+    "name": "Armenia",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 43.4,
+    "east": 46.6,
+    "south": 38.8,
+    "north": 41.3,
+    "remarks": "Landlocked, with Lake Sevan sitting at nearly two thousand metres \u2014 high enough that diving it is an altitude problem."
+  },
+  "azerbaijan": {
+    "name": "Azerbaijan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 44.8,
+    "east": 50.4,
+    "south": 38.4,
+    "north": 41.9,
+    "remarks": "On the Caspian, which is the largest lake on Earth and called a sea largely out of habit."
+  },
+  "bahrain": {
+    "name": "Bahrain",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@persian_gulf"
+    ],
+    "west": 50.4,
+    "east": 50.8,
+    "south": 25.8,
+    "north": 26.3,
+    "remarks": "An island state in shallow Gulf water, with a pearl-diving history that ran for four thousand years before oil arrived."
+  },
+  "bangladesh": {
+    "name": "Bangladesh",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@bay_of_bengal"
+    ],
+    "west": 88,
+    "east": 92.7,
+    "south": 20.7,
+    "north": 26.6,
+    "remarks": "Built almost entirely out of river delta, and the Sundarbans mangrove forest along its coast is the largest anywhere."
+  },
+  "bhutan": {
+    "name": "Bhutan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 88.7,
+    "east": 92.1,
+    "south": 26.7,
+    "north": 28.3,
+    "remarks": "Landlocked and Himalayan, with rivers that start under glaciers."
+  },
+  "brunei": {
+    "name": "Brunei",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@south_china_sea",
+      "@coral_triangle"
+    ],
+    "west": 114,
+    "east": 115.4,
+    "south": 4,
+    "north": 5.1,
+    "remarks": "A small stretch of Borneo coast with a surprising number of wrecks offshore, several of them from the Second World War."
+  },
+  "cambodia": {
+    "name": "Cambodia",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@gulf_of_thailand"
+    ],
+    "west": 102,
+    "east": 107.6,
+    "south": 10,
+    "north": 14.7,
+    "remarks": "Islands off the southern coast with reef around them, and a lake inland that quadruples in size every monsoon."
+  },
+  "china": {
+    "name": "China",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@yellow_sea",
+      "@east_china_sea",
+      "@south_china_sea"
+    ],
+    "west": 73.5,
+    "east": 134.8,
+    "south": 18.2,
+    "north": 53.6,
+    "remarks": "Fourteen thousand kilometres of coast across three seas, and a tropical island at the southern end where the diving actually happens."
+  },
+  "georgia": {
+    "name": "Georgia",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@black_sea"
+    ],
+    "west": 40,
+    "east": 46.7,
+    "south": 41,
+    "north": 43.6,
+    "remarks": "Black Sea coast with mountains immediately behind it, and caves in the limestone that go a very long way down."
+  },
+  "india": {
+    "name": "India",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@indian_ocean",
+      "@bay_of_bengal",
+      "@laccadive_sea",
+      "@arabian_sea"
+    ],
+    "west": 68.2,
+    "east": 97.4,
+    "south": 6.8,
+    "north": 35.5,
+    "remarks": "Seven thousand kilometres of coast, atolls off the south-west, and a monsoon that decides for six months of the year whether anyone is diving at all."
+  },
+  "indonesia": {
+    "name": "Indonesia",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@coral_triangle",
+      "@java_sea",
+      "@banda_sea",
+      "@flores_sea"
+    ],
+    "west": 95,
+    "east": 141,
+    "south": -11,
+    "north": 6,
+    "remarks": "Seventeen thousand islands sitting on the join between three tectonic plates, in the middle of the Coral Triangle. More marine species than anywhere, and current on most of them."
+  },
+  "iran": {
+    "name": "Iran",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@persian_gulf",
+      "@gulf_of_oman"
+    ],
+    "west": 44,
+    "east": 63.3,
+    "south": 25.1,
+    "north": 39.8,
+    "remarks": "Coast on the Gulf and the Gulf of Oman, with islands offshore and mountains a long way behind."
+  },
+  "iraq": {
+    "name": "Iraq",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@persian_gulf"
+    ],
+    "west": 38.8,
+    "east": 48.6,
+    "south": 29.1,
+    "north": 37.4,
+    "remarks": "Under sixty kilometres of coast at the head of the Gulf, where two great rivers arrive together."
+  },
+  "israel": {
+    "name": "Israel",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@mediterranean_sea",
+      "@gulf_of_aqaba"
+    ],
+    "west": 34.3,
+    "east": 35.7,
+    "south": 29.5,
+    "north": 33.3,
+    "remarks": "A dozen kilometres of Red Sea coast at Eilat, with reef a short swim from the beach, and a Mediterranean coast at the other end of the country."
+  },
+  "japan": {
+    "name": "Japan",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@pacific_ocean",
+      "@sea_of_japan",
+      "@east_china_sea"
+    ],
+    "west": 122.9,
+    "east": 153.9,
+    "south": 24,
+    "north": 45.6,
+    "remarks": "Nearly seven thousand islands along a subduction zone, with warm current running up the Pacific side and cold water on the other. Diving ranges from coral in the far south to ice in Hokkaido."
+  },
+  "jordan": {
+    "name": "Jordan",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@gulf_of_aqaba"
+    ],
+    "west": 34.9,
+    "east": 39.3,
+    "south": 29.2,
+    "north": 33.4,
+    "remarks": "Twenty-seven kilometres of Red Sea coast, and all of it reef. Also the Dead Sea, where the salinity is such that diving is essentially impossible."
+  },
+  "kazakhstan": {
+    "name": "Kazakhstan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 46.5,
+    "east": 87.3,
+    "south": 40.6,
+    "north": 55.4,
+    "remarks": "The largest landlocked country in the world, with a Caspian shore and what is left of the Aral Sea."
+  },
+  "kuwait": {
+    "name": "Kuwait",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@persian_gulf"
+    ],
+    "west": 46.5,
+    "east": 48.4,
+    "south": 28.5,
+    "north": 30.1,
+    "remarks": "Shallow Gulf water that reaches bath temperature in summer and cools enough in winter to need a wetsuit."
+  },
+  "kyrgyzstan": {
+    "name": "Kyrgyzstan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 69.3,
+    "east": 80.3,
+    "south": 39.2,
+    "north": 43.3,
+    "remarks": "Landlocked and mountainous, with Issyk-Kul \u2014 a lake at sixteen hundred metres that never freezes, despite the winters."
+  },
+  "laos": {
+    "name": "Laos",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 100,
+    "east": 107.7,
+    "south": 13.9,
+    "north": 22.5,
+    "remarks": "The only landlocked country in South-East Asia, and dependent on the Mekong for very nearly everything."
+  },
+  "lebanon": {
+    "name": "Lebanon",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@mediterranean_sea"
+    ],
+    "west": 35.1,
+    "east": 36.6,
+    "south": 33.1,
+    "north": 34.7,
+    "remarks": "Two hundred kilometres of Mediterranean coast, with Phoenician harbours under parts of it."
+  },
+  "malaysia": {
+    "name": "Malaysia",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@coral_triangle",
+      "@south_china_sea",
+      "@strait_of_malacca"
+    ],
+    "west": 99,
+    "east": 119.3,
+    "south": 0.8,
+    "north": 7.4,
+    "remarks": "Split across two land masses. Sipadan, off the Borneo side, is an old volcanic cone rising six hundred metres from the seabed, and the turtles there are essentially furniture."
+  },
+  "maldives": {
+    "name": "Maldives",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@laccadive_sea",
+      "@indian_ocean"
+    ],
+    "west": 72.7,
+    "east": 73.8,
+    "south": -0.7,
+    "north": 7.1,
+    "remarks": "Twenty-six atolls, and the lowest country on Earth \u2014 the highest natural point is under two and a half metres. The tide runs hard through the channels, which is where the mantas feed."
+  },
+  "mongolia": {
+    "name": "Mongolia",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 87.7,
+    "east": 119.9,
+    "south": 41.6,
+    "north": 52.2,
+    "remarks": "Landlocked between two large neighbours, and further from any ocean than almost anywhere else on the planet."
+  },
+  "myanmar": {
+    "name": "Myanmar",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@andaman_sea",
+      "@bay_of_bengal"
+    ],
+    "west": 92,
+    "east": 101.2,
+    "south": 9.8,
+    "north": 28.6,
+    "remarks": "The Mergui Archipelago runs down its southern coast \u2014 eight hundred islands, most uninhabited, and only opened to divers relatively recently."
+  },
+  "nepal": {
+    "name": "Nepal",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 80,
+    "east": 88.2,
+    "south": 26.3,
+    "north": 30.4,
+    "remarks": "Landlocked, and containing the highest point on the planet \u2014 which is made of marine limestone, laid down on a seabed before India arrived."
+  },
+  "north_korea": {
+    "name": "North Korea",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@sea_of_japan",
+      "@yellow_sea"
+    ],
+    "west": 124.2,
+    "east": 130.7,
+    "south": 37.7,
+    "north": 43,
+    "remarks": "Coast on two seas, and effectively closed to visiting divers."
+  },
+  "oman": {
+    "name": "Oman",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@gulf_of_oman",
+      "@arabian_sea"
+    ],
+    "west": 52,
+    "east": 59.9,
+    "south": 16.6,
+    "north": 26.4,
+    "remarks": "Seasonal upwelling turns the water cold and green and brings whale sharks in with it. The Daymaniyat Islands are a reserve, and turtles nest along the whole coast."
+  },
+  "pakistan": {
+    "name": "Pakistan",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@arabian_sea"
+    ],
+    "west": 60.9,
+    "east": 77.8,
+    "south": 23.7,
+    "north": 37.1,
+    "remarks": "A thousand kilometres of Arabian Sea coast, with mangroves at the Indus delta and rock further west."
+  },
+  "palestine": {
+    "name": "Palestine",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@mediterranean_sea"
+    ],
+    "west": 34.2,
+    "east": 35.6,
+    "south": 31.2,
+    "north": 32.6,
+    "remarks": "A short Mediterranean coastline at Gaza, and no practical diving access to it."
+  },
+  "philippines": {
+    "name": "Philippines",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@coral_triangle",
+      "@philippine_sea",
+      "@sulu_sea"
+    ],
+    "west": 116,
+    "east": 127,
+    "south": 4.6,
+    "north": 21.1,
+    "remarks": "Seven and a half thousand islands inside the Coral Triangle. Thresher sharks off Malapascua, a reef park in the middle of the Sulu Sea, and macro life that people fly a long way to photograph."
+  },
+  "qatar": {
+    "name": "Qatar",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@persian_gulf"
+    ],
+    "west": 50.7,
+    "east": 51.7,
+    "south": 24.5,
+    "north": 26.2,
+    "remarks": "A peninsula into shallow Gulf water, with pearl banks offshore that supported the country before oil."
+  },
+  "saudi_arabia": {
+    "name": "Saudi Arabia",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@red_sea",
+      "@persian_gulf"
+    ],
+    "west": 34.5,
+    "east": 55.7,
+    "south": 16,
+    "north": 32.2,
+    "remarks": "Eighteen hundred kilometres of Red Sea coast, much of it barely dived, and reef systems that are only now being properly surveyed."
+  },
+  "singapore": {
+    "name": "Singapore",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@strait_of_malacca",
+      "@south_china_sea"
+    ],
+    "west": 103.6,
+    "east": 104.1,
+    "south": 1.2,
+    "north": 1.5,
+    "remarks": "One of the busiest ports anywhere, and a country that has grown measurably larger by reclaiming its own seabed."
+  },
+  "south_korea": {
+    "name": "South Korea",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@sea_of_japan",
+      "@yellow_sea"
+    ],
+    "west": 126,
+    "east": 129.6,
+    "south": 33.1,
+    "north": 38.6,
+    "remarks": "Cold water and strong tides, and the haenyeo of Jeju \u2014 women who have free-dived for shellfish for centuries and mostly still do."
+  },
+  "sri_lanka": {
+    "name": "Sri Lanka",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@laccadive_sea",
+      "@indian_ocean"
+    ],
+    "west": 79.7,
+    "east": 81.9,
+    "south": 5.9,
+    "north": 9.9,
+    "remarks": "Blue whales year-round off the southern coast, which is unusual \u2014 most populations migrate, and this one largely does not."
+  },
+  "syria": {
+    "name": "Syria",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@mediterranean_sea"
+    ],
+    "west": 35.7,
+    "east": 42.4,
+    "south": 32.3,
+    "north": 37.3,
+    "remarks": "A short Mediterranean coast with several thousand years of harbours along it."
+  },
+  "taiwan": {
+    "name": "Taiwan",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@philippine_sea",
+      "@east_china_sea"
+    ],
+    "west": 120,
+    "east": 122.1,
+    "south": 21.9,
+    "north": 25.3,
+    "remarks": "Sits where the warm Kuroshio Current runs north, which brings coral and tropical fish a long way up the latitude scale."
+  },
+  "tajikistan": {
+    "name": "Tajikistan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 67.4,
+    "east": 75.2,
+    "south": 36.7,
+    "north": 41,
+    "remarks": "Landlocked and over ninety percent mountain, with glacial lakes at altitudes that make any diving a serious calculation."
+  },
+  "thailand": {
+    "name": "Thailand",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@andaman_sea",
+      "@gulf_of_thailand"
+    ],
+    "west": 97.3,
+    "east": 105.6,
+    "south": 5.6,
+    "north": 20.5,
+    "remarks": "Two coasts with opposite monsoons, so something is always in season. The Similans on the Andaman side are granite boulders underwater rather than reef, which surprises people."
+  },
+  "timor_leste": {
+    "name": "Timor-Leste",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@timor_sea",
+      "@coral_triangle"
+    ],
+    "west": 124,
+    "east": 127.3,
+    "south": -9.5,
+    "north": -8.1,
+    "remarks": "Deep water arrives within metres of the beach along the north coast, so most of the diving is done by walking in."
+  },
+  "turkmenistan": {
+    "name": "Turkmenistan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 52.4,
+    "east": 66.7,
+    "south": 35.1,
+    "north": 42.8,
+    "remarks": "Landlocked apart from the Caspian, and about eighty percent desert."
+  },
+  "united_arab_emirates": {
+    "name": "United Arab Emirates",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@persian_gulf",
+      "@gulf_of_oman"
+    ],
+    "west": 51,
+    "east": 56.4,
+    "south": 22.6,
+    "north": 26.1,
+    "remarks": "Coast on both sides of the peninsula \u2014 hot shallow Gulf water on one, cooler and clearer Gulf of Oman on the other."
+  },
+  "uzbekistan": {
+    "name": "Uzbekistan",
+    "category": "country",
+    "parents": [
+      "@asia"
+    ],
+    "west": 55.9,
+    "east": 73.2,
+    "south": 37.2,
+    "north": 45.6,
+    "remarks": "One of only two doubly landlocked countries on Earth, and the site of the Aral Sea's disappearance."
+  },
+  "vietnam": {
+    "name": "Vietnam",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@south_china_sea",
+      "@gulf_of_thailand"
+    ],
+    "west": 102,
+    "east": 109.5,
+    "south": 8.2,
+    "north": 23.4,
+    "remarks": "Three thousand kilometres of coast, with reef around the southern islands and limestone karst rising out of the water in the north."
+  },
+  "yemen": {
+    "name": "Yemen",
+    "category": "country",
+    "parents": [
+      "@asia",
+      "@red_sea",
+      "@gulf_of_aden",
+      "@arabian_sea"
+    ],
+    "west": 42.5,
+    "east": 54.5,
+    "south": 12.1,
+    "north": 19,
+    "remarks": "Socotra, off the Horn of Africa, has been isolated long enough that a third of its plants grow nowhere else. The marine life is similarly peculiar."
+  },
+  "raja_ampat": {
+    "name": "Raja Ampat",
+    "category": "area",
+    "parents": [
+      "@indonesia",
+      "@coral_triangle"
+    ],
+    "west": 129.5,
+    "east": 131.5,
+    "south": -2.5,
+    "north": -0.2,
+    "remarks": "Fifteen hundred islands at the heart of the Coral Triangle, and the richest reef fish diversity ever recorded anywhere."
+  },
+  "andaman_and_nicobar_islands": {
+    "name": "Andaman and Nicobar Islands",
+    "category": "area",
+    "parents": [
+      "@india",
+      "@andaman_sea"
+    ],
+    "west": 92,
+    "east": 94,
+    "south": 6.7,
+    "north": 13.7,
+    "remarks": "Five hundred islands, most closed to visitors, and some inhabited by people who have declined contact for tens of thousands of years."
+  },
+  "ryukyu_islands": {
+    "name": "Ryukyu Islands",
+    "category": "area",
+    "parents": [
+      "@japan",
+      "@east_china_sea",
+      "@philippine_sea"
+    ],
+    "west": 122.9,
+    "east": 131.3,
+    "south": 24,
+    "north": 29,
+    "remarks": "Subtropical islands running south-west from Japan, with coral, hammerhead schools in winter, and a rock formation off Yonaguni that people continue to argue about."
+  },
+  "similan_islands": {
+    "name": "Similan Islands",
+    "category": "area",
+    "parents": [
+      "@thailand",
+      "@andaman_sea"
+    ],
+    "west": 97.5,
+    "east": 97.8,
+    "south": 8.4,
+    "north": 9.6,
+    "remarks": "Granite boulders the size of houses, stacked underwater, with swim-throughs between them."
+  }
+}

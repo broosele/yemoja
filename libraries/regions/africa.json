@@ -1,0 +1,858 @@
+{
+  "units": {
+    "angle": "deg"
+  },
+  "mozambique_channel": {
+    "name": "Mozambique Channel",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@africa"
+    ],
+    "west": 34,
+    "east": 49,
+    "south": -26,
+    "north": -11,
+    "remarks": "The channel funnels a warm current south between the mainland and Madagascar, and everything that eats fish knows it."
+  },
+  "gulf_of_guinea": {
+    "name": "Gulf of Guinea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@africa"
+    ],
+    "west": -8,
+    "east": 9,
+    "south": -3,
+    "north": 5,
+    "remarks": "Sits where the equator meets the prime meridian, so the point at zero degrees by zero degrees is out here in the water."
+  },
+  "gulf_of_sidra": {
+    "name": "Gulf of Sidra",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea",
+      "@africa"
+    ],
+    "west": 15,
+    "east": 20.5,
+    "south": 30.3,
+    "north": 32.5,
+    "remarks": "A wide bite out of the Libyan coast, with a good deal of twentieth-century military history on the bottom of it."
+  },
+  "gulf_of_suez": {
+    "name": "Gulf of Suez",
+    "category": "sea",
+    "parents": [
+      "@red_sea",
+      "@africa"
+    ],
+    "west": 32.3,
+    "east": 34.2,
+    "south": 27.5,
+    "north": 30,
+    "remarks": "Shallow, busy and littered with wrecks, several of which are among the most dived pieces of steel anywhere."
+  },
+  "gulf_of_aqaba": {
+    "name": "Gulf of Aqaba",
+    "category": "sea",
+    "parents": [
+      "@red_sea",
+      "@africa",
+      "@asia"
+    ],
+    "west": 34.2,
+    "east": 35.1,
+    "south": 28,
+    "north": 29.6,
+    "remarks": "Narrow, deep and bordered by four countries, with reef starting a few metres from the beach in most of them."
+  },
+  "algeria": {
+    "name": "Algeria",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@mediterranean_sea"
+    ],
+    "west": -8.7,
+    "east": 12,
+    "south": 19,
+    "north": 37.1,
+    "remarks": "The largest country in Africa, and about four fifths Sahara. The coast is Mediterranean and comparatively little dived."
+  },
+  "angola": {
+    "name": "Angola",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": 11.7,
+    "east": 24.1,
+    "south": -18,
+    "north": -4.4,
+    "remarks": "Atlantic coast cooled by the Benguela Current, which keeps the water green, cold and full of fish."
+  },
+  "benin": {
+    "name": "Benin",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": 0.8,
+    "east": 3.9,
+    "south": 6.2,
+    "north": 12.4,
+    "remarks": "A short stretch of surf-battered coast on the Bight of Benin, with a strong longshore current running along it."
+  },
+  "botswana": {
+    "name": "Botswana",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 20,
+    "east": 29.4,
+    "south": -26.9,
+    "north": -17.8,
+    "remarks": "Landlocked, and the Okavango Delta drains into the desert rather than the sea \u2014 one of very few rivers anywhere that never reaches an ocean."
+  },
+  "burkina_faso": {
+    "name": "Burkina Faso",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": -5.5,
+    "east": 2.4,
+    "south": 9.4,
+    "north": 15.1,
+    "remarks": "Landlocked and largely savannah, with the water that matters arriving once a year."
+  },
+  "burundi": {
+    "name": "Burundi",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 29,
+    "east": 30.9,
+    "south": -4.5,
+    "north": -2.3,
+    "remarks": "Landlocked, but on Lake Tanganyika \u2014 the second deepest lake on Earth, with cichlids found nowhere else and divers who come for exactly that."
+  },
+  "cameroon": {
+    "name": "Cameroon",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": 8.5,
+    "east": 16.2,
+    "south": 1.7,
+    "north": 13.1,
+    "remarks": "Coast on the Bight of Biafra, and Mount Cameroon rising straight out of it."
+  },
+  "cape_verde": {
+    "name": "Cape Verde",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -25.4,
+    "east": -22.7,
+    "south": 14.8,
+    "north": 17.2,
+    "remarks": "Ten volcanic islands six hundred kilometres out in the Atlantic, with loggerhead turtles nesting on them in numbers that matter globally."
+  },
+  "central_african_republic": {
+    "name": "Central African Republic",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 14.4,
+    "east": 27.5,
+    "south": 2.2,
+    "north": 11,
+    "remarks": "Landlocked, forested, and drained by rivers heading for two different oceans."
+  },
+  "chad": {
+    "name": "Chad",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 13.5,
+    "east": 24,
+    "south": 7.4,
+    "north": 23.5,
+    "remarks": "Landlocked, and Lake Chad has shrunk to a fraction of the size it was within living memory."
+  },
+  "comoros": {
+    "name": "Comoros",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@mozambique_channel"
+    ],
+    "west": 43.2,
+    "east": 44.6,
+    "south": -12.4,
+    "north": -11.3,
+    "remarks": "Volcanic islands in the Mozambique Channel. The coelacanth \u2014 a fish assumed extinct for sixty million years \u2014 turned up here in 1938, very much alive."
+  },
+  "democratic_republic_of_the_congo": {
+    "name": "Democratic Republic of the Congo",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": 12.2,
+    "east": 31.3,
+    "south": -13.5,
+    "north": 5.4,
+    "remarks": "Enormous, with only about forty kilometres of coast. The Congo River makes up for it by carving a canyon eight hundred metres deep into the seabed offshore."
+  },
+  "republic_of_the_congo": {
+    "name": "Republic of the Congo",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": 11.2,
+    "east": 18.6,
+    "south": -5,
+    "north": 3.7,
+    "remarks": "A short Atlantic coastline, and rainforest behind it for most of the country's depth."
+  },
+  "cote_divoire": {
+    "name": "Cote d'Ivoire",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": -8.6,
+    "east": -2.5,
+    "south": 4.4,
+    "north": 10.7,
+    "remarks": "Five hundred kilometres of surf coast, with lagoons behind much of it."
+  },
+  "djibouti": {
+    "name": "Djibouti",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_aden",
+      "@red_sea"
+    ],
+    "west": 41.7,
+    "east": 43.5,
+    "south": 10.9,
+    "north": 12.7,
+    "remarks": "Sits at the mouth of the Red Sea, where whale sharks gather in the Gulf of Tadjoura every winter in numbers few places match."
+  },
+  "egypt": {
+    "name": "Egypt",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@red_sea",
+      "@mediterranean_sea",
+      "@gulf_of_suez",
+      "@gulf_of_aqaba"
+    ],
+    "west": 24.7,
+    "east": 36.9,
+    "south": 22,
+    "north": 31.7,
+    "remarks": "Warm, clear water and reef down the entire Red Sea coast, plus a century of shipping that failed to notice the reef. Between them they built the country's diving industry."
+  },
+  "equatorial_guinea": {
+    "name": "Equatorial Guinea",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": 5.6,
+    "east": 11.3,
+    "south": 0.9,
+    "north": 3.8,
+    "remarks": "Mainland and islands, including one volcanic island well out into the Gulf of Guinea."
+  },
+  "eritrea": {
+    "name": "Eritrea",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@red_sea"
+    ],
+    "west": 36.4,
+    "east": 43.2,
+    "south": 12.4,
+    "north": 18.1,
+    "remarks": "A long Red Sea coast and the Dahlak Archipelago offshore \u2014 over three hundred islands, almost none of them inhabited."
+  },
+  "eswatini": {
+    "name": "Eswatini",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 30.8,
+    "east": 32.1,
+    "south": -27.3,
+    "north": -25.7,
+    "remarks": "Landlocked and mountainous, and entirely surrounded by two neighbours."
+  },
+  "ethiopia": {
+    "name": "Ethiopia",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 33,
+    "east": 48,
+    "south": 3.4,
+    "north": 14.9,
+    "remarks": "Landlocked since Eritrea left, and containing the Danakil Depression, which sits over a hundred metres below sea level and is one of the hottest places on Earth."
+  },
+  "gabon": {
+    "name": "Gabon",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": 8.7,
+    "east": 14.5,
+    "south": -3.9,
+    "north": 2.3,
+    "remarks": "Rainforest that reaches the beach, and humpbacks calving offshore between July and September."
+  },
+  "gambia": {
+    "name": "Gambia",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -16.8,
+    "east": -13.8,
+    "south": 13.1,
+    "north": 13.8,
+    "remarks": "A country shaped entirely by a river, and never more than about fifty kilometres wide."
+  },
+  "ghana": {
+    "name": "Ghana",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": -3.3,
+    "east": 1.2,
+    "south": 4.7,
+    "north": 11.2,
+    "remarks": "Atlantic surf coast, and Lake Volta inland \u2014 one of the largest artificial lakes anywhere, with a drowned forest still standing in it."
+  },
+  "guinea": {
+    "name": "Guinea",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -15.1,
+    "east": -7.6,
+    "south": 7.2,
+    "north": 12.7,
+    "remarks": "A coast of mangrove and river mouths, and the source of the Niger somewhere behind it."
+  },
+  "guinea_bissau": {
+    "name": "Guinea-Bissau",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -16.7,
+    "east": -13.6,
+    "south": 10.9,
+    "north": 12.7,
+    "remarks": "The Bijagos Archipelago offshore is a biosphere reserve, with saltwater hippopotamus in it, which is not a phrase used often."
+  },
+  "kenya": {
+    "name": "Kenya",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@indian_ocean"
+    ],
+    "west": 33.9,
+    "east": 41.9,
+    "south": -4.7,
+    "north": 5.1,
+    "remarks": "A fringing reef runs most of the coast, sheltering a lagoon behind it. The tide decides what is diveable and what is snorkelling."
+  },
+  "lesotho": {
+    "name": "Lesotho",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 27,
+    "east": 29.5,
+    "south": -30.7,
+    "north": -28.6,
+    "remarks": "Entirely surrounded by South Africa, and the only country in the world lying wholly above 1,400 metres."
+  },
+  "liberia": {
+    "name": "Liberia",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -11.5,
+    "east": -7.4,
+    "south": 4.4,
+    "north": 8.6,
+    "remarks": "Atlantic coast with heavy surf, and a fair number of ships registered there that have never visited."
+  },
+  "libya": {
+    "name": "Libya",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@mediterranean_sea",
+      "@gulf_of_sidra"
+    ],
+    "west": 9.4,
+    "east": 25.2,
+    "south": 19.5,
+    "north": 33.2,
+    "remarks": "The longest Mediterranean coastline in Africa, and among the least dived."
+  },
+  "madagascar": {
+    "name": "Madagascar",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@indian_ocean",
+      "@mozambique_channel"
+    ],
+    "west": 43.2,
+    "east": 50.5,
+    "south": -25.6,
+    "north": -11.9,
+    "remarks": "Separated from everything else for something like eighty million years, with the results you would expect. Humpbacks arrive off the east coast every winter to give birth."
+  },
+  "malawi": {
+    "name": "Malawi",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 32.7,
+    "east": 35.9,
+    "south": -17.1,
+    "north": -9.4,
+    "remarks": "Landlocked, but Lake Malawi holds more fish species than any other lake on Earth \u2014 most of them cichlids, most found nowhere else, and the freshwater diving is genuinely worth the trip."
+  },
+  "mali": {
+    "name": "Mali",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": -12.2,
+    "east": 4.3,
+    "south": 10.1,
+    "north": 25,
+    "remarks": "Landlocked and largely desert, with the Niger looping improbably north into the Sahara before turning back."
+  },
+  "mauritania": {
+    "name": "Mauritania",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -17.1,
+    "east": -4.8,
+    "south": 14.7,
+    "north": 27.3,
+    "remarks": "Where the Sahara meets the Atlantic. The Banc d'Arguin offshore is one of the great shallow feeding grounds for migratory birds."
+  },
+  "mauritius": {
+    "name": "Mauritius",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@indian_ocean"
+    ],
+    "west": 57.3,
+    "east": 57.9,
+    "south": -20.6,
+    "north": -19.9,
+    "remarks": "Ringed almost entirely by reef, with a lagoon inside it. Also the only place the dodo ever lived, briefly."
+  },
+  "morocco": {
+    "name": "Morocco",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean",
+      "@mediterranean_sea",
+      "@strait_of_gibraltar"
+    ],
+    "west": -13.2,
+    "east": -1,
+    "south": 27.7,
+    "north": 35.9,
+    "remarks": "Two coasts with completely different water: cold Atlantic upwelling on one side, Mediterranean on the other, and fourteen kilometres between them at the narrowest."
+  },
+  "mozambique": {
+    "name": "Mozambique",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@mozambique_channel"
+    ],
+    "west": 30.2,
+    "east": 40.8,
+    "south": -26.9,
+    "north": -10.5,
+    "remarks": "Two and a half thousand kilometres of coast, manta cleaning stations off Tofo, and whale sharks that turn up year round rather than seasonally."
+  },
+  "namibia": {
+    "name": "Namibia",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": 11.7,
+    "east": 25.3,
+    "south": -28.9,
+    "north": -16.9,
+    "remarks": "The Benguela Current keeps the water cold enough for fog to sit permanently over the Skeleton Coast, and cold enough that most of the wrecks along it are on the beach rather than under it."
+  },
+  "niger": {
+    "name": "Niger",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 0.2,
+    "east": 16,
+    "south": 11.7,
+    "north": 23.5,
+    "remarks": "Landlocked and mostly Sahara. The river it is named after clips the south-western corner."
+  },
+  "nigeria": {
+    "name": "Nigeria",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": 2.7,
+    "east": 14.7,
+    "south": 4.3,
+    "north": 13.9,
+    "remarks": "The Niger Delta spreads across the coast in a fan of creeks and mangroves, and the water offshore carries the silt to prove it."
+  },
+  "rwanda": {
+    "name": "Rwanda",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 28.9,
+    "east": 30.9,
+    "south": -2.8,
+    "north": -1.1,
+    "remarks": "Landlocked and mountainous, with Lake Kivu on its western edge \u2014 a lake holding enough dissolved gas to be genuinely dangerous."
+  },
+  "sao_tome_and_principe": {
+    "name": "Sao Tome and Principe",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": 6.4,
+    "east": 7.5,
+    "south": 0,
+    "north": 1.7,
+    "remarks": "Two volcanic islands almost on the equator, with clear water and very few divers in it."
+  },
+  "senegal": {
+    "name": "Senegal",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -17.6,
+    "east": -11.4,
+    "south": 12.3,
+    "north": 16.7,
+    "remarks": "The westernmost point of mainland Africa, with seasonal upwelling that turns the water cold and productive."
+  },
+  "seychelles": {
+    "name": "Seychelles",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@indian_ocean"
+    ],
+    "west": 46,
+    "east": 56.3,
+    "south": -10,
+    "north": -3.7,
+    "remarks": "Granite islands, which is odd this far out \u2014 they are the tops of a submerged continental fragment rather than volcanoes. The boulders continue underwater and make the diving."
+  },
+  "sierra_leone": {
+    "name": "Sierra Leone",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -13.3,
+    "east": -10.3,
+    "south": 6.9,
+    "north": 10,
+    "remarks": "A coast of estuaries and mangrove, with one of the largest natural harbours in the world at Freetown."
+  },
+  "somalia": {
+    "name": "Somalia",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@indian_ocean",
+      "@gulf_of_aden"
+    ],
+    "west": 40.9,
+    "east": 51.5,
+    "south": -1.7,
+    "north": 12,
+    "remarks": "The longest coastline in mainland Africa, and reef along much of it that almost nobody has dived."
+  },
+  "south_africa": {
+    "name": "South Africa",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean",
+      "@indian_ocean"
+    ],
+    "west": 16.5,
+    "east": 32.9,
+    "south": -34.9,
+    "north": -22.1,
+    "remarks": "Two oceans meet at the southern tip and behave completely differently. Cold kelp forest and great whites on one side, warm reef and the sardine run on the other."
+  },
+  "south_sudan": {
+    "name": "South Sudan",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 24.1,
+    "east": 35.9,
+    "south": 3.5,
+    "north": 12.2,
+    "remarks": "Landlocked, and containing the Sudd \u2014 a wetland so vast it swallows much of the White Nile before it can get anywhere."
+  },
+  "sudan": {
+    "name": "Sudan",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@red_sea"
+    ],
+    "west": 21.8,
+    "east": 38.6,
+    "south": 8.7,
+    "north": 22,
+    "remarks": "Red Sea reef with a fraction of Egypt's traffic. Cousteau sank an underwater habitat off Sha'ab Rumi in 1963, and parts of it are still down there."
+  },
+  "tanzania": {
+    "name": "Tanzania",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@indian_ocean"
+    ],
+    "west": 29.3,
+    "east": 40.4,
+    "south": -11.7,
+    "north": -0.9,
+    "remarks": "Reef and drop-offs off the islands, and Lake Tanganyika inland \u2014 the second deepest lake anywhere and full of species found nowhere else."
+  },
+  "togo": {
+    "name": "Togo",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@gulf_of_guinea"
+    ],
+    "west": -0.2,
+    "east": 1.8,
+    "south": 6.1,
+    "north": 11.1,
+    "remarks": "Fifty-six kilometres of coast, which is among the shortest in Africa."
+  },
+  "tunisia": {
+    "name": "Tunisia",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@mediterranean_sea"
+    ],
+    "west": 7.5,
+    "east": 11.6,
+    "south": 30.2,
+    "north": 37.6,
+    "remarks": "The Mediterranean narrows here to about a hundred and fifty kilometres between Tunisia and Sicily, which is why so much has been fought over it."
+  },
+  "uganda": {
+    "name": "Uganda",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 29.5,
+    "east": 35,
+    "south": -1.5,
+    "north": 4.2,
+    "remarks": "Landlocked, and sharing Lake Victoria \u2014 the largest tropical lake in the world \u2014 with two neighbours."
+  },
+  "western_sahara": {
+    "name": "Western Sahara",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -17.1,
+    "east": -8.7,
+    "south": 20.8,
+    "north": 27.7,
+    "remarks": "A long desert coast with cold, productive Atlantic water alongside it."
+  },
+  "zambia": {
+    "name": "Zambia",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 21.9,
+    "east": 33.7,
+    "south": -18.1,
+    "north": -8.2,
+    "remarks": "Landlocked, and sharing Victoria Falls and Lake Kariba \u2014 the largest artificial lake by volume anywhere."
+  },
+  "zimbabwe": {
+    "name": "Zimbabwe",
+    "category": "country",
+    "parents": [
+      "@africa"
+    ],
+    "west": 25.2,
+    "east": 33.1,
+    "south": -22.4,
+    "north": -15.6,
+    "remarks": "Landlocked, with Lake Kariba on its northern border and a drowned forest still standing in parts of it."
+  },
+  "zanzibar": {
+    "name": "Zanzibar",
+    "category": "area",
+    "parents": [
+      "@tanzania",
+      "@indian_ocean"
+    ],
+    "west": 39.1,
+    "east": 39.9,
+    "south": -6.5,
+    "north": -4.8,
+    "remarks": "Reef, dhows and warm water. Also the shortest war in recorded history, which lasted under forty minutes."
+  },
+  "dahlak_archipelago": {
+    "name": "Dahlak Archipelago",
+    "category": "area",
+    "parents": [
+      "@eritrea",
+      "@red_sea"
+    ],
+    "west": 39.5,
+    "east": 41,
+    "south": 15.2,
+    "north": 16.2,
+    "remarks": "Over two hundred islands in the southern Red Sea, of which fewer than five are inhabited."
+  },
+  "aldabra": {
+    "name": "Aldabra",
+    "category": "area",
+    "parents": [
+      "@seychelles",
+      "@indian_ocean"
+    ],
+    "west": 46.2,
+    "east": 46.5,
+    "south": -9.5,
+    "north": -9.3,
+    "remarks": "One of the largest coral atolls on Earth, and home to more giant tortoises than the Galapagos."
+  },
+  "reunion": {
+    "name": "Reunion",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@indian_ocean"
+    ],
+    "west": 55.2,
+    "east": 55.9,
+    "south": -21.4,
+    "north": -20.8,
+    "remarks": "A volcanic island with one of the most active volcanoes anywhere, and a lagoon on its western side."
+  },
+  "mayotte": {
+    "name": "Mayotte",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@mozambique_channel"
+    ],
+    "west": 45,
+    "east": 45.3,
+    "south": -13,
+    "north": -12.6,
+    "remarks": "A double barrier reef encloses one of the largest lagoons in the Indian Ocean, with a passage through it that whales use."
+  },
+  "saint_helena": {
+    "name": "Saint Helena",
+    "category": "country",
+    "parents": [
+      "@africa",
+      "@atlantic_ocean"
+    ],
+    "west": -5.8,
+    "east": -5.6,
+    "south": -16,
+    "north": -15.9,
+    "remarks": "One of the remotest inhabited islands on the planet, and whale sharks turn up every summer for reasons nobody has entirely settled."
+  }
+}

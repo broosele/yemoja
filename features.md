@@ -1,0 +1,154 @@
+# Features
+
+What Yemoja is meant to do, and what it is meant to do *later*. This register exists so
+that an idea can be set aside without being lost, and so that something already decided
+against is not proposed again a year on.
+
+It is not a plan and carries no dates. It says what is intended, not when.
+
+## How to read it
+
+Every entry has an identifier — `FEAT-3` — which is never reused and never renumbered,
+so it can be referred to in discussion. Entries move between statuses; they are not
+deleted.
+
+| Status | Meaning |
+|---|---|
+| **Core** | Part of what the application is for. Without these there is no product. |
+| **Planned** | Intended, and will be built. |
+| **Future** | Wanted, not scheduled. Nothing depends on it. |
+| **Low priority** | Wanted in principle, and may never happen. |
+| **Rejected** | Decided against. The reason stays, so the decision is not relitigated. |
+
+Design questions belong in the `doc.md` file for the layer they affect, not here. Where
+a feature waits on such a question, it names it.
+
+## Core
+
+- **FEAT-1 — Log dives.** Recording a dive and everything about it.
+- **FEAT-2 — Dive sites, people, gear, trips, operators.** The items a dive refers to.
+
+The first version is a **local logbook and nothing else**: dives and the items they refer
+to, in readable files on one machine. Everything that moves data between places — history,
+syncing, downloading, importing, merging — is intended and designed for, and none of it is
+what makes this a logbook.
+
+That is a decision about order, not about ambition. The design work behind those features
+is done and recorded, and the file format must not foreclose them: see
+[lib/data/json/requirements.md](lib/data/json/requirements.md), whose eighteen
+requirements are settled and remain binding on the format even while nothing implements
+them.
+
+## Planned
+
+- **FEAT-4 — Versioned storage in readable files.** Yemoja's own history, not a
+  version control system underneath. See [lib/data/json/doc.md](lib/data/json/doc.md).
+  Moved from *Core*: a logbook that cannot undo is still a logbook, and the journal is
+  the largest single piece of machinery in the storage layer.
+- **FEAT-5 — Sync between installations, and backup.** Through a location the diver
+  provides; see [lib/data/json/requirements.md](lib/data/json/requirements.md). Moved
+  from *Core* with `FEAT-4`, which it builds on — merging is merging journals — and
+  carrying conflict resolution with it.
+- **FEAT-3 — Download from a dive computer**, over Bluetooth among other transports.
+  Moved from *Core*: it is how most dives will arrive in practice, but a dive typed in
+  by hand is a dive, and this brings a native library and per-platform Bluetooth with it.
+
+- **FEAT-6 — Dive planning with decompression.** Carries the safety obligation recorded
+  in [lib/logic/doc.md](lib/logic/doc.md). Moved here from *Core*: logging what you did
+  and planning what you will do are separate jobs, and a logbook that cannot plan is
+  still a logbook. It also brings a whole item type with it — a plan keeps its own
+  inputs — which is `DATA-57` in [lib/data/doc.md](lib/data/doc.md).
+- **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
+  designed for it; see [lib/logic/reconciliation.md](lib/logic/reconciliation.md).
+- **FEAT-8 — Statistics over the logbook.** Totals, counts and summaries, each reported
+  with what it was based on.
+- **FEAT-9 — Renewal tracking.** One list answering what needs renewing, across
+  insurance and gear maintenance. The reason the validity work in
+  [lib/data/doc.md](lib/data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
+  stored value: the data layer records when a thing falls due and this feature decides
+  when that is worth saying.
+
+## Future
+
+- **FEAT-11 — A terminal interface.** Deliberately raw; see [lib/ui/tui/doc.md](lib/ui/tui/doc.md).
+- **FEAT-12 — A programmatic interface.** See [lib/ui/api/doc.md](lib/ui/api/doc.md).
+- **FEAT-13 — Export to other applications' formats.** Waits on `RECON-4`.
+- **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
+  described in [lib/data/json/doc.md](lib/data/json/doc.md).
+- **FEAT-15 — More than one logbook.** *Answered by `JSON-8`:* any number may exist on
+  disk and one is open at a time. What remains here is the convenience around it —
+  remembering recent logbooks, switching without hunting for a folder.
+- **FEAT-18 — An AI agent over the logbook.** Asking for something in ordinary language
+  and having it done, where doing it by hand would be many edits: retagging a season,
+  filling a site in across a trip, finding what disagrees with itself. The diver brings
+  their own subscription — Yemoja supplies no model and pays for none.
+  Built on `FEAT-12`, so an agent reaches the data through the same surface as any other
+  program and gets no privileged path of its own. Two things it needs already exist by
+  design: a changeset is one revertible unit, and work is applied to live data for review
+  before it is saved, so an agent's edits are inspected and undone like any import — see
+  [lib/logic/reconciliation.md](lib/logic/reconciliation.md). What is sent to the service
+  and what stays local is undecided.
+
+## Low priority
+
+- **FEAT-16 — Libraries a diver did not get from Yemoja**, so that a club's dive sites or
+  its own words for things can be added without a new release. `DATA-25` settles that
+  suggested values come from the field's description joined with what a logbook already
+  uses, so a library would be a third source rather than a replacement for the first.
+
+  What makes this more than a convenience is what `LIB-5` settles it *cannot* be. A diver
+  can already copy items into their logbook, which is how a supplied item is frozen — but
+  absorbing a club's list that way loses which items came from it and any hope of
+  replacing it wholesale when the club issues a new one. A third-party library therefore
+  needs somewhere of its own to live, and the logbook folder is the only place that
+  reaches every device: a setting cannot carry files to a phone. A layer of that kind was
+  sketched and set aside under `LIB-5`; this is the want that would bring it back, and it
+  would have to answer the question that sank it — where an edit to an item in your own
+  library goes.
+- **FEAT-17 — Maintenance measured in dives** rather than elapsed time, so that a
+  regulator due every hundred dives says so instead of needing a date worked out by hand.
+  `DATA-35` settles that validity is dates only for now, and that this remains additive:
+  a maintenance with no dive limit simply has none. What it would need is a count of dives
+  using a given item since a date, which is the first derived value on gear that reads the
+  whole logbook rather than the item.
+- **FEAT-22 — Argon and hydrogen in a gas mix.** UDDF's `mix` carries `ar` and `h2`
+  alongside oxygen, helium and nitrogen; this model's gas notation names oxygen and
+  helium only, so a mix containing either cannot be represented and is lost on import.
+  Argon is a drysuit inflation gas more often than a breathing one, and hydrogen is
+  experimental — neither is common enough to shape the notation now, and both are worth
+  recording as known gaps rather than being discovered twice. See
+  [lib/logic/uddf.md](lib/logic/uddf.md).
+- **FEAT-19 — Units declared per item.** A `units` block inside a single item in a
+  file holding several, so a metric and an imperial cylinder can sit in the same
+  `gear.json`. Removed deliberately rather than never considered: a declaration now
+  reaches only the file it is written in, because a resolution order the reader cannot
+  see is a source of errors in a format meant to be read by hand — see
+  [lib/data/doc.md](lib/data/doc.md). Low priority because the case is already
+  expressible: any type may be stored as a directory of one file per item, and each
+  file then says what it likes. The cost of reinstating it is that the rule stops being
+  statable in one sentence, not that the code is hard.
+- **FEAT-10 — Weighting from gear buoyancy.** Working out ballast from the kit taken.
+  Gear carries buoyancy figures whether or not this is ever built, so nothing waits on
+  it.
+
+## Rejected
+
+Entries here keep their reason, so that a decision already taken is not taken again.
+
+- **FEAT-21 — Closed and semi-closed circuit diving.** Rebreather support, and the data
+  that comes with it: set, measured and calculated oxygen partial pressures through a
+  dive, and the dive modes that distinguish a rebreather from open circuit. Ruled out for
+  the foreseeable future rather than for ever — the reason is scope, not principle. It is
+  a different kind of diving with its own safety surface, and supporting it badly would be
+  worse than not supporting it. UDDF carries all of it, so a rebreather dive imported from
+  elsewhere will lose that data rather than be refused; `DATA-54` should record it among
+  the fields deliberately not modelled.
+- **FEAT-20 — Recording what things cost.** A purchase price on gear, a price on each
+  service, and totals across them. Dropped from the data model rather than deferred:
+  money is the one quantity that does not behave like the others. Every dimension the
+  model handles converts by a fixed factor, which is what lets a value be kept as written
+  and converted only when used; a currency has no base and no constant rate, so any total
+  across currencies needs exchange rates and dates from outside — live external data an
+  offline logbook has nowhere to get and no reason to hold. See `DATA-34` in
+  [lib/data/doc.md](lib/data/doc.md). Tracking the cost of diving is a fair thing to
+  want and belongs in something that is not a logbook.

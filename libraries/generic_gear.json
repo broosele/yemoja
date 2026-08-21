@@ -1,0 +1,454 @@
+{
+  "units": {
+    "mass": "kg",
+    "volume": "l",
+    "length": "m"
+  },
+  "generic_0.5_kg_lead_weight": {
+    "name": "0.5 kg lead weight",
+    "category": "weights",
+    "kind": "lead weight",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.5,
+      "displaced_volume": 0.04
+    }
+  },
+  "generic_1_kg_lead_weight": {
+    "name": "1 kg lead weight",
+    "category": "weights",
+    "kind": "lead weight",
+    "generic": true,
+    "buoyancy": {
+      "mass": 1.0,
+      "displaced_volume": 0.09
+    }
+  },
+  "generic_2_kg_lead_weight": {
+    "name": "2 kg lead weight",
+    "category": "weights",
+    "kind": "lead weight",
+    "generic": true,
+    "buoyancy": {
+      "mass": 2.0,
+      "displaced_volume": 0.18
+    }
+  },
+  "generic_jacket-style_bcd": {
+    "name": "jacket-style BCD",
+    "category": "BCD",
+    "kind": "jacket",
+    "generic": true,
+    "buoyancy": {
+      "mass": 2.8,
+      "displaced_volume": 2.5,
+      "lift_volume": 16.0
+    }
+  },
+  "generic_single-cylinder_wing": {
+    "name": "single-cylinder wing",
+    "category": "BCD",
+    "kind": "wing",
+    "generic": true,
+    "buoyancy": {
+      "mass": 2.5,
+      "displaced_volume": 1.6,
+      "lift_volume": 18.0
+    }
+  },
+  "generic_twin-cylinder_wing": {
+    "name": "twin-cylinder wing",
+    "category": "BCD",
+    "kind": "wing",
+    "generic": true,
+    "buoyancy": {
+      "mass": 3.0,
+      "displaced_volume": 2.0,
+      "lift_volume": 27.0
+    }
+  },
+  "generic_3_mm_one-piece_wetsuit": {
+    "name": "3 mm one-piece wetsuit",
+    "category": "suit",
+    "kind": "wetsuit",
+    "generic": true,
+    "buoyancy": {
+      "mass": 2.0,
+      "displaced_volume": 3.0,
+      "compressibility": 0.09
+    }
+  },
+  "generic_5_mm_one-piece_wetsuit": {
+    "name": "5 mm one-piece wetsuit",
+    "category": "suit",
+    "kind": "wetsuit",
+    "generic": true,
+    "buoyancy": {
+      "mass": 2.8,
+      "displaced_volume": 5.0,
+      "compressibility": 0.1
+    }
+  },
+  "generic_7_mm_one-piece_wetsuit": {
+    "name": "7 mm one-piece wetsuit",
+    "category": "suit",
+    "kind": "wetsuit",
+    "generic": true,
+    "buoyancy": {
+      "mass": 3.5,
+      "displaced_volume": 7.0,
+      "compressibility": 0.11
+    }
+  },
+  "generic_7_mm_two-piece_wetsuit": {
+    "name": "7 mm two-piece wetsuit",
+    "category": "suit",
+    "kind": "wetsuit",
+    "generic": true,
+    "buoyancy": {
+      "mass": 4.5,
+      "displaced_volume": 9.0,
+      "compressibility": 0.11
+    }
+  },
+  "generic_3_mm_shorty": {
+    "name": "3 mm shorty",
+    "category": "suit",
+    "kind": "wetsuit",
+    "generic": true,
+    "buoyancy": {
+      "mass": 1.2,
+      "displaced_volume": 1.5,
+      "compressibility": 0.09
+    }
+  },
+  "generic_drysuit": {
+    "name": "drysuit",
+    "category": "suit",
+    "kind": "drysuit",
+    "generic": true,
+    "buoyancy": {
+      "mass": 5.0,
+      "displaced_volume": 7.0,
+      "compressibility": 0.02,
+      "lift_volume": 12.0
+    }
+  },
+  "generic_5_mm_hood": {
+    "name": "5 mm hood",
+    "category": "suit",
+    "kind": "hood",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.3,
+      "displaced_volume": 0.3,
+      "compressibility": 0.1
+    }
+  },
+  "generic_3_mm_wet_gloves": {
+    "name": "3 mm wet gloves",
+    "category": "suit",
+    "kind": "gloves",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.2,
+      "displaced_volume": 0.3
+    }
+  },
+  "generic_5_mm_wet_gloves": {
+    "name": "5 mm wet gloves",
+    "category": "suit",
+    "kind": "gloves",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.3,
+      "displaced_volume": 0.5
+    }
+  },
+  "generic_7_mm_wet_gloves": {
+    "name": "7 mm wet gloves",
+    "category": "suit",
+    "kind": "gloves",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.4,
+      "displaced_volume": 0.7
+    }
+  },
+  "generic_dry_gloves": {
+    "name": "dry gloves",
+    "category": "suit",
+    "kind": "gloves",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.3,
+      "displaced_volume": 0.3
+    }
+  },
+  "generic_heated_vest": {
+    "name": "heated vest",
+    "category": "suit",
+    "kind": "heated vest",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.8,
+      "displaced_volume": 0.8
+    }
+  },
+  "generic_mask": {
+    "name": "mask",
+    "category": "ABC",
+    "kind": "mask",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.2,
+      "displaced_volume": 0.25
+    }
+  },
+  "generic_snorkel": {
+    "name": "snorkel",
+    "category": "ABC",
+    "kind": "snorkel",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.1,
+      "displaced_volume": 0.15
+    }
+  },
+  "generic_open-heel_fins": {
+    "name": "open-heel fins",
+    "category": "ABC",
+    "kind": "fins",
+    "generic": true,
+    "buoyancy": {
+      "mass": 1.5,
+      "displaced_volume": 1.3
+    }
+  },
+  "generic_full-foot_fins": {
+    "name": "full-foot fins",
+    "category": "ABC",
+    "kind": "fins",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.9,
+      "displaced_volume": 0.9
+    }
+  },
+  "generic_technical_fins": {
+    "name": "technical fins",
+    "category": "ABC",
+    "kind": "fins",
+    "generic": true,
+    "buoyancy": {
+      "mass": 2.6,
+      "displaced_volume": 1.6
+    }
+  },
+  "generic_knife": {
+    "name": "knife",
+    "category": "accessory",
+    "kind": "knife",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.2,
+      "displaced_volume": 0.05
+    }
+  },
+  "generic_compass": {
+    "name": "compass",
+    "category": "instruments",
+    "kind": "compass",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.1,
+      "displaced_volume": 0.08
+    }
+  },
+  "generic_pressure_gauge": {
+    "name": "pressure gauge",
+    "category": "instruments",
+    "kind": "pressure gauge",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.3,
+      "displaced_volume": 0.15
+    }
+  },
+  "generic_depth_gauge": {
+    "name": "depth gauge",
+    "category": "instruments",
+    "kind": "depth gauge",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.2,
+      "displaced_volume": 0.12
+    }
+  },
+  "generic_console": {
+    "name": "gauge console",
+    "category": "instruments",
+    "kind": "console",
+    "description": "Pressure and depth gauges mounted together on a hose.",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.5,
+      "displaced_volume": 0.25
+    }
+  },
+  "generic_dive_watch": {
+    "name": "dive watch",
+    "category": "instruments",
+    "kind": "watch",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.12,
+      "displaced_volume": 0.06
+    }
+  },
+  "generic_primary_flashlight": {
+    "name": "primary flashlight",
+    "category": "lighting",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.5,
+      "displaced_volume": 0.35
+    }
+  },
+  "generic_backup_light": {
+    "name": "backup light",
+    "category": "lighting",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.15,
+      "displaced_volume": 0.15
+    }
+  },
+  "generic_dive_computer": {
+    "name": "dive computer",
+    "category": "instruments",
+    "kind": "dive computer",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.15,
+      "displaced_volume": 0.1
+    }
+  },
+  "generic_camera": {
+    "name": "camera",
+    "category": "photography",
+    "kind": "camera",
+    "generic": true,
+    "buoyancy": {
+      "mass": 1.2,
+      "displaced_volume": 1.3
+    }
+  },
+  "generic_dsmb": {
+    "name": "dsmb",
+    "category": "accessory",
+    "kind": "DSMB",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.3,
+      "displaced_volume": 0.3
+    }
+  },
+  "generic_spool": {
+    "name": "spool",
+    "category": "accessory",
+    "kind": "spool",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.2,
+      "displaced_volume": 0.15
+    }
+  },
+  "generic_reel": {
+    "name": "reel",
+    "category": "accessory",
+    "kind": "reel",
+    "generic": true,
+    "buoyancy": {
+      "mass": 0.5,
+      "displaced_volume": 0.4
+    }
+  },
+  "generic_aluminium_80cf_cylinder": {
+    "name": "aluminium 80cf cylinder",
+    "category": "cylinder",
+    "kind": "aluminium",
+    "capacity": 11.1,
+    "generic": true,
+    "buoyancy": {
+      "mass": 14.3,
+      "displaced_volume": 15.7
+    }
+  },
+  "generic_steel_10_l_cylinder": {
+    "name": "steel 10 l cylinder",
+    "category": "cylinder",
+    "kind": "steel",
+    "capacity": 10.0,
+    "generic": true,
+    "buoyancy": {
+      "mass": 12.5,
+      "displaced_volume": 11.0
+    }
+  },
+  "generic_steel_12_l_cylinder": {
+    "name": "steel 12 l cylinder",
+    "category": "cylinder",
+    "kind": "steel",
+    "capacity": 12.0,
+    "generic": true,
+    "buoyancy": {
+      "mass": 14.5,
+      "displaced_volume": 13.2
+    }
+  },
+  "generic_steel_15_l_cylinder": {
+    "name": "steel 15 l cylinder",
+    "category": "cylinder",
+    "kind": "steel",
+    "capacity": 15.0,
+    "generic": true,
+    "buoyancy": {
+      "mass": 18.0,
+      "displaced_volume": 16.3
+    }
+  },
+  "generic_twin_12_l_cylinder": {
+    "name": "twin 12 l cylinder",
+    "category": "cylinder",
+    "kind": "twinset",
+    "capacity": 24.0,
+    "generic": true,
+    "buoyancy": {
+      "mass": 33.0,
+      "displaced_volume": 26.9
+    }
+  },
+  "generic_aluminium_40cf_stage_cylinder": {
+    "name": "aluminium 40cf stage cylinder",
+    "category": "cylinder",
+    "kind": "aluminium",
+    "capacity": 5.7,
+    "generic": true,
+    "buoyancy": {
+      "mass": 5.9,
+      "displaced_volume": 6.7
+    }
+  },
+  "generic_aluminium_2_l_pony_cylinder": {
+    "name": "aluminium 2 l pony cylinder",
+    "category": "cylinder",
+    "kind": "aluminium",
+    "capacity": 2.0,
+    "generic": true,
+    "buoyancy": {
+      "mass": 2.9,
+      "displaced_volume": 3.0
+    }
+  }
+}

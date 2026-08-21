@@ -1,0 +1,43 @@
+{
+  "dive_number": 37,
+  "start_date": "2025-05-30",
+  "start_time": "11:40:00",
+  "end_time": "12:19:00",
+  "dive_site": "@mistral_point",
+  "previous_dive": "@2025-05-30#0",
+  "buddies": [
+    "Marco"
+  ],
+  "rating": 7,
+  "max_depth": 18.2,
+  "deco": false,
+  "details": {
+    "tags": [
+      "reef"
+    ],
+    "dive_trip": "@provence_week_calanques",
+    "operator": "@calanque_plongee"
+  },
+  "environment": {
+    "current": "hard",
+    "waves": "very hard",
+    "visibility": 10,
+    "air_temperature": 24,
+    "bottom_temperature": 18
+  },
+  "gear": {
+    "items": [
+      "@summer_wetsuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins"
+    ],
+    "mass": 22,
+    "weight": 4,
+    "temperature_evaluation": "good",
+    "buoyancy_evaluation": "too light"
+  },
+  "remarks": "The mistral got up and cut it short."
+}

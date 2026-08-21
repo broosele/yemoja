@@ -1,0 +1,200 @@
+{
+  "dive_number": 71,
+  "start_date": "2026-06-21",
+  "start_time": "08:50:00",
+  "dive_site": "@serpentine_wall",
+  "buddies": [
+    "@lena_okafor"
+  ],
+  "rating": 10,
+  "max_depth": 52.4,
+  "details": {
+    "tags": [
+      "deep",
+      "wall",
+      "trimix"
+    ],
+    "operator": "@calanque_plongee"
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 20,
+    "air_temperature": 26
+  },
+  "gear": {
+    "items": [
+      "@my_drysuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@steel_12",
+      "@backup_regulator",
+      "@aluminium_11"
+    ],
+    "mass": 42,
+    "weight": 6,
+    "temperature_evaluation": "good",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Wall dive to fifty-two metres. Long, slow ascent. The computer reported 52.4 as its deepest, a little more than its own recording kept, so max_depth is corrected here. Lena's spare read a metre shallower throughout and started a minute early.",
+  "profiles": {
+    "p1": {
+      "dive_computer": "@reef_computer",
+      "start_date": "2026-06-21",
+      "start_time": "08:50:00",
+      "water_type": "salt",
+      "depth": [
+        [0, 0],
+        [60, 18.2],
+        [120, 34.6],
+        [180, 47.0],
+        [240, 51.9],
+        [600, 51.4],
+        [1020, 48.6],
+        [1140, 43.2],
+        [1260, 30.5],
+        [1380, 22.0],
+        [1440, 21.0],
+        [1500, 21.0],
+        [1620, 18.0],
+        [1800, 18.0],
+        [1980, 15.0],
+        [2160, 12.0],
+        [2400, 9.0],
+        [2760, 6.0],
+        [3300, 3.0],
+        [3660, 1.4],
+        [3720, 0]
+      ],
+      "temperature": [
+        [0, 21],
+        [240, 15],
+        [600, 13],
+        [1200, 13],
+        [2400, 15],
+        [3300, 17],
+        [3720, 18]
+      ],
+      "pressures": {
+        "g1": [
+          [0, 232],
+          [240, 210],
+          [600, 172],
+          [1020, 128],
+          [1260, 104],
+          [1440, 88],
+          [3720, 70]
+        ],
+        "g2": [
+          [1440, 200],
+          [2400, 168],
+          [3300, 140],
+          [3720, 120]
+        ]
+      },
+      "gas_switches": [
+        [1440, "*g2"]
+      ],
+      "alarms": [
+        [1020, "deco"],
+        [1260, "ascent"]
+      ],
+      "decostop": [
+        [240, 0],
+        [600, 3],
+        [900, 9],
+        [1140, 21],
+        [1500, 18],
+        [1800, 15],
+        [1980, 12],
+        [2160, 12],
+        [2400, 9],
+        [2760, 6],
+        [3300, 3],
+        [3660, 0]
+      ],
+      "no_deco_time": [
+        [60, 1800],
+        [180, 480],
+        [240, 0]
+      ],
+      "cns": [
+        [0, 0],
+        [600, 12],
+        [1200, 24],
+        [2400, 38],
+        [3720, 44]
+      ],
+      "otu": [
+        [0, 0],
+        [1200, 18],
+        [2400, 36],
+        [3720, 52]
+      ],
+      "heart_rate": [
+        [0, 78],
+        [240, 112],
+        [1020, 96],
+        [1260, 124],
+        [2400, 88],
+        [3720, 81]
+      ],
+      "no_flight_time": 64800,
+      "desaturation_time": 108000,
+      "tolerances": {
+        "depth": 0.3,
+        "temperature": 0.5,
+        "pressure": 2
+      }
+    },
+    "p2": {
+      "dive_computer": "Aladin borrowed from Lena",
+      "start_date": "2026-06-21",
+      "start_time": "08:49:00",
+      "water_type": "en13319",
+      "depth": [
+        [0, 0],
+        [120, 33.8],
+        [300, 51.6],
+        [660, 51.0],
+        [1080, 47.9],
+        [1320, 25.4],
+        [1560, 21.0],
+        [1860, 18.0],
+        [2220, 12.0],
+        [2460, 9.0],
+        [2820, 6.0],
+        [3360, 3.0],
+        [3780, 0]
+      ],
+      "temperature": [
+        [0, 21],
+        [300, 14],
+        [1200, 13],
+        [3780, 18]
+      ]
+    }
+  },
+  "primary_profile": "*p1",
+  "gas_sources": {
+    "g1": {
+      "cylinder": "@steel_12",
+      "gas_type": "TMX18/35",
+      "start_pressure": 232,
+      "end_pressure": 70,
+      "usage": "bottom",
+      "configuration": "back mounted"
+    },
+    "g2": {
+      "cylinder": "@aluminium_11",
+      "gas_type": "EAN50",
+      "start_pressure": 200,
+      "end_pressure": 120,
+      "usage": "deco",
+      "configuration": "staged"
+    }
+  }
+}

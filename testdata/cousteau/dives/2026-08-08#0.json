@@ -1,0 +1,45 @@
+{
+  "dive_number": 74,
+  "start_date": "2026-08-08",
+  "start_time": "12:10:00",
+  "end_time": "13:04:00",
+  "dive_site": "@lantern_reef",
+  "buddies": [
+    "@jacques_cousteau",
+    "Marco"
+  ],
+  "buddy_count": 5,
+  "rating": 9,
+  "max_depth": 19.7,
+  "surface_interval": 7200,
+  "deco": false,
+  "details": {
+    "tags": [
+      "reef",
+      "photo"
+    ],
+    "operator": "@calanque_plongee"
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 20,
+    "bottom_temperature": 21
+  },
+  "gear": {
+    "items": [
+      "@summer_wetsuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@camera_housing"
+    ],
+    "mass": 24,
+    "weight": 4,
+    "temperature_evaluation": "too warm",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Five of us went in. Only two of the names ever got written down, so the count is corrected."
+}

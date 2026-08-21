@@ -1,0 +1,252 @@
+{
+  "units": {
+    "angle": "deg"
+  },
+  "world": {
+    "name": "World",
+    "category": "world",
+    "west": -180,
+    "east": 180,
+    "south": -90,
+    "north": 90,
+    "remarks": "Seven tenths water, and the average depth of that water is about 3.7 km. Whatever your personal best, you have been paddling in the shallows."
+  },
+  "africa": {
+    "name": "Africa",
+    "category": "continent",
+    "parents": [
+      "@world"
+    ],
+    "west": -17.6,
+    "east": 51.4,
+    "south": -34.8,
+    "north": 37.5,
+    "remarks": "Its north-eastern corner is pulling away from Arabia at roughly the speed your fingernails grow, and the Red Sea is the gap so far. Give it twenty million years and the Sinai will be an island."
+  },
+  "antarctica": {
+    "name": "Antarctica",
+    "category": "continent",
+    "parents": [
+      "@world"
+    ],
+    "west": -180,
+    "east": 180,
+    "south": -90,
+    "north": -60,
+    "remarks": "The coldest, driest and windiest continent, and technically a desert. Divers come anyway, cut a hole in the ice, and tie a line to it, because the alternative to finding the hole again is not one worth considering."
+  },
+  "asia": {
+    "name": "Asia",
+    "category": "continent",
+    "parents": [
+      "@world"
+    ],
+    "west": 26,
+    "east": 180,
+    "south": -11,
+    "north": 81,
+    "remarks": "Runs from Arctic pack ice to equatorial reef, and contains the western half of the Coral Triangle. Also contains most of the people, which the reefs have noticed."
+  },
+  "europe": {
+    "name": "Europe",
+    "category": "continent",
+    "parents": [
+      "@world"
+    ],
+    "west": -24.5,
+    "east": 60,
+    "south": 34.5,
+    "north": 71.2,
+    "remarks": "Cold water, poor visibility, and several thousand years of enthusiastic seafaring gone wrong. The result is the densest concentration of wreck diving anywhere. Bring a hood."
+  },
+  "north_america": {
+    "name": "North America",
+    "category": "continent",
+    "parents": [
+      "@world"
+    ],
+    "west": -168,
+    "east": -52,
+    "south": 7,
+    "north": 83.6,
+    "remarks": "Arctic ice at the top, flooded limestone caves at the bottom. The caves formed when sea levels were lower, filled up when they rose again, and have been quietly waiting ever since."
+  },
+  "south_america": {
+    "name": "South America",
+    "category": "continent",
+    "parents": [
+      "@world"
+    ],
+    "west": -82,
+    "east": -34,
+    "south": -56,
+    "north": 13,
+    "remarks": "The cold Humboldt Current runs up the Pacific side and drags nutrients with it, which is the entire reason a diver can meet a penguin on the equator."
+  },
+  "oceania": {
+    "name": "Oceania",
+    "category": "continent",
+    "parents": [
+      "@world"
+    ],
+    "west": 110,
+    "east": 180,
+    "south": -48,
+    "north": 0,
+    "remarks": "Mostly ocean, with some land in it. Counting the water it covers about a third of the planet, and counting the land rather less."
+  },
+  "atlantic_ocean": {
+    "name": "Atlantic Ocean",
+    "category": "ocean",
+    "parents": [
+      "@world"
+    ],
+    "west": -80,
+    "east": 20,
+    "south": -60,
+    "north": 70,
+    "remarks": "Widening by a few centimetres a year along the ridge down its middle. At Silfra in Iceland you can swim in the crack, with a hand on each continent, drifting apart slower than anyone can notice."
+  },
+  "pacific_ocean": {
+    "name": "Pacific Ocean",
+    "category": "ocean",
+    "parents": [
+      "@world"
+    ],
+    "west": 120,
+    "east": -70,
+    "south": -60,
+    "north": 66,
+    "remarks": "The largest and deepest ocean, with room for Everest in the Mariana Trench and a kilometre to spare. Spans the antimeridian, so its east edge is numerically west of its west one, which is a headache for anything drawing a box around it."
+  },
+  "indian_ocean": {
+    "name": "Indian Ocean",
+    "category": "ocean",
+    "parents": [
+      "@world"
+    ],
+    "west": 20,
+    "east": 120,
+    "south": -60,
+    "north": 30,
+    "remarks": "The warmest ocean on average, which suits the coral, the whale sharks and very nearly everyone diving in it."
+  },
+  "arctic_ocean": {
+    "name": "Arctic Ocean",
+    "category": "ocean",
+    "parents": [
+      "@world"
+    ],
+    "west": -180,
+    "east": 180,
+    "south": 66,
+    "north": 90,
+    "remarks": "The smallest and shallowest ocean, and roofed with ice for much of the year. Under-ice diving here is done on a line, for the obvious reason."
+  },
+  "southern_ocean": {
+    "name": "Southern Ocean",
+    "category": "ocean",
+    "parents": [
+      "@world"
+    ],
+    "west": -180,
+    "east": 180,
+    "south": -90,
+    "north": -60,
+    "remarks": "The only ocean that circles the planet without meeting land, driven by the strongest current there is. That current is also why nothing here ever gets a chance to warm up."
+  },
+  "mediterranean_sea": {
+    "name": "Mediterranean Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe",
+      "@africa",
+      "@asia"
+    ],
+    "west": -6,
+    "east": 36.5,
+    "south": 30,
+    "north": 46,
+    "remarks": "More water evaporates from it than the rivers put back, so it runs saltier than the Atlantic that tops it up through Gibraltar. Slightly more buoyant, therefore, and scattered with amphorae."
+  },
+  "red_sea": {
+    "name": "Red Sea",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@africa",
+      "@asia"
+    ],
+    "west": 32,
+    "east": 43.5,
+    "south": 12,
+    "north": 30,
+    "remarks": "Hot, salty and fed by no river worth the name, which the coral appreciates rather more than your regulator does."
+  },
+  "caribbean_sea": {
+    "name": "Caribbean Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@north_america"
+    ],
+    "west": -89,
+    "east": -60,
+    "south": 9,
+    "north": 22.5,
+    "remarks": "Warm, clear and ringed with reef. Also the reason a great many people own a dive certification and have used it exactly once."
+  },
+  "coral_sea": {
+    "name": "Coral Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@oceania"
+    ],
+    "west": 142,
+    "east": 170,
+    "south": -30,
+    "north": -8,
+    "remarks": "Holds the outer barrier reefs and the seamounts beyond them, where the wall goes down further than anyone is going to follow it."
+  },
+  "arabian_sea": {
+    "name": "Arabian Sea",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@asia"
+    ],
+    "west": 50,
+    "east": 78,
+    "south": 0,
+    "north": 25,
+    "remarks": "The monsoon reverses the surface currents here twice a year, which is either excellent timing or terrible, depending entirely on when you booked."
+  },
+  "bering_sea": {
+    "name": "Bering Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean"
+    ],
+    "west": -180,
+    "east": -157,
+    "south": 52,
+    "north": 66,
+    "remarks": "The strait at its northern end was dry land during the last ice age, and the first people to reach the Americas walked across it. Nobody has since."
+  },
+  "gulf_of_aden": {
+    "name": "Gulf of Aden",
+    "category": "sea",
+    "parents": [
+      "@indian_ocean",
+      "@africa",
+      "@asia"
+    ],
+    "west": 43,
+    "east": 51.5,
+    "south": 10,
+    "north": 15,
+    "remarks": "The doorway between the Red Sea and the Indian Ocean, and the route every bit of Red Sea coral originally came in by."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "user": "@jacques_cousteau",
+  "libraries": {
+    "region": [
+      "regions/world",
+      "regions/africa",
+      "regions/asia",
+      "regions/europe",
+      "regions/north_america",
+      "regions/oceania",
+      "regions/south_america"
+    ],
+    "certification": [
+      "certifications/padi",
+      "certifications/cmas"
+    ],
+    "gear": [
+      "generic_gear"
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "dive_number": 36,
+  "start_date": "2025-05-30",
+  "start_time": "08:30:00",
+  "end_time": "09:12:00",
+  "dive_site": "@lantern_reef",
+  "buddies": [
+    "@jacques_cousteau",
+    "Marco"
+  ],
+  "rating": 9,
+  "max_depth": 24.6,
+  "deco": false,
+  "details": {
+    "tags": [
+      "reef"
+    ],
+    "dive_trip": "@provence_week_calanques",
+    "operator": "@calanque_plongee"
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 15,
+    "bottom_temperature": 17
+  },
+  "gear": {
+    "items": [
+      "@summer_wetsuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins"
+    ],
+    "mass": 22,
+    "weight": 4,
+    "temperature_evaluation": "good",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Marco was on the boat and had no record made for him."
+}

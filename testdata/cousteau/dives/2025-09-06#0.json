@@ -1,0 +1,42 @@
+{
+  "dive_number": 52,
+  "start_date": "2025-09-06",
+  "start_time": "23:20:00",
+  "end_time": "00:05:00",
+  "dive_site": "@amber_shallows",
+  "buddies": [
+    "@anna_devries",
+    "@pieter_bakker"
+  ],
+  "rating": 10,
+  "max_depth": 7.8,
+  "deco": false,
+  "details": {
+    "tags": [
+      "night",
+      "shore"
+    ]
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 4,
+    "bottom_temperature": 18
+  },
+  "gear": {
+    "items": [
+      "@summer_wetsuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@backup_light"
+    ],
+    "mass": 23,
+    "weight": 5,
+    "temperature_evaluation": "good",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Night dive that ran past midnight, so the end date falls on the seventh."
+}

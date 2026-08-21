@@ -1,0 +1,42 @@
+{
+  "northshore_diving": {
+    "name": "Northshore Diving",
+  "alternative_names": [
+    "Stellendam Duikcentrum"
+  ],
+    "region": "@netherlands",
+    "address": "Havenweg 4, Stellendam",
+    "phone": "+31 6 00 00 00 10",
+    "email": "info@example.invalid",
+    "website": "https://example.invalid/northshore",
+    "category": "dive center",
+    "rating": 8
+  },
+  "calanque_plongee": {
+    "name": "Calanque Plongee",
+    "region": "@provence",
+    "email": "contact@example.invalid",
+    "category": "dive resort",
+    "rating": 9,
+    "remarks": "Boat leaves at eight and does not wait."
+  },
+  "deep_current_charters": {
+    "name": "Deep Current Charters",
+    "region": "@north_sea",
+    "phone": "+31 6 00 00 00 11",
+    "category": "boat operator",
+    "rating": 6,
+    "remarks": "Cheap, punctual, and the deck is always wet."
+  },
+  "lakeside_dive_club": {
+    "name": "Lakeside Dive Club",
+    "region": "@france",
+    "category": "dive club",
+    "rating": 7
+  },
+  "ravensgate_quarry_desk": {
+    "name": "Ravensgate Quarry Desk",
+    "region": "@netherlands",
+    "category": "dive center"
+  }
+}

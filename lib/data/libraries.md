@@ -1,0 +1,199 @@
+# Libraries
+
+Reference data shipped with the application rather than owned by the diver: regions
+and their dive sites, a catalogue of commonly available gear, certification schemes.
+
+A library is **not** part of a logbook. It is not versioned with it, not synced with
+it, and not the user's to change.
+
+## Rules
+
+- **Read-only.** Nothing writes to a library.
+- **Adding always goes to the logbook.** A new dive site is the diver's, even if it
+  sits in a region a library describes. Its id is worked out against the libraries as
+  well as the logbook, so a new item can never land on a supplied id by accident — it
+  takes an index instead.
+- **Editing a library item copies it.** The edited version is written to the logbook and
+  the library keeps its own, untouched. **This is the only way an item comes to shadow a
+  supplied one**, which makes shadowing always deliberate: adding cannot cause it, and
+  editing cannot fail to.
+- **The logbook wins.** An item in the logbook shadows a library item with the
+  same id.
+- **Library items cannot be deleted.** They can only be shadowed — and deleting the
+  shadow brings the supplied one back, which is how a diver undoes a copy and takes up
+  whatever the library says now.
+
+## Reference resolution
+
+A reference names an id, not a place. Think of it as layers, each laid over the last:
+
+```
+first library  →  … →  last library  →  the logbook
+```
+
+**The last to define an id wins.** A library listed later shadows one listed earlier,
+and the logbook, laid on top of them all, shadows every library. One rule in one
+direction, rather than a search order and a separate statement that the logbook takes
+precedence.
+
+This is what makes shadowing work, and it means a reference never has to say *where* its
+target lives — `@padi_owd` and `@jacques_cousteau` look identical and need no
+distinguishing syntax.
+
+## How a library is named
+
+`yemoja.json` sits inside the logbook, which may be anywhere. Libraries live with the
+application, whose location differs by platform and installation. A path relative to
+the logbook cannot reach the application, and an absolute path stops working the
+moment the logbook is synced to a phone.
+
+**Libraries are therefore referenced by name, not by path:**
+
+```json
+{
+  "libraries": {
+    "region": ["regions/world", "regions/europe"],
+    "certification": ["certifications/padi"]
+  }
+}
+```
+
+The logbook declares *which* libraries it uses, grouped by the kind of item they
+hold. Where they live is the application's business, resolved against its own library
+directory, and may differ on every device the logbook is opened on.
+
+A name is an identifier, not a file name: no directory prefix and no extension. The
+application supplies both, and the type comes from the declaration rather than from
+anything inside the file.
+
+This is now the whole of it: **`yemoja.json` contains no paths at all.** Where a
+logbook's own items live is fixed by convention rather than declared — `dives/` or
+`dives.json`, whichever is there — so the file names libraries and says who the logbook
+belongs to, and nothing else. A path could point outside the folder, and a logbook that
+does not contain itself cannot be copied, synced, or made into a repository.
+
+Where these files live in this repository, and how one is written, is
+[libraries/doc.md](../../libraries/doc.md).
+
+If user-supplied libraries are ever wanted, the resolution gains a second directory
+and names resolve against both; nothing in the logbook changes. If libraries ever
+genuinely need to live in arbitrary places, the fallback is a scheme naming a root —
+`app:regions/world`, `logbook:dives/` — but that is more machinery than the current
+requirement justifies.
+
+## Publishing is close to permanent
+
+A library item cannot be deleted at runtime, and any logbook anywhere may hold
+references to it. Removing an entry therefore breaks every reference written against it,
+in logbooks this project will never see. Renaming an id does the same thing by
+another route.
+
+**Until the first release, none of this has bitten yet.** Nothing has been published, so
+no logbook anywhere refers to a supplied id and any of them may still be corrected. That
+window closes the day something ships, and it is the only chance to make them right for
+free — a name that reads badly is worth fixing now rather than being carried for ever.
+
+Correcting an item's *contents* is expected and safe. Changing what it is called, or
+taking it away, is not. `LIB-5` settles that a logbook does not pin the edition it was
+written against: a diver who wants a supplied item to stop changing copies it in, where
+it becomes theirs.
+
+## Open questions
+
+## Settled
+
+- **LIB-1 — Whether a superseded copy is surfaced.** *Settled:* it is not. Once an item
+  is copied into the logbook it is the diver's, and the supplied version is no longer
+  consulted for it or compared against it. A dive site frozen in 2026 keeps the
+  coordinates it was frozen with, and nothing says they were later corrected.
+
+  That is what copying is *for*, and the reason to leave it alone is that the application
+  cannot honestly say much anyway. It holds the library's current version and the diver's
+  copy, and they differ — but they always differ, because differing is why the copy
+  exists. Telling a library correction from the diver's own edit needs what the library
+  said at the moment of copying, and `LIB-5` settles that a logbook pins no edition.
+
+  There was a way to have it. Copying is editing a supplied item, and `JSON-11` has an
+  `edit` carry each changed field as before and after; if the *before* were the library's
+  value, the journal would hold exactly what was superseded. That is a real option and it
+  is declined, not overlooked — it would make a copy quietly dependent on history for its
+  meaning, and `FEAT-4` is *Planned*, so it would do nothing at all for the first version.
+
+  A diver who wants the current supplied version has a plain way to get it: delete their
+  copy. The library item is untouched underneath and reappears, since **library items
+  cannot be deleted, only shadowed**.
+
+- **LIB-4 — Version skew across installations.** *Settled:* accepted, and not a defect.
+  Libraries ship with the application and do not sync, so two installations on different
+  versions can resolve one reference to different content. That is what shipping
+  corrections means.
+
+  What bounds it is already settled elsewhere. **References never break**: *Publishing is
+  close to permanent* forbids removing or renaming a published id, so every version
+  resolves every reference and the skew is in content alone. **Correcting content is
+  expected and safe** — the same section says so. And **the logbook is untouched**: a
+  diver's own items sync and agree, and only the reference data behind them differs.
+
+  So the older installation is not wrong about the logbook, only behind on the atlas.
+  A diver who wants a supplied item to stop moving copies it in, where it becomes theirs
+  and syncs like anything else — `LIB-5`.
+
+  The alternatives were both worse for the same reason: they buy stability by making the
+  library less useful. Showing which edition is in use needs libraries to carry a version,
+  which is the pinning `LIB-5` declined, wearing a different hat. Copying every referenced
+  item into the logbook removes the skew and the corrections together, and grows a logbook
+  that quietly duplicates whatever it touches.
+
+- **LIB-2 — Accidental shadowing.** *Settled:* it cannot happen by accident. **An id
+  proposal is checked against the libraries as well as the logbook**, so a diver adding
+  their own Blue Hole where a library already has one gets `blue_hole#1` and the supplied
+  item is untouched.
+
+  Shadowing therefore only ever happens on purpose, and there is exactly one way to do it:
+  **edit the supplied item.** The edited copy is written to the logbook, where it shadows
+  what it came from — which is the same act as freezing it, settled in `LIB-5`. One
+  gesture, one meaning.
+
+  Nothing changes at read time. `DATA-15` already resolves clashes by appending an index;
+  it was only ever consulting a smaller set than it should have. And it matters more here
+  than elsewhere because the diver never sees an id: a silent replacement would leave
+  nothing on screen to notice, and every reference to the supplied item would quietly
+  change target.
+
+- **LIB-3 — Ordering between libraries.** *Settled:* allowed, and the last listed wins —
+  as reference resolution already has it, with each library laid over the one before.
+
+  Two libraries defining one id is not necessarily a fault. A club correcting a supplied
+  dive site is `FEAT-16`'s whole purpose, and refusing the collision would force it to
+  ship a replacement for the entire set instead of the one item it disagrees with. The
+  diver controls which wins by the order they are listed in, which is a thing they can see
+  and change.
+
+  This is the one place where the collision rules differ by side, and deliberately: a
+  *diver* cannot shadow a library item by accident, because `LIB-2` gives their new item
+  an index, while a *library* may shadow another on purpose, because that is what
+  publishing a correction means.
+
+- **LIB-5 — Whether a library can be versioned or pinned.** *Settled:* no. Libraries
+  carry no edition and a logbook records none. A diver who wants a supplied item to stop
+  changing **copies it into the logbook**, where it shadows the supplied one and is
+  thereafter theirs.
+
+  Nothing had to be built for that: it is ordinary shadowing, and `testdata/cousteau`
+  already does it — `netherlands` sits in the logbook's own `regions.json`, the same
+  content with a remark of the diver's own. Copy twenty regions and twenty regions are
+  frozen. The freeze is per item, so later additions to a library still arrive; a diver
+  who does not want a library at all leaves it out of the list.
+
+  **Two alternatives were considered and set aside.** *Pinning* — recording which edition
+  a logbook was written against — needs versioned libraries, a way to obtain old editions,
+  and a rule for what happens when one is missing, all to serve a want that copying
+  already meets. *A second static layer* holding the diver's own library files was
+  designed and dropped: it has no clean boundary against the logbook, because an edit to
+  an item in your own library has nowhere to go that is not either the static layer, which
+  then is not static, or a third layer above it.
+
+  What copying does not serve is a **third-party** library — a club's dive sites, a
+  shared vocabulary — where the point is to add a set you did not have, keep it
+  identifiable, and replace it wholesale later. Absorbing its items loses all three. That
+  is a different want and belongs with `FEAT-16` rather than here.

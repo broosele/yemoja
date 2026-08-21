@@ -1,0 +1,43 @@
+{
+  "dive_number": 2,
+  "start_date": "2024-06-15",
+  "start_time": "13:20:00",
+  "end_time": "13:58:00",
+  "dive_site": "@ravensgate_quarry",
+  "previous_dive": "@2024-06-15#0",
+  "buddies": [
+    "@tom_janssen"
+  ],
+  "rating": 7,
+  "max_depth": 12.2,
+  "deco": false,
+  "details": {
+    "tags": [
+      "training"
+    ],
+    "dive_trip": "@quarry_training_weekend",
+    "operator": "@ravensgate_quarry_desk"
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 2,
+    "bottom_temperature": 12
+  },
+  "gear": {
+    "items": [
+      "@my_drysuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@steel_12"
+    ],
+    "mass": 34,
+    "weight": 6,
+    "temperature_evaluation": "cold",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Two kilos off the belt and it came right."
+}

@@ -1,0 +1,35 @@
+{
+  "provence": {
+    "name": "Provence",
+    "category": "area",
+    "parents": [
+      "@france",
+      "@mediterranean_sea"
+    ],
+    "west": 4,
+    "east": 7,
+    "south": 42.98,
+    "north": 44.5,
+    "remarks": "Not in the supplied regions, so it is added here. It has two parents, a country and a sea."
+  },
+  "netherlands": {
+    "name": "Netherlands",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 3.35,
+    "east": 7.2,
+    "south": 50.75,
+    "north": 53.63,
+    "remarks": "Shadows the supplied record. Kept because the diver wanted a note of their own on it; everything else is as the library has it."
+  },
+  "ravensgate_valley": {
+    "name": "Ravensgate Valley",
+    "category": "area",
+    "parents": [
+      "@netherlands"
+    ],
+    "remarks": "A local addition sitting beneath a shadowed region."
+  }
+}

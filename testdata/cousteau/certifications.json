@@ -1,0 +1,10 @@
+{
+  "quarry_club_diver": {
+    "name": "Quarry Club Diver",
+    "abbreviation": "QCD",
+    "organisation": "Ravensgate Quarry Desk",
+    "max_depth": 15,
+    "category": "progression",
+    "remarks": "A local award from the quarry, which no agency library would carry."
+  }
+}

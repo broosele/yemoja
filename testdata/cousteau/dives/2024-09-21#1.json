@@ -1,0 +1,41 @@
+{
+  "dive_number": 15,
+  "start_date": "2024-09-21",
+  "start_time": "14:10:00",
+  "end_time": "14:38:00",
+  "dive_site": "@silt_harbour",
+  "previous_dive": "@2024-09-21#0",
+  "buddies": [
+    "@anna_devries"
+  ],
+  "rating": 4,
+  "max_depth": 7.2,
+  "deco": false,
+  "details": {
+    "tags": [
+      "training"
+    ],
+    "operator": "@northshore_diving"
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 0.3,
+    "bottom_temperature": 16
+  },
+  "gear": {
+    "items": [
+      "@my_drysuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@steel_12"
+    ],
+    "mass": 35,
+    "weight": 7,
+    "temperature_evaluation": "cold",
+    "buoyancy_evaluation": "good"
+  }
+}

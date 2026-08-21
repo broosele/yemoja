@@ -1,0 +1,42 @@
+{
+  "dive_number": 67,
+  "start_date": "2026-03-14",
+  "start_time": "13:45:00",
+  "end_time": "14:21:00",
+  "dive_site": "@windlass_wreck",
+  "previous_dive": "@2026-03-14#0",
+  "buddies": [
+    "@john_smith#1"
+  ],
+  "rating": 6,
+  "max_depth": 26.2,
+  "deco": false,
+  "details": {
+    "tags": [
+      "wreck"
+    ],
+    "operator": "@deep_current_charters"
+  },
+  "environment": {
+    "current": "moderate",
+    "waves": "moderate",
+    "visibility": 3,
+    "bottom_temperature": 8
+  },
+  "gear": {
+    "items": [
+      "@my_drysuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@steel_12"
+    ],
+    "mass": 38,
+    "weight": 8,
+    "temperature_evaluation": "cold",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Same wreck, same day, back in metres."
+}

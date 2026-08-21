@@ -1,0 +1,84 @@
+{
+  "dive_number": 38,
+  "dive_site": "@lantern_reef",
+  "previous_dive": "@2025-05-30#1",
+  "buddies": [
+    "@jacques_cousteau"
+  ],
+  "rating": 8,
+  "details": {
+    "tags": ["reef", "photo"],
+    "dive_trip": "@provence_week_calanques",
+    "operator": "@calanque_plongee"
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 18
+  },
+  "gear": {
+    "items": [
+      "@summer_wetsuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@camera_housing"
+    ],
+    "mass": 24,
+    "weight": 4,
+    "temperature_evaluation": "good",
+    "buoyancy_evaluation": "good"
+  },
+  "profiles": {
+    "p1": {
+      "dive_computer": "@reef_computer",
+      "start_date": "2025-05-30",
+      "start_time": "16:05:00",
+      "water_type": "salt",
+      "depth": [
+        [0, 0],
+        [90, 8.6],
+        [180, 14.9],
+        [420, 14.2],
+        [900, 11.5],
+        [1500, 7.8],
+        [1980, 5.4],
+        [2220, 5.0],
+        [2340, 0]
+      ],
+      "temperature": [
+        [0, 22],
+        [180, 19],
+        [1200, 19],
+        [2340, 21]
+      ],
+      "pressures": {
+        "g1": [
+          [0, 205],
+          [420, 178],
+          [900, 154],
+          [1500, 128],
+          [2340, 106]
+        ]
+      },
+      "no_deco_time": [
+        [180, 5400],
+        [900, 6600],
+        [1980, 5940]
+      ]
+    }
+  },
+  "gas_sources": {
+    "g1": {
+      "gas_type": "AIR",
+      "start_pressure": 205,
+      "end_pressure": 106,
+      "volume": 12,
+      "usage": "bottom",
+      "configuration": "back mounted"
+    }
+  },
+  "remarks": "Rented cylinder from the centre, so nothing here to point at: the twelve litres is written in rather than worked out."
+}

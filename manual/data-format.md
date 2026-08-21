@@ -1,0 +1,427 @@
+# Your logbook on disk
+
+Yemoja keeps your logbook as ordinary text files that you can open, read and change
+with any text editor. Nothing is hidden in a database. If you ever stop using Yemoja,
+your dives are still there and still readable.
+
+This page describes how those files are arranged, so you can edit them safely by hand.
+It covers the shape of the files — where they sit, how items are named and referred
+to, and how values are written. What each kind of item *contains* is a chapter of its
+own: see [data-fields.md](data-fields.md).
+
+Only the parts of the format that are fixed are described here. Sections will be added
+as more of the application is finished.
+
+## A logbook is a folder
+
+Everything belonging to one logbook lives in a single folder. Copy that folder and
+you have copied your whole logbook.
+
+You choose where it goes. Yemoja suggests a place the first time, and you can put it
+somewhere else — an external disk, or a folder you already sync yourself. On a phone the
+choice may be narrower, because phones are stricter about where an application may write.
+
+You can keep as many logbooks as you like; Yemoja has one open at a time.
+
+At the top of it sits a file called `yemoja.json`. It says what the logbook is: whose it
+is, which of the supplied libraries it uses, and where the rest of your data is kept.
+
+Two more files sit beside it, `settings.json` and `settings.local.json`. They hold your
+preferences rather than your data, they belong to the application rather than to this
+format, and they are described in [settings.md](settings.md). Nothing in this chapter or
+in [data-fields.md](data-fields.md) applies to them.
+
+## Where your data is kept
+
+Each kind of item has a name, and everything of that kind lives under it:
+
+| Kind | Lives in |
+|---|---|
+| Dive | `dives` |
+| Person | `persons` |
+| Region | `regions` |
+| Dive site | `dive_sites` |
+| Gear | `gear` |
+| Certification | `certifications` |
+| Operator | `operators` |
+| Dive trip | `dive_trips` |
+
+Each may be either:
+
+- **A single file** — `persons.json` — holding everything of that kind together. Good
+  for things you have few of, such as the people you dive with.
+- **A folder** — `dives/` — holding one file per item. Good for things you have many
+  of, or that are individually large, such as dives.
+
+Yemoja looks for both and uses whichever it finds, so you can choose differently for
+each kind and change your mind later by moving the files. Having both at once — a
+`dives` folder *and* a `dives.json* — is the one thing it cannot make sense of, and it
+will tell you rather than guess.
+
+Nothing lists these anywhere. There are no paths in a logbook, which is deliberate: a
+path can point outside the folder, and then copying the folder no longer copies the
+logbook. What you can see in the folder is what there is.
+
+What a file holds depends on which of the two you chose:
+
+- **A folder of one file per item** — each file *is* the item. Its fields sit at the
+  top level, with no wrapper around them.
+- **A single file for everything of a kind** — an object whose keys are the items'
+  ids, each holding one item.
+
+An owned item, such as a dive's `environment`, is written as an object inside the item
+that holds it. Where there can be several — a person's `courses` — they are written as an
+object too, each entry under a key of its own.
+
+## How an item is identified
+
+Two different things are easily confused, so it is worth separating them at the start:
+
+- An item's **name** is a field inside it, saying what the thing is called: `Anna De
+  Vries`, `Zeelandbrug`, `Red Sea`. You read it, you can change it, and it is what
+  Yemoja shows you.
+- An item's **id** is the text other items use to point at it:
+  `anna_devries`. It is not inside the item at all.
+
+Where an id comes from depends on how you store the item:
+
+- **One file per item:** the id is the file name, without `.json`. A dive in
+  `dives/2026-02-23#0.json` has the id `2026-02-23#0`.
+- **Several items in one file:** the id is the key it is stored under.
+
+```json
+{
+  "anna_devries": { },
+  "john_smith": { }
+}
+```
+
+Yemoja works an id out from the item's `name` when the item is created, and
+then leaves it alone. The two drift apart quite normally: correcting a misspelled
+`name` does not change the id, because everything pointing at that item would
+otherwise stop working. An id that no longer quite matches the name is not a
+fault.
+
+Nothing inside an item mentions its id, and changing one does not change
+anything the item says about itself.
+
+### When two items would share an id
+
+Yemoja adds a number. A second Anna De Vries becomes `anna_devries#1`, leaving the
+first as it was.
+
+Dives always carry such a number, because several dives in one day is perfectly normal.
+Two dives on 23 February 2026 are `2026-02-23#0` and `2026-02-23#1`.
+
+**The number does not say which dive of the day it was.** It is only there to tell two
+dives apart, handed out as they are created — so if you log the afternoon dive first, it
+gets `#0` and the morning one gets `#1`. Which came first is what the times are for.
+
+These numbers are never reused. If you delete a dive, the others keep the ids
+they have, so anything referring to them still points where you expect.
+
+### Changing an id
+
+Do not change one by editing the file yourself. Everything referring to that item
+would still be pointing at the old id. Use the application, which moves the
+item and everything referring to it together, in one step you can undo.
+
+## Referring to another item
+
+To point at another item, write its id with an `@` in front:
+
+```json
+{
+  "buddies": ["@anna_devries"]
+}
+```
+
+This means *the person stored under `anna_devries`* — the same person every time,
+wherever they appear.
+
+### When you do not want to name someone
+
+You can also write a plain value, without the `@`:
+
+```json
+{
+  "buddies": ["john"]
+}
+```
+
+This items that you dived with someone called John without claiming to know who.
+Two dives that each list `john` are **not** treated as the same person, which is what
+you want when you simply cannot remember, or when two different Johns are involved.
+
+Yemoja will never quietly turn one of these into a real reference.
+
+## Units
+
+Unless the file says otherwise, measurements are in these units:
+
+| What is measured | Written in | Or one of |
+|---|---|---|
+| Depth, distance, length | metres, `m` | feet, `ft` |
+| Mass | kilograms, `kg` | pounds, `lb` |
+| Time | seconds, `s` | minutes `min`, hours `h` |
+| Temperature | degrees Celsius, `C` | Fahrenheit `F`, kelvin `K` |
+| Volume | litres, `l` | cubic metres, `m3` |
+| Pressure | bar, `bar` | psi, `psi`, pascal `Pa` |
+| Longitude and latitude | degrees, `deg` | |
+| Water density | kilograms per cubic metre, `kg/m3` | |
+
+Case matters: `C` is Celsius and `K` is kelvin, and `Pa` is the pascal. Nothing is
+written with a superscript, so cubic metres are `m3`, and a compound divides with a
+slash: `kg/m3`.
+
+If a file uses something else, it says so at the top:
+
+```json
+{
+  "units": {
+    "length": "ft",
+    "pressure": "psi"
+  }
+}
+```
+
+Everything in that file is then read in those units. Anything the block does not
+mention keeps the unit from the table.
+
+**Write the name exactly as it appears above**, capitals included: `C` is Celsius and
+`K` is kelvin. Those are the only names Yemoja knows, and a name it does not recognise
+means it cannot tell what any number in that file measures — so it will show you none of
+them, and tell you which name it did not understand. The rest of the file still opens.
+This is deliberate: reading a depth in feet as though it were metres would be silently
+wrong by a factor of three, and being told nothing is better than being told something
+false.
+
+**A `units` block applies to its own file and to nothing else.** There is no setting
+elsewhere that changes how a file is read — not in `yemoja.json`, not in another file,
+and not in a single item inside a file. To know what a number means, look at the top
+of the file it is in. Nothing else can change it.
+
+This does mean everything in one file shares the same units. If you keep both metric
+and imperial cylinders, and your gear is all in one `gear.json`, they have to be
+written the same way. You can put each piece of gear in its own file instead — see
+*Where your data is kept* above — and then each says what it likes.
+
+In a file holding several items, `units` sits alongside them. No item can be called
+`units`, for the obvious reason.
+
+If you set units by hand, Yemoja keeps your choice. It will not rewrite your file into
+different units.
+
+The ready-made data described below says what its own units are, so your choices never
+change what it means. Your choice of litres does not change what the supplied equipment
+weighs.
+
+## What the values look like
+
+Every field holds one of a small number of kinds of value. Each is named in brackets
+after the field.
+
+- **text** — a single line: `"Zeelandbrug"`. It may not begin with `@` or `*`, which
+  mark the two kinds of pointer, and may not contain line breaks, tabs or other invisible
+  control characters.
+- **multiline text** — line breaks are allowed, and so is a leading `@` or `*`, since
+  nothing here is ever read as a pointer. Tabs are not.
+- **whole number** — no decimal point: `12`.
+- **number** — with or without one: `31.4`.
+- **true or false** — written `true` or `false`, and nothing else.
+- **date** — always `"2026-02-23"`.
+- **time** — always `"09:15:00"`.
+- **reference** — another item's id with `@` in front: `"@anna_devries"`.
+- **key reference** — a part of this same item, with `*` in front: `"*p1"`. Where an `@`
+  points at another item anywhere in the logbook, a `*` points at one entry of one list
+  inside the item you are already reading — a dive saying which of its profiles to work
+  from.
+- **fixed set** — a value from a short closed list, which is given with the field.
+  Nothing outside the list means anything.
+- **gas** — a breathing mix, written the way divers write it: `"AIR"`, `"EAN32"` for
+  nitrox with 32% oxygen, `"TMX18/35"` for trimix with 18% oxygen and 35% helium. Yemoja
+  reads the fractions out of it, which is what decompression needs — a name alone would
+  not do. No `units` setting affects it.
+
+  Those are the forms to write, but the reading is deliberately forgiving: near-misses
+  and the other spellings divers use are understood where the meaning is clear. What you
+  wrote is what stays in the file — nothing is rewritten into a tidier form — so a mix
+  Yemoja cannot make sense of is kept as you typed it and reported rather than dropped.
+- **list of** — several values together: `["@anna_devries", "john"]`.
+- **keyed owned items** — several owned items together, each under a key: `{"k1": {…},
+  "k2": {…}}`. The key names the entry and is not written inside it.
+- **series** — a measurement through a dive, as a list of pairs: a time and a value,
+  `[[0, 0], [30, 8.4]]`. The time is always seconds from the start of the recording,
+  whatever else the file says about units. Between two pairs, assume a straight line.
+- **keyed series** — several series together, each under a key, the same way owned items
+  are keyed.
+
+An **owned item** is not a value but a set of fields kept together, described with the
+item that owns it.
+
+### Dates and times are always written the same way
+
+Measurements change form to suit a file; dates and times do not. They are always
+`yyyy-mm-dd` and `hh:mm:ss`, everywhere, and no `units` setting affects them.
+
+That is deliberate. `03/04/2026` is the third of April to some readers and the fourth of
+March to others, and a file that had it the wrong way round would look perfectly
+correct — the mistake would only show up as dives on the wrong days, long after anyone
+could tell which reading was meant. There is no such doubt about `2026-04-03`.
+
+It also sorts. A list of dates in this form is in date order as plain text, which is why
+a folder of dives reads chronologically.
+
+## Ready-made data
+
+Yemoja comes with reference information you do not have to type yourself: parts of the
+world and their dive sites, commonly available equipment, and certification schemes.
+You refer to these exactly as you refer to your own items.
+
+`yemoja.json` lists which of these you use, grouped by the kind of item they hold:
+
+```json
+{
+  "libraries": {
+    "region": ["regions/world", "regions/europe"],
+    "certification": ["certifications/padi"]
+  }
+}
+```
+
+These are names, not file paths — Yemoja knows where to find them, on whichever device
+you are using.
+
+Three things to know about them:
+
+1. **They are read-only.** Anything you add is stored in your own logbook, never in
+   the supplied data.
+2. **You can change them anyway.** If you correct a dive site that came with Yemoja,
+   your corrected version is saved in your logbook and is the one that gets used from
+   then on. The original stays untouched. This is the only way one of your items comes
+   to stand in for a supplied one: adding a site of your own never replaces one, even
+   if you give it the same name.
+3. **They cannot be deleted** — only replaced by your own version. Delete your version
+   and the supplied one comes back, as it stands today: Yemoja will not tell you that a
+   site you corrected has since been corrected at its end, so if you want what it ships
+   with, take your copy away.
+
+If an id exists both in your logbook and in the supplied data, yours is always
+the one that counts.
+
+## Editing by hand — what to watch for
+
+1. **Close the logbook in Yemoja first**, or your changes may be overwritten.
+2. **Keep the file valid JSON.** A missing comma or bracket will stop the file being
+   read. Most editors will point these out.
+3. **Do not invent fields.** Anything Yemoja does not recognise is kept but ignored.
+   The fields each item may hold are listed in [data-fields.md](data-fields.md).
+4. **Do not store anything the application works out for itself**, such as totals or
+   averages. These are recalculated and your value would be discarded. Where a
+   calculated value is allowed to be corrected, it is listed as such below.
+5. **Renaming items is for the application**, as described above.
+
+## Two complete examples
+
+### A dive, one file per item
+
+Stored as `dives/2026-02-23#0.json`. The file is the dive itself.
+
+```json
+{
+  "units": {
+    "length": "m",
+    "temperature": "C"
+  },
+  "start_date": "2026-02-23",
+  "start_time": "09:15:00",
+  "end_time": "09:58:00",
+  "dive_number": 143,
+  "dive_site": "@blue_quarry",
+  "buddies": ["@anna_devries", "john"],
+  "rating": 8,
+  "max_depth": 31.4,
+  "details": {
+    "tags": ["training"],
+    "dive_trip": "@spring_weekend",
+    "operator": "@northshore_diving"
+  },
+  "environment": {
+    "current": "none",
+    "waves": "none",
+    "visibility": 4,
+    "air_temperature": 11,
+    "bottom_temperature": 7
+  },
+  "gear": {
+    "items": ["@my_drysuit", "@my_computer"],
+    "mass": 34,
+    "weight": 8,
+    "temperature_evaluation": "cold",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Silty in the shallows.\nEntry easier from the north end."
+}
+```
+
+Notice what is **not** in the file. There is no `name`, no `end_date`, no `duration` and
+no `buddy_count`: Yemoja works all of those out. Writing them in would only be worth doing
+to correct one of them.
+
+`max_depth` is here because this dive has no profile. With one, it would be worked out
+too, and worth writing only if the computer's own figure were better.
+
+`deco` is missing for a different reason. Without a profile there is nothing to work it
+out from, so it is not absent by choice — it is simply unanswered, and writing `true` or
+`false` here is the only way it gets an answer.
+
+### People, all in one file
+
+Stored as `persons.json`. Each key is a person's id.
+
+```json
+{
+  "anna_devries": {
+    "first_name": "Anna",
+    "last_name": "De Vries",
+    "email": "anna@example.invalid",
+    "medical": {
+      "last_medical_check": "2026-01-14",
+      "blood_group": "O+",
+      "height": 1.72,
+      "body_mass": 64
+    },
+    "insurance": {
+      "name": "Aqua Cover",
+      "policy": "AC-88213",
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31"
+    },
+    "courses": {
+      "k1": {
+        "certification": "@open_water_diver",
+        "instructor": "@tom_janssen",
+        "date": "2019-06-02",
+        "dives": ["@2019-06-01#0", "@2019-06-01#1"]
+      }
+    },
+    "remarks": "Prefers a shore entry."
+  },
+  "tom_janssen": {
+    "first_name": "Tom",
+    "last_name": "Janssen"
+  }
+}
+```
+
+Both people are in the same file, so both are as complete or as sparse as you like:
+`tom_janssen` has a name and nothing else, which is enough to be referred to.
+
+`medical` and `insurance` are single owned items, written as objects. `courses` may hold
+several, so each sits under a key of its own. A course's `dives` are references like any other, `@` and
+all.
+
+---
+
+*This chapter is dedicated to the public domain under CC0 1.0. Copy it, quote it,
+translate it, build on it — no permission needed and no attribution required.*

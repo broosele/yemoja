@@ -1,0 +1,202 @@
+{
+  "jacques_cousteau": {
+    "first_name": "Jacques",
+    "last_name": "Cousteau",
+    "birthday": "1910-06-11",
+    "address": "12 Quai des Ormes, Toulon",
+    "email": "jacques@example.invalid",
+    "phone": "+33 4 00 00 00 00",
+    "medical": {
+      "last_medical_check": "2026-01-14",
+      "blood_group": "O+",
+      "height": 1.78,
+      "body_mass": 74
+    },
+    "insurance": {
+      "name": "Aqua Cover",
+      "policy": "AC-88213",
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31"
+    },
+    "emergency_contacts": [
+      "@simone_cousteau",
+      "Harbour office, +33 4 00 00 00 01"
+    ],
+    "courses": {
+      "k1": {
+        "certification": "@padi_open_water_diver",
+        "instructor": "@tom_janssen",
+        "date": "2019-06-02",
+        "dives": [
+          "@2024-06-15#0",
+          "@2024-06-15#1"
+        ]
+      },
+      "k2": {
+        "certification": "@padi_advanced_open_water_diver",
+        "instructor": "@tom_janssen",
+        "date": "2021-09-18"
+      },
+      "k3": {
+        "certification": "@padi_enriched_air_diver",
+        "instructor": "@lena_okafor",
+        "date": "2023-03-04"
+      }
+    },
+    "remarks": "Keeps the logbook.\nPrefers a shore entry and an early start."
+  },
+  "simone_cousteau": {
+    "first_name": "Simone",
+    "last_name": "Cousteau",
+    "email": "simone@example.invalid",
+    "emergency_contacts": [
+      "@jacques_cousteau"
+    ]
+  },
+  "anna_devries": {
+    "first_name": "Anna",
+    "middle_names": "Maria Johanna",
+    "last_name": "De Vries",
+    "birthday": "1988-02-29",
+    "email": "anna@example.invalid",
+    "medical": {
+      "last_medical_check": "2025-11-02",
+      "blood_group": "A-",
+      "height": 1.72,
+      "body_mass": 64
+    },
+    "insurance": {
+      "name": "Northern Divers Mutual",
+      "policy": "NDM-4471",
+      "start_date": "2025-07-01",
+      "end_date": "2026-06-30"
+    },
+    "courses": {
+      "k1": {
+        "certification": "@padi_open_water_diver",
+        "instructor": "@tom_janssen",
+        "date": "2015-05-10"
+      },
+      "k2": {
+        "certification": "@padi_rescue_diver",
+        "instructor": "@lena_okafor",
+        "date": "2022-08-21",
+        "dives": [
+          "@2024-09-21#0"
+        ]
+      }
+    },
+    "remarks": "Born on a leap day, which the logbook should not trip over."
+  },
+  "tom_janssen": {
+    "first_name": "Tom",
+    "last_name": "Janssen",
+    "email": "tom@example.invalid",
+    "medical": {
+      "last_medical_check": "2024-04-19",
+      "blood_group": "B+"
+    },
+    "courses": {
+      "k1": {
+        "certification": "@padi_divemaster",
+        "instructor": "@lena_okafor",
+        "date": "2012-11-30"
+      }
+    },
+    "remarks": "Instructor. His last medical is long past, which Yemoja records but does not judge."
+  },
+  "lena_okafor": {
+    "first_name": "Lena",
+    "last_name": "Okafor",
+    "email": "lena@example.invalid",
+    "phone": "+31 6 00 00 00 02",
+    "medical": {
+      "last_medical_check": "2026-02-01",
+      "blood_group": "AB+",
+      "height": 1.66,
+      "body_mass": 58
+    },
+    "courses": {
+      "k1": {
+        "certification": "@padi_tec_trimix",
+        "instructor": "@maria_ferreira",
+        "date": "2020-06-14"
+      },
+      "k2": {
+        "certification": "@padi_divemaster",
+        "date": "2018-04-02"
+      }
+    }
+  },
+  "maria_ferreira": {
+    "first_name": "Maria",
+    "last_name": "Ferreira",
+    "birthday": "1979-10-05",
+    "email": "maria@example.invalid",
+    "insurance": {
+      "name": "Aqua Cover",
+      "policy": "AC-90114",
+      "start_date": "2024-03-01",
+      "end_date": "2025-02-28"
+    },
+    "remarks": "Cover has run out and nothing renews it on her behalf."
+  },
+  "pieter_bakker": {
+    "first_name": "Pieter",
+    "last_name": "Bakker",
+    "name": "Piet Bakker",
+    "email": "pieter@example.invalid",
+    "remarks": "Known to everyone as Piet, so the assembled name is corrected."
+  },
+  "john_smith": {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "john.smith@example.invalid",
+    "remarks": "One of two divers of this name. This one dives the quarry.",
+    "courses": {
+      "k1": {
+        "certification": "@quarry_club_diver",
+        "instructor": "@tom_janssen",
+        "date": "2023-04-11",
+        "dives": [
+          "@2026-01-17#0"
+        ]
+      },
+      "k2": {
+        "certification": "@cmas_one_star_diver",
+        "date": "2016-08-30"
+      }
+    }
+  },
+  "john_smith#1": {
+    "first_name": "John",
+    "last_name": "Smith",
+    "phone": "+44 20 0000 0003",
+    "remarks": "The other John Smith: same name, different person, so the identity carries a number."
+  },
+  "omar_haddad": {
+    "first_name": "Omar",
+    "last_name": "Haddad"
+  },
+  "sofia_ricci": {
+    "first_name": "Sofia",
+    "last_name": "Ricci",
+    "birthday": "1995-12-01",
+    "email": "sofia@example.invalid",
+    "medical": {
+      "last_medical_check": "2025-09-09",
+      "height": 1.6,
+      "body_mass": 55
+    },
+    "courses": {
+      "k1": {
+        "certification": "@padi_advanced_open_water_diver",
+        "instructor": "@tom_janssen",
+        "date": "2024-05-19",
+        "dives": [
+          "@2024-08-03#0"
+        ]
+      }
+    }
+  }
+}

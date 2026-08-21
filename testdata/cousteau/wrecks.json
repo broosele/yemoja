@@ -1,0 +1,27 @@
+{
+  "units": {
+    "length": "m"
+  },
+  "thistlegorm": {
+    "name": "SS Thistlegorm",
+    "ship_type": "armed merchant",
+    "nationality": "United Kingdom",
+    "shipyard": "Joseph L. Thompson & Sons",
+    "sunk": "1941-10-06",
+    "length": 126.5,
+    "remarks": "Bombed at anchor while carrying military stores.\nFound and dived by Cousteau in the mid-fifties, and largely forgotten again until the nineties."
+  },
+  "britannic": {
+    "name": "HMHS Britannic",
+    "alternative_names": [
+      "Gigantic"
+    ],
+    "ship_type": "hospital ship",
+    "nationality": "United Kingdom",
+    "shipyard": "Harland & Wolff",
+    "launched": "1914-02-26",
+    "sunk": "1916-11-21",
+    "length": 269.0,
+    "remarks": "The third of her class, and the largest of the three.\nLocated and dived by Cousteau in 1975."
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "ravensgate_quarry": {
+    "name": "Ravensgate Quarry",
+    "alternative_names": [
+      "The Quarry",
+      "Ravensgate"
+    ],
+    "regions": [
+      "@netherlands"
+    ],
+    "longitude": 5.82,
+    "latitude": 51.44,
+    "elevation": 32,
+    "max_depth": 18,
+    "water_type": "fresh",
+    "rating": 5,
+    "environment_type": "quarry",
+    "substrate": "gravel and sunken timber",
+    "facilities": [
+      "parking",
+      "air fills",
+      "toilets",
+      "changing rooms",
+      "cafe"
+    ],
+    "remarks": "Training platforms at 6 and 12 metres. Silts out easily."
+  },
+  "cold_kettle_lake": {
+    "name": "Cold Kettle Lake",
+    "regions": [
+      "@france"
+    ],
+    "longitude": 6.41,
+    "latitude": 45.12,
+    "elevation": 1180,
+    "water_type": "fresh",
+    "environment_type": "lake",
+    "facilities": [
+      "parking"
+    ],
+    "remarks": "Altitude diving. Thin air above, cold water below."
+  },
+  "lantern_reef": {
+    "name": "Lantern Reef",
+    "regions": [
+      "@provence",
+      "@mediterranean_sea"
+    ],
+    "longitude": 5.94,
+    "latitude": 43.06,
+    "max_depth": 22,
+    "water_type": "salt",
+    "rating": 9,
+    "environment_type": "sea",
+    "substrate": "sand between rock",
+    "facilities": [
+      "boat access",
+      "air fills",
+      "nitrox"
+    ]
+  },
+  "mistral_point": {
+    "name": "Mistral Point",
+    "alternative_names": [
+      "Pointe du Mistral"
+    ],
+    "regions": [
+      "@provence"
+    ],
+    "longitude": 6.12,
+    "latitude": 43.01,
+    "water_type": "salt",
+    "environment_type": "sea",
+    "facilities": [
+      "boat access"
+    ],
+    "remarks": "Exposed. Unworkable in a northerly."
+  },
+  "serpentine_wall": {
+    "name": "Serpentine Wall",
+    "regions": [
+      "@mediterranean_sea"
+    ],
+    "longitude": 6.55,
+    "latitude": 42.94,
+    "max_depth": 60,
+    "water_type": "salt",
+    "rating": 8,
+    "environment_type": "sea",
+    "facilities": [
+      "boat access",
+      "nitrox",
+      "trimix"
+    ]
+  },
+  "the_copper_barge": {
+    "name": "The Copper Barge",
+    "alternative_names": [
+      "Barge Wreck"
+    ],
+    "regions": [
+      "@north_sea",
+      "@netherlands"
+    ],
+    "longitude": 4.02,
+    "latitude": 52.11,
+    "max_depth": 12,
+    "water_type": "salt",
+    "environment_type": "sea",
+    "wrecks": [
+      "@britannic"
+    ],
+    "facilities": [
+      "boat access"
+    ],
+    "remarks": "Barge on her side in 34 metres. Nets on the stern."
+  },
+  "windlass_wreck": {
+    "name": "Windlass Wreck",
+    "regions": [
+      "@north_sea"
+    ],
+    "longitude": 3.71,
+    "latitude": 52.48,
+    "max_depth": 34,
+    "water_type": "salt",
+    "rating": 7,
+    "environment_type": "sea",
+    "wrecks": [
+      "@thistlegorm"
+    ],
+    "facilities": [
+      "boat access"
+    ]
+  },
+  "silt_harbour": {
+    "name": "Silt Harbour",
+    "regions": [
+      "@netherlands",
+      "@north_sea"
+    ],
+    "longitude": 4.31,
+    "latitude": 51.92,
+    "max_depth": 9,
+    "water_type": "en13319",
+    "rating": 2,
+    "environment_type": "sea",
+    "substrate": "deep silt, easily stirred",
+    "facilities": [
+      "parking",
+      "slipway",
+      "toilets"
+    ],
+    "remarks": "Harbour water, neither properly salt nor fresh, so the standard density is used."
+  },
+  "amber_shallows": {
+    "name": "Amber Shallows",
+    "regions": [
+      "@netherlands"
+    ],
+    "longitude": 4.55,
+    "latitude": 51.63,
+    "water_type": "salt",
+    "environment_type": "sea",
+    "substrate": "sand",
+    "facilities": [
+      "parking",
+      "slipway"
+    ]
+  },
+  "old_lock_basin": {
+    "name": "Old Lock Basin",
+    "regions": [
+      "@netherlands"
+    ],
+    "water_type": "fresh",
+    "remarks": "Position never recorded, which is allowed."
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "dive_number": 31,
+  "start_date": "2025-04-12",
+  "start_time": "09:05:00",
+  "end_time": "09:44:00",
+  "dive_site": "@the_copper_barge",
+  "buddies": [
+    "@lena_okafor"
+  ],
+  "rating": 9,
+  "max_depth": 33.8,
+  "deco": true,
+  "details": {
+    "tags": [
+      "wreck",
+      "deep"
+    ],
+    "dive_trip": "@spring_north_sea",
+    "operator": "@deep_current_charters"
+  },
+  "environment": {
+    "current": "moderate",
+    "waves": "mild",
+    "visibility": 4,
+    "bottom_temperature": 7
+  },
+  "gear": {
+    "items": [
+      "@my_drysuit",
+      "@backplate_and_wing",
+      "@primary_regulator",
+      "@reef_computer",
+      "@weight_belt",
+      "@mask_snorkel_and_fins",
+      "@steel_12"
+    ],
+    "mass": 38,
+    "weight": 8,
+    "temperature_evaluation": "cold",
+    "buoyancy_evaluation": "good"
+  },
+  "remarks": "Nets on the stern, given a wide berth.\nFour minutes of deco on the way up."
+}

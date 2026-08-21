@@ -1,0 +1,564 @@
+{
+  "units": {
+    "angle": "deg"
+  },
+  "caribbean": {
+    "name": "Caribbean",
+    "category": "area",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea"
+    ],
+    "west": -89,
+    "east": -59,
+    "south": 9,
+    "north": 27.5,
+    "remarks": "Not a country and not quite a sea \u2014 the islands, the water between them, and the reef that ties the two together. Where a great many divers learn, and where a great many go back."
+  },
+  "greater_antilles": {
+    "name": "Greater Antilles",
+    "category": "area",
+    "parents": [
+      "@caribbean"
+    ],
+    "west": -85,
+    "east": -65,
+    "south": 17.5,
+    "north": 23.3,
+    "remarks": "The four large islands at the northern edge of the Caribbean, sitting on their own tectonic plate."
+  },
+  "lesser_antilles": {
+    "name": "Lesser Antilles",
+    "category": "area",
+    "parents": [
+      "@caribbean"
+    ],
+    "west": -63.5,
+    "east": -59,
+    "south": 11.9,
+    "north": 18.6,
+    "remarks": "A volcanic arc curving south from Puerto Rico, marking where one plate is sliding beneath another."
+  },
+  "gulf_of_mexico": {
+    "name": "Gulf of Mexico",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@north_america"
+    ],
+    "west": -97.5,
+    "east": -80.5,
+    "south": 18,
+    "north": 30.5,
+    "remarks": "Nearly enclosed, and the Loop Current spins through it before leaving as the Gulf Stream. There is an asteroid crater under its southern edge with a good deal to answer for."
+  },
+  "gulf_of_california": {
+    "name": "Gulf of California",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@north_america"
+    ],
+    "west": -115,
+    "east": -107,
+    "south": 23,
+    "north": 31.5,
+    "remarks": "Long, narrow and startlingly productive \u2014 Cousteau called it the world's aquarium, and the description has stuck to it ever since."
+  },
+  "hudson_bay": {
+    "name": "Hudson Bay",
+    "category": "sea",
+    "parents": [
+      "@arctic_ocean",
+      "@north_america"
+    ],
+    "west": -95,
+    "east": -75,
+    "south": 51,
+    "north": 64,
+    "remarks": "Frozen much of the year, and shallow enough that it is really a flooded dent in the continent."
+  },
+  "beaufort_sea": {
+    "name": "Beaufort Sea",
+    "category": "sea",
+    "parents": [
+      "@arctic_ocean",
+      "@north_america"
+    ],
+    "west": -156,
+    "east": -125,
+    "south": 69,
+    "north": 76,
+    "remarks": "Arctic water and sea ice, north of a coast where almost nobody lives."
+  },
+  "labrador_sea": {
+    "name": "Labrador Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@north_america"
+    ],
+    "west": -64,
+    "east": -44,
+    "south": 50,
+    "north": 65,
+    "remarks": "Where icebergs calved off Greenland drift south, and where a good deal of the Atlantic's deep water is manufactured every winter."
+  },
+  "canada": {
+    "name": "Canada",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@atlantic_ocean",
+      "@pacific_ocean",
+      "@arctic_ocean"
+    ],
+    "west": -141,
+    "east": -52.6,
+    "south": 41.7,
+    "north": 83.1,
+    "remarks": "The longest coastline of any country by a very wide margin, on three oceans. Cold water diving, kelp forests off British Columbia, and shipwrecks preserved in the Great Lakes by fresh water and cold."
+  },
+  "united_states": {
+    "name": "United States",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@atlantic_ocean",
+      "@pacific_ocean",
+      "@gulf_of_mexico"
+    ],
+    "west": -125,
+    "east": -66.9,
+    "south": 24.4,
+    "north": 49.4,
+    "remarks": "Coral at one end, kelp at the other, freshwater springs in Florida that run clear at a constant temperature, and the wreck of a great many things in between."
+  },
+  "mexico": {
+    "name": "Mexico",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@gulf_of_mexico",
+      "@caribbean_sea",
+      "@pacific_ocean",
+      "@gulf_of_california"
+    ],
+    "west": -118.4,
+    "east": -86.7,
+    "south": 14.5,
+    "north": 32.7,
+    "remarks": "The Yucatan is limestone riddled with flooded caves, entered through sinkholes called cenotes. The water in them is fresh on top and salt underneath, with a visible shimmering layer between."
+  },
+  "guatemala": {
+    "name": "Guatemala",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@pacific_ocean",
+      "@caribbean_sea"
+    ],
+    "west": -92.3,
+    "east": -88.2,
+    "south": 13.7,
+    "north": 17.8,
+    "remarks": "Two coasts, and Lake Atitlan inland sitting in a collapsed volcano at fifteen hundred metres."
+  },
+  "belize": {
+    "name": "Belize",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea"
+    ],
+    "west": -89.3,
+    "east": -87.5,
+    "south": 15.9,
+    "north": 18.5,
+    "remarks": "The largest barrier reef in the northern hemisphere, and a near-circular sinkhole in the middle of it that formed as a dry cave during an ice age and flooded when the sea came back."
+  },
+  "honduras": {
+    "name": "Honduras",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@pacific_ocean"
+    ],
+    "west": -89.4,
+    "east": -83.1,
+    "south": 12.9,
+    "north": 16.5,
+    "remarks": "The Bay Islands sit on the same reef system as Belize, and are where a large share of the Caribbean's dive instructors were certified."
+  },
+  "el_salvador": {
+    "name": "El Salvador",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@pacific_ocean"
+    ],
+    "west": -90.1,
+    "east": -87.7,
+    "south": 13.1,
+    "north": 14.5,
+    "remarks": "The only country in Central America with no Caribbean coast, and volcanic crater lakes inland instead."
+  },
+  "nicaragua": {
+    "name": "Nicaragua",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@pacific_ocean"
+    ],
+    "west": -87.7,
+    "east": -82.6,
+    "south": 10.7,
+    "north": 15.1,
+    "remarks": "Lake Nicaragua has bull sharks in it, which arrived up the river and stayed \u2014 freshwater sharks by habit rather than biology."
+  },
+  "costa_rica": {
+    "name": "Costa Rica",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@pacific_ocean"
+    ],
+    "west": -86,
+    "east": -82.5,
+    "south": 8,
+    "north": 11.3,
+    "remarks": "Cocos Island lies five hundred kilometres offshore in the Pacific, and hammerheads school there in numbers that make the crossing worth it."
+  },
+  "panama": {
+    "name": "Panama",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@pacific_ocean"
+    ],
+    "west": -83.1,
+    "east": -77.1,
+    "south": 7.2,
+    "north": 9.7,
+    "remarks": "Two oceans eighty kilometres apart, with entirely different marine life on each side \u2014 separated for three million years by the isthmus itself."
+  },
+  "cuba": {
+    "name": "Cuba",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@greater_antilles"
+    ],
+    "west": -85,
+    "east": -74.1,
+    "south": 19.8,
+    "north": 23.3,
+    "remarks": "The largest Caribbean island, and its reefs are in better condition than most, largely because decades of restricted access kept the boats away."
+  },
+  "jamaica": {
+    "name": "Jamaica",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@greater_antilles"
+    ],
+    "west": -78.4,
+    "east": -76.2,
+    "south": 17.7,
+    "north": 18.6,
+    "remarks": "Reef along the north coast, and Port Royal on the south \u2014 a town that slid into the harbour during an earthquake in 1692 and is still down there."
+  },
+  "haiti": {
+    "name": "Haiti",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@greater_antilles"
+    ],
+    "west": -74.5,
+    "east": -71.6,
+    "south": 18,
+    "north": 20.1,
+    "remarks": "Shares an island with its neighbour, and has the mountains on its side of it."
+  },
+  "dominican_republic": {
+    "name": "Dominican Republic",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@greater_antilles"
+    ],
+    "west": -72.1,
+    "east": -68.3,
+    "south": 17.5,
+    "north": 20,
+    "remarks": "Humpbacks come to the Silver Bank offshore every winter to breed, in one of the densest gatherings anywhere."
+  },
+  "puerto_rico": {
+    "name": "Puerto Rico",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@greater_antilles"
+    ],
+    "west": -67.3,
+    "east": -65.2,
+    "south": 17.9,
+    "north": 18.6,
+    "remarks": "The Puerto Rico Trench runs along its northern side \u2014 over eight kilometres deep, and the deepest water in the Atlantic."
+  },
+  "bahamas": {
+    "name": "Bahamas",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@atlantic_ocean"
+    ],
+    "west": -79.1,
+    "east": -72.7,
+    "south": 20.9,
+    "north": 27.3,
+    "remarks": "Shallow banks with deep blue water dropping away at the edges, and blue holes punched down through the limestone \u2014 vertical caves that flooded when the sea rose."
+  },
+  "cayman_islands": {
+    "name": "Cayman Islands",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea"
+    ],
+    "west": -81.5,
+    "east": -79.7,
+    "south": 19.2,
+    "north": 19.8,
+    "remarks": "Three small islands on top of a submarine ridge, with walls that begin in the shallows and go down further than anyone needs."
+  },
+  "turks_and_caicos_islands": {
+    "name": "Turks and Caicos Islands",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@atlantic_ocean"
+    ],
+    "west": -72.5,
+    "east": -71.1,
+    "south": 21.2,
+    "north": 21.9,
+    "remarks": "A wall on the north side that drops around two thousand metres, close enough to shore to reach in a short boat ride."
+  },
+  "bermuda": {
+    "name": "Bermuda",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@atlantic_ocean"
+    ],
+    "west": -64.9,
+    "east": -64.6,
+    "south": 32.2,
+    "north": 32.4,
+    "remarks": "A thousand kilometres out in the Atlantic, and the northernmost coral reef in the world \u2014 kept alive by the Gulf Stream arriving warm. Also several hundred wrecks, for the same reason the reef is there."
+  },
+  "antigua_and_barbuda": {
+    "name": "Antigua and Barbuda",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -62,
+    "east": -61.6,
+    "south": 16.9,
+    "north": 17.8,
+    "remarks": "Reef, wrecks and a reputation for having a beach for every day of the year."
+  },
+  "saint_kitts_and_nevis": {
+    "name": "Saint Kitts and Nevis",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -62.9,
+    "east": -62.5,
+    "south": 17.1,
+    "north": 17.5,
+    "remarks": "The smallest country in the Americas, volcanic, with a shallow channel between its two islands."
+  },
+  "dominica": {
+    "name": "Dominica",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -61.5,
+    "east": -61.2,
+    "south": 15.2,
+    "north": 15.7,
+    "remarks": "Volcanic and steep. Champagne Reef is heated by a vent underneath and releases a constant stream of bubbles through the sand."
+  },
+  "saint_lucia": {
+    "name": "Saint Lucia",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -61.1,
+    "east": -60.9,
+    "south": 13.7,
+    "north": 14.2,
+    "remarks": "Two volcanic peaks rising straight out of the sea, with the reef continuing the slope underwater."
+  },
+  "saint_vincent_and_the_grenadines": {
+    "name": "Saint Vincent and the Grenadines",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -61.5,
+    "east": -61.1,
+    "south": 12.5,
+    "north": 13.4,
+    "remarks": "Black volcanic sand, which makes for excellent macro diving and dreadful photographs of the beach."
+  },
+  "grenada": {
+    "name": "Grenada",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -61.8,
+    "east": -61.6,
+    "south": 11.9,
+    "north": 12.3,
+    "remarks": "Home to an underwater sculpture park, installed to take pressure off the natural reef and now colonised by it."
+  },
+  "barbados": {
+    "name": "Barbados",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -59.7,
+    "east": -59.4,
+    "south": 13,
+    "north": 13.4,
+    "remarks": "Coral limestone rather than volcanic, which makes it flatter than its neighbours and a good deal older on top."
+  },
+  "trinidad_and_tobago": {
+    "name": "Trinidad and Tobago",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -61.9,
+    "east": -60.5,
+    "south": 10,
+    "north": 11.4,
+    "remarks": "Close enough to South America to have its wildlife, and the Orinoco's outflow brings nutrients that grow some very large brain coral."
+  },
+  "bonaire": {
+    "name": "Bonaire",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea"
+    ],
+    "west": -68.5,
+    "east": -68.1,
+    "south": 12,
+    "north": 12.4,
+    "remarks": "The entire leeward coast is a marine park, and the shore dives are numbered with yellow stones by the roadside. Park, walk in, dive."
+  },
+  "curacao": {
+    "name": "Curacao",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea"
+    ],
+    "west": -69.2,
+    "east": -68.7,
+    "south": 12,
+    "north": 12.4,
+    "remarks": "Outside the hurricane belt, with a fringing reef running the length of the sheltered side."
+  },
+  "aruba": {
+    "name": "Aruba",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea"
+    ],
+    "west": -70.1,
+    "east": -69.8,
+    "south": 12.4,
+    "north": 12.7,
+    "remarks": "Dry, windy and flat, with a large wreck in shallow water that has become the island's principal dive."
+  },
+  "british_virgin_islands": {
+    "name": "British Virgin Islands",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -64.8,
+    "east": -64.3,
+    "south": 18.3,
+    "north": 18.8,
+    "remarks": "The wreck of a mail steamer lost in a hurricane in 1867 lies in shallow water here, and has been dived more or less continuously since."
+  },
+  "united_states_virgin_islands": {
+    "name": "United States Virgin Islands",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -65.1,
+    "east": -64.6,
+    "south": 17.7,
+    "north": 18.4,
+    "remarks": "Reef, wrecks and a national park that covers most of one island and the water around it."
+  },
+  "greenland": {
+    "name": "Greenland",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@arctic_ocean",
+      "@atlantic_ocean"
+    ],
+    "west": -73,
+    "east": -12,
+    "south": 59.8,
+    "north": 83.6,
+    "remarks": "The largest island in the world, and about eighty percent ice. Diving here means icebergs, and icebergs roll without warning."
+  }
+}

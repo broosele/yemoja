@@ -1,0 +1,223 @@
+{
+  "units": {
+    "length": "m"
+  },
+  "cmas_introductory_scuba_experience": {
+    "name": "Introductory Scuba Experience",
+    "abbreviation": "CMAS ISE",
+    "organisation": "CMAS",
+    "max_depth": 5,
+    "category": "progression"
+  },
+  "cmas_one_star_diver": {
+    "name": "One Star Diver",
+    "abbreviation": "CMAS 1*",
+    "organisation": "CMAS",
+    "max_depth": 20,
+    "supersedes": [
+      "@cmas_introductory_scuba_experience"
+    ],
+    "category": "progression"
+  },
+  "cmas_two_star_diver": {
+    "name": "Two Star Diver",
+    "abbreviation": "CMAS 2*",
+    "organisation": "CMAS",
+    "max_depth": 40,
+    "supersedes": [
+      "@cmas_one_star_diver"
+    ],
+    "category": "progression"
+  },
+  "cmas_three_star_diver": {
+    "name": "Three Star Diver",
+    "abbreviation": "CMAS 3*",
+    "organisation": "CMAS",
+    "max_depth": 60,
+    "supersedes": [
+      "@cmas_two_star_diver"
+    ],
+    "category": "progression"
+  },
+  "cmas_four_star_diver": {
+    "name": "Four Star Diver",
+    "abbreviation": "CMAS 4*",
+    "organisation": "CMAS",
+    "max_depth": 60,
+    "supersedes": [
+      "@cmas_three_star_diver"
+    ],
+    "category": "professional"
+  },
+  "cmas_one_star_instructor": {
+    "name": "One Star Instructor",
+    "abbreviation": "CMAS M1",
+    "organisation": "CMAS",
+    "supersedes": [
+      "@cmas_three_star_diver"
+    ],
+    "category": "professional"
+  },
+  "cmas_two_star_instructor": {
+    "name": "Two Star Instructor",
+    "abbreviation": "CMAS M2",
+    "organisation": "CMAS",
+    "supersedes": [
+      "@cmas_one_star_instructor"
+    ],
+    "category": "professional"
+  },
+  "cmas_three_star_instructor": {
+    "name": "Three Star Instructor",
+    "abbreviation": "CMAS M3",
+    "organisation": "CMAS",
+    "supersedes": [
+      "@cmas_two_star_instructor"
+    ],
+    "category": "professional"
+  },
+  "cmas_nitrox_diver": {
+    "name": "Nitrox Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_advanced_nitrox_diver": {
+    "name": "Advanced Nitrox Diver",
+    "organisation": "CMAS",
+    "supersedes": [
+      "@cmas_nitrox_diver"
+    ],
+    "category": "technical"
+  },
+  "cmas_normoxic_trimix_diver": {
+    "name": "Normoxic Trimix Diver",
+    "organisation": "CMAS",
+    "max_depth": 60,
+    "supersedes": [
+      "@cmas_advanced_nitrox_diver"
+    ],
+    "category": "technical"
+  },
+  "cmas_trimix_diver": {
+    "name": "Trimix Diver",
+    "organisation": "CMAS",
+    "max_depth": 100,
+    "supersedes": [
+      "@cmas_normoxic_trimix_diver"
+    ],
+    "category": "technical"
+  },
+  "cmas_rebreather_diver": {
+    "name": "Rebreather Diver",
+    "organisation": "CMAS",
+    "category": "technical"
+  },
+  "cmas_deep_diver": {
+    "name": "Deep Diver",
+    "organisation": "CMAS",
+    "max_depth": 40,
+    "category": "specialisation"
+  },
+  "cmas_night_diver": {
+    "name": "Night Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_wreck_diver": {
+    "name": "Wreck Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_cave_diver": {
+    "name": "Cave Diver",
+    "organisation": "CMAS",
+    "category": "technical"
+  },
+  "cmas_ice_diver": {
+    "name": "Ice Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_altitude_diver": {
+    "name": "Altitude Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_drysuit_diver": {
+    "name": "Drysuit Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_sidemount_diver": {
+    "name": "Sidemount Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_navigation_diver": {
+    "name": "Navigation Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_search_and_recovery_diver": {
+    "name": "Search and Recovery Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_rescue_diver": {
+    "name": "Rescue Diver",
+    "organisation": "CMAS",
+    "supersedes": [
+      "@cmas_two_star_diver"
+    ],
+    "category": "progression"
+  },
+  "cmas_underwater_photographer": {
+    "name": "Underwater Photographer",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_underwater_videographer": {
+    "name": "Underwater Videographer",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_marine_biology_diver": {
+    "name": "Marine Biology Diver",
+    "organisation": "CMAS",
+    "category": "specialisation"
+  },
+  "cmas_scientific_diver": {
+    "name": "Scientific Diver",
+    "organisation": "CMAS",
+    "category": "professional"
+  },
+  "cmas_snorkel_diver": {
+    "name": "Snorkel Diver",
+    "organisation": "CMAS",
+    "category": "progression"
+  },
+  "cmas_one_star_apnoea_diver": {
+    "name": "One Star Apnoea Diver",
+    "abbreviation": "CMAS A1",
+    "organisation": "CMAS",
+    "category": "progression"
+  },
+  "cmas_two_star_apnoea_diver": {
+    "name": "Two Star Apnoea Diver",
+    "abbreviation": "CMAS A2",
+    "organisation": "CMAS",
+    "supersedes": [
+      "@cmas_one_star_apnoea_diver"
+    ],
+    "category": "progression"
+  },
+  "cmas_three_star_apnoea_diver": {
+    "name": "Three Star Apnoea Diver",
+    "abbreviation": "CMAS A3",
+    "organisation": "CMAS",
+    "supersedes": [
+      "@cmas_two_star_apnoea_diver"
+    ],
+    "category": "progression"
+  }
+}

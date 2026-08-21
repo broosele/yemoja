@@ -1,0 +1,1385 @@
+# Data layer
+
+Owns *what* the data is and *how it is asked for* — never *where it is kept*.
+
+Concrete storage lives in subdirectories, one per source. Only [json](json/doc.md)
+is planned for now; the split exists so a second source (a server API, a database)
+can be added without touching anything above this layer.
+
+A source here means a **repository** — somewhere the logbook lives, read and written,
+holding history. It does not mean a dive computer or another application's export
+file: those are one-way *importers* and are covered in
+[../logic/reconciliation.md](../logic/reconciliation.md). The two are easy to confuse
+and behave differently.
+
+Read-only reference data shipped with the application — regions, gear catalogues,
+certification schemes — is a third thing again, described in
+[libraries.md](libraries.md).
+
+## Scope
+
+- The machinery of the item model: what a description of a type can say, and what
+  reading, writing, resolving and checking do with it. The types themselves are not
+  here — see *Where the descriptions live* below. The authoritative list of item
+  types, their fields and how each is derived lives in the user manual,
+  `manual/data-fields.md`, and is not restated anywhere; this document covers the rules
+  those fields obey.
+- The contracts a data source must satisfy (read, write, list, query, delete).
+- Rules that hold regardless of storage: id, required fields, valid ranges,
+  how items reference each other, units.
+- Schema versioning and migration. The version an item carries, the rule for what to
+  do with an unknown one, and the migration itself, which runs **once when a logbook is
+  opened**. Everything above sees current-shape items only, so no code outside the
+  migration needs to know that more than one version has ever existed. An `ItemSet` is
+  constructed in full at that moment anyway — see `DATA-5` — so it costs no extra pass
+  over the data. How a version is physically recorded is the source's business.
+
+## Not in scope
+
+- File formats, directory layouts, serialisation, transactions, history, sync,
+  network. All of that belongs to a specific source.
+- Anything that interprets the data. Computing a statistic, validating a dive plan
+  against a decompression model, deciding which dives are "recent" — that is the
+  [logic layer](../logic/doc.md).
+
+## Item model
+
+### Three kinds of field
+
+| Kind | Stored? |
+|---|---|
+| **Primary** | Yes. The value exists only because someone or something recorded it. |
+| **Derived** | Never. Recomputed from other stored values whenever it is needed. |
+| **Overrideable** | Only when set. Normally derived, but a correcting value may be stored when the derived answer is known to be wrong or incomplete. |
+
+The buddies on a dive are primary. The *number* of buddies is derived from that list
+— but overrideable: you may remember that five people were on the dive while only
+knowing three of their names.
+
+An override is stored only when it has been set. Absent means *derive it*. Clearly
+derived and never stored under any circumstances: statistics and totals, averages,
+surface intervals, gas consumption rates, anything aggregated across dives.
+
+**A derived value is not necessarily a function of its own item.** The children of a
+region are found by inspecting the `parents` of every other item; a dive's number
+comes from counting the dives before it. Derivation needs the surrounding collection
+at least as often as it needs the item, which bears on what a source has to be able
+to answer — see `DATA-4` and `DATA-5`.
+
+It is also what lets a read-only [library](libraries.md) take part. A region supplied
+with the application gains a child when the diver adds one beneath it, because the
+child list was never stored in the library to begin with.
+
+### What a derived value can be
+
+A derivation does not always produce a value. There are three outcomes, and the last
+two must not be collapsed into one:
+
+- **Usable** — a value, and it can be used.
+- **Absent** — the inputs are not there. A dive with no profile has no maximum depth
+  to work out. Nothing is wrong; there is simply nothing to say.
+- **Unusable** — the inputs are there and cannot be used. A dive site whose water type
+  reads `brackish` cannot yield a depth from a pressure. The input need not be malformed:
+  a gas source whose `cylinder` points at a regulator has a reference that resolves
+  perfectly to an item that cannot supply a capacity, and a cylinder whose capacity was
+  never filled in fails the same way.
+
+Both absent and unusable show as nothing in a list, which is exactly why they need to be
+distinguishable underneath. They call for opposite responses: absent may be fine, or may
+mean *record more*; unusable means something already recorded is wrong and can be put
+right. Treat them alike and a mistyped water type becomes a column of silent blanks with
+nothing to point the user at.
+
+**Unusable spreads, except in aggregates.** A value worked out from an unusable one is
+unusable in turn — the safe default, because a figure built on something unusable is not
+to be trusted. Statistics gathered across many items are the exception: a total time
+underwater, a greatest depth, a count of buddies, skip the items they cannot use rather
+than collapsing the whole figure. Beyond those two rules, individual cases are decided as
+they arise.
+
+An aggregate therefore reports **what it was based on** as well as its result: how
+many items it used, and how many there were. A bare number cannot be checked, and a
+total quietly short by five dives looks exactly like a correct one.
+
+An unusable value therefore carries its reason — which field, which value, and what was
+expected. "Unusable" on its own tells a user nothing they can act on, and the whole point
+of separating it from absent is that it is actionable.
+
+**An override repairs an unusable value.** Where a field is overrideable, a stored
+correction is used and the failing derivation is never reached. Overrides are the general
+escape from unusable inputs rather than a special case, which is worth knowing before
+inventing a second repair mechanism.
+
+### Derived values arriving from outside
+
+An overrideable field is also the answer to what happens when a source supplies a
+value that would normally be derived. Such a value is neither discarded nor promoted
+to primary — it is stored as an override, **but only where it disagrees with what would
+be derived**. A dive computer reporting a maximum depth identical to the deepest point of
+the profile it also supplied has told us nothing, and writing it down would record one
+fact in two places that could later disagree. The difference is the only part worth
+keeping.
+
+This matters more than it sounds. A dive computer's reported maximum depth is usually
+*more* accurate than its own sampled profile, because sampling can miss the peak.
+Discarding it as derived would throw away the better number; treating it as primary
+would mean it never gets recomputed when the profile is corrected. As an override it
+is kept, attributed, and can be cleared to fall back to the profile.
+
+The same applies to a dive computer's own decompression state, which was calculated
+with that device's model, settings and preceding dive history and cannot be
+reproduced here.
+
+### What primary data can be
+
+- **Simple values** — number, true or false, date, time, a breathing mix, and two kinds
+  of text. A date, a time and a mix are alike in having one written form everywhere,
+  which no `units` declaration affects, and in being parsed rather than taken at face
+  value: `EAN32` yields a fraction of oxygen, and a mix that cannot be read is unusable
+  rather than absent.
+
+  **Text** is a single line. It may not begin with `@` or `*`, may not carry line breaks
+  or tabs, and may not carry other control characters. Those two restrictions are what
+  make a one-off value unambiguous: a string beginning with `@` is a reference to an item
+  and one beginning with `*` is a reference to a key, always, and a string that is neither
+  cannot begin with either. Nothing needs escaping and nothing needs guessing at.
+
+  **Multiline text** allows line breaks, and allows a leading `@` — a field of this kind
+  is never read as a reference, so there is nothing to disambiguate. Tabs are excluded
+  here too, for now; that is the restriction most likely to be relaxed, since a tab in
+  prose is merely untidy rather than ambiguous. `remarks` is the only field of this kind.
+- **A value from a fixed set** — a closed list, and nothing outside it means anything.
+  A dive site's `water_type` is `salt`, `fresh` or `en13319`. These are the fields
+  whose values the application acts on: water type decides how depth follows from
+  pressure, so an unfamiliar value is not merely unusual, it is unusable.
+- **A value from a suggested vocabulary** — a plain string with values the application
+  knows about, where the set suggests rather than restricts: a region's `category`, a dive
+  site's `facilities`, a dive's tags. Nothing is refused for being unfamiliar, because
+  nothing depends on it beyond being shown back.
+
+  The distinction is not stylistic. Ask whether an unrecognised value would stop the
+  application doing something: if it would, the set is fixed; if it would not, it is a
+  vocabulary.
+
+  Three words are in use here and they are deliberately not interchangeable:
+
+  - **`category`** is the broad group an item falls in — a region's, a gear item's, an
+    operator's.
+  - **`kind`** is a finer classification within that group, where one is worth having. A
+    piece of gear is `BCD` by category and a `wing` or a `jacket` by kind. Only gear
+    carries both, because only gear needs the distinction so far.
+  - **`type`** is what was *done*, not what something is. Only a maintenance item uses
+    it, and the item's sort was never in doubt.
+
+  None of these is an oversight to be tidied into the others.
+- **Lists** and **dictionaries** of them.
+- **Owned items**, inline (see below).
+- **References** to referenceable items.
+
+### References and one-off values
+
+A reference identifies a referenceable item. A field that normally holds references
+may instead hold a plain value — a *one-off* — used in two situations:
+
+- The item is not known well enough to record: a buddy whose name is remembered but
+  who is not in the logbook.
+- Naming something must **not** imply it is the same thing named elsewhere. Two dives
+  each listing a one-off `john` make no claim that it was the same John.
+
+The one-off is deliberately not a weaker reference. It asserts no id at all,
+and must never be silently promoted to one — including during import or sync.
+
+**It is a name and carries nothing else.** A one-off with properties would be a weaker
+reference by another route: two dives naming a site at the same coordinates would be read
+as the same place, which is the whole thing a one-off refuses to say. Anything with
+properties is an item — see `JSON-7` in [json/doc.md](json/doc.md).
+
+**A generic item is the same idea with properties attached.** A piece of gear marked
+`generic` describes a kind of thing — a five millimetre wetsuit — rather than one item.
+Referring to it twice claims no more than writing the same plain name twice would: not
+that it was the same item, only that it was that sort of item. Unlike a one-off it is a
+real item with real fields, so buoyancy and weighting still compute.
+
+What follows is that anything true of *one item* is meaningless on a generic item: a
+serial number, a service history, and any count of the dives it has been on. Those belong to the item in someone's garage, which is a separate item that is
+not generic.
+
+### A relationship is stored once
+
+Where two items relate to each other, one side holds the reference and the other
+derives its half. A dive names the trip it belongs to; the trip's list of dives follows
+from that. A region names its parents; their `children` follow from that.
+
+Storing both halves would be convenient and would eventually disagree with itself —
+and there would be no way to tell which half was right. Deriving one of them makes that
+impossible rather than merely discouraged. Which side stores it is decided per
+relationship, and is normally the many side, so that adding an item touches one file
+instead of two.
+
+How references and ids are written down is a storage concern; see
+[json/doc.md](json/doc.md).
+
+### Units
+
+**A number means one of two things, and never a third.** Either the default, or what
+the file it sits in says. Nothing else is consulted.
+
+The default is SI but for four dimensions, where strict SI is close to unreadable for
+diving — 200 bar is 20000000 Pa, 14 °C is 287.15 K, a twelve-litre cylinder is
+0.012 m³:
+
+| Dimension | Default | |
+|---|---|---|
+| length | metre | SI |
+| mass | kilogram | SI |
+| time | second | SI |
+| temperature | degree Celsius | not SI |
+| volume | litre | not SI |
+| pressure | bar | not SI |
+| angle | degree | not SI |
+| density | kilogram per cubic metre | SI |
+
+Any file may carry a `units` declaration replacing any of them for that file, and that
+is the whole of the rule. **A declaration reaches no further than the file it is
+written in.** There is no logbook-wide setting, nothing inherited from `yemoja.json`,
+and no per-item declaration inside a file holding several items.
+
+That is a deliberate loss of expressiveness. Two cylinders in one `gear.json` cannot be
+written in different volumes, and a diver who owns both metric and imperial kit has to
+convert one or split the file — the format already allows a directory of one file per
+item for any type, not only dives, so the case remains expressible. What is bought is
+that the units of a number can be determined by looking at the top of the file it is in,
+with nothing else open. A resolution order the reader cannot see is a source of errors
+in a format whose purpose is being readable by hand.
+
+**Libraries stop being a special case.** A shipped library used to need exempting from
+the chain, so that a logbook declaring bar could not change what the library meant. With
+no chain, that follows from the rule. Library files declare their units explicitly all
+the same: they are published and effectively permanent, and a file that depends on no
+default cannot be broken by one changing.
+
+Three things follow:
+
+- **Every numeric field has a dimension** — length, mass, time, temperature, volume,
+  pressure, angle — recorded in the schema. That is how a declaration knows which
+  fields it governs.
+- **A declaration is data.** It must survive a read-and-write cycle untouched, or the
+  units someone chose by hand are silently replaced on the next save.
+- **Values are kept as written and converted at the point of use.** Converting to SI
+  on read and back on write risks drift, and a value that changes in the last decimal
+  on every save produces noise in exactly the diffs versioning depends on.
+
+**Sample times inside a profile are always seconds**, and no declaration reaches them.
+They are exempt for the reason dates are: a profile holds thousands of numbers, so a
+declaration touching them would rescale a whole recording at a stroke, and the benefit —
+writing 2 instead of 120 — is nil for figures no one reads by eye. Everything else in a
+profile follows the file's declaration as usual; a device reporting in another unit is
+converted once, at import.
+
+Note that this is about **how a number on disk is to be read**, which is not the same
+as what a person is shown. Display preference is a separate concern — see
+[UI](../ui/doc.md).
+
+**Instants and quantities are not the same thing.** A date or a time names a point and
+is written one way everywhere, because a second notation buys nothing and `03/04/2026`
+means two different days to two readers. A duration is a quantity like any other, with
+the time dimension and the second as its base, so unit scoping applies to it exactly as
+it does to length or pressure. A dive's `duration` is a number of seconds, and a file
+may say it is written in minutes.
+
+### A field's name says how many
+
+A singular field name holds one thing; a plural one holds a list. `region` on an
+operator is the one region it sits in; `regions` on a dive site is every region that
+site belongs to. `profiles` on a dive is a collection, `medical` on a person is not.
+
+The rule is worth stating because it is the only signal, and because breaking it is
+invisible until someone reads the wrong shape out of a file they cannot see the schema
+for.
+
+One deliberate exception: a person's `middle_names` is a single piece of text holding
+however many there are, not a list of them. The plural belongs to the English phrase
+rather than to the field. It is the exception that proves the rule needs stating.
+
+### Fields common to every type
+
+Some fields belong to every referenceable type rather than to one of them. `remarks` —
+optional free-form multi-line text — is the first. Common fields are defined once, in
+the manual's introduction to the item types, and are not repeated per type.
+
+An **owned** item has `remarks` only where its own definition says so. Free-form text
+is bulky wherever it is shown, and an interface offering a notes box beside every
+cylinder and every service entry spends its space badly — so this one is granted
+deliberately rather than by default.
+
+### Types are not subdivided
+
+An item type covers every variant of the thing it names. Gear is one type, whether
+the item is a regulator, a cylinder or a camera; a variant simply omits the fields
+that do not apply to it.
+
+Validation is deliberately permissive. A field that is absent is absent, and the
+application does not insist on a set of fields being present because of some other
+field's value. The alternative — a type per variant, or required-field rules
+conditioned on a `category` — buys strictness that a personal logbook does not need and
+makes hand-editing hostile.
+
+### How a type is described
+
+There is no class per item type. A dive, a person and a region are all the same Dart
+class — `Item` — holding three things: the description of its type, a map of field
+name to value, and the items it belongs to.
+
+The description is data. An `ItemDescription` names a type and lists its fields. A
+`FieldDescription` says what one field is, in enough detail that the parser, the
+structural checks and every front end can work from it and nothing has to name a field
+in code. Four things need describing differently, so they are subclasses rather than one
+class with a flag: a **value**, a **reference**, a **singular owned item**, and a
+**keyed collection of owned items**. The last two are separate because the interface treats them
+separately — one is a group expanded by default on a desktop, the other collapses to a
+count on both form factors, see [../ui/gui/doc.md](../ui/gui/doc.md).
+
+The three kinds of field are orthogonal to that split. Primary, derived and overrideable
+are properties any of the four may carry, not subclasses of their own.
+
+**Why a description rather than a class.** Dart offers no useful runtime reflection:
+`dart:mirrors` is unsupported under ahead-of-time compilation, which is how this
+application ships. Build-time code generation is available and would work, but a Dart
+declaration is the wrong place to keep this. `double? maxDepth` cannot say that the
+value is a length and therefore obeys a `units` declaration, that it is derived with an
+override rather than primary, that a string field is a reference to a dive site rather
+than free text, or that it offers a suggested vocabulary rather than a fixed set. All of
+that would have to be written alongside as annotations — at which point the annotations
+*are* the description, and the class contributes nothing but a second place for the
+field list to live.
+
+Keeping it as data has a consequence worth having on its own: **a field the application
+does not recognise survives a round trip.** A file written by a newer version is read,
+held and written back with its unknown fields intact. Nothing has to be taught to
+preserve them, which is what stops two installations at different versions quietly
+eroding each other's data as they sync.
+
+**What it costs.** Reading a field is not statically checked. Nothing is caught at
+compile time, and renaming a field is a search rather than a refactoring the editor can
+do. That is the price of the field list having one home.
+
+It is not paid at full price, though. `DATA-51` settles that the logic layer reads
+through an interface accepting only names the description carries, so a misspelt name is
+reported as a fault in the code rather than becoming a silent absent — found on the first
+run instead of never. The raw untyped mapping stays available beneath it for writing
+back, which is the one job that has to reach fields the description has never heard of.
+
+**On the name.** *Item* is the word everywhere — in prose, in the manual, and as the
+class. *Record* would have been the natural choice and was used at first, but Dart 3
+defines `Record` in `dart:core` for its tuples, and shadowing that in every file
+importing this layer is a cost with nothing bought. Carrying both words — *record* in
+prose, `Item` in code — was tried and discarded: one thing gets one name, and a reader
+should never have to ask which of two words a sentence means.
+
+**How it stays true.** [manual/data-fields.md](../../manual/data-fields.md) is the
+definition of every field, so a description and the manual can drift apart. They are
+checked against each other rather than trusted: `tool/checkdata.py` already reads the
+manual's field lists to validate the fixtures and the libraries, and the descriptions
+become a third thing checked the same way — see `TEST-2` in
+[../../test/doc.md](../../test/doc.md).
+
+### The set of items
+
+Reading a logbook produces a set of **items**: everything loaded, from the logbook and
+from every [library](libraries.md) it uses, with shadowing already applied so each
+id resolves to exactly one of them.
+
+**One id names one item across every type.** The namespace is not per type, because a
+reference carries no type: `@anna_devries` has the id and nothing else to go on, so if a
+person and a dive site could share one there would be no way to say which was meant. A
+proposal is therefore checked against everything already loaded, not only against items of
+its own kind, and a new person proposing an id a dive site already holds becomes
+`#1` like any other clash.
+
+The one legitimate second sighting is **shadowing**: the same id, of the same type, laid
+over rather than beside — a logbook item over a supplied one, or one library over another.
+See [libraries.md](libraries.md).
+
+Every item holds access to the items it belongs to. That is how an item answers
+questions it cannot answer alone — a region finds its `children` by asking which regions
+name it as a parent — and it is where a reference such as `@anna_devries` becomes the
+item it points at.
+
+**Two things can be asked of a set of items:** resolve an id, and list
+everything of a type. Nothing else, and what comes back is always a whole item of the
+type asked for, constructed in full when the data is read. There are no summaries, no
+projections and no half-built items — one kind of thing to ask for and one kind of
+thing to get. A logbook is small enough to hold entirely, so
+filtering, sorting and searching are done above this layer over ordinary collections,
+and items navigate themselves — a region asks for its children, a reference resolves,
+a dive reaches its site. The interface stays small because there is nothing to add to
+it, which is a better reason than restraint.
+
+**Nothing is announced when an item changes.** There are no subscriptions and no
+listeners here: whatever is showing something derived from an item asks again when it
+may be out of date. At this scale that is cheap — rebuilding a list of a thousand dives
+costs less than maintaining the machinery to avoid it — and it removes a whole class of
+faults, since a view cannot go stale if it never cached anything, and a listener cannot
+outlive what it was listening to.
+
+It does not remove the need for *something* to say that a change happened. It removes
+the need to say what.
+
+More than one set can exist at a time. An import is read into its own, so that candidate
+items are complete and resolvable before anything is merged, and the
+[logic layer](../logic/doc.md) holds whichever are open.
+
+#### Where the descriptions live
+
+**The machinery is here; the types are not.** `Item`, `ItemDescription`,
+`FieldDescription` and everything that acts on them — parsing, resolving `@`, applying
+units to the right fields, proposing an id, checking that a journal action names a
+real field — belong to this layer. The descriptions that say what a dive, a person or a
+region *is* belong to the [logic layer](../logic/doc.md), and an `ItemSet` is
+constructed with them.
+
+The test is the one that layer already sets: can this be done without knowing the file is
+about diving? Parsing a file against a description can. Writing the description cannot —
+its whole content is diving. So the machinery stays and the instances go up.
+
+That also settles where a derived value is computed. A description declares that a field
+is derived and carries the computation with it, so `children`, `duration`, `buddy_count`
+and `deco` alike sit with the type they belong to, rather than being split by how much
+arithmetic each needs. This layer never computes a derived value; it holds the item
+that knows how, and hands back whatever the description works out.
+
+An earlier arrangement kept the types here, on the argument that too much of this layer
+needs to know what a dive is. That argument was written when knowing meant *having a
+class per type*. Once the description is data handed in at construction, nothing here
+knows anything about diving, and the objection goes with it.
+
+Two things follow from items being connected rather than free-standing:
+
+- **An item is not plain data in memory.** Writing one out must stop at its own
+  fields and never follow its way back into the items around it.
+- **Serialising and deriving are different operations.** What goes to disk is what was
+  recorded; what an item can tell you includes everything it works out by asking
+  around.
+
+### An item does not own its id
+
+A referenceable item's id lives outside it — in the file name, or in the key
+it is stored under. Nothing inside the item records it. Changing an item's
+id therefore does not touch the item at all: it changes where the item sits
+and it changes everything that refers to it, and that is all.
+
+**References are held as they are written.** A reference field holds the id, not
+the item it names, and resolves on demand through the items the item belongs to.
+Resolving at load into direct links was considered and rejected: it would make renaming
+an id a silent in-memory operation, whereas `JSON-17` settles that a rename is one
+changeset carrying every reference rewrite, so that a half-undone rename cannot arise.
+Those rewrites have to be recorded whether or not the links would have survived without
+them. Keeping the written form also means a reference to something deleted, which
+permissive validation has to accept, survives a round trip unchanged instead of needing
+a representation of its own.
+
+The consequence is that an item cannot say what it is called. Nothing in this layer
+needs to — writing a logbook iterates the items and takes each id from the key
+it is stored under — but an interface offering "add this person as a buddy" holds an
+item and must write a reference to it. So a set of items answers in both directions:
+an id to an item, and an item to its id. Storing it on the item
+instead would mean an item created but not yet accepted — an import candidate — either
+carrying an id it does not have yet or having one written into it later.
+
+An item can, however, **propose** an id for itself from its own data — a
+person from their name, a dive from its date. The proposal is derived and never
+stored; the id actually in use is whatever the container says it is, and may
+differ from the proposal indefinitely. Correcting a diver's surname changes what their
+item would propose without changing what it is called.
+
+An **id proposal** is a *base*, not a finished id. The item supplies it from its own
+data and knows nothing of its neighbours; whatever manages the collection resolves
+clashes by appending `#<index>`.
+
+**The clash is checked against the libraries too**, not only the logbook. A new dive site
+whose proposal matches a supplied one becomes `blue_hole#1` rather than silently replacing
+it — see `LIB-2` in [libraries.md](libraries.md). Shadowing a library item is then always
+deliberate: you edit the supplied item, and the edited copy is written to the logbook.
+
+**Proposing only happens at creation.** An item read from a file already has an
+id — its file name or its key — so nothing is proposed for it, however sparse its
+contents. That leaves one case to worry about: an item created with too little to
+propose from. Since no field is mandatory anywhere, the data layer cannot prevent it,
+and should not try. Ensuring there is enough to work with belongs where items are
+created, which in practice means the interface asks for a date before it makes a dive.
+See [../ui/gui/doc.md](../ui/gui/doc.md). This keeps the item free of any knowledge about
+what else exists, and puts uniqueness where uniqueness can actually be checked.
+
+An index, once assigned, is never reissued and never renumbered. Deleting
+`2026-02-23#0` does not renumber `2026-02-23#1`, and the freed index is not handed to
+a later item — otherwise ids would silently start meaning something else, and
+every reference to them would quietly change target.
+
+**Whether the index is written down is a property of the item type.** For most
+types a clash is rare, so index zero is left off and only a genuine second item
+carries one: `anna_devries`, then `anna_devries#1`. Dives are the exception — several
+dives in a day is ordinary rather than exceptional — and always carry their index,
+starting at `#0`. This keeps the common case free of noise without letting an item
+acquire an index retrospectively, which would mean renaming it.
+
+**An index means nothing beyond telling two items apart**, and this is worth stating
+because a dive invites the other reading. `2026-02-23#1` is not *the second dive of that
+day*: it is a dive of that day which needed a distinguisher, assigned in the order dives
+were created rather than the order they were made. Log the afternoon dive first and it
+takes `#0`. Nothing derives an ordering from an index, and nothing should — a dive's
+place in a day comes from its times, which is what they are for.
+
+`#` is therefore structural in an id, and a proposed base may not contain one. Neither
+may it contain `*`: a key reference is written `*key`, and the two markers compose as
+`@<id>*<key>` for reaching into another item — a form nothing needs yet, but one that
+stops parsing if an id may contain the character that separates its halves. See `JSON-19`
+in [json/doc.md](json/doc.md). A name may contain `*` freely; only the id worked out from
+it may not.
+
+Assignment is hidden **in the graphical application, and nowhere else**. A user of
+that application neither chooses nor sees an id; it is assigned when the item
+is created and left alone thereafter. Editing ids may appear later as a feature
+for advanced users.
+
+In storage the id is fully visible, and deliberately so. It names the file and
+appears in every reference inside every file, so anyone reading the logbook in a text
+editor sees ids constantly — which is a goal of the format, not a leak. A
+proposal must therefore produce something a person can recognise: `anna_devries`,
+never `p_00417`.
+
+### Referenceable and owned items
+
+Two kinds of stored item:
+
+- **Referenceable** — has its own id, can be referred to from elsewhere, and is
+  stored in its own right: dives, buddies, dive sites, gear items.
+- **Owned** — exists only inside one referenceable item, is never referred to from
+  outside it, and is created and destroyed with its owner: a dive profile, a cylinder
+  entry on a dive, a service item on a gear item.
+
+An owned item in a collection sits under a **key**: an identifier, but a local one. It is
+unique within the collection it belongs to and means nothing outside its owner. **It is
+where the entry sits, not a field the entry carries** — the same rule as an item and its
+id, applied one level down, and the reason a collection is written as a keyed object
+rather than a list.
+
+Two things need it. The journal has to be able to say which of three courses changed, and
+counting from the top stops being true the moment anything is reordered. And the owner
+itself has to be able to point at one of them, which is how a dive with several profiles
+says which one to work from.
+
+Keying by construction settles what would otherwise be rules to enforce: two entries
+cannot share a key in a file that parses, and no entry can lack one. What remains a rule
+is that a key must not be *reused* once its entry is gone, which no format can prevent.
+
+**A collection has no inherent order.** Where an order matters it is worked out from the
+contents — courses by date, services by date, gas sources by when they were first
+breathed, which comes from the profile rather than from the entry. Which fields give the
+order is a property of the type. Two consequences follow: nothing may lean on the order
+entries happen to sit in, and a writer must nevertheless emit them in a settled order, or
+every save produces a diff for a file that did not change.
+
+The distinction to hold on to is scope. An **id** names an item in the whole
+logbook, is written with `@`, and any item may use it. A **key** names one entry inside
+one owner, is not written with `@`, and is meaningless the moment it leaves. Both are
+identifiers; only one of them is an address.
+
+A singular owned item has no key and needs none: its field name is its address, so
+`environment.current` reaches inside one exactly as `courses.k1.date` reaches into a
+collection. A key tells siblings apart, and a singular has no siblings.
+
+An owned item may appear singly as well as in a collection. Most are collections — a
+person's courses, a gear item's service history — but one of a kind is equally valid, and a
+singular one is how a set of related fields is grouped.
+
+One of a list may be **primary**. A dive can carry several profiles, and the primary one
+is what its times, duration, depth and temperatures are derived from. The dive says which
+by naming its key — not by a flag on the profile, which could end up set on two of them
+at once, and not by position, which changes.
+
+An owned item also knows its **parent**. That link is not stored — it would be
+circular on disk and says nothing the file structure does not already — and is set
+when the item is created. Like an item's access to the items around it, this makes
+it connected rather than free-standing, and writing an item out must not follow it.
+
+### Validity and renewal
+
+Two things in the model expire: an insurance policy and the maintenance of a piece of
+gear.
+
+A medical examination does not. Whether a year-old check still counts depends on who is
+asking — an agency, an operator, a country — so validity is a rule applied to the
+examination from outside, not a property of it. Recording an expiry against the check
+itself would be asserting something the check does not say.
+
+These are unified in **how they are implemented, not in what they store.** Both happen
+to state an end date outright — a policy because that is what the document says, a
+maintenance item because the shop tells you when the item is next due — but neither
+is obliged to, and a third expiring thing need not follow suit. What matters is that
+each reads like the thing it describes.
+
+What is common is the behaviour. Both answer the same questions — when does this run
+out, how long is left, has it lapsed — and the same code answers them. Those values are
+the `DATA-29` kind: they depend on today, are never stored, and two installations may
+legitimately show different numbers for the same file.
+
+**Extending is not replacing.** A policy that is renewed is still that policy, so its
+dates move and it stays one item; only one is held at a time. Maintenance is the
+opposite: each occasion is an event that happened on a day, a later one does not amend
+it, and every one is kept.
+
+**Maintenance is one sequence, not several.** The obligation is that maintenance happens
+at all — an item falls due again once the last work's validity runs out, whatever was
+done that time. So the latest item is the item's status, whatever kind of work it
+was, and the history behind it stays for reference.
+
+**What comes next is recorded, not derived.** Each item names the work that should
+follow it. An alternating routine therefore needs no schedule and no rule: an
+inspection that turned into a repair simply says that an inspection is due next, and the
+alternation re-bases itself. A schedule held against the item would instead be a rule
+that reality departs from — a year skipped, work brought forward, an inspection that
+became something else — and it would need reconciling against the items for as long as
+the item existed.
+
+### Shape carries the hierarchy
+
+An item has levels, and they follow from where a field sits rather than from a
+separate marking kept alongside it:
+
+- **`name`.** Every referenceable item has a field called exactly that — mandatory
+  on some types, derived and overrideable on others, as a person's is from the parts of
+  their name. It titles the item, it is what a link to it reads as, and it is what
+  the id is proposed from.
+
+  **`name` is not the id.** The name lives in the item and is meant to be read
+  and corrected; the id lives in the file name or key, is what references point
+  at, and is fixed once assigned. An id is proposed from a name at creation and
+  the two are free to diverge afterwards — see *An item does not own its id*
+  below. Keeping the two words apart matters, because almost every mistake in this area
+  starts by conflating them.
+- **Fields directly on the item** are its main fields: what the item is, at a
+  glance.
+- **A singular owned item** groups detail. A person's health details sit together
+  because they are one item, not because something labelled them a group.
+- **Keyed collections of owned items** are lower still: a person's courses, a gear
+  item's service history.
+
+This is a statement about **structure, not about presentation**. Nesting says that
+fields belong together and that a group is subordinate to the item holding it. It
+does not say how large anything should be drawn, or whether it is shown at all.
+
+Interfaces are expected to read the structure — it is there precisely so they have
+something to read — but they are not bound by it. What appears in a view, and how
+prominently, is decided by the interface, per item type. The data layer supplies the
+shape and no more; see [../ui/gui/doc.md](../ui/gui/doc.md).
+
+The gain is that there is nothing to keep in step. The hierarchy cannot disagree with
+where a field is stored, because it *is* where the field is stored, and someone reading
+the file by hand sees the same structure an application works from.
+
+The cost is worth stating plainly: **regrouping a field changes the file.** Moving a
+main field into a group is a change of stored shape, not of an annotation, so it moves
+data and affects anything already written by hand. That is a reason to be deliberate
+about the grouping early, not a reason to avoid the model.
+
+What follows from the distinction:
+
+- Only referenceable items need stable identifiers.
+- Deleting a referenceable item can leave references to it elsewhere; deleting an
+  owner simply destroys what it owns.
+- In [reconciliation](../logic/reconciliation.md), an owned item is matched and
+  resolved as part of its owner, never on its own. A referenceable item is matched
+  in its own right.
+
+## Depends on
+
+Nothing above it. This is the bottom of the stack, and it must stay free of any
+dependency on logic, UI, or a specific source.
+
+## Structure
+
+```
+lib/data/
+  doc.md          this file — the item model, items, id, validation
+  libraries.md    reference data shipped with the application
+  json/           the JSON file source (doc.md, requirements.md)
+```
+
+Tests for this layer mirror it under `test/data/` — see [../../test/doc.md](../../test/doc.md).
+
+## Open questions
+
+To settle when we discuss architecture:
+
+
+   `DATA-5` sharpens this. Entities are constructed in full when read, so whatever sits
+   inside a dive is in memory for every dive at once. A profile is the only field large
+   enough for that to matter: a thousand dives with a few thousand samples each is
+   comfortably the largest thing in the application, and a phone is where it would be
+   felt. Either profiles are not read with their dives, or the cost is accepted and
+   measured.
+
+   An argument for the small answer: most navigation happens *through items* rather
+   than through queries. A region asks for its children, a reference resolves itself, a
+   dive reaches its site. If that holds, `ItemSet` needs little beyond resolving an
+   id and listing a type, and the interface stays small by consequence rather than
+   by discipline.
+- **DATA-54 — Which fields the common interchange formats carry that this model does
+  not.** *In progress:* **UDDF is done.** [../logic/uddf.md](../logic/uddf.md) compares
+  every section of the logbook against 3.2.3, and what remains is other formats — which
+  ones is `RECON-5`, so this cannot close before that does.
+
+  `DATA-45` was decided by looking at one element of one format and finding the
+  model would have lost data on import. That was luck rather than method. The formats
+  worth importing — `RECON-5` in
+  [../logic/reconciliation.md](../logic/reconciliation.md) names the question — should be
+  read through field by field, and each of their fields placed in one of three piles:
+  modelled already, deliberately not modelled, or a gap to close before an importer
+  exists. The middle pile matters as much as the last, since a field consciously declined
+  is not a bug and should not be rediscovered every time somebody reads a specification.
+
+  The middle pile now has entries: `workload`, `problems` and `equipmentmalfunction` are
+  declined because `remarks` already takes what a diver would write, and imported values
+  are folded there rather than dropped. Markers a diver sets on the computer mid-dive —
+  UDDF's
+  `setmarker` — are deliberately not modelled: a marker says something was interesting and
+  nothing about what, which the dive's remarks do better. Rebreather data goes with
+  `FEAT-21`. And UDDF's site-level `environment` — `ocean-sea`, `cave-cavern`,
+  `under-ice` and the rest — describes the kind of place and is a different axis from
+  `water_type`, which is about density; an importer cannot map one onto the other and
+  should leave `water_type` unset rather than infer `salt` from `ocean-sea`. And UDDF has
+  no wave element at all, so `waves` will always arrive empty from it.
+- **DATA-55 — Whether what this model records can be written back out.** The companion
+  to `DATA-54`, which asks what the interchange formats carry that this model does not.
+  This asks the reverse: for every field both model, can ours be expressed in theirs
+  without loss?
+
+  The bad case is not a field they lack — that is merely absent from an export. It is
+  **both modelling the same thing incompatibly**, because that cannot be repaired later
+  by either side. A current recorded on an eight-step scale has no honest home in UDDF's
+  six: exporting collapses steps, importing the result back gives a different dive, and
+  every round trip degrades. Nothing in a converter can fix it; only the choice of
+  representation can.
+
+  Which is why this is a constraint while fields are still being defined, not a task for
+  when an exporter is written. **Where both model the same thing, match their
+  representation unless there is a reason not to.** `current` and `waves` follow it
+  already — `DATA-45` took UDDF's six steps rather than inventing a scale, so the mapping
+  is one-to-one in both directions.
+
+  It does not wait on deciding to export at all — `RECON-4` and `FEAT-13` — since an
+  incompatible representation is a permanent property of the model whether or not
+  anything ever writes the file.
+
+  It applies only to **actively supported** formats, and only to the version of them that
+  is written: a best-effort format gets no say in how a field is shaped. See *Two levels
+  of support* in [../logic/reconciliation.md](../logic/reconciliation.md), which also
+  notes that UDDF's own versions differ enough for "match their representation" to need a
+  version named.
+- **DATA-57 — Whether a dive plan is an item, and what it holds.** A plan keeps the
+  inputs it was made with — gases, depths, times, and the gradient factors fixed at the
+  moment it was made — so that changing a preference later does not silently rewrite it.
+  Nothing in the model holds those. There are eight item types and none of them is a plan.
+
+  Open: whether a plan is a ninth type, or something owned by a dive, or not stored at all
+  and merely printed. What settles it is whether a plan outlives the screen it was made
+  on — a plan you keep to compare against what you actually did is an item; a plan you
+  read off and forget is not. `FEAT-6` is *Planned* rather than *Core*, so nothing waits
+  on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
+  remembers its own.
+## Settled and relocated
+
+- **DATA-63 — Which items carry `alternative_names`.** *Settled:* dive site, wreck and
+  **operator**. Not person, not dive trip, not gas mix, whatever UDDF does.
+
+  UDDF puts `aliasname` on nearly everything, which is a format's caution rather than a
+  model. The test applied here is whether a thing is *known* by more than one name, as
+  against merely having been called something else once. A site is: charts, local usage
+  and a guidebook disagree, and all three are current. A wreck is: renamed before sinking,
+  and both names appear in the literature. An operator is: dive centres are bought and
+  rebranded, and the dives you logged there were with the old name, so searching either
+  should find the place.
+
+  A trip is named by the diver and has no other name to know. A person has a name.
+  Neither gets a field that would sit empty in every logbook, and an imported `aliasname`
+  on one of them folds into `remarks` rather than being dropped silently.
+
+- **DATA-62 — How a wreck's `displacement` is written.** *Settled:* a **number, in the
+  file's mass unit**, and no tonne is added to `DATA-8`. A ship reads in kilograms, so a
+  fifty-thousand-tonne liner is written 50000000.
+
+  Two shorter routes were refused. **Text with the unit inside it** was the tempting one, on the grounds that nothing calculates with the field. It loses
+  the one exact mapping the field has, since UDDF writes displacement as a real number in
+  kilograms and a string can only be exported by parsing prose. And it inverts `DATA-52`:
+  that ruled "40 cuft" is a *name* rather than a quantity and belongs in `description`, and
+  the complement is that a quantity belongs in a numeric field. *Niche, with no arithmetic
+  attached* is an exemption any field could claim.
+
+  **A `t` name** was the other, and would have let a wrecks file declare `"mass": "t"` and
+  read 48158. It buys readability in one field of one item type, against a unit set whose
+  whole value is being short enough to hold in mind. Seven digits are ugly; a vocabulary
+  that grows a name per awkward case is worse.
+
+  What a wreck book actually says — "10,077 tons", of a kind it will not name, and as
+  often as not gross register tonnage, which is a volume — is a provenance problem rather
+  than a unit one. It goes in `remarks`, in the source's own words, which is where
+  `DATA-52` sends "40 cuft" for the same reason.
+
+- **DATA-61 — Whether `m3` and `Pa` join the unit set.** *Settled:* both are in, added to
+  `DATA-8`'s table.
+
+  They are the SI units for dimensions this model already carries, and the set says what a
+  file may declare. What a diver writes settles which name is the *default* and how litre
+  is spelled; it was never a reason to refuse a valid unit. `DATA-8`'s own generosity
+  argument points the same way — an unrecognised name makes every number in a file
+  unusable, and a name added later does that to every version before it.
+
+  The practical effect is small and worth having: UDDF is strict SI, so a file converted
+  from one by hand can be written in the units it arrived in and needs no arithmetic at
+  all. See [../logic/uddf.md](../logic/uddf.md).
+
+- **DATA-60 — How a repetitive dive is tied to the one before it.** *Settled:* an
+  optional **`previous_dive`** reference on the dive, and no computed grouping anywhere.
+
+  UDDF wraps its dives in `repetitiongroup`s and hangs a `surfaceintervalbeforedive` off
+  each one, holding either `<infinity/>` or a `passedtime` in seconds. Both are derived —
+  an interval is this dive's start minus the last one's end, and a group is that
+  arithmetic with a threshold laid over it — so by the rule that nothing derived is
+  stored, both should simply be recomputed and neither should be a field.
+
+  **The threshold is what breaks that.** The arithmetic is exact; deciding that six hours
+  is clean and five is not is a judgement, and one this application would be making on the
+  diver's behalf every time it drew a group. Agencies disagree about the number, and a
+  wrong one is not a rounding error but a claim about somebody's decompression. So the
+  judgement is the diver's and is recorded, and the arithmetic stays derived: what
+  `previous_dive` says is *this one counted*, not how long the gap was.
+
+  It sits on the **dive**, not the profile. Residual gas belongs to the diver, and the
+  profiles of one dive are the same diver seen by two computers — letting them disagree
+  about what preceded would be recording a fact about a device rather than about a dive.
+
+  Validation is the ordinary permissive kind: the target must have started earlier, and a
+  chain that closes on itself is a `LOGIC-8` question like every other self-reference, not
+  something this layer refuses on write.
+
+  Exporting draws UDDF's groups from the chain — an unset `previous_dive` opens a group
+  with `<infinity/>`, a set one continues it, and `passedtime` is computed on the way out.
+  Importing reverses it: a dive takes the one before it in its group, and the first of a
+  group takes nothing. See [../logic/uddf.md](../logic/uddf.md).
+
+- **DATA-17 — Cycles in self-referential lists.** *Relocated to the logic layer,* as
+  `LOGIC-8`, and **not answered once for all fields.** A region's `parents`, a dive trip's
+  `parent` and a certification's `supersedes` all point at their own type, and what a
+  cycle *means* differs in each — so what a walk should do about one is decided per
+  derivation, by whatever knows what the field is for.
+
+  Nothing here needs to guard against it, because nothing here walks. An item set answers
+  two questions — resolve an id, list a type — and every traversal is above it, alongside
+  the derivations that live with the descriptions. This layer's part is only that a cycle
+  is not refused on write: validation is permissive, and the check could not be made
+  anyway against items that are not loaded.
+
+- **DATA-59 — Which water type a recorded depth was computed with.** *Settled:* the
+  profile records it. A profile carries a **`water_type`** — what the computer was set to,
+  not what the water was — and a **`density`** derived from it, overrideable.
+
+  The derivation needs two things because one is not enough. `fresh` is 1000 and
+  `en13319` is exactly 1020, that figure chosen so ten metres is one bar. `salt` is not a
+  number at all: makers use anywhere between 1025 and 1035, so density follows from the
+  water type *and the make of computer*, read through the profile's `dive_computer`.
+  Where the make is unknown, salt has no single answer.
+
+  **Without a density, nothing can be worked out from the profile.** A dive computer
+  measures ambient pressure and converts to depth on the device; only the depth is
+  downloaded. Working back to pressure — which is what decompression needs — requires the
+  constant the device used, so where it is missing the derived values are unusable rather
+  than approximate, per `DATA-50`.
+
+  This is why a site's `water_type` could never have served. A diver may dive the sea with
+  a computer set to fresh, and the depths will say fresh; the site is salt regardless. The
+  two fields share a name and a vocabulary and answer different questions — one describes
+  water, the other an instrument's setting.
+
+  Correcting the setting does not touch the depths already written: it changes what they
+  mean. Saying so, and offering to convert them, is the interface's work — `GUI-18`.
+
+  Whether the setting arrives at all depends on the source. Some computers report it and
+  some do not, and a download library may or may not know how to read it from a given
+  model; where such a library supplies a nominal figure of its own rather than the
+  device's, that is a derived value arriving from outside and is kept only where it
+  disagrees.
+
+- **DATA-58 — Whether a series can say that data is missing, as against merely sparse.**
+  *Settled:* it cannot, and nothing is added to say so. A series is pairs, read as
+  piecewise linear throughout, and a long gap means the same thing whether the device was
+  sampling coarsely or had lost a transmitter.
+
+  Where a device knows it lost signal it raises a `link` alarm, which is already recorded
+  with its time, so the fact is in the profile even though it is not in the series. That
+  is enough to explain a curve to someone looking at it, and it costs nothing.
+
+  **What that does not do is worth writing down.** An alarm says the link went, not when
+  it returned, and this model does not carry UDDF's `tankref`, so on a dive with twins and
+  a stage the alarm does not say which transmitter dropped. A reader can tell that
+  *something* was lost around a certain time; it cannot mark the affected stretch of the
+  affected series.
+
+  Both alternatives were declined for the same reason: they add structure to every profile
+  to describe a case that is uncommon and already half-recorded. A sentinel would put a
+  non-number in a series of numbers; a separate list of gaps would be a second structure
+  to keep in step with the first.
+
+  This is one of the few decisions that cannot be revisited cheaply. A logbook written
+  without the distinction cannot be given it later, because nobody will know afterwards
+  which gaps were which.
+
+- **DATA-35 — Validity measured in use rather than time.** *Settled:* dates only.
+  `valid_until` is a date and there is no counting of dives. A diver whose regulator is
+  due every hundred dives works out when that will be and writes the date.
+
+  The model therefore says less than the label on a regulator does, and that is accepted.
+  What it buys is that validity means one thing everywhere: a date, on a medical, an
+  insurance and a service alike, with `days_left` a subtraction and `expired` a
+  comparison. A usage limit would have made gear the exception — the only place validity
+  needed a walk over the logbook to count which dives used which item, and the only place
+  where "expired" meant *whichever of two came first*, which is a third derived value
+  neither `days_left` nor a dive count answers.
+
+  `FEAT-17` stays *Low priority* rather than rejected. Adding a limit later is additive,
+  since a maintenance with no such field simply has no limit, so nothing written now
+  forecloses it.
+
+- **DATA-36 — What counts as due soon.** *Relocated to the logic layer,* as `LOGIC-7`.
+  Not a data question: this layer records what is true — a `valid_until`, the `days_left`
+  until it, whether it has `expired` — and "soon" is a judgement about those facts rather
+  than another fact. Nothing is stored for it and no field carries it.
+
+  Which is the same line the layers are drawn on everywhere else. A date subtraction is
+  arithmetic; deciding that five weeks is worth mentioning and six is not needs to know
+  what the thing is and how a diver plans, which is knowing what diving is.
+
+- **DATA-38 — Whether an item can have more than one maintenance sequence.** *Settled:*
+  yes, and without a second list. Entries stay in one collection and the derived values
+  are worked out **per obligation** rather than for the item as a whole, so a cylinder's
+  yearly inspection and five-yearly test each answer for themselves.
+
+  What identifies an obligation is what an entry says falls due next: `follow_up_type`,
+  or the entry's own `type` where that is not given. So an inspection sets the inspection
+  clock, a pressure test sets the test clock, and a repair that says
+  `follow_up_type: service` resets the service clock rather than inventing a "repair"
+  obligation — a repair is something that happened, not something owed. An entry with no
+  `valid_until` starts no clock at all.
+
+  That keeps `follow_up_type` doing the job it was added for, which was the *alternating*
+  case, while making the *concurrent* case work too. The two turned out to be the same
+  rule seen from either side: an entry always says when the next thing is due and what
+  that thing is.
+
+  A separate sequence item was the alternative and buys little. It would make a diver
+  choose a sequence before logging a service, and it puts a second level of nesting under
+  gear to hold what `type` already distinguishes.
+
+Kept with their identifiers so earlier discussion still resolves.
+
+- **DATA-56 — Fields that have a default rather than being absent.** *Settled:* a
+  `FieldDescription` may carry a **default**. A field with one never reads back absent:
+  where nothing is written, the default is returned, and it is *usable*.
+
+  Nothing is stored to make that happen. The file stays as it was — a diver's gear does
+  not gain a `generic: false` it never had — so writing back is unchanged and a default
+  costs nothing on disk. `DATA-27` still holds: storage has exactly one absent state. The
+  default applies on the way out, which is where a reader would otherwise have to invent
+  one anyway, scattered and inconsistently.
+
+  `generic` on gear is the case that prompted it. Almost nothing in a diver's own logbook
+  is generic and almost everything in the supplied library is, so the library states
+  `true` and everything else says nothing and means `false`. Making every owner write
+  `generic: false` on every item would be noise in service of a distinction they never
+  think about.
+
+  **A default is only right where absent has no meaning of its own**, which is why this
+  is a property of a few fields rather than a habit. A flag is on or off, so absent is
+  merely unwritten. A missing `max_depth` is not zero — it is unknown, and defaulting it
+  would turn a gap into a false measurement, which is exactly the confusion `DATA-50`
+  exists to prevent. Give a field a default only when the alternative is every reader
+  guessing the same one.
+
+- **DATA-19 — How a region's extent is stored.** *Settled:* four numbers, named for the
+  edges they are — `west`, `east`, `south`, `north`. **`east` is the edge reached
+  travelling east from `west`**, so a box crossing the antimeridian has an `east`
+  numerically below its `west` and needs no explaining. Latitude does not wrap, so `north`
+  is always above `south`.
+
+  The names were `min_longitude` and friends first, and the rename is most of the answer.
+  Everywhere else in this model a `max_` prefix marks an *observed extreme* — `max_depth`
+  on a dive, and on a dive site — so a box edge borrowing it invited the same reading,
+  under which `min` above `max` genuinely is broken. Naming the edges for their compass
+  points says what they are and leaves nothing to correct.
+
+  The alternatives each bought less than they cost. A list of boxes removes the special
+  case from every consumer, but makes the common region — one box — a list of one, and
+  turns something legible into something awkward to write by hand, which the format
+  cannot afford. A west edge plus a width is unambiguous and arithmetic, but stops
+  reading as a bounding box to anyone editing the file and departs from how extents are
+  written everywhere else.
+
+  What remains of the rule has somewhere to live: it is a property of the field, so the
+  description carries it and the manual states it once, rather than each consumer
+  rediscovering it. Arithmetic still has to cope — a width is not `east - west` when the
+  box wraps — but that is now a calculation to get right rather than data that looks
+  wrong. And the extent feeds nothing: it places a region on a map and bounds it, and nothing derives from it or
+  references it, so a consumer that mishandles the wrap draws a wrong rectangle rather
+  than producing a wrong number.
+
+  The failure it guards against is worth naming, because it is the kind that passes
+  review: treating a wrapped box as ordinary yields the *inverse* region — a box around
+  the rest of the world — which looks like working code and is wrong only where the date
+  line is crossed. The supplied regions carry three such cases, and `testdata/cousteau`
+  one more, deliberately.
+
+- **DATA-25 — Where suggested values come from.** *Settled:* two sources, joined above
+  this layer. The **`FieldDescription` carries the presets**, written with the field like
+  its type and its unit. The **Universe gathers what is already in use** from the loaded
+  items, and hands out the union of the two.
+
+  Not a library. A library ships reference data that items point at, and its ids are close
+  to permanent — a heavy promise for a list nothing references, where dropping a value
+  breaks nothing. `FEAT-16` remains a way to *extend* the presets later rather than to
+  replace where they live.
+
+  **A suggested vocabulary constrains nothing.** This is the whole of the difference from
+  a fixed set: a value outside a fixed set is unusable, by `DATA-24` and `DATA-32`, while
+  a value outside a suggested vocabulary is an ordinary value and always was. The
+  suggestion is help with typing, and belongs to the interface — see *Choosing among known
+  values* in [../ui/gui/doc.md](../ui/gui/doc.md), which is also why the
+  [tui](../ui/tui/doc.md) offers none of it and takes a plain string as typed.
+
+  The presets are still written into the model rather than left to the interface, because
+  a default that everyone is shown is what keeps a logbook self-consistent — the diver who
+  wrote `slipway` once should be offered it the second time instead of writing `slip way`.
+  Recording them is encouragement, not enforcement.
+
+- **DATA-45 — Whether conditions stay yes-or-no.** *Settled:* they become a six-step
+  fixed set, the same one for `current` and for `waves`: `none`, `very mild`, `mild`,
+  `moderate`, `hard`, `very hard`.
+
+  What decided it was import, not richness. UDDF records current as a six-value
+  enumeration — `no-current` through `very-hard-current` — so a flag would have collapsed
+  five distinct values into `true` at the moment a dive arrived, and no later widening
+  could recover them. A field that loses data on the way in is worse than one that is
+  merely coarse.
+
+  The steps are UDDF's, with the `-current` suffix dropped so the same scale serves waves,
+  and written as words with spaces as every other value in this model is. The mapping is
+  therefore one-to-one in both directions and needs no table. UDDF defines the steps by
+  what a diver can do rather than by speed, which is what makes them recordable from
+  memory after a dive; that reading is kept.
+
+  `waves` gets the same scale despite having nothing to import from — UDDF has no wave
+  element. One scale for both is easier to hold in mind than two, and `hard` reading a
+  little oddly of a sea surface is a smaller cost than a second vocabulary.
+
+- **DATA-52 — What a cylinder's volume means.** *Settled:* **water capacity, always.** A
+  cylinder's volume is how much water it would hold, in the volume unit of its file — a
+  twelve-litre is 12, and an American forty is a little under six.
+
+  An imperial size is a **name, not a quantity.** "40 cuft" describes the free gas the
+  cylinder delivers at its working pressure, which depends on that pressure and is a
+  different measurement from the volume of the vessel. It is written where names are
+  written — `model`, `description` — and never in a numeric field. That is why `cuft` is
+  absent from the unit set in `DATA-8`, and why adding it would be wrong rather than
+  merely unnecessary: it is not another way of writing a volume.
+
+  The field is `capacity` on a gear item, and a gas source's `volume` derives from it.
+  What a cylinder *displaces* is a separate figure and lives in `buoyancy` as
+  `displaced_volume` — the outside of the cylinder against the inside. Both were once
+  called volume, which is how they came to hold the same numbers. The name says its
+  dimension on purpose: a ship's `displacement` is a *mass*, and the two words would
+  otherwise collide across `Wreck` and `Buoyancy` with different dimensions behind them.
+  A ship keeps `displacement` because that is the term of art and `tonnage` means
+  something else — gross tonnage is a volume — so the field this project invented is the
+  one that moved. See the note under `DATA-52`
+  in the fixture and library data.
+
+  **Displacement is the item's own volume**: the material, plus any gas sealed inside it.
+  Water that floods freely in and out belongs to the sea, not to the item. This settles a
+  case that looked like a missing field — a wetsuit weighs more once soaked, and nothing
+  in `buoyancy` records that. Nothing needs to: taking on water adds mass and adds the
+  displacement of that same water, and the two cancel exactly, because what it absorbed is
+  the water it is floating in. The apparent gap was an accounting error, counting a
+  flooded suit's outer envelope as displacement while leaving the water inside it out.
+
+- **DATA-34 — Money as a unit.** *Settled:* there is no money. `price` is dropped from
+  gear and from maintenance, and currency is not a dimension — the unit set in `DATA-8`
+  holds only quantities with a fixed base.
+
+  Currency was the one thing in the model that could not obey the rules the rest of it
+  runs on. Every other dimension converts by a constant, which is what lets a value be
+  kept as written and converted at the point of use, and lets figures from files in
+  different units be added together at all. A hundred euro is not a fixed number of
+  dollars, and what it is depends on the day — so a total across fifteen years and three
+  currencies needs rates and dates from outside, which an offline logbook has nowhere to
+  get and no business storing.
+
+  Tracking what diving costs is a reasonable thing to want and a different application
+  from this one. Registered as rejected in [../../features.md](../../features.md) with
+  the reason, so it is not proposed again.
+
+- **DATA-32 — Whether a numeric range is enforced or advisory.** *Settled:* enforced, and
+  by the same rule as `DATA-24`. A value outside its range is kept on disk exactly as
+  written and read back **unusable** — a `rating` of 50 where the range is 1 to 10 is not
+  a rating. Nothing is refused and nothing is silently corrected.
+
+  The average that prompted the question then comes out right without anyone having to
+  remember why: `DATA-26` already has statistics skip what they cannot use, so an
+  out-of-range rating is excluded rather than dragging the mean upward. And because the
+  written value survives, an interface can say what it found instead of showing a blank —
+  which is the difference between a diver finding the typo and never learning of it.
+
+  One rule now covers both shapes of the same mistake. A range and a fixed set are the
+  same thing said two ways — a closed description of what a field may hold — so a value
+  outside either is unusable, and the reader needs no special case for numbers.
+
+- **DATA-53 — Whether a prefixed setting overrides a plain one.** *Settled:* the question
+  does not arise, because **granularity is fixed when a setting is defined** and a setting
+  exists at exactly one. Either there is a `desktop_window_size`, or the window size is
+  split per platform, never both — so a plain name and a prefixed one for the same
+  setting cannot coexist and there is nothing to resolve between.
+
+  A reader therefore always knows the whole name to ask for, and the three layers of
+  `DATA-9` apply to that one name. No second resolution order, and no falling back from
+  `linux_` to `desktop_` to plain.
+
+  In practice most settings will be unprefixed or `desktop_`/`phone_`. A platform prefix
+  is for something that only exists on that platform at all, not for a value that merely
+  happens to differ there.
+
+- **DATA-9 — Whether display preference lives in the logbook or the installation.**
+  *Settled:* both, in three layers, the first that answers winning:
+
+  1. **Local settings**, held by the installation and never written to the logbook.
+  2. **Settings in the logbook**, which travel with it and reach every device.
+  3. **Built-in defaults.**
+
+  So a preference set once in the logbook follows a diver to a new device, and an
+  installation can still depart from it without that departure leaking back into shared
+  data. A device that has never been told anything falls through to the logbook, and then
+  to the default, so nothing has to be configured before a logbook is usable.
+
+  Where a setting is *expected* to differ by device, the answer is not to rely on the
+  chain diverging. It carries a prefix naming what it applies to, and a device reads only
+  those addressed to it — so both can sit in the logbook and travel together without
+  fighting.
+
+  The prefixes are the [form factor](../../glossary.md) and the platform, spelled as the
+  directories under `lib/ui/gui/` are: `desktop_` and `phone_`; `windows_`, `mac_`,
+  `linux_`, `android_` and `iphone_`. A setting with no prefix applies anywhere.
+
+  That keeps one axis out of the lookup chain. A phone does not have to know what a
+  desktop would have chosen, and a setting meant for one platform cannot be reached by
+  another through any amount of falling through.
+
+  **This is a lookup chain, and units deliberately have none** — see *Units*, where a
+  declaration reaches no further than its own file. The two are not in conflict because
+  they govern different things. A unit decides what recorded data *means*, so an
+  invisible resolution order can silently corrupt it: the same number becomes a different
+  depth. A setting decides only what a diver is shown, so getting it from the wrong layer
+  is visible, harmless and immediately correctable. Ambiguity is cheap here and expensive
+  there.
+
+- **DATA-8 — The vocabulary of unit names.** *Settled:* short symbols, from a closed set,
+  written exactly as listed. These are what a diver writes and what the fixtures and
+  every supplied library already use, so nothing needed renumbering.
+
+  | Dimension | Names |
+  |---|---|
+  | length | `m` `ft` |
+  | mass | `kg` `lb` |
+  | time | `s` `min` `h` |
+  | temperature | `C` `F` `K` |
+  | volume | `l` `m3` |
+  | pressure | `bar` `psi` `Pa` |
+  | angle | `deg` |
+  | density | `kg/m3` |
+
+  The first of each is the default. Case is part of the name: `C` is Celsius and `K` is
+  kelvin, `Pa` is the pascal, and none can be written the other way round. Cubic metres
+  are `m3`, since nothing here carries a superscript, and a compound name divides with a
+  slash: `kg/m3`.
+
+  **Density is a dimension like any other**, keyed `density` in a `units` block and
+  defaulting to `kg/m3`. It has one name because one is all anyone writes — water is 1000
+  to 1035 and every source quotes it that way — but it is in the table rather than fixed
+  in prose, so the unit of a density comes from the same place as the unit of a depth. A
+  second spelling was rejected rather than forgotten: `g/cm3` writes the same water as
+  1.025, and two spellings a thousand apart is exactly the confusion this set exists to
+  prevent.
+
+  **What a diver writes decides the default, not the set.** `l` for litre is kept over the
+  `L` the SI brochure permits because `l` is what divers write — the ambiguity with `1` is
+  a display concern, and every place the application shows a unit can choose its own
+  glyph. That is an argument about spelling and about which name comes first; it is not a
+  reason to refuse a valid unit for a dimension the model already carries. `m3` and `Pa`
+  are valid and are in (`DATA-61`), even though no logbook will be written in them.
+
+  **An unrecognised name makes every number in that file unusable**, in the sense
+  `DATA-50` settles — not absent, and not refused. The file still opens, everything
+  non-numeric in it still reads, and the interface can name the unit it did not know. A
+  fallback to the default was rejected: a depth written in feet and read as metres is
+  silently wrong by a factor of three, which is worse than being told nothing is legible.
+
+  That blast radius is the reason to be generous now. One typo costs a whole file, and a
+  name added in a later version has the same effect on every version before it, so the
+  imperial units are in from the start rather than waiting to be needed.
+- **DATA-51 — Whether typed accessors exist, and for which fields.** *Settled:* three
+  ways in, and not one of them is per field.
+
+  - **The raw mapping.** Every field as it was parsed, by name, untyped. Writing back
+    uses this, and it is deliberately wider than the description: a field this version
+    does not recognise lives here and nowhere else, which is what lets it survive a round
+    trip.
+  - **A checked read**, accepting only names the `ItemDescription` carries. This is what
+    the logic layer uses. A name the description does not know is a fault in the code,
+    not in the data, and is reported as one — which is the distinction that makes a
+    misspelt field name findable rather than a silent absent.
+  - **Typed convenience methods** — `getInt`, `getText`, `getDate` and the rest — which
+    look the field up in the description, confirm it is declared as that kind, and hand
+    back the three states of `DATA-50` with the value already typed. A caller asking for
+    the wrong kind is told so rather than given a bad cast.
+
+  There is one method per kind of value, about ten of them, rather than an accessor per
+  field across eight types — so the per-field surface the description design removed does
+  not come back. Nothing here names a field, so this layer still knows nothing about
+  diving, and the three-state result is unwrapped once per call site instead of being
+  rebuilt by hand at each one.
+
+- **DATA-50 — What reading a field gives back.** *Settled:* three states, in one result
+  type — **absent**, **usable** with the value, or **unusable** with what was written and
+  why. A nullable value would collapse absent and unusable into one answer, and those are
+  the two a diver most needs told apart: nothing recorded, against something recorded
+  that this version cannot use. Every reader has to handle all three, which is the point
+  rather than the cost — the question is asked at each use instead of being forgotten
+  once, centrally.
+
+  This fixes more than one signature. It is what a derivation returns, so `DATA-26`
+  propagation is mechanical: a derivation whose input is unusable is unusable, and one
+  whose input is absent is absent. It is what `GUI-8` renders, so an empty cell and a
+  broken one stop looking alike. And a derivation that declares which fields it reads
+  need not carry the propagation itself — the reader resolves the inputs, short-circuits,
+  and calls the arithmetic only when every input is usable.
+- **DATA-24 — What happens to a value outside a fixed set.** *Settled by `DATA-50`:* it is
+  kept on disk exactly as written and read back as **unusable**, never as absent. That
+  covers both cases the question named — `brackish` typed by hand, and a value a newer
+  version wrote that this one has not heard of — without refusing the file and without
+  losing the meaning silently. What was written stays available, so an interface can say
+  what it found rather than showing a blank.
+
+- **DATA-49 — Where a derived value's computation is named.** *Settled by moving the
+  descriptions:* a description declares a field derived and carries the computation, and
+  both live in the logic layer. There is nothing to register across a boundary and no
+  special case for `deco` — see *Where the descriptions live*.
+
+- **DATA-12 — What a certification item is.** *Settled:* the qualification itself —
+  an agency's open water award — which a library supplies. A person's holding of one
+  is recorded separately, by a *course* owned by that person.
+- **DATA-15 — A proposal cannot be a function of the item alone.** *Settled:* it can.
+  The item proposes a base from its own data; the collection appends `#<index>` when
+  that base is taken.
+- **DATA-16 — Whether an index is always present or only added on a clash.** *Settled:*
+  *Settled:* per item type. Dives always carry one; everything else omits index zero
+  and indexes only on a genuine clash.
+- **DATA-14 — Whether regions nest.** *Settled:* they do, and a region may have
+  several parents, so the structure is a graph rather than a tree.
+- **DATA-18 — Which ancestry to show.** *Relocated:* a presentation question, not a
+  data one. Now `GUI-7`.
+- **DATA-26 — How an unusable value propagates.** *Settled:* propagate by default, since a
+  value built on an unusable one cannot be trusted. Statistics across many items are
+  the exception and skip what they cannot use. Anything else is decided case by case.
+- **DATA-27 — Whether absent has more than one meaning.** *Settled:* no. There is one
+  absent state. Storing the distinction would clutter every item, and deriving it is
+  more dangerous than useful.
+- **DATA-22 — Whether derived values are cached.** *Settled:* not by default. Caching
+  is an implementation matter and is avoided unless performance demands it, and used
+  carefully where it is.
+- **DATA-28 — Whether an owned item can be singular.** *Settled:* yes. What form a
+  person's health grouping takes is a separate question — `DATA-31`.
+- **DATA-29 — Derivations that depend on the current date.** *Settled:* no special
+  handling. Derived values are never stored, so a value that depends on today never
+  reaches a file, and two installations showing a different `days_left` are both right
+  rather than in conflict. With caching avoided by default, staleness does not arise.
+- **DATA-30 — Sensitive and third-party data in a logbook that leaves the device.** *Settled:*
+  *Settled:* the user's decision. Nothing is withheld from a copy that leaves the
+  device; a logbook holds what its owner chose to record, which in practice is this
+  kind of detail about themselves.
+- **DATA-31 — How a group of fields is expressed.** *Settled:* as a singular owned
+  item, nested on disk. Grouping and prominence are the same thing, and both follow
+  from the stored shape. A person's health details are one such item.
+- **DATA-33 — What an organisation is.** *Settled:* a plain string, for now. Turning it
+  into a reference later would let an agency carry an address or a website, and is
+  worth revisiting only if that is wanted.
+- **DATA-13 — Which way a dive trip and its dives point.** *Settled:* the dive names
+  its trip and the trip derives its list. See *A relationship is stored once*.
+- **DATA-37 — Whether a medical is one item or a history.** *Settled:* one item. A
+  medical has no validity of its own, so it takes no part in renewal, and the reason to
+  keep a history went with it.
+- **DATA-40 — Which two of start, end and duration are stored.** *Settled:* none of
+  them, where a primary profile exists — all five time fields derive from it. Failing
+  that, `start_date` and the two times are given and `end_date` and `duration`
+  follow. All five are overrideable.
+- **DATA-41 — Whether a dive records a time zone.** *Settled:* not for now.
+- **DATA-42 — Two things called index.** *Settled:* the field is `dive_number`. The
+  number in an id keeps its own meaning and is never confused with it.
+- **DATA-43 — What "required" means where nothing is enforced.** *Settled:* nothing is
+  mandatory in storage, `start_date` included. A proposal only runs when an item is
+  created, so a file missing a date keeps the id it already has. Making sure a new
+  dive has a date to propose from is the interface's job.
+- **DATA-44 — A dive has no `name`.** *Settled:* it has one, derived as the start date
+  and the dive's number within that day. Every referenceable type therefore has a
+  `name`, and every id is proposed from one, dives included.
+- **DATA-10 — Whether dates, times and durations participate in unit scoping.** *Settled:*
+  *Settled:* dates and times do not — one notation, everywhere. Durations do, being
+  quantities with the time dimension.
+- **DATA-39 — How a duration is written.** *Settled:* as a number of seconds, and so
+  not a distinct kind of value at all. The only duration left is a dive's, which the
+  interface formats for reading; a maintenance item now states a `valid_until` date
+  outright rather than a length of time.
+- **DATA-48 — Whether a library can span several files.** *Settled:* no. A name is one
+  file. The supplied regions are named one continent at a time, and a logbook lists the
+  ones it wants.
+- **DATA-47 — Whether a library file declares the type of its items.** *Settled:* it
+  does not. The logbook names its libraries by type, so a library file stays an ordinary
+  id-keyed map and holds exactly one type.
+- **DATA-46 — Reserved keys in a file holding several items.** *Settled:* `units` is
+  reserved. In a file keyed by id it declares the units for that file, and no
+  item may be called `units`. Every library file carries one.
+- **DATA-3 — Where do items live?** *Settled:* in this layer, with the items.
+- **DATA-20 — Which layer owns the loaded items.** *Settled:* this one, as
+  an **`ItemSet`**. Structural validation belongs with it; domain rules do not, and
+  live in logic behind the **Universe** — see [../logic/doc.md](../logic/doc.md).
+  *Amended:* the set and the machinery stay here, but the descriptions it is constructed
+  with moved to logic — see *Where the descriptions live*. The name was `Items` when
+  this was settled, and changed with `Item`.
+- **DATA-21 — What an item can do without a set of items.** *Settled:* it never has
+  to. An import is read into its own set, so candidate items are complete and
+  resolvable before anything is merged.
+- **DATA-23 — Whether unsaved work is a second set of items.** *Settled:* yes. The
+  logic layer's **Universe** holds whichever sets are open, and reconciliation compares
+  two of them.
+- **DATA-4 — Query surface.** *Settled:* resolve an id, list a type, and nothing
+  else. Filtering and sorting happen above, in memory; items navigate themselves.
+- **DATA-5 — Read model.** *Settled:* whole items, of the type asked for, fully
+  constructed when the data is read. No summaries and no partial items.
+- **DATA-6 — Change notification.** *Settled:* none. Nothing is announced and nothing
+  subscribes; a view that may be out of date asks again.
+- **DATA-7 — Where migration runs.** *Settled:* once, when the logbook is opened.
+  Nothing above ever meets an older shape.
+- **DATA-1 — Whether "owned" also means physically inline.** *Settled:* for a profile,
+  yes. It sits in the dive and is read with it. The scale is manageable provided samples
+  are held columnar in memory rather than as an object per sample; the difference between
+  those two is roughly tenfold, and larger than the choice of where to put the file.
+- **DATA-2 — Whether a dive's number is derived or primary.** *Settled:* primary. The
+  manual records it as a field the diver writes — their own numbering, kept or not as
+  they please — precisely so that finding a forgotten dive renumbers nothing.
+- **DATA-11 — Angles and coordinates.** *Settled:* degrees, and they take part in unit
+  scoping like any other quantity. `angle` is the dimension; every supplied library
+  declares `deg`.

@@ -1,0 +1,1083 @@
+{
+  "units": {
+    "angle": "deg"
+  },
+  "north_sea": {
+    "name": "North Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe"
+    ],
+    "west": -4,
+    "east": 9,
+    "south": 51,
+    "north": 61,
+    "remarks": "Shallow, tidal and worked hard for a thousand years, which is why the seabed is littered with things that used to float. Visibility is measured in optimism."
+  },
+  "baltic_sea": {
+    "name": "Baltic Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe"
+    ],
+    "west": 9.4,
+    "east": 30.3,
+    "south": 53.6,
+    "north": 66,
+    "remarks": "Brackish, cold, and short of the shipworm that eats timber everywhere else. Wooden wrecks survive here with their masts still standing, which happens nowhere else on Earth."
+  },
+  "celtic_sea": {
+    "name": "Celtic Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe"
+    ],
+    "west": -12,
+    "east": -5,
+    "south": 48,
+    "north": 52,
+    "remarks": "Where Atlantic swell arrives with nothing having slowed it down. The wrecks are excellent and the weather window is short."
+  },
+  "irish_sea": {
+    "name": "Irish Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe"
+    ],
+    "west": -6.5,
+    "east": -2.7,
+    "south": 51.4,
+    "north": 55.1,
+    "remarks": "Tidal streams run hard through the narrows, which makes for a fine drift dive or a serious problem, depending entirely on the timing."
+  },
+  "norwegian_sea": {
+    "name": "Norwegian Sea",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe"
+    ],
+    "west": -8,
+    "east": 20,
+    "south": 62,
+    "north": 76,
+    "remarks": "Deep and cold, kept ice-free by the last of the Gulf Stream. Without that, this coast would freeze like Labrador at the same latitude."
+  },
+  "barents_sea": {
+    "name": "Barents Sea",
+    "category": "sea",
+    "parents": [
+      "@arctic_ocean",
+      "@europe"
+    ],
+    "west": 20,
+    "east": 60,
+    "south": 68,
+    "north": 80,
+    "remarks": "Arctic water over a shallow shelf, and the ice edge moving north and south across it with the season."
+  },
+  "white_sea": {
+    "name": "White Sea",
+    "category": "sea",
+    "parents": [
+      "@arctic_ocean",
+      "@europe"
+    ],
+    "west": 32,
+    "east": 45,
+    "south": 63.7,
+    "north": 68.9,
+    "remarks": "Frozen half the year and dived through holes cut in the lid, by people who have thought about it properly."
+  },
+  "english_channel": {
+    "name": "English Channel",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe"
+    ],
+    "west": -5.5,
+    "east": 2,
+    "south": 48.5,
+    "north": 51.2,
+    "remarks": "The busiest shipping lane in the world, and one of the great wreck cemeteries as a direct result. Slack water is not a suggestion here."
+  },
+  "bay_of_biscay": {
+    "name": "Bay of Biscay",
+    "category": "sea",
+    "parents": [
+      "@atlantic_ocean",
+      "@europe"
+    ],
+    "west": -10,
+    "east": -1,
+    "south": 43.3,
+    "north": 48.5,
+    "remarks": "Atlantic swell meets a shelf that shoals fast, and the sea stands up. Sailors have strong opinions about it."
+  },
+  "adriatic_sea": {
+    "name": "Adriatic Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 12,
+    "east": 20,
+    "south": 39.5,
+    "north": 45.8,
+    "remarks": "Sheltered, shallow and remarkably clear along the eastern shore, where limestone karst drops straight into it without troubling to make a beach first."
+  },
+  "aegean_sea": {
+    "name": "Aegean Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 22.5,
+    "east": 28,
+    "south": 35,
+    "north": 41,
+    "remarks": "Several thousand islands, and underneath them a great deal of antiquity that archaeologists would very much prefer divers admired without touching."
+  },
+  "ionian_sea": {
+    "name": "Ionian Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 15,
+    "east": 22,
+    "south": 34.5,
+    "north": 40,
+    "remarks": "Holds the deepest water in the Mediterranean \u2014 a little over five kilometres down in the Calypso Deep, which no diver will ever see."
+  },
+  "tyrrhenian_sea": {
+    "name": "Tyrrhenian Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 9,
+    "east": 16,
+    "south": 38,
+    "north": 44,
+    "remarks": "Volcanic underneath, with seamounts rising out of deep water and the occasional stream of bubbles coming up through the sand to prove it."
+  },
+  "ligurian_sea": {
+    "name": "Ligurian Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 7,
+    "east": 10.5,
+    "south": 43,
+    "north": 44.5,
+    "remarks": "Deep water unusually close to shore, and a protected corridor that fin whales commute along every summer."
+  },
+  "balearic_sea": {
+    "name": "Balearic Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 0,
+    "east": 5,
+    "south": 38,
+    "north": 42,
+    "remarks": "Seagrass meadows the length of the coast. One connected patch off Formentera is reckoned to be tens of thousands of years old, which makes it a contender for the oldest living thing anywhere."
+  },
+  "alboran_sea": {
+    "name": "Alboran Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": -5.6,
+    "east": -1.5,
+    "south": 35,
+    "north": 37,
+    "remarks": "The Atlantic pours in here, so the water is colder, richer and far better stocked than the Mediterranean manages elsewhere."
+  },
+  "strait_of_gibraltar": {
+    "name": "Strait of Gibraltar",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea",
+      "@atlantic_ocean"
+    ],
+    "west": -6,
+    "east": -5.2,
+    "south": 35.8,
+    "north": 36.2,
+    "remarks": "Fourteen kilometres wide, and the only thing stopping the Mediterranean evaporating. It has managed to close before, and the sea did exactly that."
+  },
+  "black_sea": {
+    "name": "Black Sea",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 27.4,
+    "east": 42,
+    "south": 40.9,
+    "north": 47.3,
+    "remarks": "Below roughly 150 metres there is no oxygen whatsoever, so nothing decays. Ancient ships sit down there intact with their masts up, waiting for someone with a rebreather and an extremely good reason."
+  },
+  "sea_of_azov": {
+    "name": "Sea of Azov",
+    "category": "sea",
+    "parents": [
+      "@black_sea"
+    ],
+    "west": 34.8,
+    "east": 39.3,
+    "south": 45.2,
+    "north": 47.3,
+    "remarks": "The shallowest sea on Earth, averaging about seven metres. A tall diver could stand up in a surprising amount of it."
+  },
+  "sea_of_marmara": {
+    "name": "Sea of Marmara",
+    "category": "sea",
+    "parents": [
+      "@mediterranean_sea"
+    ],
+    "west": 26.5,
+    "east": 30,
+    "south": 40.3,
+    "north": 41.2,
+    "remarks": "The waiting room between Aegean and Black Sea, with two currents running through it in opposite directions at different depths."
+  },
+  "skagerrak": {
+    "name": "Skagerrak",
+    "category": "sea",
+    "parents": [
+      "@north_sea"
+    ],
+    "west": 7,
+    "east": 12,
+    "south": 57,
+    "north": 59.5,
+    "remarks": "Where brackish Baltic outflow meets North Sea salt. The boundary between them is sharp enough to see from below, like swimming under a pane of glass."
+  },
+  "kattegat": {
+    "name": "Kattegat",
+    "category": "sea",
+    "parents": [
+      "@north_sea",
+      "@baltic_sea"
+    ],
+    "west": 10,
+    "east": 13,
+    "south": 55.5,
+    "north": 57.8,
+    "remarks": "Shallow, busy, and the corridor every ship entering the Baltic must thread. The wrecks reflect that."
+  },
+  "wadden_sea": {
+    "name": "Wadden Sea",
+    "category": "sea",
+    "parents": [
+      "@north_sea"
+    ],
+    "west": 4.5,
+    "east": 9,
+    "south": 53,
+    "north": 55.5,
+    "remarks": "The largest unbroken system of tidal flats in the world. Twice a day a good deal of it stops being sea altogether."
+  },
+  "canary_islands": {
+    "name": "Canary Islands",
+    "category": "area",
+    "parents": [
+      "@spain",
+      "@atlantic_ocean",
+      "@africa"
+    ],
+    "west": -18.2,
+    "east": -13.4,
+    "south": 27.6,
+    "north": 29.5,
+    "remarks": "Spanish by government, African by geography, and volcanic by disposition. Deep water arrives close inshore and the diving stays comfortable through the winter."
+  },
+  "azores": {
+    "name": "Azores",
+    "category": "area",
+    "parents": [
+      "@portugal",
+      "@atlantic_ocean"
+    ],
+    "west": -31.3,
+    "east": -25,
+    "south": 36.9,
+    "north": 39.7,
+    "remarks": "Nine islands perched on the Mid-Atlantic Ridge, a long way from anything. The seamounts nearby collect everything large that passes."
+  },
+  "madeira": {
+    "name": "Madeira",
+    "category": "area",
+    "parents": [
+      "@portugal",
+      "@atlantic_ocean"
+    ],
+    "west": -17.3,
+    "east": -16.3,
+    "south": 32.6,
+    "north": 33.1,
+    "remarks": "The seabed falls away almost immediately offshore, so deep water is a short boat ride rather than an expedition."
+  },
+  "balearic_islands": {
+    "name": "Balearic Islands",
+    "category": "area",
+    "parents": [
+      "@spain",
+      "@balearic_sea"
+    ],
+    "west": 1.1,
+    "east": 4.4,
+    "south": 38.6,
+    "north": 40.1,
+    "remarks": "Clear water, seagrass and caves \u2014 and where a sizeable fraction of Europe first breathed underwater."
+  },
+  "faroe_islands": {
+    "name": "Faroe Islands",
+    "category": "area",
+    "parents": [
+      "@denmark",
+      "@norwegian_sea"
+    ],
+    "west": -7.7,
+    "east": -6.2,
+    "south": 61.3,
+    "north": 62.4,
+    "remarks": "Eighteen islands, considerably more sheep than people, and tidal streams between them that do not negotiate."
+  },
+  "shetland_islands": {
+    "name": "Shetland Islands",
+    "category": "area",
+    "parents": [
+      "@united_kingdom",
+      "@north_sea"
+    ],
+    "west": -1.8,
+    "east": -0.7,
+    "south": 59.8,
+    "north": 60.9,
+    "remarks": "Closer to Bergen than to Edinburgh. Cold, clear, and thoroughly furnished with wrecks."
+  },
+  "orkney_islands": {
+    "name": "Orkney Islands",
+    "category": "area",
+    "parents": [
+      "@united_kingdom",
+      "@north_sea"
+    ],
+    "west": -3.5,
+    "east": -2.3,
+    "south": 58.7,
+    "north": 59.4,
+    "remarks": "Scapa Flow sits in the middle: a natural harbour where a scuttled German fleet went down in 1919, and a good deal of it is still there to swim over."
+  },
+  "channel_islands": {
+    "name": "Channel Islands",
+    "category": "area",
+    "parents": [
+      "@united_kingdom",
+      "@english_channel"
+    ],
+    "west": -2.7,
+    "east": -1.9,
+    "south": 49.1,
+    "north": 49.8,
+    "remarks": "The tidal range here is among the largest anywhere \u2014 over ten metres on springs \u2014 which rearranges a dive site between one slack water and the next."
+  },
+  "crete": {
+    "name": "Crete",
+    "category": "area",
+    "parents": [
+      "@greece",
+      "@mediterranean_sea"
+    ],
+    "west": 23.4,
+    "east": 26.4,
+    "south": 34.8,
+    "north": 35.7,
+    "remarks": "The southern boundary of the Aegean, with caves, walls and rather more history in the shallows than any one diver can get through."
+  },
+  "sicily": {
+    "name": "Sicily",
+    "category": "area",
+    "parents": [
+      "@italy",
+      "@mediterranean_sea"
+    ],
+    "west": 12.4,
+    "east": 15.7,
+    "south": 36.6,
+    "north": 38.3,
+    "remarks": "Volcanic, and ringed by water deep enough to matter. Etna is in view from most of the northern sites, which lends the surface interval something to look at."
+  },
+  "sardinia": {
+    "name": "Sardinia",
+    "category": "area",
+    "parents": [
+      "@italy",
+      "@mediterranean_sea"
+    ],
+    "west": 8.1,
+    "east": 9.9,
+    "south": 38.8,
+    "north": 41.3,
+    "remarks": "Granite coast, clear water, and some of the better cave diving the Mediterranean has to offer."
+  },
+  "corsica": {
+    "name": "Corsica",
+    "category": "area",
+    "parents": [
+      "@france",
+      "@ligurian_sea"
+    ],
+    "west": 8.5,
+    "east": 9.6,
+    "south": 41.3,
+    "north": 43.1,
+    "remarks": "A mountain range that happens to be an island. The reserve on its north-western corner shows what the Mediterranean looked like before everyone arrived."
+  },
+  "cyclades": {
+    "name": "Cyclades",
+    "category": "area",
+    "parents": [
+      "@greece",
+      "@aegean_sea"
+    ],
+    "west": 24,
+    "east": 26.6,
+    "south": 36.3,
+    "north": 38,
+    "remarks": "A ring of islands around a sunken volcanic caldera, which is a more dramatic way of saying the water is deep and the walls are steep."
+  },
+  "dodecanese": {
+    "name": "Dodecanese",
+    "category": "area",
+    "parents": [
+      "@greece",
+      "@aegean_sea"
+    ],
+    "west": 26,
+    "east": 28.3,
+    "south": 35.4,
+    "north": 37.7,
+    "remarks": "Twelve islands by name and rather more by count, strung along the Turkish coast."
+  },
+  "hebrides": {
+    "name": "Hebrides",
+    "category": "area",
+    "parents": [
+      "@united_kingdom",
+      "@atlantic_ocean"
+    ],
+    "west": -7.7,
+    "east": -5.7,
+    "south": 56.4,
+    "north": 58.5,
+    "remarks": "Atlantic water, kelp forests and basking sharks in season \u2014 cold, clear, and greener than anything further south."
+  },
+  "albania": {
+    "name": "Albania",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@adriatic_sea",
+      "@ionian_sea"
+    ],
+    "west": 19.3,
+    "east": 21.1,
+    "south": 39.6,
+    "north": 42.7,
+    "remarks": "A coast that was closed to outsiders for decades and is consequently in better condition than most of the Mediterranean."
+  },
+  "andorra": {
+    "name": "Andorra",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 1.4,
+    "east": 1.8,
+    "south": 42.4,
+    "north": 42.7,
+    "remarks": "Landlocked, mountainous, and the nearest thing to diving is a very cold lake."
+  },
+  "austria": {
+    "name": "Austria",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 9.5,
+    "east": 17.2,
+    "south": 46.4,
+    "north": 49,
+    "remarks": "No coast at all, but a supply of alpine lakes so clear and so cold that people dive them on purpose."
+  },
+  "belarus": {
+    "name": "Belarus",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 23.2,
+    "east": 32.8,
+    "south": 51.3,
+    "north": 56.2,
+    "remarks": "Landlocked, flat, and thoroughly supplied with lakes and marshland."
+  },
+  "belgium": {
+    "name": "Belgium",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@north_sea"
+    ],
+    "west": 2.5,
+    "east": 6.4,
+    "south": 49.5,
+    "north": 51.5,
+    "remarks": "Sixty-odd kilometres of coast, most of it sand. The serious diving happens in flooded quarries inland, and the country is unusually good at those."
+  },
+  "bosnia_and_herzegovina": {
+    "name": "Bosnia and Herzegovina",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@adriatic_sea"
+    ],
+    "west": 15.7,
+    "east": 19.6,
+    "south": 42.5,
+    "north": 45.3,
+    "remarks": "Twenty kilometres of coastline, which is enough to count and not enough to plan a trip around."
+  },
+  "bulgaria": {
+    "name": "Bulgaria",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@black_sea"
+    ],
+    "west": 22.4,
+    "east": 28.6,
+    "south": 41.2,
+    "north": 44.2,
+    "remarks": "Black Sea coast, with the anoxic layer sitting somewhere below the recreational limit and everything above it perfectly ordinary."
+  },
+  "croatia": {
+    "name": "Croatia",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@adriatic_sea"
+    ],
+    "west": 13.5,
+    "east": 19.4,
+    "south": 42.4,
+    "north": 46.5,
+    "remarks": "More than a thousand islands and a karst coastline riddled with caves. Also a great deal of amphora, most of it firmly protected."
+  },
+  "cyprus": {
+    "name": "Cyprus",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@mediterranean_sea"
+    ],
+    "west": 32.3,
+    "east": 34.6,
+    "south": 34.6,
+    "north": 35.7,
+    "remarks": "Warm water into November, and a scuttled ferry lying upright in thirty metres that has become the island's whole diving economy."
+  },
+  "czechia": {
+    "name": "Czechia",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 12.1,
+    "east": 18.9,
+    "south": 48.6,
+    "north": 51.1,
+    "remarks": "Landlocked, and diving flooded quarries and sinkholes as a result. One of them descends past four hundred metres, which is a lot for a country with no sea."
+  },
+  "denmark": {
+    "name": "Denmark",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@north_sea",
+      "@baltic_sea"
+    ],
+    "west": 8,
+    "east": 15.2,
+    "south": 54.6,
+    "north": 57.8,
+    "remarks": "Four hundred islands, two seas of different salinity, and wrecks in the shallow water between them."
+  },
+  "estonia": {
+    "name": "Estonia",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@baltic_sea"
+    ],
+    "west": 21.8,
+    "east": 28.2,
+    "south": 57.5,
+    "north": 59.7,
+    "remarks": "Cold, brackish Baltic water, which is exactly the combination that preserves wooden ships."
+  },
+  "finland": {
+    "name": "Finland",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@baltic_sea"
+    ],
+    "west": 20.6,
+    "east": 31.6,
+    "south": 59.8,
+    "north": 70.1,
+    "remarks": "Something like a hundred and eighty thousand lakes, plus a Baltic coast. Ice diving is a normal winter activity rather than an eccentricity."
+  },
+  "france": {
+    "name": "France",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@atlantic_ocean",
+      "@mediterranean_sea",
+      "@english_channel"
+    ],
+    "west": -5,
+    "east": 9.6,
+    "south": 41.3,
+    "north": 51.1,
+    "remarks": "Atlantic on one side, Mediterranean on the other, Channel across the top, and a respectable stock of flooded quarries in between."
+  },
+  "germany": {
+    "name": "Germany",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@north_sea",
+      "@baltic_sea"
+    ],
+    "west": 5.9,
+    "east": 15.1,
+    "south": 47.3,
+    "north": 55.1,
+    "remarks": "Two coasts, neither warm, and an inland scene built almost entirely on quarries and gravel pits."
+  },
+  "greece": {
+    "name": "Greece",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@aegean_sea",
+      "@ionian_sea"
+    ],
+    "west": 19.4,
+    "east": 28.3,
+    "south": 34.8,
+    "north": 41.8,
+    "remarks": "Roughly six thousand islands, of which a couple of hundred are inhabited. Recreational diving was heavily restricted until 2005 to protect the antiquities, so the sites are less worn than the latitude suggests."
+  },
+  "hungary": {
+    "name": "Hungary",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 16.1,
+    "east": 22.9,
+    "south": 45.7,
+    "north": 48.6,
+    "remarks": "Landlocked, but sitting on thermal water. There is a flooded cave system beneath a hospital that divers visit at a steady twenty degrees."
+  },
+  "iceland": {
+    "name": "Iceland",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@atlantic_ocean"
+    ],
+    "west": -24.6,
+    "east": -13.5,
+    "south": 63.4,
+    "north": 66.6,
+    "remarks": "Sits astride the boundary between two plates. At Silfra the gap is filled with glacial meltwater filtered through lava for decades, and the visibility runs to a hundred metres."
+  },
+  "ireland": {
+    "name": "Ireland",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@atlantic_ocean",
+      "@irish_sea"
+    ],
+    "west": -10.5,
+    "east": -6,
+    "south": 51.4,
+    "north": 55.4,
+    "remarks": "Atlantic swell on the west coast, kelp, and basking sharks in early summer. The water never gets properly warm and nobody pretends otherwise."
+  },
+  "italy": {
+    "name": "Italy",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@mediterranean_sea",
+      "@adriatic_sea",
+      "@tyrrhenian_sea"
+    ],
+    "west": 6.6,
+    "east": 18.5,
+    "south": 36.6,
+    "north": 47.1,
+    "remarks": "Eight thousand kilometres of coast, several active volcanoes, and more sunken Roman cargo than anywhere else on the planet."
+  },
+  "latvia": {
+    "name": "Latvia",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@baltic_sea"
+    ],
+    "west": 21,
+    "east": 28.2,
+    "south": 55.7,
+    "north": 58.1,
+    "remarks": "Baltic coast, brackish and cold, with the usual dividend of intact timber wrecks."
+  },
+  "liechtenstein": {
+    "name": "Liechtenstein",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 9.5,
+    "east": 9.6,
+    "south": 47,
+    "north": 47.3,
+    "remarks": "One of the two doubly landlocked countries in the world: you must cross two borders to reach any sea at all."
+  },
+  "lithuania": {
+    "name": "Lithuania",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@baltic_sea"
+    ],
+    "west": 20.9,
+    "east": 26.9,
+    "south": 53.9,
+    "north": 56.5,
+    "remarks": "A short Baltic coast behind a long sand spit, and amber washing up on it after storms."
+  },
+  "luxembourg": {
+    "name": "Luxembourg",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 5.7,
+    "east": 6.5,
+    "south": 49.4,
+    "north": 50.2,
+    "remarks": "Landlocked and small, which has never stopped a national dive federation existing."
+  },
+  "malta": {
+    "name": "Malta",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@mediterranean_sea"
+    ],
+    "west": 14.1,
+    "east": 14.6,
+    "south": 35.8,
+    "north": 36.1,
+    "remarks": "Small, limestone, and almost entirely surrounded by water clear enough to see the bottom from the surface. Caverns, arches and deliberately sunk wrecks in convenient depths."
+  },
+  "moldova": {
+    "name": "Moldova",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 26.6,
+    "east": 30.2,
+    "south": 45.4,
+    "north": 48.5,
+    "remarks": "Landlocked, and known for wine cellars rather than anything underwater."
+  },
+  "monaco": {
+    "name": "Monaco",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@ligurian_sea"
+    ],
+    "west": 7.4,
+    "east": 7.4,
+    "south": 43.7,
+    "north": 43.8,
+    "remarks": "Two square kilometres, and the home of an oceanographic museum that Jacques Cousteau ran for thirty years."
+  },
+  "montenegro": {
+    "name": "Montenegro",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@adriatic_sea"
+    ],
+    "west": 18.4,
+    "east": 20.4,
+    "south": 41.8,
+    "north": 43.6,
+    "remarks": "The Bay of Kotor cuts deep inland between mountains, which makes for sheltered water and a submarine pen left over from Yugoslavia."
+  },
+  "netherlands": {
+    "name": "Netherlands",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@north_sea",
+      "@wadden_sea"
+    ],
+    "west": 3.3,
+    "east": 7.2,
+    "south": 50.7,
+    "north": 53.6,
+    "remarks": "A quarter of it lies below sea level and stays dry through continuous effort. The diving is tidal, estuarine and green, and the country produces divers entirely undeterred by any of that."
+  },
+  "north_macedonia": {
+    "name": "North Macedonia",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 20.4,
+    "east": 23.1,
+    "south": 40.8,
+    "north": 42.4,
+    "remarks": "Landlocked, but Lake Ohrid is one of the oldest and deepest lakes in Europe, with species found nowhere else."
+  },
+  "norway": {
+    "name": "Norway",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@norwegian_sea",
+      "@north_sea",
+      "@barents_sea"
+    ],
+    "west": 4.6,
+    "east": 31.1,
+    "south": 57.9,
+    "north": 71.2,
+    "remarks": "Fjords that go straight down, cold clear water, and orca following the herring into the north every winter."
+  },
+  "poland": {
+    "name": "Poland",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@baltic_sea"
+    ],
+    "west": 14.1,
+    "east": 24.1,
+    "south": 49,
+    "north": 54.9,
+    "remarks": "Baltic coast with cold brackish water, and a good deal of twentieth-century history on the seabed."
+  },
+  "portugal": {
+    "name": "Portugal",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@atlantic_ocean"
+    ],
+    "west": -9.5,
+    "east": -6.2,
+    "south": 36.9,
+    "north": 42.2,
+    "remarks": "Atlantic all the way down, with upwelling that keeps the water cold, green and extremely well fed."
+  },
+  "romania": {
+    "name": "Romania",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@black_sea"
+    ],
+    "west": 20.3,
+    "east": 29.7,
+    "south": 43.6,
+    "north": 48.3,
+    "remarks": "Black Sea coast where the Danube arrives, bringing silt and fresh water with it."
+  },
+  "russia": {
+    "name": "Russia",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@asia",
+      "@barents_sea",
+      "@baltic_sea",
+      "@black_sea",
+      "@arctic_ocean",
+      "@pacific_ocean"
+    ],
+    "west": 19.6,
+    "east": 180,
+    "south": 41.2,
+    "north": 81.9,
+    "remarks": "Spans two continents and eleven time zones, and touches three oceans. Lake Baikal alone holds around a fifth of the world's unfrozen fresh water, and is dived through the ice."
+  },
+  "san_marino": {
+    "name": "San Marino",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 12.4,
+    "east": 12.5,
+    "south": 43.9,
+    "north": 44,
+    "remarks": "Sixty square kilometres on a mountain, landlocked inside Italy."
+  },
+  "serbia": {
+    "name": "Serbia",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 18.8,
+    "east": 23,
+    "south": 42.2,
+    "north": 46.2,
+    "remarks": "Landlocked since Montenegro left, and diving the Danube and its lakes."
+  },
+  "slovakia": {
+    "name": "Slovakia",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 16.8,
+    "east": 22.6,
+    "south": 47.7,
+    "north": 49.6,
+    "remarks": "Landlocked, with flooded quarries and a thermal cave lake that stays warm all winter."
+  },
+  "slovenia": {
+    "name": "Slovenia",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@adriatic_sea"
+    ],
+    "west": 13.4,
+    "east": 16.6,
+    "south": 45.4,
+    "north": 46.9,
+    "remarks": "Forty-odd kilometres of Adriatic coast, and a karst underground so extensive it gave its name to the landform."
+  },
+  "spain": {
+    "name": "Spain",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@atlantic_ocean",
+      "@mediterranean_sea",
+      "@balearic_sea"
+    ],
+    "west": -9.3,
+    "east": 3.3,
+    "south": 36,
+    "north": 43.8,
+    "remarks": "Two seas, an ocean, and two archipelagos in different hemispheres of weather. The Medes Islands reserve is what the Costa Brava looked like before the tourists."
+  },
+  "sweden": {
+    "name": "Sweden",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@baltic_sea",
+      "@kattegat"
+    ],
+    "west": 11.1,
+    "east": 24.2,
+    "south": 55.3,
+    "north": 69.1,
+    "remarks": "Baltic on one side, Kattegat on the other, and a hundred thousand lakes in between. The brackish water keeps the wrecks and the cold keeps the visibility."
+  },
+  "switzerland": {
+    "name": "Switzerland",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 5.9,
+    "east": 10.5,
+    "south": 45.8,
+    "north": 47.8,
+    "remarks": "Landlocked, and diving alpine lakes at altitude \u2014 which is a genuine decompression problem, since the surface you are ascending to is already well above sea level."
+  },
+  "ukraine": {
+    "name": "Ukraine",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@black_sea",
+      "@sea_of_azov"
+    ],
+    "west": 22.1,
+    "east": 40.2,
+    "south": 44.4,
+    "north": 52.4,
+    "remarks": "Black Sea and the Sea of Azov, the latter shallow enough to be more of a very large lagoon."
+  },
+  "united_kingdom": {
+    "name": "United Kingdom",
+    "category": "country",
+    "parents": [
+      "@europe",
+      "@north_sea",
+      "@english_channel",
+      "@celtic_sea",
+      "@irish_sea"
+    ],
+    "west": -8.6,
+    "east": 1.8,
+    "south": 49.9,
+    "north": 60.9,
+    "remarks": "Cold, tidal and green, with a density of wrecks that is difficult to overstate. Scapa Flow alone has a scuttled battle fleet in it."
+  },
+  "vatican_city": {
+    "name": "Vatican City",
+    "category": "country",
+    "parents": [
+      "@europe"
+    ],
+    "west": 12.4,
+    "east": 12.5,
+    "south": 41.9,
+    "north": 41.9,
+    "remarks": "The smallest country in the world, at about half a square kilometre, and the furthest from any diving of anywhere in this list."
+  }
+}

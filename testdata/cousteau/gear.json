@@ -1,0 +1,223 @@
+{
+  "units": {
+    "volume": "l",
+    "pressure": "bar"
+  },
+  "my_drysuit": {
+    "name": "My drysuit",
+    "brand": "Fjordline",
+    "model": "Trilaminate 200",
+    "serial": "FL-2200-4471",
+    "category": "suit",
+    "kind": "drysuit",
+    "description": "Trilaminate, with a warm undersuit for winter.",
+    "buoyancy": {
+      "mass": 4.6,
+      "displaced_volume": 6.5,
+      "compressibility": 0.02,
+      "lift_volume": 11.0
+    },
+    "maintenances": {
+      "k1": {
+        "type": "service",
+        "date": "2024-11-05",
+        "valid_until": "2025-11-05",
+        "follow_up_type": "visual inspection",
+        "operator": "@northshore_diving",
+        "remarks": "Neck seal replaced."
+      },
+      "k2": {
+        "type": "visual inspection",
+        "date": "2025-11-12",
+        "valid_until": "2026-11-12",
+        "follow_up_type": "service",
+        "operator": "@northshore_diving"
+      }
+    }
+  },
+  "summer_wetsuit": {
+    "name": "Summer wetsuit",
+    "brand": "Calanque",
+    "model": "5mm",
+    "category": "suit",
+    "kind": "wetsuit",
+    "buoyancy": {
+      "mass": 2.8,
+      "displaced_volume": 6.0,
+      "compressibility": 0.11
+    }
+  },
+  "backplate_and_wing": {
+    "name": "Backplate and wing",
+    "brand": "Halyard",
+    "model": "Steel 30",
+    "serial": "HW-30-8812",
+    "category": "BCD",
+    "kind": "wing",
+    "buoyancy": {
+      "mass": 5.4,
+      "displaced_volume": 4.0,
+      "lift_volume": 30.0
+    },
+    "maintenances": {
+      "k1": {
+        "type": "cleaning",
+        "date": "2026-03-20",
+        "valid_until": "2027-03-20",
+        "follow_up_type": "visual inspection",
+        "remarks": "Rinsed and dried after a silty week. Nothing found."
+      }
+    }
+  },
+  "primary_regulator": {
+    "name": "Primary regulator",
+    "brand": "Halyard",
+    "model": "Balanced 900",
+    "serial": "HB-900-1153",
+    "category": "regulator",
+    "kind": "primary",
+    "maintenances": {
+      "k1": {
+        "type": "service",
+        "date": "2024-02-14",
+        "valid_until": "2025-02-14",
+        "follow_up_type": "visual inspection",
+        "operator": "@northshore_diving"
+      },
+      "k2": {
+        "type": "visual inspection",
+        "date": "2025-02-20",
+        "valid_until": "2026-02-20",
+        "follow_up_type": "service",
+        "operator": "@northshore_diving",
+        "remarks": "Second stage found leaking, so it became a repair.\nNext one is back to an inspection."
+      },
+      "k3": {
+        "type": "repair",
+        "date": "2025-02-27",
+        "valid_until": "2026-02-27",
+        "follow_up_type": "visual inspection",
+        "operator": "@northshore_diving",
+        "remarks": "Second stage rebuilt."
+      }
+    }
+  },
+  "backup_regulator": {
+    "name": "Backup regulator",
+    "brand": "Halyard",
+    "model": "Balanced 700",
+    "category": "regulator",
+    "kind": "octopus"
+  },
+  "reef_computer": {
+    "name": "Reef computer",
+    "brand": "Tidewatch",
+    "model": "Halo 2",
+    "serial": "TW-H2-77120",
+    "category": "instruments",
+    "kind": "wrist",
+    "description": "Downloads over Bluetooth. Also the thing that records the profile.",
+    "buoyancy": {
+      "mass": 0.14,
+      "displaced_volume": 0.1
+    }
+  },
+  "weight_belt": {
+    "name": "Weight belt",
+    "category": "weights",
+    "kind": "weight belt",
+    "description": "Six pockets, filled as needed.",
+    "buoyancy": {
+      "mass": 8,
+      "displaced_volume": 0.7
+    }
+  },
+  "mask_snorkel_and_fins": {
+    "name": "Mask, snorkel and fins",
+    "brand": "Calanque",
+    "category": "ABC",
+    "kind": "mask, snorkel and fins",
+    "buoyancy": {
+      "mass": 1.9,
+      "displaced_volume": 2.0
+    }
+  },
+  "steel_12": {
+    "name": "Steel 12",
+    "brand": "Northline",
+    "model": "12L 232 bar",
+    "serial": "NL-12-55031",
+    "category": "cylinder",
+    "kind": "steel",
+    "capacity": 12,
+    "buoyancy": {
+      "mass": 14.5,
+      "displaced_volume": 13.2
+    },
+    "maintenances": {
+      "k1": {
+        "type": "visual inspection",
+        "date": "2025-06-02",
+        "valid_until": "2026-06-02",
+        "operator": "@northshore_diving"
+      },
+      "k2": {
+        "type": "pressure test",
+        "date": "2026-06-10",
+        "valid_until": "2031-06-10",
+        "operator": "@northshore_diving",
+        "remarks": "Five-year test. Passed. The yearly inspection runs on its own clock."
+      }
+    }
+  },
+  "aluminium_11": {
+    "name": "Aluminium 11",
+    "brand": "Northline",
+    "model": "11L 200 bar",
+    "serial": "NL-AL-11-2204",
+    "category": "cylinder",
+    "kind": "aluminium",
+    "capacity": 11,
+    "buoyancy": {
+      "mass": 14.3,
+      "displaced_volume": 15.7
+    },
+    "maintenances": {
+      "k1": {
+        "type": "visual inspection",
+        "date": "2026-03-02",
+        "valid_until": "2027-03-02",
+        "operator": "@northshore_diving",
+        "remarks": "Bought second hand and inspected before first use."
+      }
+    }
+  },
+  "camera_housing": {
+    "name": "Camera housing",
+    "brand": "Lumenport",
+    "category": "photography",
+    "kind": "housing",
+    "buoyancy": {
+      "mass": 2.1,
+      "displaced_volume": 2.4
+    },
+    "remarks": "Very nearly neutral, which is the point."
+  },
+  "backup_light": {
+    "name": "Backup light",
+    "brand": "Lumenport",
+    "model": "Pocket 400",
+    "category": "lighting",
+    "kind": "torch"
+  },
+  "club_weights": {
+    "name": "Club weights",
+    "category": "weights",
+    "kind": "lead weight",
+    "description": "Borrowed from the quarry desk, so no serial and no history.",
+    "buoyancy": {
+      "mass": 6,
+      "displaced_volume": 0.53
+    }
+  }
+}

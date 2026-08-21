@@ -1,0 +1,436 @@
+{
+  "units": {
+    "angle": "deg"
+  },
+  "melanesia": {
+    "name": "Melanesia",
+    "category": "area",
+    "parents": [
+      "@oceania",
+      "@pacific_ocean"
+    ],
+    "west": 140,
+    "east": 180,
+    "south": -23,
+    "north": -1,
+    "remarks": "The western arc of Pacific islands, and the part of Oceania that reaches into the Coral Triangle."
+  },
+  "micronesia": {
+    "name": "Micronesia",
+    "category": "area",
+    "parents": [
+      "@oceania",
+      "@pacific_ocean"
+    ],
+    "west": 130,
+    "east": 177,
+    "south": 0,
+    "north": 20,
+    "remarks": "Thousands of small islands north of the equator, mostly atolls, with a good deal of the Second World War still on the seabed between them."
+  },
+  "polynesia": {
+    "name": "Polynesia",
+    "category": "area",
+    "parents": [
+      "@oceania",
+      "@pacific_ocean"
+    ],
+    "west": -180,
+    "east": -130,
+    "south": -30,
+    "north": 20,
+    "remarks": "A triangle of islands covering more area than any continent, settled by people navigating with stars, swell and birds."
+  },
+  "tasman_sea": {
+    "name": "Tasman Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@oceania"
+    ],
+    "west": 150,
+    "east": 175,
+    "south": -45,
+    "north": -30,
+    "remarks": "Rough often enough to have earned its nickname. Cold water, and great whites at the southern end."
+  },
+  "solomon_sea": {
+    "name": "Solomon Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@oceania"
+    ],
+    "west": 146,
+    "east": 156,
+    "south": -11,
+    "north": -5,
+    "remarks": "Deep trenches close inshore, and wrecks from the 1942 fighting in water shallow enough to dive."
+  },
+  "bismarck_sea": {
+    "name": "Bismarck Sea",
+    "category": "sea",
+    "parents": [
+      "@pacific_ocean",
+      "@oceania"
+    ],
+    "west": 143,
+    "east": 152,
+    "south": -6,
+    "north": -1,
+    "remarks": "Volcanic, with hydrothermal vents on the seabed and reef immediately above them."
+  },
+  "great_barrier_reef": {
+    "name": "Great Barrier Reef",
+    "category": "area",
+    "parents": [
+      "@australia",
+      "@coral_sea"
+    ],
+    "west": 142,
+    "east": 154,
+    "south": -24,
+    "north": -10,
+    "remarks": "The largest structure built by living things anywhere, running two thousand three hundred kilometres and made of about three thousand separate reefs. Nobody dives all of it."
+  },
+  "ningaloo_reef": {
+    "name": "Ningaloo Reef",
+    "category": "area",
+    "parents": [
+      "@australia",
+      "@indian_ocean"
+    ],
+    "west": 113,
+    "east": 114.5,
+    "south": -24,
+    "north": -21.5,
+    "remarks": "A fringing reef on the western side where whale sharks arrive every autumn, close enough to shore to swim out to."
+  },
+  "australia": {
+    "name": "Australia",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@coral_sea",
+      "@tasman_sea",
+      "@indian_ocean"
+    ],
+    "west": 112.9,
+    "east": 153.6,
+    "south": -43.6,
+    "north": -10.7,
+    "remarks": "Reef along the north, kelp and great whites along the south, and a coastline long enough that the two have almost nothing in common."
+  },
+  "new_zealand": {
+    "name": "New Zealand",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@tasman_sea",
+      "@pacific_ocean"
+    ],
+    "west": 166,
+    "east": 178.6,
+    "south": -47.3,
+    "north": -34.4,
+    "remarks": "Cold, clear and volcanic, with kelp where the tropics would put coral. A warm current reaches the Poor Knights and carries subtropical species much further south than they ought to manage."
+  },
+  "papua_new_guinea": {
+    "name": "Papua New Guinea",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@melanesia",
+      "@coral_triangle",
+      "@solomon_sea"
+    ],
+    "west": 140.8,
+    "east": 155.9,
+    "south": -11.7,
+    "north": -1.3,
+    "remarks": "Inside the Coral Triangle, with reef, muck diving, and a very large number of ships and aircraft lost here in the 1940s."
+  },
+  "fiji": {
+    "name": "Fiji",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@melanesia",
+      "@pacific_ocean"
+    ],
+    "west": 177,
+    "east": -178.2,
+    "south": -19.2,
+    "north": -16.1,
+    "remarks": "Straddles the antimeridian, so its east edge is numerically west of its west one. Known for soft coral, and a great deal of it."
+  },
+  "solomon_islands": {
+    "name": "Solomon Islands",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@melanesia",
+      "@solomon_sea",
+      "@coral_triangle"
+    ],
+    "west": 155.5,
+    "east": 166.9,
+    "south": -11.9,
+    "north": -6.6,
+    "remarks": "Nearly a thousand islands. The water off Guadalcanal is called Iron Bottom Sound, and the reason becomes obvious underwater."
+  },
+  "vanuatu": {
+    "name": "Vanuatu",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@melanesia",
+      "@pacific_ocean"
+    ],
+    "west": 166.5,
+    "east": 170.3,
+    "south": -20.3,
+    "north": -13.1,
+    "remarks": "Volcanic and seismically busy. A troopship sunk in 1942 lies close enough to the beach to be dived by walking in."
+  },
+  "new_caledonia": {
+    "name": "New Caledonia",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@melanesia",
+      "@coral_sea"
+    ],
+    "west": 163.5,
+    "east": 168.2,
+    "south": -22.7,
+    "north": -20.1,
+    "remarks": "Ringed by the second largest barrier reef in the world, enclosing one of the largest lagoons."
+  },
+  "palau": {
+    "name": "Palau",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@micronesia",
+      "@philippine_sea",
+      "@coral_triangle"
+    ],
+    "west": 134.1,
+    "east": 134.7,
+    "south": 6.9,
+    "north": 8.1,
+    "remarks": "Small, and wildly out of proportion to its size underwater. It declared the first shark sanctuary in the world, and has a landlocked lake full of jellyfish that lost their sting for want of anything to sting."
+  },
+  "federated_states_of_micronesia": {
+    "name": "Federated States of Micronesia",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@micronesia",
+      "@pacific_ocean"
+    ],
+    "west": 138,
+    "east": 163.1,
+    "south": 5.2,
+    "north": 9.7,
+    "remarks": "Chuuk Lagoon holds a Japanese fleet sunk at anchor in 1944 \u2014 dozens of ships in divable depths, cargo still in the holds."
+  },
+  "marshall_islands": {
+    "name": "Marshall Islands",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@micronesia",
+      "@pacific_ocean"
+    ],
+    "west": 165.3,
+    "east": 172.2,
+    "south": 4.6,
+    "north": 14.7,
+    "remarks": "Twenty-nine atolls, including Bikini, where nuclear testing sank a fleet in a lagoon that people now dive on purpose."
+  },
+  "kiribati": {
+    "name": "Kiribati",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@micronesia",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": 169.5,
+    "east": -150.2,
+    "south": -11.5,
+    "north": 4.7,
+    "remarks": "Spread across the equator and the antimeridian at once, which makes it the only country in all four hemispheres."
+  },
+  "nauru": {
+    "name": "Nauru",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@micronesia",
+      "@pacific_ocean"
+    ],
+    "west": 166.9,
+    "east": 167,
+    "south": -0.6,
+    "north": -0.5,
+    "remarks": "Twenty-one square kilometres, the third smallest country in the world, with a reef edge that drops away almost immediately."
+  },
+  "tuvalu": {
+    "name": "Tuvalu",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": 176,
+    "east": 179.9,
+    "south": -10.8,
+    "north": -5.6,
+    "remarks": "Nine low atolls with a highest point around four and a half metres, and a very direct interest in what the sea level does next."
+  },
+  "tonga": {
+    "name": "Tonga",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -176.3,
+    "east": -173.7,
+    "south": -21.5,
+    "north": -15.6,
+    "remarks": "Humpbacks arrive every winter to calve, and this is one of very few places where swimming with them is allowed."
+  },
+  "samoa": {
+    "name": "Samoa",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -172.8,
+    "east": -171.4,
+    "south": -14.1,
+    "north": -13.4,
+    "remarks": "Volcanic, reef-fringed, with a trench dropping away to the north."
+  },
+  "french_polynesia": {
+    "name": "French Polynesia",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -152,
+    "east": -134.5,
+    "south": -27.7,
+    "north": -7.9,
+    "remarks": "A hundred and eighteen islands scattered over an area the size of Europe. The passes between lagoon and ocean run hard with the tide, and grey reef sharks stack up in them by the hundred."
+  },
+  "cook_islands": {
+    "name": "Cook Islands",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -166,
+    "east": -157.3,
+    "south": -22,
+    "north": -8.9,
+    "remarks": "Fifteen islands in two widely separated groups, with clear water and very little traffic in it."
+  },
+  "niue": {
+    "name": "Niue",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -170,
+    "east": -169.8,
+    "south": -19.2,
+    "north": -18.9,
+    "remarks": "A single raised coral island with no rivers, so nothing silts the water. The visibility is reliably among the best anywhere."
+  },
+  "guam": {
+    "name": "Guam",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@micronesia",
+      "@philippine_sea"
+    ],
+    "west": 144.6,
+    "east": 145.1,
+    "south": 13.2,
+    "north": 13.7,
+    "remarks": "A German ship sunk in 1914 and a Japanese one sunk in 1944 lie touching each other in the harbour, which nobody planned."
+  },
+  "northern_mariana_islands": {
+    "name": "Northern Mariana Islands",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@micronesia",
+      "@philippine_sea"
+    ],
+    "west": 145.1,
+    "east": 146.1,
+    "south": 14,
+    "north": 20.6,
+    "remarks": "The Mariana Trench runs alongside, making this the nearest inhabited land to the deepest point on the planet."
+  },
+  "wallis_and_futuna": {
+    "name": "Wallis and Futuna",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -178.2,
+    "east": -176.1,
+    "south": -14.4,
+    "north": -13.2,
+    "remarks": "Two small island groups, a lagoon around one of them, and very few visitors to either."
+  },
+  "tokelau": {
+    "name": "Tokelau",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -172.5,
+    "east": -171.1,
+    "south": -9.5,
+    "north": -8.5,
+    "remarks": "Three atolls, no airport, and a highest point of about five metres."
+  },
+  "american_samoa": {
+    "name": "American Samoa",
+    "category": "country",
+    "parents": [
+      "@oceania",
+      "@polynesia",
+      "@pacific_ocean"
+    ],
+    "west": -171.1,
+    "east": -168.1,
+    "south": -14.4,
+    "north": -14.2,
+    "remarks": "Volcanic islands with a deep natural harbour, and a national park that includes the reef around it."
+  }
+}

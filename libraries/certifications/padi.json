@@ -1,0 +1,288 @@
+{
+  "units": {
+    "length": "m"
+  },
+  "padi_scuba_diver": {
+    "name": "Scuba Diver",
+    "abbreviation": "SD",
+    "organisation": "PADI",
+    "max_depth": 12,
+    "category": "progression"
+  },
+  "padi_open_water_diver": {
+    "name": "Open Water Diver",
+    "abbreviation": "OW",
+    "organisation": "PADI",
+    "max_depth": 18,
+    "supersedes": [
+      "@padi_scuba_diver"
+    ],
+    "category": "progression"
+  },
+  "padi_advanced_open_water_diver": {
+    "name": "Advanced Open Water Diver",
+    "abbreviation": "AOW",
+    "organisation": "PADI",
+    "max_depth": 30,
+    "supersedes": [
+      "@padi_open_water_diver"
+    ],
+    "category": "progression"
+  },
+  "padi_rescue_diver": {
+    "name": "Rescue Diver",
+    "abbreviation": "RED",
+    "organisation": "PADI",
+    "supersedes": [
+      "@padi_advanced_open_water_diver",
+      "@padi_emergency_first_responder"
+    ],
+    "category": "progression"
+  },
+  "padi_master_scuba_diver": {
+    "name": "Master Scuba Diver",
+    "abbreviation": "MSD",
+    "organisation": "PADI",
+    "supersedes": [
+      "@padi_rescue_diver"
+    ],
+    "category": "progression"
+  },
+  "padi_divemaster": {
+    "name": "Divemaster",
+    "abbreviation": "DM",
+    "organisation": "PADI",
+    "supersedes": [
+      "@padi_rescue_diver"
+    ],
+    "category": "professional"
+  },
+  "padi_assistant_instructor": {
+    "name": "Assistant Instructor",
+    "abbreviation": "AI",
+    "organisation": "PADI",
+    "supersedes": [
+      "@padi_divemaster"
+    ],
+    "category": "professional"
+  },
+  "padi_open_water_scuba_instructor": {
+    "name": "Open Water Scuba Instructor",
+    "abbreviation": "OWSI",
+    "organisation": "PADI",
+    "supersedes": [
+      "@padi_assistant_instructor"
+    ],
+    "category": "professional"
+  },
+  "padi_deep_diver": {
+    "name": "Deep Diver",
+    "abbreviation": "deep",
+    "organisation": "PADI",
+    "max_depth": 40,
+    "category": "specialisation"
+  },
+  "padi_wreck_diver": {
+    "name": "Wreck Diver",
+    "abbreviation": "wreck",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_night_diver": {
+    "name": "Night Diver",
+    "abbreviation": "night",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_enriched_air_diver": {
+    "name": "Enriched Air Diver",
+    "abbreviation": "nitrox",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_underwater_navigator": {
+    "name": "Underwater Navigator",
+    "abbreviation": "nav",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_peak_performance_buoyancy": {
+    "name": "Peak Performance Buoyancy",
+    "abbreviation": "buoyancy",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_digital_underwater_photographer": {
+    "name": "Digital Underwater Photographer",
+    "abbreviation": "photo",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_underwater_videographer": {
+    "name": "Underwater Videographer",
+    "abbreviation": "video",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_multilevel_diver": {
+    "name": "Multilevel Diver",
+    "abbreviation": "multilevel",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_search_and_recovery_diver": {
+    "name": "Search and Recovery Diver",
+    "abbreviation": "search",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_equipment_specialist": {
+    "name": "Equipment Specialist",
+    "abbreviation": "equipment",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_boat_diver": {
+    "name": "Boat Diver",
+    "abbreviation": "boat",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_drift_diver": {
+    "name": "Drift Diver",
+    "abbreviation": "drift",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_altitude_diver": {
+    "name": "Altitude Diver",
+    "abbreviation": "altitude",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_cavern_diver": {
+    "name": "Cavern Diver",
+    "abbreviation": "cavern",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_ice_diver": {
+    "name": "Ice Diver",
+    "abbreviation": "ice",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_dry_suit_diver": {
+    "name": "Dry Suit Diver",
+    "abbreviation": "drysuit",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_sidemount_diver": {
+    "name": "Sidemount Diver",
+    "abbreviation": "sidemount",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_self-reliant_diver": {
+    "name": "Self-Reliant Diver",
+    "abbreviation": "solo",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_diver_propulsion_vehicle_diver": {
+    "name": "Diver Propulsion Vehicle Diver",
+    "abbreviation": "DPV",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_underwater_naturalist": {
+    "name": "Underwater Naturalist",
+    "abbreviation": "naturalist",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_project_aware_specialist": {
+    "name": "Project AWARE Specialist",
+    "abbreviation": "AWARE",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_coral_reef_conservation": {
+    "name": "Coral Reef Conservation",
+    "abbreviation": "coral",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_full_face_mask_diver": {
+    "name": "Full Face Mask Diver",
+    "abbreviation": "FFM",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_emergency_oxygen_provider": {
+    "name": "Emergency Oxygen Provider",
+    "abbreviation": "O2",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_emergency_first_responder": {
+    "name": "Emergency First Responder",
+    "abbreviation": "EFR",
+    "organisation": "PADI",
+    "category": "specialisation"
+  },
+  "padi_tec_40": {
+    "name": "TEC 40",
+    "abbreviation": "TEC40",
+    "organisation": "PADI",
+    "max_depth": 40.0,
+    "supersedes": [
+      "@padi_advanced_open_water_diver",
+      "@padi_deep_diver",
+      "@padi_enriched_air_diver"
+    ],
+    "category": "technical"
+  },
+  "padi_tec_45": {
+    "name": "TEC 45",
+    "abbreviation": "TEC45",
+    "organisation": "PADI",
+    "max_depth": 45.0,
+    "supersedes": [
+      "@padi_rescue_diver",
+      "@padi_tec_40"
+    ],
+    "category": "technical"
+  },
+  "padi_tec_50": {
+    "name": "TEC 50",
+    "abbreviation": "TEC50",
+    "organisation": "PADI",
+    "max_depth": 50.0,
+    "supersedes": [
+      "@padi_tec_45"
+    ],
+    "category": "technical"
+  },
+  "padi_tec_trimix_65": {
+    "name": "Tec Trimix 65",
+    "abbreviation": "TEC65",
+    "organisation": "PADI",
+    "max_depth": 65.0,
+    "supersedes": [
+      "@padi_tec_50"
+    ],
+    "category": "technical"
+  },
+  "padi_tec_trimix": {
+    "name": "Tec Trimix",
+    "abbreviation": "TECTMX",
+    "organisation": "PADI",
+    "max_depth": 90.0,
+    "supersedes": [
+      "@padi_tec_trimix_65"
+    ],
+    "category": "technical"
+  }
+}
