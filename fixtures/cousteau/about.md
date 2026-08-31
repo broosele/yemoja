@@ -121,6 +121,11 @@ Each of these is here because it is awkward, not because it is typical.
 - `2026-08-08#0` writes `surface_interval` by hand and names no `previous_dive`. It stands
   for the dive whose predecessor was never logged — the case that makes the field
   correctable rather than purely worked out.
+- Every `compressible_fraction` is worked out the same way, from the published rule of
+  thumb that a neoprene suit loses about half its surface buoyancy at ten metres and two
+  thirds at twenty. Both figures give the same answer — the compressible volume equals the
+  surface buoyancy — so the fraction is `(displaced_volume - mass) / displaced_volume`.
+  They are meant to behave correctly rather than to describe any particular suit.
 - The suits split their volume the way the model asks. `my_drysuit` displaces 6.5 litres
   with just enough gas in it not to squeeze and can take on 11 more, so the fixture
   exercises a `lift_volume` on something that is not a wing. The wetsuits carry none:
@@ -154,7 +159,7 @@ every dive came off a computer would not be one anybody has.
 
   The gas sources are `g1`, back-mounted trimix, and `g2`, a staged deco mix. `pressures`
   holds a series under each of those keys, `gas_switches` points at the second with `*g2`,
-  and `decostop`, `alarms`, `no_deco_time`, `cns`, `otu` and `heart_rate` are all there.
+  and `decostop`, `alarms`, `no_deco_time`, `cns` and `otu` are all there.
   `tolerances` records what the thinning was allowed to drop.
 
 Between them they exercise every profile and gas source field except `density` and

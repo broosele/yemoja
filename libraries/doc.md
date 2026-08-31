@@ -4,7 +4,7 @@ The library files themselves.
 
 What a library *is* — read-only, shadowed by the logbook, never deleted, named rather
 than pathed, and permanent once published — is
-[../lib/data/libraries.md](../lib/data/libraries.md). That is the design; this is the folder.
+[data/libraries.md](../data/libraries.md). That is the design; this is the folder.
 Nothing here argues for a rule, and a rule stated here has been restated by mistake.
 
 ## Layout
@@ -43,7 +43,7 @@ same types, same references, written in the syntax `manual/data-format.md` descr
 }
 ```
 
-A library sits outside the logbook's unit scoping — see [../lib/data/doc.md](../lib/data/doc.md)
+A library sits outside the logbook's unit scoping — see [data/doc.md](../data/doc.md)
 — so without a declaration the values fall back to SI, and a logbook writing its volumes
 in litres would read a five-litre suit as five thousand.
 
@@ -88,7 +88,7 @@ is trivial to note and impossible to recover afterwards, and these files are rel
 under CC0 — a promise nobody can make about data they cannot account for.
 
 Ids published here are fixed: correct an item's contents freely, but never
-rename or remove one. The reason is in [../lib/data/libraries.md](../lib/data/libraries.md).
+rename or remove one. The reason is in [data/libraries.md](../data/libraries.md).
 
 - **Regions** — written for this project. The coordinates are approximate bounding boxes
   of well-known geography, which is fact rather than anyone's work. The shape of the

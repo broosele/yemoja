@@ -133,8 +133,10 @@ is preferable because:
 - A description can be tested without constructing any interface at all.
 - The [tui](../tui/doc.md) can consume the same description rather than
   reimplementing which fields exist and how they group.
-- Widget toolkits generally favour composition over inheritance; a deep widget
-  hierarchy split by platform tends to fight the framework.
+- The toolkit is composition all the way down — an interface is functions calling
+  functions, with no hierarchy to subclass. A design that wanted a platform-specific
+  subclass would have nothing to subclass, so description-plus-renderer is not merely
+  preferable here but the only one of the two the toolkit expresses.
 
 ### Choosing among known values
 
@@ -215,8 +217,10 @@ bind every front end.
 
 ## Toolkit
 
-The intended toolkit is Flutter, which covers all five targets from one codebase and
-has adaptive navigation primitives that suit the structure above.
+The intended toolkit is Compose Multiplatform, which covers all five targets from one
+codebase and has adaptive navigation primitives that suit the structure above. Android is
+where it is strongest, which is where this project wants it strongest; iPhone is the
+youngest of the five and also the last in line.
 
 Two things to plan around: it provides no adaptive layout automatically — both
 layouts are still designed and written, the toolkit only prevents them being two

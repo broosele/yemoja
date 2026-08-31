@@ -8,7 +8,7 @@ Four capabilities are expected: versioning, syncing, backup, and conflict
 resolution.
 
 **None of this is in the first version.** `FEAT-4` and `FEAT-5` are *Planned*, not *Core*
-— see [../../../features.md](../../../features.md) — so nothing here is implemented at
+— see [../../../features.md](../../features.md) — so nothing here is implemented at
 first. The requirements are settled all the same, and they bind the file format now: a
 format that cannot carry a journal, or that cannot tell where an item came from, could not
 gain either later without rewriting every logbook already written. Read this as a

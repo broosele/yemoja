@@ -10,7 +10,7 @@ This is analysis, not behaviour. Nothing here describes an importer: `FEAT-7` is
 has not decided which formats get active support. What is settled is the correspondence
 between two data models, which is a fact about both and does not wait on either.
 
-**What a diver keeps or loses is stated in [../../manual/uddf.md](../../manual/uddf.md),
+**What a diver keeps or loses is stated in [../../manual/uddf.md](../manual/uddf.md),
 and that chapter owns it.** This document holds what the manual deliberately does not: the
 element names, the quotations from the specification, and the reasoning behind each
 decision — why a thing is lost, what the alternatives were, and which question settled it.
@@ -141,7 +141,6 @@ What that costs, and why it is acceptable, is weighed under *Where the two disag
 | `no_deco_time` | `nodecotime` |
 | `cns` | `cns` |
 | `otu` | `otu` |
-| `heart_rate` | `heartrate` |
 | `no_flight_time` | `noflighttime` | on the dive there |
 | `desaturation_time` | `desaturationtime` | on the dive there |
 | `water_type`, `density` | — | see below |
@@ -161,7 +160,8 @@ the converted depth and discards the conversion.
 interesting and nothing about what, which the dive's remarks do better. `divemode`,
 which reduces to open circuit against apnea once rebreathers are out, and a breath-hold
 dive is arguably a different kind of dive rather than a mode within one. `bodytemperature`,
-`pulserate`, `batterychargecondition`, `heading`, `remainingbottomtime`,
+`heartrate` and `pulserate`, dropped by `DATA-72`; `batterychargecondition`, `heading`,
+`remainingbottomtime`,
 `remainingo2time`, `gradientfactor`, `divetime` as a value in its own right.
 
 ## Repetitive dives

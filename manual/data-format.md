@@ -264,6 +264,12 @@ item that owns it.
 Measurements change form to suit a file; dates and times do not. They are always
 `yyyy-mm-dd` and `hh:mm:ss`, everywhere, and no `units` setting affects them.
 
+**Whole numbers take no unit either.** Every one of them counts something rather than
+measuring it — your own dive numbering, how many buddies, a rating out of ten, how many
+days until a service falls due — and a count has nothing to be converted into. Only
+numbers with a decimal point allowed are measurements, and only those follow the table
+above.
+
 That is deliberate. `03/04/2026` is the third of April to some readers and the fourth of
 March to others, and a file that had it the wrong way round would look perfectly
 correct — the mistake would only show up as dives on the wrong days, long after anyone

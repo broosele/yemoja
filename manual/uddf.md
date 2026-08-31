@@ -21,8 +21,8 @@ lose going out rather than coming in.
 
 Almost everything about a dive survives in both directions: when it was, how deep, how
 long, how cold, who with, where, what you breathed, and the whole recording your computer
-made — every sample of depth, temperature, cylinder pressure, stops, alarms, oxygen
-loading and heart rate.
+made — every sample of depth, temperature, cylinder pressure, stops, alarms and oxygen
+loading.
 
 Four things do not, and they are the ones to remember:
 
@@ -81,8 +81,8 @@ them.
 This is the largest part of most dives and it survives well.
 
 **Kept, both ways.** Depth, temperature, cylinder pressures, the stops the computer set,
-no-decompression time, CNS and OTU, heart rate, gas switches, and the no-fly and
-desaturation times at the end. Alarms too: UDDF names the same nine kinds this logbook
+no-decompression time, CNS and OTU, gas switches, and the no-fly and desaturation times
+at the end. Alarms too: UDDF names the same nine kinds this logbook
 does, so they cross over exactly.
 
 **Three losses, and one of them matters a great deal.**
@@ -105,6 +105,9 @@ no way round it that does not lie about the number of dives.
 
 **Alarm severity.** UDDF can say how serious an alarm was. That is not kept, because
 "serious" is not comparable between makes.
+
+**Heart rate.** Some computers record it and UDDF carries it. Yemoja does not keep it, so
+it is lost coming in and never written going out.
 
 **A shape difference, which is not a loss but is worth knowing.** Your logbook keeps each
 measurement as its own series with its own times, because a computer samples temperature

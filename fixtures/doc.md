@@ -1,7 +1,7 @@
-# Test data
+# Fixtures
 
 Fixture logbooks used by tests across every layer. Each fixture is a complete
-logbook folder in the layout described in [../lib/data/json/doc.md](../lib/data/json/doc.md)
+logbook folder in the layout described in [data/json/doc.md](../data/json/doc.md)
 — a `yemoja.json` plus the data it points at — so that tests exercise the real
 format rather than a simplified stand-in.
 
@@ -28,7 +28,7 @@ Each fixture is a directory. What it contains is up to what it tests, but a shor
 note inside it should say what it is for, so that a failing test leads somewhere.
 
 ```
-testdata/
+fixtures/
   <fixture-name>/
     yemoja.json
     ... the data it points at

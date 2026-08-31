@@ -18,14 +18,14 @@ it is defined, not where it is used.
 
 ## Items and their fields
 
-Owned by [lib/data/doc.md](lib/data/doc.md).
+Owned by [data/doc.md](data/doc.md).
 
 | Term | Meaning |
 |---|---|
 | **item** | one thing in a logbook — a dive, a person, a region. The class is `Item`; the word is the same in prose, in code and in the manual |
 | **`ItemSet`** | everything loaded, from logbook and libraries, with shadowing already applied |
 | **`ItemDescription`** | what one item type is: its name and its fields |
-| **`FieldDescription`** | what one field is, in enough detail to parse, check and show it |
+| **`FieldDescription`** | what one field is, in enough detail to parse, check and show it. One kind per description — `NumberDescription`, `TextDescription`, `ReferenceDescription` — and each describes a field rather than being one |
 | **primary** | a field whose value is recorded and nothing else |
 | **derived** | a field worked out from other values, never stored |
 | **overrideable** | derived, but a stored value *may* be present and corrects it when it is — a correction, never a cache |
@@ -41,6 +41,8 @@ Owned by [lib/data/doc.md](lib/data/doc.md).
 | **usable** | a field or derivation gave a value, and it can be used |
 | **absent** | nothing was recorded and nothing could be worked out. There is one absent state, not several |
 | **unusable** | something is recorded but cannot be used — a word where a depth belongs, a value outside a fixed set, a reference to the wrong kind of item. Kept as written, and carries why |
+| **unrecognised** | a field name in the data that the description does not define — a newer version's, or a misspelling. Kept whole so a round trip survives, and never judged |
+| **raw** | a value exactly as it was stored, carried by *unusable* so an interface can show what it found |
 | **fixed set** | a closed list of values, where nothing outside it means anything |
 | **suggested vocabulary** | an open list offered as help, where anything else is still accepted |
 | **dimension** | what a numeric field measures — length, mass, time, pressure, and so on |
@@ -49,7 +51,7 @@ Owned by [lib/data/doc.md](lib/data/doc.md).
 
 ## Storage
 
-Owned by [lib/data/json/doc.md](lib/data/json/doc.md), except where noted.
+Owned by [data/json/doc.md](data/json/doc.md), except where noted.
 
 | Term | Meaning |
 |---|---|
@@ -60,31 +62,31 @@ Owned by [lib/data/json/doc.md](lib/data/json/doc.md), except where noted.
 | **journal** | Yemoja's own history of a logbook, kept in full and never compacted |
 | **changeset** | one unit of change, reversible whole; a rename and its rewrites are one |
 | **action** | one reversible step inside a changeset |
-| **library** | reference data shipped with the application — see [lib/data/libraries.md](lib/data/libraries.md) |
-| **shadowing** | a logbook item replacing a library one of the same id — see [lib/data/libraries.md](lib/data/libraries.md) |
+| **library** | reference data shipped with the application — see [data/libraries.md](data/libraries.md) |
+| **shadowing** | a logbook item replacing a library one of the same id — see [data/libraries.md](data/libraries.md) |
 
 ## Behaviour
 
-Owned by [lib/logic/doc.md](lib/logic/doc.md), except where noted.
+Owned by [logic/doc.md](logic/doc.md), except where noted.
 
 | Term | Meaning |
 |---|---|
 | **Universe** | the single door every front end goes through; holds one or more item sets |
 | **domain rule** | a check that needs to know the file is about diving |
 | **finding** | what a domain rule produces — aimed at an item, carrying a severity, never a refusal |
-| **reconciliation** | folding items that arrive from elsewhere into the logbook — see [lib/logic/reconciliation.md](lib/logic/reconciliation.md) |
-| **repository** | somewhere a logbook *lives*: read, written, holding history — see [lib/logic/reconciliation.md](lib/logic/reconciliation.md) |
-| **importer** | somewhere items *come from*, one way, with no history — not a repository. See [lib/logic/reconciliation.md](lib/logic/reconciliation.md) |
-| **ancestry** | whether a common earlier version exists; sync has one, import does not — see [lib/logic/reconciliation.md](lib/logic/reconciliation.md) |
-| **authority** | what a source is entitled to overwrite, and what it must leave alone — see [lib/logic/reconciliation.md](lib/logic/reconciliation.md) |
+| **reconciliation** | folding items that arrive from elsewhere into the logbook — see [logic/reconciliation.md](logic/reconciliation.md) |
+| **repository** | somewhere a logbook *lives*: read, written, holding history — see [logic/reconciliation.md](logic/reconciliation.md) |
+| **importer** | somewhere items *come from*, one way, with no history — not a repository. See [logic/reconciliation.md](logic/reconciliation.md) |
+| **ancestry** | whether a common earlier version exists; sync has one, import does not — see [logic/reconciliation.md](logic/reconciliation.md) |
+| **authority** | what a source is entitled to overwrite, and what it must leave alone — see [logic/reconciliation.md](logic/reconciliation.md) |
 
 ## Interface
 
-Owned by [lib/ui/gui/doc.md](lib/ui/gui/doc.md), except where noted.
+Owned by [ui/gui/doc.md](ui/gui/doc.md), except where noted.
 
 | Term | Meaning |
 |---|---|
-| **front end** | one of several interfaces over the logic layer — see [lib/ui/doc.md](lib/ui/doc.md) |
+| **front end** | one of several interfaces over the logic layer — see [ui/doc.md](ui/doc.md) |
 | **form factor** *(defined here)* | the two shapes the application takes: a large screen with keyboard and mouse, and a small touch screen. Which one applies follows from what the screen affords, not from the operating system — Windows and macOS are one form factor, Android and iPhone the other |
 | **tab** | one of the eight top-level divisions of the application |
 | **selector** | narrows a collection down to one item |

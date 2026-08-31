@@ -300,9 +300,9 @@ def main():
     sets, ranges = manual_vocabularies()
     checker = Checker(manual_fields(), sets, ranges)
     checker.libraries_seen = set()
-    testdata = os.path.join(ROOT, 'testdata')
-    for name in sorted(os.listdir(testdata)):
-        folder = os.path.join(testdata, name)
+    fixtures = os.path.join(ROOT, 'fixtures')
+    for name in sorted(os.listdir(fixtures)):
+        folder = os.path.join(fixtures, name)
         if os.path.isdir(folder) and os.path.exists(os.path.join(folder, 'yemoja.json')):
             check_logbook(checker, folder)
     checker.resolve()

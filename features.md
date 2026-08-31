@@ -35,18 +35,18 @@ what makes this a logbook.
 
 That is a decision about order, not about ambition. The design work behind those features
 is done and recorded, and the file format must not foreclose them: see
-[lib/data/json/requirements.md](lib/data/json/requirements.md), whose eighteen
+[data/json/requirements.md](data/json/requirements.md), whose eighteen
 requirements are settled and remain binding on the format even while nothing implements
 them.
 
 ## Planned
 
 - **FEAT-4 — Versioned storage in readable files.** Yemoja's own history, not a
-  version control system underneath. See [lib/data/json/doc.md](lib/data/json/doc.md).
+  version control system underneath. See [data/json/doc.md](data/json/doc.md).
   Moved from *Core*: a logbook that cannot undo is still a logbook, and the journal is
   the largest single piece of machinery in the storage layer.
 - **FEAT-5 — Sync between installations, and backup.** Through a location the diver
-  provides; see [lib/data/json/requirements.md](lib/data/json/requirements.md). Moved
+  provides; see [data/json/requirements.md](data/json/requirements.md). Moved
   from *Core* with `FEAT-4`, which it builds on — merging is merging journals — and
   carrying conflict resolution with it.
 - **FEAT-3 — Download from a dive computer**, over Bluetooth among other transports.
@@ -54,27 +54,27 @@ them.
   by hand is a dive, and this brings a native library and per-platform Bluetooth with it.
 
 - **FEAT-6 — Dive planning with decompression.** Carries the safety obligation recorded
-  in [lib/logic/doc.md](lib/logic/doc.md). Moved here from *Core*: logging what you did
+  in [logic/doc.md](logic/doc.md). Moved here from *Core*: logging what you did
   and planning what you will do are separate jobs, and a logbook that cannot plan is
   still a logbook. It also brings a whole item type with it — a plan keeps its own
-  inputs — which is `DATA-57` in [lib/data/doc.md](lib/data/doc.md).
+  inputs — which is `DATA-57` in [data/doc.md](data/doc.md).
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
-  designed for it; see [lib/logic/reconciliation.md](lib/logic/reconciliation.md).
+  designed for it; see [logic/reconciliation.md](logic/reconciliation.md).
 - **FEAT-8 — Statistics over the logbook.** Totals, counts and summaries, each reported
   with what it was based on.
 - **FEAT-9 — Renewal tracking.** One list answering what needs renewing, across
   insurance and gear maintenance. The reason the validity work in
-  [lib/data/doc.md](lib/data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
+  [data/doc.md](data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
   stored value: the data layer records when a thing falls due and this feature decides
   when that is worth saying.
 
 ## Future
 
-- **FEAT-11 — A terminal interface.** Deliberately raw; see [lib/ui/tui/doc.md](lib/ui/tui/doc.md).
-- **FEAT-12 — A programmatic interface.** See [lib/ui/api/doc.md](lib/ui/api/doc.md).
+- **FEAT-11 — A terminal interface.** Deliberately raw; see [ui/tui/doc.md](ui/tui/doc.md).
+- **FEAT-12 — A programmatic interface.** See [ui/api/doc.md](ui/api/doc.md).
 - **FEAT-13 — Export to other applications' formats.** Waits on `RECON-4`.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
-  described in [lib/data/json/doc.md](lib/data/json/doc.md).
+  described in [data/json/doc.md](data/json/doc.md).
 - **FEAT-15 — More than one logbook.** *Answered by `JSON-8`:* any number may exist on
   disk and one is open at a time. What remains here is the convenience around it —
   remembering recent logbooks, switching without hunting for a folder.
@@ -86,7 +86,7 @@ them.
   program and gets no privileged path of its own. Two things it needs already exist by
   design: a changeset is one revertible unit, and work is applied to live data for review
   before it is saved, so an agent's edits are inspected and undone like any import — see
-  [lib/logic/reconciliation.md](lib/logic/reconciliation.md). What is sent to the service
+  [logic/reconciliation.md](logic/reconciliation.md). What is sent to the service
   and what stays local is undecided.
 
 ## Low priority
@@ -117,13 +117,13 @@ them.
   Argon is a drysuit inflation gas more often than a breathing one, and hydrogen is
   experimental — neither is common enough to shape the notation now, and both are worth
   recording as known gaps rather than being discovered twice. See
-  [lib/logic/uddf.md](lib/logic/uddf.md).
+  [logic/uddf.md](logic/uddf.md).
 - **FEAT-19 — Units declared per item.** A `units` block inside a single item in a
   file holding several, so a metric and an imperial cylinder can sit in the same
   `gear.json`. Removed deliberately rather than never considered: a declaration now
   reaches only the file it is written in, because a resolution order the reader cannot
   see is a source of errors in a format meant to be read by hand — see
-  [lib/data/doc.md](lib/data/doc.md). Low priority because the case is already
+  [data/doc.md](data/doc.md). Low priority because the case is already
   expressible: any type may be stored as a directory of one file per item, and each
   file then says what it likes. The cost of reinstating it is that the rule stops being
   statable in one sentence, not that the code is hard.
@@ -150,5 +150,5 @@ Entries here keep their reason, so that a decision already taken is not taken ag
   and converted only when used; a currency has no base and no constant rate, so any total
   across currencies needs exchange rates and dates from outside — live external data an
   offline logbook has nowhere to get and no reason to hold. See `DATA-34` in
-  [lib/data/doc.md](lib/data/doc.md). Tracking the cost of diving is a fair thing to
+  [data/doc.md](data/doc.md). Tracking the cost of diving is a fair thing to
   want and belongs in something that is not a logbook.

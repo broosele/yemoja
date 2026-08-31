@@ -103,6 +103,12 @@ To settle when we discuss architecture and features:
    Where the *reconciliation* belongs is settled — see
    [reconciliation.md](reconciliation.md) — but where the device-facing half lives,
    given it needs platform capabilities the logic layer should not have, is not.
+
+   The language change moved this. The platform that matters most is now the one where
+   Bluetooth and a native library are least awkward, and the three routes to
+   libdivecomputer — JVM, Android, iOS — are three source sets rather than one binding.
+   That argues for the boundary sitting at an interface the logic layer declares and each
+   target implements, but it is an argument, not the answer.
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants
@@ -136,10 +142,46 @@ To settle when we discuss architecture and features:
    the loaded items is settled — the data layer does, as an `ItemSet`, see `DATA-20`
    in [../data/doc.md](../data/doc.md) — but whether the Universe above them is live
    is not.
-- **LOGIC-5 — Concurrency.** Long operations — a dive computer download, a large import — must
-   not block a UI. Decide where that boundary sits.
+
+   *Observe* needs care now: the toolkit has a state model of its own, and an interface
+   that rebuilds when what it read changes. `DATA-6` settled that nothing below announces
+   anything and a view that may be stale asks again — which fits that model rather than
+   fighting it, and is worth checking before anything here grows a subscription.
+
+   `LOGIC-5` narrows this considerably: with one operation at a time there is nothing to
+   race, so *live* costs only what it costs to hold, not what it costs to protect.
 
 ## Settled
+
+- **LOGIC-5 — Concurrency.** *Settled:* **there is none.** One thread, one operation at a
+  time, and a long operation takes the application over until it finishes.
+
+  Downloading a dive computer, importing a file, running a plan: each is exclusive. The
+  diver is not browsing dives while forty come off their computer, because nobody needs to
+  and pretending otherwise buys a class of bugs for a convenience nobody asked for.
+
+  **What that removes is the whole question.** Two things reaching one logbook at once is
+  the only reason any of the alternatives existed — copying it so readers see a consistent
+  version, queueing writes to one owner, locking it. None of them is needed if there is
+  never a second thing. `ItemSet` stays a plain mutable structure, an edit changes an item
+  in place, and no part of this layer has to be written twice for a case that cannot arise.
+
+  It is also the one place where the change of language would otherwise have cost
+  something: coroutines make a background download cheap to *start* and make the shared
+  logbook expensive to get right. Declining the first declines the second.
+
+  **One implementation constraint, and it is not a softening of this.** Android kills an
+  application whose interface stops answering for a few seconds, so *exclusive* cannot mean
+  a frozen thread — the interface has to keep drawing to show that something is happening
+  and to offer a way to stop it. The work therefore runs off the interface's own thread
+  while the interface refuses everything else: one screen, a progress indication, a cancel,
+  and nothing reachable behind it. The rule stands as written — one operation at a time,
+  the application belongs to it — and only the mechanism has to respect the platform.
+
+  Two things follow elsewhere. `LOGIC-4` gets easier: a live in-memory logbook has no
+  observers racing it. And a large import is a single stretch of work rather than something
+  reconciled while the diver carries on around it — see
+  [reconciliation.md](reconciliation.md).
 
 - **LOGIC-6 — Which gradient factors a logged dive's `deco` is computed against.**
   *Settled:* **none, because nothing computes it.** `deco` is read off the primary

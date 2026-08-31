@@ -73,7 +73,7 @@ belongs to, and nothing else. A path could point outside the folder, and a logbo
 does not contain itself cannot be copied, synced, or made into a repository.
 
 Where these files live in this repository, and how one is written, is
-[libraries/doc.md](../../libraries/doc.md).
+[libraries/doc.md](../libraries/doc.md).
 
 If user-supplied libraries are ever wanted, the resolution gains a second directory
 and names resolve against both; nothing in the logbook changes. If libraries ever
@@ -179,7 +179,7 @@ it becomes theirs.
   changing **copies it into the logbook**, where it shadows the supplied one and is
   thereafter theirs.
 
-  Nothing had to be built for that: it is ordinary shadowing, and `testdata/cousteau`
+  Nothing had to be built for that: it is ordinary shadowing, and `fixtures/cousteau`
   already does it — `netherlands` sits in the logbook's own `regions.json`, the same
   content with a remark of the diver's own. Copy twenty regions and twenty regions are
   frozen. The freeze is per item, so later additions to a library still arrive; a diver

@@ -33,7 +33,7 @@ can only be done through the GUI has leaked presentation into business logic.
 ## Structure
 
 ```
-lib/ui/
+ui/
   doc.md              this file — rules common to all front ends
   api/                programmatic interface
   tui/                terminal interface

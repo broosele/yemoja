@@ -14,7 +14,7 @@
     "buoyancy": {
       "mass": 4.6,
       "displaced_volume": 6.5,
-      "compressibility": 0.02,
+      "compressible_fraction": 0.29,
       "lift_volume": 11.0
     },
     "maintenances": {
@@ -44,7 +44,7 @@
     "buoyancy": {
       "mass": 2.8,
       "displaced_volume": 6.0,
-      "compressibility": 0.11
+      "compressible_fraction": 0.53
     }
   },
   "backplate_and_wing": {

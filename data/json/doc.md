@@ -354,7 +354,7 @@ To settle when we discuss architecture:
   rather than choosing.
 
   `yemoja.json` therefore has no `logbook` section and no paths of any kind. The
-  flexibility removed was never used: every entry in `testdata/cousteau` was the
+  flexibility removed was never used: every entry in `fixtures/cousteau` was the
   predictable one.
 
   The reason is that a path is the only thing in a logbook that can point outside it. An

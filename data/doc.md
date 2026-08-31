@@ -326,32 +326,59 @@ makes hand-editing hostile.
 
 ### How a type is described
 
-There is no class per item type. A dive, a person and a region are all the same Dart
-class — `Item` — holding three things: the description of its type, a map of field
-name to value, and the items it belongs to.
+There is no class per item type. A dive, a person and a region are all the same class —
+`Item` — holding three things: the description of its type, a map of field name to value,
+and the items it belongs to.
 
 The description is data. An `ItemDescription` names a type and lists its fields. A
 `FieldDescription` says what one field is, in enough detail that the parser, the
 structural checks and every front end can work from it and nothing has to name a field
-in code. Four things need describing differently, so they are subclasses rather than one
-class with a flag: a **value**, a **reference**, a **singular owned item**, and a
-**keyed collection of owned items**. The last two are separate because the interface treats them
-separately — one is a group expanded by default on a desktop, the other collapses to a
-count on both form factors, see [../ui/gui/doc.md](../ui/gui/doc.md).
+in code. **Three** things need describing differently, so they are implementations rather
+than one class with a flag: a **value**, a **reference**, and an **owned item** — a set of
+fields kept inside its owner.
 
-The three kinds of field are orthogonal to that split. Primary, derived and overrideable
-are properties any of the four may carry, not subclasses of their own.
+**Two things are orthogonal to that split**, and both are properties any of the three may
+carry rather than types of their own:
 
-**Why a description rather than a class.** Dart offers no useful runtime reflection:
-`dart:mirrors` is unsupported under ahead-of-time compilation, which is how this
-application ships. Build-time code generation is available and would work, but a Dart
-declaration is the wrong place to keep this. `double? maxDepth` cannot say that the
-value is a length and therefore obeys a `units` declaration, that it is derived with an
-override rather than primary, that a string field is a reference to a dive site rather
-than free text, or that it offers a suggested vocabulary rather than a fixed set. All of
-that would have to be written alongside as annotations — at which point the annotations
-*are* the description, and the class contributes nothing but a second place for the
-field list to live.
+- **Primary, derived and overrideable** — whether a field is recorded, worked out, or
+  worked out and correctable.
+- **Cardinality** — one, a list, keyed, a series through a dive, or a keyed series. See
+  `DATA-67`.
+
+**A value is described by kind rather than by a kind field.** There is a description per
+kind of value — a number, text, a date, a series — so that what a kind needs belongs to it
+and to nothing else: a dimension is on a number and on a series, a suggested vocabulary is
+on text, and a date can no more be given a dimension than a boolean can be given a range.
+That is a refinement of *value*, not a fourth thing beside reference and owned item.
+
+**Being closed is one rule, written where it applies.** A `current` of six steps and a
+`rating` from 1 to 10 make the same promise — a value outside is *unusable* and kept as
+written, by `DATA-24`. That is what keeps a rating a number, with a number's dimension and
+a number's ordering, rather than becoming a kind of its own.
+
+But a closed *list* belongs to text and *bounds* belong to numbers, and neither means
+anything on the other. So each kind carries its own — text has a fixed set, a number has
+bounds — rather than both sharing one thing that could be attached to either. One rule,
+stated once here; two ways of writing it, each where it can be used and nowhere it cannot.
+
+A *suggested* vocabulary is neither. It constrains nothing: a value outside it is an
+ordinary value and always was. It sits beside the fixed set on text, which is where the
+difference between them is easiest to state.
+
+**Why a description rather than a class.** A declaration is the wrong place to keep this,
+whatever the language offers. `Double? maxDepth` cannot say that the value is a length and
+therefore obeys a `units` declaration, that it is derived with an override rather than
+primary, that a string field is a reference to a dive site rather than free text, or that
+it offers a suggested vocabulary rather than a fixed set. All of that would have to be
+written alongside as annotations — at which point the annotations *are* the description,
+and the class contributes nothing but a second place for the field list to live.
+
+This argument was first written against Dart, which has no useful runtime reflection, and
+it was tempting to read reflection as the reason. It was not. **The language changed and
+the decision did not**: a language with full reflection and annotations still has to
+declare every one of those properties somewhere, and the only question is whether that
+somewhere is beside a field or instead of one. Reflection would have made a class *work*;
+it would not have made it a better place for the field list.
 
 Keeping it as data has a consequence worth having on its own: **a field the application
 does not recognise survives a round trip.** A file written by a newer version is read,
@@ -370,18 +397,26 @@ run instead of never. The raw untyped mapping stays available beneath it for wri
 back, which is the one job that has to reach fields the description has never heard of.
 
 **On the name.** *Item* is the word everywhere — in prose, in the manual, and as the
-class. *Record* would have been the natural choice and was used at first, but Dart 3
-defines `Record` in `dart:core` for its tuples, and shadowing that in every file
-importing this layer is a cost with nothing bought. Carrying both words — *record* in
-prose, `Item` in code — was tried and discarded: one thing gets one name, and a reader
-should never have to ask which of two words a sentence means.
+class. *Record* would have been the natural choice and was used at first; it collided with
+Dart's own `Record`, and by the time the language changed the whole project — glossary,
+manual, fixtures, every document — spoke of items.
 
-**How it stays true.** [manual/data-fields.md](../../manual/data-fields.md) is the
+**The clash is history and the name still stays**, because the better reason was always
+the second one. *Record* is this project's verb: a hundred and thirty uses of *record*,
+*records* and *recorded*, against six hundred of *item*. And *recording* is already taken
+— it is what a dive computer wrote, and the manual has a chapter section by that name. A
+`Record` holding a `Recording` would be two unrelated ideas one letter apart. Carrying both
+words — *record* in prose, `Item` in code — was tried and discarded for the same reason.
+
+The name is also not quite free even now: `java.lang.Record` is in scope by default in
+Kotlin's JVM and Android source sets, though not in common code.
+
+**How it stays true.** [manual/data-fields.md](../manual/data-fields.md) is the
 definition of every field, so a description and the manual can drift apart. They are
 checked against each other rather than trusted: `tool/checkdata.py` already reads the
 manual's field lists to validate the fixtures and the libraries, and the descriptions
 become a third thing checked the same way — see `TEST-2` in
-[../../test/doc.md](../../test/doc.md).
+[testing.md](../testing.md).
 
 ### The set of items
 
@@ -699,13 +734,18 @@ dependency on logic, UI, or a specific source.
 ## Structure
 
 ```
-lib/data/
+data/
   doc.md          this file — the item model, items, id, validation
   libraries.md    reference data shipped with the application
   json/           the JSON file source (doc.md, requirements.md)
+  src/commonMain/kotlin/yemoja/data/
+                  Description.kt   what a type is, and what a field is
+  src/commonTest/kotlin/yemoja/data/
+                  the tests, beside what they cover
 ```
 
-Tests for this layer mirror it under `test/data/` — see [../../test/doc.md](../../test/doc.md).
+This layer is a module of its own, and its tests sit inside it rather than in a tree of
+their own — see [testing.md](../testing.md).
 
 ## Open questions
 
@@ -719,11 +759,38 @@ To settle when we discuss architecture:
    felt. Either profiles are not read with their dives, or the cost is accepted and
    measured.
 
+   The language change made this sharper rather than softer. A runtime with a heap and
+   object headers costs more per sample than the one this was first weighed against, and
+   Android is now the target that matters most rather than one of five — so the phone is
+   both where it hurts and where it is least acceptable to hurt.
+
    An argument for the small answer: most navigation happens *through items* rather
    than through queries. A region asks for its children, a reference resolves itself, a
    dive reaches its site. If that holds, `ItemSet` needs little beyond resolving an
    id and listing a type, and the interface stays small by consequence rather than
    by discipline.
+- **DATA-66 — Which layer judges a value against its description.** Parsing is settled
+  by `DATA-64`; this asks what happens to a value that parsed cleanly and is still wrong —
+  `brackish` where the fixed set holds three, a rating of 47, a reference to an item of the
+  wrong type.
+
+  **Structural checks stay below.** The test already in
+  [../logic/doc.md](../logic/doc.md) — can this be checked without knowing the file is
+  about diving? — puts a closed vocabulary, a numeric range and a reference that does not
+  resolve in the data layer, since none of them needs to know what a dive is. `DATA-24` and
+  `DATA-50` are written that way: a value outside a fixed set is read back as **unusable**,
+  by this layer, and `GUI-8` renders that state without asking anyone.
+
+  **Everything judged goes above.** The data layer then reports only what *parsing* could
+  fail at — a date that is not a date — and a fixed set is a fact the description carries
+  for the logic layer to check, not a rule this layer enforces. It keeps one place where
+  data is judged rather than two, and it makes `FieldDescription` purely descriptive.
+
+  What turns on it: whether this layer can produce `unusable` for a vocabulary violation at
+  all, and therefore whether `DATA-24` stands as written or moves. It is a boundary
+  question rather than a mechanism one — the same check runs either way, and the argument is
+  about who owns it.
+
 - **DATA-54 — Which fields the common interchange formats carry that this model does
   not.** *In progress:* **UDDF is done.** [../logic/uddf.md](../logic/uddf.md) compares
   every section of the logbook against 3.2.3, and what remains is other formats — which
@@ -788,6 +855,222 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-72 — Heart rate.** *Settled:* **dropped.** The field is gone from the profile,
+  from the fixture and from the UDDF mapping.
+
+  It was the last quantity in the model whose unit could not be declared. Beats per minute
+  is a rate, there is no rate in `DATA-8`'s dimensions, and adding one for a single field
+  would have bought an exemption of its own — the fourth after dates, gas and whole
+  numbers, in a scheme whose worth is that it has few.
+
+  Nothing else argued for keeping it. No feature reads it, decompression here does not use
+  it, and only some computers record it. A logbook that showed it could do nothing with it
+  but draw it.
+
+  What is given up is real: a diver whose computer records a pulse loses it on import and
+  cannot export it. That is written where a diver will meet it, in
+  [../manual/uddf.md](../manual/uddf.md), rather than left to be discovered.
+
+- **DATA-71 — Whether a pressure is gauge or absolute.** *Settled:* **a cylinder's is
+  gauge, the atmosphere's is absolute, and anything computed uses absolute.**
+
+  A cylinder pressure is what the needle showed — zero for an empty cylinder at the
+  surface — because that is what a diver reads and writes, and because this model keeps
+  what was observed rather than a converted form. `atmospheric_pressure` is not a reading
+  against anything; it is the pressure itself, and is absolute. `pressures` in a profile
+  follows the cylinder.
+
+  Anything that calculates adds the atmosphere at the point of use, which the dive already
+  records. The distinction is negligible for gas in a cylinder — four parts in a thousand
+  — and is the whole of the calculation when turning a depth back into a pressure.
+
+  **It went unstated for a long time and was not harmless.** `DATA-70`'s compression law
+  divides the gas part by the pressure in bar; read as gauge that is a division by zero at
+  the surface, and read as absolute it is correct. Two fields with two conventions and
+  nothing saying so is the kind of thing that produces an answer rather than an error.
+
+  Three smaller gaps went with it, all of them missing words rather than decisions: `cns`
+  is a percentage that runs past 100, `otu` is a count on its own scale — they were one
+  line describing two different measures. A third, `heart_rate`, was answered by dropping
+  the field — see `DATA-72`.
+
+- **DATA-70 — What `compressibility` means.** *Settled:* it is renamed
+  **`compressible_fraction`** and defined as *how much of `displaced_volume` is gas rather
+  than solid*, from 0 to 1. What an item displaces at pressure `p` bar is
+  `solid + gas / p`.
+
+  The old field carried one clause — "how much that volume is squeezed by pressure" — with
+  no unit, no range and no formula, while nine values already sat in the shipped library.
+  Two implementers would have read it differently and neither could have been shown wrong.
+
+  **The physics chose the shape.** A wetsuit is sealed gas cells in rubber; pressure
+  squeezes the gas and leaves the rubber, so an item is mixed and one number says where
+  between the two it sits. That makes it a ratio of two volumes — dimensionless, needing no
+  unit and no exemption from unit scoping, which the alternative *fraction lost per bar*
+  would have needed, being an inverse pressure.
+
+  **It is an effective figure, not a measured one.** Real neoprene is 60 to 80 percent gas,
+  but the cell walls carry load and the bubbles do not squeeze as freely as loose gas. What
+  belongs in the field is the fraction that *behaves* as gas — fitted to the buoyancy a
+  diver actually loses, and so checkable by one.
+
+  **`lift_volume` is not governed by it.** Gas the diver adds is whatever they have added;
+  a wing at thirty metres holds what was put there, not a quarter of it. Only
+  `displaced_volume` is squeezed and only its gas part. A drysuit is where confusing the
+  two would be invisible in the arithmetic and wrong in the water — its suit compresses,
+  and its inflation is the diver answering that.
+
+  The name changed because "compressibility" in physics is a coefficient with units of
+  inverse pressure, which is exactly what this stopped being.
+
+- **DATA-69 — What a series carries.** *Settled:* **whatever a value may be.** A series
+  field describes its value axis with a value description of its own, rather than with a
+  dimension.
+
+  The shape it replaced assumed a series is numbers, and two of the model's series are not:
+  `alarms` carries text closed to nine words, `gas_switches` carries a key reference into
+  `gas_sources`. Neither has a dimension and neither is a measurement, so a description
+  built around one could not describe them at all.
+
+  Describing the axis instead makes the rest fall out. The nine alarm values are a
+  `Constraint.OneOf` like any other closed list, rather than something a series has to know
+  about specially. A depth series is a series *of* a length. And a **keyed series** —
+  `pressures`, one per gas source — is a series with `KEYED` cardinality rather than a kind
+  of its own, which is the second thing `DATA-67` collapsed now falling out for free.
+
+  The time axis is not described, because there is nothing to say about it: always seconds,
+  never scoped by a `units` declaration, on every series there is or will be.
+
+- **DATA-68 — Whether a whole number can have a dimension.** *Settled:* **no. It never
+  does, and the description says so by being a kind of its own.**
+
+  Every whole number in the model answers *how many*: `dive_number` is an ordinal,
+  `buddy_count` is a count, `rating` is a bare 1 to 10, and `days_left` is a count of days.
+  A measurement answers *how much*, and only a measurement has a unit to be written in. So
+  a whole number carries no dimension, takes no `units` declaration, and a description that
+  offered it one would be offering nonsense.
+
+  **The rule runs one way only.** Every whole number is dimensionless; not every other
+  number is dimensioned. `compressible_fraction` is a ratio, and `cns` and `otu` are a
+  percentage and an accumulated count — numbers that are neither counts nor measurements,
+  so a dimension stays optional.
+
+  **`days_left` is the one that had to be decided rather than observed.** It looks like a
+  duration, and a duration has a dimension. It is a *count of days*: derived for reading
+  rather than measured, and answering how many days rather than how long. That settles it
+  as dimensionless with the rest.
+
+  Two things follow. `d` is not added to `DATA-8` — it was the only field that would have
+  wanted it. And `days_left` sits deliberately apart from `no_flight_time`, which is a real
+  duration in seconds and is unit-scoped like any other measurement; the two are different
+  kinds of quantity that happen to be about time.
+
+  The hole this closed was real: nothing had exempted `days_left` from unit scoping, so a
+  logbook declaring `"time": "min"` was saying something about it that nobody intended, and
+  its unit lived in its name — which `DATA-52` forbids for values.
+
+- **DATA-67 — Whether a keyed collection of owned items is its own kind of field.**
+  *Settled:* **no. Cardinality is a property, and there are three kinds of field rather
+  than four.**
+
+  A field description used to name four things, the last two being a singular owned item
+  and a keyed collection of them, separate *"because the interface treats them
+  separately"* — one a group expanded by default, the other collapsing to a count. That
+  reason was sound and pointed at the wrong conclusion: what the interface is switching on
+  is **how many**, and how many is a property. It can switch on a property.
+
+  Following that turned up two more places saying the same thing in different words. A
+  value or a reference expressed *several* as a flag on the field, while owned items
+  expressed it as a second type. And `pressures` — several series, each under a
+  `gas_sources` key — was a *kind of value* called keyed series, so "keyed" appeared both
+  as a value kind and as a field kind, with nothing relating them.
+
+  One `Cardinality` replaces all three. It means the same
+  thing wherever it appears, and the shape of the model is visible in it: plural owned
+  items are always keyed and never a list, because their entries are addressed —
+  `@2026-06-21#0*p1` reaches one — while a list has no addressable elements. Nothing in
+  the model is a list of owned items, and nothing is a keyed reference; the cardinality
+  says which combinations exist without a type per combination.
+
+  What a diver sees is unchanged, and so is
+  [manual/data-format.md](../manual/data-format.md), which lists *keyed owned items* and
+  *keyed series* as kinds because that is how they are written in a file. The manual
+  describes the syntax; this describes what the syntax is made of.
+
+  **A series is the same argument, and was missed the first time.** Pairs of a time and a
+  value are several values reached by time, which is a cardinality and not a kind — so
+  `depth` is a *number* held as a series, `alarms` is closed *text* held as a series, and
+  `pressures` is a *pressure* held as a keyed series. What had been a description of its
+  own, carrying a nested description of its value axis, is now a property like the rest.
+  The nested one had a name, a label and a role that meant nothing, which is how the
+  mistake showed.
+
+  So the cardinalities are **one, a list, keyed, a series, and a keyed series** — five,
+  because the model nests exactly once and has no prospect of nesting twice. A structure
+  that expressed nesting generally would also express keyed-keyed, which is nothing.
+
+  **Some combinations are unused rather than impossible, and those stay sayable.** A series
+  of references would say which buddy you were with at each moment: coherent, and nobody
+  wants it. That is different in kind from a dimension on a count or bounds on text, which
+  cannot be assigned a meaning at all. The rule this layer follows is to make the
+  *meaningless* unsayable — with a type, which is why a whole number has no dimension — and
+  to leave the merely useless alone. Generality is not nonsense, and only one of them is
+  worth a type to prevent.
+
+- **DATA-64 — Where a stored value is turned into a value.**
+  *Settled in part:* **the source parses, and the description is what it parses against.**
+  Where validation happens is `DATA-66`, and open.
+
+  `FieldDescription` was doing both jobs, and only one of them is its own. The
+  documentation had said as much without the code following: a description says what a
+  field is *"in enough detail that **the parser**, the structural checks and every front
+  end can work from it"* — the parser works *from* the description, it is not the
+  description.
+
+  **Parsing belongs to whatever the items came from.** JSON has no date, so a date arrives
+  as `"2026-02-23"` and has to be read; a database column would hand one over already
+  made; a fixture assembled in memory never had a string at all. That difference is the
+  source's business and nothing above it should know which case it was in.
+
+  The source cannot do it alone, which is what keeps the description in the picture. No
+  store knows that a piece of text is a reference, a gas or a series — those kinds exist
+  only in the description. So a source is **asked for a kind and answers or fails**: JSON
+  implements `date` by parsing, a database by reading a column, and both implement `gas`
+  the same way because neither has one. That is `DATA-51`'s typed accessors, moved down to
+  the storage boundary.
+
+  **Where validation happens is *not* settled here** — see `DATA-66`. This question
+  settles only that parsing is the source's job and that the description is what the source
+  is asked against.
+
+  **`raw` is reserved for what could not be made into a value**: the text as it stood,
+  carried into `Unusable` so an interface can say what it found rather than showing a
+  blank. That is not a storage concern — any source can hold a word where a depth belongs,
+  and every one of them needs it shown.
+
+  A source-specific result type was considered and refused. The logic layer depends *"never
+  on a specific source… it must be possible to run and test this layer against items
+  assembled in memory, with no files anywhere"*, and a JSON-flavoured result would either
+  be unbuildable in memory or force every derivation and every piece of interface to handle
+  two shapes.
+
+- **DATA-65 — What a field in the data but not in the description is called.** *Settled:*
+  **unrecognised**, and it keeps its own mapping.
+
+  `DATA-51` reserved a place for them without naming it — *"deliberately wider than the
+  description: a field this version does not recognise lives here and nowhere else, which
+  is what lets it survive a round trip."* The word was already in that sentence.
+
+  It sits beside `unusable` on a different axis, and the pair is the whole of what this
+  version cannot do with a file: **`unusable` is a value that cannot be believed,
+  `unrecognised` is a name that means nothing here.** A newer version's field and a
+  hand-typed misspelling are both unrecognised, and neither can be told from the other —
+  which is why they are kept rather than judged.
+
+  Unlike `raw`, this one *is* a storage concern. Keeping a name nobody asked for is
+  something a file can do and a schema cannot, so a source that cannot preserve them says
+  so rather than dropping them quietly.
 
 - **DATA-63 — Which items carry `alternative_names`.** *Settled:* dive site, wreck and
   **operator**. Not person, not dive trip, not gas mix, whatever UDDF does.
@@ -1034,7 +1317,7 @@ Kept with their identifiers so earlier discussion still resolves.
   The failure it guards against is worth naming, because it is the kind that passes
   review: treating a wrapped box as ordinary yields the *inverse* region — a box around
   the rest of the world — which looks like working code and is wrong only where the date
-  line is crossed. The supplied regions carry three such cases, and `testdata/cousteau`
+  line is crossed. The supplied regions carry three such cases, and `fixtures/cousteau`
   one more, deliberately.
 
 - **DATA-25 — Where suggested values come from.** *Settled:* two sources, joined above
@@ -1122,7 +1405,7 @@ Kept with their identifiers so earlier discussion still resolves.
   get and no business storing.
 
   Tracking what diving costs is a reasonable thing to want and a different application
-  from this one. Registered as rejected in [../../features.md](../../features.md) with
+  from this one. Registered as rejected in [../../features.md](../features.md) with
   the reason, so it is not proposed again.
 
 - **DATA-32 — Whether a numeric range is enforced or advisory.** *Settled:* enforced, and
@@ -1171,8 +1454,8 @@ Kept with their identifiers so earlier discussion still resolves.
   those addressed to it — so both can sit in the logbook and travel together without
   fighting.
 
-  The prefixes are the [form factor](../../glossary.md) and the platform, spelled as the
-  directories under `lib/ui/gui/` are: `desktop_` and `phone_`; `windows_`, `mac_`,
+  The prefixes are the [form factor](../glossary.md) and the platform, spelled as the
+  directories under `ui/gui/` are: `desktop_` and `phone_`; `windows_`, `mac_`,
   `linux_`, `android_` and `iphone_`. A setting with no prefix applies anywhere.
 
   That keeps one axis out of the lookup chain. A phone does not have to know what a
@@ -1247,7 +1530,13 @@ Kept with their identifiers so earlier discussion still resolves.
     back the three states of `DATA-50` with the value already typed. A caller asking for
     the wrong kind is told so rather than given a bad cast.
 
-  There is one method per kind of value, about ten of them, rather than an accessor per
+  **How many methods that is, is a language artefact.** It was written as one per kind —
+  about ten — because Dart could not do better. Kotlin's reified generics can collapse them
+  into a single `read<Int>(name)` that checks the declared kind just as well, and probably
+  should. The decision is *three ways in, none of them per field*; the shape of the third
+  is an implementation choice and open.
+
+  One method per kind of value, or one generic method, rather than an accessor per
   field across eight types — so the per-field surface the description design removed does
   not come back. Nothing here names a field, so this layer still knows nothing about
   diving, and the three-state result is unwrapped once per call site instead of being
@@ -1377,6 +1666,10 @@ Kept with their identifiers so earlier discussion still resolves.
   yes. It sits in the dive and is read with it. The scale is manageable provided samples
   are held columnar in memory rather than as an object per sample; the difference between
   those two is roughly tenfold, and larger than the choice of where to put the file.
+
+  On the JVM *columnar* has to mean primitive arrays rather than a list of numbers, since a
+  boxed list pays an object header and an indirection per sample. The tenfold estimate was
+  made against a language that boxes less, so it is a floor here rather than a figure.
 - **DATA-2 — Whether a dive's number is derived or primary.** *Settled:* primary. The
   manual records it as a field the diver writes — their own numbering, kept or not as
   they please — precisely so that finding a forgotten dive renumbers nothing.

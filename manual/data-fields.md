@@ -202,8 +202,10 @@ One per dive. What the conditions were.
 - `bottom_temperature` (number) — the coldest water you were in, from the primary
   profile. Correct it where there is no profile, or where it did not measure
   temperature.
-- `atmospheric_pressure` (number) — from where the dive was. Correct it when you know
-  better; weather moves it about, and altitude matters more than most divers expect.
+- `atmospheric_pressure` (number) — from where the dive was, and **absolute**: about 1 bar
+  at sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge
+  reads against; it is the pressure itself. Correct it when you know better; weather moves
+  it about, and altitude matters more than most divers expect.
 
 #### Dive gear
 
@@ -251,7 +253,7 @@ that is the only record of it.
 - `depth` (series) — how deep, throughout.
 - `temperature` (series) — how cold, throughout. Often sampled far less often than
   depth, which is why it is a series of its own rather than a column beside it.
-- `pressures` (keyed series) — what was left in each cylinder, throughout: one series
+- `pressures` (keyed series) — gauge pressure left in each cylinder, throughout: one series
   under each `gas_sources` key it measured, so a dive on twins with a stage has three,
   and two computers watching one cylinder keep their readings apart.
 - `alarms` (series) — what the computer warned about, and when. Each is one of `ascent`,
@@ -265,8 +267,11 @@ that is the only record of it.
 - `no_flight_time` (number) — how long the computer said to wait before flying, at the
   end of the dive.
 - `desaturation_time` (number) — how long it reckoned you would take to offgas.
-- `cns`, `otu` (series) — the oxygen exposure it was tracking.
-- `heart_rate` (series) — where the computer measures it.
+- `cns` (series) — the central nervous system oxygen clock the computer was keeping, as a
+  percentage. It runs past 100 on a long or deep dive, and the computer decides when to
+  say so.
+- `otu` (series) — oxygen tolerance units accumulated, which is a count and not a
+  percentage. A different measure of a different risk, on its own scale.
 - `water_type` (fixed set) — what the computer was **set to** while it recorded: `salt`,
   `fresh` or `en13319`. Not what the water actually was — you can dive the sea with a
   computer set to fresh, and the depths it wrote down will say so.
@@ -324,8 +329,12 @@ keeps them apart.
 
 - `cylinder` (reference) — the gear item it was, where it is one you own. Leave it out
   for a rented or borrowed cylinder you have no item for.
-- `start_pressure` (number) — what it read as you went in.
+- `start_pressure` (number) — what the gauge read as you went in.
 - `end_pressure` (number) — what it read as you came out.
+
+  Both are **gauge** pressure: what the needle showed, which is zero for an empty
+  cylinder at the surface. That is what you read and what you write, and Yemoja adds the
+  atmosphere itself wherever a calculation needs the absolute figure.
 - `gas_type` (gas) — what was in it: `AIR`, `EAN32`, `TMX18/35`.
 - `usage` (text) — what it was for. Anything you like; the usual ones are `bottom`,
   `stage`, `deco` and `travel`.
@@ -570,8 +579,24 @@ buoyancy, so that weighting can be worked out from the kit you took.
   figure that changes. A suit that has grown genuinely less buoyant over the years has
   lost gas from the neoprene itself — that is a smaller `displaced_volume`, corrected on
   the item.
-- `compressibility` (number) — how much that volume is squeezed by pressure, so that a
-  suit losing buoyancy with depth is accounted for.
+- `compressible_fraction` (number) — how much of `displaced_volume` is gas rather than
+  solid, from 0 to 1, so that a suit losing buoyancy with depth is accounted for.
+
+  A wetsuit is mostly sealed bubbles in rubber. Pressure squeezes the gas and leaves the
+  rubber alone, so what an item displaces at depth is
+
+  > the solid part, plus the gas part divided by the **absolute** pressure in bar — one
+  > at the surface, two at ten metres, four at thirty.
+
+  At ten metres the gas is halved, at thirty it is a quarter. A steel backplate is nearly
+  all solid and displaces the same at forty metres as at the surface; a 7 mm one-piece is
+  mostly gas and loses most of its lift. One number places an item between the two.
+
+  **It is not the foam's real gas content**, which is higher. Neoprene's cell walls carry
+  some of the load, so the bubbles do not squeeze quite as freely as loose gas would. What
+  belongs here is the fraction that *behaves* as gas — the figure that reproduces the
+  buoyancy you actually lose. If your 5 mm suit loses about half its lift by ten metres,
+  the number that says so is right, whatever the foam is made of.
 - `lift_volume` (number) — the gas the item can take on, over and above
   `displaced_volume`. A wing, a lift bag and a drysuit are all this: something with a
   volume of its own that a valve makes larger.
@@ -580,6 +605,13 @@ buoyancy, so that weighting can be worked out from the kit you took.
   and its undersuit with just enough in it not to squeeze — the least it can ever
   displace, which is the figure weighting has to work from — and `lift_volume` is what
   can be added beyond that. A wing splits the same way and happens to start near nothing.
+
+  **Depth does not shrink `lift_volume`.** It is gas you put in and let out, so at thirty
+  metres a wing holds whatever you have put there — not a quarter of what it held at the
+  surface. Only `displaced_volume` is squeezed, and only its gas part. That is the whole of
+  the difference between the two figures: one is what the item is, the other is what you
+  are doing with it. A drysuit is where it matters most, since its suit compresses and its
+  inflation is you answering that.
 
 Nothing here records the gas in a cylinder. Its weight follows from the cylinder's
 `capacity`, the pressure at the time and what is in it, so recording it on the gear item

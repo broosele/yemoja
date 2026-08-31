@@ -45,7 +45,7 @@ Nothing is installable yet. This section will cover, per platform, how to instal
 release and how to build and run from source, once there is something to run.
 
 Development prerequisites are per platform and are documented with each target — for
-the current first priority, see [lib/ui/gui/desktop/windows/doc.md](lib/ui/gui/desktop/windows/doc.md).
+the current first priority, see [ui/gui/desktop/windows/doc.md](ui/gui/desktop/windows/doc.md).
 
 ## Architecture
 
@@ -59,18 +59,18 @@ logic     everything the application does — a single implementation
 data      what the data is, and one or more places to keep it
 ```
 
-- **[data](lib/data/doc.md)** — items and the machinery that reads, writes, resolves
+- **[data](data/doc.md)** — items and the machinery that reads, writes, resolves
   and checks them, plus the contract a data source must meet, separate from any
   particular storage. It is told what an item type is rather than knowing; the
   descriptions come from the layer above. Several sources are possible; the only one
-  planned is **[json](lib/data/json/doc.md)**, plain files on disk.
-- **[logic](lib/logic/doc.md)** — the item model, logbook operations, dive planning
+  planned is **[json](data/json/doc.md)**, plain files on disk.
+- **[logic](logic/doc.md)** — the item model, logbook operations, dive planning
   and decompression, statistics, import. One implementation, no variants. Decompression is isolated and
   treated as safety-relevant.
-- **[ui](lib/ui/doc.md)** — several front ends over the same logic: a programmatic
-  **[api](lib/ui/api/doc.md)**, a raw **[tui](lib/ui/tui/doc.md)**, and the
-  **[gui](lib/ui/gui/doc.md)** that is the real application, in a
-  [desktop](lib/ui/gui/desktop/doc.md) and a [phone](lib/ui/gui/phone/doc.md) form factor.
+- **[ui](ui/doc.md)** — several front ends over the same logic: a programmatic
+  **[api](ui/api/doc.md)**, a raw **[tui](ui/tui/doc.md)**, and the
+  **[gui](ui/gui/doc.md)** that is the real application, in a
+  [desktop](ui/gui/desktop/doc.md) and a [phone](ui/gui/phone/doc.md) form factor.
 
 The rule that makes this worth having: **a layer never reaches past the one directly
 below it.** The logic layer offers a single access point, the *Universe*, and every front
@@ -78,32 +78,56 @@ end goes through it; none of them opens a file or knows where anything is kept.
 
 ### Repository layout
 
-One Dart package. The three layers are directories under `lib/`, which is where Dart
-expects a package's source, and the test suite mirrors them under `test/` — Dart offers
-no way to keep tests beside the code they cover.
+**One module per layer**, each with its own source and its own tests:
 
 ```
-lib/          the three layers above, one directory each
-test/         the suite, mirroring lib/ — see test/doc.md
+data/         the data layer — see data/doc.md
+logic/        the logic layer — see logic/doc.md
+ui/           the front ends — see ui/doc.md
 tool/         development scripts that check the documentation and the fixtures
 libraries/    reference data shipped with the application
 manual/       the user manual, bundled and shown in the application
-testdata/     fixture logbooks
+fixtures/     fixture logbooks — see fixtures/doc.md
 ```
 
-The four directories outside `lib/` and `test/` are not Dart source. `libraries/` and
-`manual/` are shipped with the application and are dedicated to the public domain;
-everything else is not — see *Licensing* below.
+Inside a module, source sits under `src/commonMain/kotlin` and tests under
+`src/commonTest/kotlin`, with a further source set per target where a layer needs one —
+which in practice is only the interface. A layer's `doc.md` sits at the root of its
+module, above the source rather than inside it.
+
+**Modules are how the layering rule is kept.** A module declares what it depends on, so
+the data layer cannot reach the logic layer by accident: there is nothing to reach, and
+the build says so rather than a reviewer. The rule above stops being a convention.
+
+The four directories that are not modules hold no source. `libraries/` and `manual/` are
+shipped with the application and are dedicated to the public domain; everything else is
+not — see *Licensing* below.
 
 ### Main dependencies
 
-The language is Dart, which is what the repository layout above assumes. The rest is
-not settled: a cross-platform UI toolkit for the GUI, a library for reading dive
-computers, and a Bluetooth LE library per platform. Each will be recorded with the layer
-that needs it, once chosen.
+The language is **Kotlin**, and the interface is **Compose Multiplatform**. The rest is
+not settled: a library for reading dive computers, and a Bluetooth LE library per
+platform. Each will be recorded with the layer that needs it, once chosen.
+
+**Why, and against what.** The five targets are not equal — Android matters more than
+iPhone here — and Kotlin is Android's own language rather than a target it compiles to.
+The desktop three run on the JVM, and iPhone, which is last in line, is also the youngest
+part of the toolkit; that ordering is the point rather than a compromise.
+
+Two costs are accepted. Desktop builds carry a runtime, so installers are larger than a
+compiled binary's. And reaching a C library takes more plumbing than a language with
+first-class foreign bindings — which matters because libdivecomputer must be linked
+dynamically for the licence reasons below, on the JVM, on Android and on iOS by three
+different routes.
+
+Two things it buys beyond the language. The terminal front end has real libraries to build
+on. And nothing about the item model changed when the language did — see *Why a
+description rather than a class* in [data/doc.md](data/doc.md), where the argument
+was rewritten to stop resting on Dart's lack of reflection, which was never the load
+it carried.
 
 Storage needs nothing: versioning is Yemoja's own, so no version control library is
-involved — see [lib/data/json/doc.md](lib/data/json/doc.md).
+involved — see [data/json/doc.md](data/json/doc.md).
 
 ## Code style
 
@@ -119,8 +143,8 @@ involved — see [lib/data/json/doc.md](lib/data/json/doc.md).
   can be referred to in discussion. An identifier is never reused and never
   renumbered; a settled question keeps its number and records the answer.
 - **Detail belongs at the narrowest level it applies to.** General GUI structure goes
-  in `lib/ui/gui/doc.md`, phone layout in `lib/ui/gui/phone/doc.md`, Android specifics in
-  `lib/ui/gui/phone/android/doc.md`.
+  in `ui/gui/doc.md`, phone layout in `ui/gui/phone/doc.md`, Android specifics in
+  `ui/gui/phone/android/doc.md`.
 - **Every feature has tests.** The full suite passes before a commit.
 - **One commit per feature or fix.** Unrelated changes are not bundled together.
 - **Documentation is updated in the same commit as the change that affects it.**
@@ -135,24 +159,24 @@ involved — see [lib/data/json/doc.md](lib/data/json/doc.md).
 |---|---|
 | [features.md](features.md) | What the application is meant to do, and what is deferred |
 | [glossary.md](glossary.md) | Every term with a specific meaning, and which document owns it |
-| [lib/data/doc.md](lib/data/doc.md) | Item model, data source contracts |
-| [lib/data/json/doc.md](lib/data/json/doc.md) | The JSON file source |
-| [lib/data/libraries.md](lib/data/libraries.md) | Read-only reference data shipped with the application |
+| [data/doc.md](data/doc.md) | Item model, data source contracts |
+| [data/json/doc.md](data/json/doc.md) | The JSON file source |
+| [data/libraries.md](data/libraries.md) | Read-only reference data shipped with the application |
 | [libraries/doc.md](libraries/doc.md) | The library files themselves: layout, format, what belongs |
-| [lib/data/json/requirements.md](lib/data/json/requirements.md) | What storage must do: versioning, sync, backup, conflicts |
-| [lib/logic/doc.md](lib/logic/doc.md) | Application behaviour, planning, decompression |
-| [lib/logic/reconciliation.md](lib/logic/reconciliation.md) | Merging sync, dive computer and file import into the logbook |
-| [lib/logic/uddf.md](lib/logic/uddf.md) | UDDF field by field against this model: what maps, what is missing, what is declined |
-| [lib/ui/doc.md](lib/ui/doc.md) | Rules common to all front ends |
-| [lib/ui/api/doc.md](lib/ui/api/doc.md) · [lib/ui/tui/doc.md](lib/ui/tui/doc.md) · [lib/ui/gui/doc.md](lib/ui/gui/doc.md) | The individual front ends |
+| [data/json/requirements.md](data/json/requirements.md) | What storage must do: versioning, sync, backup, conflicts |
+| [logic/doc.md](logic/doc.md) | Application behaviour, planning, decompression |
+| [logic/reconciliation.md](logic/reconciliation.md) | Merging sync, dive computer and file import into the logbook |
+| [logic/uddf.md](logic/uddf.md) | UDDF field by field against this model: what maps, what is missing, what is declined |
+| [ui/doc.md](ui/doc.md) | Rules common to all front ends |
+| [ui/api/doc.md](ui/api/doc.md) · [ui/tui/doc.md](ui/tui/doc.md) · [ui/gui/doc.md](ui/gui/doc.md) | The individual front ends |
 | [manual/doc.md](manual/doc.md) | User manual — conventions and what is written |
 | [manual/data-fields.md](manual/data-fields.md) | **The definition of every data field**, written for users |
 | [manual/settings.md](manual/settings.md) | The settings files: app-owned, not part of the data format |
 | [manual/data-format.md](manual/data-format.md) | How a logbook is written to disk, written for users |
-| [testdata/doc.md](testdata/doc.md) | Fixture logbooks used by tests |
-| [test/doc.md](test/doc.md) | The test suite: how it mirrors `lib/`, and what belongs in it |
-| [lib/ui/gui/desktop/doc.md](lib/ui/gui/desktop/doc.md) | Desktop form factor — [windows](lib/ui/gui/desktop/windows/doc.md), [mac](lib/ui/gui/desktop/mac/doc.md), [linux](lib/ui/gui/desktop/linux/doc.md) |
-| [lib/ui/gui/phone/doc.md](lib/ui/gui/phone/doc.md) | Phone form factor — [android](lib/ui/gui/phone/android/doc.md), [iphone](lib/ui/gui/phone/iphone/doc.md) |
+| [fixtures/doc.md](fixtures/doc.md) | Fixture logbooks used by tests |
+| [testing.md](testing.md) | The test suite: the conventions that hold across all three modules |
+| [ui/gui/desktop/doc.md](ui/gui/desktop/doc.md) | Desktop form factor — [windows](ui/gui/desktop/windows/doc.md), [mac](ui/gui/desktop/mac/doc.md), [linux](ui/gui/desktop/linux/doc.md) |
+| [ui/gui/phone/doc.md](ui/gui/phone/doc.md) | Phone form factor — [android](ui/gui/phone/android/doc.md), [iphone](ui/gui/phone/iphone/doc.md) |
 
 Each `doc.md` ends with the questions still open at that level.
 
@@ -205,7 +229,7 @@ are allowed will not usually pay a lawyer to find out — they will simply do so
 else, and a format nobody else implements is not really a format. Silence reads as
 reserved.
 
-Everything else goes with the source, including the test fixtures in `testdata/` and the
+Everything else goes with the source, including the test fixtures in `fixtures/` and the
 internal documents — the per-layer `doc.md` files, and `manual/doc.md`, which is about
 writing the manual rather than part of it.
 
@@ -241,8 +265,8 @@ Nothing is chosen yet, so nothing is binding yet. The constraints to plan around
   *implementations* are GPL. An engine written from the published tables is clean;
   one derived from existing source is not, and would take the whole application
   with it.
-- **Flutter, Dart and most of the package ecosystem** are BSD, MIT or Apache, and
-  impose nothing.
+- **Kotlin, Compose Multiplatform and most of the ecosystem** are Apache 2.0, and
+  impose nothing beyond attribution.
 - **The library data is in the public domain**, so nothing attaches to it. Any data
   added later has to be checked the same way: a share-alike source would carry its
   obligation into the libraries and collide with releasing them freely.
