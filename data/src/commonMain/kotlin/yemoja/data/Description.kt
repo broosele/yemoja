@@ -7,7 +7,6 @@ package yemoja.data
  * See ../../../../../doc.md — "How a type is described".
  *
  * Absent until settled: validation (DATA-66) and the shape of the typed reads (DATA-51).
- * `required` is absent for good — DATA-73.
  */
 
 /**

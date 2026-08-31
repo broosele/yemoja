@@ -747,6 +747,7 @@ data/
   json/           the JSON file source (doc.md, requirements.md)
   src/commonMain/kotlin/yemoja/data/
                   Description.kt   what a type is, and what a field is
+                  Result.kt        what reading a field gave
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
