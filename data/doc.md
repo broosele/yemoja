@@ -521,34 +521,41 @@ an id to an item, and an item to its id. Storing it on the item
 instead would mean an item created but not yet accepted — an import candidate — either
 carrying an id it does not have yet or having one written into it later.
 
-An item can, however, **propose** an id for itself from its own data — a
-person from their name, a dive from its date. The proposal is derived and never
-stored; the id actually in use is whatever the container says it is, and may
-differ from the proposal indefinitely. Correcting a diver's surname changes what their
-item would propose without changing what it is called.
+**Nor does this layer invent one.** An id is the diver's, arrived at with whatever help
+the interface offers — proposing one from a person's name or a dive's date is an
+assistance, not machinery, and it does not live here. An `ItemDescription` says nothing
+about how a proposal is made, and `DATA-73` records why: a recipe per type in the
+descriptions would be this layer knowing what a dive is.
 
-An **id proposal** is a *base*, not a finished id. The item supplies it from its own
-data and knows nothing of its neighbours; whatever manages the collection resolves
-clashes by appending `#<index>`.
+An **id proposal** is a *base*, not a finished id. Whatever manages the collection resolves
+clashes by appending `#<index>`, and that much *is* here, because only the collection can
+see the neighbours.
 
 **The clash is checked against the libraries too**, not only the logbook. A new dive site
 whose proposal matches a supplied one becomes `blue_hole#1` rather than silently replacing
 it — see `LIB-2` in [libraries.md](libraries.md). Shadowing a library item is then always
 deliberate: you edit the supplied item, and the edited copy is written to the logbook.
 
-**Proposing only happens at creation.** An item read from a file already has an
-id — its file name or its key — so nothing is proposed for it, however sparse its
-contents. That leaves one case to worry about: an item created with too little to
-propose from. Since no field is mandatory anywhere, the data layer cannot prevent it,
-and should not try. Ensuring there is enough to work with belongs where items are
-created, which in practice means the interface asks for a date before it makes a dive.
-See [../ui/gui/doc.md](../ui/gui/doc.md). This keeps the item free of any knowledge about
-what else exists, and puts uniqueness where uniqueness can actually be checked.
+**Nothing is required, and nothing is prevented.** An item read from a file already has an
+id — its file name or its key. One created with too little to name it gets a proposal all
+the same: whoever proposes falls back to the type's own name, so an unnamed person becomes
+`unknown_person`, and a second becomes `unknown_person#1` like any other clash. No field
+is mandatory, the data layer cannot prevent an empty item and should not try, and an
+interface that wants to warn about one is welcome to. It is a safety net rather than a
+path anybody takes: an interface that saves a filled form rather than a half-typed one
+will not produce it.
 
-An index, once assigned, is never reissued and never renumbered. Deleting
-`2026-02-23#0` does not renumber `2026-02-23#1`, and the freed index is not handed to
-a later item — otherwise ids would silently start meaning something else, and
-every reference to them would quietly change target.
+**An id can be changed, but not by the item.** An item does not own its id, so it cannot
+rename itself; the Universe can, and does it as one act — the id and every reference to it
+together. That is why it sits there and nowhere lower: only something holding all the
+items can find what points at one.
+
+**What stays forbidden is reuse.** An index, once assigned, is never reissued and never
+renumbered. Deleting `2026-02-23#0` does not renumber `2026-02-23#1`, and the freed index
+is not handed to a later item — otherwise ids would silently start meaning something else,
+and every reference to them would quietly change target. A deliberate rename does not do
+that, because it carries the references with it; a reissued index does, because nothing
+announces it.
 
 **Whether the index is written down is a property of the item type.** For most
 types a clash is rare, so index zero is left off and only a genuine second item
@@ -855,6 +862,28 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-73 — Whether a description says what an id is proposed from, and what becomes of
+  `required`.** *Settled:* **it does not, and `required` goes.**
+
+  An id is the diver's. Proposing one from a person's name or a dive's date is help the
+  interface offers, not machinery this layer owns — so an `ItemDescription` says nothing
+  about it, and no recipe per type appears in the descriptions. A recipe there would be
+  this layer knowing what a dive is.
+
+  **`required` was never about requirement.** Six fields carried the word and five gave the
+  same reason beside it — *the item's id is worked out from it* — with a person's
+  `first_name` the same one step removed. Nothing is refused on write, so it could only
+  have meant *the proposal needs this*. The marking was inconsistent too, which is what
+  gave it away: a dive site's `name` and a region's `name` say the id comes from them and
+  were never marked.
+
+  **Missing inputs are handled rather than prevented.** Whoever proposes falls back to the
+  type's own name, so an unnamed person is `unknown_person` and a second is
+  `unknown_person#1` by the ordinary clash rule. Nothing has to be present, nothing is
+  refused, and an interface may warn. The cost is that an id is not rewritten when the name
+  arrives — but ids can now be changed at the Universe, so that is a repair rather than a
+  scar.
 
 - **DATA-72 — Heart rate.** *Settled:* **dropped.** The field is gone from the profile,
   from the fixture and from the UDDF mapping.

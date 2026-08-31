@@ -25,6 +25,12 @@ A kind of item is never subdivided. Gear covers a regulator, a cylinder and a
 camera alike, and each simply leaves out the fields that do not apply to it. Yemoja
 does not insist that a particular field be present.
 
+**Nothing is required, including a name.** An item with nothing in it is a valid item;
+Yemoja will call it something — `unknown_person`, and `unknown_person#1` for the next —
+and let you fill it in later. What it is called does not change when you do, because other
+things point at that name; renaming is its own operation and Yemoja does it across the
+whole logbook at once.
+
 Every kind of item has a `remarks` field: multiline text of any length, for whatever
 you want to note that has no field of its own. It is never required, and it is not
 repeated in the lists below.
@@ -360,7 +366,7 @@ emergency contacts, and yourself. They need not be divers.
 
 Fields you record:
 
-- `first_name` (text) — required.
+- `first_name` (text)
 - `middle_names` (text) — all of them together, if there are several.
 - `last_name` (text)
 - `birthday` (date)
@@ -498,7 +504,7 @@ site may hold several while one large wreck may be dived from more than one.
 
 Fields you record:
 
-- `name` (text) — required. What she was called. The item's id is worked out from it.
+- `name` (text) — what she was called. The item's id is worked out from it.
 - `alternative_names` (list of text) — other names she went by, before a rename or a
   change of owner.
 - `ship_type` (text) — what she was: `freighter`, `tanker`, `warship`, `hospital ship`.
@@ -527,7 +533,7 @@ A piece of equipment. A dive computer is gear like anything else you own.
 
 Fields you record:
 
-- `name` (text) — required. The item's id is worked out from it.
+- `name` (text) — the item's id is worked out from it.
 - `brand` (text)
 - `model` (text)
 - `serial` (text) — the serial number, where it has one.
@@ -657,7 +663,7 @@ qualifications are recorded as courses on your person item.
 
 Fields you record:
 
-- `name` (text) — required. The item's id is worked out from it.
+- `name` (text) — the item's id is worked out from it.
 - `abbreviation` (text) — the short form it is usually known by.
 - `organisation` (text) — who awards it, written as a plain name.
 - `max_depth` (number) — the depth the qualification is granted for.
@@ -673,7 +679,7 @@ centre, a club, a resort, a boat.
 
 Fields you record:
 
-- `name` (text) — required. The item's id is worked out from it.
+- `name` (text) — the item's id is worked out from it.
 - `alternative_names` (list of text) — what they were called before. Dive centres are
   bought and rebranded, and the dives you did there were with the old name; keeping it
   here means searching for either one finds the place.
@@ -699,7 +705,7 @@ rather than the fortnight.
 
 Fields you record:
 
-- `name` (text) — required. The item's id is worked out from it.
+- `name` (text) — the item's id is worked out from it.
 - `parent` (reference) — the larger trip this one is part of, where there is one.
 - `region` (reference) — where it went.
 - `operator` (reference) — who ran it.
