@@ -356,10 +356,13 @@ That is a refinement of *value*, not a fourth thing beside reference and owned i
 written, by `DATA-24`. That is what keeps a rating a number, with a number's dimension and
 a number's ordering, rather than becoming a kind of its own.
 
-But a closed *list* belongs to text and *bounds* belong to numbers, and neither means
-anything on the other. So each kind carries its own — text has a fixed set, a number has
-bounds — rather than both sharing one thing that could be attached to either. One rule,
+But a closed *list* belongs to text and a *range* belongs to numbers, and neither means
+anything on the other. So each kind carries its own — text has a fixed set, a number has a
+range — rather than both sharing one thing that could be attached to either. One rule,
 stated once here; two ways of writing it, each where it can be used and nowhere it cannot.
+
+A range rather than a pair of bounds, so that a lower bound above an upper one cannot be
+written. It costs the one-sided case, which nothing in the model has.
 
 A *suggested* vocabulary is neither. It constrains nothing: a value outside it is an
 ordinary value and always was. It sits beside the fixed set on text, which is where the

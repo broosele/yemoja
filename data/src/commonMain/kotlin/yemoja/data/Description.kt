@@ -46,12 +46,10 @@ sealed interface Role {
 
 /**
  * One field of one item type, in enough detail for the parser, the checks and every front
- * end to work from.
+ * end to work from. These describe fields; they hold no values.
  *
  * Three implementations: a value, a reference to another item, and an owned item. How many
  * of each is [Cardinality].
- *
- * These describe fields; they hold no values.
  */
 sealed class FieldDescription(
     /** As written in a file. */
@@ -60,11 +58,7 @@ sealed class FieldDescription(
     val role: Role,
     val cardinality: Cardinality,
 ) {
-    /**
-     * Shown to a diver. Defaults from [name] — underscores to spaces, first letter up —
-     * which works because field names are never abbreviated. Acronyms need one given:
-     * `cns` would otherwise show as "Cns".
-     */
+    /** Used in the UI. */
     val label: String =
         label ?: name.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
@@ -95,9 +89,8 @@ class NumberDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-    /** Inclusive bounds, where given. */
-    val min: Double? = null,
-    val max: Double? = null,
+    /** Closed at both ends, where given: a latitude is `-90.0..90.0`. */
+    val range: ClosedRange<Double>? = null,
     default: Any? = null,
 ) : ValueDescription(name, label, role, cardinality, default)
 
@@ -110,9 +103,8 @@ class WholeNumberDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-    /** Whole bounds: a rating runs 1 to 10, not 1.0 to 10.0. */
-    val min: Int? = null,
-    val max: Int? = null,
+    /** Whole bounds, where given: a rating is `1..10`, not `1.0..10.0`. */
+    val range: IntRange? = null,
     default: Any? = null,
 ) : ValueDescription(name, label, role, cardinality, default)
 
