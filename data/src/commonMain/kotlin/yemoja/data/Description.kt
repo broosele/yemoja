@@ -6,8 +6,8 @@ package yemoja.data
  *
  * See ../../../../../doc.md — "How a type is described".
  *
- * Absent until settled: validation (DATA-66), `required`, and the shape of the typed
- * reads (DATA-51).
+ * Absent until settled: validation (DATA-66) and the shape of the typed reads (DATA-51).
+ * `required` is absent for good — DATA-73.
  */
 
 /**
@@ -23,11 +23,9 @@ enum class Dimension {
 /**
  * How many, and how reached. Orthogonal to what a field contains — `DATA-67`.
  *
- * [KEYED] entries are addressable, which `@2026-06-21#0*p1` reaches; a [LIST] has no
+ * [KEYED] entries are addressable, with keys like `@2026-06-21#0*p1`; a [LIST] has no
  * addressable elements. [SERIES] is indexed by time, always in seconds. [KEYED_SERIES] is
- * one series per key, used by `pressures` and nothing else.
- *
- * Unused combinations stay sayable; meaningless ones are prevented by the types.
+ * one series per key.
  */
 enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
 
@@ -54,7 +52,7 @@ sealed interface Role {
  * Three implementations: a value, a reference to another item, and an owned item. How many
  * of each is [Cardinality].
  *
- * These describe fields and hold no values of their own, which is what the names say.
+ * These describe fields; they hold no values.
  */
 sealed class FieldDescription(
     /** As written in a file. */
