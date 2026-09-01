@@ -5,24 +5,28 @@ package yemoja.data
  *
  * Three states rather than a nullable, because absent and unusable are the two a diver most
  * needs told apart — `DATA-50`. Every reader handles all three.
+ *
+ * The value is non-null by the bound on [T]: a usable nothing would be the collapse the
+ * three states exist to prevent, smuggled back through the type parameter.
  */
-sealed class Result<out T> {
+sealed class Result<out T : Any> {
 
     /**
      * Applies [transform] to a usable value and carries the other two states through
-     * untouched, so a derivation states its arithmetic and nothing else — `DATA-50`.
+     * untouched.
      *
-     * Several inputs are the reader's business: it resolves them, stops at the first that
-     * is not usable, and calls the arithmetic only when all of them are.
+     * Offered, not imposed. A derivation decides for itself whether it can manage without
+     * an input — `deco` falls back from one field to another when the first is absent — so
+     * propagation is the common case rather than the rule. `DATA-26`.
      */
-    inline fun <R> map(transform: (T) -> R): Result<R> = when (this) {
+    inline fun <R : Any> map(transform: (T) -> R): Result<R> = when (this) {
         is Usable -> Usable(transform(value))
         is Absent -> this
         is Unusable -> this
     }
 
     /** A value, and it can be used. */
-    class Usable<out T>(val value: T) : Result<T>()
+    class Usable<out T : Any>(val value: T) : Result<T>()
 
     /** Nothing was recorded and nothing could be worked out. One absent state, not several. */
     object Absent : Result<Nothing>()

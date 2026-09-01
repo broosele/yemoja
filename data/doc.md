@@ -1583,12 +1583,22 @@ Kept with their identifiers so earlier discussion still resolves.
   rather than the cost — the question is asked at each use instead of being forgotten
   once, centrally.
 
-  This fixes more than one signature. It is what a derivation returns, so `DATA-26`
-  propagation is mechanical: a derivation whose input is unusable is unusable, and one
-  whose input is absent is absent. It is what `GUI-8` renders, so an empty cell and a
-  broken one stop looking alike. And a derivation that declares which fields it reads
-  need not carry the propagation itself — the reader resolves the inputs, short-circuits,
-  and calls the arithmetic only when every input is usable.
+  This fixes more than one signature. It is what a derivation returns, and what `GUI-8`
+  renders, so an empty cell and a broken one stop looking alike.
+
+  **It does not make propagation automatic**, and an earlier draft of this entry said it
+  did. `DATA-26` is the one to follow: an unusable input propagates *by default*, and
+  anything else is decided case by case — by the derivation, which is the only thing that
+  knows whether it can manage without.
+
+  Absent is where that matters most, because a missing input is often something a
+  derivation has an answer for. `deco` is the settled example: it reads the recording's
+  `decostop`, and *failing that* a `no_deco_time` that never reached zero — see `LOGIC-6`
+  in [../logic/doc.md](../logic/doc.md). A rule that turned an absent input into an absent
+  answer would have made that impossible to write.
+
+  So a derivation is handed the item and decides. What this layer offers is the
+  short-circuit for the common case, not a rule that imposes it.
 - **DATA-24 — What happens to a value outside a fixed set.** *Settled by `DATA-50`:* it is
   kept on disk exactly as written and read back as **unusable**, never as absent. That
   covers both cases the question named — `brackish` typed by hand, and a value a newer
