@@ -12,38 +12,39 @@ package yemoja.data
 /**
  * What a number measures, deciding which `units` entry applies to it.
  *
- * [DIMENSIONLESS] is a member, not an absence: a ratio or a percentage takes no unit and
- * needs none. `DATA-8`'s unit table has no row for it.
+ * [DIMENSIONLESS] is a member, not an absence: a ratio or a percentage takes no unit and needs
+ * none. `DATA-8`'s unit table has no row for it.
  */
 enum class Dimension {
     LENGTH, MASS, TIME, TEMPERATURE, VOLUME, PRESSURE, ANGLE, DENSITY, DIMENSIONLESS,
 }
 
 /**
- * How many, and how reached. Orthogonal to what a field contains — `DATA-67`.
+ * How many, and how reached.
  *
- * [KEYED] entries are addressable, with keys like `@2026-06-21#0*p1`; a [LIST] has no
- * addressable elements. [SERIES] is indexed by time, always in seconds. [KEYED_SERIES] is
- * one series per key.
+ * Orthogonal to what a field contains. `DATA-67`.
+ *
+ * [KEYED] entries are addressable, with keys like `@2026-06-21#0*p1`; a [LIST] has no addressable
+ * elements. [SERIES] is indexed by time, always in seconds. [KEYED_SERIES] is one series per key.
  */
 enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
 
 /**
- * Text that does not say what it claims to — `EAN200`, or a date that is not a date.
+ * Text that does not say what it claims to: `EAN200`, or a date that is not a date.
  *
- * A bad *value*, not a bad program, which is the distinction it exists to draw. A parser
- * this project owns throws this and nothing else does, so catching it catches only that:
- * an `IllegalArgumentException` from somewhere unrelated stays a fault and is not reported
- * to a diver as a misspelt gas.
+ * A bad value, not a bad program. A parser this project owns throws this, and nothing else does, so
+ * catching it catches only that. An `IllegalArgumentException` from somewhere unrelated stays a
+ * fault instead of reaching a diver as a misspelt gas.
  */
 class ValueFormatException(message: String) : RuntimeException(message)
 
 /**
  * Whether a value is acceptable for the field it is offered to, and why not.
  *
- * Not [Result]: that answers what reading a *stored* value gave, and carries the raw text
- * so an interface can show what is in the file. This answers whether a value — typed into
- * a form, or about to be written — belongs in a field at all. Nothing raw to keep.
+ * Not [Result]. That answers what reading a *stored* value gave, and carries the raw text so an
+ * interface can show what is in the file. This answers whether a value belongs in a field at all,
+ * about something that may never have been in a file: typed into a form, or about to be written.
+ * Nothing raw to keep.
  */
 sealed interface Validity {
 
@@ -54,8 +55,9 @@ sealed interface Validity {
 }
 
 /**
- * Recorded, worked out, or worked out and correctable. Orthogonal to the kind of field.
- * A derivation carries its own computation.
+ * Recorded, worked out, or worked out and correctable.
+ *
+ * Orthogonal to the kind of field. A derivation carries its own computation.
  */
 sealed interface Role {
 
@@ -70,11 +72,13 @@ sealed interface Role {
 }
 
 /**
- * One field of one item type, in enough detail for the parser, the checks and every front
- * end to work from. These describe fields; they hold no values.
+ * One field of one item type, in enough detail for the parser, the checks and every front end to
+ * work from.
  *
- * Three implementations: a value, a reference to another item, and an owned item. How many
- * of each is [Cardinality].
+ * These describe fields; they hold no values.
+ *
+ * Three implementations: a value, a reference to another item, and an owned item. How many of each
+ * is [Cardinality].
  */
 sealed class FieldDescription(
     /** As written in a file. */
@@ -88,15 +92,16 @@ sealed class FieldDescription(
         label ?: name.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
     /**
-     * Reads [text] as this field's kind — the written form that `manual/data-format.md`
-     * defines. One value at a time: a field holding a list or a series parses its elements
-     * one by one, so cardinality is the caller's business.
+     * Reads [text] as this field's kind, in the written form `manual/data-format.md` defines.
      *
-     * [overrides] says the text is a stored value on a field that would otherwise work one
-     * out, which decides the origin. It is given rather than defaulted: whoever reads knows
-     * which case it is, and the wrong answer here is a correct-looking one.
+     * One value at a time: a field holding a list or a series parses its elements one by one, so
+     * cardinality is the caller's business.
      *
-     * A kind with no written form — an owned item — answers unusable.
+     * [overrides] says the text is a stored value on a field that would otherwise work one out,
+     * which decides the origin. It is given, not defaulted. Whoever reads knows which case it is,
+     * and the wrong answer here is a correct-looking one.
+     *
+     * A kind with no written form, such as an owned item, answers unusable.
      */
     open fun parse(text: String, overrides: Boolean): Result<Any> =
         Result.Unusable(text, "$name is not written as text")
@@ -109,12 +114,13 @@ sealed class FieldDescription(
         if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
 
     /**
-     * Whether [value] belongs in this field. Answers for a value on its own, so it cannot
-     * judge a reference — whether one resolves needs the items, and is asked where they
-     * are. `DATA-66`.
+     * Whether [value] belongs in this field.
      *
-     * The parameter is `Any` because an override may not narrow it. A caller holding a
-     * description already knows what kind of value it takes.
+     * Answers for a value on its own, so it cannot judge a reference. Whether one resolves needs
+     * the items, and is asked where they are. `DATA-66`.
+     *
+     * The parameter is `Any` because an override may not narrow it. A caller holding a description
+     * already knows what kind of value it takes.
      */
     open fun validate(value: Any): Validity = Validity.Valid
 
@@ -124,12 +130,13 @@ sealed class FieldDescription(
 }
 
 /**
- * A value rather than a reference or an owned item. The kind is the type, so a property
- * belongs only to the kinds it applies to.
+ * A value, rather than a reference or an owned item.
  *
- * A field with a default is [Role.Overrideable] with a constant computation: nothing
- * written and it works out the same answer every time, something written and that wins.
- * There is no separate default — `DATA-56`.
+ * The kind is the type, so a property belongs only to the kinds it applies to.
+ *
+ * A field with a default is [Role.Overrideable] with a constant computation. Nothing written and it
+ * works out the same answer every time; something written and that wins. There is no separate
+ * default. `DATA-56`.
  */
 sealed class ValueDescription(
     name: String,
@@ -163,8 +170,9 @@ class NumberDescription(
 }
 
 /**
- * A count, never a measurement: no dimension, and no `units` declaration reaches it.
- * `DATA-68`.
+ * A count, never a measurement.
+ *
+ * No dimension, and no `units` declaration reaches it. `DATA-68`.
  */
 class WholeNumberDescription(
     name: String,
@@ -202,23 +210,27 @@ class TextDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> = when {
         text.any { it == '\n' || it == '\r' || it == '\t' } ->
-            Result.Unusable(text, "$name is one line")
+            Result.Unusable(text, "$name should be single line of text")
+
         text.startsWith('@') || text.startsWith('*') ->
-            Result.Unusable(text, "$name may not begin with @ or *, which name other things")
+            Result.Unusable(text, "$name may not begin with @ or *, which indicated references to other things")
+
         else -> Result.Usable(text, originOf(overrides))
     }
 
     override fun validate(value: Any) = when {
-        value !is String -> Validity.Invalid("$name is text")
+        value !is String -> Validity.Invalid("$name should be text")
         fixedSet != null && value !in fixedSet ->
-            Validity.Invalid("$name is one of ${fixedSet.sorted().joinToString(", ")}")
+            Validity.Invalid("$name should be one of ${fixedSet.sorted().joinToString(", ")}")
+
         else -> Validity.Valid
     }
 }
 
 /**
- * Prose: line breaks allowed, and a leading `@` or `*`. Carries no vocabulary, closed or
- * offered. `remarks` is nearly the only one in the model.
+ * Prose: line breaks allowed, and a leading `@` or `*`.
+ *
+ * Carries no vocabulary, closed or offered. `remarks` is nearly the only one in the model.
  */
 class MultilineTextDescription(
     name: String,
@@ -238,7 +250,18 @@ class DateDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality)
+) : ValueDescription(name, label, role, cardinality) {
+
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        try {
+            Result.Usable(Date.parse(text), originOf(overrides))
+        } catch (refused: ValueFormatException) {
+            Result.Unusable(text, "$name is a date: ${refused.message}")
+        }
+
+    override fun validate(value: Any) =
+        if (value is Date) Validity.Valid else Validity.Invalid("$name is a date")
+}
 
 /** Always `"09:15:00"`. */
 class TimeDescription(
@@ -275,7 +298,7 @@ class GasDescription(
         try {
             Result.Usable(Gas.parse(text), originOf(overrides))
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name is a mix: ${refused.message}")
+            Result.Unusable(text, "$name should be a valid gas mix: ${refused.message}")
         }
 
     override fun validate(value: Any) =
@@ -293,8 +316,10 @@ class KeyReferenceDescription(
 ) : ValueDescription(name, label, role, cardinality)
 
 /**
- * Another item, written `@id`. [targetType] is what is expected there, not what is
- * guaranteed: the target may be the wrong type, or not loaded.
+ * Another item, written `@id`.
+ *
+ * [targetType] is what is expected there, not what is guaranteed: the target may be the wrong type,
+ * or not loaded.
  */
 class ReferenceDescription(
     name: String,
@@ -307,8 +332,10 @@ class ReferenceDescription(
 ) : FieldDescription(name, label, role, cardinality)
 
 /**
- * Fields kept inside their owner and read with it. [Cardinality.SINGLE] is one, a dive's
- * environment; [Cardinality.KEYED] is several under keys, a dive's profiles.
+ * Fields kept inside their owner and read with it.
+ *
+ * [Cardinality.SINGLE] is one, a dive's environment; [Cardinality.KEYED] is several under keys, a
+ * dive's profiles.
  */
 class OwnedItemDescription(
     name: String,

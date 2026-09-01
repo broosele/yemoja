@@ -759,9 +759,12 @@ data/
   libraries.md    reference data shipped with the application
   json/           the JSON file source (doc.md, requirements.md)
   src/commonMain/kotlin/yemoja/data/
+                  Date.kt          a day, with no time and no zone
+                  Moment.kt        a date and a time, for arithmetic only
                   Description.kt   what a type is, and what a field is
                   Gas.kt           a breathing mix, in whole percentages
                   Result.kt        what reading a field gave
+                  Time.kt          a time of day, with no date and no zone
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
@@ -855,6 +858,44 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-74 — Where a date and a time come from.** *Settled:* **ours, and no dependency.**
+  `Date` and `Time` are written in this layer rather than taken from `kotlinx-datetime`.
+
+  A library would be the obvious choice and brings more than a date. `LocalDate` and
+  `LocalTime` are exactly these two, and their arithmetic is proven by everyone else using
+  it — where ours is proven only by us. That is the real cost, and it is not nothing.
+
+  Against it: this layer has no dependencies at all, and the first one is the expensive
+  one. What we need is narrow — a calendar date, a time of day, and the number of days or
+  seconds between two of them — where the library's reach is time zones, instants and a
+  copy of the IANA database that goes stale on a phone. `DATA-41` already declined the
+  zones. Taking the package for the two small types would be taking the rest as well.
+
+  **The arithmetic was checked rather than believed.** Both directions of the day count
+  were run against a known-good implementation across two and a half thousand years, and
+  the leap-year rule against the centuries that catch people out — 1900 is not a leap year
+  and 2000 is. That is the answer to "proven only by us": not a promise, a comparison.
+
+  If a date ever needs a zone, an instant or a locale, this decision is wrong and the
+  library is the answer. None of those is in the model.
+
+- **DATA-75 — A moment, which is not a field.** *Settled:* a `Moment` pairs a `Date` with
+  a `Time` **for arithmetic only, and is never stored**.
+
+  A start is three fields — a date, a time and a `gmt_offset` — and they are not
+  independent. Correcting the time alone can push it out of the day, which means the date
+  was wrong too: two minutes past midnight less two hours is late the evening before. So
+  the correction is an operation on a moment, not on a time.
+
+  That argues for a moment in the *computation* and not in the *format*. Storing one
+  combined field would make a date and a time a special case among the value kinds, and
+  would stop a diver correcting either by hand — which is why UDDF's single `datetime` is
+  split on the way in. See [../logic/uddf.md](../logic/uddf.md).
+
+  Three derivations carry a day and should not each say so: correcting a recording by its
+  offset, an `end_date` from an end time earlier than the start, and the interval between
+  two dives. The second of those was a written rule before it was a type.
 
 - **DATA-66 — Which layer judges a value against its description.** *Settled:*
   **structural checks stay here, on the description, and domain rules stay above.** A
@@ -1710,8 +1751,9 @@ Kept with their identifiers so earlier discussion still resolves.
   and the dive's number within that day. Every referenceable type therefore has a
   `name`, and every id is proposed from one, dives included.
 - **DATA-10 — Whether dates, times and durations participate in unit scoping.** *Settled:*
-  *Settled:* dates and times do not — one notation, everywhere. Durations do, being
-  quantities with the time dimension.
+  dates and times do not — one notation, everywhere. Durations do, being quantities with
+  the time dimension. A profile's `gmt_offset` does not, being a correction to a clock
+  rather than a length of time — see `DATA-41`.
 - **DATA-39 — How a duration is written.** *Settled:* as a number of seconds, and so
   not a distinct kind of value at all. The only duration left is a dive's, which the
   interface formats for reading; a maintenance item now states a `valid_until` date

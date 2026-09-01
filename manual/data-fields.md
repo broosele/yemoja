@@ -152,8 +152,9 @@ Worked out for you:
 
 - `name` (text) — the dive's date and its number within that day, as `2026-02-23#0`.
   This is what a dive is listed and linked as.
-- `start_date` (date) — the day the dive began. From the primary profile, or from you.
-- `start_time` (time) — when you went in.
+- `start_date` (date) — the day the dive began, in GMT. From the primary profile,
+  corrected by its `gmt_offset`, or from you.
+- `start_time` (time) — when you went in, in GMT.
 - `end_time` (time) — when you came out.
 - `end_date` (date) — the day the dive finished. An end time earlier than the start
   means it ran past midnight. Correct it for the rare dive spanning more than one night,
@@ -254,8 +255,26 @@ that is the only record of it.
 
 - `dive_computer` (reference) — the gear item that recorded it. A plain name works for
   one you borrowed and keep no item for.
-- `start_date` (date) — the day the recording began.
-- `start_time` (time) — the moment it began.
+- `start_date` (date) — the day the recording began, as the computer had it.
+- `start_time` (time) — the moment it began, as the computer had it.
+- `gmt_offset` (number) — how many seconds to add to the two above to reach GMT. Always
+  seconds, whatever the file says about units.
+
+  It covers three things at once, because they are one thing to arithmetic: a computer set
+  to the wrong time, a clock that has drifted, and a computer set to a different zone from
+  the water you were in. Whatever the reason, this is the correction.
+
+  A recording keeps what the computer said, so correcting a clock you find was wrong means
+  changing this one number and nothing else.
+
+  **Everything worked out from a recording is GMT**, this having been applied — a dive's
+  own date and time among them. That is what makes a surface interval right when two dives
+  sit in different countries, and what makes dives sort into the order you did them. It
+  also means a dive begun just after midnight in an eastern zone is dated the day before,
+  because in GMT it was.
+
+  The correction moves the date as well as the time where it has to: two minutes past
+  midnight, corrected by minus two hours, is late the previous evening.
 - `depth` (series) — how deep, throughout.
 - `temperature` (series) — how cold, throughout. Often sampled far less often than
   depth, which is why it is a series of its own rather than a column beside it.
