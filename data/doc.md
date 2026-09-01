@@ -488,8 +488,18 @@ that knows how, and hands back whatever the description works out.
 
 An earlier arrangement kept the types here, on the argument that too much of this layer
 needs to know what a dive is. That argument was written when knowing meant *having a
-class per type*. Once the description is data handed in at construction, nothing here
-knows anything about diving, and the objection goes with it.
+class per type*. Once the description is data handed in at construction, the objection
+goes with it.
+
+**What this layer knows is the kinds of value the format has, not the fields any item
+holds.** The two are easy to run together and are not the same. A `gas` is a kind — the
+format writes one as `EAN32`, so something here reads and writes that, and `Gas` is a type
+in this layer. That a dive has a `gas_type`, or that a gas source has one and a dive site
+does not, is knowledge this layer never has and never needs.
+
+So the line is not that nothing here has heard of diving. It is that nothing here names a
+field, and nothing here would have to change to describe a different subject with the same
+kinds of value.
 
 Two things follow from items being connected rather than free-standing:
 
@@ -750,6 +760,7 @@ data/
   json/           the JSON file source (doc.md, requirements.md)
   src/commonMain/kotlin/yemoja/data/
                   Description.kt   what a type is, and what a field is
+                  Gas.kt           a breathing mix, in whole percentages
                   Result.kt        what reading a field gave
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover

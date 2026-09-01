@@ -219,6 +219,12 @@ dive. Our `gas_sources` entry is both at once.
 fractions out. The two are convertible because ours is parsed rather than a label, which
 is why it is a value kind and not text. Argon and hydrogen have no place to go.
 
+**Convertible to whole percentages**, which is as fine as this format goes: `EAN32` and
+nothing between. A UDDF `o2` of 0.318 arrives as 32 and leaves as 0.32. That is a loss and
+a small one — a mix is named and analysed in whole percentages, and rounding oxygen up is
+the conservative direction — but it is a loss, and it is in the field `DATA-55` names as
+its own example.
+
 **UDDF's, not modelled.** `breathingconsumptionvolume` — gas consumption rate, which
 this model could derive from pressures and volume but does not. `equivalentairdepth`,
 `maximumoperationdepth`, `maximumpo2` — all derivable from the mix. `priceperlitre`,

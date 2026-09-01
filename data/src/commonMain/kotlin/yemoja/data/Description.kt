@@ -78,6 +78,27 @@ sealed class FieldDescription(
         label ?: name.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
     /**
+     * Reads [text] as this field's kind — the written form that `manual/data-format.md`
+     * defines. One value at a time: a field holding a list or a series parses its elements
+     * one by one, so cardinality is the caller's business.
+     *
+     * [overrides] says the text is a stored value on a field that would otherwise work one
+     * out, which decides the origin. It is given rather than defaulted: whoever reads knows
+     * which case it is, and the wrong answer here is a correct-looking one.
+     *
+     * A kind with no written form — an owned item — answers unusable.
+     */
+    open fun parse(text: String, overrides: Boolean): Result<Any> =
+        Result.Unusable(text, "$name is not written as text")
+
+    /** The written form of [value], the inverse of [parse]. */
+    open fun format(value: Any): String = value.toString()
+
+    /** The origin a parsed value carries, by whether it corrects a derivation. */
+    protected fun originOf(overrides: Boolean) =
+        if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
+
+    /**
      * Whether [value] belongs in this field. Answers for a value on its own, so it cannot
      * judge a reference — whether one resolves needs the items, and is asked where they
      * are. `DATA-66`.
@@ -118,6 +139,12 @@ class NumberDescription(
     val range: ClosedRange<Double>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override fun parse(text: String, overrides: Boolean): Result<Any> {
+        val number = text.trim().toDoubleOrNull()
+            ?: return Result.Unusable(text, "$name is a number")
+        return Result.Usable(number, originOf(overrides))
+    }
+
     override fun validate(value: Any) = when {
         value !is Double -> Validity.Invalid("$name is a number")
         range != null && value !in range -> Validity.Invalid("$name runs $range")
@@ -138,6 +165,12 @@ class WholeNumberDescription(
     val range: IntRange? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override fun parse(text: String, overrides: Boolean): Result<Any> {
+        val number = text.trim().toIntOrNull()
+            ?: return Result.Unusable(text, "$name is a whole number")
+        return Result.Usable(number, originOf(overrides))
+    }
+
     override fun validate(value: Any) = when {
         value !is Int -> Validity.Invalid("$name is a whole number")
         range != null && value !in range -> Validity.Invalid("$name runs $range")
@@ -157,6 +190,15 @@ class TextDescription(
     val suggested: Set<String>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override fun parse(text: String, overrides: Boolean): Result<Any> = when {
+        text.any { it == '
+' || it == '' || it == '	' } ->
+            Result.Unusable(text, "$name is one line")
+        text.startsWith('@') || text.startsWith('*') ->
+            Result.Unusable(text, "$name may not begin with @ or *, which name other things")
+        else -> Result.Usable(text, originOf(overrides))
+    }
+
     override fun validate(value: Any) = when {
         value !is String -> Validity.Invalid("$name is text")
         fixedSet != null && value !in fixedSet ->
@@ -174,7 +216,12 @@ class MultilineTextDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality)
+) : ValueDescription(name, label, role, cardinality) {
+
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        if (text.contains('	')) Result.Unusable(text, "$name may not contain a tab")
+        else Result.Usable(text, originOf(overrides))
+}
 
 /** Always `"2026-02-23"`; no `units` setting reaches it. */
 class DateDescription(
@@ -198,7 +245,14 @@ class BooleanDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality)
+) : ValueDescription(name, label, role, cardinality) {
+
+    override fun parse(text: String, overrides: Boolean): Result<Any> = when (text) {
+        "true" -> Result.Usable(true, originOf(overrides))
+        "false" -> Result.Usable(false, originOf(overrides))
+        else -> Result.Unusable(text, "$name is written true or false, and nothing else")
+    }
+}
 
 /** A mix as divers write it — `AIR`, `EAN32`, `TMX18/35` — parsed for its fractions. */
 class GasDescription(

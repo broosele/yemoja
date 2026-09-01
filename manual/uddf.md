@@ -125,9 +125,12 @@ disagrees with what was recorded. Reading such a file back does not degrade it f
 which of your cylinders it was.
 
 Your logbook writes a mix the way divers do — `AIR`, `EAN32`, `TMX18/35` — and UDDF writes
-the fractions out. Those are the same thing said differently, and both directions are
-exact, because your logbook reads the fractions out of the name rather than treating it as
-a label.
+the fractions out. Those are the same thing said differently, and your logbook reads the
+fractions out of the name rather than treating it as a label, so the two convert.
+
+**To whole percentages.** A file claiming 31.8% oxygen comes in as 32 and goes back out as
+32, because whole percentages are all a mix is written in here — which is how mixes are
+named, analysed and labelled on a cylinder.
 
 **Lost on export.** Argon and hydrogen. UDDF can describe them and this logbook cannot, so
 the question does not arise in that direction.
