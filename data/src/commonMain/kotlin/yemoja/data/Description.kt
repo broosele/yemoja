@@ -29,6 +29,16 @@ enum class Dimension {
 enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
 
 /**
+ * Text that does not say what it claims to — `EAN200`, or a date that is not a date.
+ *
+ * A bad *value*, not a bad program, which is the distinction it exists to draw. A parser
+ * this project owns throws this and nothing else does, so catching it catches only that:
+ * an `IllegalArgumentException` from somewhere unrelated stays a fault and is not reported
+ * to a diver as a misspelt gas.
+ */
+class ValueFormatException(message: String) : RuntimeException(message)
+
+/**
  * Whether a value is acceptable for the field it is offered to, and why not.
  *
  * Not [Result]: that answers what reading a *stored* value gave, and carries the raw text
@@ -191,8 +201,7 @@ class TextDescription(
 ) : ValueDescription(name, label, role, cardinality) {
 
     override fun parse(text: String, overrides: Boolean): Result<Any> = when {
-        text.any { it == '
-' || it == '' || it == '	' } ->
+        text.any { it == '\n' || it == '\r' || it == '\t' } ->
             Result.Unusable(text, "$name is one line")
         text.startsWith('@') || text.startsWith('*') ->
             Result.Unusable(text, "$name may not begin with @ or *, which name other things")
@@ -219,7 +228,7 @@ class MultilineTextDescription(
 ) : ValueDescription(name, label, role, cardinality) {
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
-        if (text.contains('	')) Result.Unusable(text, "$name may not contain a tab")
+        if (text.contains('\t')) Result.Unusable(text, "$name may not contain a tab")
         else Result.Usable(text, originOf(overrides))
 }
 
@@ -260,7 +269,18 @@ class GasDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality)
+) : ValueDescription(name, label, role, cardinality) {
+
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        try {
+            Result.Usable(Gas.parse(text), originOf(overrides))
+        } catch (refused: ValueFormatException) {
+            Result.Unusable(text, "$name is a mix: ${refused.message}")
+        }
+
+    override fun validate(value: Any) =
+        if (value is Gas) Validity.Valid else Validity.Invalid("$name is a mix")
+}
 
 /** An entry inside the same item, written `*p1`. */
 class KeyReferenceDescription(

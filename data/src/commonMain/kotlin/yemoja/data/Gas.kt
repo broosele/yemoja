@@ -7,23 +7,21 @@ import kotlin.math.roundToInt
  * helium, with nitrogen making up the rest.
  *
  * A value rather than a label — `DATA-55`. `EAN32` is how a diver writes it and what
- * [toString] gives back, but what is kept is the quantity, so a mix converts to any format
- * that states its fractions and back again — to whole percentages, which is as fine as
- * this one goes.
+ * [toString] gives back; what is kept is the quantity, so a mix converts to and from any
+ * format that states its fractions.
  *
- * Held in **whole percentages**, because that is what the format writes: `EAN32` and
- * nothing finer. Anything more precise could not be saved, so a mix that held it would
- * change on the first write — and [toString] would no longer name one mix only.
- *
- * Integers also compare exactly, which fractions do not.
+ * Held in **whole percentages**, because that is what our own format writes and anything
+ * finer could not be saved: a mix holding tenths would change on its first write, and
+ * [toString] would no longer name one mix only. Integers also compare exactly, which
+ * fractions do not.
  */
 data class Gas(val percentO2: Int, val percentHe: Int) {
 
     init {
-        require(percentO2 in 0..100) { "oxygen is $percentO2 percent" }
-        require(percentHe in 0..100) { "helium is $percentHe percent" }
+        require(percentO2 in 0..100) { "oxygen is $percentO2%" }
+        require(percentHe in 0..100) { "helium is $percentHe%" }
         require(percentO2 + percentHe <= 100) {
-            "oxygen and helium come to more than the whole of it"
+            "oxygen and helium together are more than 100%"
         }
     }
 
@@ -53,9 +51,58 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
 
     companion object {
 
-        /** Air is written as air, not as `EAN21`. */
         val AIR = Gas(21, 0)
 
         val OXYGEN = Gas(100, 0)
+
+        private val NITROX = Regex("""(?:EANX?|NX|NITROX)?(\d{1,3})%?""")
+        private val TRIMIX = Regex("""(?:TMX|TX|TRIMIX)?(\d{1,3})/(\d{1,3})(?:/(\d{1,3}))?""")
+
+        /**
+         * Reads a mix as divers write it, and throws where the text is not one.
+         *
+         * Throwing because this is the utility rather than the parser: whatever reads a
+         * field catches and answers *unusable*, which is where a bad value belongs. Nothing
+         * else should call this without catching.
+         *
+         * Deliberately forgiving, as `manual/data-format.md` promises: case and spaces are
+         * ignored, and the marker before the numbers is optional wherever the numbers alone
+         * are unambiguous. `EAN32`, `nx 32`, `32%` and `Nitrox32` are one mix; `TMX18/35`,
+         * `18/35` and `18/35/47` are another.
+         *
+         * Forgiving is not guessing. A bare `32` is refused — it could as easily be a
+         * cylinder — and so is a mix naming a gas this model does not hold, rather than
+         * being read as something it is not. A three-part trimix must agree with itself.
+         */
+        fun parse(text: String): Gas = try {
+            read(text)
+        } catch (impossible: IllegalArgumentException) {
+            // The constructor guards against a bug in a caller; here the numbers came from
+            // a file, so the same complaint is about the text rather than about the code.
+            throw ValueFormatException("$text: ${impossible.message}")
+        }
+
+        private fun read(text: String): Gas {
+            val written = text.filterNot { it.isWhitespace() }.uppercase()
+            if (written == "AIR") return AIR
+            if (written == "O2" || written == "OXYGEN") return OXYGEN
+
+            TRIMIX.matchEntire(written)?.let { match ->
+                val (oxygen, helium, nitrogen) = match.destructured
+                val gas = Gas(oxygen.toInt(), helium.toInt())
+                if (nitrogen.isNotEmpty() && nitrogen.toInt() != gas.percentN2) {
+                    throw ValueFormatException(
+                        "$text gives ${gas.percentN2}% nitrogen, not $nitrogen%"
+                    )
+                }
+                return gas
+            }
+            // Bare digits fall through: no marker and no percent sign, so nothing says a
+            // mix is meant rather than a size or a pressure.
+            NITROX.matchEntire(written)?.let { match ->
+                if (!written.all { it.isDigit() }) return Gas(match.groupValues[1].toInt(), 0)
+            }
+            throw ValueFormatException("$text is not a mix")
+        }
     }
 }
