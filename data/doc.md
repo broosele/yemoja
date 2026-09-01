@@ -780,28 +780,6 @@ To settle when we discuss architecture:
    dive reaches its site. If that holds, `ItemSet` needs little beyond resolving an
    id and listing a type, and the interface stays small by consequence rather than
    by discipline.
-- **DATA-66 — Which layer judges a value against its description.** Parsing is settled
-  by `DATA-64`; this asks what happens to a value that parsed cleanly and is still wrong —
-  `brackish` where the fixed set holds three, a rating of 47, a reference to an item of the
-  wrong type.
-
-  **Structural checks stay below.** The test already in
-  [../logic/doc.md](../logic/doc.md) — can this be checked without knowing the file is
-  about diving? — puts a closed vocabulary, a numeric range and a reference that does not
-  resolve in the data layer, since none of them needs to know what a dive is. `DATA-24` and
-  `DATA-50` are written that way: a value outside a fixed set is read back as **unusable**,
-  by this layer, and `GUI-8` renders that state without asking anyone.
-
-  **Everything judged goes above.** The data layer then reports only what *parsing* could
-  fail at — a date that is not a date — and a fixed set is a fact the description carries
-  for the logic layer to check, not a rule this layer enforces. It keeps one place where
-  data is judged rather than two, and it makes `FieldDescription` purely descriptive.
-
-  What turns on it: whether this layer can produce `unusable` for a vocabulary violation at
-  all, and therefore whether `DATA-24` stands as written or moves. It is a boundary
-  question rather than a mechanism one — the same check runs either way, and the argument is
-  about who owns it.
-
 - **DATA-54 — Which fields the common interchange formats carry that this model does
   not.** *In progress:* **UDDF is done.** [../logic/uddf.md](../logic/uddf.md) compares
   every section of the logbook against 3.2.3, and what remains is other formats — which
@@ -866,6 +844,35 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-66 — Which layer judges a value against its description.** *Settled:*
+  **structural checks stay here, on the description, and domain rules stay above.** A
+  description answers `validate`, returning valid or a reason a diver can read.
+
+  The interface decided it. A diver typing into a form has to be told before saving that
+  `brackish` is not one of the three water types, and the only thing that knows the three
+  is the description. Putting the check above would mean the logic layer reaching down for
+  a vocabulary the description already holds, or holding a second copy of it.
+
+  **It is not the same question as reading**, which is why it is not the same type.
+  `DATA-50`'s `Unusable` answers *what is in the file and why it cannot be used*, and
+  carries the raw text so an interface can show it. Validity answers *does this value
+  belong in this field* about something that may never have been in a file at all — typed
+  into a form, or about to be written. There is no raw to keep, and a value that reaches
+  validation has already been parsed.
+
+  For text entry a front end wants both at once — a parse error and a range error are the
+  same kind of news to a diver — so the per-kind reader of `DATA-64` does the parsing and
+  calls this for the rest. One implementation, used when reading a file and when reading a
+  form.
+
+  **What it deliberately cannot judge is a reference.** Whether `@blue_hole` resolves, and
+  whether `*p1` names an entry that exists, are questions about the items and not about the
+  value; a description holds no items and should not. Those are checked where the items
+  are, and `validate` is honest about answering less than the whole of structural validity.
+
+  Nothing is refused by any of this. Validation informs an interface and produces
+  `unusable` on the way back in; it never stops a file being written or read — `DATA-24`.
 
 - **DATA-73 — Whether a description says what an id is proposed from, and what becomes of
   `required`.** *Settled:* **it does not, and `required` goes.**
