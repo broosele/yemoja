@@ -3,17 +3,15 @@ package yemoja.data
 import kotlin.math.roundToInt
 
 /**
- * A breathing mix, held as the parts of it that matter to decompression: oxygen and
- * helium, with nitrogen making up the rest.
+ * A breathing mix, held as the parts of it that matter to decompression: oxygen and helium, with
+ * nitrogen making up the rest.
  *
- * A value rather than a label — `DATA-55`. `EAN32` is how a diver writes it and what
- * [toString] gives back; what is kept is the quantity, so a mix converts to and from any
- * format that states its fractions.
+ * A value, not a label. `DATA-55`. `EAN32` is how a diver writes it and what [toString] gives back.
+ * What is kept is the quantity, so a mix converts to and from any format that states its fractions.
  *
- * Held in **whole percentages**, because that is what our own format writes and anything
- * finer could not be saved: a mix holding tenths would change on its first write, and
- * [toString] would no longer name one mix only. Integers also compare exactly, which
- * fractions do not.
+ * Held in **whole percentages**, because that is what our own format writes. Anything finer could
+ * not be saved. A mix holding tenths would change on its first write, and [toString] would no
+ * longer name one mix only. Integers also compare exactly, which fractions do not.
  */
 data class Gas(val percentO2: Int, val percentHe: Int) {
 
@@ -25,10 +23,7 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
         }
     }
 
-    /**
-     * From fractions, which is how every interchange format states a mix. Rounded to whole
-     * percentages, which is all this one can keep.
-     */
+    /** From fractions, as interchange formats state a mix. Rounded to whole percentages. */
     constructor(fractionO2: Double, fractionHe: Double) :
             this((fractionO2 * 100).roundToInt(), (fractionHe * 100).roundToInt())
 
@@ -59,26 +54,26 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
         private val TRIMIX = Regex("""(?:TMX|TX|TRIMIX)?(\d{1,3})/(\d{1,3})(?:/(\d{1,3}))?""")
 
         /**
-         * Reads a mix as divers write it, and throws where the text is not one.
+         * Reads a mix as divers write it.
          *
-         * Throwing because this is the utility rather than the parser: whatever reads a
-         * field catches and answers *unusable*, which is where a bad value belongs. Nothing
-         * else should call this without catching.
+         * Throws where the text is not one.
          *
-         * Deliberately forgiving, as `manual/data-format.md` promises: case and spaces are
-         * ignored, and the marker before the numbers is optional wherever the numbers alone
-         * are unambiguous. `EAN32`, `nx 32`, `32%` and `Nitrox32` are one mix; `TMX18/35`,
-         * `18/35` and `18/35/47` are another.
+         * This is the utility, not the parser. Whatever reads a field catches and answers
+         * *unusable*. Nothing should call this without catching.
          *
-         * Forgiving is not guessing. A bare `32` is refused — it could as easily be a
-         * cylinder — and so is a mix naming a gas this model does not hold, rather than
-         * being read as something it is not. A three-part trimix must agree with itself.
+         * Deliberately forgiving, as `manual/data-format.md` promises: case and spaces are ignored,
+         * and the marker before the numbers is optional wherever the numbers alone are unambiguous.
+         * `EAN32`, `nx 32`, `32%` and `Nitrox32` are one mix; `TMX18/35`, `18/35` and `18/35/47`
+         * are another.
+         *
+         * A bare `32` is refused: it could be a cylinder size. So is a mix naming a gas this model
+         * does not hold. A three-part trimix must agree with itself.
          */
         fun parse(text: String): Gas = try {
             read(text)
         } catch (impossible: IllegalArgumentException) {
-            // The constructor guards against a bug in a caller; here the numbers came from
-            // a file, so the same complaint is about the text rather than about the code.
+            // The constructor guards against a caller's bug. Here the numbers came from a
+            // file, so the complaint is about the text.
             throw ValueFormatException("$text: ${impossible.message}")
         }
 
@@ -97,8 +92,8 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
                 }
                 return gas
             }
-            // Bare digits fall through: no marker and no percent sign, so nothing says a
-            // mix is meant rather than a size or a pressure.
+            // Bare digits fall through. No marker and no percent sign, so nothing says a
+            // mix is meant.
             NITROX.matchEntire(written)?.let { match ->
                 if (!written.all { it.isDigit() }) return Gas(match.groupValues[1].toInt(), 0)
             }
