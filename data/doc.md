@@ -1297,24 +1297,33 @@ To settle when we discuss architecture:
 
 Kept with their identifiers so earlier discussion still resolves.
 
-- **DATA-56 — Fields that have a default rather than being absent.** *Settled:* a
-  `FieldDescription` may carry a **default**. A field with one never reads back absent:
-  where nothing is written, the default is returned, and it is *usable*.
+- **DATA-56 — Fields that have a default rather than being absent.** *Settled:* a field
+  with a default never reads back absent — where nothing is written it gets one, and it is
+  *usable*. **It is not a mechanism of its own.** A default is an **overrideable derivation
+  whose computation is a constant**: nothing written and it works out the same answer every
+  time, something written and that wins.
 
-  Nothing is stored to make that happen. The file stays as it was — a diver's gear does
-  not gain a `generic: false` it never had — so writing back is unchanged and a default
-  costs nothing on disk. `DATA-27` still holds: storage has exactly one absent state. The
-  default applies on the way out, which is where a reader would otherwise have to invent
-  one anyway, scattered and inconsistently.
+  The two were separate at first and turned out to be one thing described twice. Every
+  clause said of a default is what overrideable already did, and holding both meant a rule
+  about which fields could carry one — a default beside a derivation would have won always,
+  since a derived value is never written — enforced by a check rather than by the shape.
+  Now the question cannot be asked.
 
-  `generic` on gear is the case that prompted it. Almost nothing in a diver's own logbook
+  Nothing is stored to make it happen. The file stays as it was — a diver's gear does not
+  gain a `generic: false` it never had — so writing back is unchanged and a default costs
+  nothing on disk. `DATA-27` still holds: storage has exactly one absent state, and the
+  value is worked out on the way out.
+
+  `generic` on gear is the case that prompted it, and remains the only field in the model
+  with a default. Almost nothing in a diver's own logbook
   is generic and almost everything in the supplied library is, so the library states
   `true` and everything else says nothing and means `false`. Making every owner write
   `generic: false` on every item would be noise in service of a distinction they never
   think about.
 
   **A default is only right where absent has no meaning of its own**, which is why this
-  is a property of a few fields rather than a habit. A flag is on or off, so absent is
+  is true of a few fields rather than a habit — and matters more now that writing one is a
+  computation rather than a value, since a computation is easier to write carelessly. A flag is on or off, so absent is
   merely unwritten. A missing `max_depth` is not zero — it is unknown, and defaulting it
   would turn a gap into a false measurement, which is exactly the confusion `DATA-50`
   exists to prevent. Give a field a default only when the alternative is every reader
@@ -1585,6 +1594,20 @@ Kept with their identifiers so earlier discussion still resolves.
 
   This fixes more than one signature. It is what a derivation returns, and what `GUI-8`
   renders, so an empty cell and a broken one stop looking alike.
+
+  **A usable value says where it came from**: stored, derived, or overridden where a stored
+  value corrects a derivation. A caller needing the difference — an
+  interface greying a value nobody typed, an editor deciding whether clearing a field does
+  anything — no longer works it out from the description and the raw mapping for itself,
+  and that rule lives in one place rather than in each of them.
+
+  All of them, rather than the one that prompted it. They exclude one another, so a flag
+  each would allow combinations that are nonsense, and a set that answers the question
+  completely raises no question about why it stopped where it did. A defaulted value is
+  *derived*, by `DATA-56`.
+
+  It says nothing about what is written back. Writing uses the raw mapping, which the
+  origin does not touch — `DATA-56`.
 
   **It does not make propagation automatic**, and an earlier draft of this entry said it
   did. `DATA-26` is the one to follow: an unusable input propagates *by default*, and

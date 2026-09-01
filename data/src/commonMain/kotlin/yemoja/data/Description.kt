@@ -38,10 +38,10 @@ sealed interface Role {
     object Primary : Role
 
     /** Worked out from other values, never stored. */
-    class Derived(val compute: (Item) -> Result) : Role
+    class Derived(val compute: (Item) -> Result<Any>) : Role
 
     /** Derived, but a stored value is present sometimes and corrects it when it is. */
-    class Overrideable(val compute: (Item) -> Result) : Role
+    class Overrideable(val compute: (Item) -> Result<Any>) : Role
 }
 
 /**
@@ -71,15 +71,15 @@ sealed class FieldDescription(
  * A value rather than a reference or an owned item. The kind is the type, so a property
  * belongs only to the kinds it applies to.
  *
- * [default] is returned where nothing is written, so such a field never reads absent.
- * Nothing is stored to make that happen — `DATA-56`.
+ * A field with a default is [Role.Overrideable] with a constant computation: nothing
+ * written and it works out the same answer every time, something written and that wins.
+ * There is no separate default — `DATA-56`.
  */
 sealed class ValueDescription(
     name: String,
     label: String? = null,
     role: Role,
     cardinality: Cardinality,
-    val default: Any? = null,
 ) : FieldDescription(name, label, role, cardinality)
 
 /** A measurement. */
@@ -91,8 +91,7 @@ class NumberDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
     /** Closed at both ends, where given: a latitude is `-90.0..90.0`. */
     val range: ClosedRange<Double>? = null,
-    default: Any? = null,
-) : ValueDescription(name, label, role, cardinality, default)
+) : ValueDescription(name, label, role, cardinality)
 
 /**
  * A count, never a measurement: no dimension, and no `units` declaration reaches it.
@@ -105,8 +104,7 @@ class WholeNumberDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
     /** Whole bounds, where given: a rating is `1..10`, not `1.0..10.0`. */
     val range: IntRange? = null,
-    default: Any? = null,
-) : ValueDescription(name, label, role, cardinality, default)
+) : ValueDescription(name, label, role, cardinality)
 
 /** One line: no line breaks, no tabs, and no leading `@` or `*`. */
 class TextDescription(
@@ -118,8 +116,7 @@ class TextDescription(
     val fixedSet: Set<String>? = null,
     /** Offered, not enforced: a value outside is an ordinary value. */
     val suggested: Set<String>? = null,
-    default: Any? = null,
-) : ValueDescription(name, label, role, cardinality, default)
+) : ValueDescription(name, label, role, cardinality)
 
 /**
  * Prose: line breaks allowed, and a leading `@` or `*`. Carries no vocabulary, closed or
@@ -154,8 +151,7 @@ class BooleanDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-    default: Any? = null,
-) : ValueDescription(name, label, role, cardinality, default)
+) : ValueDescription(name, label, role, cardinality)
 
 /** A mix as divers write it — `AIR`, `EAN32`, `TMX18/35` — parsed for its fractions. */
 class GasDescription(

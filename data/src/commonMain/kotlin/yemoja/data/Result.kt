@@ -1,34 +1,48 @@
 package yemoja.data
 
 /**
- * What reading a field gave: a value, nothing, or something that cannot be believed.
+ * The result of reading a field: a value, nothing, or something that cannot be interpreted correctly.
  *
  * Three states rather than a nullable, because absent and unusable are the two a diver most
  * needs told apart — `DATA-50`. Every reader handles all three.
  *
- * The value is non-null by the bound on [T]: a usable nothing would be the collapse the
- * three states exist to prevent, smuggled back through the type parameter.
+ * The value is non-null by the bound on [T]: a usable nothing should be an absent.
  */
 sealed class Result<out T : Any> {
 
     /**
-     * Applies [transform] to a usable value and carries the other two states through
-     * untouched.
+     * Where a usable value came from. Not *source*, which is the store it was read from —
+     * `DATA-64`.
      *
-     * Offered, not imposed. A derivation decides for itself whether it can manage without
-     * an input — `deco` falls back from one field to another when the first is absent — so
-     * propagation is the common case rather than the rule. `DATA-26`.
+     * One of three rather than a flag each, because they exclude one another, and a
+     * description settles which are possible before a file is read.
      */
-    inline fun <R : Any> map(transform: (T) -> R): Result<R> = when (this) {
-        is Usable -> Usable(transform(value))
-        is Absent -> this
-        is Unusable -> this
+    enum class Origin {
+
+        /** Written in the file, on a field that records what it is given. */
+        STORED,
+
+        /** Worked out, and nothing was stored to work out from. A default is this. */
+        DERIVED,
+
+        /** Written in the file, on a field that would otherwise have worked it out. */
+        OVERRIDDEN,
     }
 
-    /** A value, and it can be used. */
-    class Usable<out T : Any>(val value: T) : Result<T>()
+    /**
+     * A usable value, and where it came from.
+     *
+     * [origin] saves every caller working that out from the description and the raw mapping
+     * for itself — an interface greying a value nobody typed, an editor deciding whether
+     * clearing a field does anything. It changes nothing about what is written back.
+     *
+     * Always given: whatever builds one of these knows where the value came from, and a
+     * default here could only stand in for a forgotten argument — which nothing would
+     * catch, since the wrong origin is a correct-looking answer.
+     */
+    class Usable<out T : Any>(val value: T, val origin: Origin) : Result<T>()
 
-    /** Nothing was recorded and nothing could be worked out. One absent state, not several. */
+    /** Nothing recorded and nothing worked out. One absent state, not several. */
     object Absent : Result<Nothing>()
 
     /**
