@@ -1,16 +1,145 @@
 package yemoja.data
 
+import kotlin.reflect.KClass
+
 /**
- * One item of one type: a dive, a person, a region.
+ * One item of one type: a dive, a person, a profile.
  *
- * **A placeholder.** It holds nothing yet, and exists so the layer compiles. Three declarations
- * name it: [Role.Derived] and [Role.Overrideable], which carry a computation over one, and
- * [Referent.Resolved].
+ * There is no class per type. What a dive is comes from its [ItemDescription], which is data and
+ * lives in the logic layer, so nothing here names a field.
  *
- * What it will hold is settled and the shape is not: the description of its type, a map of field
- * name to value, and the items it belongs to. It holds no id, which lives in the file name or the
- * key it sits under. See *How a type is described* and *The set of items* in `doc.md`.
+ * An item holds no id. A referenceable one is named by the file it sits in, an owned one by the key
+ * it sits under, and neither is inside the item. Ask the [set] instead.
  *
- * Not immutable, unlike the values in this layer. An item is what a user edits.
+ * Connected rather than free-standing: an item answers questions it cannot answer alone by asking
+ * outward, which is how a reference resolves and how a region finds its children. **Writing an item
+ * out must stop at its own fields** and never follow [set] or a parent.
+ *
+ * **Changing one is absent.** Nothing here sets a field, adds an owned item or deletes anything;
+ * that waits on the journal.
  */
-class Item
+sealed class Item(
+    val description: ItemDescription,
+    fields: Map<String, Result<Any>>,
+) {
+
+    /**
+     * Every field that was stored, by name, untyped.
+     *
+     * The first of the three ways in, and deliberately wider than the description: a field this
+     * version does not recognise lives here and nowhere else, which is what lets it survive a round
+     * trip. Writing back reads this. `DATA-51`.
+     *
+     * Only stored fields. A derived one is worked out and never kept, and an absent one is not a
+     * key, so [Result.Absent] never appears as a value here.
+     */
+    val fields: Map<String, Result<Any>> = fields.toMap()
+
+    /** The items this one belongs to, and the only way to reach anything outside it. */
+    abstract val set: ItemSet
+
+    /**
+     * What reading [name] gives, by the rules its description sets.
+     *
+     * The second way in: it accepts only names the description carries, so a misspelt one is a
+     * fault in the code rather than a silent absent. `DATA-51`.
+     *
+     * A primary field gives what was stored. A derived one is worked out every time, because
+     * nothing announces that an item changed. An overrideable one gives what was stored where there
+     * is anything, and works it out otherwise.
+     */
+    fun read(name: String): Result<Any> =
+        when (val role = declared(name).role) {
+            is Role.Primary -> fields[name] ?: Result.Absent
+            is Role.Derived -> role.compute(this)
+            is Role.Overrideable -> fields[name] ?: role.compute(this)
+        }
+
+    /** One value: `one<Double>("max_depth")`. */
+    inline fun <reified T : Any> one(name: String): Result<T> =
+        readAs(name, Cardinality.SINGLE, T::class)
+
+    /** Several, in the order written: `list<Reference>("buddies")`. */
+    inline fun <reified T : Any> list(name: String): Result<List<Element<T>>> =
+        readAs(name, Cardinality.LIST, T::class)
+
+    /** Several under keys: `keyed<Item>("profiles")`. */
+    inline fun <reified T : Any> keyed(name: String): Result<Map<String, Element<T>>> =
+        readAs(name, Cardinality.KEYED, T::class)
+
+    /** Against time: `series<Double>("depth")`. [T] is what sits on the value axis. */
+    inline fun <reified T : Any> series(name: String): Result<Series> =
+        readAs(name, Cardinality.SERIES, T::class)
+
+    /** One series per key: `keyedSeries<Double>("pressures")`. */
+    inline fun <reified T : Any> keyedSeries(name: String): Result<Map<String, Series>> =
+        readAs(name, Cardinality.KEYED_SERIES, T::class)
+
+    /**
+     * The field [name] describes, or a fault where it describes none.
+     *
+     * Not an absent. A name the description does not carry is a mistake in the code that asked, and
+     * saying so on the first run is the point of the checked read. `DATA-51`.
+     */
+    @PublishedApi
+    internal fun declared(name: String): FieldDescription =
+        description[name] ?: throw IllegalArgumentException(
+            "${description.name} has no field called $name"
+        )
+
+    /**
+     * [read], having first confirmed the field is declared the way the caller is asking for it.
+     *
+     * The check is against the description rather than the value, so asking for the wrong shape or
+     * the wrong kind is a fault even where the field is absent — which is most of them.
+     */
+    @PublishedApi
+    @Suppress("UNCHECKED_CAST")
+    internal fun <R : Any> readAs(
+        name: String,
+        cardinality: Cardinality,
+        type: KClass<*>,
+    ): Result<R> {
+        val field = declared(name)
+        require(field.cardinality == cardinality) {
+            "$name is written as $cardinality, so it should not be read as ${field.cardinality}"
+        }
+        require(field.valueType == type) {
+            "$name holds ${field.valueType.simpleName}," +
+                " so it should not be read as ${type.simpleName}"
+        }
+        return read(name) as Result<R>
+    }
+}
+
+/**
+ * An item with an id of its own, which anything may point at: a dive, a person, a dive site.
+ *
+ * The id is not here. It is the name of the file the item sits in, and [ItemSet] answers in both
+ * directions.
+ */
+class ReferenceableItem(
+    description: ItemDescription,
+    fields: Map<String, Result<Any>>,
+    override val set: ItemSet,
+) : Item(description, fields)
+
+/**
+ * An item that exists only inside another: a dive's profile, a cylinder on a dive.
+ *
+ * Created and destroyed with its [parent], never pointed at from outside it, and named by the key
+ * it sits under where it sits in a collection at all.
+ *
+ * The link to the parent is not stored — it would be circular on disk and says nothing the file
+ * structure does not — and it is load-bearing rather than tidy: a profile's `gas_switches` name
+ * entries of `gas_sources`, which is a collection on the dive.
+ */
+class OwnedItem(
+    description: ItemDescription,
+    fields: Map<String, Result<Any>>,
+    val parent: Item,
+) : Item(description, fields) {
+
+    // The owner's, by definition. Holding a second copy is a second thing to keep in step.
+    override val set: ItemSet get() = parent.set
+}

@@ -119,7 +119,7 @@ data class KeyReference(val key: String) {
 sealed class Referent {
 
     /** The reference named an item, and it is here. */
-    class Resolved(val item: Item) : Referent()
+    class Resolved(val item: ReferenceableItem) : Referent()
 
     /** The reference named an item that is not in the set. Still an identity. */
     class Dangling(val id: String) : Referent()

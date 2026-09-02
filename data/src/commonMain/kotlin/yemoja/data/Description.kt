@@ -1,5 +1,7 @@
 package yemoja.data
 
+import kotlin.reflect.KClass
+
 /*
  * The machinery for describing an item type. What a dive or a person *is* belongs to the
  * logic layer, which builds an item set with these. Nothing here names a field.
@@ -139,6 +141,15 @@ sealed class FieldDescription(
      * The parameter is `Any` because an override may not narrow it. A caller holding a description
      * already knows what kind of value it takes.
      */
+    /**
+     * The type one value of this field has once it is read.
+     *
+     * What a typed read is checked against, so asking for the wrong kind is a fault whether or not
+     * the field has anything stored. Cardinality is separate: a list of numbers says [Double] here
+     * and says how many in [cardinality]. `DATA-51`.
+     */
+    abstract val valueType: KClass<*>
+
     open fun validate(value: Any): Validity = Validity.Valid
 
     /** For test failures. */
@@ -173,6 +184,8 @@ class NumberDescription(
     val range: ClosedRange<Double>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override val valueType: KClass<*> get() = Double::class
+
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toDoubleOrNull()
             ?: return Result.Unusable(text, "$name is a number")
@@ -200,6 +213,8 @@ class WholeNumberDescription(
     val range: IntRange? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override val valueType: KClass<*> get() = Int::class
+
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toIntOrNull()
             ?: return Result.Unusable(text, "$name is a whole number")
@@ -222,6 +237,8 @@ class TextDescription(
     fixedSet: Set<String>? = null,
     suggested: Set<String>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
+
+    override val valueType: KClass<*> get() = String::class
 
     // Both copied. A Set is read-only, not immutable.
     /** Closed: a value outside reads back *unusable*, kept as written. `DATA-24`. */
@@ -265,6 +282,8 @@ class MultilineTextDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override val valueType: KClass<*> get() = String::class
+
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         accepted(text, text, overrides)
 
@@ -282,6 +301,8 @@ class DateDescription(
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
+
+    override val valueType: KClass<*> get() = Date::class
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
@@ -302,6 +323,8 @@ class TimeDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override val valueType: KClass<*> get() = Time::class
+
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
             accepted(Time.parse(text), text, overrides)
@@ -321,6 +344,8 @@ class BooleanDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
 
+    override val valueType: KClass<*> get() = Boolean::class
+
     override fun parse(text: String, overrides: Boolean): Result<Any> = when (text) {
         "true" -> accepted(true, text, overrides)
         "false" -> accepted(false, text, overrides)
@@ -338,6 +363,8 @@ class GasDescription(
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
+
+    override val valueType: KClass<*> get() = Gas::class
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
@@ -359,6 +386,8 @@ class KeyReferenceDescription(
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
+
+    override val valueType: KClass<*> get() = KeyReference::class
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
@@ -388,6 +417,8 @@ class ReferenceDescription(
     /** A plain name may stand in, asserting no id. */
     val oneOff: Boolean = false,
 ) : FieldDescription(name, label, role, cardinality) {
+
+    override val valueType: KClass<*> get() = Reference::class
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
@@ -422,7 +453,10 @@ class OwnedItemDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : FieldDescription(name, label, role, cardinality)
+) : FieldDescription(name, label, role, cardinality) {
+
+    override val valueType: KClass<*> get() = OwnedItem::class
+}
 
 /**
  * One item type: its name, and its fields in the order an interface offers them.

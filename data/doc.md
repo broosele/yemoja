@@ -762,7 +762,8 @@ data/
   src/commonMain/kotlin/yemoja/data/
                   Description.kt   what a type is, and what a field is
                   Gas.kt           a breathing mix, in whole percentages
-                  Item.kt          one item of one type, a placeholder for now
+                  Item.kt          one item of one type, referenceable or owned
+                  ItemSet.kt       everything loaded, by id and by type
                   Moment.kt        a day, a time of day, and the two together
                   Reference.kt     naming another item, and what it points at
                   Result.kt        what reading a field gave, and one member of a collection
@@ -860,6 +861,42 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-79 — Whether a referenceable item and an owned item are one class or two.**
+  *Settled:* **two, under a sealed `Item`.**
+
+  Everything that differs between them is outside the item. A referenceable one is named
+  by the file it sits in, an owned one by the key it sits under or by nothing at all, and
+  an owned one has a parent. So one class with a nullable parent was the obvious
+  alternative, and it would have expressed none of that.
+
+  What the split buys is that the base can declare the link to the set and each kind
+  answers it differently: a referenceable item holds one, an owned item answers its
+  parent's. The set is then recorded in one place, and an owned item moved between owners
+  cannot keep a stale one — which would have shown up as a reference resolving against the
+  wrong logbook, quietly.
+
+  It also lets a resolved reference name the referenceable kind, since resolution goes
+  through the set and the set holds nothing else.
+
+- **DATA-80 — What an item's field map holds.** *Settled:* **a result per stored field,
+  and nothing else.**
+
+  Only stored fields. A derived one is worked out on every read, because nothing announces
+  that an item changed and a cached answer would be the thing that goes stale. `DATA-6`.
+
+  **Absent is never a value in it**, because a field that is absent is not a key. That is a
+  stated rule rather than one the type enforces, in the same spirit as immutability being
+  declared and then honoured.
+
+  `Element` was weighed for it and refused. `Element` exists for members inside a list or a
+  keyed collection, where absence cannot arise and repeating the field's origin once per
+  sample would cost something on a profile. At field scale neither applies — an item has
+  twenty fields, not three thousand samples — and what reading a field gives is what a
+  result is for.
+
+  The map stays wider than the description: a field this version does not recognise lives
+  here and nowhere else, which is what lets it survive a round trip. `DATA-51`.
 
 - **DATA-76 — When a stored value is parsed.** *Settled:* **at construction.** An item is
   built with its fields already read, and reading one hands back what is there rather than
@@ -1685,10 +1722,16 @@ Kept with their identifiers so earlier discussion still resolves.
     the wrong kind is told so rather than given a bad cast.
 
   **How many methods that is, is a language artefact.** It was written as one per kind —
-  about ten — because Dart could not do better. Kotlin's reified generics can collapse them
-  into a single `read<Int>(name)` that checks the declared kind just as well, and probably
-  should. The decision is *three ways in, none of them per field*; the shape of the third
-  is an implementation choice and open.
+  about ten — because Dart could not do better. *Settled:* **five, one per cardinality,
+  each generic over the kind** — `one`, `list`, `keyed`, `series` and `keyedSeries`.
+  Reified generics collapse the kind axis. Cardinality does not collapse, because the
+  shapes genuinely differ and a series is not a list of anything. The ten were along the
+  axis the description model exists to remove; these five are along the other one.
+
+  **The confirmation is against the description, not the value**, so a `FieldDescription`
+  declares the type its kind produces. Checking the value would catch a wrong kind only on
+  the runs where the field happens to have one, and an optional field is usually absent —
+  which would put the silent-absent fault back in a new form.
 
   One method per kind of value, or one generic method, rather than an accessor per
   field across eight types — so the per-field surface the description design removed does
