@@ -34,7 +34,7 @@ enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
  *
  * A bad value, not a bad program. A parser this project owns throws this, and nothing else does, so
  * catching it catches only that. An `IllegalArgumentException` from somewhere unrelated stays a
- * fault instead of reaching a diver as a misspelt gas.
+ * fault instead of reaching a user as a misspelt gas.
  */
 class ValueFormatException(message: String) : RuntimeException(message)
 
@@ -50,7 +50,7 @@ sealed interface Validity {
 
     object Valid : Validity
 
-    /** [reason] is for a diver to read. */
+    /** [reason] is for a user to read. */
     class Invalid(val reason: String) : Validity
 }
 
@@ -109,6 +109,18 @@ sealed class FieldDescription(
     /** The written form of [value], the inverse of [parse]. */
     open fun format(value: Any): String = value.toString()
 
+    /**
+     * [value], read from [text], as a result.
+     *
+     * Runs [validate] on the way, so that what a field refuses when a user types it is
+     * exactly what it refuses when a file holds it.
+     */
+    protected fun accepted(value: Any, text: String, overrides: Boolean): Result<Any> =
+        when (val validity = validate(value)) {
+            is Validity.Valid -> Result.Usable(value, originOf(overrides))
+            is Validity.Invalid -> Result.Unusable(text, validity.reason)
+        }
+
     /** The origin a parsed value carries, by whether it corrects a derivation. */
     protected fun originOf(overrides: Boolean) =
         if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
@@ -159,7 +171,7 @@ class NumberDescription(
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toDoubleOrNull()
             ?: return Result.Unusable(text, "$name is a number")
-        return Result.Usable(number, originOf(overrides))
+        return accepted(number, text, overrides)
     }
 
     override fun validate(value: Any) = when {
@@ -186,7 +198,7 @@ class WholeNumberDescription(
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toIntOrNull()
             ?: return Result.Unusable(text, "$name is a whole number")
-        return Result.Usable(number, originOf(overrides))
+        return accepted(number, text, overrides)
     }
 
     override fun validate(value: Any) = when {
@@ -208,18 +220,16 @@ class TextDescription(
     val suggested: Set<String>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> = when {
-        text.any { it == '\n' || it == '\r' || it == '\t' } ->
-            Result.Unusable(text, "$name should be single line of text")
-
-        text.startsWith('@') || text.startsWith('*') ->
-            Result.Unusable(text, "$name may not begin with @ or *, which indicated references to other things")
-
-        else -> Result.Usable(text, originOf(overrides))
-    }
+    override fun parse(text: String, overrides: Boolean) = accepted(text, text, overrides)
 
     override fun validate(value: Any) = when {
         value !is String -> Validity.Invalid("$name should be text")
+        value.any { it == '\n' || it == '\r' || it == '\t' } ->
+            Validity.Invalid("$name should be a single line of text")
+
+        value.startsWith('@') || value.startsWith('*') ->
+            Validity.Invalid("$name may not begin with @ or *, which name other things")
+
         fixedSet != null && value !in fixedSet ->
             Validity.Invalid("$name should be one of ${fixedSet.sorted().joinToString(", ")}")
 
@@ -239,9 +249,13 @@ class MultilineTextDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        if (text.contains('\t')) Result.Unusable(text, "$name may not contain a tab")
-        else Result.Usable(text, originOf(overrides))
+    override fun parse(text: String, overrides: Boolean) = accepted(text, text, overrides)
+
+    override fun validate(value: Any) = when {
+        value !is String -> Validity.Invalid("$name should be text")
+        value.contains('\t') -> Validity.Invalid("$name may not contain a tab")
+        else -> Validity.Valid
+    }
 }
 
 /** Always `"2026-02-23"`; no `units` setting reaches it. */
@@ -254,7 +268,7 @@ class DateDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            Result.Usable(Date.parse(text), originOf(overrides))
+            accepted(Date.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name is a date: ${refused.message}")
         }
@@ -269,7 +283,18 @@ class TimeDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality)
+) : ValueDescription(name, label, role, cardinality) {
+
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        try {
+            accepted(Time.parse(text), text, overrides)
+        } catch (refused: ValueFormatException) {
+            Result.Unusable(text, "$name is a time: ${refused.message}")
+        }
+
+    override fun validate(value: Any) =
+        if (value is Time) Validity.Valid else Validity.Invalid("$name is a time")
+}
 
 /** `true` or `false`. */
 class BooleanDescription(
@@ -280,10 +305,13 @@ class BooleanDescription(
 ) : ValueDescription(name, label, role, cardinality) {
 
     override fun parse(text: String, overrides: Boolean): Result<Any> = when (text) {
-        "true" -> Result.Usable(true, originOf(overrides))
-        "false" -> Result.Usable(false, originOf(overrides))
+        "true" -> accepted(true, text, overrides)
+        "false" -> accepted(false, text, overrides)
         else -> Result.Unusable(text, "$name is written true or false, and nothing else")
     }
+
+    override fun validate(value: Any) =
+        if (value is Boolean) Validity.Valid else Validity.Invalid("$name should be true or false")
 }
 
 /** A mix as divers write it — `AIR`, `EAN32`, `TMX18/35` — parsed for its fractions. */
@@ -296,7 +324,7 @@ class GasDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            Result.Usable(Gas.parse(text), originOf(overrides))
+            accepted(Gas.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name should be a valid gas mix: ${refused.message}")
         }
@@ -313,7 +341,20 @@ class KeyReferenceDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality)
+) : ValueDescription(name, label, role, cardinality) {
+
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        try {
+            accepted(KeyReference.parse(text), text, overrides)
+        } catch (refused: ValueFormatException) {
+            Result.Unusable(text, "$name names an entry of $collection: ${refused.message}")
+        }
+
+    /** Syntax only. Whether the key exists is asked of the collection, not of a value. */
+    override fun validate(value: Any) =
+        if (value is KeyReference) Validity.Valid
+        else Validity.Invalid("$name should name an entry of $collection")
+}
 
 /**
  * Another item, written `@id`.
@@ -329,7 +370,28 @@ class ReferenceDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
     /** A plain name may stand in, asserting no id. */
     val oneOff: Boolean = false,
-) : FieldDescription(name, label, role, cardinality)
+) : FieldDescription(name, label, role, cardinality) {
+
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        try {
+            accepted(Reference.parse(text, oneOff), text, overrides)
+        } catch (refused: ValueFormatException) {
+            Result.Unusable(text, "$name names another item: ${refused.message}")
+        }
+
+    /**
+     * Syntax only.
+     *
+     * Whether the reference resolves is not part of its validity: `@john` names a person
+     * whether or not that person is in the logbook yet. `DATA-66`.
+     */
+    override fun validate(value: Any) = when {
+        value !is Reference -> Validity.Invalid("$name should name another item")
+        value is Reference.OneOff && !oneOff ->
+            Validity.Invalid("$name should be a reference, written with a leading @")
+        else -> Validity.Valid
+    }
+}
 
 /**
  * Fields kept inside their owner and read with it.

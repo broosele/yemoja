@@ -67,7 +67,7 @@ at least as often as it needs the item, which bears on what a source has to be a
 to answer — see `DATA-4` and `DATA-5`.
 
 It is also what lets a read-only [library](libraries.md) take part. A region supplied
-with the application gains a child when the diver adds one beneath it, because the
+with the application gains a child when the user adds one beneath it, because the
 child list was never stored in the library to begin with.
 
 ### What a derived value can be
@@ -245,7 +245,7 @@ written in.** There is no logbook-wide setting, nothing inherited from `yemoja.j
 and no per-item declaration inside a file holding several items.
 
 That is a deliberate loss of expressiveness. Two cylinders in one `gear.json` cannot be
-written in different volumes, and a diver who owns both metric and imperial kit has to
+written in different volumes, and a user who owns both metric and imperial kit has to
 convert one or split the file — the format already allows a directory of one file per
 item for any type, not only dives, so the case remains expressible. What is bought is
 that the units of a number can be determined by looking at the top of the file it is in,
@@ -534,7 +534,7 @@ an id to an item, and an item to its id. Storing it on the item
 instead would mean an item created but not yet accepted — an import candidate — either
 carrying an id it does not have yet or having one written into it later.
 
-**Nor does this layer invent one.** An id is the diver's, arrived at with whatever help
+**Nor does this layer invent one.** An id is the user's, arrived at with whatever help
 the interface offers — proposing one from a person's name or a dive's date is an
 assistance, not machinery, and it does not live here. An `ItemDescription` says nothing
 about how a proposal is made, and `DATA-73` records why: a recipe per type in the
@@ -761,6 +761,7 @@ data/
   src/commonMain/kotlin/yemoja/data/
                   Date.kt          a day, with no time and no zone
                   Moment.kt        a date and a time, for arithmetic only
+                  Reference.kt     naming another item, and what it points at
                   Description.kt   what a type is, and what a field is
                   Gas.kt           a breathing mix, in whole percentages
                   Result.kt        what reading a field gave
@@ -809,8 +810,8 @@ To settle when we discuss architecture:
   is not a bug and should not be rediscovered every time somebody reads a specification.
 
   The middle pile now has entries: `workload`, `problems` and `equipmentmalfunction` are
-  declined because `remarks` already takes what a diver would write, and imported values
-  are folded there rather than dropped. Markers a diver sets on the computer mid-dive —
+  declined because `remarks` already takes what a user would write, and imported values
+  are folded there rather than dropped. Markers a user sets on the computer mid-dive —
   UDDF's
   `setmarker` — are deliberately not modelled: a marker says something was interesting and
   nothing about what, which the dive's remarks do better. Rebreather data goes with
@@ -890,7 +891,7 @@ To settle when we discuss architecture:
 
   That argues for a moment in the *computation* and not in the *format*. Storing one
   combined field would make a date and a time a special case among the value kinds, and
-  would stop a diver correcting either by hand — which is why UDDF's single `datetime` is
+  would stop a user correcting either by hand — which is why UDDF's single `datetime` is
   split on the way in. See [../logic/uddf.md](../logic/uddf.md).
 
   Three derivations carry a day and should not each say so: correcting a recording by its
@@ -899,9 +900,9 @@ To settle when we discuss architecture:
 
 - **DATA-66 — Which layer judges a value against its description.** *Settled:*
   **structural checks stay here, on the description, and domain rules stay above.** A
-  description answers `validate`, returning valid or a reason a diver can read.
+  description answers `validate`, returning valid or a reason a user can read.
 
-  The interface decided it. A diver typing into a form has to be told before saving that
+  The interface decided it. A user typing into a form has to be told before saving that
   `brackish` is not one of the three water types, and the only thing that knows the three
   is the description. Putting the check above would mean the logic layer reaching down for
   a vocabulary the description already holds, or holding a second copy of it.
@@ -914,7 +915,7 @@ To settle when we discuss architecture:
   validation has already been parsed.
 
   For text entry a front end wants both at once — a parse error and a range error are the
-  same kind of news to a diver — so the per-kind reader of `DATA-64` does the parsing and
+  same kind of news to a user — so the per-kind reader of `DATA-64` does the parsing and
   calls this for the rest. One implementation, used when reading a file and when reading a
   form.
 
@@ -929,7 +930,7 @@ To settle when we discuss architecture:
 - **DATA-73 — Whether a description says what an id is proposed from, and what becomes of
   `required`.** *Settled:* **it does not, and `required` goes.**
 
-  An id is the diver's. Proposing one from a person's name or a dive's date is help the
+  An id is the user's. Proposing one from a person's name or a dive's date is help the
   interface offers, not machinery this layer owns — so an `ItemDescription` says nothing
   about it, and no recipe per type appears in the descriptions. A recipe there would be
   this layer knowing what a dive is.
@@ -960,15 +961,15 @@ To settle when we discuss architecture:
   it, and only some computers record it. A logbook that showed it could do nothing with it
   but draw it.
 
-  What is given up is real: a diver whose computer records a pulse loses it on import and
-  cannot export it. That is written where a diver will meet it, in
+  What is given up is real: a user whose computer records a pulse loses it on import and
+  cannot export it. That is written where a user will meet it, in
   [../manual/uddf.md](../manual/uddf.md), rather than left to be discovered.
 
 - **DATA-71 — Whether a pressure is gauge or absolute.** *Settled:* **a cylinder's is
   gauge, the atmosphere's is absolute, and anything computed uses absolute.**
 
   A cylinder pressure is what the needle showed — zero for an empty cylinder at the
-  surface — because that is what a diver reads and writes, and because this model keeps
+  surface — because that is what a user reads and writes, and because this model keeps
   what was observed rather than a converted form. `atmospheric_pressure` is not a reading
   against anything; it is the pressure itself, and is absolute. `pressures` in a profile
   follows the cylinder.
@@ -1005,13 +1006,13 @@ To settle when we discuss architecture:
   **It is an effective figure, not a measured one.** Real neoprene is 60 to 80 percent gas,
   but the cell walls carry load and the bubbles do not squeeze as freely as loose gas. What
   belongs in the field is the fraction that *behaves* as gas — fitted to the buoyancy a
-  diver actually loses, and so checkable by one.
+  user actually loses, and so checkable by one.
 
-  **`lift_volume` is not governed by it.** Gas the diver adds is whatever they have added;
+  **`lift_volume` is not governed by it.** Gas the user adds is whatever they have added;
   a wing at thirty metres holds what was put there, not a quarter of it. Only
   `displaced_volume` is squeezed and only its gas part. A drysuit is where confusing the
   two would be invisible in the arithmetic and wrong in the water — its suit compresses,
-  and its inflation is the diver answering that.
+  and its inflation is the user answering that.
 
   The name changed because "compressibility" in physics is a coefficient with units of
   inverse pressure, which is exactly what this stopped being.
@@ -1085,7 +1086,7 @@ To settle when we discuss architecture:
   the model is a list of owned items, and nothing is a keyed reference; the cardinality
   says which combinations exist without a type per combination.
 
-  What a diver sees is unchanged, and so is
+  What a user sees is unchanged, and so is
   [manual/data-format.md](../manual/data-format.md), which lists *keyed owned items* and
   *keyed series* as kinds because that is how they are written in a file. The manual
   describes the syntax; this describes what the syntax is made of.
@@ -1175,7 +1176,7 @@ To settle when we discuss architecture:
   rebranded, and the dives you logged there were with the old name, so searching either
   should find the place.
 
-  A trip is named by the diver and has no other name to know. A person has a name.
+  A trip is named by the user and has no other name to know. A person has a name.
   Neither gets a field that would sit empty in every logbook, and an imported `aliasname`
   on one of them folds into `remarks` rather than being dropped silently.
 
@@ -1204,7 +1205,7 @@ To settle when we discuss architecture:
   `DATA-8`'s table.
 
   They are the SI units for dimensions this model already carries, and the set says what a
-  file may declare. What a diver writes settles which name is the *default* and how litre
+  file may declare. What a user writes settles which name is the *default* and how litre
   is spelled; it was never a reason to refuse a valid unit. `DATA-8`'s own generosity
   argument points the same way — an unrecognised name makes every number in a file
   unusable, and a name added later does that to every version before it.
@@ -1224,13 +1225,13 @@ To settle when we discuss architecture:
 
   **The threshold is what breaks that.** The arithmetic is exact; deciding that six hours
   is clean and five is not is a judgement, and one this application would be making on the
-  diver's behalf every time it drew a group. Agencies disagree about the number, and a
+  user's behalf every time it drew a group. Agencies disagree about the number, and a
   wrong one is not a rounding error but a claim about somebody's decompression. So the
-  judgement is the diver's and is recorded, and the arithmetic stays derived: what
+  judgement is the user's and is recorded, and the arithmetic stays derived: what
   `previous_dive` says is *this one counted*, not how long the gap was.
 
-  It sits on the **dive**, not the profile. Residual gas belongs to the diver, and the
-  profiles of one dive are the same diver seen by two computers — letting them disagree
+  It sits on the **dive**, not the profile. Residual gas belongs to the user, and the
+  profiles of one dive are the same user seen by two computers — letting them disagree
   about what preceded would be recording a fact about a device rather than about a dive.
 
   Validation is the ordinary permissive kind: the target must have started earlier, and a
@@ -1270,7 +1271,7 @@ To settle when we discuss architecture:
   constant the device used, so where it is missing the derived values are unusable rather
   than approximate, per `DATA-50`.
 
-  This is why a site's `water_type` could never have served. A diver may dive the sea with
+  This is why a site's `water_type` could never have served. A user may dive the sea with
   a computer set to fresh, and the depths will say fresh; the site is salt regardless. The
   two fields share a name and a vocabulary and answer different questions — one describes
   water, the other an instrument's setting.
@@ -1309,7 +1310,7 @@ To settle when we discuss architecture:
   which gaps were which.
 
 - **DATA-35 — Validity measured in use rather than time.** *Settled:* dates only.
-  `valid_until` is a date and there is no counting of dives. A diver whose regulator is
+  `valid_until` is a date and there is no counting of dives. A user whose regulator is
   due every hundred dives works out when that will be and writes the date.
 
   The model therefore says less than the label on a regulator does, and that is accepted.
@@ -1331,7 +1332,7 @@ To settle when we discuss architecture:
 
   Which is the same line the layers are drawn on everywhere else. A date subtraction is
   arithmetic; deciding that five weeks is worth mentioning and six is not needs to know
-  what the thing is and how a diver plans, which is knowing what diving is.
+  what the thing is and how a user plans, which is knowing what diving is.
 
 - **DATA-38 — Whether an item can have more than one maintenance sequence.** *Settled:*
   yes, and without a second list. Entries stay in one collection and the derived values
@@ -1350,7 +1351,7 @@ To settle when we discuss architecture:
   rule seen from either side: an entry always says when the next thing is due and what
   that thing is.
 
-  A separate sequence item was the alternative and buys little. It would make a diver
+  A separate sequence item was the alternative and buys little. It would make a user
   choose a sequence before logging a service, and it puts a second level of nesting under
   gear to hold what `type` already distinguishes.
 
@@ -1368,13 +1369,13 @@ Kept with their identifiers so earlier discussion still resolves.
   since a derived value is never written — enforced by a check rather than by the shape.
   Now the question cannot be asked.
 
-  Nothing is stored to make it happen. The file stays as it was — a diver's gear does not
+  Nothing is stored to make it happen. The file stays as it was — a user's gear does not
   gain a `generic: false` it never had — so writing back is unchanged and a default costs
   nothing on disk. `DATA-27` still holds: storage has exactly one absent state, and the
   value is worked out on the way out.
 
   `generic` on gear is the case that prompted it, and remains the only field in the model
-  with a default. Almost nothing in a diver's own logbook
+  with a default. Almost nothing in a user's own logbook
   is generic and almost everything in the supplied library is, so the library states
   `true` and everything else says nothing and means `false`. Making every owner write
   `generic: false` on every item would be noise in service of a distinction they never
@@ -1439,7 +1440,7 @@ Kept with their identifiers so earlier discussion still resolves.
   [tui](../ui/tui/doc.md) offers none of it and takes a plain string as typed.
 
   The presets are still written into the model rather than left to the interface, because
-  a default that everyone is shown is what keeps a logbook self-consistent — the diver who
+  a default that everyone is shown is what keeps a logbook self-consistent — the user who
   wrote `slipway` once should be offered it the second time instead of writing `slip way`.
   Recording them is encouragement, not enforcement.
 
@@ -1518,7 +1519,7 @@ Kept with their identifiers so earlier discussion still resolves.
   remember why: `DATA-26` already has statistics skip what they cannot use, so an
   out-of-range rating is excluded rather than dragging the mean upward. And because the
   written value survives, an interface can say what it found instead of showing a blank —
-  which is the difference between a diver finding the typo and never learning of it.
+  which is the difference between a user finding the typo and never learning of it.
 
   One rule now covers both shapes of the same mistake. A range and a fixed set are the
   same thing said two ways — a closed description of what a field may hold — so a value
@@ -1545,7 +1546,7 @@ Kept with their identifiers so earlier discussion still resolves.
   2. **Settings in the logbook**, which travel with it and reach every device.
   3. **Built-in defaults.**
 
-  So a preference set once in the logbook follows a diver to a new device, and an
+  So a preference set once in the logbook follows a user to a new device, and an
   installation can still depart from it without that departure leaking back into shared
   data. A device that has never been told anything falls through to the logbook, and then
   to the default, so nothing has to be configured before a logbook is usable.
@@ -1567,12 +1568,12 @@ Kept with their identifiers so earlier discussion still resolves.
   declaration reaches no further than its own file. The two are not in conflict because
   they govern different things. A unit decides what recorded data *means*, so an
   invisible resolution order can silently corrupt it: the same number becomes a different
-  depth. A setting decides only what a diver is shown, so getting it from the wrong layer
+  depth. A setting decides only what a user is shown, so getting it from the wrong layer
   is visible, harmless and immediately correctable. Ambiguity is cheap here and expensive
   there.
 
 - **DATA-8 — The vocabulary of unit names.** *Settled:* short symbols, from a closed set,
-  written exactly as listed. These are what a diver writes and what the fixtures and
+  written exactly as listed. These are what a user writes and what the fixtures and
   every supplied library already use, so nothing needed renumbering.
 
   | Dimension | Names |
@@ -1599,8 +1600,8 @@ Kept with their identifiers so earlier discussion still resolves.
   1.025, and two spellings a thousand apart is exactly the confusion this set exists to
   prevent.
 
-  **What a diver writes decides the default, not the set.** `l` for litre is kept over the
-  `L` the SI brochure permits because `l` is what divers write — the ambiguity with `1` is
+  **What a user writes decides the default, not the set.** `l` for litre is kept over the
+  `L` the SI brochure permits because `l` is what users write — the ambiguity with `1` is
   a display concern, and every place the application shows a unit can choose its own
   glyph. That is an argument about spelling and about which name comes first; it is not a
   reason to refuse a valid unit for a dimension the model already carries. `m3` and `Pa`
@@ -1646,7 +1647,7 @@ Kept with their identifiers so earlier discussion still resolves.
 - **DATA-50 — What reading a field gives back.** *Settled:* three states, in one result
   type — **absent**, **usable** with the value, or **unusable** with what was written and
   why. A nullable value would collapse absent and unusable into one answer, and those are
-  the two a diver most needs told apart: nothing recorded, against something recorded
+  the two a user most needs told apart: nothing recorded, against something recorded
   that this version cannot use. Every reader has to handle all three, which is the point
   rather than the cost — the question is asked at each use instead of being forgotten
   once, centrally.
@@ -1797,7 +1798,7 @@ Kept with their identifiers so earlier discussion still resolves.
   boxed list pays an object header and an indirection per sample. The tenfold estimate was
   made against a language that boxes less, so it is a floor here rather than a figure.
 - **DATA-2 — Whether a dive's number is derived or primary.** *Settled:* primary. The
-  manual records it as a field the diver writes — their own numbering, kept or not as
+  manual records it as a field the user writes — their own numbering, kept or not as
   they please — precisely so that finding a forgotten dive renumbers nothing.
 - **DATA-11 — Angles and coordinates.** *Settled:* degrees, and they take part in unit
   scoping like any other quantity. `angle` is the dimension; every supplied library
