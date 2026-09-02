@@ -58,3 +58,31 @@ sealed class Result<out T : Any> {
      */
     class Unusable(val raw: Any?, val reason: String) : Result<Nothing>()
 }
+
+/**
+ * One member of a collection: a value, or something that is not one.
+ *
+ * Two states where [Result] has three. A member of a list is there, so it cannot be absent, and a
+ * type carrying a state that never arises is a branch every caller writes and none reaches.
+ *
+ * No origin either. Where a value came from is a property of the field, so every member would carry
+ * the same answer, and on a profile that is one of them per sample.
+ *
+ * A field holding a collection keeps its own [Result]: absent, or usable with an origin, or
+ * unusable where what was stored is not a collection at all. Its members are these.
+ *
+ * Immutable.
+ */
+sealed class Element<out T : Any> {
+
+    /** A value that read correctly. */
+    class Usable<out T : Any>(val value: T) : Element<T>()
+
+    /**
+     * Something is there and cannot be used.
+     *
+     * [raw] is kept as written, so one unreadable member is shown in place rather than dropped, and
+     * the rest of the collection is unaffected. `DATA-24`.
+     */
+    class Unusable(val raw: Any?, val reason: String) : Element<Nothing>()
+}

@@ -763,7 +763,8 @@ data/
                   Gas.kt           a breathing mix, in whole percentages
                   Moment.kt        a day, a time of day, and the two together
                   Reference.kt     naming another item, and what it points at
-                  Result.kt        what reading a field gave
+                  Result.kt        what reading a field gave, and one member of a collection
+                  Series.kt        values against time, and one sample of them
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
@@ -857,6 +858,57 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-76 — When a stored value is parsed.** *Settled:* **at construction.** An item is
+  built with its fields already read, and reading one hands back what is there rather than
+  parsing it again.
+
+  Reads dominate. Everything an interface does is a read, and a profile is read again on
+  every redraw, so the work belongs at the one place that happens once. `DATA-5` already
+  says items are constructed in full; this is the same answer one level down.
+
+  The cost is that writing back goes through the formatter rather than through the text
+  that was read, so a hand-written `eanx32` returns as `EAN32`. That is a single
+  normalising diff on a file nobody edited, and it makes formatting the true inverse of
+  parsing, which is a property a test can hold us to rather than a promise.
+
+  A field the description does not name is not parsed at all. It is held as it came and
+  written back untouched, which is what stops two installations at different versions
+  eroding each other's data.
+
+- **DATA-77 — Where the three states sit on a field holding more than one value.**
+  *Settled:* **`Result` on the field, `Element` on each member.** A field is absent, or
+  usable with an origin, or unusable because what was stored is not a collection at all. A
+  member is a value, or something that is not one.
+
+  A result inside a result would carry a state that cannot arise. A member of a list is
+  there, so it is never absent, and every caller would write a branch nothing reaches. It
+  would also repeat the field's origin on every member, which is one reference per sample
+  across the profiles that are the largest thing in the application.
+
+  **One bad member does not spoil the field.** A misspelt buddy leaves the other three
+  readable, and `DATA-24` keeps the bad one visible in place with its text. This was
+  weighed for series too, where the samples are read as one curve, and rejected there for
+  a concrete reason: `alarms` is closed to nine words, so one unrecognised word from a
+  newer version would take out the whole series, including the `link` alarm that `DATA-58`
+  leans on to explain a gap in the depth curve.
+
+- **DATA-78 — Whether a series is a collection or a value.** *Settled:* **a value, with a
+  type of its own.** `Series` holds the times in one array and the values beside them, and
+  a field holding one is a result over a series rather than over a list of pairs.
+
+  Where the time axis lives was the half that stayed open. A value description parses one
+  value and cannot see the time beside it, so nothing owned the pairing. A series does,
+  being the only thing that holds both halves.
+
+  Pairs were the alternative and cost three objects per sample: the pair, a boxed time and
+  the member. `DATA-5` notes that a thousand dives of a few thousand samples each is
+  comfortably the largest thing in the application, and that Android is where it would be
+  felt. That decides it.
+
+  Samples run strictly forwards, and a file that breaks it makes the field unusable rather
+  than throwing where a user would see it. An empty series is allowed. Negative seconds
+  are not forbidden, since nothing says a sample cannot precede the start.
 
 - **DATA-74 — Where a date and a time come from.** *Settled:* **ours, and no dependency.**
   `Date` and `Time` are written in this layer rather than taken from `kotlinx-datetime`.
