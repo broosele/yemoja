@@ -353,8 +353,9 @@ class BooleanDescription(
 }
 
 /**
- * GasDescription is a field holding a mix as divers write it — `AIR`, `EAN32`, `TMX18/35`
- * — parsed for its fractions.
+ * GasDescription is a field holding a mix as divers write it, parsed for its fractions.
+ *
+ * Examples include `AIR`, `EAN32` and `TMX18/35`.
  */
 class GasDescription(
     name: String,

@@ -47,11 +47,13 @@ sealed class Result<out T : Any> {
     object Absent : Result<Nothing>()
 
     /**
-     * Unusable is something that is there and cannot be used: a word where a depth belongs, a
-     * value outside a fixed set, a reference to the wrong kind of item.
+     * Unusable is something that is there and cannot be used.
      *
      * [raw] is what was stored, kept exactly as written. An interface can then say what it found
      * instead of showing a blank. `DATA-24`.
+     *
+     * Examples include a word where a depth belongs, a value outside a fixed set, and a reference
+     * to the wrong kind of item.
      */
     data class Unusable(val raw: Any?, val reason: String) : Result<Nothing>()
 }
@@ -85,11 +87,11 @@ sealed class Element<out T : Any> {
 }
 
 /**
- * ValueFormatException is thrown for text that does not say what it claims to: `EAN200`, or a
- * date that is not a date.
+ * ValueFormatException is thrown when a bad value is presented to a parser.
  *
- * A bad value, not a bad program. A parser this project owns throws this, and nothing else does, so
- * catching it catches only that. An `IllegalArgumentException` from somewhere unrelated stays a
- * fault instead of reaching a user as a misspelt gas.
+ * It is not used when code fails. It is only used by the parsers in this codebase and thus can
+ * be told apart from other errors: catching it catches a bad value and never a fault.
+ *
+ * Examples include `EAN200`, or a date that indicates a 13th month.
  */
 class ValueFormatException(message: String) : RuntimeException(message)

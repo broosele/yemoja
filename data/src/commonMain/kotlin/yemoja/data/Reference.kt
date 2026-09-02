@@ -71,12 +71,14 @@ sealed class Reference {
 }
 
 /**
- * KeyReference names one entry inside the item being read, written `*p1`.
+ * KeyReference names one entry inside the item being read.
  *
  * Not a [Reference]: it names a part of one item rather than an item, so what resolves it
  * is the collection the description points into, not the set of all items.
  *
  * Immutable.
+ *
+ * An entry keyed `p1` is written `*p1`.
  */
 data class KeyReference(val key: String) {
 

@@ -3,7 +3,7 @@ package yemoja.data
 import kotlin.reflect.KClass
 
 /**
- * Item is one thing of one type: a dive, a person, a profile.
+ * Item is one thing of one type.
  *
  * There is no class per type. What a dive is comes from its [ItemDescription], which is data and
  * lives in the logic layer, so nothing here names a field.
@@ -17,6 +17,8 @@ import kotlin.reflect.KClass
  *
  * **Changing one is absent.** Nothing here sets a field, adds an owned item or deletes anything;
  * that waits on the journal.
+ *
+ * Examples of a type include a dive, a person and a profile.
  */
 sealed class Item(
     val description: ItemDescription,
@@ -113,11 +115,12 @@ sealed class Item(
 }
 
 /**
- * ReferenceableItem is an item with an id of its own, which anything may point at: a dive, a
- * person, a dive site.
+ * ReferenceableItem is an item with an id of its own, which anything may point at.
  *
  * The id is not here. It is the name of the file the item sits in, and [ItemSet] answers in both
  * directions.
+ *
+ * Examples include a dive, a person and a dive site.
  */
 class ReferenceableItem(
     description: ItemDescription,
@@ -126,10 +129,12 @@ class ReferenceableItem(
 ) : Item(description, fields)
 
 /**
- * OwnedItem is an item that exists only inside another: a dive's profile, a cylinder on a dive.
+ * OwnedItem is an item that exists only inside another.
  *
  * Created and destroyed with its [parent], never pointed at from outside it, and named by the key
  * it sits under where it sits in a collection at all.
+ *
+ * Examples include a dive's profile and a cylinder on a dive.
  *
  * The link to the parent is not stored — it would be circular on disk and says nothing the file
  * structure does not — and it is load-bearing rather than tidy: a profile's `gas_switches` name
