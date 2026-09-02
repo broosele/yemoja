@@ -448,9 +448,14 @@ proposal is therefore checked against everything already loaded, not only agains
 its own kind, and a new person proposing an id a dive site already holds becomes
 `#1` like any other clash.
 
-The one legitimate second sighting is **shadowing**: the same id, of the same type, laid
-over rather than beside — a logbook item over a supplied one, or one library over another.
-See [libraries.md](libraries.md).
+The one legitimate second sighting is **shadowing**: the same id, of the same type, met
+again after it has already been read — a logbook item before a supplied one, or a library
+before a later library. What is read first wins and the second sighting is passed over, so
+nothing already in the set is ever replaced. See [libraries.md](libraries.md).
+
+**Within one source it is still a clash.** Two items of one id in one logbook, or in one
+library, is the fault that `add` refuses. First-wins is about the order sources are read
+in, not a licence to write an id twice in one place.
 
 Every item holds access to the items it belongs to. That is how an item answers
 questions it cannot answer alone — a region finds its `children` by asking which regions

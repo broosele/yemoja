@@ -17,24 +17,28 @@ it, and not the user's to change.
   the library keeps its own, untouched. **This is the only way an item comes to shadow a
   supplied one**, which makes shadowing always deliberate: adding cannot cause it, and
   editing cannot fail to.
-- **The logbook wins.** An item in the logbook shadows a library item with the
-  same id.
+- **The logbook wins.** An item in the logbook shadows a library item with the same id,
+  because the logbook is looked in first.
 - **Library items cannot be deleted.** They can only be shadowed — and deleting the
   shadow brings the supplied one back, which is how a user undoes a copy and takes up
   whatever the library says now.
 
 ## Reference resolution
 
-A reference names an id, not a place. Think of it as layers, each laid over the last:
+A reference names an id, not a place. Think of it as a search, in one order:
 
 ```
-first library  →  … →  last library  →  the logbook
+the logbook  →  first library  →  … →  last library
 ```
 
-**The last to define an id wins.** A library listed later shadows one listed earlier,
-and the logbook, laid on top of them all, shadows every library. One rule in one
-direction, rather than a search order and a separate statement that the logbook takes
-precedence.
+**The first to define an id wins**, and later definitions of it are passed over. The
+logbook is looked in first, so it shadows every library; among libraries the one listed
+first is preferred. One rule in one direction, rather than a search order and a separate
+statement that the logbook takes precedence.
+
+That makes the list in `yemoja.json` an order of preference, which is what a reader would
+guess it is. It also means nothing already read is ever replaced: reading only ever adds,
+so an item is final the moment it is in.
 
 This is what makes shadowing work, and it means a reference never has to say *where* its
 target lives — `@padi_owd` and `@jacques_cousteau` look identical and need no
