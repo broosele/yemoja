@@ -8,8 +8,9 @@ package yemoja.data
  * logbook. A plain `john` asserts nothing of the sort, so two of them may be two people who
  * share a name.
  *
- * A reference that names nothing is still a reference. Failing to resolve is not a fault in
- * the value — see [Referent] and `DATA-66`.
+ * A reference to an item that is not in the logbook is still a reference. It names someone
+ * who has not been entered yet, which is not a fault in the value. See [Referent] and
+ * `DATA-66`.
  */
 sealed class Reference {
 
@@ -19,8 +20,10 @@ sealed class Reference {
     /** `@john`. */
     data class Identified(val id: String) : Reference() {
         init {
-            require(id.isNotEmpty()) { "an empty id" }
-            require(id.none { it == '*' || it.isWhitespace() }) { "an id of $id" }
+            require(id.isNotEmpty()) { "an id should not be empty" }
+            require(id.none { it == '*' || it.isWhitespace() }) {
+                "an id should hold no spaces and no *, but was $id"
+            }
         }
 
         override val written get() = "@$id"
@@ -29,8 +32,10 @@ sealed class Reference {
     /** `john`. A name where a reference could have gone, asserting no id. */
     data class OneOff(val name: String) : Reference() {
         init {
-            require(name.isNotEmpty()) { "an empty name" }
-            require(!name.startsWith('@')) { "a name that reads as an id: $name" }
+            require(name.isNotEmpty()) { "a name should not be empty" }
+            require(!name.startsWith('@')) {
+                "a name should not begin with @, which would make it an id: $name"
+            }
         }
 
         override val written get() = name
@@ -72,8 +77,10 @@ sealed class Reference {
 data class KeyReference(val key: String) {
 
     init {
-        require(key.isNotEmpty()) { "an empty key" }
-        require(key.none { it == '*' || it.isWhitespace() }) { "a key of $key" }
+        require(key.isNotEmpty()) { "a key should not be empty" }
+        require(key.none { it == '*' || it.isWhitespace() }) {
+            "a key should hold no spaces and no *, but was $key"
+        }
     }
 
     val written get() = "*$key"

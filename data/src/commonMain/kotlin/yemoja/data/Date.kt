@@ -9,8 +9,13 @@ package yemoja.data
 data class Date(val year: Int, val month: Int, val day: Int) : Comparable<Date> {
 
     init {
-        require(month in 1..12) { "month $month" }
-        require(day in 1..lengthOfMonth(year, month)) { "day $day of month $month, $year" }
+        require(month in 1..MONTHS_IN_YEAR) {
+            "month should be 1 to $MONTHS_IN_YEAR, but was $month"
+        }
+        require(day in 1..lengthOfMonth(year, month)) {
+            "day should be 1 to ${lengthOfMonth(year, month)}" +
+                " in month $month of $year, but was $day"
+        }
     }
 
     /**
@@ -40,6 +45,8 @@ data class Date(val year: Int, val month: Int, val day: Int) : Comparable<Date> 
         "${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}"
 
     companion object {
+
+        const val MONTHS_IN_YEAR = 12
 
         private val WRITTEN = Regex("""(-?\d{4,})-(\d{2})-(\d{2})""")
 

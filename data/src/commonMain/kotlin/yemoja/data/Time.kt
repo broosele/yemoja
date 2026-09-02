@@ -11,9 +11,15 @@ package yemoja.data
 data class Time(val hour: Int, val minute: Int, val second: Int) : Comparable<Time> {
 
     init {
-        require(hour in 0 until HOURS_IN_DAY) { "hour $hour" }
-        require(minute in 0 until MINUTES_IN_HOUR) { "minute $minute" }
-        require(second in 0 until SECONDS_IN_MINUTE) { "second $second" }
+        require(hour in 0..<HOURS_IN_DAY) {
+            "hour should be 0 to ${HOURS_IN_DAY - 1}, but was $hour"
+        }
+        require(minute in 0..<MINUTES_IN_HOUR) {
+            "minute should be 0 to ${MINUTES_IN_HOUR - 1}, but was $minute"
+        }
+        require(second in 0..<SECONDS_IN_MINUTE) {
+            "second should be 0 to ${SECONDS_IN_MINUTE - 1}, but was $second"
+        }
     }
 
     val secondOfDay: Int get() =
@@ -37,7 +43,9 @@ data class Time(val hour: Int, val minute: Int, val second: Int) : Comparable<Ti
         private val WRITTEN = Regex("""(\d{2}):(\d{2}):(\d{2})""")
 
         fun ofSecondOfDay(second: Int): Time {
-            require(second in 0 until SECONDS_IN_DAY) { "second of day $second" }
+            require(second in 0..<SECONDS_IN_DAY) {
+                "a second of the day should be 0 to ${SECONDS_IN_DAY - 1}, but was $second"
+            }
             return Time(
                 second / SECONDS_IN_HOUR,
                 second % SECONDS_IN_HOUR / SECONDS_IN_MINUTE,

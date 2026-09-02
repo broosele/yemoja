@@ -16,10 +16,11 @@ import kotlin.math.roundToInt
 data class Gas(val percentO2: Int, val percentHe: Int) {
 
     init {
-        require(percentO2 in 0..100) { "oxygen is $percentO2%" }
-        require(percentHe in 0..100) { "helium is $percentHe%" }
+        require(percentO2 in 0..100) { "oxygen should be 0 to 100%, but was $percentO2%" }
+        require(percentHe in 0..100) { "helium should be 0 to 100%, but was $percentHe%" }
         require(percentO2 + percentHe <= 100) {
-            "oxygen and helium together are more than 100%"
+            "oxygen and helium together should be at most 100%," +
+                " but were ${percentO2 + percentHe}%"
         }
     }
 
