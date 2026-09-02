@@ -22,7 +22,8 @@ enum class Dimension {
 /**
  * Cardinality is how many values a field holds, and how each of them is reached.
  *
- * Orthogonal to what a field contains. `DATA-67`.
+ * Any kind of value may have any of them: a number can be one, a list, or a series through a
+ * dive. `DATA-67`.
  *
  * [KEYED] entries are addressable, with keys like `@2026-06-21#0*p1`; a [LIST] has no addressable
  * elements. [SERIES] is indexed by time, always in seconds. [KEYED_SERIES] is one series per key.
@@ -35,7 +36,7 @@ enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
  * Not [Result]. That answers what reading a *stored* value gave, and carries the raw text so an
  * interface can show what is in the file. This answers whether a value belongs in a field at all,
  * about something that may never have been in a file: typed into a form, or about to be written.
- * Nothing raw to keep.
+ * So there is nothing raw to keep.
  *
  * Immutable.
  */
@@ -50,7 +51,8 @@ sealed interface Validity {
 /**
  * Role is whether a field is recorded, worked out, or worked out and correctable.
  *
- * Orthogonal to the kind of field. A derivation carries its own computation.
+ * Any kind of field may have any of them, and one that is worked out carries its own
+ * computation.
  */
 sealed interface Role {
 
@@ -392,7 +394,11 @@ class KeyReferenceDescription(
             Result.Unusable(text, "$name should name an entry of $collection: ${refused.message}")
         }
 
-    /** Syntax only. Whether the key exists is asked of the collection, not of a value. */
+    /**
+     * Whether the text is written as a key reference, and nothing more.
+     *
+     * Whether the key exists is asked of the collection, not of a value.
+     */
     override fun validate(value: Any): Validity =
         if (value is KeyReference) Validity.Valid
         else Validity.Invalid("$name should name an entry of $collection")
@@ -424,10 +430,10 @@ class ReferenceDescription(
         }
 
     /**
-     * Syntax only.
+     * Whether the text is written as a reference, and nothing more.
      *
-     * Whether the reference resolves is not part of its validity: `@john` names a person
-     * whether or not that person is in the logbook yet. `DATA-66`.
+     * Whether it resolves is not part of its validity: `@john` names a person whether or not
+     * that person is in the logbook yet. `DATA-66`.
      */
     override fun validate(value: Any): Validity = when {
         value !is Reference -> Validity.Invalid("$name should name another item")
