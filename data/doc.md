@@ -779,24 +779,27 @@ their own — see [testing.md](../testing.md).
 
 To settle when we discuss architecture:
 
+- **DATA-81 — Whether a profile is read with its dive.** A logbook is held entirely in
+  memory, and this asks whether the profiles are part of that or are fetched when
+  something asks for one. It is the only field where the answer could matter.
 
-   `DATA-5` sharpens this. Entities are constructed in full when read, so whatever sits
-   inside a dive is in memory for every dive at once. A profile is the only field large
-   enough for that to matter: a thousand dives with a few thousand samples each is
-   comfortably the largest thing in the application, and a phone is where it would be
-   felt. Either profiles are not read with their dives, or the cost is accepted and
-   measured.
+  `DATA-5` sharpens this. Entities are constructed in full when read, so whatever sits
+  inside a dive is in memory for every dive at once. A profile is the only field large
+  enough for that to matter: a thousand dives with a few thousand samples each is
+  comfortably the largest thing in the application, and a phone is where it would be
+  felt. Either profiles are not read with their dives, or the cost is accepted and
+  measured.
 
-   The language change made this sharper rather than softer. A runtime with a heap and
-   object headers costs more per sample than the one this was first weighed against, and
-   Android is now the target that matters most rather than one of five — so the phone is
-   both where it hurts and where it is least acceptable to hurt.
+  The language change made this sharper rather than softer. A runtime with a heap and
+  object headers costs more per sample than the one this was first weighed against, and
+  Android is now the target that matters most rather than one of five — so the phone is
+  both where it hurts and where it is least acceptable to hurt.
 
-   An argument for the small answer: most navigation happens *through items* rather
-   than through queries. A region asks for its children, a reference resolves itself, a
-   dive reaches its site. If that holds, `ItemSet` needs little beyond resolving an
-   id and listing a type, and the interface stays small by consequence rather than
-   by discipline.
+  An argument for the small answer: most navigation happens *through items* rather
+  than through queries. A region asks for its children, a reference resolves itself, a
+  dive reaches its site. If that holds, `ItemSet` needs little beyond resolving an
+  id and listing a type, and the interface stays small by consequence rather than
+  by discipline.
 - **DATA-54 — Which fields the common interchange formats carry that this model does
   not.** *In progress:* **UDDF is done.** [../logic/uddf.md](../logic/uddf.md) compares
   every section of the logbook against 3.2.3, and what remains is other formats — which

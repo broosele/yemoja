@@ -133,15 +133,6 @@ sealed class FieldDescription(
         if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
 
     /**
-     * Whether [value] belongs in this field.
-     *
-     * Answers for a value on its own, so it cannot judge a reference. Whether one resolves needs
-     * the items, and is asked where they are. `DATA-66`.
-     *
-     * The parameter is `Any` because an override may not narrow it. A caller holding a description
-     * already knows what kind of value it takes.
-     */
-    /**
      * The type one value of this field has once it is read.
      *
      * What a typed read is checked against, so asking for the wrong kind is a fault whether or not
@@ -150,6 +141,15 @@ sealed class FieldDescription(
      */
     abstract val valueType: KClass<*>
 
+    /**
+     * Whether [value] belongs in this field.
+     *
+     * Answers for a value on its own, so it cannot judge a reference. Whether one resolves needs
+     * the items, and is asked where they are. `DATA-66`.
+     *
+     * The parameter is `Any` because an override may not narrow it. A caller holding a description
+     * already knows what kind of value it takes.
+     */
     open fun validate(value: Any): Validity = Validity.Valid
 
     /** For test failures. */
