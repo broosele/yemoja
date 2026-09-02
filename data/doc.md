@@ -759,13 +759,11 @@ data/
   libraries.md    reference data shipped with the application
   json/           the JSON file source (doc.md, requirements.md)
   src/commonMain/kotlin/yemoja/data/
-                  Date.kt          a day, with no time and no zone
-                  Moment.kt        a date and a time, for arithmetic only
-                  Reference.kt     naming another item, and what it points at
                   Description.kt   what a type is, and what a field is
                   Gas.kt           a breathing mix, in whole percentages
+                  Moment.kt        a day, a time of day, and the two together
+                  Reference.kt     naming another item, and what it points at
                   Result.kt        what reading a field gave
-                  Time.kt          a time of day, with no date and no zone
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
