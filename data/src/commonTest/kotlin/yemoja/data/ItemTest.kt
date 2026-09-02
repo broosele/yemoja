@@ -121,11 +121,27 @@ class ItemTest {
     }
 
     @Test
-    fun `a field the description never heard of survives in the raw mapping`() {
-        val item = postbox(set, mapOf("posting_times" to stored("09:00 and 17:00")))
-        assertEquals(stored("09:00 and 17:00"), item.fields["posting_times"])
-        // It is only reachable there. The checked read refuses it.
+    fun `a field the description never heard of keeps its own mapping`() {
+        val item = ReferenceableItem(POSTBOX, emptyMap(), set, mapOf("posting_times" to "09:00"))
+        assertEquals("09:00", item.unrecognisedFields["posting_times"])
+        // Not among the fields, and the checked read refuses it: the description has no such name.
+        assertEquals(emptyMap(), item.fields)
         assertFailsWith<IllegalArgumentException> { item.read("posting_times") }
+    }
+
+    @Test
+    fun `an item assembled in memory has no unrecognised fields`() {
+        assertEquals(emptyMap(), postbox(set, emptyMap()).unrecognisedFields)
+        assertEquals(emptyMap(), OwnedItem(DISTRICT, emptyMap(), postbox(set, emptyMap()))
+            .unrecognisedFields)
+    }
+
+    @Test
+    fun `an item keeps its own copy of what it was given`() {
+        val unrecognised = mutableMapOf<String, Any>("posting_times" to "09:00")
+        val item = ReferenceableItem(POSTBOX, emptyMap(), set, unrecognised)
+        unrecognised["colour"] = "red"
+        assertEquals(setOf("posting_times"), item.unrecognisedFields.keys)
     }
 
     @Test

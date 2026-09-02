@@ -23,19 +23,32 @@ import kotlin.reflect.KClass
 sealed class Item(
     val description: ItemDescription,
     fields: Map<String, Result<Any>>,
+    unrecognisedFields: Map<String, Any>,
 ) {
 
     /**
-     * Every field that was stored, by name, untyped.
+     * Every field the description names that was stored, by name, untyped.
      *
-     * The first of the three ways in, and deliberately wider than the description: a field this
-     * version does not recognise lives here and nowhere else, which is what lets it survive a round
-     * trip. Writing back reads this. `DATA-51`.
+     * The first of the three ways in. Writing back reads it, together with
+     * [unrecognisedFields]. `DATA-51`.
      *
      * Only stored fields. A derived one is worked out and never kept, and an absent one is not a
      * key, so [Result.Absent] never appears as a value here.
      */
     val fields: Map<String, Result<Any>> = fields.toMap()
+
+    /**
+     * Fields the description does not name, kept as the source handed them over.
+     *
+     * A newer version's field and a hand-typed misspelling are both here and neither can be told
+     * from the other, which is why they are kept rather than judged. `DATA-65`.
+     *
+     * **The values are the source's own** — a reader's tree, for a file — and nothing here looks
+     * inside one. Only a writer from the same source ever touches them, so no derivation, no
+     * check and no interface has a second shape to handle, which is what `DATA-64` refused when
+     * it kept a source's types out of a result. An item assembled in memory has none.
+     */
+    val unrecognisedFields: Map<String, Any> = unrecognisedFields.toMap()
 
     /** The items this one belongs to, and the only way to reach anything outside it. */
     abstract val set: ItemSet
@@ -126,7 +139,8 @@ class ReferenceableItem(
     description: ItemDescription,
     fields: Map<String, Result<Any>>,
     override val set: ItemSet,
-) : Item(description, fields)
+    unrecognisedFields: Map<String, Any> = emptyMap(),
+) : Item(description, fields, unrecognisedFields)
 
 /**
  * OwnedItem is an item that exists only inside another.
@@ -144,7 +158,8 @@ class OwnedItem(
     description: ItemDescription,
     fields: Map<String, Result<Any>>,
     val parent: Item,
-) : Item(description, fields) {
+    unrecognisedFields: Map<String, Any> = emptyMap(),
+) : Item(description, fields, unrecognisedFields) {
 
     // The owner's, by definition. Holding a second copy is a second thing to keep in step.
     override val set: ItemSet get() = parent.set

@@ -341,8 +341,8 @@ makes hand-editing hostile.
 ### How a type is described
 
 There is no class per item type. A dive, a person and a region are all the same class —
-`Item` — holding three things: the description of its type, a map of field name to value,
-and the items it belongs to.
+`Item` — holding the description of its type, a map of field name to value, a second
+mapping for the fields it does not recognise, and the items it belongs to.
 
 The description is data. An `ItemDescription` names a type and lists its fields. A
 `FieldDescription` says what one field is, in enough detail that the parser, the
@@ -1368,6 +1368,19 @@ To settle when we discuss architecture:
   something a file can do and a schema cannot, so a source that cannot preserve them says
   so rather than dropping them quietly.
 
+  **They are held as the source handed them over**, in a mapping of name to anything, and
+  nothing in this layer looks inside one. `DATA-64` kept a source's own types out of a
+  *result* because a source-flavoured result *"would force every derivation and every piece
+  of interface to handle two shapes"*. Neither applies here: an unrecognised field is never
+  derived from, never shown, never checked and never read as a value. The only thing that
+  touches one is a writer from the source that produced it, and an item assembled in memory
+  has none, which is correct rather than a limitation.
+
+  A neutral tree of our own was the alternative. To lose nothing it would have needed a
+  whole number told from a fraction, a null, and the order the members were written in — at
+  which point it is the JSON reader's tree under another name, plus a conversion on every
+  load for data nobody reads.
+
 - **DATA-63 — Which items carry `alternative_names`.** *Settled:* dive site, wreck and
   **operator**. Not person, not dive trip, not gas mix, whatever UDDF does.
 
@@ -1822,10 +1835,9 @@ Kept with their identifiers so earlier discussion still resolves.
 - **DATA-51 — Whether typed accessors exist, and for which fields.** *Settled:* three
   ways in, and not one of them is per field.
 
-  - **The raw mapping.** Every field as it was parsed, by name, untyped. Writing back
-    uses this, and it is deliberately wider than the description: a field this version
-    does not recognise lives here and nowhere else, which is what lets it survive a round
-    trip.
+  - **The raw mapping.** Every field the description names, as it was parsed, by name,
+    untyped. Writing back uses it, together with the separate mapping `DATA-65` puts beside
+    it for the fields this version does not recognise.
   - **A checked read**, accepting only names the `ItemDescription` carries. This is what
     the logic layer uses. A name the description does not know is a fault in the code,
     not in the data, and is reported as one — which is the distinction that makes a
