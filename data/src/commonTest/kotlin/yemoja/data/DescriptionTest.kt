@@ -46,7 +46,8 @@ class FieldDescriptionTest {
     fun `a kind with no written form answers unusable rather than pretending`() {
         val inner = ItemDescription("inner", listOf(TextDescription("name")))
         val owned = OwnedItemDescription("detail", inner)
-        assertEquals("detail is not written as text", unusable(owned, "anything").reason)
+        val read = unusable(owned, "anything")
+        assertEquals("detail should be a set of fields, not text", read.reason)
     }
 
     @Test
@@ -60,7 +61,7 @@ class FieldDescriptionTest {
         // parse runs validate, so the two can never drift apart.
         val rating = WholeNumberDescription("rating", range = 1..10)
         assertIs<Validity.Invalid>(rating.validate(11))
-        assertEquals("rating runs 1..10", unusable(rating, "11").reason)
+        assertEquals("rating should be within 1..10", unusable(rating, "11").reason)
     }
 }
 
@@ -254,9 +255,9 @@ class ResultTest {
 
     @Test
     fun `an unusable read keeps what it found`() {
-        val read = Result.Unusable("EAN200", "mix should be a valid gas mix")
+        val read = Result.Unusable("EAN200", "mix should be a gas mix")
         assertEquals("EAN200", read.raw)
-        assertEquals(Result.Unusable("EAN200", "mix should be a valid gas mix"), read)
+        assertEquals(Result.Unusable("EAN200", "mix should be a gas mix"), read)
     }
 
     @Test
@@ -269,7 +270,8 @@ class ResultTest {
     @Test
     fun `a verdict carries its reason`() {
         assertEquals(Validity.Valid, Validity.Valid)
-        assertEquals(Validity.Invalid("rating runs 1..10"), Validity.Invalid("rating runs 1..10"))
+        val refused = Validity.Invalid("rating should be within 1..10")
+        assertEquals(refused, Validity.Invalid("rating should be within 1..10"))
         assertTrue(Validity.Invalid("one") != Validity.Invalid("another"))
     }
 }

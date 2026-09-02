@@ -96,11 +96,8 @@ sealed class FieldDescription(
      * [overrides] says the text is a stored value on a field that would otherwise work one out,
      * which decides the origin. It is given, not defaulted. Whoever reads knows which case it is,
      * and the wrong answer here is a correct-looking one.
-     *
-     * A kind with no written form, such as an owned item, answers unusable.
      */
-    open fun parse(text: String, overrides: Boolean): Result<Any> =
-        Result.Unusable(text, "$name is not written as text")
+    abstract fun parse(text: String, overrides: Boolean): Result<Any>
 
     /** The written form of [value], the inverse of [parse]. */
     open fun format(value: Any): String = value.toString()
@@ -177,13 +174,13 @@ class NumberDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toDoubleOrNull()
-            ?: return Result.Unusable(text, "$name is a number")
+            ?: return Result.Unusable(text, "$name should be a number")
         return accepted(number, text, overrides)
     }
 
     override fun validate(value: Any): Validity = when {
-        value !is Double -> Validity.Invalid("$name is a number")
-        range != null && value !in range -> Validity.Invalid("$name runs $range")
+        value !is Double -> Validity.Invalid("$name should be a number")
+        range != null && value !in range -> Validity.Invalid("$name should be within $range")
         else -> Validity.Valid
     }
 }
@@ -206,13 +203,13 @@ class WholeNumberDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toIntOrNull()
-            ?: return Result.Unusable(text, "$name is a whole number")
+            ?: return Result.Unusable(text, "$name should be a whole number")
         return accepted(number, text, overrides)
     }
 
     override fun validate(value: Any): Validity = when {
-        value !is Int -> Validity.Invalid("$name is a whole number")
-        range != null && value !in range -> Validity.Invalid("$name runs $range")
+        value !is Int -> Validity.Invalid("$name should be a whole number")
+        range != null && value !in range -> Validity.Invalid("$name should be within $range")
         else -> Validity.Valid
     }
 }
@@ -253,7 +250,7 @@ class TextDescription(
             Validity.Invalid("$name should be a single line of text")
 
         value.startsWith('@') || value.startsWith('*') ->
-            Validity.Invalid("$name may not begin with @ or *, which name other things")
+            Validity.Invalid("$name should not begin with @ or *, which name other things")
 
         fixedSet != null && value !in fixedSet ->
             Validity.Invalid("$name should be one of ${fixedSet.sorted().joinToString(", ")}")
@@ -282,7 +279,7 @@ class MultilineTextDescription(
 
     override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
-        value.contains('\t') -> Validity.Invalid("$name may not contain a tab")
+        value.contains('\t') -> Validity.Invalid("$name should not contain a tab")
         else -> Validity.Valid
     }
 }
@@ -304,11 +301,11 @@ class DateDescription(
         try {
             accepted(Date.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name is a date: ${refused.message}")
+            Result.Unusable(text, "$name should be a date: ${refused.message}")
         }
 
     override fun validate(value: Any): Validity =
-        if (value is Date) Validity.Valid else Validity.Invalid("$name is a date")
+        if (value is Date) Validity.Valid else Validity.Invalid("$name should be a date")
 }
 
 /** TimeDescription is a field holding a time of day, always written `"09:15:00"`. */
@@ -325,11 +322,11 @@ class TimeDescription(
         try {
             accepted(Time.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name is a time: ${refused.message}")
+            Result.Unusable(text, "$name should be a time: ${refused.message}")
         }
 
     override fun validate(value: Any): Validity =
-        if (value is Time) Validity.Valid else Validity.Invalid("$name is a time")
+        if (value is Time) Validity.Valid else Validity.Invalid("$name should be a time")
 }
 
 /** BooleanDescription is a field holding `true` or `false`. */
@@ -345,7 +342,7 @@ class BooleanDescription(
     override fun parse(text: String, overrides: Boolean): Result<Any> = when (text) {
         "true" -> accepted(true, text, overrides)
         "false" -> accepted(false, text, overrides)
-        else -> Result.Unusable(text, "$name is written true or false, and nothing else")
+        else -> Result.Unusable(text, "$name should be true or false")
     }
 
     override fun validate(value: Any): Validity =
@@ -370,11 +367,11 @@ class GasDescription(
         try {
             accepted(Gas.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name should be a valid gas mix: ${refused.message}")
+            Result.Unusable(text, "$name should be a gas mix: ${refused.message}")
         }
 
     override fun validate(value: Any): Validity =
-        if (value is Gas) Validity.Valid else Validity.Invalid("$name is a mix")
+        if (value is Gas) Validity.Valid else Validity.Invalid("$name should be a gas mix")
 }
 
 /** KeyReferenceDescription is a field naming an entry inside the same item, written `*p1`. */
@@ -393,7 +390,7 @@ class KeyReferenceDescription(
         try {
             accepted(KeyReference.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name names an entry of $collection: ${refused.message}")
+            Result.Unusable(text, "$name should name an entry of $collection: ${refused.message}")
         }
 
     /** Syntax only. Whether the key exists is asked of the collection, not of a value. */
@@ -424,7 +421,7 @@ class ReferenceDescription(
         try {
             accepted(Reference.parse(text, oneOff), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name names another item: ${refused.message}")
+            Result.Unusable(text, "$name should name another item: ${refused.message}")
         }
 
     /**
@@ -456,6 +453,10 @@ class OwnedItemDescription(
 ) : FieldDescription(name, label, role, cardinality) {
 
     override val valueType: KClass<*> get() = OwnedItem::class
+
+    /** An owned item is a set of fields, so no text is ever one. */
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        Result.Unusable(text, "$name should be a set of fields, not text")
 }
 
 /**
