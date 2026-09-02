@@ -15,7 +15,7 @@ layer for anything it *does* is a bug in the design.
   and resolves against those descriptions is in [data](../data/doc.md); what a dive
   *is*, is here.
 - **Logbook operations:** create, edit, delete dives, sites, buddies and gear, and
-  linking them together. Not numbering: a dive's number is the diver's own and nothing
+  linking them together. Not numbering: a dive's number is the user's own and nothing
   renumbers it.
 - **Dive planning and decompression.** Given gases, depths and times, produce a
   schedule with ascent, stops and gas use.
@@ -24,7 +24,7 @@ layer for anything it *does* is a bug in the design.
 - **Import from dive computers**, and import of other logbook formats — folded into
   the logbook by the shared machinery in [reconciliation.md](reconciliation.md).
 - **Search and filtering** — the definitions of "recent", "deep", "with this buddy".
-- Unit handling for *display and entry*: what a diver is shown and what they type.
+- Unit handling for *display and entry*: what a user is shown and what they type.
   Values are stored and held in the units they were written in — see
   [../data/doc.md](../data/doc.md) — so this layer converts when presenting, not on the
   way in or out of storage.
@@ -50,7 +50,7 @@ what diving is:
   below, which made `deco` an exception needing a rule of its own; now the computation
   travels with the description and there is no exception to police.
 - **Domain rules.** Two dives that overlap in time, a course made of somebody else's
-  dives, a cylinder whose end pressure exceeds its start, a dive deeper than the diver
+  dives, a cylinder whose end pressure exceeds its start, a dive deeper than the user
   was certified for. The test is whether a thing can be checked without knowing the file
   is about diving; if it cannot, it belongs here. Structural checks — a date that parses,
   a reference that resolves, text without a line break — stay in the data layer.
@@ -116,9 +116,9 @@ To settle when we discuss architecture and features:
 
    What makes it more than a threshold is that one number is wrong everywhere. A month's
    notice suits a regulator service, is derisory for a five-yearly pressure test, and
-   means nothing for a medical without knowing whether the diver is diving next week or
+   means nothing for a medical without knowing whether the user is diving next week or
    next season. Candidates: a share of the original interval, which scales itself since
-   the interval is known from `date` to `valid_until`; a setting the diver chooses; or a
+   the interval is known from `date` to `valid_until`; a setting the user chooses; or a
    per-obligation figure. Relocated from `DATA-36`.
 - **LOGIC-8 — What a walk does when it meets a cycle.** Three fields point at their own
    type — a region's `parents`, a dive trip's `parent`, a certification's `supersedes` —
@@ -157,7 +157,7 @@ To settle when we discuss architecture and features:
   time, and a long operation takes the application over until it finishes.
 
   Downloading a dive computer, importing a file, running a plan: each is exclusive. The
-  diver is not browsing dives while forty come off their computer, because nobody needs to
+  user is not browsing dives while forty come off their computer, because nobody needs to
   and pretending otherwise buys a class of bugs for a convenience nobody asked for.
 
   **What that removes is the whole question.** Two things reaching one logbook at once is
@@ -180,7 +180,7 @@ To settle when we discuss architecture and features:
 
   Two things follow elsewhere. `LOGIC-4` gets easier: a live in-memory logbook has no
   observers racing it. And a large import is a single stretch of work rather than something
-  reconciled while the diver carries on around it — see
+  reconciled while the user carries on around it — see
   [reconciliation.md](reconciliation.md).
 
 - **LOGIC-6 — Which gradient factors a logged dive's `deco` is computed against.**
@@ -191,7 +191,7 @@ To settle when we discuss architecture and features:
   - failing that, a `no_deco_time` that never reached zero — it did not.
 
   Where the profile has neither, or there is no profile at all, `deco` is absent and the
-  diver answers it.
+  user answers it.
 
   The second rule exists because computers generally write stops only when there are
   stops, so a `decostop`-only rule would leave `deco` unanswered on most recreational
@@ -201,7 +201,7 @@ To settle when we discuss architecture and features:
 
   The question assumed `deco` could not be answered without gradient factors. For a dive
   that came off a computer it can, and better: the device decided at the time, with the
-  diver in the water, using the model and settings they were actually following. Nothing
+  user in the water, using the model and settings they were actually following. Nothing
   here can reproduce that, and a second opinion computed afterwards would not be a
   correction — it would be a different dive's answer printed over this one.
 

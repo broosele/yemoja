@@ -45,7 +45,7 @@ them.
   version control system underneath. See [data/json/doc.md](data/json/doc.md).
   Moved from *Core*: a logbook that cannot undo is still a logbook, and the journal is
   the largest single piece of machinery in the storage layer.
-- **FEAT-5 — Sync between installations, and backup.** Through a location the diver
+- **FEAT-5 — Sync between installations, and backup.** Through a location the user
   provides; see [data/json/requirements.md](data/json/requirements.md). Moved
   from *Core* with `FEAT-4`, which it builds on — merging is merging journals — and
   carrying conflict resolution with it.
@@ -80,7 +80,7 @@ them.
   remembering recent logbooks, switching without hunting for a folder.
 - **FEAT-18 — An AI agent over the logbook.** Asking for something in ordinary language
   and having it done, where doing it by hand would be many edits: retagging a season,
-  filling a site in across a trip, finding what disagrees with itself. The diver brings
+  filling a site in across a trip, finding what disagrees with itself. The user brings
   their own subscription — Yemoja supplies no model and pays for none.
   Built on `FEAT-12`, so an agent reaches the data through the same surface as any other
   program and gets no privileged path of its own. Two things it needs already exist by
@@ -91,12 +91,12 @@ them.
 
 ## Low priority
 
-- **FEAT-16 — Libraries a diver did not get from Yemoja**, so that a club's dive sites or
+- **FEAT-16 — Libraries a user did not get from Yemoja**, so that a club's dive sites or
   its own words for things can be added without a new release. `DATA-25` settles that
   suggested values come from the field's description joined with what a logbook already
   uses, so a library would be a third source rather than a replacement for the first.
 
-  What makes this more than a convenience is what `LIB-5` settles it *cannot* be. A diver
+  What makes this more than a convenience is what `LIB-5` settles it *cannot* be. A user
   can already copy items into their logbook, which is how a supplied item is frozen — but
   absorbing a club's list that way loses which items came from it and any hope of
   replacing it wholesale when the club issues a new one. A third-party library therefore

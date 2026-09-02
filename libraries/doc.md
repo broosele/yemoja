@@ -71,14 +71,14 @@ by, or will shadow, something it has nothing to do with.
 
 ## What belongs here
 
-Data that is true for everyone, and that a diver should not have to type:
+Data that is true for everyone, and that a user should not have to type:
 
 - Geography — regions, and their relationships.
 - Certifications as the awarding bodies define them.
 - Gear as manufacturers make it, rather than the item in someone's garage.
 
-What does not belong: anything personal, anything one diver would want changed, and
-anything that varies by who is asking. A diver's *correction* to a library item is
+What does not belong: anything personal, anything one user would want changed, and
+anything that varies by who is asking. A user's *correction* to a library item is
 stored in their own logbook and shadows this copy; it never comes back here.
 
 ## Where the data came from

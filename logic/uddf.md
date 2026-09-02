@@ -10,7 +10,7 @@ This is analysis, not behaviour. Nothing here describes an importer: `FEAT-7` is
 has not decided which formats get active support. What is settled is the correspondence
 between two data models, which is a fact about both and does not wait on either.
 
-**What a diver keeps or loses is stated in [../../manual/uddf.md](../manual/uddf.md),
+**What a user keeps or loses is stated in [../../manual/uddf.md](../manual/uddf.md),
 and that chapter owns it.** This document holds what the manual deliberately does not: the
 element names, the quotations from the specification, and the reasoning behind each
 decision — why a thing is lost, what the alternatives were, and which question settled it.
@@ -34,7 +34,7 @@ things this application is not for. Excluded wholesale, and not listed again bel
   settled which models this application supports, and only Bühlmann is described in the
   manual.
 
-What remains is the logbook: the dive, its profile, its gas, the site, the diver and the
+What remains is the logbook: the dive, its profile, its gas, the site, the person and the
 equipment. That is what this document covers.
 
 ## A note on units
@@ -65,7 +65,7 @@ written, because writing one would not be UDDF.
 
 The set has `m3` and `Pa` in it (`DATA-61`), so a converted file *may* be written in the
 units it arrived in and skip the arithmetic entirely. That is not what the importer will
-do — a logbook in cubic metres would be unreadable to the diver who owns it — but it is
+do — a logbook in cubic metres would be unreadable to the user who owns it — but it is
 available, and it means nothing UDDF can say lacks a name here.
 
 *An oddity, not yet confirmed against the schema:* the `latitude` page describes its sign
@@ -100,8 +100,8 @@ too, so nothing is given up there now.
 `duration`, `buddy_count`, `end_date`, `end_time` and `name` are derived here and would be
 computed either side rather than carried across. **`deco` is the awkward one.** Where a
 profile recorded stops it is derived from them and survives, because the stops themselves
-export as `decostop` samples. Where there is no profile it is the diver's own answer
-(`LOGIC-6`), and a UDDF dive has no field for it: a dive from a depth gauge that the diver
+export as `decostop` samples. Where there is no profile it is the user's own answer
+(`LOGIC-6`), and a UDDF dive has no field for it: a dive from a depth gauge that the user
 marked as a decompression dive goes out saying nothing about that, and comes back
 unanswered.
 
@@ -152,7 +152,7 @@ between makes.
 
 **Ours with no counterpart.** `water_type` and `density` on a profile — what the computer
 was set to, and the constant it turned pressure into depth with. UDDF records neither, so
-an imported profile has no density and nothing can be worked out from it until a diver
+an imported profile has no density and nothing can be worked out from it until a user
 supplies one. That is `DATA-59`, and it is the sharpest gap in this document: UDDF stores
 the converted depth and discards the conversion.
 
@@ -254,7 +254,7 @@ slipway. UDDF has no equivalent.
   depth is what it reaches, and how shallow it also is says little.
 
 
-## The diver
+## The person
 
 UDDF splits `owner` from `buddy` structurally. This model has one Person type and names
 the owner once, in `yemoja.json`, which is flatter and loses nothing.
@@ -523,7 +523,7 @@ Those eighteen, and what each means here:
 | `hyperbaricfacilitytreatment` | nothing; chamber treatment is not logged here |
 
 Two of the empty rows are worth more than a dash. **`equipmentconfiguration`** names a set
-of gear that goes together — a diver's usual kit — which this model has no item for: gear
+of gear that goes together — a user's usual kit — which this model has no item for: gear
 is listed per dive and a configuration would be a saving of typing rather than a fact
 about a dive, so it is a feature question rather than a data one. And **`notes`** may hold
 a `link`, so UDDF's free text can point at a site or a buddy inside a sentence; `remarks`
@@ -620,7 +620,7 @@ good. That is `tolerances` doing its job, not a disagreement between the formats
 
 **Which cylinder a gas switch moved to.** Our `gas_switches` names a `gas_sources` entry,
 which is a cylinder and its gas together. UDDF's `switchmix` names a `mix`, which is the
-gas alone. A diver switching between two cylinders carrying the same mix is expressible
+gas alone. A user switching between two cylinders carrying the same mix is expressible
 here and not there, so that distinction is lost on export and cannot be recovered.
 
 **Exotic gases.** UDDF's `mix` carries `ar` and `h2` alongside oxygen, helium and
@@ -640,7 +640,7 @@ on two computers therefore cannot be written out whole.
 
 *Settled:* **export writes the primary and drops the rest.** `primary_profile` already
 names which one to work from, so there is no choosing to do. The second recording is lost,
-and a diver should be told so once rather than discovering it.
+and a user should be told so once rather than discovering it.
 
 `applicationdata` could have carried it and deliberately does not. A profile is thousands
 of numbers, by far the largest thing in a dive, so this would be the heaviest possible use
@@ -654,7 +654,7 @@ readable form, and any reader then counts two dives that never happened.
 **Water type against density.** Ours is a fixed set of three, one of them the `en13319`
 nominal figure; UDDF's `sitedata` holds `density` as a number. Ours converts outward —
 each of the three has a density — but not back, since an arbitrary density cannot say
-which of three a diver chose, and most real densities match none of them.
+which of three a user chose, and most real densities match none of them.
 
 **Where a site is.** UDDF's `geography` gives `country`, `province` and `location` as
 three levels of text. This model gives `regions`, a list of references into a graph with
@@ -666,7 +666,7 @@ matching or minting Region items that may already exist under other names.
 
 **Gear as one type against twenty-one.** UDDF names each kind of equipment with its own
 element; this model has one `Gear` item and says what it is in two fields of open text.
-Import is a table lookup. Export cannot be, since no table can anticipate what a diver
+Import is a table lookup. Export cannot be, since no table can anticipate what a user
 typed — see *Exporting* above, where what will not fit goes into the notes rather than
 being dropped. Structure is lost; content need not be.
 
@@ -703,7 +703,7 @@ already taken.
 ## Where this stands
 
 **The comparison is complete for UDDF 3.2.3.** Every section of the logbook has been read
-against it — the dive, its profile, its gas, the dive site, wrecks, the diver, equipment,
+against it — the dive, its profile, its gas, the dive site, wrecks, the user, equipment,
 trips, operators, repetitive dives and how references work — and the claims that once
 rested on unread pages have been checked against the pages. Three of them were wrong and
 are corrected in place: `operator` does have a counterpart, `rating` has no scale
@@ -712,7 +712,7 @@ attribute, and `link` has eighteen parents rather than nineteen.
 **Declined deliberately**, which is `DATA-54`'s middle pile — not modelled, as against a
 gap to close:
 
-- `workload`, `problems`, `equipmentmalfunction` — all three are things a diver observed
+- `workload`, `problems`, `equipmentmalfunction` — all three are things a user observed
   and would write in prose. `remarks` takes them, and three fields that are usually empty
   cost more than they carry. Imported values are folded into remarks rather than dropped.
 - `setmarker`, rebreather data with `FEAT-21`, `minimumdepth` on a site, the taxonomy, and

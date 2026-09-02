@@ -4,7 +4,7 @@ package yemoja.data
  * The result of reading a field: a value, nothing, or something that cannot be interpreted
  * correctly.
  *
- * Three states, not a nullable. Absent and unusable are the two a diver most needs told apart.
+ * Three states, not a nullable. Absent and unusable are the two a user most needs told apart.
  * `DATA-50`. Every reader handles all three.
  *
  * The value is non-null by the bound on [T]: a usable nothing should be an absent.

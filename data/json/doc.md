@@ -60,7 +60,7 @@ candidate, and three of the four things it is normally chosen for do not apply h
   and which kind of operation produced a change. Git offers an author, an address and a
   message, so that metadata would have to be encoded by hand anyway.
 - **Its transport only helps with git remotes.** Sync goes through whatever location the
-  diver provides, and a `.git` directory carried by a file-sync service is a well-known
+  user provides, and a `.git` directory carried by a file-sync service is a well-known
   way to corrupt a repository.
 
 What remains is genuine — content-addressed integrity, parent-linked history, and files
@@ -75,7 +75,7 @@ control system exists to provide buy nothing here.
 
 ### The journal
 
-The journal is a list of **changesets**. A changeset is one thing the diver did, and it
+The journal is a list of **changesets**. A changeset is one thing the user did, and it
 holds the **actions** that carried it out:
 
 ```json
@@ -131,7 +131,7 @@ how to invert anything. Reversing a changeset is reversing its actions, backward
 
 **Every change to the logbook belongs to exactly one changeset**, including a single
 edit of a single field, which becomes a changeset holding one action. The uniformity is
-worth the small overhead: the unit the diver undoes is the unit the file is made of.
+worth the small overhead: the unit the user undoes is the unit the file is made of.
 
 Two things follow from grouping this way, and both were required anyway. A download or
 an import is *one* labelled thing to review and revert rather than four hundred, which
@@ -190,7 +190,7 @@ What has to be built, and is not free:
   part of this design: two journals that diverged have to become one, and the order they
   end up in has to be defensible.
 The journal is never compacted and nothing is ever discarded from it. The arithmetic
-allows that comfortably: a changeset is a few hundred bytes, so even a diver making
+allows that comfortably: a changeset is a few hundred bytes, so even a user making
 twenty changes a week accumulates well under a megabyte a year — less, over twenty years,
 than a single dive's profile. An application whose purpose is answering *what happened*
 should not be quietly forgetting on a schedule.
@@ -328,7 +328,7 @@ To settle when we discuss architecture:
   is structural, since a collection is a keyed object; nothing else is enforced.
 
   **A key is not reused once its entry is gone**, and that binds the application rather
-  than the diver. Only history can say which keys were ever used — the items show what is
+  than the user. Only history can say which keys were ever used — the items show what is
   in use, not what was — and history is also the only thing reuse can harm: the damage is
   a recorded action naming `k1` reaching an entry it was not written against, which
   requires such an action to exist. So a key freed before any history existed is safe to
@@ -414,7 +414,7 @@ To settle when we discuss architecture:
   were wrong.
 
   `*` is taken from the alias syntax of YAML, where `*name` is the entry labelled *name*.
-  It is rare at the start of anything a diver writes, and it does not collide with `#`,
+  It is rare at the start of anything a user writes, and it does not collide with `#`,
   which is already structural inside an id.
 
   **The sigil marks the reference, never the key itself** — exactly as with ids, where a
@@ -444,14 +444,14 @@ To settle when we discuss architecture:
   own its id* in [../doc.md](../doc.md). Free to impose now and breaking to impose
   later, once ids exist that contain one.
 
-- **JSON-8 — Where the logbook lives, and whether a diver can keep several.** *Settled:*
-  **the diver chooses, from a per-platform default**, and **one logbook is open at a time
+- **JSON-8 — Where the logbook lives, and whether a user can keep several.** *Settled:*
+  **the user chooses, from a per-platform default**, and **one logbook is open at a time
   while any number may exist on disk.**
 
   Choosing matters because a logbook is a folder — copy it and you have copied
-  everything. A location the diver cannot reach is a format that is readable in principle
+  everything. A location the user cannot reach is a format that is readable in principle
   and not in practice, and it forecloses putting a logbook on an external disk or inside
-  whatever the diver already syncs. So Yemoja proposes a place and does not insist on it.
+  whatever the user already syncs. So Yemoja proposes a place and does not insist on it.
 
   Where that leaves a phone is a per-platform question rather than this one: Android's
   scoped storage and iOS's sandbox may not offer an arbitrary path, in which case the
@@ -467,7 +467,7 @@ To settle when we discuss architecture:
   opened. This is what `FEAT-15` asked for, so it is answered rather than merely unblocked.
 
   A consequence for the local settings: `settings.local.json` lives in the logbook folder
-  and belongs to one installation, so a diver who moves or copies a folder carries it
+  and belongs to one installation, so a user who moves or copies a folder carries it
   along. `JSON-3` records that cost; choosing the location makes it likelier to arise,
   since copying a folder is now an ordinary thing to do rather than a rare one.
 
@@ -540,13 +540,13 @@ To settle when we discuss architecture:
   with it, and there the resemblance stops: no compatibility promise, no schema version,
   no place in `manual/data-fields.md`, and no obligation on a future release to read what
   an older one wrote. An unrecognised setting is ignored and the default is used, which is
-  a licence the data itself will never have. They are documented for divers in
+  a licence the data itself will never have. They are documented for users in
   `manual/settings.md`, deliberately apart from the format chapters.
 
   That is the sharper reason for the split, beyond the fact that two things change for
   different reasons and by different hands. The structure is written once when a logbook is made and rarely touched; settings
-  are edited whenever a diver changes their mind. Keeping them apart also means the file
-  a diver is most likely to open by hand is the small one.
+  are edited whenever a user changes their mind. Keeping them apart also means the file
+  a user is most likely to open by hand is the small one.
 
   **`settings.local.json` sits in the logbook folder and is excluded from everything.**
   Not synced, not backed up, and not in the journal — it is not logbook data, and a
@@ -556,7 +556,7 @@ To settle when we discuss architecture:
 
   The cost, recorded rather than glossed: a logbook folder copied to another machine by
   hand carries the local file with it, and those settings were meant to stay behind. The
-  name is the mitigation — a file saying `local` in the middle of it is one a diver can
+  name is the mitigation — a file saying `local` in the middle of it is one a user can
   delete knowing what it was — and nothing breaks if they do.
 
 Kept with their identifiers so earlier discussion still resolves.

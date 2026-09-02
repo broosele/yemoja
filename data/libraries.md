@@ -1,6 +1,6 @@
 # Libraries
 
-Reference data shipped with the application rather than owned by the diver: regions
+Reference data shipped with the application rather than owned by the user: regions
 and their dive sites, a catalogue of commonly available gear, certification schemes.
 
 A library is **not** part of a logbook. It is not versioned with it, not synced with
@@ -9,7 +9,7 @@ it, and not the user's to change.
 ## Rules
 
 - **Read-only.** Nothing writes to a library.
-- **Adding always goes to the logbook.** A new dive site is the diver's, even if it
+- **Adding always goes to the logbook.** A new dive site is the user's, even if it
   sits in a region a library describes. Its id is worked out against the libraries as
   well as the logbook, so a new item can never land on a supplied id by accident — it
   takes an index instead.
@@ -20,7 +20,7 @@ it, and not the user's to change.
 - **The logbook wins.** An item in the logbook shadows a library item with the
   same id.
 - **Library items cannot be deleted.** They can only be shadowed — and deleting the
-  shadow brings the supplied one back, which is how a diver undoes a copy and takes up
+  shadow brings the supplied one back, which is how a user undoes a copy and takes up
   whatever the library says now.
 
 ## Reference resolution
@@ -95,7 +95,7 @@ free — a name that reads badly is worth fixing now rather than being carried f
 
 Correcting an item's *contents* is expected and safe. Changing what it is called, or
 taking it away, is not. `LIB-5` settles that a logbook does not pin the edition it was
-written against: a diver who wants a supplied item to stop changing copies it in, where
+written against: a user who wants a supplied item to stop changing copies it in, where
 it becomes theirs.
 
 ## Open questions
@@ -103,14 +103,14 @@ it becomes theirs.
 ## Settled
 
 - **LIB-1 — Whether a superseded copy is surfaced.** *Settled:* it is not. Once an item
-  is copied into the logbook it is the diver's, and the supplied version is no longer
+  is copied into the logbook it is the user's, and the supplied version is no longer
   consulted for it or compared against it. A dive site frozen in 2026 keeps the
   coordinates it was frozen with, and nothing says they were later corrected.
 
   That is what copying is *for*, and the reason to leave it alone is that the application
-  cannot honestly say much anyway. It holds the library's current version and the diver's
+  cannot honestly say much anyway. It holds the library's current version and the user's
   copy, and they differ — but they always differ, because differing is why the copy
-  exists. Telling a library correction from the diver's own edit needs what the library
+  exists. Telling a library correction from the user's own edit needs what the library
   said at the moment of copying, and `LIB-5` settles that a logbook pins no edition.
 
   There was a way to have it. Copying is editing a supplied item, and `JSON-11` has an
@@ -119,7 +119,7 @@ it becomes theirs.
   is declined, not overlooked — it would make a copy quietly dependent on history for its
   meaning, and `FEAT-4` is *Planned*, so it would do nothing at all for the first version.
 
-  A diver who wants the current supplied version has a plain way to get it: delete their
+  A user who wants the current supplied version has a plain way to get it: delete their
   copy. The library item is untouched underneath and reappears, since **library items
   cannot be deleted, only shadowed**.
 
@@ -132,10 +132,10 @@ it becomes theirs.
   close to permanent* forbids removing or renaming a published id, so every version
   resolves every reference and the skew is in content alone. **Correcting content is
   expected and safe** — the same section says so. And **the logbook is untouched**: a
-  diver's own items sync and agree, and only the reference data behind them differs.
+  user's own items sync and agree, and only the reference data behind them differs.
 
   So the older installation is not wrong about the logbook, only behind on the atlas.
-  A diver who wants a supplied item to stop moving copies it in, where it becomes theirs
+  A user who wants a supplied item to stop moving copies it in, where it becomes theirs
   and syncs like anything else — `LIB-5`.
 
   The alternatives were both worse for the same reason: they buy stability by making the
@@ -145,7 +145,7 @@ it becomes theirs.
   that quietly duplicates whatever it touches.
 
 - **LIB-2 — Accidental shadowing.** *Settled:* it cannot happen by accident. **An id
-  proposal is checked against the libraries as well as the logbook**, so a diver adding
+  proposal is checked against the libraries as well as the logbook**, so a user adding
   their own Blue Hole where a library already has one gets `blue_hole#1` and the supplied
   item is untouched.
 
@@ -156,7 +156,7 @@ it becomes theirs.
 
   Nothing changes at read time. `DATA-15` already resolves clashes by appending an index;
   it was only ever consulting a smaller set than it should have. And it matters more here
-  than elsewhere because the diver never sees an id: a silent replacement would leave
+  than elsewhere because the user never sees an id: a silent replacement would leave
   nothing on screen to notice, and every reference to the supplied item would quietly
   change target.
 
@@ -166,29 +166,29 @@ it becomes theirs.
   Two libraries defining one id is not necessarily a fault. A club correcting a supplied
   dive site is `FEAT-16`'s whole purpose, and refusing the collision would force it to
   ship a replacement for the entire set instead of the one item it disagrees with. The
-  diver controls which wins by the order they are listed in, which is a thing they can see
+  user controls which wins by the order they are listed in, which is a thing they can see
   and change.
 
   This is the one place where the collision rules differ by side, and deliberately: a
-  *diver* cannot shadow a library item by accident, because `LIB-2` gives their new item
+  *user* cannot shadow a library item by accident, because `LIB-2` gives their new item
   an index, while a *library* may shadow another on purpose, because that is what
   publishing a correction means.
 
 - **LIB-5 — Whether a library can be versioned or pinned.** *Settled:* no. Libraries
-  carry no edition and a logbook records none. A diver who wants a supplied item to stop
+  carry no edition and a logbook records none. A user who wants a supplied item to stop
   changing **copies it into the logbook**, where it shadows the supplied one and is
   thereafter theirs.
 
   Nothing had to be built for that: it is ordinary shadowing, and `fixtures/cousteau`
   already does it — `netherlands` sits in the logbook's own `regions.json`, the same
-  content with a remark of the diver's own. Copy twenty regions and twenty regions are
-  frozen. The freeze is per item, so later additions to a library still arrive; a diver
+  content with a remark of the user's own. Copy twenty regions and twenty regions are
+  frozen. The freeze is per item, so later additions to a library still arrive; a user
   who does not want a library at all leaves it out of the list.
 
   **Two alternatives were considered and set aside.** *Pinning* — recording which edition
   a logbook was written against — needs versioned libraries, a way to obtain old editions,
   and a rule for what happens when one is missing, all to serve a want that copying
-  already meets. *A second static layer* holding the diver's own library files was
+  already meets. *A second static layer* holding the user's own library files was
   designed and dropped: it has no clean boundary against the logbook, because an edit to
   an item in your own library has nowhere to go that is not either the static layer, which
   then is not static, or a third layer above it.

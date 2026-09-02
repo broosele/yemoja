@@ -86,7 +86,7 @@ Each of these is here because it is awkward, not because it is typical.
 
 - Most regions and every agency certification resolve to a library, not to this logbook.
 - `netherlands` is defined here as well, shadowing the supplied item — the same
-  content with a remark of the diver's own.
+  content with a remark of the user's own.
 - `ravensgate_valley` is a local region whose parent is that shadowed item.
 - `provence` is a local addition the supplied regions do not have.
 - `quarry_club_diver` is a local certification no agency would carry, and

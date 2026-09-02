@@ -49,7 +49,7 @@ Assumed to mean installations of this application — desktop and phone — rath
 exchange with third-party dive software, which is import/export and a different
 feature. *Flagged as an interpretation; correct it if it is wrong.*
 
-**Sync goes through a location the diver provides** — a git remote, a folder on a cloud
+**Sync goes through a location the user provides** — a git remote, a folder on a cloud
 drive, a share on a network disk. Not device to device, and not through anything this
 project runs.
 
@@ -67,10 +67,10 @@ Three things follow, and the third is the reason:
   people. Keeping that out of any infrastructure this project runs is worth more than
   the convenience of putting it in.
 
-The cost is that the diver must have somewhere and set it up. That is a real barrier,
+The cost is that the user must have somewhere and set it up. That is a real barrier,
 and making it painless is the interface's problem.
 
-**Syncing is explicit.** It happens when the diver asks and at no other time, so nothing
+**Syncing is explicit.** It happens when the user asks and at no other time, so nothing
 surprising ever runs and there is never a question about which version went where.
 
 What makes that safe rather than merely predictable is that the application always shows
@@ -110,7 +110,7 @@ narrow: the same field of the same item, set to two different values, in two pla
 
 **A collision never has to be dealt with now.** Everything that merged cleanly is
 applied, and any item with a collision is set aside — keeping its local version whole
-and consistent — until the diver chooses to answer. Not the contested fields but the
+and consistent — until the user chooses to answer. Not the contested fields but the
 whole item, so nothing is ever half-merged and no item exists in a state its own
 rules would reject.
 
@@ -120,7 +120,7 @@ for a plainer outcome — an item is either merged or waiting, never partly both
 means a sync is not finished while anything is deferred, and the indicator that says
 whether a sync is owed has to count those too.
 
-**What the diver is shown is the item, twice.** Both versions in the item view they
+**What the user is shown is the item, twice.** Both versions in the item view they
 already read items in, with the fields that disagree picked out and everything else
 left as context — because which dive it is, and what else changed alongside, is usually
 what makes the answer obvious. Values are taken from either side, field by field, and
@@ -141,7 +141,7 @@ present and strips away exactly the context that would answer it. And choosing a
 side is one decision that discards good edits from the other, which is the outcome the
 field-level design exists to prevent.
 
-**Every collision is put to the diver.** Both values were typed deliberately and
+**Every collision is put to the user.** Both values were typed deliberately and
 neither is more right; a rule picking between them — most recent, longest, fullest —
 would be guessing, and its cost when wrong is silently throwing away something somebody
 wrote. Asking is only bearable because it is rare, and it is rare because everything
@@ -171,9 +171,9 @@ framing still holds.
 
 Kept with their identifiers so earlier discussion still resolves.
 
-- **REQ-5 — Topology.** *Settled:* Sync goes through a location the diver provides. Not
+- **REQ-5 — Topology.** *Settled:* Sync goes through a location the user provides. Not
   device-to-device, and not through infrastructure this project runs.
-- **REQ-6 — Who provides the location.** *Settled:* The diver does.
+- **REQ-6 — Who provides the location.** *Settled:* The user does.
 - **REQ-10 — Whether backup is a by-product of syncing.** *Settled:* Largely yes, given REQ-5. The
   synced copy is off-device and current; what is left is being able to restore from it.
 - **REQ-8 — Whether history travels with the data.** *Merged into `REQ-4`*, which asks
@@ -207,22 +207,22 @@ Kept with their identifiers so earlier discussion still resolves.
   which is the ordinary case with larger numbers. It works only because history is never
   discarded — see `REQ-3` — so the common ancestor is always still there. There is no
   threshold, no second code path, and no notion of a device having been away too long.
-- **REQ-12 — Automatic or manual, and how the diver knows a backup is current.**
+- **REQ-12 — Automatic or manual, and how the user knows a backup is current.**
   *Settled:* there is no separate backup mechanism and no second status. The sync
   indicator already says whether anything here has yet to go up; when it says nothing is
   owed, the copy at the location is current, and that copy is the backup.
 - **REQ-15 — What resolves automatically and what asks.** *Settled:* every genuine
   collision is asked about. A rule choosing between two deliberate values would be
-  guessing, and the one outcome worth avoiding is quietly discarding something a diver
+  guessing, and the one outcome worth avoiding is quietly discarding something a user
   typed.
 - **REQ-17 — What happens to an unresolved conflict.** *Settled:* the item is deferred
   whole. Everything that merged cleanly is applied; an item with a collision keeps its
-  local version, entire and consistent, until the diver answers.
+  local version, entire and consistent, until the user answers.
 - **REQ-16 — What the user is shown.** *Settled:* the item twice, in the ordinary item
   view, with the disagreeing fields picked out and the rest as context. Values are taken
   from either side field by field, and the result is one item.
 - **REQ-18 — Profile and sample data.** *Settled:* a profile is one indivisible value.
-  It is compared whole and replaced whole, never merged, and where two differ the diver
+  It is compared whole and replaced whole, never merged, and where two differ the user
   picks a side.
 - **REQ-14 — Granularity.** *Settled:* per field, since the journal records changes per
   field — see `JSON-11`. A profile is the exception and is one value entire, see

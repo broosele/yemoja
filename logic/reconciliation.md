@@ -81,7 +81,7 @@ be read as an instruction to erase.
 
 - **Dive computer**: authoritative for what it measured — profile, times,
   temperatures, depths. Knows nothing about buddies, sites, gear or notes.
-  Re-downloading a dive must refresh the profile and leave everything the diver
+  Re-downloading a dive must refresh the profile and leave everything the user
   typed untouched.
 
   It also reports figures that can be derived from what it already gave us: a maximum
@@ -167,7 +167,7 @@ model.**
   [../data/doc.md](../data/doc.md) applies — where this model and that format record the
   same thing, they should record it the same way, so nothing is collapsed on the way out
   and back. Fixtures exist, and a break is a bug.
-- **Best effort.** Read what can be read, drop what cannot, tell the diver what was
+- **Best effort.** Read what can be read, drop what cannot, tell the user what was
   dropped. No claim of fidelity and no vote on how a field is shaped. Failing on an
   unusual file is acceptable; failing silently is not.
 
@@ -192,7 +192,7 @@ is written. This document works from 3.2.3.
 
 **Dive computers are already handled**, and not as a format. `FEAT-3` reads the devices
 themselves through a library, so a vendor's desktop-application file is only needed for a
-diver's existing archive, never for ongoing use. That makes vendor formats best-effort by
+user's existing archive, never for ongoing use. That makes vendor formats best-effort by
 their nature. Some are one-way for other reasons — a manufacturer's cloud service may
 accept only logs its own computers produced, so it can be a source but not a destination.
 
@@ -202,9 +202,9 @@ specification apart from its implementation — so working the format out means 
 code, which the project does not do. It stays off the list unless a specification exists
 independently of the source.
 
-**CSV is the floor.** No standard, a different shape from every application, and a diver
+**CSV is the floor.** No standard, a different shape from every application, and a user
 with a spreadsheet is a real case. Best effort by definition, and probably needs the
-columns mapped by the diver rather than guessed.
+columns mapped by the user rather than guessed.
 
 ## Open questions
 

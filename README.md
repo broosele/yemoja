@@ -4,7 +4,7 @@ A dive logbook for desktop and phone.
 
 ## Goal
 
-Divers accumulate a lifetime of dives, and that item usually ends up locked inside
+Users accumulate a lifetime of dives, and that item usually ends up locked inside
 one vendor's application or one vendor's cloud. Yemoja aims to be the logbook that
 outlives the app that wrote it.
 
@@ -134,7 +134,7 @@ involved — see [data/json/doc.md](data/json/doc.md).
 - **Documentation lives with what it describes.** Each layer and each platform has a
   `doc.md` covering that level and nothing more. A fact has exactly one home;
   everywhere else links to it.
-- **User documentation is a separate set**, in `manual/`, written for divers. It owns
+- **User documentation is a separate set**, in `manual/`, written for users. It owns
   the description of the file format and of every data field; internal documents
   reference it rather than restating them.
 - **Features are registered, not remembered.** Anything deferred goes in
@@ -181,7 +181,7 @@ involved — see [data/json/doc.md](data/json/doc.md).
 Each `doc.md` ends with the questions still open at that level.
 
 `manual/` is separate: user documentation, bundled with the application and rendered
-in its information tab. It is written for divers rather than for whoever builds this,
+in its information tab. It is written for users rather than for whoever builds this,
 and it never links back into the documents above. Its conventions are in
 [manual/doc.md](manual/doc.md).
 
@@ -276,7 +276,7 @@ Nothing is chosen yet, so nothing is binding yet. The constraints to plan around
 Yemoja is not affiliated with, endorsed by, or connected to any diving agency,
 manufacturer or operator named anywhere in this project or in the data it ships.
 
-Agency and product names appear because the data is about those things: a diver's Open
+Agency and product names appear because the data is about those things: a user's Open
 Water card cannot be recorded without naming who issued it. They are used to refer to
 the real qualifications and equipment and for no other purpose. All trademarks belong to
 their owners. No logos or stylised marks are used, and none should be added.

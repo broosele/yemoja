@@ -1,7 +1,7 @@
 # UI layer — GUI
 
 The application most people will use: polished, and aimed at a broad audience
-rather than at divers who are comfortable with a terminal.
+rather than at users who are comfortable with a terminal.
 
 One application, two form factors: [desktop](desktop/doc.md) and
 [phone](phone/doc.md). They share their structure and differ only in how that
@@ -158,7 +158,7 @@ chooser offering, in one place:
 - the values supplied with the application,
 - and the option of typing something new.
 
-Presenting them together is the point: a diver who has written `slipway` once should
+Presenting them together is the point: a user who has written `slipway` once should
 not have to remember whether they wrote `slip way` the second time, and should still
 be free to write whatever they like. How the chooser looks — a dropdown beside the
 field on desktop, a full-height sheet on a phone — is a form-factor decision like any
@@ -238,7 +238,7 @@ application feels most.
   controls makes it permanent furniture for something that is usually saying "nothing to do".
 - **GUI-18 — Correcting a recording's water type.** A profile's `water_type` says what
    the computer was set to, and the depths it wrote down were computed with it — see
-   `DATA-59` in [../../data/doc.md](../../data/doc.md). A diver who corrects it has
+   `DATA-59` in [../../data/doc.md](../../data/doc.md). A user who corrects it has
    changed what every depth in that recording means, not the depths themselves.
 
    Two things follow that are this layer's to do. It must **say so before the change is
@@ -246,7 +246,7 @@ application feels most.
    reinterprets a thousand others. And it should **offer to convert** — recomputing the
    depths so the dive stays the same dive — which is a different act from correcting a
    mistyped setting and must be distinguishable from it. Open: how the two are put to a
-   diver without the wording implying that one is the safe choice.
+   user without the wording implying that one is the safe choice.
 - **GUI-3 — How much visual identity to define up front** versus adopting the platform's
    defaults and refining later.
 - **GUI-4 — Dive profile rendering** is the most demanding piece of the interface and, per

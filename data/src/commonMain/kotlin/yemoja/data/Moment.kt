@@ -3,7 +3,7 @@ package yemoja.data
 /**
  * A date and a time together, so that arithmetic across midnight carries the day.
  *
- * **Never stored.** The format keeps the two apart so a diver can correct one by hand; this is what
+ * **Never stored.** The format keeps the two apart so a user can correct one by hand; this is what
  * they become while something is worked out from them, and it is split back before anything is
  * written. See `DATA-75`.
  */

@@ -55,7 +55,7 @@ Owned by [data/json/doc.md](data/json/doc.md), except where noted.
 
 | Term | Meaning |
 |---|---|
-| **logbook** | one diver's data: a folder, and everything under it |
+| **logbook** | one user's data: a folder, and everything under it |
 | **`yemoja.json`** | the file at the top of a logbook, saying whose it is and which libraries it uses. It holds no paths: the rest is found by convention |
 | **`settings.json`** | preferences that travel with the logbook — the middle layer of the three. App-owned, outside the data model; see [manual/settings.md](manual/settings.md) |
 | **`settings.local.json`** | preferences for one installation, never synced or backed up; see [manual/settings.md](manual/settings.md) |
