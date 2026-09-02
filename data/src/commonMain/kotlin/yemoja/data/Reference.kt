@@ -17,7 +17,7 @@ package yemoja.data
 sealed class Reference {
 
     /** As written in a file, `@` and all. */
-    abstract val written: String
+    abstract val asWritten: String
 
     /** Identified is a reference to a particular item, written `@john`. */
     data class Identified(val id: String) : Reference() {
@@ -28,7 +28,7 @@ sealed class Reference {
             }
         }
 
-        override val written: String get() = "@$id"
+        override val asWritten: String get() = "@$id"
     }
 
     /** OneOff is a name where a reference could have gone, written `john`, asserting no id. */
@@ -40,7 +40,7 @@ sealed class Reference {
             }
         }
 
-        override val written: String get() = name
+        override val asWritten: String get() = name
     }
 
     companion object {
@@ -48,10 +48,10 @@ sealed class Reference {
         /**
          * Reads a reference. Throws where the text is not one.
          *
-         * [oneOff] says whether a plain name is allowed here. Where it is not, text without
+         * [oneOffAllowed] says whether a plain name may stand in here. Where it may not, text
          * a leading `@` is not a reference at all.
          */
-        fun parse(text: String, oneOff: Boolean): Reference {
+        fun parse(text: String, oneOffAllowed: Boolean): Reference {
             val written = text.trim()
             if (written.startsWith('@')) {
                 return try {
@@ -60,7 +60,9 @@ sealed class Reference {
                     throw ValueFormatException("$text: ${impossible.message}")
                 }
             }
-            if (!oneOff) throw ValueFormatException("$text is not a reference, which begins with @")
+            if (!oneOffAllowed) {
+                throw ValueFormatException("$text is not a reference, which begins with @")
+            }
             return try {
                 OneOff(written)
             } catch (impossible: IllegalArgumentException) {
@@ -90,9 +92,9 @@ data class KeyReference(val key: String) {
         }
     }
 
-    val written: String get() = "*$key"
+    val asWritten: String get() = "*$key"
 
-    override fun toString(): String = written
+    override fun toString(): String = asWritten
 
     companion object {
 

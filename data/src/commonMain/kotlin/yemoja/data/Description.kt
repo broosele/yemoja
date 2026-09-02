@@ -261,7 +261,7 @@ class TextDescription(
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
     fixedSet: Set<String>? = null,
-    suggested: Set<String>? = null,
+    suggestedSet: Set<String>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
     override val valueType: KClass<*> get() = String::class
@@ -277,7 +277,7 @@ class TextDescription(
      * The presets the application ships. A user is offered these joined with what is already
      * in use, which happens above this layer, so the set itself never grows. `DATA-25`.
      */
-    val suggested: Set<String>? = suggested?.toSet()
+    val suggestedSet: Set<String>? = suggestedSet?.toSet()
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         resultOf(text, text, overrides)
@@ -473,15 +473,15 @@ class ReferenceDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-    /** A plain name may stand in, asserting no id. */
-    val oneOff: Boolean = false,
+    /** Whether a plain name may stand in, asserting no id. */
+    val oneOffAllowed: Boolean = false,
 ) : FieldDescription(name, label, role, cardinality) {
 
     override val valueType: KClass<*> get() = Reference::class
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            resultOf(Reference.parse(text, oneOff), text, overrides)
+            resultOf(Reference.parse(text, oneOffAllowed), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name should name another item: ${refused.message}")
         }
@@ -494,7 +494,7 @@ class ReferenceDescription(
      */
     override fun validate(value: Any): Validity = when {
         value !is Reference -> Validity.Invalid("$name should name another item")
-        value is Reference.OneOff && !oneOff ->
+        value is Reference.OneOff && !oneOffAllowed ->
             Validity.Invalid("$name should be a reference, written with a leading @")
 
         else -> Validity.Valid

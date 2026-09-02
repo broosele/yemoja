@@ -109,9 +109,9 @@ class ValueDescriptionTest {
 
     @Test
     fun `an offered vocabulary constrains nothing`() {
-        val colour = TextDescription("colour", suggested = setOf("red", "green"))
+        val colour = TextDescription("colour", suggestedSet = setOf("red", "green"))
         assertEquals("puce", usable(colour, "puce"))
-        assertEquals(setOf("red", "green"), colour.suggested)
+        assertEquals(setOf("red", "green"), colour.suggestedSet)
         assertNull(colour.fixedSet)
     }
 
@@ -195,7 +195,7 @@ class ValueDescriptionTest {
     @Test
     fun `a one-off is allowed only where the field says so`() {
         val strict = ReferenceDescription("district", targetType = "district")
-        val loose = ReferenceDescription("district", targetType = "district", oneOff = true)
+        val loose = ReferenceDescription("district", targetType = "district", oneOffAllowed = true)
         unusable(strict, "north")
         assertEquals(Reference.OneOff("north"), usable(loose, "north"))
         assertIs<Validity.Invalid>(strict.validate(Reference.OneOff("north")))

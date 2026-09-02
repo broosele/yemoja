@@ -9,27 +9,28 @@ class ReferenceTest {
 
     @Test
     fun `a reference is written with an at sign and a one-off without`() {
-        assertEquals("@john", Reference.Identified("john").written)
-        assertEquals("john", Reference.OneOff("john").written)
+        assertEquals("@john", Reference.Identified("john").asWritten)
+        assertEquals("john", Reference.OneOff("john").asWritten)
     }
 
     @Test
     fun `a reference reads back from the way it is written`() {
-        assertEquals(Reference.Identified("john"), Reference.parse("@john", oneOff = false))
-        assertEquals(Reference.Identified("john"), Reference.parse("  @john  ", oneOff = true))
-        assertEquals(Reference.OneOff("john"), Reference.parse("john", oneOff = true))
+        assertEquals(Reference.Identified("john"), Reference.parse("@john", oneOffAllowed = false))
+        val padded = Reference.parse("  @john  ", oneOffAllowed = true)
+        assertEquals(Reference.Identified("john"), padded)
+        assertEquals(Reference.OneOff("john"), Reference.parse("john", oneOffAllowed = true))
     }
 
     @Test
     fun `a plain name is not a reference where the field does not allow one`() {
-        assertFailsWith<ValueFormatException> { Reference.parse("john", oneOff = false) }
+        assertFailsWith<ValueFormatException> { Reference.parse("john", oneOffAllowed = false) }
     }
 
     @Test
     fun `an id has to be something a reference can carry`() {
-        assertFailsWith<ValueFormatException> { Reference.parse("@", oneOff = false) }
-        assertFailsWith<ValueFormatException> { Reference.parse("@jo hn", oneOff = false) }
-        assertFailsWith<ValueFormatException> { Reference.parse("@jo*hn", oneOff = false) }
+        assertFailsWith<ValueFormatException> { Reference.parse("@", oneOffAllowed = false) }
+        assertFailsWith<ValueFormatException> { Reference.parse("@jo hn", oneOffAllowed = false) }
+        assertFailsWith<ValueFormatException> { Reference.parse("@jo*hn", oneOffAllowed = false) }
         assertFailsWith<IllegalArgumentException> { Reference.Identified("") }
         assertFailsWith<IllegalArgumentException> { Reference.Identified("jo hn") }
         assertFailsWith<IllegalArgumentException> { Reference.Identified("jo*hn") }
@@ -49,7 +50,7 @@ class ReferenceTest {
     @Test
     fun `a one-off may hold what an id may not`() {
         // Only the id worked out from a name is constrained; the name itself is free.
-        assertEquals("Jo*hn Smith", Reference.OneOff("Jo*hn Smith").written)
+        assertEquals("Jo*hn Smith", Reference.OneOff("Jo*hn Smith").asWritten)
     }
 
     @Test
@@ -63,7 +64,7 @@ class ReferenceTest {
     @Test
     fun `a written reference survives being read back`() {
         for (reference in listOf(Reference.Identified("anna_devries"), Reference.OneOff("Anna"))) {
-            assertEquals(reference, Reference.parse(reference.written, oneOff = true))
+            assertEquals(reference, Reference.parse(reference.asWritten, oneOffAllowed = true))
         }
     }
 }
@@ -72,7 +73,7 @@ class KeyReferenceTest {
 
     @Test
     fun `a key reference is written with a star`() {
-        assertEquals("*p1", KeyReference("p1").written)
+        assertEquals("*p1", KeyReference("p1").asWritten)
         assertEquals("*p1", KeyReference("p1").toString())
     }
 

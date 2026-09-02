@@ -51,7 +51,7 @@ sealed class Item(
      * is anything, and works it out otherwise.
      */
     fun read(name: String): Result<Any> =
-        when (val role = declared(name).role) {
+        when (val role = fieldDescription(name).role) {
             is Role.Primary -> fields[name] ?: Result.Absent
             is Role.Derived -> role.compute(this)
             is Role.Overrideable -> fields[name] ?: role.compute(this)
@@ -78,13 +78,13 @@ sealed class Item(
         readAs(name, Cardinality.KEYED_SERIES, T::class)
 
     /**
-     * The field [name] describes, or a fault where it describes none.
+     * The description of the field called [name], or a fault where the type has no such field.
      *
      * Not an absent. A name the description does not carry is a mistake in the code that asked.
      * `DATA-51`.
      */
     @PublishedApi
-    internal fun declared(name: String): FieldDescription =
+    internal fun fieldDescription(name: String): FieldDescription =
         description[name] ?: throw IllegalArgumentException(
             "${description.name} has no field called $name"
         )
@@ -102,7 +102,7 @@ sealed class Item(
         cardinality: Cardinality,
         type: KClass<*>,
     ): Result<R> {
-        val field = declared(name)
+        val field = fieldDescription(name)
         require(field.cardinality == cardinality) {
             "$name is written as $cardinality, so it should not be read as ${field.cardinality}"
         }
