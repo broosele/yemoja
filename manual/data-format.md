@@ -250,7 +250,9 @@ after the field.
   `0.29`, and a gradient factor of 20 is written `0.2`. Two kinds run from 0 to 100
   instead — a field whose name says *percentage*, and `cns`, which is quoted that way
   everywhere else in diving too. The field list says which each one is.
-- **true or false** — written `true` or `false`, and nothing else.
+- **true or false** — written `true` or `false`. Reading is forgiving, as it is for a
+  mix: case is ignored, and `yes`, `no`, `t`, `f`, `y` and `n` are understood too, and
+  written back as `true` or `false`. A number is not — `1` is a count, not a yes.
 - **date** — always `"2026-02-23"`.
 - **time** — always `"09:15:00"`.
 - **reference** — another item's id with `@` in front: `"@anna_devries"`.
@@ -266,9 +268,10 @@ after the field.
   not do. No `units` setting affects it.
 
   Those are the forms to write, but the reading is deliberately forgiving: near-misses
-  and the other spellings divers use are understood where the meaning is clear. What you
-  wrote is what stays in the file — nothing is rewritten into a tidier form — so a mix
-  Yemoja cannot make sense of is kept as you typed it and reported rather than dropped.
+  and the other spellings divers use are understood where the meaning is clear. A mix
+  Yemoja understands is written back in the standard form the next time it saves that
+  dive, so `nx 32` becomes `EAN32`. One it cannot make sense of is kept exactly as you
+  typed it and reported rather than dropped.
 - **list of** — several values together: `["@anna_devries", "john"]`.
 - **keyed owned items** — several owned items together, each under a key: `{"k1": {…},
   "k2": {…}}`. The key names the entry and is not written inside it.

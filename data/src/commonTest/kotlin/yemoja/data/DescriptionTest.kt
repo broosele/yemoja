@@ -138,14 +138,26 @@ class ValueDescriptionTest {
     }
 
     @Test
-    fun `a boolean is written one of two ways and nothing else`() {
+    fun `a boolean is written two ways and read in several`() {
         val covered = BooleanDescription("covered")
-        assertEquals(true, usable(covered, "true"))
-        assertEquals(false, usable(covered, "false"))
-        unusable(covered, "yes")
-        unusable(covered, "True")
-        unusable(covered, " true ")
+        for (yes in listOf("true", "TRUE", "True", " true ", "t", "T", "yes", "Yes", "y")) {
+            assertEquals(true, usable(covered, yes), yes)
+        }
+        for (no in listOf("false", "FALSE", "False", " false ", "f", "F", "no", "No", "n")) {
+            assertEquals(false, usable(covered, no), no)
+        }
         assertEquals(Boolean::class, covered.valueType)
+    }
+
+    @Test
+    fun `a boolean is not a number, and not a guess`() {
+        val covered = BooleanDescription("covered")
+        // 1 would invite 2, and a count is a different kind.
+        unusable(covered, "1")
+        unusable(covered, "0")
+        unusable(covered, "ja")
+        unusable(covered, "maybe")
+        unusable(covered, "")
     }
 
     @Test

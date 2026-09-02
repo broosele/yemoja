@@ -374,7 +374,19 @@ class TimeDescription(
         if (value is Time) Validity.Valid else Validity.Invalid("$name should be a time")
 }
 
-/** BooleanDescription is a field holding `true` or `false`. */
+/** The written forms that mean true. Surrounding spaces and case are removed before matching. */
+private val TRUE_FORMS = setOf("true", "t", "yes", "y")
+
+/** The written forms that mean false. */
+private val FALSE_FORMS = setOf("false", "f", "no", "n")
+
+/**
+ * BooleanDescription is a field holding `true` or `false`.
+ *
+ * Reading is forgiving, as `manual/data-format.md` promises for a mix: case is ignored and the
+ * short and spoken forms are understood. A number is not one of them — `1` would invite `2`, and
+ * a count is a different kind.
+ */
 class BooleanDescription(
     name: String,
     label: String? = null,
@@ -384,11 +396,12 @@ class BooleanDescription(
 
     override val valueType: KClass<*> get() = Boolean::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> = when (text) {
-        "true" -> resultOf(true, text, overrides)
-        "false" -> resultOf(false, text, overrides)
-        else -> Result.Unusable(text, "$name should be true or false")
-    }
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        when (text.trim().lowercase()) {
+            in TRUE_FORMS -> resultOf(true, text, overrides)
+            in FALSE_FORMS -> resultOf(false, text, overrides)
+            else -> Result.Unusable(text, "$name should be true or false")
+        }
 
     override fun validate(value: Any): Validity =
         if (value is Boolean) Validity.Valid else Validity.Invalid("$name should be true or false")
