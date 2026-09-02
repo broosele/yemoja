@@ -11,6 +11,8 @@ package yemoja.data
  * A reference to an item that is not in the logbook is still a reference. It names someone
  * who has not been entered yet, which is not a fault in the value. See [Referent] and
  * `DATA-66`.
+ *
+ * Immutable.
  */
 sealed class Reference {
 
@@ -73,6 +75,8 @@ sealed class Reference {
  *
  * Not a [Reference]: it names a part of one item rather than an item, so what resolves it
  * is the collection the description points into, not the set of all items.
+ *
+ * Immutable.
  */
 data class KeyReference(val key: String) {
 
@@ -109,6 +113,8 @@ data class KeyReference(val key: String) {
  * Four answers rather than an item or nothing, because the ways of having no item differ
  * and an interface says different things about them. A dangling reference is a person you
  * have not entered yet; a one-off is a name you chose not to make anyone.
+ *
+ * Not immutable, alone among these: [Resolved] holds an [Item], and items change.
  */
 sealed class Referent {
 

@@ -8,6 +8,8 @@ package yemoja.data
  * `DATA-50`. Every reader handles all three.
  *
  * The value is non-null by the bound on [T]: a usable nothing should be an absent.
+ *
+ * Immutable. What a [Usable] carries is immutable only where the value itself is.
  */
 sealed class Result<out T : Any> {
 

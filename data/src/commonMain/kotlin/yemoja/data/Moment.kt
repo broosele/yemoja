@@ -7,6 +7,8 @@ package yemoja.data
  *
  * Always written `2026-02-23`. No `units` setting affects it. Written here rather than taken from a
  * library. `DATA-74`.
+ *
+ * Immutable.
  */
 data class Date(val year: Int, val month: Int, val day: Int) : Comparable<Date> {
 
@@ -110,6 +112,8 @@ data class Date(val year: Int, val month: Int, val day: Int) : Comparable<Date> 
  *
  * Seconds run 0 to 59. A leap second is refused because [Moment] takes every day to be 86,400
  * seconds.
+ *
+ * Immutable.
  */
 data class Time(val hour: Int, val minute: Int, val second: Int) : Comparable<Time> {
 
@@ -178,6 +182,8 @@ data class Time(val hour: Int, val minute: Int, val second: Int) : Comparable<Ti
  * **Never stored.** The format keeps the two apart so a user can correct one by hand; this is what
  * they become while something is worked out from them, and it is split back before anything is
  * written. See `DATA-75`.
+ *
+ * Immutable, both halves being so.
  */
 data class Moment(val date: Date, val time: Time) : Comparable<Moment> {
 

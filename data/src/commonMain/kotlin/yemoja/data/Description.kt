@@ -45,6 +45,8 @@ class ValueFormatException(message: String) : RuntimeException(message)
  * interface can show what is in the file. This answers whether a value belongs in a field at all,
  * about something that may never have been in a file: typed into a form, or about to be written.
  * Nothing raw to keep.
+ *
+ * Immutable.
  */
 sealed interface Validity {
 
@@ -79,6 +81,9 @@ sealed interface Role {
  *
  * Three implementations: a value, a reference to another item, and an owned item. How many of each
  * is [Cardinality].
+ *
+ * Immutable, as is every description below it. One is built once and shared by everything that
+ * reads that field.
  */
 sealed class FieldDescription(
     /** As written in a file. */
@@ -214,11 +219,21 @@ class TextDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-    /** Closed: a value outside reads back *unusable*, kept as written. `DATA-24`. */
-    val fixedSet: Set<String>? = null,
-    /** Offered, not enforced: a value outside is an ordinary value. */
-    val suggested: Set<String>? = null,
+    fixedSet: Set<String>? = null,
+    suggested: Set<String>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
+
+    // Both copied. A Set is read-only, not immutable.
+    /** Closed: a value outside reads back *unusable*, kept as written. `DATA-24`. */
+    val fixedSet: Set<String>? = fixedSet?.toSet()
+
+    /**
+     * Offered, not enforced: a value outside is an ordinary value.
+     *
+     * The presets the application ships. A user is offered these joined with what is already
+     * in use, which happens above this layer, so the set itself never grows. `DATA-25`.
+     */
+    val suggested: Set<String>? = suggested?.toSet()
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         accepted(text, text, overrides)
@@ -409,11 +424,19 @@ class OwnedItemDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : FieldDescription(name, label, role, cardinality)
 
-/** One item type: its name, and its fields in the order an interface offers them. */
+/**
+ * One item type: its name, and its fields in the order an interface offers them.
+ *
+ * Immutable.
+ */
 class ItemDescription(
     val name: String,
-    val fields: List<FieldDescription>,
+    fields: List<FieldDescription>,
 ) {
+
+    // Copied. A List is read-only, not immutable.
+    val fields: List<FieldDescription> = fields.toList()
+
     /** Built on first use. Every read is by name, and a scan per read is the wrong shape. */
     val byName: Map<String, FieldDescription> by lazy { fields.associateBy { it.name } }
 

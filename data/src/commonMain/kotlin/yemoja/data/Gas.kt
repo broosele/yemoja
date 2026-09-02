@@ -12,6 +12,8 @@ import kotlin.math.roundToInt
  * Held in **whole percentages**, because that is what our own format writes. Anything finer could
  * not be saved. A mix holding tenths would change on its first write, and [toString] would no
  * longer name one mix only. Integers also compare exactly, which fractions do not.
+ *
+ * Immutable.
  */
 data class Gas(val percentO2: Int, val percentHe: Int) {
 
