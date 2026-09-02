@@ -26,7 +26,7 @@ sealed class Reference {
             }
         }
 
-        override val written get() = "@$id"
+        override val written: String get() = "@$id"
     }
 
     /** `john`. A name where a reference could have gone, asserting no id. */
@@ -38,7 +38,7 @@ sealed class Reference {
             }
         }
 
-        override val written get() = name
+        override val written: String get() = name
     }
 
     companion object {
@@ -83,9 +83,9 @@ data class KeyReference(val key: String) {
         }
     }
 
-    val written get() = "*$key"
+    val written: String get() = "*$key"
 
-    override fun toString() = written
+    override fun toString(): String = written
 
     companion object {
 

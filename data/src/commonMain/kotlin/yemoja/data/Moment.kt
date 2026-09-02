@@ -168,7 +168,7 @@ data class Time(val hour: Int, val minute: Int, val second: Int) : Comparable<Ti
             }
         }
 
-        private fun pad(value: Int) = value.toString().padStart(2, '0')
+        private fun pad(value: Int): String = value.toString().padStart(2, '0')
     }
 }
 

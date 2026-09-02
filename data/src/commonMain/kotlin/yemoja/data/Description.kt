@@ -122,7 +122,7 @@ sealed class FieldDescription(
         }
 
     /** The origin a parsed value carries, by whether it corrects a derivation. */
-    protected fun originOf(overrides: Boolean) =
+    protected fun originOf(overrides: Boolean): Result.Origin =
         if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
 
     /**
@@ -137,7 +137,7 @@ sealed class FieldDescription(
     open fun validate(value: Any): Validity = Validity.Valid
 
     /** For test failures. */
-    override fun toString() =
+    override fun toString(): String =
         "${this::class.simpleName}($name, ${role::class.simpleName}, $cardinality)"
 }
 
@@ -174,7 +174,7 @@ class NumberDescription(
         return accepted(number, text, overrides)
     }
 
-    override fun validate(value: Any) = when {
+    override fun validate(value: Any): Validity = when {
         value !is Double -> Validity.Invalid("$name is a number")
         range != null && value !in range -> Validity.Invalid("$name runs $range")
         else -> Validity.Valid
@@ -201,7 +201,7 @@ class WholeNumberDescription(
         return accepted(number, text, overrides)
     }
 
-    override fun validate(value: Any) = when {
+    override fun validate(value: Any): Validity = when {
         value !is Int -> Validity.Invalid("$name is a whole number")
         range != null && value !in range -> Validity.Invalid("$name runs $range")
         else -> Validity.Valid
@@ -220,9 +220,10 @@ class TextDescription(
     val suggested: Set<String>? = null,
 ) : ValueDescription(name, label, role, cardinality) {
 
-    override fun parse(text: String, overrides: Boolean) = accepted(text, text, overrides)
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        accepted(text, text, overrides)
 
-    override fun validate(value: Any) = when {
+    override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
         value.any { it == '\n' || it == '\r' || it == '\t' } ->
             Validity.Invalid("$name should be a single line of text")
@@ -249,9 +250,10 @@ class MultilineTextDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
 ) : ValueDescription(name, label, role, cardinality) {
 
-    override fun parse(text: String, overrides: Boolean) = accepted(text, text, overrides)
+    override fun parse(text: String, overrides: Boolean): Result<Any> =
+        accepted(text, text, overrides)
 
-    override fun validate(value: Any) = when {
+    override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
         value.contains('\t') -> Validity.Invalid("$name may not contain a tab")
         else -> Validity.Valid
@@ -273,7 +275,7 @@ class DateDescription(
             Result.Unusable(text, "$name is a date: ${refused.message}")
         }
 
-    override fun validate(value: Any) =
+    override fun validate(value: Any): Validity =
         if (value is Date) Validity.Valid else Validity.Invalid("$name is a date")
 }
 
@@ -292,7 +294,7 @@ class TimeDescription(
             Result.Unusable(text, "$name is a time: ${refused.message}")
         }
 
-    override fun validate(value: Any) =
+    override fun validate(value: Any): Validity =
         if (value is Time) Validity.Valid else Validity.Invalid("$name is a time")
 }
 
@@ -310,7 +312,7 @@ class BooleanDescription(
         else -> Result.Unusable(text, "$name is written true or false, and nothing else")
     }
 
-    override fun validate(value: Any) =
+    override fun validate(value: Any): Validity =
         if (value is Boolean) Validity.Valid else Validity.Invalid("$name should be true or false")
 }
 
@@ -329,7 +331,7 @@ class GasDescription(
             Result.Unusable(text, "$name should be a valid gas mix: ${refused.message}")
         }
 
-    override fun validate(value: Any) =
+    override fun validate(value: Any): Validity =
         if (value is Gas) Validity.Valid else Validity.Invalid("$name is a mix")
 }
 
@@ -351,7 +353,7 @@ class KeyReferenceDescription(
         }
 
     /** Syntax only. Whether the key exists is asked of the collection, not of a value. */
-    override fun validate(value: Any) =
+    override fun validate(value: Any): Validity =
         if (value is KeyReference) Validity.Valid
         else Validity.Invalid("$name should name an entry of $collection")
 }
@@ -385,7 +387,7 @@ class ReferenceDescription(
      * Whether the reference resolves is not part of its validity: `@john` names a person
      * whether or not that person is in the logbook yet. `DATA-66`.
      */
-    override fun validate(value: Any) = when {
+    override fun validate(value: Any): Validity = when {
         value !is Reference -> Validity.Invalid("$name should name another item")
         value is Reference.OneOff && !oneOff ->
             Validity.Invalid("$name should be a reference, written with a leading @")
