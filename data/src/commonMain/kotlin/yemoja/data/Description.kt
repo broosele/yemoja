@@ -103,12 +103,12 @@ sealed class FieldDescription(
     open fun format(value: Any): String = value.toString()
 
     /**
-     * [value], read from [text], as a result.
+     * The result of reading [text] as [value], which is what every kind's [parse] ends with.
      *
-     * Runs [validate] on the way, so that what a field refuses when a user types it is
-     * exactly what it refuses when a file holds it.
+     * Runs [validate] on the way, so that what a field refuses when a user types it is exactly
+     * what it refuses when a file holds it.
      */
-    protected fun accepted(value: Any, text: String, overrides: Boolean): Result<Any> =
+    protected fun resultOf(value: Any, text: String, overrides: Boolean): Result<Any> =
         when (val validity = validate(value)) {
             is Validity.Valid -> Result.Usable(value, originOf(overrides))
             is Validity.Invalid -> Result.Unusable(text, validity.reason)
@@ -175,7 +175,7 @@ class NumberDescription(
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toDoubleOrNull()
             ?: return Result.Unusable(text, "$name should be a number")
-        return accepted(number, text, overrides)
+        return resultOf(number, text, overrides)
     }
 
     override fun validate(value: Any): Validity = when {
@@ -204,7 +204,7 @@ class WholeNumberDescription(
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toIntOrNull()
             ?: return Result.Unusable(text, "$name should be a whole number")
-        return accepted(number, text, overrides)
+        return resultOf(number, text, overrides)
     }
 
     override fun validate(value: Any): Validity = when {
@@ -242,7 +242,7 @@ class TextDescription(
     val suggested: Set<String>? = suggested?.toSet()
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
-        accepted(text, text, overrides)
+        resultOf(text, text, overrides)
 
     override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
@@ -275,7 +275,7 @@ class MultilineTextDescription(
     override val valueType: KClass<*> get() = String::class
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
-        accepted(text, text, overrides)
+        resultOf(text, text, overrides)
 
     override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
@@ -299,7 +299,7 @@ class DateDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            accepted(Date.parse(text), text, overrides)
+            resultOf(Date.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name should be a date: ${refused.message}")
         }
@@ -320,7 +320,7 @@ class TimeDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            accepted(Time.parse(text), text, overrides)
+            resultOf(Time.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name should be a time: ${refused.message}")
         }
@@ -340,8 +340,8 @@ class BooleanDescription(
     override val valueType: KClass<*> get() = Boolean::class
 
     override fun parse(text: String, overrides: Boolean): Result<Any> = when (text) {
-        "true" -> accepted(true, text, overrides)
-        "false" -> accepted(false, text, overrides)
+        "true" -> resultOf(true, text, overrides)
+        "false" -> resultOf(false, text, overrides)
         else -> Result.Unusable(text, "$name should be true or false")
     }
 
@@ -365,7 +365,7 @@ class GasDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            accepted(Gas.parse(text), text, overrides)
+            resultOf(Gas.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name should be a gas mix: ${refused.message}")
         }
@@ -388,7 +388,7 @@ class KeyReferenceDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            accepted(KeyReference.parse(text), text, overrides)
+            resultOf(KeyReference.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name should name an entry of $collection: ${refused.message}")
         }
@@ -419,7 +419,7 @@ class ReferenceDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> =
         try {
-            accepted(Reference.parse(text, oneOff), text, overrides)
+            resultOf(Reference.parse(text, oneOff), text, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(text, "$name should name another item: ${refused.message}")
         }
