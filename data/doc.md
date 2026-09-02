@@ -1041,8 +1041,19 @@ To settle when we discuss architecture:
   would also repeat the field's origin on every member, which is one reference per sample
   across the profiles that are the largest thing in the application.
 
+  **A single value where a list belongs reads as a list of one.** `"buddies": "@anna_devries"`
+  is the list with one name in it. It is a forgiveness for someone editing by hand, in the
+  spirit of the ones the JSON reader already offers, and `DATA-76` writes it back as a list on
+  the next save, so nothing stays in the odd shape. No file in the fixtures or the libraries
+  uses it — thirteen list fields and every one of them written as a list — so it costs nothing
+  today and exists for the hand a user has not yet made.
+
+  It goes one way only. A list where a single value belongs is unusable, since there is no
+  answer to which of two values was meant, and a keyed collection has no equivalent
+  forgiveness: a name is not optional the way a bracket is.
+
   **One bad member does not spoil the field.** A misspelt buddy leaves the other three
-  readable, and `DATA-24` keeps the bad one visible in place with its text. This was
+  readable, and `DATA-24` keeps the bad one visible in place with what the source held. This was
   weighed for series too, where the samples are read as one curve, and rejected there for
   a concrete reason: `alarms` is closed to nine words, so one unrecognised word from a
   newer version would take out the whole series, including the `link` alarm that `DATA-58`
@@ -1879,7 +1890,7 @@ Kept with their identifiers so earlier discussion still resolves.
   rebuilt by hand at each one.
 
 - **DATA-50 — What reading a field gives back.** *Settled:* three states, in one result
-  type — **absent**, **usable** with the value, or **unusable** with what was written and
+  type — **absent**, **usable** with the value, or **unusable** with what the source held and
   why. A nullable value would collapse absent and unusable into one answer, and those are
   the two a user most needs told apart: nothing recorded, against something recorded
   that this version cannot use. Every reader has to handle all three, which is the point
@@ -1888,6 +1899,17 @@ Kept with their identifiers so earlier discussion still resolves.
 
   This fixes more than one signature. It is what a derivation returns, and what `GUI-8`
   renders, so an empty cell and a broken one stop looking alike.
+
+  **What an unusable read carries is a `Stored` node, not text.** It was text while every
+  value arrived as text, and stopped being so when `DATA-64` settled that a source hands over
+  a tree. What could not be used may be a whole subtree — an object where a date belongs —
+  and rendering that to text in order to keep it would write a string where the file had an
+  object, which is a worse answer than the one being refused. A member of a collection
+  carries the same, for the same reason.
+
+  It follows that **badly shaped data is unusable rather than refused**, at whatever level
+  the shape went wrong. A field whose value is the wrong shape is an unusable field; a member
+  that is the wrong shape is an unusable member and its neighbours are unaffected. `DATA-77`.
 
   **A usable value says where it came from**: stored, derived, or overridden where a stored
   value corrects a derivation. A caller needing the difference — an
@@ -1920,8 +1942,8 @@ Kept with their identifiers so earlier discussion still resolves.
   kept on disk exactly as written and read back as **unusable**, never as absent. That
   covers both cases the question named — `brackish` typed by hand, and a value a newer
   version wrote that this one has not heard of — without refusing the file and without
-  losing the meaning silently. What was written stays available, so an interface can say
-  what it found rather than showing a blank.
+  losing the meaning silently. What the source held stays available, so an interface can say
+  what it found rather than showing a blank, and a writer can put back what it was given.
 
 - **DATA-49 — Where a derived value's computation is named.** *Settled by moving the
   descriptions:* a description declares a field derived and carries the computation, and

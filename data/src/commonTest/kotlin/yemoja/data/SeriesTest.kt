@@ -62,12 +62,13 @@ class SeriesTest {
             intArrayOf(0, 30, 60),
             listOf(
                 Element.Usable(0.0),
-                Element.Unusable("deep", "depth should be a number"),
+                Element.Unusable(Stored.Leaf("deep"), "depth should be a number"),
                 Element.Usable(12.1),
             ),
         )
         assertEquals(Element.Usable(0.0), mixed.valueAt(0))
-        assertEquals(Element.Unusable("deep", "depth should be a number"), mixed.valueAt(1))
+        val refused = Element.Unusable(Stored.Leaf("deep"), "depth should be a number")
+        assertEquals(refused, mixed.valueAt(1))
         assertEquals(Element.Usable(12.1), mixed.valueAt(2))
     }
 

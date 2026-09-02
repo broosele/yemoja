@@ -17,7 +17,7 @@ private fun usable(description: FieldDescription, text: String): Any {
 private fun unusable(description: FieldDescription, text: String): Result.Unusable {
     val read = description.parse(text, false)
     assertIs<Result.Unusable>(read, "$text should not have read as a value")
-    assertEquals(text, read.raw, "the text should be kept exactly as written")
+    assertEquals(Stored.Leaf(text), read.raw, "what was there should be kept as it was")
     return read
 }
 
@@ -274,7 +274,7 @@ class ValueDescriptionTest {
     @Test
     fun `a value outside a fixed set is kept exactly as it was written`() {
         val surface = TextDescription("surface", fixedSet = setOf("brick"))
-        assertEquals("  Wattle  ", unusable(surface, "  Wattle  ").raw)
+        assertEquals(Stored.Leaf("  Wattle  "), unusable(surface, "  Wattle  ").raw)
     }
 }
 
@@ -319,16 +319,17 @@ class ResultTest {
 
     @Test
     fun `an unusable read keeps what it found`() {
-        val read = Result.Unusable("EAN200", "mix should be a gas mix")
-        assertEquals("EAN200", read.raw)
-        assertEquals(Result.Unusable("EAN200", "mix should be a gas mix"), read)
+        val read = Result.Unusable(Stored.Leaf("EAN200"), "mix should be a gas mix")
+        assertEquals(Stored.Leaf("EAN200"), read.raw)
+        assertEquals(Result.Unusable(Stored.Leaf("EAN200"), "mix should be a gas mix"), read)
     }
 
     @Test
     fun `a member of a collection has two states and no origin`() {
         assertEquals(Element.Usable(1), Element.Usable(1))
         assertTrue(Element.Usable(1) != Element.Usable(2))
-        assertEquals(Element.Unusable("x", "why"), Element.Unusable("x", "why"))
+        val refused = Element.Unusable(Stored.Leaf("x"), "why")
+        assertEquals(refused, Element.Unusable(Stored.Leaf("x"), "why"))
     }
 
     @Test

@@ -113,7 +113,7 @@ class ItemTest {
     fun `a list keeps each member's own fate`() {
         val members = listOf(
             Element.Usable(Reference.Identified("north")),
-            Element.Unusable("@", "an id should not be empty"),
+            Element.Unusable(Stored.Leaf("@"), "an id should not be empty"),
         )
         val item = postbox(set, mapOf("emptied_by" to stored(members)))
         val read = item.list<Reference>("emptied_by")

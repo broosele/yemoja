@@ -49,13 +49,17 @@ sealed class Result<out T : Any> {
     /**
      * Unusable is something that is there and cannot be used.
      *
-     * [raw] is what was stored, kept exactly as written. An interface can then say what it found
-     * instead of showing a blank. `DATA-24`.
+     * [raw] is what the source held, kept as it held it, so an interface can say what it found
+     * instead of showing a blank and a writer can put back what it was given. `DATA-24`.
+     *
+     * A [Stored] node rather than text, because what could not be used may be a whole subtree: an
+     * object where a date belongs. Rendering that to text to keep it would write a string where
+     * the file had an object, which is a worse answer than the one it refused.
      *
      * Examples include a word where a depth belongs, a value outside a fixed set, and a reference
      * to the wrong kind of item.
      */
-    data class Unusable(val raw: Any?, val reason: String) : Result<Nothing>()
+    data class Unusable(val raw: Stored, val reason: String) : Result<Nothing>()
 }
 
 /**
@@ -80,10 +84,10 @@ sealed class Element<out T : Any> {
     /**
      * Unusable is something that is there and cannot be used.
      *
-     * [raw] is kept as written, so one unreadable member is shown in place rather than dropped, and
-     * the rest of the collection is unaffected. `DATA-24`.
+     * [raw] is the [Stored] node the source held, so one unreadable member is shown in place
+     * rather than dropped and the rest of the collection is unaffected. `DATA-24`.
      */
-    data class Unusable(val raw: Any?, val reason: String) : Element<Nothing>()
+    data class Unusable(val raw: Stored, val reason: String) : Element<Nothing>()
 }
 
 /**

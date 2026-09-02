@@ -121,7 +121,7 @@ sealed class FieldDescription(
         val origin = if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
         return when (val validity = validate(value)) {
             is Validity.Valid -> Result.Usable(value, origin)
-            is Validity.Invalid -> Result.Unusable(text, validity.reason)
+            is Validity.Invalid -> Result.Unusable(Stored.Leaf(text), validity.reason)
         }
     }
 
@@ -182,7 +182,7 @@ class NumberDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toDoubleOrNull()
-            ?: return Result.Unusable(text, "$name should be a number")
+            ?: return Result.Unusable(Stored.Leaf(text), "$name should be a number")
         return resultOf(number, text, overrides)
     }
 
@@ -211,7 +211,7 @@ class WholeNumberDescription(
 
     override fun parse(text: String, overrides: Boolean): Result<Any> {
         val number = text.trim().toIntOrNull()
-            ?: return Result.Unusable(text, "$name should be a whole number")
+            ?: return Result.Unusable(Stored.Leaf(text), "$name should be a whole number")
         return resultOf(number, text, overrides)
     }
 
@@ -346,7 +346,7 @@ class DateDescription(
         try {
             resultOf(Date.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name should be a date: ${refused.message}")
+            Result.Unusable(Stored.Leaf(text), "$name should be a date: ${refused.message}")
         }
 
     override fun validate(value: Any): Validity =
@@ -367,7 +367,7 @@ class TimeDescription(
         try {
             resultOf(Time.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name should be a time: ${refused.message}")
+            Result.Unusable(Stored.Leaf(text), "$name should be a time: ${refused.message}")
         }
 
     override fun validate(value: Any): Validity =
@@ -400,7 +400,7 @@ class BooleanDescription(
         when (text.trim().lowercase()) {
             in TRUE_FORMS -> resultOf(true, text, overrides)
             in FALSE_FORMS -> resultOf(false, text, overrides)
-            else -> Result.Unusable(text, "$name should be true or false")
+            else -> Result.Unusable(Stored.Leaf(text), "$name should be true or false")
         }
 
     override fun validate(value: Any): Validity =
@@ -425,7 +425,7 @@ class GasDescription(
         try {
             resultOf(Gas.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name should be a gas mix: ${refused.message}")
+            Result.Unusable(Stored.Leaf(text), "$name should be a gas mix: ${refused.message}")
         }
 
     override fun validate(value: Any): Validity =
@@ -448,7 +448,10 @@ class KeyReferenceDescription(
         try {
             resultOf(KeyReference.parse(text), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name should name an entry of $collection: ${refused.message}")
+            Result.Unusable(
+                Stored.Leaf(text),
+                "$name should name an entry of $collection: ${refused.message}",
+            )
         }
 
     /**
@@ -483,7 +486,7 @@ class ReferenceDescription(
         try {
             resultOf(Reference.parse(text, oneOffAllowed), text, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(text, "$name should name another item: ${refused.message}")
+            Result.Unusable(Stored.Leaf(text), "$name should name another item: ${refused.message}")
         }
 
     /**
@@ -519,7 +522,7 @@ class OwnedItemDescription(
 
     /** An owned item is a set of fields, so no text is ever one. */
     override fun parse(text: String, overrides: Boolean): Result<Any> =
-        Result.Unusable(text, "$name should be a set of fields, not text")
+        Result.Unusable(Stored.Leaf(text), "$name should be a set of fields, not text")
 }
 
 /**
