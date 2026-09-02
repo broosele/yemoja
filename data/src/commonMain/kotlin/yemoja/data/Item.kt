@@ -93,8 +93,13 @@ sealed class Item(
     inline fun <reified T : Any> series(name: String): Result<Series> =
         readAs(name, Cardinality.SERIES, T::class)
 
-    /** One series per key: `keyedSeries<Double>("pressures")`. */
-    inline fun <reified T : Any> keyedSeries(name: String): Result<Map<String, Series>> =
+    /**
+     * One series per key: `keyedSeries<Double>("pressures")`.
+     *
+     * Each key keeps its own fate, as a keyed collection does: one gas source whose pressures
+     * cannot be read leaves the others alone. `DATA-77`.
+     */
+    inline fun <reified T : Any> keyedSeries(name: String): Result<Map<String, Element<Series>>> =
         readAs(name, Cardinality.KEYED_SERIES, T::class)
 
     /**
