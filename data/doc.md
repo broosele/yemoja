@@ -356,7 +356,7 @@ carry rather than types of their own:
 
 - **Primary, derived and overrideable** — whether a field is recorded, worked out, or
   worked out and correctable.
-- **Cardinality** — one, a list, keyed, a series through a dive, or a keyed series. See
+- **Cardinality** — single, a list, keyed, a series through a dive, or a keyed series. See
   `DATA-67`.
 
 **A value is described by kind rather than by a kind field.** There is a description per
@@ -1302,7 +1302,7 @@ To settle when we discuss architecture:
   The nested one had a name, a label and a role that meant nothing, which is how the
   mistake showed.
 
-  So the cardinalities are **one, a list, keyed, a series, and a keyed series** — five,
+  So the cardinalities are **single, a list, keyed, a series, and a keyed series** — five,
   because the model nests exactly once and has no prospect of nesting twice. A structure
   that expressed nesting generally would also express keyed-keyed, which is nothing.
 
@@ -1837,7 +1837,7 @@ Kept with their identifiers so earlier discussion still resolves.
 
   **How many methods that is, is a language artefact.** It was written as one per kind —
   about ten — because Dart could not do better. *Settled:* **five, one per cardinality,
-  each generic over the kind** — `one`, `list`, `keyed`, `series` and `keyedSeries`.
+  each generic over the kind** — `single`, `list`, `keyed`, `series` and `keyedSeries`.
   Reified generics collapse the kind axis. Cardinality does not collapse, because the
   shapes genuinely differ and a series is not a list of anything. The ten were along the
   axis the description model exists to remove; these five are along the other one.

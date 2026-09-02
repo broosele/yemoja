@@ -27,7 +27,7 @@ private val POSTBOX = ItemDescription(
             "height_in_hands",
             Dimension.LENGTH,
             role = Role.Derived { item ->
-                when (val height = item.one<Double>("height")) {
+                when (val height = item.single<Double>("height")) {
                     is Result.Usable -> Result.Usable(height.value / 0.1016, Result.Origin.DERIVED)
                     else -> Result.Absent
                 }
@@ -70,7 +70,7 @@ class ItemTest {
     @Test
     fun `a derived field is worked out and was never stored`() {
         val item = postbox(set, mapOf("height" to stored(1.524)))
-        val read = item.one<Double>("height_in_hands")
+        val read = item.single<Double>("height_in_hands")
         assertEquals(Result.Origin.DERIVED, (read as Result.Usable).origin)
         assertEquals(15.0, read.value, 0.0001)
         assertNull(item.fields["height_in_hands"])
@@ -89,21 +89,22 @@ class ItemTest {
     @Test
     fun `a typed read hands the value back already typed`() {
         val item = postbox(set, mapOf("collections_per_day" to stored(2)))
-        assertEquals(Result.Usable(2, Result.Origin.STORED), item.one<Int>("collections_per_day"))
+        val read = item.single<Int>("collections_per_day")
+        assertEquals(Result.Usable(2, Result.Origin.STORED), read)
     }
 
     @Test
     fun `asking for the wrong kind is a fault even where nothing is stored`() {
         val item = postbox(set, emptyMap())
         // The point of checking the description rather than the value: absent is the common case.
-        assertFailsWith<IllegalArgumentException> { item.one<Int>("height") }
-        assertFailsWith<IllegalArgumentException> { item.one<String>("height") }
+        assertFailsWith<IllegalArgumentException> { item.single<Int>("height") }
+        assertFailsWith<IllegalArgumentException> { item.single<String>("height") }
     }
 
     @Test
     fun `asking for the wrong shape is a fault`() {
         val item = postbox(set, emptyMap())
-        assertFailsWith<IllegalArgumentException> { item.one<Reference>("emptied_by") }
+        assertFailsWith<IllegalArgumentException> { item.single<Reference>("emptied_by") }
         assertFailsWith<IllegalArgumentException> { item.list<Double>("height") }
         assertFailsWith<IllegalArgumentException> { item.series<Reference>("district") }
     }

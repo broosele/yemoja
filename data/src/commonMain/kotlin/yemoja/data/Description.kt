@@ -22,8 +22,8 @@ enum class Dimension {
 /**
  * Cardinality is how many values a field holds, and how each of them is reached.
  *
- * Any kind of value may have any of them: a number can be one, a list, or a series through a
- * dive. `DATA-67`.
+ * Any kind of value may have any of them: a number can be single, a list, or a series through
+ * a dive. `DATA-67`.
  *
  * [KEYED] entries are addressable, with keys like `@2026-06-21#0*p1`; a [LIST] has no addressable
  * elements. [SERIES] is indexed by time, always in seconds. [KEYED_SERIES] is one series per key.

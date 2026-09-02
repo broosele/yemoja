@@ -57,8 +57,8 @@ sealed class Item(
             is Role.Overrideable -> fields[name] ?: role.compute(this)
         }
 
-    /** One value: `one<Double>("max_depth")`. */
-    inline fun <reified T : Any> one(name: String): Result<T> =
+    /** A single value: `single<Double>("max_depth")`. */
+    inline fun <reified T : Any> single(name: String): Result<T> =
         readAs(name, Cardinality.SINGLE, T::class)
 
     /** Several, in the order written: `list<Reference>("buddies")`. */
