@@ -12,9 +12,9 @@ Nothing here argues for a rule, and a rule stated here has been restated by mist
 A name maps to a file here by appending `.json`:
 
 ```
-regions/world        →  libraries/regions/world.json
-generic_gear         →  libraries/generic_gear.json
-certifications/mda   →  libraries/certifications/mda.json
+region/world        →  libraries/region/world.json
+generic_gear        →  libraries/generic_gear.json
+certification/mda   →  libraries/certification/mda.json
 ```
 
 Names may nest where that groups them usefully, and need not where it does not. The
@@ -55,8 +55,8 @@ uses it, which names its libraries by type:
 ```json
 {
   "libraries": {
-    "region": ["regions/world", "regions/europe"],
-    "certification": ["certifications/padi"]
+    "region": ["region/world", "region/europe"],
+    "certification": ["certification/padi"]
   }
 }
 ```

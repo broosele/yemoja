@@ -15,7 +15,7 @@ and a fixture is neither.
 `yemoja.json` names the libraries and the owner and nothing else: no paths, and no
 list of where the items are. Which layout each kind uses is visible in the folder.
 
-It uses both storage layouts: dives are one file each in `dives/`, everything else is
+It uses both storage layouts: dives are one file each in `dive/`, everything else is
 grouped into a file per type.
 
 It uses the supplied libraries — world regions, PADI and CMAS certifications, generic

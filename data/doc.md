@@ -792,6 +792,7 @@ data/
                   Series.kt        values against time, and one sample of them
                   Stored.kt        what a source holds, before anything judges it
                   json/Json.kt     a JSON text, read into that
+                  json/LogbookReader.kt  a folder of them, read into a set of items
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
@@ -909,7 +910,7 @@ To settle when we discuss architecture:
 
   **Four operations, because reading a logbook needs four**: whether a path is a file, whether
   it is a folder, what is directly inside a folder, and the whole of a file as text. `JSON-21`
-  has to tell a `dives` folder from a `dives.json` file, and the files are small enough to
+  has to tell a `dive` folder from a `dive.json` file, and the files are small enough to
   read whole. Writing widens this when there is a writer; guessing at it now would be
   designing against no implementation.
 

@@ -37,25 +37,26 @@ Each kind of item has a name, and everything of that kind lives under it:
 
 | Kind | Lives in |
 |---|---|
-| Dive | `dives` |
-| Person | `persons` |
-| Region | `regions` |
-| Dive site | `dive_sites` |
+| Dive | `dive` |
+| Person | `person` |
+| Region | `region` |
+| Dive site | `dive_site` |
+| Wreck | `wreck` |
 | Gear | `gear` |
-| Certification | `certifications` |
-| Operator | `operators` |
-| Dive trip | `dive_trips` |
+| Certification | `certification` |
+| Operator | `operator` |
+| Dive trip | `dive_trip` |
 
 Each may be either:
 
-- **A single file** — `persons.json` — holding everything of that kind together. Good
+- **A single file** — `person.json` — holding everything of that kind together. Good
   for things you have few of, such as the people you dive with.
-- **A folder** — `dives/` — holding one file per item. Good for things you have many
+- **A folder** — `dive/` — holding one file per item. Good for things you have many
   of, or that are individually large, such as dives.
 
 Yemoja looks for both and uses whichever it finds, so you can choose differently for
 each kind and change your mind later by moving the files. Having both at once — a
-`dives` folder *and* a `dives.json* — is the one thing it cannot make sense of, and it
+`dive` folder *and* a `dive.json` — is the one thing it cannot make sense of, and it
 will tell you rather than guess.
 
 Nothing lists these anywhere. There are no paths in a logbook, which is deliberate: a
@@ -86,7 +87,7 @@ Two different things are easily confused, so it is worth separating them at the 
 Where an id comes from depends on how you store the item:
 
 - **One file per item:** the id is the file name, without `.json`. A dive in
-  `dives/2026-02-23#0.json` has the id `2026-02-23#0`.
+  `dive/2026-02-23#0.json` has the id `2026-02-23#0`.
 - **Several items in one file:** the id is the key it is stored under.
 
 ```json
@@ -314,8 +315,8 @@ You refer to these exactly as you refer to your own items.
 ```json
 {
   "libraries": {
-    "region": ["regions/world", "regions/europe"],
-    "certification": ["certifications/padi"]
+    "region": ["region/world", "region/europe"],
+    "certification": ["certification/padi"]
   }
 }
 ```
@@ -356,7 +357,7 @@ the one that counts.
 
 ### A dive, one file per item
 
-Stored as `dives/2026-02-23#0.json`. The file is the dive itself.
+Stored as `dive/2026-02-23#0.json`. The file is the dive itself.
 
 ```json
 {
@@ -408,7 +409,7 @@ out from, so it is not absent by choice — it is simply unanswered, and writing
 
 ### People, all in one file
 
-Stored as `persons.json`. Each key is a person's id.
+Stored as `person.json`. Each key is a person's id.
 
 ```json
 {

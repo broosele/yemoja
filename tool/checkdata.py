@@ -29,14 +29,10 @@ KEYED = {
 # `pressures` holds a series under each gas-source key, not owned items, so there is
 # nothing to walk into and no field list to check it against.
 OPAQUE = {'pressures'}
-# Where each kind of item lives inside a logbook: a folder of that name holding one
-# file per item, or a single file of that name holding them all. Fixed by convention,
-# so that a logbook contains no paths at all.
-STORAGE = {
-    'dive': 'dives', 'person': 'persons', 'region': 'regions',
-    'dive_site': 'dive_sites', 'gear': 'gear', 'certification': 'certifications',
-    'operator': 'operators', 'dive_trip': 'dive_trips', 'wreck': 'wrecks',
-}
+# Where each kind of item lives inside a logbook: a folder of its own name holding one
+# file per item, or a single file of that name holding them all. Fixed by convention, so
+# that a logbook contains no paths at all, and the name is the type's own, so there is no
+# table here mapping one to the other.
 TYPE_NAMES = {
     'region': 'Region', 'gear': 'Gear', 'certification': 'Certification',
     'dive_site': 'Dive site', 'person': 'Person', 'operator': 'Operator',
@@ -255,7 +251,8 @@ def check_logbook(checker, folder):
 
     # No paths: each kind lives under its own name, as either a folder of one file
     # per item or a single file holding them all. Whichever is present is used.
-    for name, stem in STORAGE.items():
+    for name in TYPE_NAMES:
+        stem = name
         as_dir = os.path.join(folder, stem)
         as_file = as_dir + '.json'
         if os.path.isdir(as_dir) and os.path.exists(as_file):

@@ -24,10 +24,10 @@ its root sits **`yemoja.json`**, saying whose logbook it is and which
 `JSON-3`.
 
 **Nothing in a logbook is a path.** Libraries are named and the application resolves
-them; a logbook's own items live under fixed names — `dives/` or `dives.json` — and are
+them; a logbook's own items live under fixed names — `dive/` or `dive.json` — and are
 found by looking rather than by being declared. A path is the one thing that can point
 outside the folder, and a logbook that does not contain itself cannot be copied, synced,
-or turned into a repository: `../../../persons.json` survives on the machine that wrote
+or turned into a repository: `../../../person.json` survives on the machine that wrote
 it and nowhere else.
 
 [Referenceable items](../doc.md) are stored one of two ways, chosen per logbook:
@@ -35,9 +35,10 @@ it and nowhere else.
 - **Grouped by type** — one file holding every dive, one holding every buddy.
 - **One file per item** — a directory per type, a file per item inside it.
 
-`yemoja.json` declares which is in use and where each type lives, so a logbook
-describes its own layout rather than the application assuming one. That also allows a
-logbook to be reorganised without the application changing, and different types to be
+Neither is declared. Each type lives under a fixed name and the application uses whichever
+of the two is there, which is `JSON-21` — an earlier draft of this section had `yemoja.json`
+declaring the layout, and it does not. What that decision keeps is the part worth keeping: a
+logbook can be reorganised without the application changing, and different types can be
 stored differently — many large dives one per file, a handful of buddies grouped.
 
 [Owned items](../doc.md) belong to their owner. Whether that means physically
@@ -202,14 +203,14 @@ stored: the file name when each item has its own file, or the key it sits under
 when several share one.
 
 ```json
-// persons.json
+// person.json
 {
   "anna_devries": { }
 }
 ```
 
 ```json
-// dives/2026-04-28#0.json
+// dive/2026-04-28#0.json
 {
   "buddies": ["@anna_devries"]
 }
@@ -259,14 +260,17 @@ dive would renumber its neighbours and break every reference to them.
 - Tolerating hand edits: reformatting, unknown fields, and changes made while the
   app was not running.
 
-## Reading a JSON text
+## Reading
 
-The reader is ours, in `src/commonMain/kotlin/yemoja/data/json/`. It turns a text into a
-`Stored` tree — the data layer's own, not one of this source's — and knows nothing about
-fields: `"max_depth": "deep"` reads happily as a string and is refused later by the
-description, which is the division `DATA-64` draws. Building the layer's tree rather than a
-JSON-shaped one is what lets the walk from a description to an item's fields be written
-once instead of once per source.
+Two readers, both ours, in `src/commonMain/kotlin/yemoja/data/json/`. `LogbookReader` turns
+a folder into a set of items, by the convention `JSON-21` settles and with nothing declaring
+the layout. `Json` turns one text into a tree, and everything below is about that one.
+
+It builds a `Stored` tree — the data layer's own, not one of this source's — and knows
+nothing about fields: `"max_depth": "deep"` reads happily as a string and is refused later
+by the description, which is the division `DATA-64` draws. Building the layer's tree rather
+than a JSON-shaped one is what lets the walk from a description to an item's fields be
+written once instead of once per source.
 
 **No library.** JSON is a small grammar and the reader is about three hundred lines, which
 buys the bottom layer keeping its promise of no dependencies. The deciding argument was
@@ -395,21 +399,46 @@ To settle when we discuss architecture:
   work — a journal kept in full never gets smaller, so neither answer is free.
 
 - **JSON-21 — How a logbook's own files are found.** *Settled:* by **convention, not by
-  declaration.** Each kind of item lives under a fixed name — `dives`, `persons`,
-  `regions`, `dive_sites`, `gear`, `certifications`, `operators`, `dive_trips` — as
+  declaration.** Each kind of item lives under **its own name** — `dive`, `person`,
+  `region`, `dive_site`, `wreck`, `gear`, `certification`, `operator`, `dive_trip` — as
   either a folder of one file per item or a single file of them all, and the application
   uses whichever is there. Both at once is the one case it cannot resolve, and it says so
   rather than choosing.
+
+  **The name is the type's own, so nothing maps one to the other.** A source is handed
+  descriptions and reads `dive` for the type *dive*; it holds no list of type names, which it
+  could not, being a source that has to work for a subject other than diving.
+
+  The names were plural until the reader was written, and writing it showed what that cost:
+  something had to turn *dive* into `dives`, and it could not be a rule. `gear` is uncountable
+  and takes nothing, and `persons` is a deliberate departure from English, so any derivation
+  was a table with two exceptions — `tool/checkdata.py` had been carrying exactly that table.
+  Singular also agrees with the rest of the format, since `yemoja.json` already groups its
+  libraries under `region` and `certification`.
+
+  **A folder is read in sorted order; a grouped file keeps its own.** What a folder lists
+  first is the platform's business, and two machines reading one logbook should hold it the
+  same way. A file's order is one somebody chose, and a writer emits it settled so that
+  saving an unchanged logbook produces no diff.
+
+  **A file that is not named `.json` is passed over.** A logbook is a folder that someone
+  may also keep other things in.
+
+  **One unreadable file stops the whole read**, for now. A file that is not JSON, or that
+  does not hold a set of items, ends the reading rather than being reported and skipped.
+  That is the strict answer and probably not the last one: carrying on would need somewhere
+  to report the file to, and nothing has settled what that is. It is a different matter from
+  a value that cannot be believed, which is kept and reported by `DATA-24`.
 
   `yemoja.json` therefore has no `logbook` section and no paths of any kind. The
   flexibility removed was never used: every entry in `fixtures/cousteau` was the
   predictable one.
 
   The reason is that a path is the only thing in a logbook that can point outside it. An
-  absolute path stops working the moment the folder is copied; `../shared/persons.json`
+  absolute path stops working the moment the folder is copied; `../shared/person.json`
   means the folder no longer *is* the logbook, so making it a repository or syncing it
   quietly leaves data behind. And a path carries a case-sensitivity trap across devices —
-  `./Persons.json` against a file named `persons.json` works on Windows and fails on Linux
+  `./Person.json` against a file named `person.json` works on Windows and fails on Linux
   and Android, revealing nothing on the machine that wrote it.
 
   What the section used to say survives without it. Which layout a type uses is visible in

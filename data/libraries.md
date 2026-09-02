@@ -52,8 +52,8 @@ moment the logbook is synced to a phone.
 ```json
 {
   "libraries": {
-    "region": ["regions/world", "regions/europe"],
-    "certification": ["certifications/padi"]
+    "region": ["region/world", "region/europe"],
+    "certification": ["certification/padi"]
   }
 }
 ```
@@ -67,8 +67,8 @@ application supplies both, and the type comes from the declaration rather than f
 anything inside the file.
 
 This is now the whole of it: **`yemoja.json` contains no paths at all.** Where a
-logbook's own items live is fixed by convention rather than declared — `dives/` or
-`dives.json`, whichever is there — so the file names libraries and says who the logbook
+logbook's own items live is fixed by convention rather than declared — `dive/` or
+`dive.json`, whichever is there — so the file names libraries and says who the logbook
 belongs to, and nothing else. A path could point outside the folder, and a logbook that
 does not contain itself cannot be copied, synced, or made into a repository.
 
@@ -78,7 +78,7 @@ Where these files live in this repository, and how one is written, is
 If user-supplied libraries are ever wanted, the resolution gains a second directory
 and names resolve against both; nothing in the logbook changes. If libraries ever
 genuinely need to live in arbitrary places, the fallback is a scheme naming a root —
-`app:regions/world`, `logbook:dives/` — but that is more machinery than the current
+`app:region/world`, `logbook:dive/` — but that is more machinery than the current
 requirement justifies.
 
 ## Publishing is close to permanent
@@ -180,7 +180,7 @@ it becomes theirs.
   thereafter theirs.
 
   Nothing had to be built for that: it is ordinary shadowing, and `fixtures/cousteau`
-  already does it — `netherlands` sits in the logbook's own `regions.json`, the same
+  already does it — `netherlands` sits in the logbook's own `region.json`, the same
   content with a remark of the user's own. Copy twenty regions and twenty regions are
   frozen. The freeze is per item, so later additions to a library still arrive; a user
   who does not want a library at all leaves it out of the list.
