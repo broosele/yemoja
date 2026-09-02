@@ -53,7 +53,7 @@ sealed interface Validity {
     object Valid : Validity
 
     /** [reason] is for a user to read. */
-    class Invalid(val reason: String) : Validity
+    data class Invalid(val reason: String) : Validity
 }
 
 /**

@@ -45,8 +45,12 @@ class Series(seconds: IntArray, values: List<Element<Any>>) {
     /** The two halves together. Built on asking, so a scan that does not need it pays nothing. */
     operator fun get(index: Int): Sample = Sample(seconds[index], values[index])
 
-    // Equality is absent, as on Result. Making this a data class would not supply it: generated
-    // equality over an IntArray compares identity, so two identical series would differ.
+    // Written out rather than generated. A data class compares an IntArray by identity, so two
+    // series holding the same samples would differ.
+    override fun equals(other: Any?): Boolean =
+        other is Series && seconds.contentEquals(other.seconds) && values == other.values
+
+    override fun hashCode(): Int = 31 * seconds.contentHashCode() + values.hashCode()
 
     /** For test failures. The samples themselves are too many to print. */
     override fun toString(): String =

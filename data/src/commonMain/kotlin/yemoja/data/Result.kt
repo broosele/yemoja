@@ -44,7 +44,7 @@ sealed class Result<out T : Any> {
      * could only stand in for a forgotten argument. Nothing would catch that: the wrong origin is a
      * correct-looking answer.
      */
-    class Usable<out T : Any>(val value: T, val origin: Origin) : Result<T>()
+    data class Usable<out T : Any>(val value: T, val origin: Origin) : Result<T>()
 
     /** Nothing recorded and nothing worked out. One absent state, not several. */
     object Absent : Result<Nothing>()
@@ -56,7 +56,7 @@ sealed class Result<out T : Any> {
      * [raw] is what was stored, kept exactly as written. An interface can then say what it found
      * instead of showing a blank. `DATA-24`.
      */
-    class Unusable(val raw: Any?, val reason: String) : Result<Nothing>()
+    data class Unusable(val raw: Any?, val reason: String) : Result<Nothing>()
 }
 
 /**
@@ -76,7 +76,7 @@ sealed class Result<out T : Any> {
 sealed class Element<out T : Any> {
 
     /** A value that read correctly. */
-    class Usable<out T : Any>(val value: T) : Element<T>()
+    data class Usable<out T : Any>(val value: T) : Element<T>()
 
     /**
      * Something is there and cannot be used.
@@ -84,5 +84,5 @@ sealed class Element<out T : Any> {
      * [raw] is kept as written, so one unreadable member is shown in place rather than dropped, and
      * the rest of the collection is unaffected. `DATA-24`.
      */
-    class Unusable(val raw: Any?, val reason: String) : Element<Nothing>()
+    data class Unusable(val raw: Any?, val reason: String) : Element<Nothing>()
 }
