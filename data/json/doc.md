@@ -287,6 +287,12 @@ a field is, so what a null means — most likely that the field is absent — be
 whatever reads against a description. No file in the fixtures or the libraries contains
 one.
 
+**Nothing is rendered back into text on the way in.** A boolean and a number reach a
+description as a boolean and a number, and only a date, a gas, a reference and the rest
+arrive as strings, because JSON has no such thing. Rendering `false` back to `"false"` so
+that a description could parse it would make `"deco": "false"` and `"deco": false` the same
+value, which the format says they are not.
+
 **Two forgivenesses, in the reading only, and the writer offers neither.** A trailing comma
 after the last member or element, so that deleting a line does not break the line above it.
 And a byte order mark at the start, because editors on Windows leave one, nobody can see it,

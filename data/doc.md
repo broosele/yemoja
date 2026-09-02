@@ -1063,7 +1063,7 @@ To settle when we discuss architecture:
   type of its own.** `Series` holds the times in one array and the values beside them, and
   a field holding one is a result over a series rather than over a list of pairs.
 
-  Where the time axis lives was the half that stayed open. A value description parses one
+  Where the time axis lives was the half that stayed open. A value description reads one
   value and cannot see the time beside it, so nothing owned the pairing. A series does,
   being the only thing that holds both halves.
 
@@ -1125,15 +1125,16 @@ To settle when we discuss architecture:
 
   **It is not the same question as reading**, which is why it is not the same type.
   `DATA-50`'s `Unusable` answers *what is in the file and why it cannot be used*, and
-  carries the raw text so an interface can show it. Validity answers *does this value
+  carries what the source held so an interface can show it. Validity answers *does this value
   belong in this field* about something that may never have been in a file at all — typed
   into a form, or about to be written. There is no raw to keep, and a value that reaches
-  validation has already been parsed.
+  validation is already one.
 
-  For text entry a front end wants both at once — a parse error and a range error are the
-  same kind of news to a user — so the per-kind reader of `DATA-64` does the parsing and
-  calls this for the rest. One implementation, used when reading a file and when reading a
-  form.
+  For text entry a front end wants both at once — a value that will not read and a value out
+  of range are the same kind of news to a user — so the per-kind reader of `DATA-64` does the
+  reading and calls this for the rest. One implementation, used when a file is read and when
+  a form is. A form handing over a value it has already made goes through the same door and
+  is judged the same way: taking a value as it comes is not taking it on trust.
 
   **What it deliberately cannot judge is a reference.** Whether `@blue_hole` resolves, and
   whether `*p1` names an entry that exists, are questions about the items and not about the
@@ -1359,14 +1360,28 @@ To settle when we discuss architecture:
   up in the tree rather than in ten methods each source implements, which serves this
   question's reason better than its first answer did.
 
-  **Where validation happens is *not* settled here** — see `DATA-66`. This question
-  settles only that parsing is the source's job and that the description is what the source
-  is asked against.
+  **The reading lives on the description**, one method per kind, taking whatever the leaf
+  held. Each kind says which forms it accepts: a date takes a `Date` as it comes and parses
+  a string, a number takes a double or a whole number and parses a string, a whole number
+  refuses a fraction whichever way it arrives. Nothing switches on the source.
 
-  **`raw` is reserved for what could not be made into a value**: the text as it stood,
-  carried into `Unusable` so an interface can say what it found rather than showing a
+  **A form is a source too**, which is the second thing this buys. A date picker hands over
+  a `Date`, a checkbox a boolean, and neither has to render its value to text so that a
+  description can read it back. The caller gets a result with the origin already right,
+  rather than assembling one and guessing — and a wrong origin is a correct-looking answer.
+
+  **Shape is not the description's business.** It is handed one piece at a time, and whatever
+  owns cardinality decides that a leaf belongs here and a group does not. A description given
+  a group answers unusable rather than trying to make sense of it.
+
+  **Where validation happens is *not* settled here** — see `DATA-66`. This question settles
+  only that reading is the source's job and that the description is what the source is read
+  against.
+
+  **`raw` is reserved for what could not be made into a value**: the node as the source held
+  it, carried into `Unusable` so an interface can say what it found rather than showing a
   blank. That is not a storage concern — any source can hold a word where a depth belongs,
-  and every one of them needs it shown.
+  and every one of them needs it shown. `DATA-50`.
 
   A source-specific result type was considered and refused. The logic layer depends *"never
   on a specific source… it must be possible to run and test this layer against items

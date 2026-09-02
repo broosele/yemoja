@@ -8,16 +8,16 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /** Invented fields on an invented type. This layer knows nothing about diving. `TEST-4`. */
-private fun usable(description: FieldDescription, text: String): Any {
-    val read = description.parse(text, false)
-    assertIs<Result.Usable<Any>>(read, "$text should have read as a value")
+private fun usable(description: FieldDescription, given: Any?): Any {
+    val read = description.interpret(given, false)
+    assertIs<Result.Usable<Any>>(read, "$given should have read as a value")
     return read.value
 }
 
-private fun unusable(description: FieldDescription, text: String): Result.Unusable {
-    val read = description.parse(text, false)
-    assertIs<Result.Unusable>(read, "$text should not have read as a value")
-    assertEquals(Stored.Leaf(text), read.raw, "what was there should be kept as it was")
+private fun unusable(description: FieldDescription, given: Any?): Result.Unusable {
+    val read = description.interpret(given, false)
+    assertIs<Result.Unusable>(read, "$given should not have read as a value")
+    assertEquals(Stored.Leaf(given), read.raw, "what was there should be kept as it was")
     return read
 }
 
@@ -38,16 +38,18 @@ class FieldDescriptionTest {
     @Test
     fun `a stored value carries where it came from`() {
         val height = NumberDescription("height", Dimension.LENGTH)
-        assertEquals(Result.Origin.STORED, (height.parse("1.5", false) as Result.Usable).origin)
-        assertEquals(Result.Origin.OVERRIDDEN, (height.parse("1.5", true) as Result.Usable).origin)
+        val stored = height.interpret("1.5", false) as Result.Usable
+        val overridden = height.interpret("1.5", true) as Result.Usable
+        assertEquals(Result.Origin.STORED, stored.origin)
+        assertEquals(Result.Origin.OVERRIDDEN, overridden.origin)
     }
 
     @Test
-    fun `a kind with no written form answers unusable rather than pretending`() {
+    fun `a kind that is a group answers unusable when given one value`() {
         val inner = ItemDescription("inner", listOf(TextDescription("name")))
         val owned = OwnedItemDescription("detail", inner)
         val read = unusable(owned, "anything")
-        assertEquals("detail should be a set of fields, not text", read.reason)
+        assertEquals("detail should be a set of fields, not one value", read.reason)
     }
 
     @Test
@@ -275,6 +277,75 @@ class ValueDescriptionTest {
     fun `a value outside a fixed set is kept exactly as it was written`() {
         val surface = TextDescription("surface", fixedSet = setOf("brick"))
         assertEquals(Stored.Leaf("  Wattle  "), unusable(surface, "  Wattle  ").raw)
+    }
+}
+
+class MadeValueTest {
+
+    @Test
+    fun `a kind takes a value a source had already made`() {
+        // A database column, or a date picker: neither has to render it to text first.
+        assertEquals(Date(2026, 2, 23), usable(DateDescription("day"), Date(2026, 2, 23)))
+        assertEquals(Time(9, 15, 0), usable(TimeDescription("at"), Time(9, 15, 0)))
+        assertEquals(Gas(32, 0), usable(GasDescription("mix"), Gas(32, 0)))
+        assertEquals(true, usable(BooleanDescription("covered"), true))
+        assertEquals("Zeelandbrug", usable(TextDescription("name"), "Zeelandbrug"))
+    }
+
+    @Test
+    fun `a made value is still judged`() {
+        // Taking it as it comes is not taking it on trust: validate runs either way.
+        val rating = WholeNumberDescription("rating", range = 1..10)
+        assertEquals(7, usable(rating, 7))
+        unusable(rating, 11)
+    }
+
+    @Test
+    fun `a made value carries the origin it is given`() {
+        val day = DateDescription("day")
+        val read = day.interpret(Date(2026, 2, 23), true) as Result.Usable
+        assertEquals(Result.Origin.OVERRIDDEN, read.origin)
+    }
+
+    @Test
+    fun `a number takes a whole one, because that is how files write them`() {
+        // 108000 in a desaturation_time has no decimal point, and every fixture is like it.
+        val height = NumberDescription("height", Dimension.LENGTH)
+        assertEquals(1.5, usable(height, 1.5))
+        assertEquals(108000.0, usable(height, 108000L))
+        assertEquals(7.0, usable(height, 7))
+    }
+
+    @Test
+    fun `a whole number refuses a fraction however it arrives`() {
+        val rating = WholeNumberDescription("rating", range = 1..10)
+        assertEquals(7, usable(rating, 7))
+        assertEquals(7, usable(rating, 7L))
+        unusable(rating, 7.0)
+        assertEquals("rating should be a whole number", unusable(rating, 7.0).reason)
+    }
+
+    @Test
+    fun `a whole number too large to hold is refused rather than truncated`() {
+        val count = WholeNumberDescription("count")
+        val read = unusable(count, Int.MAX_VALUE.toLong() + 1)
+        assertEquals("count should be a whole number this machine can hold", read.reason)
+        assertEquals(Int.MAX_VALUE, usable(count, Int.MAX_VALUE.toLong()))
+    }
+
+    @Test
+    fun `a kind refuses a made value of the wrong kind`() {
+        unusable(TextDescription("name"), 7L)
+        unusable(DateDescription("day"), Time(9, 15, 0))
+        unusable(GasDescription("mix"), Date(2026, 2, 23))
+        unusable(BooleanDescription("covered"), 1L)
+        unusable(NumberDescription("height", Dimension.LENGTH), true)
+    }
+
+    @Test
+    fun `what could not be used is kept whatever it was`() {
+        assertEquals(Stored.Leaf(7.0), unusable(WholeNumberDescription("rating"), 7.0).raw)
+        assertEquals(Stored.Leaf(null), unusable(TextDescription("name"), null).raw)
     }
 }
 

@@ -90,38 +90,45 @@ sealed class FieldDescription(
         label ?: name.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
     /**
-     * Reads [text] as this field's kind, in the written form `manual/data-format.md` defines.
+     * Reads [given] as this field's kind, whatever shape it arrives in.
      *
-     * One value at a time: a field holding a list or a series parses its elements one by one, so
-     * cardinality is the caller's business.
+     * A source hands over what it has, and they differ: JSON has no date, so one arrives as
+     * `"2026-02-23"` and is parsed, while a database column hands one over already made and it is
+     * taken as it is. A date picker is a source in the same sense. Each kind says here which it
+     * accepts, and text is only one of them. `DATA-64`.
      *
-     * [overrides] says the text is a stored value on a field that would otherwise work one out,
+     * **Shape is not this method's business.** A field holding a list or a series is walked by
+     * whatever owns cardinality, and this is handed one piece at a time. Being given a group where
+     * a single value belongs is a shape the walk should have caught, so it answers unusable rather
+     * than trying to make sense of it.
+     *
+     * [overrides] says the value is a stored one on a field that would otherwise work one out,
      * which decides the origin. It is given, not defaulted. Whoever reads knows which case it is,
      * and the wrong answer here is a correct-looking one.
-     *
-     * **Not every value arrives as text.** Parsing belongs to whatever the items came from, and a
-     * store that holds a kind already hands it over made. JSON has booleans and numbers, so it
-     * never calls this for them; it has no date or gas, so it does. `DATA-64`.
-     *
-     * A source that renders its own kinds back into text before calling this would make
-     * `"deco": "false"` and `"deco": false` the same value, which the format says they are not.
      */
-    abstract fun parse(text: String, overrides: Boolean): Result<Any>
+    abstract fun interpret(given: Any?, overrides: Boolean): Result<Any>
 
-    /** The written form of [value], the inverse of [parse]. */
+    /**
+     * The written form of [value].
+     *
+     * The inverse of reading text, and only of that. Reading is wider than writing: a date may
+     * arrive already made, and this has no counterpart for it. So `format(interpret(x))` returns
+     * text for any `x` a kind accepts, while `interpret(format(v))` is the round trip a writer
+     * relies on. `DATA-76`.
+     */
     open fun format(value: Any): String = value.toString()
 
     /**
-     * The result of reading [text] as [value], which is what every kind's [parse] ends with.
+     * The result of reading [given] as [value], which is what every kind's [interpret] ends with.
      *
      * Runs [validate] on the way, so that what a field refuses when a user types it is exactly
      * what it refuses when a file holds it.
      */
-    protected fun resultOf(value: Any, text: String, overrides: Boolean): Result<Any> {
+    protected fun resultOf(value: Any, given: Any?, overrides: Boolean): Result<Any> {
         val origin = if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
         return when (val validity = validate(value)) {
             is Validity.Valid -> Result.Usable(value, origin)
-            is Validity.Invalid -> Result.Unusable(Stored.Leaf(text), validity.reason)
+            is Validity.Invalid -> Result.Unusable(Stored.Leaf(given), validity.reason)
         }
     }
 
@@ -180,10 +187,16 @@ class NumberDescription(
 
     override val valueType: KClass<*> get() = Double::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> {
-        val number = text.trim().toDoubleOrNull()
-            ?: return Result.Unusable(Stored.Leaf(text), "$name should be a number")
-        return resultOf(number, text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        // A whole one is a number too. Every file writes 108000 rather than 108000.0.
+        is Double -> resultOf(given, given, overrides)
+        is Long -> resultOf(given.toDouble(), given, overrides)
+        is Int -> resultOf(given.toDouble(), given, overrides)
+        is String -> given.trim().toDoubleOrNull()
+            ?.let { resultOf(it, given, overrides) }
+            ?: Result.Unusable(Stored.Leaf(given), "$name should be a number")
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should be a number")
     }
 
     override fun validate(value: Any): Validity = when {
@@ -209,10 +222,24 @@ class WholeNumberDescription(
 
     override val valueType: KClass<*> get() = Int::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> {
-        val number = text.trim().toIntOrNull()
-            ?: return Result.Unusable(Stored.Leaf(text), "$name should be a whole number")
-        return resultOf(number, text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        // A fraction is refused however it arrives, so 7.0 is no more a rating than "7.0" is.
+        is Int -> resultOf(given, given, overrides)
+        is Long -> {
+            // Narrow, widen, compare: anything that does not survive the trip did not fit.
+            val narrowed = given.toInt()
+            if (narrowed.toLong() == given) resultOf(narrowed, given, overrides)
+            else Result.Unusable(
+                Stored.Leaf(given),
+                "$name should be a whole number this machine can hold",
+            )
+        }
+
+        is String -> given.trim().toIntOrNull()
+            ?.let { resultOf(it, given, overrides) }
+            ?: Result.Unusable(Stored.Leaf(given), "$name should be a whole number")
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should be a whole number")
     }
 
     override fun validate(value: Any): Validity = when {
@@ -279,8 +306,9 @@ class TextDescription(
      */
     val suggestedSet: Set<String>? = suggestedSet?.toSet()
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        resultOf(text, text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
+        if (given is String) resultOf(given, given, overrides)
+        else Result.Unusable(Stored.Leaf(given), "$name should be text")
 
     override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
@@ -317,8 +345,9 @@ class MultilineTextDescription(
 
     override val valueType: KClass<*> get() = String::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        resultOf(text, text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
+        if (given is String) resultOf(given, given, overrides)
+        else Result.Unusable(Stored.Leaf(given), "$name should be text")
 
     override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
@@ -342,12 +371,16 @@ class DateDescription(
 
     override val valueType: KClass<*> get() = Date::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        try {
-            resultOf(Date.parse(text), text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        is Date -> resultOf(given, given, overrides)
+        is String -> try {
+            resultOf(Date.parse(given), given, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(Stored.Leaf(text), "$name should be a date: ${refused.message}")
+            Result.Unusable(Stored.Leaf(given), "$name should be a date: ${refused.message}")
         }
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should be a date")
+    }
 
     override fun validate(value: Any): Validity =
         if (value is Date) Validity.Valid else Validity.Invalid("$name should be a date")
@@ -363,12 +396,16 @@ class TimeDescription(
 
     override val valueType: KClass<*> get() = Time::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        try {
-            resultOf(Time.parse(text), text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        is Time -> resultOf(given, given, overrides)
+        is String -> try {
+            resultOf(Time.parse(given), given, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(Stored.Leaf(text), "$name should be a time: ${refused.message}")
+            Result.Unusable(Stored.Leaf(given), "$name should be a time: ${refused.message}")
         }
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should be a time")
+    }
 
     override fun validate(value: Any): Validity =
         if (value is Time) Validity.Valid else Validity.Invalid("$name should be a time")
@@ -396,12 +433,16 @@ class BooleanDescription(
 
     override val valueType: KClass<*> get() = Boolean::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        when (text.trim().lowercase()) {
-            in TRUE_FORMS -> resultOf(true, text, overrides)
-            in FALSE_FORMS -> resultOf(false, text, overrides)
-            else -> Result.Unusable(Stored.Leaf(text), "$name should be true or false")
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        is Boolean -> resultOf(given, given, overrides)
+        is String -> when (given.trim().lowercase()) {
+            in TRUE_FORMS -> resultOf(true, given, overrides)
+            in FALSE_FORMS -> resultOf(false, given, overrides)
+            else -> Result.Unusable(Stored.Leaf(given), "$name should be true or false")
         }
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should be true or false")
+    }
 
     override fun validate(value: Any): Validity =
         if (value is Boolean) Validity.Valid else Validity.Invalid("$name should be true or false")
@@ -421,12 +462,16 @@ class GasDescription(
 
     override val valueType: KClass<*> get() = Gas::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        try {
-            resultOf(Gas.parse(text), text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        is Gas -> resultOf(given, given, overrides)
+        is String -> try {
+            resultOf(Gas.parse(given), given, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(Stored.Leaf(text), "$name should be a gas mix: ${refused.message}")
+            Result.Unusable(Stored.Leaf(given), "$name should be a gas mix: ${refused.message}")
         }
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should be a gas mix")
+    }
 
     override fun validate(value: Any): Validity =
         if (value is Gas) Validity.Valid else Validity.Invalid("$name should be a gas mix")
@@ -444,15 +489,19 @@ class KeyReferenceDescription(
 
     override val valueType: KClass<*> get() = KeyReference::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        try {
-            resultOf(KeyReference.parse(text), text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        is KeyReference -> resultOf(given, given, overrides)
+        is String -> try {
+            resultOf(KeyReference.parse(given), given, overrides)
         } catch (refused: ValueFormatException) {
             Result.Unusable(
-                Stored.Leaf(text),
+                Stored.Leaf(given),
                 "$name should name an entry of $collection: ${refused.message}",
             )
         }
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should name an entry of $collection")
+    }
 
     /**
      * Whether the text is written as a key reference, and nothing more.
@@ -482,12 +531,19 @@ class ReferenceDescription(
 
     override val valueType: KClass<*> get() = Reference::class
 
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        try {
-            resultOf(Reference.parse(text, oneOffAllowed), text, overrides)
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        is Reference -> resultOf(given, given, overrides)
+        is String -> try {
+            resultOf(Reference.parse(given, oneOffAllowed), given, overrides)
         } catch (refused: ValueFormatException) {
-            Result.Unusable(Stored.Leaf(text), "$name should name another item: ${refused.message}")
+            Result.Unusable(
+                Stored.Leaf(given),
+                "$name should name another item: ${refused.message}",
+            )
         }
+
+        else -> Result.Unusable(Stored.Leaf(given), "$name should name another item")
+    }
 
     /**
      * Whether the text is written as a reference, and nothing more.
@@ -520,9 +576,9 @@ class OwnedItemDescription(
 
     override val valueType: KClass<*> get() = OwnedItem::class
 
-    /** An owned item is a set of fields, so no text is ever one. */
-    override fun parse(text: String, overrides: Boolean): Result<Any> =
-        Result.Unusable(Stored.Leaf(text), "$name should be a set of fields, not text")
+    /** An owned item is a set of fields, so no single value is ever one. */
+    override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
+        Result.Unusable(Stored.Leaf(given), "$name should be a set of fields, not one value")
 }
 
 /**
