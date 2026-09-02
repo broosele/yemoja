@@ -880,9 +880,9 @@ To settle when we discuss architecture:
 - **DATA-57 — Whether a dive plan is an item, and what it holds.** A plan keeps the
   inputs it was made with — gases, depths, times, and the gradient factors fixed at the
   moment it was made — so that changing a preference later does not silently rewrite it.
-  Nothing in the model holds those. There are eight item types and none of them is a plan.
+  Nothing in the model holds those. There are nine item types and none of them is a plan.
 
-  Open: whether a plan is a ninth type, or something owned by a dive, or not stored at all
+  Open: whether a plan is a tenth type, or something owned by a dive, or not stored at all
   and merely printed. What settles it is whether a plan outlives the screen it was made
   on — a plan you keep to compare against what you actually did is an item; a plan you
   read off and forget is not. `FEAT-6` is *Planned* rather than *Core*, so nothing waits
@@ -1970,7 +1970,7 @@ Kept with their identifiers so earlier discussion still resolves.
   which would put the silent-absent fault back in a new form.
 
   One method per kind of value, or one generic method, rather than an accessor per
-  field across eight types — so the per-field surface the description design removed does
+  field across nine types — so the per-field surface the description design removed does
   not come back. Nothing here names a field, so this layer still knows nothing about
   diving, and the three-state result is unwrapped once per call site instead of being
   rebuilt by hand at each one.
