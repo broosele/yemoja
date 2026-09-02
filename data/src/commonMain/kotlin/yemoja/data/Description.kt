@@ -7,12 +7,10 @@ import kotlin.reflect.KClass
  * logic layer, which builds an item set with these. Nothing here names a field.
  *
  * See ../../../../../doc.md — "How a type is described".
- *
- * Absent until settled: the shape of the typed reads (DATA-51).
  */
 
 /**
- * What a number measures, deciding which `units` entry applies to it.
+ * Dimension is what a number measures, and it decides which `units` entry applies to it.
  *
  * [DIMENSIONLESS] is a member, not an absence: a ratio or a percentage takes no unit and needs
  * none. `DATA-8`'s unit table has no row for it.
@@ -22,7 +20,7 @@ enum class Dimension {
 }
 
 /**
- * How many, and how reached.
+ * Cardinality is how many values a field holds, and how each of them is reached.
  *
  * Orthogonal to what a field contains. `DATA-67`.
  *
@@ -32,7 +30,8 @@ enum class Dimension {
 enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
 
 /**
- * Text that does not say what it claims to: `EAN200`, or a date that is not a date.
+ * ValueFormatException is thrown for text that does not say what it claims to: `EAN200`, or a
+ * date that is not a date.
  *
  * A bad value, not a bad program. A parser this project owns throws this, and nothing else does, so
  * catching it catches only that. An `IllegalArgumentException` from somewhere unrelated stays a
@@ -41,7 +40,7 @@ enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
 class ValueFormatException(message: String) : RuntimeException(message)
 
 /**
- * Whether a value is acceptable for the field it is offered to, and why not.
+ * Validity is whether a value is acceptable for the field it is offered to, and why not.
  *
  * Not [Result]. That answers what reading a *stored* value gave, and carries the raw text so an
  * interface can show what is in the file. This answers whether a value belongs in a field at all,
@@ -54,30 +53,30 @@ sealed interface Validity {
 
     object Valid : Validity
 
-    /** [reason] is for a user to read. */
+    /** Invalid is a refusal, carrying the [reason] for a user to read. */
     data class Invalid(val reason: String) : Validity
 }
 
 /**
- * Recorded, worked out, or worked out and correctable.
+ * Role is whether a field is recorded, worked out, or worked out and correctable.
  *
  * Orthogonal to the kind of field. A derivation carries its own computation.
  */
 sealed interface Role {
 
-    /** Recorded and nothing else. */
+    /** Primary is recorded and nothing else. */
     object Primary : Role
 
-    /** Worked out from other values, never stored. */
+    /** Derived is worked out from other values and never stored. */
     class Derived(val compute: (Item) -> Result<Any>) : Role
 
-    /** Derived, but a stored value is present sometimes and corrects it when it is. */
+    /** Overrideable is derived, except that a stored value corrects it where there is one. */
     class Overrideable(val compute: (Item) -> Result<Any>) : Role
 }
 
 /**
- * One field of one item type, in enough detail for the parser, the checks and every front end to
- * work from.
+ * FieldDescription is one field of one item type, in enough detail for the parser, the checks
+ * and every front end to work from.
  *
  * These describe fields; they hold no values.
  *
@@ -158,7 +157,7 @@ sealed class FieldDescription(
 }
 
 /**
- * A value, rather than a reference or an owned item.
+ * ValueDescription is a field holding a value, rather than a reference or an owned item.
  *
  * The kind is the type, so a property belongs only to the kinds it applies to.
  *
@@ -173,7 +172,7 @@ sealed class ValueDescription(
     cardinality: Cardinality,
 ) : FieldDescription(name, label, role, cardinality)
 
-/** A measurement. */
+/** NumberDescription is a field holding a measurement. */
 class NumberDescription(
     name: String,
     val dimension: Dimension,
@@ -200,7 +199,7 @@ class NumberDescription(
 }
 
 /**
- * A count, never a measurement.
+ * WholeNumberDescription is a field holding a count, never a measurement.
  *
  * No dimension, and no `units` declaration reaches it. `DATA-68`.
  */
@@ -228,7 +227,10 @@ class WholeNumberDescription(
     }
 }
 
-/** One line: no line breaks, no tabs, and no leading `@` or `*`. */
+/**
+ * TextDescription is a field holding one line of text: no line breaks, no tabs, and no
+ * leading `@` or `*`.
+ */
 class TextDescription(
     name: String,
     label: String? = null,
@@ -271,7 +273,8 @@ class TextDescription(
 }
 
 /**
- * Prose: line breaks allowed, and a leading `@` or `*`.
+ * MultilineTextDescription is a field holding prose: line breaks are allowed, and so is a
+ * leading `@` or `*`.
  *
  * Carries no vocabulary, closed or offered. `remarks` is nearly the only one in the model.
  */
@@ -294,7 +297,10 @@ class MultilineTextDescription(
     }
 }
 
-/** Always `"2026-02-23"`; no `units` setting reaches it. */
+/**
+ * DateDescription is a field holding a date, always written `"2026-02-23"`. No `units`
+ * setting reaches it.
+ */
 class DateDescription(
     name: String,
     label: String? = null,
@@ -315,7 +321,7 @@ class DateDescription(
         if (value is Date) Validity.Valid else Validity.Invalid("$name is a date")
 }
 
-/** Always `"09:15:00"`. */
+/** TimeDescription is a field holding a time of day, always written `"09:15:00"`. */
 class TimeDescription(
     name: String,
     label: String? = null,
@@ -336,7 +342,7 @@ class TimeDescription(
         if (value is Time) Validity.Valid else Validity.Invalid("$name is a time")
 }
 
-/** `true` or `false`. */
+/** BooleanDescription is a field holding `true` or `false`. */
 class BooleanDescription(
     name: String,
     label: String? = null,
@@ -356,7 +362,10 @@ class BooleanDescription(
         if (value is Boolean) Validity.Valid else Validity.Invalid("$name should be true or false")
 }
 
-/** A mix as divers write it — `AIR`, `EAN32`, `TMX18/35` — parsed for its fractions. */
+/**
+ * GasDescription is a field holding a mix as divers write it — `AIR`, `EAN32`, `TMX18/35`
+ * — parsed for its fractions.
+ */
 class GasDescription(
     name: String,
     label: String? = null,
@@ -377,7 +386,7 @@ class GasDescription(
         if (value is Gas) Validity.Valid else Validity.Invalid("$name is a mix")
 }
 
-/** An entry inside the same item, written `*p1`. */
+/** KeyReferenceDescription is a field naming an entry inside the same item, written `*p1`. */
 class KeyReferenceDescription(
     name: String,
     /** The field holding the collection pointed into. */
@@ -403,7 +412,7 @@ class KeyReferenceDescription(
 }
 
 /**
- * Another item, written `@id`.
+ * ReferenceDescription is a field naming another item, written `@id`.
  *
  * [targetType] is what is expected there, not what is guaranteed: the target may be the wrong type,
  * or not loaded.
@@ -442,7 +451,7 @@ class ReferenceDescription(
 }
 
 /**
- * Fields kept inside their owner and read with it.
+ * OwnedItemDescription is a field whose value is an item kept inside its owner and read with it.
  *
  * [Cardinality.SINGLE] is one, a dive's environment; [Cardinality.KEYED] is several under keys, a
  * dive's profiles.
@@ -459,7 +468,8 @@ class OwnedItemDescription(
 }
 
 /**
- * One item type: its name, and its fields in the order an interface offers them.
+ * ItemDescription is one item type: its name, and its fields in the order an interface offers
+ * them.
  *
  * Immutable.
  */

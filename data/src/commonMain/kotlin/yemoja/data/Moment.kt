@@ -3,7 +3,7 @@ package yemoja.data
 /* When something happened: a day, a time of day, and the two together. */
 
 /**
- * A day in the proleptic Gregorian calendar, with no time of day and no time zone.
+ * Date is a day in the proleptic Gregorian calendar, with no time of day and no time zone.
  *
  * Always written `2026-02-23`. No `units` setting affects it. Written here rather than taken from a
  * library. `DATA-74`.
@@ -106,7 +106,7 @@ data class Date(val year: Int, val month: Int, val day: Int) : Comparable<Date> 
 }
 
 /**
- * A time of day, with no date and no zone.
+ * Time is a time of day, with no date and no zone.
  *
  * Always written `09:15:00`, seconds included. No `units` setting affects it.
  *
@@ -177,7 +177,7 @@ data class Time(val hour: Int, val minute: Int, val second: Int) : Comparable<Ti
 }
 
 /**
- * A date and a time together, so that arithmetic across midnight carries the day.
+ * Moment is a date and a time together, so that arithmetic across midnight carries the day.
  *
  * **Never stored.** The format keeps the two apart so a user can correct one by hand; this is what
  * they become while something is worked out from them, and it is split back before anything is

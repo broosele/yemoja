@@ -1,12 +1,13 @@
 package yemoja.data
 
 /**
- * Values against time, in seconds.
+ * Series holds values against time, in seconds.
  *
- * One value rather than a collection of them. A series is a curve or a run of events, and its
- * samples are how that gets written down, so a field holding one is usable or not as a whole. What
- * sits on the value axis is whatever a value may be: a depth is a number, an alarm is closed text,
- * a gas switch is a key reference. `DATA-69`.
+ * One value rather than a collection of them, so a field holding one carries a single [Result]
+ * and not a result per sample. Each sample keeps its own fate all the same. `DATA-77`.
+ *
+ * What sits on the value axis is whatever a value may be: a depth is a number, an alarm is closed
+ * text, a gas switch is a key reference. `DATA-69`.
  *
  * Times and values are held apart rather than as pairs. A profile is the largest thing in the
  * application, and a thousand dives of a few thousand samples is where that is felt.
@@ -59,9 +60,7 @@ class Series(seconds: IntArray, values: List<Element<Any>>) {
 }
 
 /**
- * One reading of a [Series]: when it was taken, and what was recorded.
- *
- * A view of two halves held apart, not how they are stored.
+ * Sample is one reading of a [Series]: when it was taken, and what was recorded.
  *
  * Immutable.
  */

@@ -81,8 +81,9 @@ class ItemTest {
         val plain = postbox(set, emptyMap())
         assertEquals(Result.Usable("a postbox", Result.Origin.DERIVED), plain.read("shown_as"))
 
-        val corrected = postbox(set, mapOf("shown_as" to Result.Usable("the old one", Result.Origin.OVERRIDDEN)))
-        assertEquals(Result.Usable("the old one", Result.Origin.OVERRIDDEN), corrected.read("shown_as"))
+        val overridden = Result.Usable("the old one", Result.Origin.OVERRIDDEN)
+        val corrected = postbox(set, mapOf("shown_as" to overridden))
+        assertEquals(overridden, corrected.read("shown_as"))
     }
 
     @Test

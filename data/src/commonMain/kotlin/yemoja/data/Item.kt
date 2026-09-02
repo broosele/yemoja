@@ -3,7 +3,7 @@ package yemoja.data
 import kotlin.reflect.KClass
 
 /**
- * One item of one type: a dive, a person, a profile.
+ * Item is one thing of one type: a dive, a person, a profile.
  *
  * There is no class per type. What a dive is comes from its [ItemDescription], which is data and
  * lives in the logic layer, so nothing here names a field.
@@ -78,8 +78,8 @@ sealed class Item(
     /**
      * The field [name] describes, or a fault where it describes none.
      *
-     * Not an absent. A name the description does not carry is a mistake in the code that asked, and
-     * saying so on the first run is the point of the checked read. `DATA-51`.
+     * Not an absent. A name the description does not carry is a mistake in the code that asked.
+     * `DATA-51`.
      */
     @PublishedApi
     internal fun declared(name: String): FieldDescription =
@@ -91,7 +91,7 @@ sealed class Item(
      * [read], having first confirmed the field is declared the way the caller is asking for it.
      *
      * The check is against the description rather than the value, so asking for the wrong shape or
-     * the wrong kind is a fault even where the field is absent — which is most of them.
+     * the wrong kind is a fault even where the field is absent.
      */
     @PublishedApi
     @Suppress("UNCHECKED_CAST")
@@ -113,7 +113,8 @@ sealed class Item(
 }
 
 /**
- * An item with an id of its own, which anything may point at: a dive, a person, a dive site.
+ * ReferenceableItem is an item with an id of its own, which anything may point at: a dive, a
+ * person, a dive site.
  *
  * The id is not here. It is the name of the file the item sits in, and [ItemSet] answers in both
  * directions.
@@ -125,7 +126,7 @@ class ReferenceableItem(
 ) : Item(description, fields)
 
 /**
- * An item that exists only inside another: a dive's profile, a cylinder on a dive.
+ * OwnedItem is an item that exists only inside another: a dive's profile, a cylinder on a dive.
  *
  * Created and destroyed with its [parent], never pointed at from outside it, and named by the key
  * it sits under where it sits in a collection at all.

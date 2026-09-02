@@ -1,15 +1,14 @@
 package yemoja.data
 
 /**
- * Every item that is loaded: the logbook's own, and those of each library it uses.
+ * ItemSet holds every item that is loaded: the logbook's own, and those of each library it uses.
  *
  * Shadowing is applied before an item gets here, so an id names exactly one of them. One id names
  * one item across every type, because a reference carries the id and nothing else.
  *
  * **Two questions, and no more.** Resolve an id, and list everything of a type. `DATA-4`. A logbook
  * is small enough to hold entirely, so filtering, sorting and searching happen above this layer
- * over ordinary collections, and items navigate themselves. The surface stays small because there
- * is nothing to add to it.
+ * over ordinary collections, and items navigate themselves.
  *
  * It answers in both directions. An item cannot say what it is called, but an interface offering
  * "add this person as a buddy" holds one and has to write a reference to it.
@@ -20,9 +19,11 @@ package yemoja.data
  * More than one set can exist at a time. An import is read into its own, so candidates are whole
  * and resolvable before anything is merged.
  *
- * **Minting an id, renaming one and removing an item are absent.** Minting has to know which
- * indices were ever used, since one is never reissued, and renaming carries every reference with it
- * as a single act. Both wait on the journal.
+ * **Minting an id and removing an item are absent.** Minting has to know which indices were ever
+ * used, since one is never reissued, and that waits on the journal.
+ *
+ * Renaming is not absent so much as elsewhere. An id and every reference to it change as one act,
+ * and the layer document puts that at the Universe, above here.
  *
  * Not immutable: reading a logbook fills a set, and a logbook gains items while it is open.
  */
@@ -40,8 +41,8 @@ class ItemSet(descriptions: List<ItemDescription>) {
     /**
      * Puts [item] in under [id].
      *
-     * Refuses an id already taken, which is what makes one id name one item. Resolving a clash by
-     * appending `#1` belongs here too and is not written yet.
+     * Refuses an id already taken: one id names one item. Resolving a clash by appending `#1`
+     * belongs here too and is not written yet.
      */
     fun add(id: String, item: ReferenceableItem) {
         require(id.isNotEmpty()) { "an id should not be empty" }

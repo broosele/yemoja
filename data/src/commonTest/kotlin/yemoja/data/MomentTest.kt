@@ -198,14 +198,16 @@ class MomentTest {
     fun `a second before the epoch is the last second of the day before it`() {
         // Flooring, not truncating: the whole reason this type exists.
         assertEquals(Moment(Date(1969, 12, 31), Time(23, 59, 59)), Moment.of(-1))
-        assertEquals(Moment(Date(1969, 12, 31), Time(0, 0, 0)), Moment.of(-Time.SECONDS_IN_DAY.toLong()))
+        val aDayBefore = -Time.SECONDS_IN_DAY.toLong()
+        assertEquals(Moment(Date(1969, 12, 31), Time(0, 0, 0)), Moment.of(aDayBefore))
     }
 
     @Test
     fun `adding seconds carries the date as far as it has to go`() {
         val lateOn = Moment(Date(2026, 2, 23), Time(23, 30, 0))
         assertEquals(Moment(Date(2026, 2, 24), Time(0, 30, 0)), lateOn.plusSeconds(3600))
-        assertEquals(Moment(Date(2026, 3, 25), Time(23, 30, 0)), lateOn.plusSeconds(30L * Time.SECONDS_IN_DAY))
+        val thirtyDays = 30L * Time.SECONDS_IN_DAY
+        assertEquals(Moment(Date(2026, 3, 25), Time(23, 30, 0)), lateOn.plusSeconds(thirtyDays))
     }
 
     @Test

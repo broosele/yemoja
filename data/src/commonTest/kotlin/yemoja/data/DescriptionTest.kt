@@ -247,7 +247,8 @@ class ResultTest {
     fun `the three states of a read are told apart`() {
         assertEquals(Result.Absent, Result.Absent)
         assertEquals(Result.Usable(1, Result.Origin.STORED), Result.Usable(1, Result.Origin.STORED))
-        assertTrue(Result.Usable(1, Result.Origin.STORED) != Result.Usable(1, Result.Origin.DERIVED))
+        val stored = Result.Usable(1, Result.Origin.STORED)
+        assertTrue(stored != Result.Usable(1, Result.Origin.DERIVED))
         assertTrue(Result.Usable(1, Result.Origin.STORED) != Result.Usable(2, Result.Origin.STORED))
     }
 

@@ -1,7 +1,7 @@
 package yemoja.data
 
 /**
- * A field's way of naming another item.
+ * Reference is a field's way of naming another item.
  *
  * Two kinds, and the difference is identity rather than form. `@john` asserts that this is
  * a particular person: two of them name the same one whether or not that person is in the
@@ -19,7 +19,7 @@ sealed class Reference {
     /** As written in a file, `@` and all. */
     abstract val written: String
 
-    /** `@john`. */
+    /** Identified is a reference to a particular item, written `@john`. */
     data class Identified(val id: String) : Reference() {
         init {
             require(id.isNotEmpty()) { "an id should not be empty" }
@@ -31,7 +31,7 @@ sealed class Reference {
         override val written: String get() = "@$id"
     }
 
-    /** `john`. A name where a reference could have gone, asserting no id. */
+    /** OneOff is a name where a reference could have gone, written `john`, asserting no id. */
     data class OneOff(val name: String) : Reference() {
         init {
             require(name.isNotEmpty()) { "a name should not be empty" }
@@ -71,7 +71,7 @@ sealed class Reference {
 }
 
 /**
- * One entry inside the item being read, written `*p1`.
+ * KeyReference names one entry inside the item being read, written `*p1`.
  *
  * Not a [Reference]: it names a part of one item rather than an item, so what resolves it
  * is the collection the description points into, not the set of all items.
@@ -108,25 +108,25 @@ data class KeyReference(val key: String) {
 }
 
 /**
- * What a reference turned out to point at.
+ * Referent is what a reference turned out to point at.
  *
  * Four answers rather than an item or nothing, because the ways of having no item differ
  * and an interface says different things about them. A dangling reference is a person you
  * have not entered yet; a one-off is a name you chose not to make anyone.
  *
- * Not immutable, alone among these: [Resolved] holds an [Item], and items change.
+ * Not immutable: [Resolved] holds an item, and items change.
  */
 sealed class Referent {
 
-    /** The reference named an item, and it is here. */
+    /** Resolved is a reference that named an item, and the item is here. */
     class Resolved(val item: ReferenceableItem) : Referent()
 
-    /** The reference named an item that is not in the set. Still an identity. */
+    /** Dangling is a reference that named an item not in the set. Still an identity. */
     class Dangling(val id: String) : Referent()
 
-    /** A name was written where a reference could have gone. There is nothing to find. */
+    /** OneOff is a name written where a reference could have gone. There is nothing to find. */
     class OneOff(val name: String) : Referent()
 
-    /** No reference to follow: the field was empty, or held something unreadable. */
+    /** None is no reference to follow: the field was empty, or held something unreadable. */
     object None : Referent()
 }

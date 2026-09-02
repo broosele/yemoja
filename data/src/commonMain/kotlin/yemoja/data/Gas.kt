@@ -3,8 +3,8 @@ package yemoja.data
 import kotlin.math.roundToInt
 
 /**
- * A breathing mix, held as the parts of it that matter to decompression: oxygen and helium, with
- * nitrogen making up the rest.
+ * Gas is a breathing mix, held as the parts of it that matter to decompression: oxygen and
+ * helium, with nitrogen making up the rest.
  *
  * A value, not a label. `DATA-55`. `EAN32` is how a diver writes it and what [toString] gives back.
  * What is kept is the quantity, so a mix converts to and from any format that states its fractions.
@@ -61,8 +61,8 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
          *
          * Throws where the text is not one.
          *
-         * This is the utility, not the parser. Whatever reads a field catches and answers
-         * *unusable*. Nothing should call this without catching.
+         * The utility, not the parser: whatever reads a field catches this and answers
+         * *unusable*.
          *
          * Deliberately forgiving, as `manual/data-format.md` promises: case and spaces are ignored,
          * and the marker before the numbers is optional wherever the numbers alone are unambiguous.

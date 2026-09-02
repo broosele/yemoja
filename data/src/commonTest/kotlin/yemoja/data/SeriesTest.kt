@@ -60,7 +60,11 @@ class SeriesTest {
     fun `one unreadable sample leaves the rest alone`() {
         val mixed = Series(
             intArrayOf(0, 30, 60),
-            listOf(Element.Usable(0.0), Element.Unusable("deep", "depth is a number"), Element.Usable(12.1)),
+            listOf(
+                Element.Usable(0.0),
+                Element.Unusable("deep", "depth is a number"),
+                Element.Usable(12.1),
+            ),
         )
         assertEquals(Element.Usable(0.0), mixed.valueAt(0))
         assertEquals(Element.Unusable("deep", "depth is a number"), mixed.valueAt(1))
@@ -79,7 +83,8 @@ class SeriesTest {
     @Test
     fun `two series holding the same samples are the same series`() {
         assertEquals(dive, Series(intArrayOf(0, 30, 60), values(0.0, 8.4, 12.1)))
-        assertEquals(dive.hashCode(), Series(intArrayOf(0, 30, 60), values(0.0, 8.4, 12.1)).hashCode())
+        val same = Series(intArrayOf(0, 30, 60), values(0.0, 8.4, 12.1))
+        assertEquals(dive.hashCode(), same.hashCode())
         assertNotEquals(dive, Series(intArrayOf(0, 30, 61), values(0.0, 8.4, 12.1)))
         assertNotEquals(dive, Series(intArrayOf(0, 30, 60), values(0.0, 8.4, 12.2)))
         assertNotEquals<Any?>(dive, null)
