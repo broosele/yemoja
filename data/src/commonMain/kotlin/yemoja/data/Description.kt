@@ -230,10 +230,11 @@ class TextDescription(
 
     override val valueType: KClass<*> get() = String::class
 
-    // Both copied. A Set is read-only, not immutable.
+    // Copied. A Set is read-only, not immutable.
     /** Closed: a value outside reads back *unusable*, kept as written. `DATA-24`. */
     val fixedSet: Set<String>? = fixedSet?.toSet()
 
+    // Copied. A Set is read-only, not immutable.
     /**
      * Offered, not enforced: a value outside is an ordinary value.
      *
@@ -251,7 +252,9 @@ class TextDescription(
             Validity.Invalid("$name should be a single line of text")
 
         value.startsWith('@') || value.startsWith('*') ->
-            Validity.Invalid("$name should not begin with @ or *, which name other things")
+            Validity.Invalid(
+                "$name should not begin with @ or *, which are references to other items"
+            )
 
         fixedSet != null && value !in fixedSet ->
             Validity.Invalid("$name should be one of ${fixedSet.sorted().joinToString(", ")}")
@@ -439,6 +442,7 @@ class ReferenceDescription(
         value !is Reference -> Validity.Invalid("$name should name another item")
         value is Reference.OneOff && !oneOff ->
             Validity.Invalid("$name should be a reference, written with a leading @")
+
         else -> Validity.Valid
     }
 }

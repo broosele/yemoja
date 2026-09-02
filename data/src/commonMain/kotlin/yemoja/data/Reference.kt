@@ -73,8 +73,9 @@ sealed class Reference {
 /**
  * KeyReference names one entry inside the item being read.
  *
- * Not a [Reference]: it names a part of one item rather than an item, so what resolves it
- * is the collection the description points into, not the set of all items.
+ * Not a [Reference]: an id names an item anywhere in the logbook, while a key names an owned item
+ * relative to its owner, so what resolves it is the collection the description points into rather
+ * than the set of all items.
  *
  * Immutable.
  *
