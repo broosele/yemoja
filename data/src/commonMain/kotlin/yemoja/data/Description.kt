@@ -108,15 +108,13 @@ sealed class FieldDescription(
      * Runs [validate] on the way, so that what a field refuses when a user types it is exactly
      * what it refuses when a file holds it.
      */
-    protected fun resultOf(value: Any, text: String, overrides: Boolean): Result<Any> =
-        when (val validity = validate(value)) {
-            is Validity.Valid -> Result.Usable(value, originOf(overrides))
+    protected fun resultOf(value: Any, text: String, overrides: Boolean): Result<Any> {
+        val origin = if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
+        return when (val validity = validate(value)) {
+            is Validity.Valid -> Result.Usable(value, origin)
             is Validity.Invalid -> Result.Unusable(text, validity.reason)
         }
-
-    /** The origin a parsed value carries, by whether it corrects a derivation. */
-    protected fun originOf(overrides: Boolean): Result.Origin =
-        if (overrides) Result.Origin.OVERRIDDEN else Result.Origin.STORED
+    }
 
     /**
      * The type one value of this field has once it is read.
@@ -146,7 +144,8 @@ sealed class FieldDescription(
 /**
  * ValueDescription is a field holding a value, rather than a reference or an owned item.
  *
- * The kind is the type, so a property belongs only to the kinds it applies to.
+ * Each kind is a class of its own, so a property belongs only to the kinds it applies to: a range
+ * to numbers, a fixed vocabulary to text. A boolean can be given neither.
  *
  * A field with a default is [Role.Overrideable] with a constant computation. Nothing written and it
  * works out the same answer every time; something written and that wins. There is no separate
