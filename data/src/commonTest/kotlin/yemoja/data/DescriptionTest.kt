@@ -208,6 +208,58 @@ class ValueDescriptionTest {
     }
 
     @Test
+    fun `text refuses a line break however it is written`() {
+        val name = TextDescription("name")
+        unusable(name, "two\nlines")
+        unusable(name, "two\rlines")
+        unusable(name, "two\u2028lines")
+        unusable(name, "two\u2029paragraphs")
+    }
+
+    @Test
+    fun `text refuses what a reader would not see`() {
+        val name = TextDescription("name")
+        unusable(name, "a\u0008backspace")
+        unusable(name, "an\u001Bescape")
+        unusable(name, "a\u0000null")
+        unusable(name, "a\u0085stray byte")
+        unusable(name, "a\u200Bzero width space")
+        unusable(name, "a\uFEFFbyte order mark")
+    }
+
+    @Test
+    fun `text refuses what would be shown in another order`() {
+        // A name could otherwise read as something the file does not say.
+        val name = TextDescription("name")
+        unusable(name, "Zeeland\u2067brug")
+        assertEquals(
+            "name should not contain characters that cannot be seen",
+            unusable(name, "Zeeland\u202Ebrug").reason,
+        )
+    }
+
+    @Test
+    fun `text keeps the joiners that real writing needs`() {
+        // A zero-width joiner builds one emoji out of several, and Persian and Indic writing
+        // needs the non-joiner. Neither hides anything.
+        val name = TextDescription("name")
+        assertEquals("family\u200Dhere", usable(name, "family\u200Dhere"))
+        assertEquals("Zeeland\u200Cbrug", usable(name, "Zeeland\u200Cbrug"))
+    }
+
+    @Test
+    fun `prose keeps its line breaks and refuses the rest`() {
+        val remarks = MultilineTextDescription("remarks")
+        assertEquals("two\nlines", usable(remarks, "two\nlines"))
+        assertEquals("family\u200Dhere", usable(remarks, "family\u200Dhere"))
+        unusable(remarks, "a\ttab")
+        unusable(remarks, "a\rcarriage return")
+        unusable(remarks, "a\u2028line separator")
+        unusable(remarks, "a\u0008backspace")
+        unusable(remarks, "a\u202Ereordering")
+    }
+
+    @Test
     fun `a value outside a fixed set is kept exactly as it was written`() {
         val surface = TextDescription("surface", fixedSet = setOf("brick"))
         assertEquals("  Wattle  ", unusable(surface, "  Wattle  ").raw)

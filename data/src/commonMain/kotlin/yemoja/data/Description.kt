@@ -216,6 +216,35 @@ class WholeNumberDescription(
 }
 
 /**
+ * Characters that make stored text read as something other than what is stored.
+ *
+ * The first two rows reorder what is shown, so a name could appear as something the file does not
+ * say. The third is invisible and joins nothing, so two names can look identical and be different,
+ * which matters because an id is proposed from a name.
+ *
+ * The zero-width joiner and non-joiner are deliberately absent: emoji sequences and Persian and
+ * Indic text need them.
+ */
+private val MISLEADING = setOf(
+    '\u202A', '\u202B', '\u202C', '\u202D', '\u202E',
+    '\u2066', '\u2067', '\u2068', '\u2069',
+    '\u200B', '\u2060', '\uFEFF',
+)
+
+/** Whether this ends a line, in any of the four ways one can be written. */
+private fun Char.breaksLine(): Boolean =
+    this == '\n' || this == '\r' ||
+        category == CharCategory.LINE_SEPARATOR ||
+        category == CharCategory.PARAGRAPH_SEPARATOR
+
+/** Whether this would not be seen, or would not be seen for what it is. */
+private fun Char.isHidden(): Boolean =
+    category == CharCategory.CONTROL ||
+        category == CharCategory.LINE_SEPARATOR ||
+        category == CharCategory.PARAGRAPH_SEPARATOR ||
+        this in MISLEADING
+
+/**
  * TextDescription is a field holding one line of text: no line breaks, no tabs, and no
  * leading `@` or `*`.
  */
@@ -248,8 +277,11 @@ class TextDescription(
 
     override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
-        value.any { it == '\n' || it == '\r' || it == '\t' } ->
+        value.any { it.breaksLine() } ->
             Validity.Invalid("$name should be a single line of text")
+
+        value.any { it.isHidden() } ->
+            Validity.Invalid("$name should not contain characters that cannot be seen")
 
         value.startsWith('@') || value.startsWith('*') ->
             Validity.Invalid(
@@ -283,7 +315,8 @@ class MultilineTextDescription(
 
     override fun validate(value: Any): Validity = when {
         value !is String -> Validity.Invalid("$name should be text")
-        value.contains('\t') -> Validity.Invalid("$name should not contain a tab")
+        value.any { it != '\n' && it.isHidden() } ->
+            Validity.Invalid("$name should not contain characters that cannot be seen")
         else -> Validity.Valid
     }
 }

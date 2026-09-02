@@ -105,6 +105,21 @@ fault.
 Nothing inside an item mentions its id, and changing one does not change
 anything the item says about itself.
 
+**What an id may contain** is narrow, because it is also a file name: lowercase
+letters `a` to `z`, digits, and `_`, `-` and `.`. Nothing else, and no accented or
+non-Latin letters. It may not start or end with `_`, `-` or `.`.
+
+That looks mean, and it is deliberate. An id is a file name on Windows, macOS, Linux,
+Android and iPhone, and those disagree: two of them treat `Anna` and `anna` as the same
+file while Yemoja would treat them as two items, and one of them rewrites accented
+letters into a different form on disk, so the same logbook synced between two machines
+would grow a second copy of the same dive. Letters that look identical and are not —
+a Cyrillic `a` beside a Latin one — would give you two people you could not tell apart.
+
+**Your own language belongs in `name`, not in the id.** The id is an address; the name
+is what you read, what Yemoja shows you, and what you correct when it is wrong. They are
+free to differ, and for most people they will.
+
 ### When two items would share an id
 
 Yemoja adds a number. A second Anna De Vries becomes `anna_devries#1`, leaving the
@@ -222,10 +237,12 @@ Every field holds one of a small number of kinds of value. Each is named in brac
 after the field.
 
 - **text** — a single line: `"Zeelandbrug"`. It may not begin with `@` or `*`, which
-  mark the two kinds of pointer, and may not contain line breaks, tabs or other invisible
-  control characters.
+  mark the two kinds of pointer, and may not contain a line break, a tab, or any other
+  character you would not see. Characters that reorder what is shown are refused as well,
+  so that what a file says is what you read.
 - **multiline text** — line breaks are allowed, and so is a leading `@` or `*`, since
-  nothing here is ever read as a pointer. Tabs are not.
+  nothing here is ever read as a pointer. Tabs are not, nor is anything else you would
+  not see.
 - **whole number** — no decimal point: `12`.
 - **number** — with or without one: `31.4`.
 

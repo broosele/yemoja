@@ -880,6 +880,66 @@ To settle when we discuss architecture:
   remembers its own.
 ## Settled and relocated
 
+- **DATA-84 — What an id may contain.** *Settled:* **lowercase ASCII letters, digits, `_`,
+  `-` and `.`**, with `#` reserved as the index separator and forbidden in a base. Not empty,
+  and not starting or ending with `_`, `-` or `.`.
+
+  All 523 ids in the fixtures and the libraries already fit, including
+  `generic_0.5_kg_lead_weight`, whose dot carries a decimal, and `2026-06-21#0`, whose
+  hyphens carry a date.
+
+  **This is a rule about file names, which is why it is narrow.** An id names a file on five
+  platforms, and they disagree in three ways that each break *one id names one item*:
+
+  - Windows and macOS are case-insensitive by default, so `Anna` and `anna` would be one file
+    and two ids. Lowercase-only removes it, and lowercase-only is a clean rule in ASCII and a
+    locale-dependent one in Unicode: Turkish dotted and dotless i do not fold the way every
+    other locale expects.
+  - macOS stores file names decomposed and Linux stores what it is given, so the same Unicode
+    id would be different bytes on disk depending on the machine, and a synced logbook would
+    see two files.
+  - Cyrillic and Latin have letters that look identical. Permissive reading means a
+    confusable pair resolves to two items with no visible difference between them.
+
+  **The cost falls where the proposal is made, above this layer.** Someone whose name is
+  written in Greek, Japanese or Arabic gets an id that is a transliteration or a fallback like
+  `unknown_person#1`. The `name` field keeps the real spelling, the two are free to diverge,
+  and a user of the graphical application never sees an id at all.
+
+  **Excluded regardless of the character set**, for the same file-name reason: a leading dot,
+  which hides the file on Unix; a trailing dot or space, which Windows strips, turning two ids
+  into one file; and the reserved device names `con`, `prn`, `aux`, `nul`, `com1` to `com9`
+  and `lpt1` to `lpt9`, since `nul.json` cannot be created on Windows at all. A length cap
+  around 200 characters follows from the id plus `.json` having to fit.
+
+  **Reading is not held to this.** A reference is validated permissively, so a hand-written
+  `@Andre` with an accent resolves and is reported rather than refused. Reading refuses only
+  what stops the format parsing or deceives a reader: whitespace, `*`, and what `DATA-83`
+  names. The strict rule binds when an id is minted.
+
+- **DATA-83 — What text may contain.** *Settled:* **nothing a reader would not see, and
+  nothing that reorders what is shown.**
+
+  The manual already promised *other invisible control characters* while the code refused
+  three of them, so this makes good on a promise rather than adding a rule. Refused now: every
+  Unicode control, so escape and backspace and the block that arrives from mis-decoded
+  Windows-1252 as well as tab and the line breaks; every line separator, including the two
+  that are neither carriage return nor newline and that a *single line of text* was quietly
+  accepting; the nine bidirectional controls, which display text in an order other than the
+  one it is stored in; and the zero-width space, word joiner and byte order mark, which make
+  two names look identical while differing.
+
+  **The zero-width joiner and non-joiner are kept.** An emoji sequence is joiner-built, and
+  Persian and Indic writing needs the non-joiner. Refusing the whole of the format category
+  would have been three lines shorter and would have turned away text a diver might type.
+
+  Prose is the same rule with the newline excepted, so it refuses a carriage return too and
+  the format has one line ending rather than two.
+
+  It matters most in a `name`, because an id is proposed from one: two names that look alike
+  and differ would become two people. `DATA-84` closes the other half by keeping the id itself
+  to ASCII.
+
 - **DATA-82 — Whether a proportion is written as a fraction or as a percentage.**
   *Settled:* **a fraction, from 0 to 1.** A name containing *percentage* is the exception,
   and so is a term of art already defined as one.
