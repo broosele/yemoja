@@ -783,6 +783,8 @@ data/
                   Result.kt        what reading a field gave, one member of a collection,
                                    and what a parser throws
                   Series.kt        values against time, and one sample of them
+                  Stored.kt        what a source holds, before anything judges it
+                  json/Json.kt     a JSON text, read into that
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
@@ -1331,10 +1333,20 @@ To settle when we discuss architecture:
 
   The source cannot do it alone, which is what keeps the description in the picture. No
   store knows that a piece of text is a reference, a gas or a series — those kinds exist
-  only in the description. So a source is **asked for a kind and answers or fails**: JSON
-  implements `date` by parsing, a database by reading a column, and both implement `gas`
-  the same way because neither has one. That is `DATA-51`'s typed accessors, moved down to
-  the storage boundary.
+  only in the description.
+
+  **How the two meet was settled a second time, and the first answer was wrong.** It had
+  been *a source is asked for a kind and answers or fails*, with JSON implementing `date`
+  by parsing and a database by reading a column. That cannot be built: an interface phrased
+  as *give me a date* forces every source to parse, which is the very difference between
+  sources that this question says is theirs.
+
+  **A source produces a tree instead.** `Stored` is a leaf, members under names, or elements
+  in order, and a leaf holds anything — the text JSON has, or the date a database column
+  already made. Reading a leaf against a kind takes whichever it finds, and that reading is
+  written once, in the layer that owns the rules. The difference between sources then shows
+  up in the tree rather than in ten methods each source implements, which serves this
+  question's reason better than its first answer did.
 
   **Where validation happens is *not* settled here** — see `DATA-66`. This question
   settles only that parsing is the source's job and that the description is what the source
@@ -1368,7 +1380,7 @@ To settle when we discuss architecture:
   something a file can do and a schema cannot, so a source that cannot preserve them says
   so rather than dropping them quietly.
 
-  **They are held as the source handed them over**, in a mapping of name to anything, and
+  **They are held as [Stored]**, the tree every source produces and none of them owns, and
   nothing in this layer looks inside one. `DATA-64` kept a source's own types out of a
   *result* because a source-flavoured result *"would force every derivation and every piece
   of interface to handle two shapes"*. Neither applies here: an unrecognised field is never
@@ -1376,10 +1388,11 @@ To settle when we discuss architecture:
   touches one is a writer from the source that produced it, and an item assembled in memory
   has none, which is correct rather than a limitation.
 
-  A neutral tree of our own was the alternative. To lose nothing it would have needed a
-  whole number told from a fraction, a null, and the order the members were written in — at
-  which point it is the JSON reader's tree under another name, plus a conversion on every
-  load for data nobody reads.
+  That tree was going to be built anyway, for `DATA-64`, so keeping unrecognised fields in
+  it costs nothing and buys something: a writer for one source can put back what a reader
+  for another handed over. It loses nothing JSON needs — a whole number tells itself from a
+  fraction because a `Long` is not a `Double`, a null is a leaf holding nothing, and members
+  keep the order they were written in.
 
 - **DATA-63 — Which items carry `alternative_names`.** *Settled:* dive site, wreck and
   **operator**. Not person, not dive trip, not gas mix, whatever UDDF does.

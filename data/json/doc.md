@@ -259,6 +259,48 @@ dive would renumber its neighbours and break every reference to them.
 - Tolerating hand edits: reformatting, unknown fields, and changes made while the
   app was not running.
 
+## Reading a JSON text
+
+The reader is ours, in `src/commonMain/kotlin/yemoja/data/json/`. It turns a text into a
+`Stored` tree — the data layer's own, not one of this source's — and knows nothing about
+fields: `"max_depth": "deep"` reads happily as a string and is refused later by the
+description, which is the division `DATA-64` draws. Building the layer's tree rather than a
+JSON-shaped one is what lets the walk from a description to an item's fields be written
+once instead of once per source.
+
+**No library.** JSON is a small grammar and the reader is about three hundred lines, which
+buys the bottom layer keeping its promise of no dependencies. The deciding argument was
+not the reader, though — it was the writer. This format wants a settled field order so that
+saving a file nobody edited produces no diff, and a general-purpose writer offers its own
+formatting rather than ours, so the writer was always going to be ours. The reader is the
+smaller half of a job already begun.
+
+**A whole number is told from a fraction.** `7` becomes a 64-bit integer and `7.0` a
+double, because a whole number field must refuse `7.0` while a number field accepts `7`,
+and the fixtures are full of whole-looking numbers in number fields. Nothing is needed to
+carry the distinction: the two are different types already. Holding the whole one as a
+64-bit integer also means a value too large for the model is refused where fields are
+judged rather than truncated in the reader.
+
+**A null is carried, not refused**, as a leaf holding nothing. A reader does not know what
+a field is, so what a null means — most likely that the field is absent — belongs to
+whatever reads against a description. No file in the fixtures or the libraries contains
+one.
+
+**Two forgivenesses, in the reading only, and the writer offers neither.** A trailing comma
+after the last member or element, so that deleting a line does not break the line above it.
+And a byte order mark at the start, because editors on Windows leave one, nobody can see it,
+and refusing it would point at a brace that looks perfectly correct. Everywhere else a byte
+order mark is an ordinary character and the text rules refuse it.
+
+**What it refuses beyond the grammar.** A name given twice, since this format keys items by
+id and two members of one name is a real mistake rather than an undefined one. And nesting
+beyond sixty-four deep, so that a corrupt file of nothing but brackets is reported instead
+of exhausting the stack.
+
+All forty files in `fixtures/` and `libraries/` are strict JSON, so nothing yet depends on
+either forgiveness.
+
 ## Not in scope
 
 Anything another source would also need — that belongs one level up.

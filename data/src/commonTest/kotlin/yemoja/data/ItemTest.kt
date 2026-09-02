@@ -122,8 +122,9 @@ class ItemTest {
 
     @Test
     fun `a field the description never heard of keeps its own mapping`() {
-        val item = ReferenceableItem(POSTBOX, emptyMap(), set, mapOf("posting_times" to "09:00"))
-        assertEquals("09:00", item.unrecognisedFields["posting_times"])
+        val kept = mapOf("posting_times" to Stored.Leaf("09:00"))
+        val item = ReferenceableItem(POSTBOX, emptyMap(), set, kept)
+        assertEquals(Stored.Leaf("09:00"), item.unrecognisedFields["posting_times"])
         // Not among the fields, and the checked read refuses it: the description has no such name.
         assertEquals(emptyMap(), item.fields)
         assertFailsWith<IllegalArgumentException> { item.read("posting_times") }
@@ -138,9 +139,9 @@ class ItemTest {
 
     @Test
     fun `an item keeps its own copy of what it was given`() {
-        val unrecognised = mutableMapOf<String, Any>("posting_times" to "09:00")
+        val unrecognised = mutableMapOf<String, Stored>("posting_times" to Stored.Leaf("09:00"))
         val item = ReferenceableItem(POSTBOX, emptyMap(), set, unrecognised)
-        unrecognised["colour"] = "red"
+        unrecognised["colour"] = Stored.Leaf("red")
         assertEquals(setOf("posting_times"), item.unrecognisedFields.keys)
     }
 

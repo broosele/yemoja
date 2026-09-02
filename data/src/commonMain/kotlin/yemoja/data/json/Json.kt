@@ -1,5 +1,7 @@
 package yemoja.data.json
 
+import yemoja.data.Stored
+
 /**
  * JsonFormatException is thrown when a text is not JSON at all.
  *
@@ -12,66 +14,27 @@ package yemoja.data.json
 class JsonFormatException(message: String) : RuntimeException(message)
 
 /**
- * JsonValue is one value read out of a JSON text.
+ * Json reads a JSON text into a [Stored] tree.
  *
  * Read but not judged: nothing here knows what a field is, so `"max_depth": "deep"` reads happily
  * as text and is refused later by the description. That division is `DATA-64`.
  *
- * Nothing is copied on the way in. The reader builds every map and list it hands over, so there is
- * no caller holding a mutable one.
+ * It builds the data layer's own tree rather than one of its own, so the walk from a description
+ * to an item's fields belongs to the layer that owns the rules and not to this source.
  */
-sealed class JsonValue {
+object Json {
 
-    companion object {
-
-        /**
-         * Reads [text] as JSON. Throws [JsonFormatException] where it is not.
-         *
-         * Two forgivenesses, in the reading only, and a writer offers neither. A **trailing
-         * comma** is allowed after the last member or element, because a hand-editor who deletes
-         * a line should not have to fix the line above it. And a **byte order mark** at the very
-         * start is skipped: editors on Windows leave one, it cannot be seen, and refusing it
-         * would point at a brace the reader can find nothing wrong with.
-         */
-        fun parse(text: String): JsonValue = Reader(text).read()
-    }
+    /**
+     * Reads [text] as JSON. Throws [JsonFormatException] where it is not.
+     *
+     * Two forgivenesses, in the reading only, and a writer offers neither. A **trailing comma**
+     * is allowed after the last member or element, because a hand-editor who deletes a line
+     * should not have to fix the line above it. And a **byte order mark** at the very start is
+     * skipped: editors on Windows leave one, it cannot be seen, and refusing it would point at a
+     * brace the reader can find nothing wrong with.
+     */
+    fun parse(text: String): Stored = Reader(text).read()
 }
-
-/** JsonString is a JSON string, with its escapes already resolved. */
-data class JsonString(val value: String) : JsonValue()
-
-/**
- * JsonLong is a number written with no fractional part and no exponent.
- *
- * Kept apart from [JsonDouble] because the description decides which a field takes: a whole number
- * refuses `7.0` and a number accepts `7`. A tree holding only doubles could not tell one from the
- * other, and the fixtures are full of whole-looking numbers in number fields.
- *
- * A [Long], so that a value too large for the model is refused where fields are judged rather than
- * silently truncated here.
- */
-data class JsonLong(val value: Long) : JsonValue()
-
-/** JsonDouble is a number written with a fractional part or an exponent. */
-data class JsonDouble(val value: Double) : JsonValue()
-
-/** JsonBoolean is `true` or `false`. */
-data class JsonBoolean(val value: Boolean) : JsonValue()
-
-/** JsonMap is a JSON object, in the order the file wrote its members. */
-data class JsonMap(val members: Map<String, JsonValue>) : JsonValue()
-
-/** JsonList is a JSON array. */
-data class JsonList(val elements: List<JsonValue>) : JsonValue()
-
-/**
- * JsonNull is a `null` in the file, carried rather than judged.
- *
- * What it means for a field is not a reader's business. The likely answer is that it reads the
- * same as the field being absent, and the model writes no nulls of its own, but a reader that does
- * not know what a field is has nothing to decide it with.
- */
-object JsonNull : JsonValue()
 
 /**
  * How deep the reader will go before it refuses.
@@ -97,7 +60,7 @@ private class Reader(private val text: String) {
     private var at = 0
     private var depth = 0
 
-    fun read(): JsonValue {
+    fun read(): Stored {
         if (text.startsWith(MARK)) at += 1
         skipSpace()
         val value = readValue()
@@ -106,13 +69,13 @@ private class Reader(private val text: String) {
         return value
     }
 
-    private fun readValue(): JsonValue {
+    private fun readValue(): Stored {
         if (at >= text.length) fail("a value should be here, but the text ended")
         if (depth >= DEEPEST) fail("a value should not be nested more than $DEEPEST deep")
         return when (val start = text[at]) {
             '{' -> readMembers()
             '[' -> readElements()
-            '"' -> JsonString(readText())
+            '"' -> Stored.Leaf(readText())
             't', 'f', 'n' -> readWord()
             else ->
                 if (start == '-' || start in '0'..'9') readNumber()
@@ -120,15 +83,15 @@ private class Reader(private val text: String) {
         }
     }
 
-    private fun readMembers(): JsonValue {
-        val members = LinkedHashMap<String, JsonValue>()
+    private fun readMembers(): Stored {
+        val members = LinkedHashMap<String, Stored>()
         depth += 1
         at += 1
         skipSpace()
         if (peek() == '}') {
             at += 1
             depth -= 1
-            return JsonMap(members)
+            return Stored.Members(members)
         }
         while (true) {
             skipSpace()
@@ -154,18 +117,18 @@ private class Reader(private val text: String) {
         }
         at += 1
         depth -= 1
-        return JsonMap(members)
+        return Stored.Members(members)
     }
 
-    private fun readElements(): JsonValue {
-        val elements = ArrayList<JsonValue>()
+    private fun readElements(): Stored {
+        val elements = ArrayList<Stored>()
         depth += 1
         at += 1
         skipSpace()
         if (peek() == ']') {
             at += 1
             depth -= 1
-            return JsonList(elements)
+            return Stored.Elements(elements)
         }
         while (true) {
             skipSpace()
@@ -184,7 +147,7 @@ private class Reader(private val text: String) {
         }
         at += 1
         depth -= 1
-        return JsonList(elements)
+        return Stored.Elements(elements)
     }
 
     private fun readText(): String {
@@ -265,26 +228,26 @@ private class Reader(private val text: String) {
     }
 
     /** One of the three values written as a word. */
-    private fun readWord(): JsonValue = when {
+    private fun readWord(): Stored = when {
         text.startsWith("true", at) -> {
             at += 4
-            JsonBoolean(true)
+            Stored.Leaf(true)
         }
 
         text.startsWith("false", at) -> {
             at += 5
-            JsonBoolean(false)
+            Stored.Leaf(false)
         }
 
         text.startsWith("null", at) -> {
             at += 4
-            JsonNull
+            Stored.Leaf(null)
         }
 
         else -> fail(BEGINS)
     }
 
-    private fun readNumber(): JsonValue {
+    private fun readNumber(): Stored {
         val start = at
         if (peek() == '-') at += 1
         readDigits(atLeastOne = true)
@@ -309,11 +272,11 @@ private class Reader(private val text: String) {
             val value = written.toDoubleOrNull()
                 ?: fail("$written should be a number this machine can hold")
             if (value.isInfinite()) fail("$written should be a number this machine can hold")
-            return JsonDouble(value)
+            return Stored.Leaf(value)
         }
         val value = written.toLongOrNull()
             ?: fail("$written should be a whole number this machine can hold")
-        return JsonLong(value)
+        return Stored.Leaf(value)
     }
 
     private fun readDigits(atLeastOne: Boolean) {

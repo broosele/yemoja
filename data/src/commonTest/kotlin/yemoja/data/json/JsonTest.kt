@@ -1,5 +1,7 @@
 package yemoja.data.json
 
+import yemoja.data.Stored
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -11,59 +13,59 @@ import kotlin.test.assertTrue
  * ends with a quote. Inside a raw string a backslash stays a backslash, which is what a JSON
  * escape is, so the input reads as it would in a file.
  */
-private fun one(document: String): JsonValue =
-    (JsonValue.parse(document) as JsonMap).members.getValue("a")
+private fun one(document: String): Stored =
+    (Json.parse(document) as Stored.Members).members.getValue("a")
 
-private fun members(document: String): Map<String, JsonValue> =
-    (JsonValue.parse(document) as JsonMap).members
+private fun members(document: String): Map<String, Stored> =
+    (Json.parse(document) as Stored.Members).members
 
-private fun elements(document: String): List<JsonValue> =
-    (JsonValue.parse(document) as JsonList).elements
+private fun elements(document: String): List<Stored> =
+    (Json.parse(document) as Stored.Elements).elements
 
 private fun refused(document: String): String =
-    assertFailsWith<JsonFormatException> { JsonValue.parse(document) }.message ?: ""
+    assertFailsWith<JsonFormatException> { Json.parse(document) }.message ?: ""
 
 class JsonTextTest {
 
     @Test
     fun `a string reads as its text`() {
-        assertEquals(JsonString("Zeelandbrug"), one("""{"a": "Zeelandbrug"}"""))
-        assertEquals(JsonString(""), one("""{"a": ""}"""))
+        assertEquals(Stored.Leaf("Zeelandbrug"), one("""{"a": "Zeelandbrug"}"""))
+        assertEquals(Stored.Leaf(""), one("""{"a": ""}"""))
     }
 
     @Test
     fun `every escape is resolved`() {
-        assertEquals(JsonString("\""), one("""{"a": "\""}"""))
-        assertEquals(JsonString("\\"), one("""{"a": "\\"}"""))
-        assertEquals(JsonString("/"), one("""{"a": "\/"}"""))
-        assertEquals(JsonString("\u0008"), one("""{"a": "\b"}"""))
-        assertEquals(JsonString("\u000C"), one("""{"a": "\f"}"""))
-        assertEquals(JsonString("\n"), one("""{"a": "\n"}"""))
-        assertEquals(JsonString("\r"), one("""{"a": "\r"}"""))
-        assertEquals(JsonString("\t"), one("""{"a": "\t"}"""))
-        assertEquals(JsonString("é"), one("""{"a": "é"}"""))
+        assertEquals(Stored.Leaf("\""), one("""{"a": "\""}"""))
+        assertEquals(Stored.Leaf("\\"), one("""{"a": "\\"}"""))
+        assertEquals(Stored.Leaf("/"), one("""{"a": "\/"}"""))
+        assertEquals(Stored.Leaf("\u0008"), one("""{"a": "\b"}"""))
+        assertEquals(Stored.Leaf("\u000C"), one("""{"a": "\f"}"""))
+        assertEquals(Stored.Leaf("\n"), one("""{"a": "\n"}"""))
+        assertEquals(Stored.Leaf("\r"), one("""{"a": "\r"}"""))
+        assertEquals(Stored.Leaf("\t"), one("""{"a": "\t"}"""))
+        assertEquals(Stored.Leaf("é"), one("""{"a": "é"}"""))
     }
 
     @Test
     fun `a character outside the basic plane survives as its two halves`() {
         // A Kotlin string is UTF-16, so the pair needs no joining.
         val read = one("""{"a": "🐟"}""")
-        assertEquals(JsonString("🐟"), read)
-        assertEquals(2, (read as JsonString).value.length)
+        assertEquals(Stored.Leaf("🐟"), read)
+        assertEquals(2, ((read as Stored.Leaf).value as String).length)
     }
 
     @Test
     fun `a hexadecimal escape reads as its character`() {
-        assertEquals(JsonString("A"), one("""{"a": "\u0041"}"""))
-        assertEquals(JsonString("\u00E9"), one("""{"a": "\u00e9"}"""))
-        assertEquals(JsonString("\u00E9"), one("""{"a": "\u00E9"}"""))
-        assertEquals(JsonString("\u2028"), one("""{"a": "\u2028"}"""))
+        assertEquals(Stored.Leaf("A"), one("""{"a": "\u0041"}"""))
+        assertEquals(Stored.Leaf("\u00E9"), one("""{"a": "\u00e9"}"""))
+        assertEquals(Stored.Leaf("\u00E9"), one("""{"a": "\u00E9"}"""))
+        assertEquals(Stored.Leaf("\u2028"), one("""{"a": "\u2028"}"""))
     }
 
     @Test
     fun `an escaped surrogate pair joins itself`() {
         val read = one("""{"a": "\uD83D\uDC1F"}""")
-        assertEquals(JsonString("\uD83D\uDC1F"), read)
+        assertEquals(Stored.Leaf("\uD83D\uDC1F"), read)
     }
 
     @Test
@@ -85,25 +87,25 @@ class JsonNumberTest {
 
     @Test
     fun `a number with no point and no exponent is whole`() {
-        assertEquals(JsonLong(7), one("""{"a": 7}"""))
-        assertEquals(JsonLong(-7), one("""{"a": -7}"""))
-        assertEquals(JsonLong(0), one("""{"a": 0}"""))
-        assertEquals(JsonLong(108000), one("""{"a": 108000}"""))
+        assertEquals(Stored.Leaf(7L), one("""{"a": 7}"""))
+        assertEquals(Stored.Leaf(-7L), one("""{"a": -7}"""))
+        assertEquals(Stored.Leaf(0L), one("""{"a": 0}"""))
+        assertEquals(Stored.Leaf(108000L), one("""{"a": 108000}"""))
     }
 
     @Test
     fun `a number with a point or an exponent is a fraction`() {
-        assertEquals(JsonDouble(11.8), one("""{"a": 11.8}"""))
-        assertEquals(JsonDouble(-0.5), one("""{"a": -0.5}"""))
-        assertEquals(JsonDouble(1000.0), one("""{"a": 1e3}"""))
-        assertEquals(JsonDouble(0.0015), one("""{"a": 1.5E-3}"""))
+        assertEquals(Stored.Leaf(11.8), one("""{"a": 11.8}"""))
+        assertEquals(Stored.Leaf(-0.5), one("""{"a": -0.5}"""))
+        assertEquals(Stored.Leaf(1000.0), one("""{"a": 1e3}"""))
+        assertEquals(Stored.Leaf(0.0015), one("""{"a": 1.5E-3}"""))
     }
 
     @Test
     fun `seven and seven point zero are told apart`() {
         // The whole point of the split: a whole number field refuses 7.0 and a number takes 7.
-        assertIs<JsonLong>(one("""{"a": 7}"""))
-        assertIs<JsonDouble>(one("""{"a": 7.0}"""))
+        assertIs<Stored.Leaf>(one("""{"a": 7}"""))
+        assertIs<Stored.Leaf>(one("""{"a": 7.0}"""))
     }
 
     @Test
@@ -127,15 +129,15 @@ class JsonTruthTest {
 
     @Test
     fun `true and false read as themselves`() {
-        assertEquals(JsonBoolean(true), one("""{"a": true}"""))
-        assertEquals(JsonBoolean(false), one("""{"a": false}"""))
+        assertEquals(Stored.Leaf(true), one("""{"a": true}"""))
+        assertEquals(Stored.Leaf(false), one("""{"a": false}"""))
     }
 
     @Test
     fun `null reads as null, for something else to judge`() {
         // A reader does not know what a field is, so it carries a null rather than refusing it.
-        assertEquals(JsonNull, one("""{"a": null}"""))
-        assertEquals(listOf(JsonNull, JsonLong(1)), elements("""[null, 1]"""))
+        assertEquals(Stored.Leaf(null), one("""{"a": null}"""))
+        assertEquals(listOf(Stored.Leaf(null), Stored.Leaf(1L)), elements("""[null, 1]"""))
     }
 
     @Test
@@ -153,15 +155,15 @@ class JsonMembersTest {
     fun `an object reads its members in the order the file wrote them`() {
         val read = members("""{"name": "Anna", "rating": 7, "deco": false}""")
         assertEquals(listOf("name", "rating", "deco"), read.keys.toList())
-        assertEquals(JsonString("Anna"), read["name"])
-        assertEquals(JsonLong(7), read["rating"])
-        assertEquals(JsonBoolean(false), read["deco"])
+        assertEquals(Stored.Leaf("Anna"), read["name"])
+        assertEquals(Stored.Leaf(7L), read["rating"])
+        assertEquals(Stored.Leaf(false), read["deco"])
     }
 
     @Test
     fun `an empty object is an object`() {
-        assertEquals(JsonMap(emptyMap()), JsonValue.parse("{}"))
-        assertEquals(JsonMap(emptyMap()), JsonValue.parse("  {  }  "))
+        assertEquals(Stored.Members(emptyMap()), Json.parse("{}"))
+        assertEquals(Stored.Members(emptyMap()), Json.parse("  {  }  "))
     }
 
     @Test
@@ -183,20 +185,20 @@ class JsonElementsTest {
     @Test
     fun `an array reads its elements in order`() {
         val read = elements("""["@anna_devries", "john"]""")
-        assertEquals(listOf(JsonString("@anna_devries"), JsonString("john")), read)
+        assertEquals(listOf(Stored.Leaf("@anna_devries"), Stored.Leaf("john")), read)
     }
 
     @Test
     fun `an empty array is an array`() {
-        assertEquals(JsonList(emptyList()), JsonValue.parse("[]"))
+        assertEquals(Stored.Elements(emptyList()), Json.parse("[]"))
     }
 
     @Test
     fun `an array holds whatever a value may be`() {
         val read = elements("""[[0, 0], [30, 8.4]]""")
         assertEquals(2, read.size)
-        assertEquals(listOf(JsonLong(30), JsonDouble(8.4)),
-            (read[1] as JsonList).elements)
+        assertEquals(listOf(Stored.Leaf(30L), Stored.Leaf(8.4)),
+            (read[1] as Stored.Elements).elements)
     }
 
     @Test
@@ -218,7 +220,7 @@ class JsonForgivenessTest {
     @Test
     fun `a byte order mark at the start is skipped`() {
         // An editor on Windows leaves one, and nobody can see it to take it out again.
-        assertEquals(JsonMap(emptyMap()), JsonValue.parse("\uFEFF{}"))
+        assertEquals(Stored.Members(emptyMap()), Json.parse("\uFEFF{}"))
         assertEquals(2, members("\uFEFF{\"a\": 1, \"b\": 2}").size)
         // Only at the very start. Anywhere else it is a character like any other.
         assertTrue(refused("{}\uFEFF").contains("nothing should follow"))
@@ -234,7 +236,7 @@ class JsonForgivenessTest {
     @Test
     fun `space between anything is ignored`() {
         val spaced = "{\n  \"a\" :\t[ 1 ,\r\n 2 ]\n}"
-        assertEquals(2, (members(spaced).getValue("a") as JsonList).elements.size)
+        assertEquals(2, (members(spaced).getValue("a") as Stored.Elements).elements.size)
     }
 }
 
@@ -263,7 +265,7 @@ class JsonFailureTest {
     fun `nesting is allowed up to the limit`() {
         // The limit is a guard against a corrupt file, not against a deep one.
         val deep = "[".repeat(60) + "1" + "]".repeat(60)
-        JsonValue.parse(deep)
+        Json.parse(deep)
     }
 
     @Test
@@ -299,15 +301,15 @@ class JsonDocumentTest {
             listOf("date", "rating", "max_depth", "deco", "buddies", "profiles"),
             read.keys.toList(),
         )
-        assertEquals(JsonDouble(11.8), read["max_depth"])
-        assertEquals(JsonLong(7), read["rating"])
+        assertEquals(Stored.Leaf(11.8), read["max_depth"])
+        assertEquals(Stored.Leaf(7L), read["rating"])
 
-        val profile = ((read.getValue("profiles") as JsonMap)
-            .members.getValue("p1") as JsonMap).members
-        val firstSample = (profile.getValue("depth") as JsonList).elements[0]
+        val profile = ((read.getValue("profiles") as Stored.Members)
+            .members.getValue("p1") as Stored.Members).members
+        val firstSample = (profile.getValue("depth") as Stored.Elements).elements[0]
         assertEquals(
-            listOf(JsonLong(0), JsonLong(0)),
-            (firstSample as JsonList).elements,
+            listOf(Stored.Leaf(0L), Stored.Leaf(0L)),
+            (firstSample as Stored.Elements).elements,
         )
     }
 }

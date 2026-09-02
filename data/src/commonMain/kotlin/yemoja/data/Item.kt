@@ -23,7 +23,7 @@ import kotlin.reflect.KClass
 sealed class Item(
     val description: ItemDescription,
     fields: Map<String, Result<Any>>,
-    unrecognisedFields: Map<String, Any>,
+    unrecognisedFields: Map<String, Stored>,
 ) {
 
     /**
@@ -43,12 +43,12 @@ sealed class Item(
      * A newer version's field and a hand-typed misspelling are both here and neither can be told
      * from the other, which is why they are kept rather than judged. `DATA-65`.
      *
-     * **The values are the source's own** — a reader's tree, for a file — and nothing here looks
-     * inside one. Only a writer from the same source ever touches them, so no derivation, no
-     * check and no interface has a second shape to handle, which is what `DATA-64` refused when
-     * it kept a source's types out of a result. An item assembled in memory has none.
+     * Held as [Stored], which every source produces and none of them owns, so a writer for one
+     * source can put back what a reader for another handed over. Nothing here looks inside one:
+     * an unrecognised field is never derived from, shown, checked or read as a value. An item
+     * assembled in memory has none.
      */
-    val unrecognisedFields: Map<String, Any> = unrecognisedFields.toMap()
+    val unrecognisedFields: Map<String, Stored> = unrecognisedFields.toMap()
 
     /** The items this one belongs to, and the only way to reach anything outside it. */
     abstract val set: ItemSet
@@ -139,7 +139,7 @@ class ReferenceableItem(
     description: ItemDescription,
     fields: Map<String, Result<Any>>,
     override val set: ItemSet,
-    unrecognisedFields: Map<String, Any> = emptyMap(),
+    unrecognisedFields: Map<String, Stored> = emptyMap(),
 ) : Item(description, fields, unrecognisedFields)
 
 /**
@@ -158,7 +158,7 @@ class OwnedItem(
     description: ItemDescription,
     fields: Map<String, Result<Any>>,
     val parent: Item,
-    unrecognisedFields: Map<String, Any> = emptyMap(),
+    unrecognisedFields: Map<String, Stored> = emptyMap(),
 ) : Item(description, fields, unrecognisedFields) {
 
     // The owner's, by definition. Holding a second copy is a second thing to keep in step.
