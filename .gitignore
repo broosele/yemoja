@@ -17,8 +17,6 @@ desktop.ini
 __pycache__/
 *.py[cod]
 
-# Dart and Flutter build output
-.dart_tool/
+# Gradle build output
+.gradle/
 build/
-.flutter-plugins
-.flutter-plugins-dependencies

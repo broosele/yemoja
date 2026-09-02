@@ -6,6 +6,20 @@ not finished without them.
 **The documentation checks are a separate thing** and stay in Python — they keep the
 documents and the data honest with each other rather than exercising code. See `TEST-2`.
 
+## Running them
+
+```
+./gradlew build              the whole build, tests included
+./gradlew :data:jvmTest      one layer's tests
+python tool/checkdata.py     the documents against the data
+python tool/checklinks.py    the links, the examples and the glossary
+```
+
+Two runners, on purpose. Both are run before a commit.
+
+The Kotlin task is `jvmTest` rather than `test`, because a multiplatform module names its
+test task after the target. When there is more than one, `allTests` runs the lot.
+
 ## Why tests sit with the module they cover
 
 There was once one test tree at the root, mirroring one source tree, because `dart test`

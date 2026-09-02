@@ -756,11 +756,13 @@ dependency on logic, UI, or a specific source.
 ```
 data/
   doc.md          this file — the item model, items, id, validation
+  build.gradle.kts  the module
   libraries.md    reference data shipped with the application
   json/           the JSON file source (doc.md, requirements.md)
   src/commonMain/kotlin/yemoja/data/
                   Description.kt   what a type is, and what a field is
                   Gas.kt           a breathing mix, in whole percentages
+                  Item.kt          one item of one type, a placeholder for now
                   Moment.kt        a day, a time of day, and the two together
                   Reference.kt     naming another item, and what it points at
                   Result.kt        what reading a field gave, and one member of a collection

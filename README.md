@@ -44,6 +44,13 @@ these decisions and would only have misled anyone reading it.
 Nothing is installable yet. This section will cover, per platform, how to install a
 release and how to build and run from source, once there is something to run.
 
+**Building what exists** needs a JDK 21 and nothing else. The Gradle wrapper fetches its
+own Gradle, and Gradle fetches the Kotlin compiler, so `./gradlew build` from the root is
+the whole of it. Running the tests is in [testing.md](testing.md).
+
+Only the JVM target is built. The native targets need a C++ toolchain and Developer Mode,
+and Android needs its SDK; each joins when the platform it serves is worked on.
+
 Development prerequisites are per platform and are documented with each target — for
 the current first priority, see [ui/gui/desktop/windows/doc.md](ui/gui/desktop/windows/doc.md).
 
