@@ -882,6 +882,30 @@ To settle when we discuss architecture:
   remembers its own.
 ## Settled and relocated
 
+- **DATA-85 — How an owned item is built, when neither it nor its owner can exist first.**
+  *Settled:* **the owner builds it**, by handing itself to whatever builds its fields.
+
+  An owned item takes its parent at construction, and the parent's fields are what hold the
+  owned item, so there is no order in which both can be whole. The same knot appeared with
+  an item set and was cut by letting the set be filled afterwards, which is why it was worth
+  refusing the same answer twice.
+
+  An item's fields are therefore built by a function the constructor passes itself to. Both
+  links stay fixed, no half-built owned item is ever visible, and construction is finished
+  when the constructor returns, which is what `DATA-5` asks for. An item whose fields hold no
+  owned item is built from a plain mapping and never sees the difference.
+
+  **The rule that makes it safe: nothing outside the item is read while it is being built.**
+  Not the item set, not a parent's fields, not another item. All of those are still being
+  assembled, and a property read in that window has not been given its value yet — an owned
+  item asking for the set during construction would walk up to an owner whose set is not
+  there. Storing a reference is fine; following one is not.
+
+  Two alternatives were refused. **Filling the owner's fields afterwards** would make the
+  field mapping something that changes, and everything that reads a field rests on its not
+  changing. **Giving an owned item its parent afterwards** leaves a window in which one
+  exists without an owner, and nothing stops it being used in that state.
+
 - **DATA-84 — What an id may contain.** *Settled:* **lowercase ASCII letters, digits, `_`,
   `-` and `.`**, with `#` reserved as the index separator and forbidden in a base. Not empty,
   and not starting or ending with `_`, `-` or `.`.

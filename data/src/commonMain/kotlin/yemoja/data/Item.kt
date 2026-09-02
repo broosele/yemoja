@@ -18,11 +18,18 @@ import kotlin.reflect.KClass
  * **Changing one is absent.** Nothing here sets a field, adds an owned item or deletes anything;
  * that waits on the journal.
  *
+ * **Nothing outside an item is read while it is being built.** The fields are built by a function
+ * the constructor hands itself to, so an owned item takes the parent it belongs to and the parent
+ * is finished the moment its own constructor returns. That works only because the building never
+ * looks outward: not at [set], not at a parent's fields, not at another item. Every one of those
+ * is still being assembled, and a property read in that window has not been given its value yet.
+ * `DATA-85`.
+ *
  * Examples of a type include a dive, a person and a profile.
  */
 sealed class Item(
     val description: ItemDescription,
-    fields: Map<String, Result<Any>>,
+    fields: (Item) -> Map<String, Result<Any>>,
     unrecognisedFields: Map<String, Stored>,
 ) {
 
@@ -35,7 +42,7 @@ sealed class Item(
      * Only stored fields. A derived one is worked out and never kept, and an absent one is not a
      * key, so [Result.Absent] never appears as a value here.
      */
-    val fields: Map<String, Result<Any>> = fields.toMap()
+    val fields: Map<String, Result<Any>> = fields(this).toMap()
 
     /**
      * Fields the description does not name, kept as the source handed them over.
@@ -137,10 +144,19 @@ sealed class Item(
  */
 class ReferenceableItem(
     description: ItemDescription,
-    fields: Map<String, Result<Any>>,
+    fields: (Item) -> Map<String, Result<Any>>,
     override val set: ItemSet,
     unrecognisedFields: Map<String, Stored> = emptyMap(),
-) : Item(description, fields, unrecognisedFields)
+) : Item(description, fields, unrecognisedFields) {
+
+    /** An item whose fields hold no owned item needs nothing from itself to build them. */
+    constructor(
+        description: ItemDescription,
+        fields: Map<String, Result<Any>>,
+        set: ItemSet,
+        unrecognisedFields: Map<String, Stored> = emptyMap(),
+    ) : this(description, { fields }, set, unrecognisedFields)
+}
 
 /**
  * OwnedItem is an item that exists only inside another.
@@ -156,10 +172,18 @@ class ReferenceableItem(
  */
 class OwnedItem(
     description: ItemDescription,
-    fields: Map<String, Result<Any>>,
+    fields: (Item) -> Map<String, Result<Any>>,
     val parent: Item,
     unrecognisedFields: Map<String, Stored> = emptyMap(),
 ) : Item(description, fields, unrecognisedFields) {
+
+    /** An owned item may own others, and nests the same way. */
+    constructor(
+        description: ItemDescription,
+        fields: Map<String, Result<Any>>,
+        parent: Item,
+        unrecognisedFields: Map<String, Stored> = emptyMap(),
+    ) : this(description, { fields }, parent, unrecognisedFields)
 
     // The owner's, by definition. Holding a second copy is a second thing to keep in step.
     override val set: ItemSet get() = parent.set

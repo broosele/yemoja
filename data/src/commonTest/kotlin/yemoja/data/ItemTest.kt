@@ -146,6 +146,53 @@ class ItemTest {
     }
 
     @Test
+    fun `an owned item is built against the parent it belongs to`() {
+        // Neither can exist first, so the parent hands itself to whatever builds its fields.
+        val owner = ReferenceableItem(
+            POSTBOX,
+            { parent -> mapOf("district" to stored(OwnedItem(DISTRICT, emptyMap(), parent))) },
+            set,
+        )
+        val owned = (owner.fields.getValue("district") as Result.Usable).value as OwnedItem
+        assertSame(owner, owned.parent)
+        assertSame(set, owned.set)
+    }
+
+    @Test
+    fun `a parent is finished when its constructor returns`() {
+        val owner = ReferenceableItem(
+            POSTBOX,
+            { parent -> mapOf("district" to stored(OwnedItem(DISTRICT, emptyMap(), parent))) },
+            set,
+        )
+        // Nothing was read outward while building, so everything is there afterwards.
+        assertSame(set, owner.set)
+        assertEquals(POSTBOX, owner.description)
+        assertEquals(setOf("district"), owner.fields.keys)
+    }
+
+    @Test
+    fun `owned items nest`() {
+        val owner = ReferenceableItem(
+            POSTBOX,
+            { parent ->
+                val outer = OwnedItem(
+                    DISTRICT,
+                    { middle -> mapOf("name" to stored(OwnedItem(DISTRICT, emptyMap(), middle))) },
+                    parent,
+                )
+                mapOf("district" to stored(outer))
+            },
+            set,
+        )
+        val outer = (owner.fields.getValue("district") as Result.Usable).value as OwnedItem
+        val inner = (outer.fields.getValue("name") as Result.Usable).value as OwnedItem
+        assertSame(outer, inner.parent)
+        assertSame(owner, outer.parent)
+        assertSame(set, inner.set)
+    }
+
+    @Test
     fun `an owned item reaches the set through its owner`() {
         val owner = postbox(set, emptyMap())
         val owned = OwnedItem(DISTRICT, emptyMap(), owner)
