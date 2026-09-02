@@ -98,6 +98,13 @@ sealed class FieldDescription(
      * [overrides] says the text is a stored value on a field that would otherwise work one out,
      * which decides the origin. It is given, not defaulted. Whoever reads knows which case it is,
      * and the wrong answer here is a correct-looking one.
+     *
+     * **Not every value arrives as text.** Parsing belongs to whatever the items came from, and a
+     * store that holds a kind already hands it over made. JSON has booleans and numbers, so it
+     * never calls this for them; it has no date or gas, so it does. `DATA-64`.
+     *
+     * A source that renders its own kinds back into text before calling this would make
+     * `"deco": "false"` and `"deco": false` the same value, which the format says they are not.
      */
     abstract fun parse(text: String, overrides: Boolean): Result<Any>
 
@@ -234,15 +241,15 @@ private val MISLEADING = setOf(
 /** Whether this ends a line, in any of the four ways one can be written. */
 private fun Char.breaksLine(): Boolean =
     this == '\n' || this == '\r' ||
-        category == CharCategory.LINE_SEPARATOR ||
-        category == CharCategory.PARAGRAPH_SEPARATOR
+            category == CharCategory.LINE_SEPARATOR ||
+            category == CharCategory.PARAGRAPH_SEPARATOR
 
 /** Whether this would not be seen, or would not be seen for what it is. */
 private fun Char.isHidden(): Boolean =
     category == CharCategory.CONTROL ||
-        category == CharCategory.LINE_SEPARATOR ||
-        category == CharCategory.PARAGRAPH_SEPARATOR ||
-        this in MISLEADING
+            category == CharCategory.LINE_SEPARATOR ||
+            category == CharCategory.PARAGRAPH_SEPARATOR ||
+            this in MISLEADING
 
 /**
  * TextDescription is a field holding one line of text: no line breaks, no tabs, and no
@@ -317,13 +324,14 @@ class MultilineTextDescription(
         value !is String -> Validity.Invalid("$name should be text")
         value.any { it != '\n' && it.isHidden() } ->
             Validity.Invalid("$name should not contain characters that cannot be seen")
+
         else -> Validity.Valid
     }
 }
 
 /**
  * DateDescription is a field holding a date, always written `"2026-02-23"`. No `units`
- * setting reaches it.
+ * setting is applicable.
  */
 class DateDescription(
     name: String,

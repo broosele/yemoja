@@ -912,10 +912,21 @@ To settle when we discuss architecture:
   and `lpt1` to `lpt9`, since `nul.json` cannot be created on Windows at all. A length cap
   around 200 characters follows from the id plus `.json` having to fit.
 
-  **Reading is not held to this.** A reference is validated permissively, so a hand-written
-  `@Andre` with an accent resolves and is reported rather than refused. Reading refuses only
-  what stops the format parsing or deceives a reader: whitespace, `*`, and what `DATA-83`
-  names. The strict rule binds when an id is minted.
+  **Reading is not held to this, and does not need to be.** An id arrives either as a file
+  name, which the file system has already proved legal, or inside a reference — where it
+  resolves to an item that came from a file, or dangles and never becomes a path at all. There
+  is no case where reading has to check that an id could be a file name. The rule binds when an
+  id is minted and when an item is written to a file of its own, and nowhere else.
+
+  So a reference is validated permissively: a hand-written `@Andre` with an accent resolves
+  and is reported rather than refused. Reading refuses only what stops the format parsing:
+  whitespace, and `*`.
+
+  **What `DATA-83` refuses in text is deliberately not refused here.** An invisible or
+  confusable character in an id makes a reference that looks right and dangles, which is a
+  confusing failure but a visible one — the interface says it points at nothing. In a `name`
+  the same character gives two people who look identically named with no signal at all, which
+  is why it is worth the code there and not here.
 
 - **DATA-83 — What text may contain.** *Settled:* **nothing a reader would not see, and
   nothing that reorders what is shown.**
