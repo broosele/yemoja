@@ -44,7 +44,7 @@ together without contradicting each other.
 The list will grow. At present:
 
 - `default_gf_low`, `default_gf_high` — the gradient factors a new dive plan starts
-  with.
+  with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`.
 
 Those two are worth a word, because their name is doing real work. They are *defaults*
 for a new plan and nothing more. A plan keeps the gradient factors it was made with, so

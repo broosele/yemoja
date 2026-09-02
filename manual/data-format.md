@@ -228,6 +228,11 @@ after the field.
   nothing here is ever read as a pointer. Tabs are not.
 - **whole number** — no decimal point: `12`.
 - **number** — with or without one: `31.4`.
+
+  A number that is a proportion is written **from 0 to 1**: `compressible_fraction` is
+  `0.29`, and a gradient factor of 20 is written `0.2`. Two kinds run from 0 to 100
+  instead — a field whose name says *percentage*, and `cns`, which is quoted that way
+  everywhere else in diving too. The field list says which each one is.
 - **true or false** — written `true` or `false`, and nothing else.
 - **date** — always `"2026-02-23"`.
 - **time** — always `"09:15:00"`.

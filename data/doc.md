@@ -301,6 +301,20 @@ One deliberate exception: a person's `middle_names` is a single piece of text ho
 however many there are, not a list of them. The plural belongs to the English phrase
 rather than to the field. It is the exception that proves the rule needs stating.
 
+### A proportion runs from 0 to 1
+
+`compressible_fraction` is `0.29`, and a gradient factor of 20 is `0.2`.
+
+Two things run from 0 to 100 instead. A name containing *percentage* says so outright. And
+a term of art already defined as a percentage keeps its own name and its own scale: `cns`
+is the only one in the model, because the CNS oxygen clock is quoted against a limit of
+100 wherever it appears, and `cns_percentage` would put a scale word on a term that
+carries its scale already.
+
+Nothing in a description says which. A proportion is dimensionless either way by
+`DATA-68`, and a range cannot tell them apart, since a CNS clock passes 100 on purpose. So
+[../manual/data-fields.md](../manual/data-fields.md) is where a field's scale is read.
+
 ### Fields common to every type
 
 Some fields belong to every referenceable type rather than to one of them. `remarks` —
@@ -864,6 +878,31 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-82 — Whether a proportion is written as a fraction or as a percentage.**
+  *Settled:* **a fraction, from 0 to 1.** A name containing *percentage* is the exception,
+  and so is a term of art already defined as one.
+
+  The model had both and nothing said which. `compressible_fraction` held `0.29`, the
+  gradient factors held `0.2`, and `cns` held `44` — three proportions on two scales, told
+  apart only by prose in the manual.
+
+  **`cns` keeps its name and its scale.** The CNS oxygen clock is the share of the
+  single-exposure limit used up at the partial pressure breathed, and it is quoted against
+  100 in the published tables, in training, and on every computer that shows it. That 100
+  is the threshold the whole idea is stated against, so a fraction would match nothing a
+  diver reads, and `cns_percentage` would put a scale word on a term of art that carries
+  its scale already.
+
+  **A description does not say which.** `DATA-68` leaves a proportion dimensionless either
+  way, and a range cannot help, since a CNS clock passes 100 on purpose. So this is a rule
+  about how a field is written and read rather than something a program asks. A front end
+  needing it in code would want a property beside `range` on the number description; that
+  is not written, because nothing needs it yet.
+
+  `DATA-55` is why it could not wait. UDDF states gas fractions from 0 to 1, so an exporter
+  converts, and matching a format's representation is a constraint while fields are being
+  defined rather than a task for when an exporter is written.
 
 - **DATA-79 — Whether a referenceable item and an owned item are one class or two.**
   *Settled:* **two, under a sealed `Item`.**
