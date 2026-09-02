@@ -30,16 +30,6 @@ enum class Dimension {
 enum class Cardinality { SINGLE, LIST, KEYED, SERIES, KEYED_SERIES }
 
 /**
- * ValueFormatException is thrown for text that does not say what it claims to: `EAN200`, or a
- * date that is not a date.
- *
- * A bad value, not a bad program. A parser this project owns throws this, and nothing else does, so
- * catching it catches only that. An `IllegalArgumentException` from somewhere unrelated stays a
- * fault instead of reaching a user as a misspelt gas.
- */
-class ValueFormatException(message: String) : RuntimeException(message)
-
-/**
  * Validity is whether a value is acceptable for the field it is offered to, and why not.
  *
  * Not [Result]. That answers what reading a *stored* value gave, and carries the raw text so an

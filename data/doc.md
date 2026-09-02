@@ -780,7 +780,8 @@ data/
                   ItemSet.kt       everything loaded, by id and by type
                   Moment.kt        a day, a time of day, and the two together
                   Reference.kt     naming another item, and what it points at
-                  Result.kt        what reading a field gave, and one member of a collection
+                  Result.kt        what reading a field gave, one member of a collection,
+                                   and what a parser throws
                   Series.kt        values against time, and one sample of them
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover

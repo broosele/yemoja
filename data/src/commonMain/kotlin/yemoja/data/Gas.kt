@@ -72,22 +72,14 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
          * A bare `32` is refused: it could be a cylinder size. So is a mix naming a gas this model
          * does not hold. A three-part trimix must agree with itself.
          */
-        fun parse(text: String): Gas = try {
-            read(text)
-        } catch (impossible: IllegalArgumentException) {
-            // The constructor guards against a caller's bug. Here the numbers came from a
-            // file, so the complaint is about the text.
-            throw ValueFormatException("$text: ${impossible.message}")
-        }
-
-        private fun read(text: String): Gas {
+        fun parse(text: String): Gas {
             val written = text.filterNot { it.isWhitespace() }.uppercase()
             if (written == "AIR") return AIR
             if (written == "O2" || written == "OXYGEN") return OXYGEN
 
             TRIMIX.matchEntire(written)?.let { match ->
                 val (oxygen, helium, nitrogen) = match.destructured
-                val gas = Gas(oxygen.toInt(), helium.toInt())
+                val gas = mix(text, oxygen.toInt(), helium.toInt())
                 if (nitrogen.isNotEmpty() && nitrogen.toInt() != gas.percentN2) {
                     throw ValueFormatException(
                         "$text gives ${gas.percentN2}% nitrogen, not $nitrogen%"
@@ -98,9 +90,22 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
             // Bare digits fall through. No marker and no percent sign, so nothing says a
             // mix is meant.
             NITROX.matchEntire(written)?.let { match ->
-                if (!written.all { it.isDigit() }) return Gas(match.groupValues[1].toInt(), 0)
+                if (!written.all { it.isDigit() }) return mix(text, match.groupValues[1].toInt(), 0)
             }
             throw ValueFormatException("$text is not a mix")
+        }
+
+        /**
+         * A mix from numbers that were written down, so numbers that cannot be one are a bad
+         * value rather than a bad program.
+         *
+         * Only the constructor is caught. A fault anywhere else in [parse] stays a fault instead
+         * of reaching a user as a misspelt mix.
+         */
+        private fun mix(text: String, percentO2: Int, percentHe: Int): Gas = try {
+            Gas(percentO2, percentHe)
+        } catch (impossible: IllegalArgumentException) {
+            throw ValueFormatException("$text: ${impossible.message}")
         }
     }
 }

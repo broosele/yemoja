@@ -83,3 +83,13 @@ sealed class Element<out T : Any> {
      */
     data class Unusable(val raw: Any?, val reason: String) : Element<Nothing>()
 }
+
+/**
+ * ValueFormatException is thrown for text that does not say what it claims to: `EAN200`, or a
+ * date that is not a date.
+ *
+ * A bad value, not a bad program. A parser this project owns throws this, and nothing else does, so
+ * catching it catches only that. An `IllegalArgumentException` from somewhere unrelated stays a
+ * fault instead of reaching a user as a misspelt gas.
+ */
+class ValueFormatException(message: String) : RuntimeException(message)
