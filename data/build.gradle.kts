@@ -10,6 +10,10 @@ kotlin {
     jvm()
 
     sourceSets {
+        commonMain.dependencies {
+            // Files, which common Kotlin has none of. Behind FileStore, so nothing else sees it.
+            implementation("com.squareup.okio:okio:3.18.1")
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }

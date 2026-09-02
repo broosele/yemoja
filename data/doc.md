@@ -765,6 +765,10 @@ What follows from the distinction:
 Nothing above it. This is the bottom of the stack, and it must stay free of any
 dependency on logic, UI, or a specific source.
 
+**One library**, and it is named in one file. Common Kotlin has no file access at all, so
+reading a logbook needs something outside; `DATA-86` chose Okio and put it behind a
+four-method interface, so `DiskFileStore` is the only place that knows which library it is.
+
 ## Structure
 
 ```
@@ -775,8 +779,11 @@ data/
   json/           the JSON file source (doc.md, requirements.md)
   src/commonMain/kotlin/yemoja/data/
                   Description.kt   what a type is, and what a field is
+                  DiskFileStore.kt the machine's own files, the one place Okio is named
+                  FileStore.kt     the few file operations reading needs, and one in memory
                   Gas.kt           a breathing mix, in whole percentages
                   Item.kt          one item of one type, referenceable or owned
+                  ItemReader.kt    a description and a tree, walked into an item
                   ItemSet.kt       everything loaded, by id and by type
                   Moment.kt        a day, a time of day, and the two together
                   Reference.kt     naming another item, and what it points at
@@ -881,6 +888,42 @@ To settle when we discuss architecture:
   on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
   remembers its own.
 ## Settled and relocated
+
+- **DATA-86 — What supplies files, and where it lands.** *Settled:* **Okio, behind a
+  four-method interface**, so the library is named in one file and nothing above it knows
+  which library it is.
+
+  Common Kotlin has no files. Something outside has to supply them, and unlike a date — which
+  `DATA-74` declined a library for and wrote instead — this cannot be written here at all.
+
+  **Okio over kotlinx-io**, which was the close call. `kotlinx-io` is smaller and is Kotlin's
+  own, but it is pre-1.0 and its shape can still move, which is the wrong thing to absorb in
+  the layer that holds a user's logbook. The size between them is a couple of hundred
+  kilobytes before shrinking, against an API that has carried other people's work for years.
+  They are the same design either way: `kotlinx-io` is an adaptation of Okio's. If it settles,
+  the interface is what makes changing cheap.
+
+  **Writing it per platform** was the third option. It needs five implementations of
+  something one library already does, on toolchains this machine does not have, and each
+  platform's file rules differ in ways that are found late.
+
+  **Four operations, because reading a logbook needs four**: whether a path is a file, whether
+  it is a folder, what is directly inside a folder, and the whole of a file as text. `JSON-21`
+  has to tell a `dives` folder from a `dives.json` file, and the files are small enough to
+  read whole. Writing widens this when there is a writer; guessing at it now would be
+  designing against no implementation.
+
+  **The interface earns itself twice over in tests.** A second implementation holds the files
+  in memory, so nothing above needs a disk, and it needs no fake-file-system library to do it.
+  Both are put to the same questions by the same tests, so the one standing in for a logbook
+  cannot drift from the one that is a logbook.
+
+  **A path is relative and written with `/`.** The store stands for the logbook's folder, so
+  nothing above it handles a separator, a drive letter or a home directory.
+
+  Still open, and a requirement rather than a library question: `requirements.md` says nothing
+  about crash-safety — no atomic write, no temporary file, no partial write. That is what
+  decides whether the writing half needs a rename as well as a write.
 
 - **DATA-85 — How an owned item is built, when neither it nor its owner can exist first.**
   *Settled:* **the owner builds it**, by handing itself to whatever builds its fields.
@@ -1107,8 +1150,11 @@ To settle when we discuss architecture:
   `LocalTime` are exactly these two, and their arithmetic is proven by everyone else using
   it — where ours is proven only by us. That is the real cost, and it is not nothing.
 
-  Against it: this layer has no dependencies at all, and the first one is the expensive
-  one. What we need is narrow — a calendar date, a time of day, and the number of days or
+  Against it: this layer had no dependencies at the time, and the first one is the expensive
+  one. `DATA-86` has since taken one, for files, which common Kotlin does not have at all —
+  where a date and a time can be written and were.
+
+  What we need is narrow — a calendar date, a time of day, and the number of days or
   seconds between two of them — where the library's reach is time zones, instants and a
   copy of the IANA database that goes stale on a phone. `DATA-41` already declined the
   zones. Taking the package for the two small types would be taking the rest as well.

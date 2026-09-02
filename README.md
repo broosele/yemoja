@@ -112,9 +112,11 @@ not — see *Licensing* below.
 
 ### Main dependencies
 
-The language is **Kotlin**, and the interface is **Compose Multiplatform**. The rest is
-not settled: a library for reading dive computers, and a Bluetooth LE library per
-platform. Each will be recorded with the layer that needs it, once chosen.
+The language is **Kotlin**, and the interface is **Compose Multiplatform**. The data layer
+takes **Okio** for file access, which common Kotlin has none of, behind an interface of its
+own so that one file names it — see `DATA-86` in [data/doc.md](data/doc.md). The rest is not
+settled: a library for reading dive computers, and a Bluetooth LE library per platform. Each
+will be recorded with the layer that needs it, once chosen.
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.
