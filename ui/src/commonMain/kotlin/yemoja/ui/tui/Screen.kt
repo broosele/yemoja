@@ -479,9 +479,14 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     /**
      * [line] as as many rows as it takes, each at most [width] wide.
      *
-     * Broken between characters rather than between words. A value is not prose — an id, a
-     * position, a gas mix — and breaking one where a space happens to fall would suggest
-     * that the space meant something.
+     * **Broken at a space where there is one near the end of the row, and between characters
+     * where there is not.** `remarks` is the one field long enough to wrap and it is prose, so
+     * breaking it mid-word reads as damage. A value that is not prose — an id, a position, a
+     * gas mix — holds no space to break at and falls through to the character break, which is
+     * what it wanted anyway.
+     *
+     * Near the end means the last quarter of the row. A space earlier than that is not a
+     * better break than a clean one at the edge; it is a ragged row with a hole in it.
      */
     private fun wrapped(line: Line, width: Int): List<Line> {
         // Flattened whether or not it fits. Measuring the escaped form and painting the
@@ -497,10 +502,31 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         }
         val styles = line.spans.firstOrNull()?.styles.orEmpty()
         val indent = " ".repeat(text.takeWhile { it == ' ' }.length.coerceAtMost(width / 4))
-        val rest = (width - indent.length).coerceAtLeast(1)
-        val pieces = listOf(text.take(width)) +
-            text.drop(width).chunked(rest).map { indent + it }
+        val pieces = ArrayList<String>()
+        var rest = text
+        var room = width
+        while (rest.length > room) {
+            val at = breakAt(rest, room)
+            pieces.add(rest.take(at).trimEnd())
+            // The space broken at is the break, so it is not carried to the next row.
+            rest = indent + rest.drop(at).trimStart()
+            room = (width - indent.length).coerceAtLeast(1) + indent.length
+        }
+        pieces.add(rest)
         return pieces.map { Line(listOf(Span(it, styles))) }
+    }
+
+    /**
+     * How much of [text] the next row of [room] characters takes.
+     *
+     * The last space in the final quarter, or the whole row where there is none. Measured from
+     * one past the row so that a space landing exactly at the edge counts as the break rather
+     * than as the first character of the next row.
+     */
+    private fun breakAt(text: String, room: Int): Int {
+        val edge = text.take(room + 1)
+        val space = edge.lastIndexOf(' ')
+        return if (space > room - room / 4) space else room
     }
 
     /** The tab bar: every type in order, the open one in brackets. */

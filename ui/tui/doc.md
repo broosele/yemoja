@@ -89,7 +89,16 @@ Three things it shows that a prettier interface would hide. A field with nothing
 still listed, because what a type *can* hold is half of what this is for. A value that could
 not be read shows why — `! north should be within -90.0..90.0 deg, but was 91.0 deg` — rather
 than a blank, which is what an absent field looks like and is not the same thing. And a value
-is shown in the form a file writes, `DATA-76`, so what is on screen is what is on disk.
+is shown in the form a file writes it, `DATA-76`: a date as `2026-02-23`, a reference with its
+`@`, a mix as `EAN32`.
+
+**That is the written form, not the written file.** Two things on screen were never on disk
+and are not meant to be. A worked-out value is shown like any other, in italic, because what
+a type holds is the point here and half of it is worked out. And a measurement is shown in
+the default unit whatever its file declared, reading having converted it — a dive written in
+feet is read as metres and shown as metres. Whether a front end should show a value back in
+the unit its file used is `UI-2`'s to answer, units being a setting rather than a fact about
+the item.
 
 **What a value is, is shown rather than told.** A reference is underlined, so what can be
 followed is visible before it is tried. A value written over one that would have been worked
@@ -303,8 +312,18 @@ where the user is in it.
   is a character somebody is typing and escape means *cancel this edit*; ctrl-C is the only one
   that survives intact. `TUI-3`.
 
-- **TUI-2 — Whether it is shipped to users or stays a development tool.** Affects how much
-   input validation and error recovery it needs.
+- **TUI-2 — Whether it is shipped to users or stays a development tool.** *Settled:*
+  **shipped**, as a power tool. Not yet, since nothing writes and a tool that only reads is
+  not one anybody needs, but it is built as something a user will meet rather than as a
+  workbench that happens to run.
+
+  That decides arguments rather than features. Input validation and error recovery are held
+  to the standard the rest of the application is, not to what a developer will put up with,
+  and a message reaching the screen is a message a user reads.
+
+  The raw look stays. Raw is what a power tool is for, and *no polish* was never the same
+  claim as *no care*. Nor does this make the TUI the GUI in a terminal: what is out of scope
+  above stays out, and `TUI-3` is still open about what it may edit.
 - **TUI-3 — Whether it can edit fields the GUI cannot**, and if so, how it avoids letting
    someone write data the GUI then cannot display.
 - **TUI-4 — What reads the keyboard.** *Settled:* **Mordant**, with its JNA module.

@@ -106,7 +106,7 @@ private fun holding(cardinality: Cardinality): String = when (cardinality) {
     Cardinality.LIST -> "several, in the order written"
     Cardinality.KEYED -> "several, each under a key"
     Cardinality.SERIES -> "values against time"
-    Cardinality.KEYED_SERIES -> "one series under each key"
+    Cardinality.KEYED_SERIES -> "a series under each key"
 }
 
 private fun roleOf(role: Role): String = when (role) {

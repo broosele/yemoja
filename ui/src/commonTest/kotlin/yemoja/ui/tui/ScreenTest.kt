@@ -34,8 +34,7 @@ private val THREE = logbook(
 
 private fun screen(set: ItemSet = THREE): Screen = Screen(set, Types.ALL)
 
-/** The chosen row of the list column, without its marker or its padding. */
-/** Tab along until the field called [name] is chosen, at whatever depth it sits. */
+/** Move down until the field called [name] is chosen, at whatever depth it sits. */
 private fun toField(screen: Screen, name: String) {
     repeat(screen.rows.size) { if (screen.field?.name != name) screen.press(Key.DOWN) }
     assertEquals(name, screen.field?.name)
@@ -51,16 +50,23 @@ private fun toTab(screen: Screen, name: String) {
 private fun body(screen: Screen, width: Int = 60, height: Int = 12): List<Line> =
     screen.paint(width, height).drop(2).dropLast(2)
 
+/** The chosen row of the list column, without its marker or its padding. */
 private fun chosen(screen: Screen): String? = body(screen).map { it.text }
     .firstOrNull { it.startsWith("> ") }
     ?.substringBefore("  ")
     ?.removePrefix("> ")
 
-/** One line with its runs of spaces squeezed, so a test states content and not padding. */
 /** What Screen shows a line break as: a backslash and an n, as a file writes one. */
 private const val ESCAPE = "\\n"
 
+/** One line with its runs of spaces squeezed, so a test states content and not padding. */
 private fun squeezed(line: String): String = line.trim().replace(Regex(" +"), " ")
+
+/** The rows an open field gives its value, which are the ones under the last heading. */
+private fun held(painted: List<String>): List<String> = painted
+    .dropWhile { !it.startsWith("What it holds") }
+    .drop(1)
+    .takeWhile { it.isNotBlank() }
 
 class TabTest {
 
@@ -334,6 +340,39 @@ class PaintingTest {
         val next = said[at + 1]
         assertTrue(next.startsWith("  "), "carried on in the same column: |$next|")
         assertTrue(next.isNotBlank(), "and there is more of it: $said")
+    }
+
+    @Test
+    fun `prose breaks at a space rather than through a word`() {
+        // `remarks` is the one field long enough to wrap and it is prose, so a mid-word break
+        // reads as damage rather than as a line ending.
+        val long = "Ebb runs hard and the visibility goes with it, so the second half of the " +
+            "dive is usually done along the wall rather than out over the sand."
+        val set = logbook("region.json" to """{"north_sea": {"remarks": "$long"}}""")
+        val screen = screen(set)
+        toTab(screen, "region")
+        toField(screen, "remarks")
+        screen.press(Key.OPEN)
+        val wrapped = held(screen.paint(50, 20).map { it.text })
+        assertTrue(wrapped.size >= 3, "it should take several rows: $wrapped")
+        for (row in wrapped) assertTrue(row.startsWith("  "), "one column: |$row|")
+        // Put back together it is the whole remark, each break standing in for its space.
+        assertEquals(long, wrapped.joinToString(" ") { it.trim() })
+    }
+
+    @Test
+    fun `a value with no space in it is broken where the row ends`() {
+        // An id, a position or a gas mix has nowhere better to break, and wants none.
+        val run = "a".repeat(72)
+        val set = logbook("region.json" to """{"north_sea": {"remarks": "$run"}}""")
+        val screen = screen(set)
+        toTab(screen, "region")
+        toField(screen, "remarks")
+        screen.press(Key.OPEN)
+        val rows = held(screen.paint(50, 20).map { it.text })
+        assertEquals(2, rows.size, rows.toString())
+        assertEquals(50, rows.first().length, "the first row is full: |${rows.first()}|")
+        assertEquals(run, rows.joinToString("") { it.trim() })
     }
 
     @Test
