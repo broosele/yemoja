@@ -590,14 +590,36 @@ class OpenFieldTest {
         repeat(2) { screen.press(Key.NEXT_FIELD) }
         assertEquals("colour", screen.field?.name)
         screen.press(Key.OPEN)
-        assertTrue("worked out" in opened(screen), opened(screen).toString())
+        assertTrue("What it holds (worked out)" in opened(screen), opened(screen).toString())
     }
 
     @Test
-    fun `a field holding nothing says so`() {
+    fun `a field holding nothing says so beside the heading, and adds nothing under it`() {
         val screen = invented("postbox.json" to """{"a": {}}""")
         screen.press(Key.OPEN)
-        assertTrue("nothing" in opened(screen), opened(screen).toString())
+        val said = opened(screen)
+        assertTrue("What it holds (nothing)" in said, said.toString())
+        // The heading is the last thing said, since there is nothing to say under it.
+        assertEquals("", said[said.indexOf("What it holds (nothing)") + 1])
+    }
+
+    @Test
+    fun `a value that could not be read says so beside the heading`() {
+        val screen = Screen(
+            LogbookReader.read(
+                MemoryFileStore(mapOf("region.json" to """{"r": {"north": 91.0}}""")),
+                Types.ALL,
+            ),
+            Types.ALL,
+        )
+        screen.press(Key.RIGHT)
+        repeat(6) { screen.press(Key.NEXT_FIELD) }
+        assertEquals("north", screen.field?.name)
+        screen.press(Key.OPEN)
+        val said = opened(screen)
+        assertTrue("What it holds (written, and could not be read)" in said, said.toString())
+        assertTrue(said.any { it.startsWith("north should be within") }, said.toString())
+        assertTrue(said.any { it.startsWith("as written:") }, said.toString())
     }
 
     @Test
@@ -726,5 +748,262 @@ class ListTest2 {
         assertTrue("- @one" in said, said.toString())
         assertTrue("- @three" in said, said.toString())
         assertTrue(said.any { it.startsWith("- !") }, said.toString())
+    }
+}
+
+/** Following a field that names several. The only reference any described type has is one. */
+class FollowListTest {
+
+    private val ROUNDS = ItemDescription("round", listOf(TextDescription("name")))
+
+    private val WALK = ItemDescription(
+        "walk",
+        listOf(
+            TextDescription("name"),
+            ReferenceDescription(
+                "rounds",
+                targetType = "round",
+                cardinality = Cardinality.LIST,
+                oneOffAllowed = true,
+            ),
+        ),
+    )
+
+    private val TYPES = listOf(WALK, ROUNDS)
+
+    private fun walk(rounds: String, vararg rest: Pair<String, String>): Screen {
+        val files = mapOf("walk.json" to """{"a": {"rounds": $rounds}}""") + mapOf(*rest)
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        screen.press(Key.NEXT_FIELD)
+        return screen
+    }
+
+    private val rounds =
+        "round.json" to """{"monday": {"name": "Monday"}, "tuesday": {"name": "Tuesday"}}"""
+
+    @Test
+    fun `a list of one is followed, which is every list a region has`() {
+        val screen = walk("""["@tuesday"]""", rounds)
+        screen.press(Key.FOLLOW)
+        assertEquals(ROUNDS, screen.type)
+        assertEquals("Tuesday", (screen.item!!.single<String>("name") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a list of several is followed to the first, which is the one on the row`() {
+        val screen = walk("""["@monday", "@tuesday"]""", rounds)
+        screen.press(Key.FOLLOW)
+        assertEquals("Monday", (screen.item!!.single<String>("name") as Result.Usable).value)
+    }
+
+    @Test
+    fun `one that names nothing is passed over for one that names something`() {
+        val screen = walk("""["@nowhere", "@tuesday"]""", rounds)
+        screen.press(Key.FOLLOW)
+        assertEquals("Tuesday", (screen.item!!.single<String>("name") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a plain name is not followed, there being nothing to open`() {
+        val screen = walk("""["Aunt Maud", "@tuesday"]""", rounds)
+        screen.press(Key.FOLLOW)
+        assertEquals("Tuesday", (screen.item!!.single<String>("name") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a list naming nothing that is there goes nowhere`() {
+        val screen = walk("""["@nowhere", "@elsewhere"]""", rounds)
+        screen.press(Key.FOLLOW)
+        assertEquals(WALK, screen.type)
+    }
+
+    @Test
+    fun `an empty list goes nowhere`() {
+        val screen = walk("[]", rounds)
+        screen.press(Key.FOLLOW)
+        assertEquals(WALK, screen.type)
+    }
+}
+
+/** Moving between the values of an open field, and following the one chosen. */
+class EntryCursorTest {
+
+    private val ROUNDS = ItemDescription("round", listOf(TextDescription("name")))
+
+    private val WALK = ItemDescription(
+        "walk",
+        listOf(
+            TextDescription("name"),
+            ReferenceDescription("rounds", targetType = "round", cardinality = Cardinality.LIST),
+        ),
+    )
+
+    private val TYPES = listOf(WALK, ROUNDS)
+
+    private val rounds = "round.json" to
+        """{"monday": {"name": "Monday"}, "tuesday": {"name": "Tuesday"},
+            "friday": {"name": "Friday"}}"""
+
+    /** A walk with these rounds, opened on the field that holds them. */
+    private fun opened(rounds_: String): Screen {
+        val files = mapOf("walk.json" to """{"a": {"rounds": $rounds_}}""") + mapOf(rounds)
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        screen.press(Key.NEXT_FIELD)
+        screen.press(Key.OPEN)
+        return screen
+    }
+
+    /** The bullet the cursor is on, without its mark. */
+    private fun chosenEntry(screen: Screen, height: Int = 24): String? = screen.paint(60, height)
+        .firstOrNull { row -> row.spans.any { Style.SELECTED in it.styles } }
+        ?.text?.trim()?.removePrefix("- ")
+
+    private val three = """["@monday", "@tuesday", "@friday"]"""
+
+    @Test
+    fun `the first value is chosen when a field is opened`() {
+        assertEquals("@monday", chosenEntry(opened(three)))
+    }
+
+    @Test
+    fun `down moves to the next value and up back`() {
+        val screen = opened(three)
+        screen.press(Key.DOWN)
+        assertEquals("@tuesday", chosenEntry(screen))
+        screen.press(Key.DOWN)
+        assertEquals("@friday", chosenEntry(screen))
+        screen.press(Key.UP)
+        assertEquals("@tuesday", chosenEntry(screen))
+    }
+
+    @Test
+    fun `the cursor stops at the ends`() {
+        val screen = opened(three)
+        repeat(5) { screen.press(Key.DOWN) }
+        assertEquals("@friday", chosenEntry(screen))
+        repeat(5) { screen.press(Key.UP) }
+        assertEquals("@monday", chosenEntry(screen))
+    }
+
+    @Test
+    fun `space opens the value the cursor is on, not the first`() {
+        val screen = opened(three)
+        screen.press(Key.DOWN)
+        screen.press(Key.FOLLOW)
+        assertEquals(ROUNDS, screen.type)
+        assertEquals("Tuesday", (screen.item!!.single<String>("name") as Result.Usable).value)
+    }
+
+    @Test
+    fun `following closes the field, the user having arrived somewhere else`() {
+        val screen = opened(three)
+        screen.press(Key.FOLLOW)
+        assertFalse(screen.opened)
+    }
+
+    @Test
+    fun `space on a value naming nothing stays put`() {
+        val screen = opened("""["@nowhere", "@tuesday"]""")
+        screen.press(Key.FOLLOW)
+        assertEquals(WALK, screen.type)
+        assertTrue(screen.opened, "and the field stays open")
+    }
+
+    @Test
+    fun `a long list scrolls to keep the cursor in view`() {
+        val many = "[" + (1..40).joinToString(", ") { """"@r$it"""" } + "]"
+        val screen = opened(many)
+        repeat(30) { screen.press(Key.DOWN) }
+        assertEquals("@r31", chosenEntry(screen, 12), "the cursor should be on screen")
+    }
+
+    @Test
+    fun `a field holding one value has no cursor, and up and down scroll its rows`() {
+        val long = "x".repeat(600)
+        val files = mapOf("walk.json" to """{"a": {"name": "$long"}}""")
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        screen.press(Key.OPEN)
+        assertEquals(null, chosenEntry(screen, 12), "one value is not chosen between")
+        val top = screen.paint(40, 12).map { it.text }
+        repeat(4) { screen.press(Key.DOWN) }
+        assertNotEquals(top, screen.paint(40, 12).map { it.text }, "it should have scrolled")
+    }
+
+    @Test
+    fun `opening a field again starts at its first value`() {
+        val screen = opened(three)
+        screen.press(Key.DOWN)
+        screen.press(Key.CLOSE)
+        screen.press(Key.OPEN)
+        assertEquals("@monday", chosenEntry(screen))
+    }
+}
+
+/** What is underlined where a field is open: a value that names an item, and nothing else. */
+class OpenedUnderliningTest {
+
+    private val ROUNDS = ItemDescription("round", listOf(TextDescription("name")))
+
+    private val WALK = ItemDescription(
+        "walk",
+        listOf(
+            ReferenceDescription(
+                "rounds",
+                targetType = "round",
+                cardinality = Cardinality.LIST,
+                oneOffAllowed = true,
+            ),
+            ReferenceDescription("first", targetType = "round"),
+            TextDescription("name"),
+        ),
+    )
+
+    private val TYPES = listOf(WALK, ROUNDS)
+
+    private fun opened(fields: String, steps: Int = 0): Map<String, Set<Style>> {
+        val files = mapOf(
+            "walk.json" to """{"a": $fields}""",
+            "round.json" to """{"tuesday": {"name": "Tuesday"}}""",
+        )
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        repeat(steps) { screen.press(Key.NEXT_FIELD) }
+        screen.press(Key.OPEN)
+        return screen.paint(70, 20)
+            .flatMap { it.spans }
+            .filter { it.text.isNotBlank() && !it.text.startsWith("  ") }
+            .associate { it.text.trim() to it.styles - Style.SELECTED }
+    }
+
+    @Test
+    fun `a value naming an item is underlined`() {
+        val said = opened("""{"rounds": ["@tuesday"]}""")
+        assertEquals(setOf(Style.UNDERLINED), said["@tuesday"])
+    }
+
+    @Test
+    fun `a single reference is underlined too`() {
+        val said = opened("""{"first": "@tuesday"}""", steps = 1)
+        assertEquals(setOf(Style.UNDERLINED), said["@tuesday"])
+    }
+
+    @Test
+    fun `a plain name is not, there being nothing to open`() {
+        val said = opened("""{"rounds": ["Aunt Maud", "@tuesday"]}""")
+        assertEquals(emptySet(), said["Aunt Maud"])
+        assertEquals(setOf(Style.UNDERLINED), said["@tuesday"])
+    }
+
+    @Test
+    fun `a value that would not read is not, being no value at all`() {
+        val said = opened("""{"rounds": [7, "@tuesday"]}""")
+        assertEquals(setOf(Style.UNDERLINED), said["@tuesday"])
+        val refused = said.keys.first { it.startsWith("!") }
+        assertEquals(emptySet(), said[refused])
+    }
+
+    @Test
+    fun `a value that names nothing is text, and text is not underlined`() {
+        val said = opened("""{"name": "Market Square"}""", steps = 2)
+        assertEquals(emptySet(), said["Market Square"])
     }
 }

@@ -33,7 +33,7 @@ the chosen item's fields on the right.
 | Key | Does |
 |---|---|
 | left, right | change tab, round the ring |
-| up, down | move in the list, stopping at its ends |
+| up, down | move through whatever is in front of you, stopping at its ends |
 | tab, shift-tab | move between the chosen item's fields, round the ring |
 | space | open the item the chosen field names |
 | enter | open the chosen field on its own |
@@ -42,9 +42,13 @@ the chosen item's fields on the right.
 
 A list stops at its ends because one that wraps loses the user's place on a long one; the
 tabs and the fields wrap, being short enough to see whole. Leaving takes two keys of its own
-because raw mode swallows the usual one, and escape is a third where nothing is open. Up and
-down move in whatever is in front of the user: the list, or an open field too long to see at
-once.
+because raw mode swallows the usual one, and escape is a third where nothing is open.
+
+**Up and down move through whatever is in front of you**: the list of items, or the values of
+an open field that holds several, or the rows themselves where an open field holds one value
+longer than the screen. A field holds one or the other and never both, so one key does all
+three without ever being ambiguous — and a list of 75 regions, which `children` will bring,
+needs a cursor rather than a page of bullets nobody can point at.
 
 **The layout is the descriptions and nothing else.** Nothing in this front end names a type
 or a field, so a type added to the logic layer appears here without this changing. `UI-3`.
@@ -86,9 +90,12 @@ a vocabulary, what a reference points at. The `when` over the kinds is exhaustiv
 added to the layer below is a compiler error here rather than a field this view has nothing to
 say about.
 
-What it holds is the value uncut, wrapped over as many rows as it takes and scrolled with up
-and down. A value that could not be read shows both the reason and what was written, since the
-two together are what a reader needs in order to fix it.
+What it holds is the value uncut, wrapped over as many rows as it takes. **How it came to hold
+it goes in brackets beside that heading** — `What it holds (worked out)` — rather than on a row
+of its own, since it is one word about the whole of what follows and a reader would otherwise
+count it among the values. A field holding nothing says so there and adds nothing under it. A
+value that could not be read shows both the reason and what was written, the two together being
+what a reader needs in order to fix it.
 
 **Editing is not here.** Enter opens; it does not yet change anything, and neither does
 anything else.
@@ -100,10 +107,23 @@ more or forty, and which it is decides whether opening the field is worth it. A 
 wrote with nothing in it says `(empty)`, since that is not the same as a field nobody wrote.
 
 Opened, a list is a bullet apiece and nothing is left out, which is what makes it possible to
-see where one value ends and the next begins.
+see where one value ends and the next begins. One bullet is set apart, the same way the chosen
+field is on the row, and up and down move between them.
 
-**Space follows a single reference only.** A list of them has no one target, and which entry a
-cursor would be on inside a row is a question nobody has asked yet.
+**Underlining is finer here than on the row.** The row has one piece of text for the whole
+field, so it underlines a field that names items. Open, each value stands alone, so what is
+underlined is each value that names one — a plain name asserting no id is not, and neither is
+an entry that would not read, because neither opens anything and the underline is the promise
+that something will.
+
+**Space opens the item a field names.** On the row that is the first one that can be opened,
+which is the one the row is showing — so a region with one parent needs no drilling in. In an
+open field it is the value the cursor is on, which is how one of several is chosen. Following
+closes the open field, the reader having arrived somewhere else.
+
+A plain name asserting no id is not followed, there being nothing to open, and neither is a
+value that would not read. Both still count as a value the cursor moves over: it moves over
+what a reader sees, not over what happens to be followable.
 
 **A painted line holds no line break.** `remarks` is the one multiline field and a terminal row
 is not multiline, so a break is shown as `\n`, the escape a file writes it with. Taken instead,

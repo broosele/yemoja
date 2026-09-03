@@ -12,6 +12,7 @@ import yemoja.data.KeyReferenceDescription
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
 import yemoja.data.OwnedItemDescription
+import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.Role
@@ -38,7 +39,7 @@ import yemoja.data.WholeNumberDescription
  * The rows are logical: each is as long as it needs to be, and whoever draws them cuts, wraps
  * and scrolls. Nothing here knows how wide a screen is.
  */
-internal fun fieldLines(item: Item, field: FieldDescription): List<Line> {
+internal fun fieldLines(item: Item, field: FieldDescription, chosen: Int = 0): List<Line> {
     val about = listOf(
         "field" to field.name,
         "label" to field.label,
@@ -47,10 +48,23 @@ internal fun fieldLines(item: Item, field: FieldDescription): List<Line> {
         "role" to roleOf(field.role),
     ) + particulars(field)
     val width = about.maxOf { it.first.length }
+    val read = item.read(field.name)
     return heading("This field") +
         about.map { (name, said) -> Line(listOf(Span("  ${name.padEnd(width)}  $said"))) } +
-        heading("What it holds") +
-        held(item, field)
+        heading("What it holds (${saying(read)})") +
+        held(field, read, chosen)
+}
+
+/**
+ * How the field came to hold what it holds, which goes beside the heading rather than under it.
+ *
+ * It is one word about the whole of what follows rather than a thing the field holds, so putting
+ * it in the list would make a reader count it among the values.
+ */
+private fun saying(read: Result<Any>): String = when (read) {
+    is Result.Usable -> originOf(read.origin)
+    is Result.Unusable -> "written, and could not be read"
+    Result.Absent -> "nothing"
 }
 
 /** A section, with a blank row above it so the sections read apart. */
@@ -125,54 +139,73 @@ private fun particulars(field: FieldDescription): List<Pair<String, String>> = w
 }
 
 /**
- * What a field holds, one entry to an entry: one for a single value, several for a list.
+ * What a field holds, one entry apiece: one for a single value, several for a list.
  *
  * An entry that could not be read shows why in its place. The rest of the list is unaffected —
  * `DATA-77` — and dropping it would leave a shorter list than the file holds.
  */
 @Suppress("UNCHECKED_CAST")
-internal fun entriesOf(field: FieldDescription, value: Any): List<String> =
-    if (field.cardinality != Cardinality.LIST) listOf(field.format(value, Units.DEFAULT))
+internal fun entriesOf(field: FieldDescription, value: Any): List<Span> =
+    if (field.cardinality != Cardinality.LIST) listOf(said(field, value))
     else (value as List<Element<Any>>).map { entry ->
         when (entry) {
-            is Element.Usable -> field.format(entry.value, Units.DEFAULT)
-            is Element.Unusable -> "! " + entry.reason
+            is Element.Usable -> said(field, entry.value)
+            is Element.Unusable -> Span("! " + entry.reason)
         }
     }
 
 /**
- * What the field holds on this item, whole and uncut.
+ * One value as a file writes it, underlined where it names an item.
+ *
+ * Underlined by what the value is rather than by what the field is, which the row cannot do: a
+ * plain name asserting no id opens nothing, and neither does an entry that would not read, so
+ * neither is marked as though it did.
+ */
+private fun said(field: FieldDescription, value: Any): Span = Span(
+    field.format(value, Units.DEFAULT),
+    if (value is Reference.Identified) setOf(Style.UNDERLINED) else emptySet(),
+)
+
+/**
+ * What the field holds, whole and uncut.
  *
  * A value that could not be read shows both what was written and why it was refused, since the
  * two together are what a reader needs to fix it. A list is a bullet apiece, which is what makes
  * it possible to see where one entry ends and the next begins.
+ *
+ * A field holding nothing says so in the heading and adds nothing here, there being nothing to
+ * add.
  */
-private fun held(item: Item, field: FieldDescription): List<Line> =
-    when (val read = item.read(field.name)) {
-        is Result.Usable -> listOf(
-            Line(listOf(Span("  " + originOf(read.origin)))),
-            Line(listOf(Span(""))),
-        ) + entries(field, read.value)
+private fun held(field: FieldDescription, read: Result<Any>, chosen: Int): List<Line> =
+    when (read) {
+        is Result.Usable -> entries(field, read.value, chosen)
 
         is Result.Unusable -> listOf(
-            Line(listOf(Span("  written, and could not be read"))),
-            Line(listOf(Span(""))),
             Line(listOf(Span("  " + read.reason))),
             Line(listOf(Span(""))),
             Line(listOf(Span("  as written: " + read.raw))),
         )
 
-        Result.Absent -> listOf(Line(listOf(Span("  nothing"))))
+        Result.Absent -> emptyList()
     }
 
-/** A single value on its own row, and a list as a bullet apiece. */
-private fun entries(field: FieldDescription, value: Any): List<Line> {
-    val said = entriesOf(field, value)
-    if (field.cardinality != Cardinality.LIST) return said.map { Line(listOf(Span("  " + it))) }
+/**
+ * A single value on its own row, and a list as a bullet apiece with [chosen] set apart.
+ *
+ * Only a list has a chosen entry. A single value is the whole of what the field holds, so there
+ * is nothing to choose between and a mark would say there was.
+ */
+private fun entries(field: FieldDescription, value: Any, chosen: Int): List<Line> {
+    val held = entriesOf(field, value)
+    if (field.cardinality != Cardinality.LIST) return held.map { Line(listOf(Span("  "), it)) }
     // A written list with nothing in it is not the same as a field nobody wrote, and a row of
     // bullets with no bullets in it would look like the second.
-    if (said.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
-    return said.map { Line(listOf(Span("  - " + it))) }
+    if (held.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
+    return held.mapIndexed { at, entry ->
+        // The mark runs across the bullet and the value alike, so the row reads as one bar.
+        val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
+        Line(listOf(Span("  - ", here), Span(entry.text, entry.styles + here)))
+    }
 }
 
 private fun originOf(origin: Result.Origin): String = when (origin) {

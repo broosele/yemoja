@@ -1,6 +1,7 @@
 package yemoja.ui.tui
 
 import yemoja.data.Cardinality
+import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
@@ -58,8 +59,11 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     var opened: Boolean = false
         private set
 
-    // How far down the open field is scrolled. One offset, since only one is ever open.
+    // How far down the open field is scrolled, and which of its values is chosen. One of each,
+    // since only one field is ever open.
     private var within = 0
+
+    private var chosenEntry = 0
 
     /** The type whose tab is open. */
     val type: ItemDescription get() = types[tab]
@@ -83,6 +87,22 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     val field: FieldDescription? get() = fields.getOrNull(chosenField[tab])
 
     /**
+     * How many values the chosen field holds, or absent where it does not hold a list of them.
+     *
+     * What decides whether there is anything to move between inside an open field. A single
+     * value is one thing however many rows it wraps over.
+     *
+     * A function rather than a property, because inside a property's own accessor `field` is
+     * Kotlin's word for the backing field rather than this class's.
+     */
+    private fun entries(): Int? {
+        val naming = field ?: return null
+        if (naming.cardinality != Cardinality.LIST) return null
+        val read = item?.read(naming.name) as? Result.Usable ?: return null
+        return (read.value as? List<*>)?.size
+    }
+
+    /**
      * Answer [key], and say whether the interface is still running.
      *
      * Left and right change tab and wrap round, so three tabs are reached in two presses from
@@ -94,13 +114,8 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         when (key) {
             Key.LEFT -> tab = (tab + types.size - 1) % types.size
             Key.RIGHT -> tab = (tab + 1) % types.size
-            // Up and down move in whatever is in front of the user: the list, or an open
-            // field too long to see at once.
-            Key.UP -> if (opened) within = (within - 1).coerceAtLeast(0)
-            else chosen[tab] = (chosen[tab] - 1).coerceAtLeast(0)
-
-            Key.DOWN -> if (opened) within += 1
-            else chosen[tab] = (chosen[tab] + 1).coerceAtMost(items.size - 1)
+            Key.UP -> move(-1)
+            Key.DOWN -> move(1)
             Key.NEXT_FIELD -> step(1)
             Key.PREVIOUS_FIELD -> step(-1)
             Key.FOLLOW -> follow()
@@ -110,11 +125,33 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
             Key.CLOSE -> if (opened) opened = false else running = false
             Key.QUIT -> running = false
         }
-        if (!opened) within = 0
+        if (!opened) {
+            within = 0
+            chosenEntry = 0
+        }
         // An emptied tab leaves the chosen row past the end, and nothing else corrects it.
         chosen[tab] = chosen[tab].coerceIn(0, (items.size - 1).coerceAtLeast(0))
         chosenField[tab] = chosenField[tab].coerceIn(0, (fields.size - 1).coerceAtLeast(0))
         return running
+    }
+
+    /**
+     * Move [by] through whatever is in front of the user.
+     *
+     * The list of items where nothing is open; the values of an open field that holds several;
+     * and the rows themselves where an open field holds one value, which may be longer than the
+     * screen. A field holds one or the other, never both, so the two never have to be told apart
+     * by a second key.
+     */
+    private fun move(by: Int) {
+        val count = entries()
+        when {
+            !opened -> chosen[tab] = chosen[tab] + by
+            count != null ->
+                chosenEntry = (chosenEntry + by).coerceIn(0, (count - 1).coerceAtLeast(0))
+
+            else -> within = (within + by).coerceAtLeast(0)
+        }
     }
 
     /** Move [by] fields, round the end. */
@@ -126,21 +163,49 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     /**
      * Open the item the chosen field names, where it names one that is there.
      *
-     * A field that is not a reference, a reference to nothing, and a reference to an item of a
-     * type this screen has no tab for are all the same answer: stay where we are. Following is
-     * one way — nothing records where the user came from, so there is no going back yet.
+     * **The first one that can be opened**, which for a field naming several is the one the row
+     * is showing. A field that is not a reference, a reference to nothing, a plain name asserting
+     * no id, and a reference to a type this screen has no tab for are all the same answer: stay
+     * where we are.
+     *
+     * Following is one way — nothing records where the user came from, so there is no going back
+     * yet. Which of several to follow, where a reader wants one further down the row, wants a
+     * cursor inside the field and is not settled.
      */
     private fun follow() {
-        if (opened) return
         val naming = field as? ReferenceDescription ?: return
         val read = item?.read(naming.name) as? Result.Usable ?: return
-        val named = read.value as? Reference.Identified ?: return
-        val target = set[named.id] ?: return
-        val at = types.indexOf(target.description)
-        if (at < 0) return
-        tab = at
-        chosen[tab] = set.allOf(target.description).indexOf(target)
-        chosenField[tab] = 0
+        // Open, the one the user chose. On the row, the first that can be opened, which is the
+        // one the row is showing.
+        val order: Iterable<Int> = if (opened) listOf(chosenEntry) else 0..<howMany(read.value)
+        for (at in order) {
+            val named = namedAt(read.value, at) ?: continue
+            val target = set[named.id] ?: continue
+            val to = types.indexOf(target.description)
+            if (to < 0) continue
+            // Where the user has arrived is a different field, so the one they opened is shut.
+            opened = false
+            tab = to
+            chosen[tab] = set.allOf(target.description).indexOf(target)
+            chosenField[tab] = 0
+            return
+        }
+    }
+
+    /** How many values a field holds: one, unless it holds a list of them. */
+    private fun howMany(value: Any): Int = if (value is List<*>) value.size else 1
+
+    /**
+     * The item named at [at], or absent where nothing is named there.
+     *
+     * Absent covers a plain name asserting no id and a value that would not read, neither of
+     * which names anything to open, and both of which still count as an entry: a cursor moves
+     * over what a reader sees, not over what happens to be followable.
+     */
+    private fun namedAt(value: Any, at: Int): Reference.Identified? = when (value) {
+        is Reference.Identified -> if (at == 0) value else null
+        is List<*> -> (value.getOrNull(at) as? Element.Usable<*>)?.value as? Reference.Identified
+        else -> null
     }
 
     /**
@@ -181,15 +246,31 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         val item = item ?: return emptyList()
         val field = field ?: return emptyList()
         val where = "${type.name} / ${set.idOf(item)} / ${field.name}"
-        val body = fieldLines(item, field).flatMap { wrapped(it, width) }
-        within = within.coerceIn(0, (body.size - rows).coerceAtLeast(0))
+        val body = fieldLines(item, field, chosenEntry).flatMap { wrapped(it, width) }
+        val at = body.indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
+        showing(at, rows, body.size)
         val lines = ArrayList<Line>(rows + 2)
         lines.add(Line(fitted(listOf(Span(where)), width)))
         lines.add(Line(listOf(Span("-".repeat(width)))))
         for (row in 0..<rows) {
-            lines.add(Line(fitted(body.getOrNull(within + row)?.spans.orEmpty(), width)))
+            val spans = body.getOrNull(within + row)?.spans.orEmpty()
+            val here = spans.firstOrNull()?.styles.orEmpty().intersect(setOf(Style.SELECTED))
+            lines.add(Line(fitted(spans, width, here)))
         }
         return lines
+    }
+
+    /**
+     * Move the window as little as it takes to show the row at [at], and no further than the end.
+     *
+     * Nothing chosen leaves the window alone, which is what scrolling a single value does.
+     */
+    private fun showing(at: Int, rows: Int, of: Int) {
+        if (at >= 0) {
+            if (at < within) within = at
+            if (at >= within + rows) within = at - rows + 1
+        }
+        within = within.coerceIn(0, (of - rows).coerceAtLeast(0))
     }
 
     /**
@@ -262,7 +343,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      */
     private fun shown(item: Item, field: FieldDescription): String =
         when (val read = item.read(field.name)) {
-            is Result.Usable -> shortened(entriesOf(field, read.value).map { flat(it) })
+            is Result.Usable -> shortened(entriesOf(field, read.value).map { flat(it.text) })
             is Result.Unusable -> cut(flat("! ${read.reason}"))
             Result.Absent -> ""
         }
