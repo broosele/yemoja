@@ -11,6 +11,26 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANUAL = os.path.join(ROOT, 'manual', 'data-fields.md')
+DESCRIPTIONS = os.path.join(
+    ROOT, 'logic', 'src', 'commonMain', 'kotlin', 'yemoja', 'logic', 'Types.kt')
+
+# What each kind in the manual is written as in the logic layer. The manual names a kind
+# in prose -- `(text)`, `(true or false)` -- and one class implements each. A kind absent
+# here is one nothing describes yet, and is passed over rather than guessed at.
+KINDS = {
+    'text': 'TextDescription',
+    'multiline text': 'MultilineTextDescription',
+    'fixed set': 'TextDescription',
+    'number': 'NumberDescription',
+    'whole number': 'WholeNumberDescription',
+    'date': 'DateDescription',
+    'time': 'TimeDescription',
+    'true or false': 'BooleanDescription',
+    'gas': 'GasDescription',
+    'reference': 'ReferenceDescription',
+    'key reference': 'KeyReferenceDescription',
+    'owned item': 'OwnedItemDescription',
+}
 
 # Defined in the manual's introduction rather than in any one type's list. A key is
 # not among them: an entry sits *under* its key and never carries one as a field.
@@ -110,6 +130,101 @@ def manual_fields():
         if item and current:
             fields[current] |= set(re.findall(r'`([a-z_]+)`', item.group(1)))
     return fields
+
+
+def manual_kinds():
+    """The kind the manual gives each field, per item type and owned item.
+
+    One bullet may open with several names sharing a kind -- `west`, `east`, `south`,
+    `north` are all numbers -- so every name in the opening run takes the same one.
+    `remarks` is defined in the introduction rather than in a bullet, and is the only
+    multiline text there is.
+    """
+    text = io.open(MANUAL, encoding='utf-8').read()
+    kinds, current = {}, None
+    for line in text.split('\n'):
+        heading = re.match(r'^#{3,5} (.+)$', line)
+        if heading:
+            current = heading.group(1)
+            kinds[(current, 'remarks')] = 'multiline text'
+        bullet = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)\)', line)
+        if bullet and current:
+            for name in re.findall(r'`([a-z_]+)`', bullet.group(1)):
+                kinds[(current, name)] = bullet.group(2)
+    return kinds
+
+
+def described_types():
+    """Every item type the logic layer describes, as {storage name: {field: class}}.
+
+    Read out of the source rather than by running it, so this stays one Python script
+    with no Kotlin toolchain behind it. A field written through a shared value --
+    `REMARKS` -- is resolved from that value's own declaration.
+    """
+    if not os.path.exists(DESCRIPTIONS):
+        return {}
+    text = re.sub(r'//[^\n]*', '', io.open(DESCRIPTIONS, encoding='utf-8').read())
+    shared = {
+        name: (kind, field)
+        for name, kind, field in re.findall(
+            r'val ([A-Z_]+)[^=\n]*=\s*(\w+Description)\("([a-z_]+)"', text)
+    }
+    types = {}
+    for match in re.finditer(
+            r'ItemDescription\(\s*"([a-z_]+)"\s*,\s*listOf\(', text):
+        body = balanced(text, text.index('(', match.end() - len('listOf(')))
+        fields = {field: kind for kind, field in
+                  re.findall(r'(\w+Description)\("([a-z_]+)"', body)}
+        for name in re.findall(r'\b([A-Z_]{2,})\b', body):
+            if name in shared:
+                fields[shared[name][1]] = shared[name][0]
+        types[match.group(1)] = fields
+    return types
+
+
+def balanced(text, opening):
+    """What sits between [opening] and the bracket closing it, quotes respected."""
+    depth, at = 0, opening
+    while at < len(text):
+        if text[at] == '"':
+            at = text.index('"', at + 1)
+        elif text[at] == '(':
+            depth += 1
+        elif text[at] == ')':
+            depth -= 1
+            if depth == 0:
+                return text[opening + 1:at]
+        at += 1
+    raise ValueError('unbalanced brackets in %s' % DESCRIPTIONS)
+
+
+def check_descriptions(fields, kinds):
+    """The logic layer's item types against the manual, which defines them.
+
+    Only one direction is a fault. A field described here that the manual does not
+    define is a field nobody agreed to, and a kind that disagrees is one of the two
+    documents being wrong. A field the manual defines and nothing describes yet is work
+    not done, so it is counted rather than complained about.
+    """
+    problems, described, total = [], 0, 0
+    for storage, present in sorted(described_types().items()):
+        heading = TYPE_NAMES.get(storage)
+        if heading is None or heading not in fields:
+            problems.append('%s is described and is no item type the manual names'
+                            % storage)
+            continue
+        total += len(fields[heading])
+        for field, kind in sorted(present.items()):
+            if field not in fields[heading]:
+                problems.append('%s.%s is described and the manual does not define it'
+                                % (storage, field))
+                continue
+            described += 1
+            wanted = KINDS.get(kinds.get((heading, field)))
+            if wanted and wanted != kind:
+                problems.append('%s.%s is %s here and %s in the manual'
+                                % (storage, field, kind, kinds[(heading, field)]))
+    return problems, described, total
 
 
 class Checker:
@@ -304,8 +419,13 @@ def main():
             check_logbook(checker, folder)
     checker.resolve()
 
+    described, count, total = check_descriptions(checker.fields, manual_kinds())
+    checker.problems.extend(described)
+
     print('checked %d items and %d references, against %d fixed sets and %d ranges'
           % (checker.items, len(checker.references), len(sets), len(ranges)))
+    print('the logic layer describes %d of the %d fields those types define'
+          % (count, total))
     for problem in checker.problems:
         print(' ', problem)
     rest = unchecked_libraries(checker.libraries_seen)

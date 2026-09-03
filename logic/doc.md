@@ -78,7 +78,7 @@ logic/
 and owned items are absent, so a person has no `courses` and a region no `parents`; the
 six other item types are absent entirely. [manual/data-fields.md](../manual/data-fields.md)
 is the source of truth for every field, and where it and `Types.kt` disagree the manual is
-right. Nothing checks that automatically yet.
+right. `tool/checkdata.py` holds the two together — see [testing.md](../testing.md).
 
 ## The Universe
 

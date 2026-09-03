@@ -11,7 +11,7 @@ documents and the data honest with each other rather than exercising code. See `
 ```
 ./gradlew build              the whole build, tests included
 ./gradlew :data:jvmTest      one layer's tests
-python tool/checkdata.py     the documents against the data
+python tool/checkdata.py     the documents against the data and the descriptions
 python tool/checklinks.py    the links, the examples and the glossary
 ```
 
@@ -67,6 +67,13 @@ the build refuses.
   and key reference finds its target, that no id names two items, and that fixed sets
   and numeric ranges hold. The last two read their vocabularies out of the manual's
   prose, so the manual stays the only place a value is written down.
+
+  `tool/checkdata.py` also reads the item types out of `logic/Types.kt` and holds them to
+  the same manual: a field described in code that the manual does not define is a fault,
+  and so is a kind the two disagree on. It reads the source rather than running it, which
+  keeps the checkers one Python script with no Kotlin behind them. A field the manual
+  defines and nothing describes yet is counted rather than complained about, because that
+  is work not done and not a disagreement.
 
   **They are Python, and stay that way** — and they are not tests. They check documents
   against data rather than code against expectations, which is why they sit outside the
