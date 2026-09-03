@@ -19,7 +19,7 @@ import yemoja.logic.Types
  * logbook whatever a user presses.
  */
 fun tui(folder: String): Int {
-    val set = try {
+    val logbook = try {
         Logbook.open(folder)
     } catch (refused: RuntimeException) {
         // A folder that is not a logbook, or a file in it that will not read. Either way the
@@ -27,7 +27,7 @@ fun tui(folder: String): Int {
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    return show(Screen(set, Types.ALL))
+    return show(Screen(logbook.items, Types.ALL))
 }
 
 /**

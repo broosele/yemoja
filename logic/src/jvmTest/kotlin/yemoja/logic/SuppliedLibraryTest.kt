@@ -23,7 +23,7 @@ class SuppliedLibraryTest {
     private fun logbookDeclaring(libraries: String): ItemSet {
         val folder: Path = Files.createTempDirectory("yemoja-")
         folder.resolve("yemoja.json").writeText("""{"libraries": $libraries}""")
-        return Logbook.open(folder.toString())
+        return Logbook.open(folder.toString()).items
     }
 
     private fun name(set: ItemSet, id: String): String? =
@@ -71,5 +71,53 @@ class SuppliedLibraryTest {
         val set = logbookDeclaring("""{"region": ["region/atlantis", "region/world"]}""")
         assertNull(set["atlantis"])
         assertEquals("World", name(set, "world"))
+    }
+}
+
+/** Who a logbook belongs to. `JSON-22`. */
+class OwnerTest {
+
+    private fun logbook(manifest: String, person: String? = null): Logbook {
+        val folder = Files.createTempDirectory("yemoja-")
+        folder.resolve("yemoja.json").writeText(manifest)
+        if (person != null) folder.resolve("person.json").writeText(person)
+        return Logbook.open(folder.toString())
+    }
+
+    @Test
+    fun `the owner is the person the manifest names`() {
+        val logbook = logbook(
+            """{"user": "@anna_devries"}""",
+            """{"anna_devries": {"first_name": "Anna", "last_name": "de Vries"}}""",
+        )
+        val user = assertNotNull(logbook.user)
+        assertEquals("Anna de Vries", (user.single<String>("name") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a logbook naming no owner has none`() {
+        assertNull(logbook("""{"libraries": {}}""").user)
+    }
+
+    @Test
+    fun `a logbook with no manifest has none`() {
+        val folder = Files.createTempDirectory("yemoja-")
+        assertNull(Logbook.open(folder.toString()).user)
+    }
+
+    @Test
+    fun `an owner nobody wrote is absent rather than a refusal`() {
+        // A dangling reference like any other. The person may yet be added.
+        val logbook = logbook("""{"user": "@nobody"}""", """{"anna_devries": {}}""")
+        assertNull(logbook.user)
+        assertEquals(1, logbook.items.size)
+    }
+
+    @Test
+    fun `an owner naming something that is not a person is not the owner`() {
+        val folder = Files.createTempDirectory("yemoja-")
+        folder.resolve("yemoja.json").writeText("""{"user": "@north_sea"}""")
+        folder.resolve("region.json").writeText("""{"north_sea": {"name": "North Sea"}}""")
+        assertNull(Logbook.open(folder.toString()).user)
     }
 }

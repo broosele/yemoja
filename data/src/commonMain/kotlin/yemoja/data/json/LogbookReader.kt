@@ -3,7 +3,9 @@ package yemoja.data.json
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
+import yemoja.data.Reference
 import yemoja.data.Stored
+import yemoja.data.ValueFormatException
 import yemoja.data.Units
 
 /**
@@ -14,6 +16,28 @@ import yemoja.data.Units
  * which is `DATA-24` and a different matter entirely.
  */
 class LogbookFormatException(message: String) : RuntimeException(message)
+
+/**
+ * Manifest is what the file at the top of a logbook says about it.
+ *
+ * Immutable.
+ *
+ * [user] is the person the logbook belongs to, named rather than described, so that the one
+ * place a logbook records its owner is here and a person carries no flag saying it is you.
+ * Absent where the file names none, which is allowed. [libraries] are the supplied sets it uses,
+ * by the type each holds and in the order they are wanted.
+ */
+class Manifest(val user: Reference.Identified?, libraries: Map<String, List<String>>) {
+
+    // Copied. A Map is read-only, not immutable.
+    val libraries: Map<String, List<String>> = libraries.toMap()
+
+    companion object {
+
+        /** A logbook that declares nothing, which is what a folder with no manifest is. */
+        val NOTHING: Manifest = Manifest(null, emptyMap())
+    }
+}
 
 /**
  * LogbookReader reads a logbook's files, and the libraries it declares, into a set of items.
@@ -31,6 +55,9 @@ object LogbookReader {
 
     /** The file at the top of a logbook, saying whose it is and which libraries it uses. */
     const val MANIFEST: String = "yemoja.json"
+
+    /** The key [MANIFEST] names the logbook's owner under. */
+    const val USER: String = "user"
 
     /**
      * The key a file declares its units under, in either shape.
@@ -52,11 +79,14 @@ object LogbookReader {
      * read**, which is the strict answer and probably not the last word — reporting the file and
      * carrying on would need somewhere to report to, and nothing has settled what that is.
      */
-    fun read(store: FileStore, types: List<ItemDescription>): ItemSet {
-        val declared = librariesOf(store)
+    fun read(
+        store: FileStore,
+        types: List<ItemDescription>,
+        manifest: Manifest = manifest(store),
+    ): ItemSet {
         val set = ItemSet(types)
         for (description in types) {
-            val named = declared[description.name].orEmpty()
+            val named = manifest.libraries[description.name].orEmpty()
             for ((id, held) in itemsOf(store, description.name, named)) {
                 set.add(id, ItemReader.read(description, held.members, set, held.units))
             }
@@ -65,15 +95,41 @@ object LogbookReader {
     }
 
     /**
-     * The libraries [MANIFEST] declares, by the type they hold.
+     * What [MANIFEST] says about the logbook in [store].
      *
-     * **A logbook without a manifest reads as one declaring nothing.** Whether the file is
-     * required has never been settled, and being strict would make a folder of dives unreadable
-     * for want of a file saying only what it has none of.
+     * **A logbook without a manifest declares nothing.** Whether the file is required has never
+     * been settled, and being strict would make a folder of dives unreadable for want of a file
+     * saying only what it has none of.
      */
-    private fun librariesOf(store: FileStore): Map<String, List<String>> {
-        if (!store.isFile(MANIFEST)) return emptyMap()
-        val declared = membersOf(store, MANIFEST).members[FileStore.LIBRARIES] ?: return emptyMap()
+    fun manifest(store: FileStore): Manifest {
+        if (!store.isFile(MANIFEST)) return Manifest.NOTHING
+        val read = membersOf(store, MANIFEST)
+        return Manifest(userIn(read), librariesIn(read))
+    }
+
+    /**
+     * Who the logbook belongs to, or absent where it says nothing. `JSON-22`.
+     *
+     * A plain name is refused where an id is wanted: an owner is an item, because it carries the
+     * details a certification or an emergency contact hangs off. Whether the item is there is not
+     * asked here — nothing is loaded yet, and an owner naming an item nobody wrote is a dangling
+     * reference like any other.
+     */
+    private fun userIn(read: Stored.Members): Reference.Identified? {
+        val declared = (read.members[USER] ?: return null) as? Stored.Leaf
+        val written = declared?.value as? String
+            ?: throw LogbookFormatException("$USER in $MANIFEST should name a person, as text")
+        return try {
+            Reference.parse(written, oneOffAllowed = false) as Reference.Identified
+        } catch (refused: ValueFormatException) {
+            throw LogbookFormatException(
+                "$USER in $MANIFEST should name a person: ${refused.message}",
+            )
+        }
+    }
+
+    private fun librariesIn(read: Stored.Members): Map<String, List<String>> {
+        val declared = read.members[FileStore.LIBRARIES] ?: return emptyMap()
         if (declared !is Stored.Members) {
             throw LogbookFormatException(
                 "${FileStore.LIBRARIES} in $MANIFEST should hold a list of names for each type",

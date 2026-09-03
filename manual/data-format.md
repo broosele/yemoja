@@ -23,8 +23,23 @@ choice may be narrower, because phones are stricter about where an application m
 
 You can keep as many logbooks as you like; Yemoja has one open at a time.
 
-At the top of it sits a file called `yemoja.json`. It says what the logbook is: whose it
-is, which of the supplied libraries it uses, and where the rest of your data is kept.
+At the top of it sits a file called `yemoja.json`. It says what the logbook is: whose it is
+and which of the supplied libraries it uses. It holds no file paths — where the rest of your
+data is kept is settled by the names below, not by anything you write here.
+
+```json
+{
+  "user": "@jacques_cousteau",
+  "libraries": {
+    "region": ["region/world"]
+  }
+}
+```
+
+**`user` says whose logbook it is**, naming a person in it the way any other reference does.
+It is optional: a logbook with nobody named is a logbook, and so is one naming a person you
+have not written yet — Yemoja simply does not know whose it is until you do. There is no
+field on a person saying *this is me*; the logbook says it, once, here.
 
 Two more files sit beside it, `settings.json` and `settings.local.json`. They hold your
 preferences rather than your data, they belong to the application rather than to this

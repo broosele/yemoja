@@ -185,12 +185,46 @@ class ManifestTest {
     }
 
     @Test
-    fun `the rest of the manifest is passed over`() {
-        // The owner is declared and nothing reads it yet.
-        val set = withManifest(
-            """{"user": "@anna_devries", "libraries": {"postbox": ["postbox/supplied"]}}""",
+    fun `the owner is read alongside the libraries`() {
+        val store = MemoryFileStore(
+            mapOf(
+                LogbookReader.MANIFEST to
+                    """{"user": "@anna_devries", "libraries": {"postbox": ["p/supplied"]}}""",
+            ),
         )
-        assertEquals(1, set.size)
+        val manifest = LogbookReader.manifest(store)
+        assertEquals("anna_devries", manifest.user?.id)
+        assertEquals(mapOf("postbox" to listOf("p/supplied")), manifest.libraries)
+    }
+
+    @Test
+    fun `a manifest naming no owner has none`() {
+        val store = MemoryFileStore(mapOf(LogbookReader.MANIFEST to """{"libraries": {}}"""))
+        assertNull(LogbookReader.manifest(store).user)
+    }
+
+    @Test
+    fun `a logbook with no manifest at all declares nothing`() {
+        val nothing = LogbookReader.manifest(MemoryFileStore(emptyMap()))
+        assertNull(nothing.user)
+        assertEquals(emptyMap(), nothing.libraries)
+    }
+
+    @Test
+    fun `an owner given as a plain name is refused, because an owner is an item`() {
+        val store = MemoryFileStore(mapOf(LogbookReader.MANIFEST to """{"user": "Anna"}"""))
+        val refused = assertFailsWith<LogbookFormatException> { LogbookReader.manifest(store) }
+        assertTrue(
+            refused.message!!.startsWith("user in yemoja.json should name a person:"),
+            refused.message!!,
+        )
+    }
+
+    @Test
+    fun `an owner that is not text at all is refused`() {
+        val store = MemoryFileStore(mapOf(LogbookReader.MANIFEST to """{"user": {"id": 1}}"""))
+        val refused = assertFailsWith<LogbookFormatException> { LogbookReader.manifest(store) }
+        assertEquals("user in yemoja.json should name a person, as text", refused.message)
     }
 
     @Test

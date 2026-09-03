@@ -615,8 +615,31 @@ To settle when we discuss architecture:
   because a good id is recognisable on sight and the alternative pays on every reference
   in every file to serve a rare reading.
 
+- **JSON-22 — How a logbook says whose it is.** *Settled:* a `user` key holding a reference
+  to a person, `"user": "@jacques_cousteau"`, and it is **optional**.
+
+  One place, and it is this one. The alternative was a field on a person saying *this is me*,
+  which puts a logbook-wide fact on an item and then needs a rule for what two of them mean.
+  A reference has none of that: a logbook names one person or names nobody.
+
+  **A plain name is refused where an id is wanted.** An owner is an item, because it is what a
+  certification, an emergency contact and a medical hang off, and a bare name can carry none
+  of them. This is the one reference in the format that may not be a one-off.
+
+  **Naming somebody who is not there is not an error.** The owner is then absent, exactly as a
+  dangling reference is elsewhere — the person may be written later, and refusing to open the
+  logbook over it would be a heavy answer to an optional field. Naming an item that is not a
+  person is the same case: not the owner, and not a refusal.
+
+  What *is* refused is a `user` that is not text, or is text that is not a reference. Those are
+  a malformed file rather than a missing person, and the sibling declaration in the same file
+  refuses the same way.
+
 - **JSON-3 — What `yemoja.json` holds.** *Settled:* the structure of the logbook and
-  nothing else — who owns it, which libraries it uses, and where each type's files live.
+  nothing else — who owns it and which libraries it uses. *Amended:* it said *and where each
+  type's files live*, which `JSON-21` later took away by making the layout a convention. The
+  file holds no paths at all.
+
   Settings move out, into two files of their own:
 
   | File | Holds | Travels |
