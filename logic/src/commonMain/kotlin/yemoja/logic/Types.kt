@@ -1,12 +1,14 @@
 package yemoja.logic
 
 import yemoja.data.BooleanDescription
+import yemoja.data.Cardinality
 import yemoja.data.DateDescription
 import yemoja.data.Dimension
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
+import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.Role
 import yemoja.data.TextDescription
@@ -28,8 +30,8 @@ import yemoja.data.TextDescription
  * An `ItemSet` is built with these, so this list is what the whole application shares as its
  * vocabulary. A front end may name a type; it may not describe one.
  *
- * **Only fields holding one value are here so far.** Lists, keyed collections and owned items are
- * absent — so a person has no `courses` and a region no `parents` — and the six item types the
+ * **Fields holding one value, and lists of them.** Keyed collections and owned items are absent,
+ * so a person has no `courses` and a piece of gear no `buoyancy`, and the six item types the
  * manual describes besides these three are absent too.
  */
 object Types {
@@ -37,7 +39,7 @@ object Types {
     /**
      * Person is anyone who appears in a logbook, whether or not they dive.
      *
-     * Absent so far: `emergency_contacts`, `courses`, `medical` and `insurance`.
+     * Absent so far: `courses`, `medical` and `insurance`.
      */
     val PERSON: ItemDescription = ItemDescription(
         "person",
@@ -53,6 +55,14 @@ object Types {
             TextDescription("address"),
             TextDescription("email"),
             TextDescription("phone"),
+            // A plain name stands in for someone with no item of their own, which is what makes
+            // this the one reference here that allows one.
+            ReferenceDescription(
+                "emergency_contacts",
+                targetType = "person",
+                cardinality = Cardinality.LIST,
+                oneOffAllowed = true,
+            ),
             REMARKS,
         ),
     )
@@ -60,12 +70,15 @@ object Types {
     /**
      * Region is a part of the world: a continent, an ocean, a country, a sea.
      *
-     * Absent so far: `parents` and the `children` worked out from them.
+     * Absent so far: the `children` worked out from `parents`, which needs a computation over
+     * every region rather than a description.
      */
     val REGION: ItemDescription = ItemDescription(
         "region",
         listOf(
             TextDescription("name"),
+            // More than one, since a region often sits inside several at once.
+            ReferenceDescription("parents", targetType = "region", cardinality = Cardinality.LIST),
             TextDescription("category", suggestedSet = REGION_CATEGORIES),
             // The four edges of a box holding the region, for placing it on a map. `east` is the
             // edge reached travelling east from `west`, which is what makes the date line

@@ -80,9 +80,11 @@ logic/
 this layer that names a source, and it exists so that `ui/doc.md`'s rule holds meanwhile: a
 front end names a folder and never opens one. It goes when the Universe arrives.
 
-**Three types so far, and only the fields holding one value.** Lists, keyed collections
-and owned items are absent, so a person has no `courses` and a region no `parents`; the
-six other item types are absent entirely. [manual/data-fields.md](../manual/data-fields.md)
+**Three types so far, holding one value or a list of them.** Keyed collections and owned
+items are absent, so a person has no `courses` and a piece of gear no `buoyancy`; the six
+other item types are absent entirely. So is a region's `children`, which is worked out from
+every other region's `parents`, and so needs a computation rather than a description of its
+own. [manual/data-fields.md](../manual/data-fields.md)
 is the source of truth for every field, and where it and `Types.kt` disagree the manual is
 right. `tool/checkdata.py` holds the two together — see [testing.md](../testing.md).
 

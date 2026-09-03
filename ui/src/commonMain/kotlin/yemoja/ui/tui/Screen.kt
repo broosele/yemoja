@@ -71,13 +71,13 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     val item: ReferenceableItem? get() = items.getOrNull(chosen[tab])
 
     /**
-     * The fields shown, which are those holding one value.
+     * The fields shown, which are those holding one value and those holding a list of them.
      *
-     * The rest are left out until it is settled how a list, a keyed collection and a series are
-     * each shown, so nothing here has to guess at one.
+     * A keyed collection and a series are left out until it is settled how each is shown, so
+     * nothing here has to guess at one.
      */
     val fields: List<FieldDescription>
-        get() = type.fields.filter { it.cardinality == Cardinality.SINGLE }
+        get() = type.fields.filter { it.cardinality in SHOWN }
 
     /** The chosen field, or absent where the open type has none. */
     val field: FieldDescription? get() = fields.getOrNull(chosenField[tab])
@@ -262,10 +262,31 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      */
     private fun shown(item: Item, field: FieldDescription): String =
         when (val read = item.read(field.name)) {
-            is Result.Usable -> field.format(read.value, Units.DEFAULT)
-            is Result.Unusable -> "! ${read.reason}"
+            is Result.Usable -> shortened(entriesOf(field, read.value).map { flat(it) })
+            is Result.Unusable -> cut(flat("! ${read.reason}"))
             Result.Absent -> ""
         }
+
+    /**
+     * Several values on one row: as many as fit, and how many did not.
+     *
+     * Saying how many were left out is what a plain cut cannot: three dots at the end of a list
+     * of regions could be one more or forty, and the difference is what decides whether opening
+     * the field is worth it.
+     */
+    private fun shortened(entries: List<String>): String {
+        if (entries.isEmpty()) return EMPTY
+        val whole = entries.joinToString(SEPARATOR)
+        if (entries.size <= 1 || whole.length <= VALUE_WIDTH) return cut(whole)
+        for (count in entries.size - 1 downTo 1) {
+            val rest = entries.size - count
+            val said = entries.take(count).joinToString(SEPARATOR) +
+                " $MORE ($rest other${if (rest == 1) "" else "s"})"
+            if (said.length <= VALUE_WIDTH) return said
+        }
+        // Not even the first entry fits beside the count, so only the count is worth saying.
+        return cut("(${entries.size} entries)")
+    }
 
     /**
      * How a field's value is set apart, which says what kind of value it is.
@@ -357,6 +378,15 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
          * rather than as a value that was cut.
          */
         private const val MORE = "..."
+
+        /** What sits between two values of one field on a row. */
+        private const val SEPARATOR = ", "
+
+        /** A list somebody wrote with nothing in it, which is not a field nobody wrote. */
+        private const val EMPTY = "(empty)"
+
+        /** The cardinalities this interface knows how to show. */
+        private val SHOWN = setOf(Cardinality.SINGLE, Cardinality.LIST)
 
         private const val LEAST_LIST_WIDTH = 12
 

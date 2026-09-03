@@ -1,5 +1,6 @@
 package yemoja.ui.tui
 
+import yemoja.data.Cardinality
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
 import yemoja.data.ReferenceDescription
@@ -154,12 +155,13 @@ class DetailTest {
         .filter { it.isNotEmpty() }
 
     @Test
-    fun `every single-valued field of the chosen item is shown, in the type's order`() {
+    fun `every shown field of the chosen item is there, in the type's order`() {
         val screen = screen()
         screen.press(Key.RIGHT)
         assertEquals(
             listOf(
                 "Name North Sea",
+                "Parents",
                 "Category sea",
                 "West",
                 "East",
@@ -629,5 +631,100 @@ class OpenFieldTest {
         val screen = invented(*logbook)
         screen.press(Key.OPEN)
         for (line in screen.paint(64, 14)) assertEquals(64, line.width)
+    }
+}
+
+/** A field holding several values: on a row, and opened. */
+class ListTest2 {
+
+    private val ROUNDS = ItemDescription("round", listOf(TextDescription("name")))
+
+    private val WALK = ItemDescription(
+        "walk",
+        listOf(
+            TextDescription("name"),
+            ReferenceDescription("rounds", targetType = "round", cardinality = Cardinality.LIST),
+        ),
+    )
+
+    private val TYPES = listOf(WALK, ROUNDS)
+
+    private fun walk(rounds: String): Screen = Screen(
+        LogbookReader.read(
+            MemoryFileStore(mapOf("walk.json" to """{"a": {"rounds": $rounds}}""")),
+            TYPES,
+        ),
+        TYPES,
+    )
+
+    /** The value column of the row the chosen field is on. */
+    private fun row(screen: Screen): String = screen.paint(90, 6)[3].spans[2].text.trimEnd()
+
+    private fun opened(screen: Screen): List<String> {
+        screen.press(Key.NEXT_FIELD)
+        screen.press(Key.OPEN)
+        return screen.paint(90, 24).map { it.text.trim() }
+    }
+
+    @Test
+    fun `a few values sit on the row, separated by commas`() {
+        assertEquals("@one, @two, @three", row(walk("""["@one", "@two", "@three"]""")))
+    }
+
+    @Test
+    fun `too many to fit says how many were left out`() {
+        val many = (1..9).joinToString(", ") { """"@region_$it"""" }
+        val shown = row(walk("[$many]"))
+        assertTrue(shown.length <= Screen.VALUE_WIDTH, shown)
+        assertTrue(shown.endsWith("others)"), shown)
+        assertTrue(shown.startsWith("@region_1 "), shown)
+    }
+
+    @Test
+    fun `one left out is one other, not one others`() {
+        // Two short ones and a long one: the first two fit beside the count and the third
+        // cannot, so exactly one is left out.
+        val three = """["@ab", "@cd", "@${"e".repeat(30)}"]"""
+        assertEquals("@ab, @cd ... (1 other)", row(walk(three)))
+    }
+
+    @Test
+    fun `a written list with nothing in it is not an absent field`() {
+        assertEquals("(empty)", row(walk("[]")))
+    }
+
+    @Test
+    fun `opened, each value is a bullet of its own`() {
+        val said = opened(walk("""["@one", "@two", "@three"]"""))
+        assertTrue("- @one" in said, said.toString())
+        assertTrue("- @two" in said, said.toString())
+        assertTrue("- @three" in said, said.toString())
+    }
+
+    @Test
+    fun `opened, nothing is left out however many there are`() {
+        val many = (1..9).joinToString(", ") { """"@region_$it"""" }
+        val said = opened(walk("[$many]"))
+        for (at in 1..9) assertTrue("- @region_$at" in said, "region_$at should be there")
+    }
+
+    @Test
+    fun `opened, an empty list says so rather than showing nothing`() {
+        assertTrue("(empty)" in opened(walk("[]")))
+    }
+
+    @Test
+    fun `opened, it says the field holds several`() {
+        assertTrue("holds several, in the order written" in opened(walk("[]")).map {
+            it.replace(Regex(" +"), " ")
+        })
+    }
+
+    @Test
+    fun `an entry that could not be read shows why, in its place`() {
+        val said = opened(walk("""["@one", 7, "@three"]"""))
+        assertTrue("- @one" in said, said.toString())
+        assertTrue("- @three" in said, said.toString())
+        assertTrue(said.any { it.startsWith("- !") }, said.toString())
     }
 }

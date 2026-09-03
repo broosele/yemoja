@@ -93,10 +93,17 @@ two together are what a reader needs in order to fix it.
 **Editing is not here.** Enter opens; it does not yet change anything, and neither does
 anything else.
 
-**Nothing shown today is a reference.** No field of a person, a region or a piece of gear is
-one — the only single references the manual defines sit inside owned items, which are neither
-described nor shown — so underlining and space are correct and unreachable until those
-arrive. They are tested against invented types.
+**A field holding several values** shows them on the row separated by commas, and where they
+do not fit, as many as do followed by how many were left out — `@world ... (8 others)`. Saying
+how many is what a plain cut cannot: three dots at the end of a list of regions could mean one
+more or forty, and which it is decides whether opening the field is worth it. A list somebody
+wrote with nothing in it says `(empty)`, since that is not the same as a field nobody wrote.
+
+Opened, a list is a bullet apiece and nothing is left out, which is what makes it possible to
+see where one value ends and the next begins.
+
+**Space follows a single reference only.** A list of them has no one target, and which entry a
+cursor would be on inside a row is a question nobody has asked yet.
 
 **A painted line holds no line break.** `remarks` is the one multiline field and a terminal row
 is not multiline, so a break is shown as `\n`, the escape a file writes it with. Taken instead,
@@ -107,10 +114,9 @@ would mean a field taking several rows, which is a layout question nobody has as
 The supplied libraries load, so a logbook declaring them shows them under its own items —
 they travel inside the application and need no second argument, `LIB-6`.
 
-One thing is absent for now. **Fields holding more than one value are left out** until it is
-settled how a list, a keyed collection, an owned item and a series are each shown; only
-[`Types`](../../logic/doc.md) knows the difference, and only single values are described so
-far anyway.
+**A keyed collection, an owned item and a series are still left out** until it is settled how
+each is shown. Only [`Types`](../../logic/doc.md) knows the difference, and none of the three
+is described there yet anyway.
 
 It must be started from a real terminal, which is why it cannot be run through Gradle: Gradle
 gives a child process no terminal, so there is no run task and `./gradlew :ui:installDist`

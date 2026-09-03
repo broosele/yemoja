@@ -6,6 +6,7 @@ import yemoja.data.Dimension
 import yemoja.data.Item
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
+import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.TextDescription
 import yemoja.data.json.LogbookReader
@@ -50,13 +51,30 @@ class EveryTypeTest {
     }
 
     @Test
-    fun `nothing holding more than one value is described yet`() {
-        // Lists, keyed collections and owned items are still to come.
+    fun `only single values and lists of them are described yet`() {
+        // Keyed collections and owned items are still to come.
+        val shown = setOf(Cardinality.SINGLE, Cardinality.LIST)
         for (type in Types.ALL) {
             for (field in type.fields) {
-                assertEquals(Cardinality.SINGLE, field.cardinality, "${type.name}.${field.name}")
+                assertTrue(field.cardinality in shown, "${type.name}.${field.name}")
             }
         }
+    }
+
+    @Test
+    fun `a region names the regions it sits inside, and there may be several`() {
+        val parents = assertNotNull(Types.REGION["parents"])
+        assertEquals(Cardinality.LIST, parents.cardinality)
+        assertIs<ReferenceDescription>(parents)
+        assertEquals("region", parents.targetType)
+    }
+
+    @Test
+    fun `an emergency contact may be a plain name, having no item of their own`() {
+        val contacts = assertNotNull(Types.PERSON["emergency_contacts"])
+        assertEquals(Cardinality.LIST, contacts.cardinality)
+        assertIs<ReferenceDescription>(contacts)
+        assertTrue(contacts.oneOffAllowed)
     }
 }
 

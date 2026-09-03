@@ -4,6 +4,7 @@ import yemoja.data.BooleanDescription
 import yemoja.data.Cardinality
 import yemoja.data.DateDescription
 import yemoja.data.Dimension
+import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.GasDescription
 import yemoja.data.Item
@@ -124,18 +125,34 @@ private fun particulars(field: FieldDescription): List<Pair<String, String>> = w
 }
 
 /**
+ * What a field holds, one entry to an entry: one for a single value, several for a list.
+ *
+ * An entry that could not be read shows why in its place. The rest of the list is unaffected —
+ * `DATA-77` — and dropping it would leave a shorter list than the file holds.
+ */
+@Suppress("UNCHECKED_CAST")
+internal fun entriesOf(field: FieldDescription, value: Any): List<String> =
+    if (field.cardinality != Cardinality.LIST) listOf(field.format(value, Units.DEFAULT))
+    else (value as List<Element<Any>>).map { entry ->
+        when (entry) {
+            is Element.Usable -> field.format(entry.value, Units.DEFAULT)
+            is Element.Unusable -> "! " + entry.reason
+        }
+    }
+
+/**
  * What the field holds on this item, whole and uncut.
  *
  * A value that could not be read shows both what was written and why it was refused, since the
- * two together are what a reader needs to fix it.
+ * two together are what a reader needs to fix it. A list is a bullet apiece, which is what makes
+ * it possible to see where one entry ends and the next begins.
  */
 private fun held(item: Item, field: FieldDescription): List<Line> =
     when (val read = item.read(field.name)) {
         is Result.Usable -> listOf(
             Line(listOf(Span("  " + originOf(read.origin)))),
             Line(listOf(Span(""))),
-            Line(listOf(Span("  " + field.format(read.value, Units.DEFAULT)))),
-        )
+        ) + entries(field, read.value)
 
         is Result.Unusable -> listOf(
             Line(listOf(Span("  written, and could not be read"))),
@@ -147,6 +164,16 @@ private fun held(item: Item, field: FieldDescription): List<Line> =
 
         Result.Absent -> listOf(Line(listOf(Span("  nothing"))))
     }
+
+/** A single value on its own row, and a list as a bullet apiece. */
+private fun entries(field: FieldDescription, value: Any): List<Line> {
+    val said = entriesOf(field, value)
+    if (field.cardinality != Cardinality.LIST) return said.map { Line(listOf(Span("  " + it))) }
+    // A written list with nothing in it is not the same as a field nobody wrote, and a row of
+    // bullets with no bullets in it would look like the second.
+    if (said.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
+    return said.map { Line(listOf(Span("  - " + it))) }
+}
 
 private fun originOf(origin: Result.Origin): String = when (origin) {
     Result.Origin.STORED -> "written"
