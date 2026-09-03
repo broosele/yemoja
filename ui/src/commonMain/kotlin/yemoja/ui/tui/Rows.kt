@@ -23,34 +23,66 @@ internal const val VALUE_WIDTH: Int = 32
 /** How far an item inside an item is set in. */
 internal const val STEP: Int = 2
 
+/** Steps is the way from an item to a field inside it: a field, and where in it once keyed. */
+internal typealias Steps = List<Pair<FieldDescription, String?>>
+
 /**
- * Row is one line of an item's fields.
+ * Row is one line of an item's fields, and one field a reader can choose.
  *
  * Immutable.
  *
- * [top] is which of the item's own fields the row belongs to, so that choosing a field can mark
- * it however deep its own rows go. [indent] is how far in it sits, one step per item inside an
- * item. [value] is empty on a row that only names what follows it.
+ * [steps] is the way to it, which is what opening it needs and what marking it goes by.
+ * [indent] is how far in it sits, one step per item inside an item. [value] is empty on a row
+ * that names a field holding an item, whose own rows follow it.
  */
 internal class Row(
-    val top: Int,
+    val steps: Steps,
     val indent: Int,
     val label: String,
     val value: List<Span> = emptyList(),
-)
+) {
+
+    /** The field this row is. */
+    val field: FieldDescription get() = steps.last().first
+}
 
 /**
- * Every field of [item], with what is inside an item indented under its own name.
+ * Every field of [item], with the fields of an item inside it indented under its own name.
  *
- * A field holding one item is its name and then that item's fields. A field holding several is
- * its name, then each key, then that entry's fields under it. Nothing is folded away, because a
- * reader who cannot see that a dive has three profiles cannot ask for them either.
+ * **One row is one field, and every one of them can be chosen.** A field holding one item is
+ * its name and then that item's fields, however deep that goes.
  *
- * A series is how many samples it has rather than the samples themselves, however deep it sits.
- * Expanding one belongs where a reader asked for that field and nowhere else.
+ * Everything else says what it amounts to and no more: a list as its values, a series as how
+ * many samples it took, and a field holding several as its keys. Those are unbounded — a dive
+ * with three profiles of twenty fields would be sixty rows of somebody else's business — and
+ * they are shown whole where a reader asks for that field.
  */
-internal fun rowsOf(item: Item): List<Row> =
-    item.description.fields.flatMapIndexed { top, field -> rowsOf(top, field, item, 0) }
+internal fun rowsOf(item: Item): List<Row> = rowsOf(item, emptyList(), 0)
+
+private fun rowsOf(item: Item, above: Steps, indent: Int): List<Row> =
+    item.description.fields.flatMap { field ->
+        val steps = above + (field to null)
+        val read = item.read(field.name)
+        val name = Row(steps, indent, field.label)
+        when {
+            field is OwnedItemDescription && field.cardinality == Cardinality.SINGLE -> {
+                val held = (read as? Result.Usable)?.value as? Item
+                listOf(name) + (held?.let { rowsOf(it, steps, indent + 1) } ?: emptyList())
+            }
+
+            field.cardinality == Cardinality.KEYED ||
+                field.cardinality == Cardinality.KEYED_SERIES ->
+                listOf(Row(steps, indent, field.label, keysIn(read)))
+
+            else -> listOf(Row(steps, indent, field.label, valueOf(field, read)))
+        }
+    }
+
+/** The keys of a field holding one thing per key, as many as fit and how many did not. */
+private fun keysIn(read: Result<Any>): List<Span> {
+    val keys = keyedOf((read as? Result.Usable)?.value).map { it.first }
+    return if (keys.isEmpty()) emptyList() else listOf(Span(shortened(keys)))
+}
 
 /**
  * One row per field of [item], without going into anything inside it.
@@ -59,81 +91,20 @@ internal fun rowsOf(item: Item): List<Row> =
  * reader is choosing which to go into rather than reading them all.
  */
 internal fun ownRowsOf(item: Item): List<Row> =
-    item.description.fields.mapIndexed { top, field ->
+    item.description.fields.map { field ->
+        val steps = listOf(field to null)
         val read = item.read(field.name)
         val keyed = field.cardinality == Cardinality.KEYED ||
             field.cardinality == Cardinality.KEYED_SERIES
         when {
-            keyed -> Row(top, 0, field.label, listOf(Span(counted(keyedOf(
-                (read as? Result.Usable)?.value).size))))
+            keyed -> Row(steps, 0, field.label, keysIn(read))
 
             field is OwnedItemDescription ->
-                Row(top, 0, field.label, listOf(Span(if (read is Result.Usable) "..." else "")))
+                Row(steps, 0, field.label, listOf(Span(if (read is Result.Usable) "..." else "")))
 
-            else -> Row(top, 0, field.label, valueOf(field, read))
+            else -> Row(steps, 0, field.label, valueOf(field, read))
         }
     }
-
-/** How many things sit under a field, said so that nothing reads as one. */
-private fun counted(many: Int): String = "$many entr" + if (many == 1) "y" else "ies"
-
-/** The rows one field of [item] takes, its own name first. */
-internal fun rowsOf(field: FieldDescription, item: Item): List<Row> =
-    rowsOf(0, field, item, 0)
-
-private fun rowsOf(top: Int, field: FieldDescription, item: Item, indent: Int): List<Row> {
-    val read = item.read(field.name)
-    if (field is OwnedItemDescription) return inside(top, field, read, indent)
-    return when (field.cardinality) {
-        Cardinality.KEYED, Cardinality.KEYED_SERIES -> underKeys(top, field, read, indent)
-        else -> listOf(Row(top, indent, field.label, valueOf(field, read)))
-    }
-}
-
-/**
- * A field holding items: its name, and then what is in them.
- *
- * A shape nothing writes gets a name and nothing under it. Reading an owned item as though it
- * were a value gives what a Kotlin object calls itself, which is worse than saying nothing.
- */
-private fun inside(
-    top: Int,
-    field: OwnedItemDescription,
-    read: Result<Any>,
-    indent: Int,
-): List<Row> {
-    val name = Row(top, indent, field.label)
-    val held = (read as? Result.Usable)?.value ?: return listOf(name)
-    return when (field.cardinality) {
-        Cardinality.SINGLE -> listOf(name) + fieldsOf(top, held, indent + 1)
-
-        Cardinality.KEYED -> listOf(name) + keyed(held).flatMap { (key, entry) ->
-            listOf(Row(top, indent + 1, key)) + fieldsOf(top, entry, indent + 2)
-        }
-
-        else -> listOf(name)
-    }
-}
-
-/** A field holding one value per key: its name, and then a row apiece. */
-private fun underKeys(
-    top: Int,
-    field: FieldDescription,
-    read: Result<Any>,
-    indent: Int,
-): List<Row> {
-    val name = Row(top, indent, field.label)
-    val held = (read as? Result.Usable)?.value ?: return listOf(name)
-    return listOf(name) + keyed(held).map { (key, value) ->
-        Row(top, indent + 1, key, listOf(Span(said(field, value))))
-    }
-}
-
-/** The fields of an item held inside another, or nothing where what is there is not one. */
-private fun fieldsOf(top: Int, held: Any, indent: Int): List<Row> {
-    val within = held as? Item ?: return emptyList()
-    return within.description.fields.flatMap { rowsOf(top, it, within, indent) }
-}
 
 /** What one field holds, cut to the room a row has for it. */
 private fun valueOf(field: FieldDescription, read: Result<Any>): List<Span> = when (read) {

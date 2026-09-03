@@ -82,16 +82,21 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     val item: ReferenceableItem? get() = items.getOrNull(chosen[tab])
 
     /**
-     * The fields of the open type, which are all of them.
+     * The rows of the chosen item: one per field, and one per field of anything inside it.
      *
-     * Every shape has a way of being shown now: one value beside its name, several separated by
-     * commas, a series as how many samples it holds, and an item inside an item indented under
-     * its own name.
+     * Every one of them can be chosen, which is what makes a field of a medical reachable
+     * without its being a place of its own.
      */
-    val fields: List<FieldDescription> get() = type.fields
+    internal val rows: List<Row> get() = item?.let { rowsOf(it) }.orEmpty()
+
+    /** The chosen row, or absent where the open type has no items. */
+    internal val row: Row? get() = rows.getOrNull(chosenField[tab])
 
     /** The chosen field, or absent where the open type has none. */
-    val field: FieldDescription? get() = fields.getOrNull(chosenField[tab])
+    val field: FieldDescription? get() = row?.field
+
+    /** The fields of the open type, for anything counting them. */
+    val fields: List<FieldDescription> get() = type.fields
 
     /**
      * How many values the chosen field holds, or absent where it does not hold a list of them.
@@ -133,7 +138,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         }
         // An emptied tab leaves the chosen row past the end, and nothing else corrects it.
         chosen[tab] = chosen[tab].coerceIn(0, (items.size - 1).coerceAtLeast(0))
-        chosenField[tab] = chosenField[tab].coerceIn(0, (fields.size - 1).coerceAtLeast(0))
+        chosenField[tab] = chosenField[tab].coerceIn(0, (rows.size - 1).coerceAtLeast(0))
         return running
     }
 
@@ -166,7 +171,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     private fun open() {
         val item = item ?: return
         if (!opened) {
-            path.add((field ?: return) to null)
+            path.addAll((row ?: return).steps)
         } else {
             when (val ends = endsOf(item, path)) {
                 is Ends.Within -> path.add(ends.item.description.fields[chosenEntry] to null)
@@ -209,12 +214,13 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
     /** Move [by] fields, round the end. */
     private fun step(by: Int) {
-        if (fields.isEmpty()) return
-        chosenField[tab] = (chosenField[tab] + by + fields.size) % fields.size
+        val many = rows.size
+        if (many == 0) return
+        chosenField[tab] = (chosenField[tab] + by + many) % many
         // Another field is another value, so where the reader was in the last one means nothing.
         if (opened) {
             path.clear()
-            path.add(field!! to null)
+            path.addAll(row?.steps.orEmpty())
         }
         within = 0
         chosenEntry = 0
@@ -233,8 +239,10 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * state kept for a journey nobody has to retrace. `TUI-5`.
      */
     private fun follow() {
-        val naming = field as? ReferenceDescription ?: return
-        val read = item?.read(naming.name) as? Result.Usable ?: return
+        val steps = if (opened) path else row?.steps ?: return
+        val ends = endsOf(item ?: return, steps) as? Ends.Value ?: return
+        val naming = ends.field as? ReferenceDescription ?: return
+        val read = ends.read as? Result.Usable ?: return
         // Open, the one the user chose. On the row, the first that can be opened, which is the
         // one the row is showing.
         val order: Iterable<Int> = if (opened) listOf(chosenEntry) else 0..<howMany(read.value)
@@ -446,33 +454,31 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * an eye down them.
      */
     private fun detailed(rows: Int, width: Int): List<List<Span>> {
-        val item = item ?: return List(rows) { fitted(emptyList(), width) }
-        val all = rowsOf(item)
+        val all = this.rows
         if (all.isEmpty()) return List(rows) { fitted(emptyList(), width) }
         val labelWidth = all.maxOf { it.indent * STEP + it.label.length }
         scrollFields(all, rows)
         return List(rows) { row ->
-            val at = all.getOrNull(deep[tab] + row)
-            if (at == null) fitted(emptyList(), width) else fitted(spansOf(at, labelWidth), width,
-                marking(at))
+            val at = deep[tab] + row
+            // Marked by where it sits rather than by which object it is: the rows are worked out
+            // afresh each time they are asked for, so no two calls give back the same one.
+            val here = if (at == chosenField[tab]) setOf(Style.SELECTED) else emptySet()
+            val there = all.getOrNull(at)
+            if (there == null) fitted(emptyList(), width)
+            else fitted(spansOf(there, labelWidth, here), width, here)
         }
     }
 
     /** One row: its name where its depth puts it, and what it holds in the value column. */
-    private fun spansOf(row: Row, labelWidth: Int): List<Span> {
-        val here = marking(row)
+    private fun spansOf(row: Row, labelWidth: Int, here: Set<Style>): List<Span> {
         val name = " ".repeat(row.indent * STEP) + row.label
         return listOf(Span(name.padEnd(labelWidth) + "  ", here)) +
             row.value.map { Span(it.text, it.styles + here) }
     }
 
-    /** The chosen field's own row, and none of the rows it brought with it. */
-    private fun marking(row: Row): Set<Style> =
-        if (row.indent == 0 && row.top == chosenField[tab]) setOf(Style.SELECTED) else emptySet()
-
-    /** Move the column as little as it takes to show the chosen field's own row. */
+    /** Move the column as little as it takes to show the chosen row. */
     private fun scrollFields(all: List<Row>, rows: Int) {
-        val at = all.indexOfFirst { it.indent == 0 && it.top == chosenField[tab] }
+        val at = chosenField[tab]
         if (at >= 0) {
             if (at < deep[tab]) deep[tab] = at
             if (at >= deep[tab] + rows) deep[tab] = at - rows + 1

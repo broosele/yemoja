@@ -210,9 +210,9 @@ private fun held(
     read: Result<Any>,
     chosen: Int,
 ): List<Line> {
-    // A field holding items is shown as the rows it takes, where there is an item to read them
-    // from. A series taken from under a key belongs to no item by itself, and is a value.
-    if (nested(field) && item != null) return inside(field, item)
+    // A field that should hold items and holds none. What one does hold is reached by going
+    // into it, so the only thing left to say here is that there is nothing to go into.
+    if (nested(field) && item != null) return listOf(Line(listOf(Span("  (empty)"))))
     return when (read) {
         is Result.Usable -> entries(field, read.value, chosen)
 
@@ -231,22 +231,6 @@ private fun nested(field: FieldDescription): Boolean =
     field is OwnedItemDescription ||
         field.cardinality == Cardinality.KEYED ||
         field.cardinality == Cardinality.KEYED_SERIES
-
-/**
- * A field holding items, as the rows it takes.
- *
- * The row naming the field is dropped and everything moves in by one, the heading above having
- * said which field this is already.
- */
-private fun inside(field: FieldDescription, item: Item): List<Line> {
-    val rows = rowsOf(field, item).drop(1)
-    if (rows.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
-    val width = rows.maxOf { (it.indent - 1) * STEP + it.label.length }
-    return rows.map { row ->
-        val name = " ".repeat((row.indent - 1) * STEP) + row.label
-        Line(listOf(Span("  " + name.padEnd(width) + "  ")) + row.value)
-    }
-}
 
 /**
  * A single value on its own row, and a list as a bullet apiece with [chosen] set apart.

@@ -181,14 +181,23 @@ would mean a field taking several rows, which is a layout question nobody has as
 The supplied libraries load, so a logbook declaring them shows them under its own items —
 they travel inside the application and need no second argument, `LIB-6`.
 
-**An item inside an item is indented under the name of the field holding it**, and one held
-under keys has a row per key with its own fields further in again. Nothing is folded away: a
-reader who cannot see that a dive has three profiles cannot ask for them either. Values line up
-in one column however deep their names sit, which is what lets an eye run down them, and only
-the chosen field's own row is set apart — a whole item reversed is a wall rather than a cursor.
+**An item inside an item is indented under the name of the field holding it**, and each of its
+fields is a row that can be chosen like any other — tab walks all of them, at whatever depth
+they sit. Values line up in one column however deep their names sit, which is what lets an eye
+run down them, and only the chosen row is set apart, not the rows under it: a whole item
+reversed is a wall rather than a cursor.
 
-The column of fields scrolls, since an item holding items is easily taller than a screen. Tab
-moves it, keeping the chosen field in view.
+**A field holding several says its keys and no more** — `Profiles  p1, p2`, through the same
+cut and count a list gets. What is under them is unbounded: a dive with three profiles of
+twenty fields would be sixty rows of somebody else's business, so they are shown whole where a
+reader asks for that field rather than in front of one who did not.
+
+That is the line between the two: **what a field holds is expanded where it is bounded and
+summarised where it is not.** One item is a handful of fields and always the same handful; a
+list, a series and a set of keys are however many somebody wrote.
+
+The column scrolls, since an item holding items is easily taller than a screen. Tab moves it,
+keeping the chosen row in view.
 
 Every shape the model has is reachable now that a dive is described: its profiles under keys,
 a profile's depth against time, and its pressures one series per gas source, which is the only

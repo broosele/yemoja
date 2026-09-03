@@ -35,6 +35,12 @@ private val THREE = logbook(
 private fun screen(set: ItemSet = THREE): Screen = Screen(set, Types.ALL)
 
 /** The chosen row of the list column, without its marker or its padding. */
+/** Tab along until the field called [name] is chosen, at whatever depth it sits. */
+private fun toField(screen: Screen, name: String) {
+    repeat(screen.rows.size) { if (screen.field?.name != name) screen.press(Key.NEXT_FIELD) }
+    assertEquals(name, screen.field?.name)
+}
+
 /** Change tab until the type called [name] is open, however many there are. */
 private fun toTab(screen: Screen, name: String) {
     repeat(Types.ALL.size) { if (screen.type.name != name) screen.press(Key.RIGHT) }
@@ -1246,12 +1252,6 @@ class NestedTest {
             .map { it.text.substring(width / 3 + 1).trimEnd() }
             .filter { it.isNotBlank() }
 
-    /** Tab along until the field called [name] is the chosen one. */
-    private fun toField(screen: Screen, name: String) {
-        repeat(screen.fields.size) { if (screen.field?.name != name) screen.press(Key.NEXT_FIELD) }
-        assertEquals(name, screen.field?.name)
-    }
-
     private val medical = """{"medical": {"blood_group": "O+", "height": 1.78}}"""
 
     @Test
@@ -1268,13 +1268,13 @@ class NestedTest {
     }
 
     @Test
-    fun `a field holding several names each key and sets its fields in further`() {
+    fun `a field holding several says its keys and no more`() {
+        // Unbounded: a dive with three profiles of twenty fields would be sixty rows of
+        // somebody else's business. They are shown whole where a reader asks for that field.
         val courses = """{"courses": {"k1": {"date": "2019-06-02"}, "k2": {}}}"""
         val said = rows(person(courses))
-        assertTrue("Courses" in said, said.toString())
-        assertTrue(said.any { it.startsWith("  k1") }, said.toString())
-        assertTrue(said.any { it.startsWith("  k2") }, said.toString())
-        assertTrue(said.any { it.startsWith("    Date") }, said.toString())
+        assertTrue(said.any { squeezed(it) == "Courses k1, k2" }, said.toString())
+        assertTrue(said.none { it.trim().startsWith("Date") }, said.toString())
     }
 
     @Test
@@ -1348,11 +1348,6 @@ class PathTest {
         )
         toTab(screen, "person")
         return screen
-    }
-
-    private fun toField(screen: Screen, name: String) {
-        repeat(screen.fields.size) { if (screen.field?.name != name) screen.press(Key.NEXT_FIELD) }
-        assertEquals(name, screen.field?.name)
     }
 
     private fun said(screen: Screen): List<String> =
@@ -1496,12 +1491,16 @@ class PathTest {
     }
 
     @Test
-    fun `changing field while open opens that field instead of going deeper`() {
+    fun `changing field while open opens the one now chosen, wherever it sits`() {
         val screen = person()
         toField(screen, "medical")
         screen.press(Key.OPEN)
         screen.press(Key.OPEN)
         screen.press(Key.NEXT_FIELD)
-        assertEquals(2, said(screen).first().count { it == '/' }, said(screen).first())
+        // Tab moves the cursor in the item view, and what is open follows it there.
+        assertTrue(
+            said(screen).first().endsWith("/ ${screen.field?.name}"),
+            said(screen).first() + " for " + screen.field?.name,
+        )
     }
 }
