@@ -484,10 +484,23 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * that the space meant something.
      */
     private fun wrapped(line: Line, width: Int): List<Line> {
+        // Flattened whether or not it fits. Measuring the escaped form and painting the
+        // unescaped one let a short break through, and the terminal took it: the rest of the
+        // value landed at column 0, outside the rectangle this draws. Nothing reaches here
+        // holding one now, since a remark is broken into rows before this and every other
+        // text is refused a break. The flattening stays as the guarantee rather than the
+        // repair: this is what makes a Line one row, and it should not rest on who calls it.
         val text = flat(line.text)
-        if (text.length <= width) return listOf(line)
+        // Span by span, so that what each one is underlined or set apart for survives.
+        if (text.length <= width) {
+            return listOf(Line(line.spans.map { Span(flat(it.text), it.styles) }))
+        }
         val styles = line.spans.firstOrNull()?.styles.orEmpty()
-        return text.chunked(width).map { Line(listOf(Span(it, styles))) }
+        val indent = " ".repeat(text.takeWhile { it == ' ' }.length.coerceAtMost(width / 4))
+        val rest = (width - indent.length).coerceAtLeast(1)
+        val pieces = listOf(text.take(width)) +
+            text.drop(width).chunked(rest).map { indent + it }
+        return pieces.map { Line(listOf(Span(it, styles))) }
     }
 
     /** The tab bar: every type in order, the open one in brackets. */

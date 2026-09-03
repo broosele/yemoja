@@ -257,10 +257,42 @@ class PaintingTest {
         )
         val screen = screen(set)
         toTab(screen, "region")
-        for (line in screen.paint(80, 12).map { it.text }) {
+        // Opened as well as beside the list. Checking only the list is what let a break
+        // through: a value short enough to fit was painted without being flattened.
+        for (opened in listOf(false, true)) {
+            if (opened) {
+                toField(screen, "remarks")
+                screen.press(Key.OPEN)
+            }
+            for (line in screen.paint(80, 12).map { it.text }) {
+                assertTrue(line.none { it < ' ' }, "one row per line, and |$line| is not")
+                assertEquals(80, line.length)
+            }
+        }
+    }
+
+    @Test
+    fun `a break in text that is not a remark never reaches a row at all`() {
+        // `remarks` is the only field allowed one, and the layer below refuses the rest, so
+        // taking a break as a break is safe: nothing else can be carrying one.
+        val set = logbook(
+            "dive_site.json" to """{"blue_quarry": {"name": "Blue Quarry",
+                "alternative_names": ["The Quarry\nDe Groeve", "Blauwe Groeve"]}}""",
+        )
+        val screen = screen(set)
+        toTab(screen, "dive_site")
+        toField(screen, "alternative_names")
+        screen.press(Key.OPEN)
+        val said = screen.paint(80, 16).map { it.text }
+        for (line in said) {
             assertTrue(line.none { it < ' ' }, "one row per line, and |$line| is not")
             assertEquals(80, line.length)
         }
+        assertTrue(
+            said.any { "alternative_names should be a single line of text" in it },
+            "refused, and the entry beside it is untouched: " + said.joinToString("|"),
+        )
+        assertTrue(said.any { "Blauwe Groeve" in it }, said.joinToString("|"))
     }
 
     @Test
@@ -272,6 +304,36 @@ class PaintingTest {
         toTab(screen, "region")
         val remarks = screen.paint(80, 12).map { it.text }.first { "Remarks" in it }
         assertTrue("Remarks   First." + ESCAPE + "Second." in remarks, remarks)
+    }
+
+    @Test
+    fun `opened, each line of a value is a row of its own, set in alike`() {
+        val set = logbook(
+            "region.json" to """{"north_sea": {"remarks": "Ebb runs hard.\nPark north."}}""",
+        )
+        val screen = screen(set)
+        toTab(screen, "region")
+        toField(screen, "remarks")
+        screen.press(Key.OPEN)
+        val said = screen.paint(60, 20).map { it.text.trimEnd() }
+        assertTrue("  Ebb runs hard." in said, said.joinToString("|"))
+        assertTrue("  Park north." in said, "the second line keeps the column: $said")
+    }
+
+    @Test
+    fun `a value too wide for the screen keeps its column where it carries on`() {
+        val long = "Ebb runs hard and the vis goes with it, so the second half is on the wall."
+        val set = logbook("region.json" to """{"north_sea": {"remarks": "$long"}}""")
+        val screen = screen(set)
+        toTab(screen, "region")
+        toField(screen, "remarks")
+        screen.press(Key.OPEN)
+        val said = screen.paint(50, 20).map { it.text }
+        val at = said.indexOfFirst { it.startsWith("  Ebb runs") }
+        assertTrue(at >= 0, said.toString())
+        val next = said[at + 1]
+        assertTrue(next.startsWith("  "), "carried on in the same column: |$next|")
+        assertTrue(next.isNotBlank(), "and there is more of it: $said")
     }
 
     @Test

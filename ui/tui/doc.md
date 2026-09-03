@@ -203,10 +203,28 @@ value that would not read. Both still count as a value the cursor moves over: it
 what a reader sees, not over what happens to be followable.
 
 **A painted line holds no line break.** `remarks` is the one multiline field and a terminal row
-is not multiline, so a break is shown as `\n`, the escape a file writes it with. Taken instead,
-one remark would occupy three rows while measuring as one, and in raw mode leave the cursor
-wherever the last of them ended. A remark longer than the column is cut there; showing it whole
-would mean a field taking several rows, which is a layout question nobody has asked yet.
+is not multiline, so on the row beside the list a break is shown as `\n`, the escape a file
+writes it with. Taken instead, one remark would occupy three rows while measuring as one, and in
+raw mode leave the cursor wherever the last of them ended. A remark longer than the column is cut
+there.
+
+**Opened, the breaks are taken**, one row per line, each set in by the same two spaces so the
+value stays in one column. That does not contradict the rule above, which is about a painted
+line: three written lines become three painted lines rather than one holding a break. The open
+field is where a value is shown whole, and a remark written as three lines that arrives as one
+run of text with `\n` in it has been shown in part.
+
+A line still too wide for the screen carries on below, and the rows after the first are set in as
+far as the line itself is, so a value that wraps stays in its own column rather than running back
+to the edge.
+
+Both go through one function, and it flattens whatever it is given whether or not the text fits.
+Measuring the escaped form and painting the unescaped one is exactly the bug that was there: a
+break short enough to fit was painted as a break, the terminal took it, and the rest of the value
+landed at column 0 outside the rectangle. Nothing reaches that function holding a break now — a
+remark is broken into rows before it, and every other text is refused one by the layer below —
+but the flattening is what makes a painted line one row, and that should not rest on who calls
+it.
 
 The supplied libraries load, so a logbook declaring them shows them under its own items —
 they travel inside the application and need no second argument, `LIB-6`.

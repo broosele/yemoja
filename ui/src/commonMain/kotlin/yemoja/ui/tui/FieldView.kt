@@ -241,7 +241,7 @@ private fun nested(field: FieldDescription): Boolean =
 private fun entries(field: FieldDescription, value: Any, chosen: Int): List<Line> {
     if (value is Series) return samples(field, value)
     val held = entriesOf(field, value)
-    if (field.cardinality != Cardinality.LIST) return held.map { Line(listOf(Span("  "), it)) }
+    if (field.cardinality != Cardinality.LIST) return held.flatMap { broken(it) }
     // A written list with nothing in it is not the same as a field nobody wrote, and a row of
     // bullets with no bullets in it would look like the second.
     if (held.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
@@ -251,6 +251,18 @@ private fun entries(field: FieldDescription, value: Any, chosen: Int): List<Line
         Line(listOf(Span("  - ", here), Span(entry.text, entry.styles + here)))
     }
 }
+
+/**
+ * One value as a row apiece, a line break in it taken as a break.
+ *
+ * This is the one place a break is taken rather than shown. Beside the list a row is a row and
+ * `remarks` is escaped into one, which `ui/tui/doc.md` explains; opened, the field is being shown
+ * whole, and three lines written as three are three. Each carries the same indent, so the value
+ * stays in one column.
+ */
+private fun broken(value: Span): List<Line> =
+    value.text.split("\r\n", "\n", "\r")
+        .map { Line(listOf(Span("  "), Span(it, value.styles))) }
 
 private fun originOf(origin: Result.Origin): String = when (origin) {
     Result.Origin.STORED -> "written"
