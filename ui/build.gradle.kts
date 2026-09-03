@@ -2,13 +2,15 @@ plugins {
     kotlin("multiplatform")
 }
 
+/** Where the application starts. Named once, since two places need it. */
+val entry = "yemoja.ui.MainKt"
+
 kotlin {
     jvmToolchain(21)
 
     // The only target this machine can build, for the reasons data/build.gradle.kts gives.
-    jvm {
-        mainRun { mainClass.set("yemoja.ui.tui.MainKt") }
-    }
+    // No run task: Gradle gives a child process no terminal, so it cannot host this one.
+    jvm()
 
     sourceSets {
         commonMain.dependencies {
@@ -26,4 +28,27 @@ kotlin {
             implementation(kotlin("test"))
         }
     }
+}
+
+// Start scripts, so this is run as `yemoja <command>` rather than through Gradle. They are the
+// only way to use an interactive front end, since Gradle gives a child process no terminal. The
+// application plugin would write them and is incompatible with the multiplatform one, so the two
+// tasks it would have added are here instead.
+val jvmMain = kotlin.jvm().compilations.getByName("main")
+
+val runtime = files(tasks.named("jvmJar"), jvmMain.runtimeDependencyFiles)
+
+val startScripts = tasks.register<CreateStartScripts>("startScripts") {
+    applicationName = "yemoja"
+    mainClass = entry
+    outputDir = layout.buildDirectory.dir("scripts").get().asFile
+    classpath = runtime
+}
+
+tasks.register<Sync>("installDist") {
+    description = "Writes bin/yemoja and the jars it needs into build/install/yemoja."
+    group = "distribution"
+    into(layout.buildDirectory.dir("install/yemoja"))
+    from(startScripts) { into("bin") }
+    from(runtime) { into("lib") }
 }

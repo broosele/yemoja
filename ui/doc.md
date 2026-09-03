@@ -14,6 +14,10 @@ by side; they share nothing but the [logic layer](../logic/doc.md) underneath th
 The API and TUI are not throwaways. They keep the logic layer honest: anything that
 can only be done through the GUI has leaked presentation into business logic.
 
+**One command, one front end.** The application starts in one place, `yemoja`, which names a
+command per front end — `yemoja tui <logbook folder>` — so a user does not have to know which
+executable each of them became. Nothing else reads a command line.
+
 ## Rules that apply to every front end
 
 - **Talk to the Universe.** The logic layer offers one access point — see

@@ -27,8 +27,8 @@ GUI's feature set. If the TUI needs to be pretty, that is what the GUI is for.
 
 ## What it does
 
-One argument, the logbook's folder. A tab per item type, the ids of that type down the
-left, and the chosen item's fields on the right. Left and right change tab and wrap round;
+`yemoja tui <logbook folder>`. A tab per item type, the ids of that type down the left, and
+the chosen item's fields on the right. Left and right change tab and wrap round;
 up and down move within the list and stop at its ends, because a list that wraps loses the
 user's place on a long one. `q`, escape and ctrl-C all leave, since raw mode swallows the
 usual one.
@@ -49,6 +49,10 @@ One thing is absent for now. **Fields holding more than one value are left out**
 settled how a list, a keyed collection, an owned item and a series are each shown; only
 [`Types`](../../logic/doc.md) knows the difference, and only single values are described so
 far anyway.
+
+It must be started from a real terminal, which is why it cannot be run through Gradle: Gradle
+gives a child process no terminal, so there is no run task and `./gradlew :ui:installDist`
+writes the start scripts instead.
 
 `Screen` holds no terminal. It answers a key and paints a rectangle of text, so the whole
 interface is tested without one; the terminal lives in one file beside it and does nothing

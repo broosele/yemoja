@@ -51,10 +51,13 @@ the whole of it. Running the tests is in [testing.md](testing.md).
 **One thing runs**: the terminal front end, over a logbook folder.
 
 ```
-./gradlew :ui:jvmRun --args="<logbook folder>"
+./gradlew :ui:installDist          writes ui/build/install/yemoja/bin
+yemoja tui <logbook folder>        with that bin directory on the path
 ```
 
-It needs a real terminal, so a pipe or a redirect gets a message rather than a screen. It
+`yemoja` on its own says which commands there are; there is one so far. It must be started
+from a real terminal, so a pipe or a redirect gets a message rather than a screen — which is
+also why it cannot be run through Gradle, since Gradle gives a child process no terminal. It
 reads and shows; nothing in this project writes a logbook yet. See
 [ui/tui/doc.md](ui/tui/doc.md).
 

@@ -4,7 +4,6 @@ import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
 import yemoja.logic.Logbook
 import yemoja.logic.Types
-import kotlin.system.exitProcess
 
 /*
  * The terminal itself: the one place that reads a keyboard and puts characters on a screen.
@@ -13,30 +12,22 @@ import kotlin.system.exitProcess
  * See ../../../../../../doc.md — the TUI's own document is ui/tui/doc.md.
  */
 
-/** What the interface answers to, shown when it is started with the wrong arguments. */
-private const val USAGE = "yemoja-tui <logbook folder>"
-
 /**
- * Open the logbook named on the command line and show it until the user leaves.
+ * Show the logbook in [folder] until the user leaves, and answer with what to exit with.
  *
- * One argument, because a logbook is a folder and this reads exactly one. **Nothing is written**:
- * there is no writer anywhere in the project yet, so this cannot change a logbook whatever a user
- * presses.
+ * **Nothing is written**: there is no writer anywhere in the project yet, so this cannot change a
+ * logbook whatever a user presses.
  */
-fun main(args: Array<String>) {
-    if (args.size != 1) {
-        System.err.println(USAGE)
-        exitProcess(2)
-    }
+fun tui(folder: String): Int {
     val set = try {
-        Logbook.open(args[0])
+        Logbook.open(folder)
     } catch (refused: RuntimeException) {
         // A folder that is not a logbook, or a file in it that will not read. Either way the
         // message names what was wrong, and a terminal that never started needs no tidying up.
-        System.err.println("${args[0]} could not be read: ${refused.message}")
-        exitProcess(1)
+        System.err.println("$folder could not be read: ${refused.message}")
+        return 1
     }
-    show(Screen(set, Types.ALL))
+    return show(Screen(set, Types.ALL))
 }
 
 /**
@@ -45,15 +36,15 @@ fun main(args: Array<String>) {
  * The terminal is put back the way it was found whatever happens, including the alternate screen
  * and the cursor, which raw mode alone does not restore.
  */
-private fun show(screen: Screen) {
+private fun show(screen: Screen): Int {
     val terminal = Terminal()
     val raw = try {
         terminal.enterRawMode()
     } catch (without: IllegalStateException) {
         // Piped, redirected, or run by a build tool. Nothing is broken and there is nothing to
         // tidy up, since the terminal has not been touched yet.
-        System.err.println("$USAGE needs a terminal: ${without.message}")
-        exitProcess(1)
+        System.err.println("the terminal interface needs a terminal: ${without.message}")
+        return 1
     }
     print(ENTER)
     try {
@@ -68,6 +59,7 @@ private fun show(screen: Screen) {
         print(LEAVE)
         System.out.flush()
     }
+    return 0
 }
 
 /**
