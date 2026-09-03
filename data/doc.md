@@ -771,8 +771,8 @@ Nothing above it. This is the bottom of the stack, and it must stay free of any
 dependency on logic, UI, or a specific source.
 
 **One library**, and it is named in one file. Common Kotlin has no file access at all, so
-reading a logbook needs something outside; `DATA-86` chose Okio and put it behind a
-four-method interface, so `DiskFileStore` is the only place that knows which library it is.
+reading a logbook needs something outside; `DATA-86` chose Okio and put it behind a small
+interface, so `DiskFileStore` is the only place that knows which library it is.
 
 ## Structure
 
@@ -785,7 +785,7 @@ data/
   src/commonMain/kotlin/yemoja/data/
                   Description.kt   what a type is, and what a field is
                   DiskFileStore.kt the machine's own files, the one place Okio is named
-                  FileStore.kt     the few file operations reading needs, and one in memory
+                  FileStore.kt     which files hold a type, and one store in memory
                   Gas.kt           a breathing mix, in whole percentages
                   Item.kt          one item of one type, referenceable or owned
                   ItemReader.kt    a description and a tree, walked into an item
@@ -913,11 +913,33 @@ To settle when we discuss architecture:
   something one library already does, on toolchains this machine does not have, and each
   platform's file rules differ in ways that are found late.
 
-  **Four operations, because reading a logbook needs four**: whether a path is a file, whether
-  it is a folder, what is directly inside a folder, and the whole of a file as text. `JSON-21`
-  has to tell a `dive` folder from a `dive.json` file, and the files are small enough to
-  read whole. Writing widens this when there is a writer; guessing at it now would be
-  designing against no implementation.
+  **Four operations, because reading needs four**: whether a path is a file, whether it is a
+  folder, what is directly inside a folder, and the whole of a file as text. `JSON-21` has to
+  tell a `dive` folder from a `dive.json` file, and the files are small enough to read whole.
+  Writing widens this when there is a writer; guessing at it now would be designing against
+  no implementation.
+
+  **A store is built from both folders**, the logbook's and the installation's library
+  directory. They are apart because a logbook contains itself and may be copied, while
+  libraries belong to the device it is opened on. The four operations run over one namespace
+  spanning the two: a path under `libraries` resolves against the library directory and any
+  other against the logbook. That is what lets a path be handed back to the store that gave
+  it, and `libraries` cannot collide, because a type is stored under its own name and no type
+  is called that.
+
+  **Asking for a type gives the files that hold it, in reading order**: each file in the
+  logbook's `dive` folder, or its single `dive.json`, and then the libraries declared for that
+  type. That order is where shadowing is applied — the first to define an id wins, so a
+  logbook item is met before a supplied one and an earlier library before a later. It is
+  written once against the four operations rather than by each platform.
+
+  **Which libraries those are is given, not found.** A store is handed the `libraries`
+  declaration from `yemoja.json` when it is built, so nothing at this layer parses a format to
+  learn what to read, and a library sitting in the directory that the logbook does not declare
+  is left alone. A declared one the installation has not got is passed over rather than
+  refused: a logbook carried to a device with an older installation names libraries that
+  device may not have, and refusing to open it would be a harsh answer to a missing list of
+  regions. The references into it go unresolved, which is a state the model already carries.
 
   **The interface earns itself twice over in tests.** A second implementation holds the files
   in memory, so nothing above needs a disk, and it needs no fake-file-system library to do it.

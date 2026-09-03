@@ -263,8 +263,10 @@ dive would renumber its neighbours and break every reference to them.
 ## Reading
 
 Two readers, both ours, in `src/commonMain/kotlin/yemoja/data/json/`. `LogbookReader` turns
-a folder into a set of items, by the convention `JSON-21` settles and with nothing declaring
-the layout. `Json` turns one text into a tree, and everything below is about that one.
+a logbook's files into a set of items. *Which* files those are is the store's to answer, by
+the convention `JSON-21` settles and with nothing declaring the layout; this turns each of
+them into items, whether it is one item named by its file or many under their own ids. `Json`
+turns one text into a tree, and everything below is about that one.
 
 It builds a `Stored` tree — the data layer's own, not one of this source's — and knows
 nothing about fields: `"max_depth": "deep"` reads happily as a string and is refused later

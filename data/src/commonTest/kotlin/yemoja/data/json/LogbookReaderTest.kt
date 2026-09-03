@@ -30,6 +30,11 @@ private val TYPES = listOf(POSTBOX, ROUND)
 private fun logbook(vararg files: Pair<String, String>): ItemSet =
     LogbookReader.read(MemoryFileStore(mapOf(*files)), TYPES)
 
+private fun withLibraries(
+    files: Map<String, String>,
+    libraries: Map<String, List<String>>,
+): ItemSet = LogbookReader.read(MemoryFileStore(files, libraries), TYPES)
+
 private fun name(set: ItemSet, id: String): Any? =
     (set[id]?.fields?.get("name") as? Result.Usable)?.value
 
@@ -146,6 +151,72 @@ class LogbookShapeTest {
             logbook("postbox.json" to """["market_square"]""")
         }
         assertEquals("postbox.json should hold a set of fields", refused.message)
+    }
+}
+
+class LibraryTest {
+
+    @Test
+    fun `a declared library is read alongside the logbook`() {
+        val set = withLibraries(
+            mapOf(
+                "postbox.json" to """{"market_square": {"name": "Market Square"}}""",
+                "libraries/postbox/supplied.json" to """{"almshouse": {"name": "Almshouse"}}""",
+            ),
+            mapOf("postbox" to listOf("postbox/supplied")),
+        )
+        assertEquals(2, set.size)
+        assertEquals("Almshouse", name(set, "almshouse"))
+    }
+
+    @Test
+    fun `the logbook shadows a library holding the same id`() {
+        val set = withLibraries(
+            mapOf(
+                "postbox.json" to """{"almshouse": {"name": "Mine"}}""",
+                "libraries/postbox/supplied.json" to """{"almshouse": {"name": "Theirs"}}""",
+            ),
+            mapOf("postbox" to listOf("postbox/supplied")),
+        )
+        assertEquals(1, set.size)
+        assertEquals("Mine", name(set, "almshouse"))
+    }
+
+    @Test
+    fun `the library declared first shadows one declared after it`() {
+        val set = withLibraries(
+            mapOf(
+                "libraries/postbox/first.json" to """{"almshouse": {"name": "First"}}""",
+                "libraries/postbox/second.json" to """{"almshouse": {"name": "Second"}}""",
+            ),
+            mapOf("postbox" to listOf("postbox/first", "postbox/second")),
+        )
+        assertEquals(1, set.size)
+        assertEquals("First", name(set, "almshouse"))
+    }
+
+    @Test
+    fun `a logbook file in a folder shadows a library too`() {
+        val set = withLibraries(
+            mapOf(
+                "postbox/almshouse.json" to """{"name": "Mine"}""",
+                "libraries/postbox/supplied.json" to """{"almshouse": {"name": "Theirs"}}""",
+            ),
+            mapOf("postbox" to listOf("postbox/supplied")),
+        )
+        assertEquals(1, set.size)
+        assertEquals("Mine", name(set, "almshouse"))
+    }
+
+    @Test
+    fun `a library declared for one type does not reach another`() {
+        val set = withLibraries(
+            mapOf("libraries/round/supplied.json" to """{"tuesday": {"name": "Tuesday"}}"""),
+            mapOf("round" to listOf("round/supplied")),
+        )
+        assertEquals(1, set.size)
+        assertEquals(listOf("tuesday"), set.allOf(ROUND).map { set.idOf(it) })
+        assertEquals(emptyList(), set.allOf(POSTBOX))
     }
 }
 

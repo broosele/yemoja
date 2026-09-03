@@ -12,8 +12,11 @@ import kotlin.test.assertTrue
  */
 abstract class FileStoreTest {
 
-    /** A store holding these files, at these relative paths. */
-    abstract fun storeOf(files: Map<String, String>): FileStore
+    /** A store over these files, libraries included under `libraries`, declaring these. */
+    abstract fun storeOf(
+        files: Map<String, String>,
+        libraries: Map<String, List<String>> = emptyMap(),
+    ): FileStore
 
     private val logbook = mapOf(
         "yemoja.json" to """{"version": 1}""",
@@ -79,11 +82,106 @@ abstract class FileStoreTest {
         val store = storeOf(mapOf("a.json" to "Zeelandbrug — é 🐟\nsecond line"))
         assertEquals("Zeelandbrug — é 🐟\nsecond line", store.readText("a.json"))
     }
+
+    @Test
+    fun `a library is reached by the same operations, under its own folder`() {
+        val store = storeOf(mapOf("libraries/region/world.json" to """{"europe": {}}"""))
+        assertTrue(store.isFile("libraries/region/world.json"))
+        assertFalse(store.isFile("libraries/region/atlantis.json"))
+        assertEquals("""{"europe": {}}""", store.readText("libraries/region/world.json"))
+    }
 }
 
-class MemoryFileStoreTest : FileStoreTest() {
+/** Which files hold a type, and in what order they are read. [FileStore.getPaths]. */
+abstract class GetPathsTest : FileStoreTest() {
 
-    override fun storeOf(files: Map<String, String>): FileStore = MemoryFileStore(files)
+    @Test
+    fun `a folder gives every file in it, in a settled order`() {
+        val store = storeOf(mapOf("dive/b.json" to "{}", "dive/a.json" to "{}"))
+        // Sorted, so that two machines hold the same logbook the same way.
+        assertEquals(listOf("dive/a.json", "dive/b.json"), store.getPaths("dive"))
+    }
+
+    @Test
+    fun `a type kept in one file gives that file`() {
+        val store = storeOf(mapOf("region.json" to "{}"))
+        assertEquals(listOf("region.json"), store.getPaths("region"))
+    }
+
+    @Test
+    fun `anything not ending in json is passed over`() {
+        // A logbook is a folder someone else may also keep things in.
+        val store = storeOf(mapOf("dive/a.json" to "{}", "dive/notes.txt" to "hello"))
+        assertEquals(listOf("dive/a.json"), store.getPaths("dive"))
+    }
+
+    @Test
+    fun `the declared libraries follow the logbook, in the order they were declared`() {
+        val store = storeOf(
+            mapOf(
+                "region.json" to "{}",
+                "libraries/region/world.json" to "{}",
+                "libraries/region/europe.json" to "{}",
+            ),
+            mapOf("region" to listOf("region/europe", "region/world")),
+        )
+        // The order shadowing is settled in: the first to define an id wins.
+        assertEquals(
+            listOf("region.json", "libraries/region/europe.json", "libraries/region/world.json"),
+            store.getPaths("region"),
+        )
+    }
+
+    @Test
+    fun `a library the logbook does not declare is not read, though it is there`() {
+        val store = storeOf(
+            mapOf("libraries/region/world.json" to "{}", "libraries/region/europe.json" to "{}"),
+            mapOf("region" to listOf("region/world")),
+        )
+        assertEquals(listOf("libraries/region/world.json"), store.getPaths("region"))
+    }
+
+    @Test
+    fun `a declared library this installation has not got is passed over`() {
+        val store = storeOf(
+            mapOf("libraries/region/world.json" to "{}"),
+            mapOf("region" to listOf("region/atlantis", "region/world")),
+        )
+        assertEquals(listOf("libraries/region/world.json"), store.getPaths("region"))
+    }
+
+    @Test
+    fun `libraries declared for another type are not read`() {
+        val store = storeOf(
+            mapOf("libraries/region/world.json" to "{}", "libraries/gear/generic.json" to "{}"),
+            mapOf("region" to listOf("region/world"), "gear" to listOf("gear/generic")),
+        )
+        assertEquals(listOf("libraries/region/world.json"), store.getPaths("region"))
+    }
+
+    @Test
+    fun `a type nothing holds gives no files at all`() {
+        assertEquals(emptyList(), storeOf(mapOf("dive.json" to "{}")).getPaths("wreck"))
+    }
+
+    @Test
+    fun `a type stored as a folder and as a file at once is refused`() {
+        val store = storeOf(mapOf("region.json" to "{}", "region/europe.json" to "{}"))
+        val refused = assertFailsWith<FileStoreAmbiguous> { store.getPaths("region") }
+        assertEquals(
+            "region is stored as a folder and as region.json, " +
+                "and only one of them can be the region",
+            refused.message,
+        )
+    }
+}
+
+class MemoryFileStoreTest : GetPathsTest() {
+
+    override fun storeOf(
+        files: Map<String, String>,
+        libraries: Map<String, List<String>>,
+    ): FileStore = MemoryFileStore(files, libraries)
 
     @Test
     fun `a folder exists because something is under it`() {

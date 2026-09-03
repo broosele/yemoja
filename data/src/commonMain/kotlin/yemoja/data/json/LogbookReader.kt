@@ -1,6 +1,7 @@
 package yemoja.data.json
 
 import yemoja.data.FileStore
+import yemoja.data.FileStoreAmbiguous
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
@@ -16,11 +17,11 @@ import yemoja.data.Stored
 class LogbookFormatException(message: String) : RuntimeException(message)
 
 /**
- * LogbookReader reads a folder of files into a set of items.
+ * LogbookReader reads a logbook's files, and the libraries it declares, into a set of items.
  *
- * A logbook says nothing about its own layout. Each type is stored under a fixed name, as either a
- * folder of one file per item or a single file holding them all, and this uses whichever is there.
- * `JSON-21`.
+ * Which files those are is [FileStore.getPaths]'s to answer, and it answers in reading order. This
+ * turns each of them into items: a file inside a type's folder is one item under the name of the
+ * file, and any other file holds many under ids of their own.
  *
  * **A type is stored under its own name.** `dive` holds dives, so nothing here maps one name to
  * another and nothing here holds a list of type names — which it could not, being a source that
@@ -31,8 +32,9 @@ object LogbookReader {
     /**
      * Every item in [store], of the [types] given.
      *
-     * A type with neither a folder nor a file contributes nothing, which is how a logbook with no
-     * wrecks in it reads.
+     * Where two files give one id the first wins and the second is passed over, which is how a
+     * logbook item shadows a supplied one. Two items of one id within a single file are refused by
+     * the parser, and one id used by two types in a logbook is refused by [ItemSet].
      *
      * Throws where the folder is not a logbook: a type stored both ways at once, a file that is
      * not JSON, or a file whose shape is not a set of items. **One unreadable file stops the whole
@@ -49,59 +51,39 @@ object LogbookReader {
         return set
     }
 
-    private fun itemsOf(store: FileStore, name: String): Map<String, Stored.Members> {
-        val file = "$name.json"
-        val asFolder = store.isFolder(name)
-        val asFile = store.isFile(file)
-        return when {
-            asFolder && asFile -> throw LogbookFormatException(
-                "$name is stored as a folder and as $file, and only one of them can be the $name",
-            )
-
-            asFolder -> onePerFile(store, name)
-            asFile -> grouped(store, file)
-            else -> emptyMap()
+    private fun itemsOf(store: FileStore, type: String): Map<String, Stored.Members> {
+        val paths = try {
+            store.getPaths(type)
+        } catch (stored: FileStoreAmbiguous) {
+            throw LogbookFormatException(stored.message!!)
         }
-    }
-
-    /**
-     * A folder of one file per item, the id being the file name without `.json`.
-     *
-     * Sorted, because what a folder lists first is the platform's business and two machines
-     * reading the same logbook should hold it the same way. Anything not ending in `.json` is
-     * passed over rather than complained about: a logbook is a folder someone else may also use.
-     */
-    private fun onePerFile(store: FileStore, folder: String): Map<String, Stored.Members> {
         val items = LinkedHashMap<String, Stored.Members>()
-        for (fileName in store.namesIn(folder).filter { it.endsWith(".json") }.sorted()) {
-            val path = "$folder/$fileName"
-            items[fileName.removeSuffix(".json")] = membersOf(store, path, path)
+        for (path in paths) {
+            val read = membersOf(store, path)
+            // A file inside the type's own folder is one item and its name is the id. A file's own
+            // order is kept otherwise: unlike a folder listing it is an order somebody chose, and a
+            // writer emits it settled so that saving an unchanged logbook produces no diff.
+            if (path.startsWith("$type/")) {
+                items.putIfAbsent(path.removePrefix("$type/").removeSuffix(".json"), read)
+            } else {
+                for ((id, held) in read.members) {
+                    items.putIfAbsent(id, held as? Stored.Members ?: throw fieldsExpected(id, path))
+                }
+            }
         }
         return items
     }
 
-    /**
-     * One file holding every item of a type, each under its id.
-     *
-     * The file's own order is kept. Unlike a folder listing it is an order somebody chose, and a
-     * writer emits it settled so that saving an unchanged logbook produces no diff.
-     */
-    private fun grouped(store: FileStore, path: String): Map<String, Stored.Members> {
-        val items = LinkedHashMap<String, Stored.Members>()
-        for ((id, held) in membersOf(store, path, path).members) {
-            items[id] = held as? Stored.Members
-                ?: throw LogbookFormatException("$id in $path should be a set of fields")
-        }
-        return items
-    }
+    private fun fieldsExpected(id: String, path: String): LogbookFormatException =
+        LogbookFormatException("$id in $path should be a set of fields")
 
-    private fun membersOf(store: FileStore, path: String, what: String): Stored.Members {
+    private fun membersOf(store: FileStore, path: String): Stored.Members {
         val read = try {
             Json.parse(store.readText(path))
         } catch (refused: JsonFormatException) {
-            throw LogbookFormatException("$what should be JSON: ${refused.message}")
+            throw LogbookFormatException("$path should be JSON: ${refused.message}")
         }
         return read as? Stored.Members
-            ?: throw LogbookFormatException("$what should hold a set of fields")
+            ?: throw LogbookFormatException("$path should hold a set of fields")
     }
 }
