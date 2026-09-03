@@ -262,7 +262,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
             listOf(
                 "[esc] back",
                 if (entries() != null) "[up,down] value" else "[up,down] scroll",
-                "[tab] field",
+                FIELD,
                 "[space] follow",
             )
         } else {
@@ -270,7 +270,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
                 "[esc] exit",
                 "[<-,->] type",
                 "[up,down] item",
-                "[tab] field",
+                FIELD,
                 "[enter] open",
                 "[space] follow",
             )
@@ -502,6 +502,9 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
         /** What stands between one key and the next in the bar. */
         private const val BETWEEN = " | "
+
+        /** Both directions in one, since a key that only goes forwards is half a key. */
+        private const val FIELD = "[(shift)-tab] field"
 
         /** What a line break is shown as, which is how a file writes one. */
         private const val ESCAPED = "\\n"

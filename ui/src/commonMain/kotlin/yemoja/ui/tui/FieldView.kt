@@ -128,9 +128,13 @@ private fun particulars(field: FieldDescription): List<Pair<String, String>> = w
         field.suggestedSet?.let { "usually" to it.sorted().joinToString(", ") },
     )
 
+    // Whether a plain name may stand in belongs to what the field names rather than beside it:
+    // on its own it read as a question with yes or no under it, which said no more than the
+    // question did. Only the permission is worth a word; refusing one is what every other
+    // reference does.
     is ReferenceDescription -> listOf(
-        "names a" to field.targetType,
-        "or a plain name" to if (field.oneOffAllowed) "yes" else "no",
+        "names a" to field.targetType +
+            if (field.oneOffAllowed) ", or a plain name where there is no item" else "",
     )
 
     is KeyReferenceDescription -> listOf("points into" to field.collection)

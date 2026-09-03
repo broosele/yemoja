@@ -568,6 +568,8 @@ class OpenFieldTest {
         assertTrue("kind reference" in said, said.toString())
         assertTrue("holds one value" in said, said.toString())
         assertTrue("names a round" in said, said.toString())
+        // Nothing is said about a plain name where one is not allowed, which is the norm.
+        assertTrue(said.none { "plain name" in it }, said.toString())
     }
 
     @Test
@@ -1028,10 +1030,11 @@ class ActionsTest {
 
     @Test
     fun `it says what each key does where the list is`() {
-        val said = bar(screen())
+        // Wide enough for all of them, which eighty columns is not.
+        val said = bar(screen(), 120)
         assertEquals(
-            "[esc] exit | [<-,->] type | [up,down] item | [tab] field | [enter] open | " +
-                "[space] follow",
+            "[esc] exit | [<-,->] type | [up,down] item | [(shift)-tab] field | " +
+                "[enter] open | [space] follow",
             said,
         )
     }
@@ -1040,7 +1043,7 @@ class ActionsTest {
     fun `it says something else where a field is open`() {
         val screen = screen()
         screen.press(Key.OPEN)
-        val said = bar(screen)
+        val said = bar(screen, 120)
         assertTrue(said.startsWith("[esc] back"), said)
         assertTrue("[space] follow" in said, said)
         assertTrue("[<-,->]" !in said, "the tabs do not change from inside a field: $said")
@@ -1068,11 +1071,43 @@ class ActionsTest {
         assertFalse(said.endsWith("|"), "no dangling separator: $said")
         assertFalse(said.contains("[ente"), "no half a key: $said")
         // It stops rather than skipping to something shorter, so the front is always the same.
-        assertFalse("[tab]" in said, "nothing from past the cut: $said")
+        assertFalse("[up,down]" in said, "nothing from past the cut: $said")
     }
 
     @Test
     fun `the narrowest screen there is still says one thing`() {
         assertEquals("[esc] exit", bar(screen(), Screen.LEAST_WIDTH))
+    }
+}
+
+/** What an open field says about a reference that allows a plain name. */
+class PlainNameTest {
+
+    private fun opened(oneOff: Boolean): List<String> {
+        val walk = ItemDescription(
+            "walk",
+            listOf(ReferenceDescription("who", targetType = "person", oneOffAllowed = oneOff)),
+        )
+        val types = listOf(walk)
+        val screen = Screen(
+            LogbookReader.read(MemoryFileStore(mapOf("walk.json" to """{"a": {}}""")), types),
+            types,
+        )
+        screen.press(Key.OPEN)
+        return screen.paint(90, 20).map { squeezed(it.text) }
+    }
+
+    @Test
+    fun `a field that allows one says so where it says what it names`() {
+        assertTrue(
+            "names a person, or a plain name where there is no item" in opened(true),
+            opened(true).toString(),
+        )
+    }
+
+    @Test
+    fun `a field that does not simply says what it names`() {
+        assertTrue("names a person" in opened(false), opened(false).toString())
+        assertTrue(opened(false).none { "plain name" in it }, opened(false).toString())
     }
 }

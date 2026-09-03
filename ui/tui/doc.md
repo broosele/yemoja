@@ -92,9 +92,15 @@ then the whole of what it holds.
 What a field is, is read off its description: its name and label, its kind in the words the
 manual uses for the same thing, what it holds, whether it is recorded or worked out, and then
 whatever only that kind has to say — a number's dimension and the unit it is held in, a range,
-a vocabulary, what a reference points at. The `when` over the kinds is exhaustive, so a kind
-added to the layer below is a compiler error here rather than a field this view has nothing to
-say about.
+a vocabulary, what a reference names.
+
+Only what a field *permits* is said, not what it refuses. A reference that accepts a plain
+name says so where it says what it names — `names a  person, or a plain name where there is
+no item` — and one that does not says nothing, refusing being what every other reference does.
+A row answering *yes* or *no* to a question said the same amount either way.
+
+The `when` over the kinds is exhaustive, so a kind added to the layer below is a compiler error
+here rather than a field this view has nothing to say about.
 
 What it holds is the value uncut, wrapped over as many rows as it takes. **How it came to hold
 it goes in brackets beside that heading** — `What it holds (worked out)` — rather than on a row
