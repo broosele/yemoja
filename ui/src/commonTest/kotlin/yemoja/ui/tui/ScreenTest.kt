@@ -1331,3 +1331,177 @@ class NestedTest {
         assertTrue("(empty)" in screen.paint(90, 24).map { squeezed(it.text) })
     }
 }
+
+/** Going into an item, and coming back out of it. */
+class PathTest {
+
+    private val fields = """{"medical": {"blood_group": "O+", "height": 1.78},
+        "courses": {"k1": {"date": "2019-06-02"}, "k2": {"date": "2021-03-04"}}}"""
+
+    private fun person(): Screen {
+        val screen = Screen(
+            LogbookReader.read(
+                MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
+                Types.ALL,
+            ),
+            Types.ALL,
+        )
+        toTab(screen, "person")
+        return screen
+    }
+
+    private fun toField(screen: Screen, name: String) {
+        repeat(screen.fields.size) { if (screen.field?.name != name) screen.press(Key.NEXT_FIELD) }
+        assertEquals(name, screen.field?.name)
+    }
+
+    private fun said(screen: Screen): List<String> =
+        screen.paint(90, 24).map { squeezed(it.text) }
+
+    private fun chosenRow(screen: Screen): String? = screen.paint(90, 24)
+        .firstOrNull { row -> row.spans.any { Style.SELECTED in it.styles } }
+        ?.let { squeezed(it.text) }
+
+    @Test
+    fun `opening a field that holds an item shows that item's own fields`() {
+        val screen = person()
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        assertEquals("person / anna / medical", said(screen).first())
+        assertTrue("Blood group O+" in said(screen), said(screen).toString())
+        assertEquals("Last medical check", chosenRow(screen), "the first field is chosen")
+    }
+
+    @Test
+    fun `up and down move between the fields of an item`() {
+        val screen = person()
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        screen.press(Key.DOWN)
+        assertEquals("Blood group O+", chosenRow(screen))
+        screen.press(Key.DOWN)
+        assertEquals("Height 1.78", chosenRow(screen))
+        screen.press(Key.UP)
+        assertEquals("Blood group O+", chosenRow(screen))
+    }
+
+    @Test
+    fun `enter goes into the field the cursor is on`() {
+        val screen = person()
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertEquals("person / anna / medical / blood_group", said(screen).first())
+        assertTrue("field blood_group" in said(screen), said(screen).toString())
+    }
+
+    @Test
+    fun `opening a field that holds several shows its keys`() {
+        val screen = person()
+        toField(screen, "courses")
+        screen.press(Key.OPEN)
+        assertEquals("person / anna / courses", said(screen).first())
+        assertTrue("Under each key" in said(screen), said(screen).toString())
+        assertTrue(said(screen).any { it.startsWith("k1 ") }, said(screen).toString())
+        assertTrue(said(screen).any { it.startsWith("k2 ") }, said(screen).toString())
+    }
+
+    @Test
+    fun `up and down move between the keys`() {
+        val screen = person()
+        toField(screen, "courses")
+        screen.press(Key.OPEN)
+        assertTrue(chosenRow(screen)!!.startsWith("k1"), chosenRow(screen)!!)
+        screen.press(Key.DOWN)
+        assertTrue(chosenRow(screen)!!.startsWith("k2"), chosenRow(screen)!!)
+    }
+
+    @Test
+    fun `enter on a key goes into what is under it`() {
+        val screen = person()
+        toField(screen, "courses")
+        screen.press(Key.OPEN)
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertEquals("person / anna / courses / k2", said(screen).first())
+        assertTrue("Date 2021-03-04" in said(screen), said(screen).toString())
+    }
+
+    @Test
+    fun `escape comes out one step, and lands on what was left`() {
+        val screen = person()
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        screen.press(Key.CLOSE)
+        assertEquals("person / anna / medical", said(screen).first())
+        assertEquals("Blood group O+", chosenRow(screen), "back on what was opened")
+    }
+
+    @Test
+    fun `coming out of one entry lands on the keys rather than past them`() {
+        val screen = person()
+        toField(screen, "courses")
+        screen.press(Key.OPEN)
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        screen.press(Key.CLOSE)
+        assertEquals("person / anna / courses", said(screen).first())
+        assertTrue(chosenRow(screen)!!.startsWith("k2"), "back on the key that was opened")
+        screen.press(Key.CLOSE)
+        assertFalse(screen.opened, "and out again is the list")
+        assertTrue(screen.running)
+    }
+
+    @Test
+    fun `enter at a value goes nowhere, there being nothing further in`() {
+        val screen = person()
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        screen.press(Key.OPEN)
+        val where = said(screen).first()
+        screen.press(Key.OPEN)
+        assertEquals(where, said(screen).first())
+    }
+
+    @Test
+    fun `the bar says what up and down move over here`() {
+        val screen = person()
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        assertTrue("[up,down] field" in screen.paint(120, 24).last().text)
+        screen.press(Key.OPEN)
+        assertTrue("[up,down] scroll" in screen.paint(120, 24).last().text)
+        val keyed = person()
+        toField(keyed, "courses")
+        keyed.press(Key.OPEN)
+        assertTrue("[up,down] key" in keyed.paint(120, 24).last().text)
+    }
+
+    @Test
+    fun `a field holding an item nobody wrote says so rather than opening`() {
+        val screen = Screen(
+            LogbookReader.read(
+                MemoryFileStore(mapOf("person.json" to """{"anna": {}}""")),
+                Types.ALL,
+            ),
+            Types.ALL,
+        )
+        toTab(screen, "person")
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        assertTrue("(empty)" in said(screen), said(screen).toString())
+    }
+
+    @Test
+    fun `changing field while open opens that field instead of going deeper`() {
+        val screen = person()
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        screen.press(Key.OPEN)
+        screen.press(Key.NEXT_FIELD)
+        assertEquals(2, said(screen).first().count { it == '/' }, said(screen).first())
+    }
+}

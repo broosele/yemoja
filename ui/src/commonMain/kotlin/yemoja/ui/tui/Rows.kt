@@ -52,6 +52,31 @@ internal class Row(
 internal fun rowsOf(item: Item): List<Row> =
     item.description.fields.flatMapIndexed { top, field -> rowsOf(top, field, item, 0) }
 
+/**
+ * One row per field of [item], without going into anything inside it.
+ *
+ * A field holding items says how many rather than showing them, since where this is used a
+ * reader is choosing which to go into rather than reading them all.
+ */
+internal fun ownRowsOf(item: Item): List<Row> =
+    item.description.fields.mapIndexed { top, field ->
+        val read = item.read(field.name)
+        val keyed = field.cardinality == Cardinality.KEYED ||
+            field.cardinality == Cardinality.KEYED_SERIES
+        when {
+            keyed -> Row(top, 0, field.label, listOf(Span(counted(keyedOf(
+                (read as? Result.Usable)?.value).size))))
+
+            field is OwnedItemDescription ->
+                Row(top, 0, field.label, listOf(Span(if (read is Result.Usable) "..." else "")))
+
+            else -> Row(top, 0, field.label, valueOf(field, read))
+        }
+    }
+
+/** How many things sit under a field, said so that nothing reads as one. */
+private fun counted(many: Int): String = "$many entr" + if (many == 1) "y" else "ies"
+
 /** The rows one field of [item] takes, its own name first. */
 internal fun rowsOf(field: FieldDescription, item: Item): List<Row> =
     rowsOf(0, field, item, 0)
@@ -219,3 +244,81 @@ private const val MORE = "..."
 
 /** What a line break is shown as, which is how a file writes one. */
 private const val ESCAPED = "\\n"
+
+/**
+ * Ends is where a path into an item stops, and so what is in front of the reader.
+ *
+ * Three, because there are three things a reader can be looking at: values, the fields of one
+ * item, or the keys of a field holding several. Each answers to the same keys and shows a
+ * different thing under them.
+ */
+internal sealed class Ends {
+
+    /**
+     * At a field holding values: one, a list of them, or a series.
+     *
+     * [item] is what the field belongs to, where that is an item this reached by name. It is
+     * absent for a series taken from under a key, which no item holds by itself.
+     */
+    class Value(
+        val field: FieldDescription,
+        val read: Result<Any>,
+        val item: Item? = null,
+    ) : Ends()
+
+    /** Inside one item, at its own fields. */
+    class Within(val item: Item) : Ends()
+
+    /** At the keys of a field holding one thing per key. */
+    class Keys(val field: FieldDescription, val held: List<Pair<String, Any>>) : Ends()
+
+    /**
+     * How many things a reader moves between here, or absent where there is nothing to.
+     *
+     * A function rather than a property, because inside a property's own accessor `field` is
+     * Kotlin's word for the backing field rather than this class's.
+     */
+    fun count(): Int? = when (this) {
+        is Value ->
+            if (field.cardinality != Cardinality.LIST) null
+            else ((read as? Result.Usable)?.value as? List<*>)?.size ?: 0
+
+        is Within -> item.description.fields.size
+        is Keys -> held.size
+    }
+}
+
+/**
+ * Where [steps] lead from [item], or absent where they lead nowhere.
+ *
+ * A step names a field, and once a key has been chosen it names that too. Reading a field that
+ * holds items walks into them; reading one that holds values stops there, whatever is left of
+ * the path, because there is nothing further in to go.
+ */
+internal fun endsOf(item: Item, steps: List<Pair<FieldDescription, String?>>): Ends? {
+    var here = item
+    for ((at, step) in steps.withIndex()) {
+        val (naming, key) = step
+        val read = here.read(naming.name)
+        val keyed = naming.cardinality == Cardinality.KEYED ||
+            naming.cardinality == Cardinality.KEYED_SERIES
+        if (naming !is OwnedItemDescription && !keyed) return Ends.Value(naming, read, here)
+        val usable = read as? Result.Usable
+        if (keyed) {
+            val held = keyedOf(usable?.value)
+            if (key == null) return Ends.Keys(naming, held)
+            val entry = held.firstOrNull { it.first == key }?.second ?: return null
+            if (entry !is Item) return Ends.Value(naming, Result.Usable(entry, usable!!.origin))
+            here = entry
+        } else {
+            // A field that should hold an item and holds none is not a way in. It stops here,
+            // and what it says is that there is nothing in it.
+            here = usable?.value as? Item ?: return Ends.Value(naming, read, here)
+        }
+        if (at == steps.size - 1) return Ends.Within(here)
+    }
+    return null
+}
+
+/** The entries of a keyed field, in the order they were written. */
+internal fun keyedOf(held: Any?): List<Pair<String, Any>> = keyed(held ?: return emptyList())

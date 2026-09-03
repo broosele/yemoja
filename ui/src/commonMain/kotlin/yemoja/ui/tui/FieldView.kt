@@ -40,7 +40,12 @@ import yemoja.data.WholeNumberDescription
  * The rows are logical: each is as long as it needs to be, and whoever draws them cuts, wraps
  * and scrolls. Nothing here knows how wide a screen is.
  */
-internal fun fieldLines(item: Item, field: FieldDescription, chosen: Int = 0): List<Line> {
+internal fun fieldLines(
+    field: FieldDescription,
+    read: Result<Any>,
+    item: Item?,
+    chosen: Int = 0,
+): List<Line> {
     val about = listOf(
         "field" to field.name,
         "label" to field.label,
@@ -49,7 +54,6 @@ internal fun fieldLines(item: Item, field: FieldDescription, chosen: Int = 0): L
         "role" to roleOf(field.role),
     ) + particulars(field)
     val width = about.maxOf { it.first.length }
-    val read = item.read(field.name)
     return heading("This field") +
         about.map { (name, said) -> Line(listOf(Span("  ${name.padEnd(width)}  $said"))) } +
         heading("What it holds (${saying(read)})") +
@@ -201,12 +205,14 @@ private fun samples(field: FieldDescription, series: Series): List<Line> {
  * add.
  */
 private fun held(
-    item: Item,
+    item: Item?,
     field: FieldDescription,
     read: Result<Any>,
     chosen: Int,
 ): List<Line> {
-    if (nested(field)) return inside(field, item)
+    // A field holding items is shown as the rows it takes, where there is an item to read them
+    // from. A series taken from under a key belongs to no item by itself, and is a value.
+    if (nested(field) && item != null) return inside(field, item)
     return when (read) {
         is Result.Usable -> entries(field, read.value, chosen)
 
@@ -266,4 +272,47 @@ private fun originOf(origin: Result.Origin): String = when (origin) {
     Result.Origin.STORED -> "written"
     Result.Origin.DERIVED -> "worked out"
     Result.Origin.OVERRIDDEN -> "written over what would have been worked out"
+}
+
+/**
+ * The fields of one item, one row apiece, with [chosen] set apart.
+ *
+ * Its own fields and no deeper. A reader here is choosing which to go into, and the rows of
+ * everything inside would be rows they cannot choose — the column beside the list is where the
+ * whole of an item is seen at once.
+ */
+internal fun withinLines(item: Item, chosen: Int): List<Line> {
+    val rows = ownRowsOf(item)
+    if (rows.isEmpty()) return listOf(Line(listOf(Span("  (no fields)"))))
+    val width = rows.maxOf { it.label.length }
+    return heading("What it holds") + rows.mapIndexed { at, row ->
+        val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
+        Line(
+            listOf(Span("  " + row.label.padEnd(width) + "  ", here)) +
+                row.value.map { Span(it.text, it.styles + here) },
+        )
+    }
+}
+
+/**
+ * The keys of a field holding one thing per key, with [chosen] set apart.
+ *
+ * What sits under each is said in a word — how many fields an item has, how many samples a
+ * series took — so that a reader picking one is picking something rather than a name.
+ */
+internal fun keyLines(field: FieldDescription, held: List<Pair<String, Any>>, chosen: Int):
+    List<Line> {
+    if (held.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
+    val width = held.maxOf { it.first.length }
+    return heading("Under each key") + held.mapIndexed { at, (key, entry) ->
+        val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
+        Line(listOf(Span("  " + key.padEnd(width) + "  " + summary(field, entry), here)))
+    }
+}
+
+/** What one entry under a key amounts to, in a word. */
+private fun summary(field: FieldDescription, entry: Any): String = when (entry) {
+    is Series -> samplesIn(entry)
+    is Item -> "${entry.description.fields.size} fields"
+    else -> field.format(entry, Units.DEFAULT)
 }

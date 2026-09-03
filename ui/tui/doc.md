@@ -42,8 +42,8 @@ reader learns.
 | up, down | move through whatever is in front of you, stopping at its ends |
 | tab, shift-tab | move between the chosen item's fields, round the ring |
 | space | open the item the chosen field names |
-| enter | open the chosen field on its own |
-| escape | close what is open, or leave where nothing is |
+| enter | go one step further in |
+| escape | come one step back out, or leave where there is nothing to |
 | `q`, ctrl-C | leave |
 
 A list stops at its ends because one that wraps loses the user's place on a long one; the
@@ -83,11 +83,28 @@ that is not UTF-8 shows that character as a question mark, which reads as a valu
 make sense of rather than as a value that was cut. What was cut is not lost — the field opened
 on its own shows all of it.
 
-## One field on its own
+## Going into an item
 
-Enter opens the chosen field alone. It says where it came from — type, item and field — so
-that a reader who followed a reference into it knows where they are, then what the field *is*,
-then the whole of what it holds.
+Enter opens the chosen field alone, and goes on opening from there. The top line is the way in
+— `dive / 2025-05-30#2 / profiles / p1 / pressures / g1` — so a reader who has gone four steps
+down knows where they are, and escape brings them back up one at a time.
+
+**Up and down move over whatever is in front of you, and the bar names it.** At a field holding
+one item that is its fields; at a field holding several it is the keys; at a list it is the
+values; and at a single value there is nothing to move between, so they scroll instead.
+
+**A key is a step of its own.** Coming out of one entry of a keyed field lands on its keys
+rather than skipping past them, since the keys are a place a reader chose to be.
+
+The cursor lands on what was just left rather than at the top, the way each tab keeps the row
+it was on: coming out of something is not the same as arriving somewhere.
+
+**Only one level is shown at a time here.** A reader at an item is choosing which field to go
+into, and the rows of everything inside would be rows they cannot choose. Where the whole of an
+item is wanted at once, that is the column beside the list.
+
+A field holding values says where it came from, then what the field *is*, then the whole of
+what it holds.
 
 What a field is, is read off its description: its name and label, its kind in the words the
 manual uses for the same thing, what it holds, whether it is recorded or worked out, and then

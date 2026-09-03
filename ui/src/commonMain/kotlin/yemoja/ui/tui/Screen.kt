@@ -59,15 +59,18 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     // How far down the column of fields is scrolled, which an item holding items can need.
     private val deep = IntArray(types.size)
 
-    /** Whether the chosen field is open on its own, rather than the list being shown. */
-    var opened: Boolean = false
-        private set
+    // How far into the chosen item a reader has gone: a field, then a key inside it, then a
+    // field of what was under that key, and so on down. Empty where the list is being shown.
+    private val path = ArrayList<Pair<FieldDescription, String?>>()
 
-    // How far down the open field is scrolled, and which of its values is chosen. One of each,
-    // since only one field is ever open.
+    // How far down what is open is scrolled, and which of the things in it is chosen. One of
+    // each, since a reader is in one place at a time.
     private var within = 0
 
     private var chosenEntry = 0
+
+    /** Whether something is open on its own, rather than the list being shown. */
+    val opened: Boolean get() = path.isNotEmpty()
 
     /** The type whose tab is open. */
     val type: ItemDescription get() = types[tab]
@@ -93,21 +96,14 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     /**
      * How many values the chosen field holds, or absent where it does not hold a list of them.
      *
-     * What decides whether there is anything to move between inside an open field. A single
-     * value is one thing however many rows it wraps over.
-     *
-     * It answers by the field rather than by what happens to be written, so a list nobody has
-     * filled in yet is still a list and the bar at the bottom does not change its mind from one
-     * item to the next.
-     *
-     * A function rather than a property, because inside a property's own accessor `field` is
-     * Kotlin's word for the backing field rather than this class's.
+     * What decides whether there is anything to move between where a reader is: the values of
+     * a list, the fields of an item, or the keys of a field holding several. A single value is
+     * one thing however many rows it wraps over, so there is nothing to move between and up and
+     * down scroll instead.
      */
     private fun entries(): Int? {
-        val naming = field ?: return null
-        if (naming.cardinality != Cardinality.LIST) return null
-        val read = item?.read(naming.name) as? Result.Usable ?: return 0
-        return (read.value as? List<*>)?.size ?: 0
+        if (!opened) return null
+        return endsOf(item ?: return null, path)?.count()
     }
 
     /**
@@ -127,10 +123,8 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
             Key.NEXT_FIELD -> step(1)
             Key.PREVIOUS_FIELD -> step(-1)
             Key.FOLLOW -> follow()
-            Key.OPEN -> opened = opened || (item != null && field != null)
-            // One key closes what is open and leaves where nothing is, so what it shuts is
-            // always whatever is in front of the user.
-            Key.CLOSE -> if (opened) opened = false else running = false
+            Key.OPEN -> open()
+            Key.CLOSE -> close()
             Key.QUIT -> running = false
         }
         if (!opened) {
@@ -162,11 +156,66 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         }
     }
 
+    /**
+     * Go one step further in, where there is one.
+     *
+     * From the list that is the chosen field. Inside an item it is the field the cursor is on,
+     * and at a set of keys it is the key. At values there is nowhere further to go, an open
+     * field already showing the whole of what it holds.
+     */
+    private fun open() {
+        val item = item ?: return
+        if (!opened) {
+            path.add((field ?: return) to null)
+        } else {
+            when (val ends = endsOf(item, path)) {
+                is Ends.Within -> path.add(ends.item.description.fields[chosenEntry] to null)
+                is Ends.Keys -> {
+                    val last = path.removeAt(path.size - 1)
+                    path.add(last.first to ends.held[chosenEntry].first)
+                }
+
+                else -> return
+            }
+        }
+        within = 0
+        chosenEntry = 0
+    }
+
+    /**
+     * Come one step back out, and leave where there is nothing to come out of.
+     *
+     * A key is a step of its own, so leaving one entry of a keyed field lands on its keys
+     * rather than skipping past them.
+     */
+    private fun close() {
+        if (!opened) {
+            running = false
+            return
+        }
+        val last = path.removeAt(path.size - 1)
+        if (last.second != null) path.add(last.first to null)
+        // The cursor lands on what was just left rather than at the top, the way each tab keeps
+        // the row it was on: coming out of something is not the same as arriving somewhere.
+        chosenEntry = when (val ends = item?.let { endsOf(it, path) }) {
+            is Ends.Within ->
+                ends.item.description.fields.indexOfFirst { it.name == last.first.name }
+
+            is Ends.Keys -> ends.held.indexOfFirst { it.first == last.second }
+            else -> 0
+        }.coerceAtLeast(0)
+        within = 0
+    }
+
     /** Move [by] fields, round the end. */
     private fun step(by: Int) {
         if (fields.isEmpty()) return
         chosenField[tab] = (chosenField[tab] + by + fields.size) % fields.size
         // Another field is another value, so where the reader was in the last one means nothing.
+        if (opened) {
+            path.clear()
+            path.add(field!! to null)
+        }
         within = 0
         chosenEntry = 0
     }
@@ -194,8 +243,9 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
             val target = set[named.id] ?: continue
             val to = types.indexOf(target.description)
             if (to < 0) continue
-            // Where the user has arrived is a different field, so the one they opened is shut.
-            opened = false
+            // Where the user has arrived is a different item, so the way into the last one is
+            // not a way into this one.
+            path.clear()
             tab = to
             chosen[tab] = set.allOf(target.description).indexOf(target)
             chosenField[tab] = 0
@@ -246,11 +296,11 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
     private fun rule(width: Int): Line = Line(listOf(Span("-".repeat(width))))
 
-    /** What is being looked at: the types, or the field that is open. */
+    /** What is being looked at: the types, or how far into an item a reader has gone. */
     private fun where(): String {
         if (!opened) return tabs()
-        val field = field ?: return tabs()
-        return "${type.name} / ${item?.let { set.idOf(it) }} / ${field.name}"
+        val said = path.flatMap { (naming, key) -> listOfNotNull(naming.name, key) }
+        return (listOf(type.name, item?.let { set.idOf(it) }) + said).joinToString(" / ")
     }
 
     /**
@@ -265,8 +315,8 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         val said = if (opened) {
             listOf(
                 "[esc] back",
-                if (entries() != null) "[up,down] value" else "[up,down] scroll",
-                FIELD,
+                "[up,down] " + moving(),
+                if (deeper()) "[enter] open" else FIELD,
                 "[space] follow",
             )
         } else {
@@ -287,6 +337,20 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         return shown
     }
 
+    /** What up and down move over where the reader is, in the word for that thing. */
+    private fun moving(): String = when (endsOf(item ?: return "scroll", path)) {
+        is Ends.Within -> "field"
+        is Ends.Keys -> "key"
+        is Ends.Value -> if (entries() != null) "value" else "scroll"
+        null -> "scroll"
+    }
+
+    /** Whether there is anywhere further in to go from where the reader is. */
+    private fun deeper(): Boolean = when (endsOf(item ?: return false, path)) {
+        is Ends.Within, is Ends.Keys -> true
+        else -> false
+    }
+
     /** The list of items against the chosen one's fields. */
     private fun listed(width: Int, rows: Int): List<Line> {
         val listWidth = (width / 3).coerceIn(LEAST_LIST_WIDTH, MOST_LIST_WIDTH)
@@ -305,9 +369,14 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      */
     private fun opened(width: Int, rows: Int): List<Line> {
         val item = item
-        val field = field
-        if (item == null || field == null) return List(rows) { Line(fitted(emptyList(), width)) }
-        val body = fieldLines(item, field, chosenEntry).flatMap { wrapped(it, width) }
+        val ends = if (item == null) null else endsOf(item, path)
+        if (ends == null) return List(rows) { Line(fitted(emptyList(), width)) }
+        val lines = when (ends) {
+            is Ends.Value -> fieldLines(ends.field, ends.read, ends.item, chosenEntry)
+            is Ends.Within -> withinLines(ends.item, chosenEntry)
+            is Ends.Keys -> keyLines(ends.field, ends.held, chosenEntry)
+        }
+        val body = lines.flatMap { wrapped(it, width) }
         val at = body.indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
         showing(at, rows, body.size)
         return List(rows) { row ->
