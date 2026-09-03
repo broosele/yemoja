@@ -48,6 +48,16 @@ release and how to build and run from source, once there is something to run.
 own Gradle, and Gradle fetches the Kotlin compiler, so `./gradlew build` from the root is
 the whole of it. Running the tests is in [testing.md](testing.md).
 
+**One thing runs**: the terminal front end, over a logbook folder.
+
+```
+./gradlew :ui:jvmRun --args="<logbook folder>"
+```
+
+It needs a real terminal, so a pipe or a redirect gets a message rather than a screen. It
+reads and shows; nothing in this project writes a logbook yet. See
+[ui/tui/doc.md](ui/tui/doc.md).
+
 Only the JVM target is built. The native targets need a C++ toolchain and Developer Mode,
 and Android needs its SDK; each joins when the platform it serves is worked on.
 
@@ -114,9 +124,11 @@ not — see *Licensing* below.
 
 The language is **Kotlin**, and the interface is **Compose Multiplatform**. The data layer
 takes **Okio** for file access, which common Kotlin has none of, behind an interface of its
-own so that one file names it — see `DATA-86` in [data/doc.md](data/doc.md). The rest is not
-settled: a library for reading dive computers, and a Bluetooth LE library per platform. Each
-will be recorded with the layer that needs it, once chosen.
+own so that one file names it — see `DATA-86` in [data/doc.md](data/doc.md). The terminal
+front end takes **Mordant** for raw keys and the terminal's size, which the JDK offers no way
+to ask for — see `TUI-4` in [ui/tui/doc.md](ui/tui/doc.md). The rest is not settled: a library
+for reading dive computers, and a Bluetooth LE library per platform. Each will be recorded
+with the layer that needs it, once chosen.
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.

@@ -8,7 +8,7 @@ by side; they share nothing but the [logic layer](../logic/doc.md) underneath th
 | Front end | Purpose | Priority |
 |---|---|---|
 | [api](api/doc.md) | Programmatic access to the logic layer, for scripting and automation | Later |
-| [tui](tui/doc.md) | Raw terminal interface: tables with new/edit/delete | Later |
+| [tui](tui/doc.md) | Raw terminal interface: tables with new/edit/delete | **Started** |
 | [gui](gui/doc.md) | The real application, for a broad audience | **Now** |
 
 The API and TUI are not throwaways. They keep the logic layer honest: anything that
@@ -48,12 +48,17 @@ ui/
    a dive list — shared across front ends, but presentation. Where does it live?
 - **UI-2 — Units and language** are per-user settings that every front end needs. Which
    layer owns them?
-- **UI-3 — How much the TUI reuses.** Which fields exist and what they are is settled:
-   both read the same description of the type, which the logic layer holds — see
-   [../logic/doc.md](../logic/doc.md). What is open is the presentation half — the GUI's
-   shared description of fields and grouping
-   (see [gui/doc.md](gui/doc.md)) is not inherently GUI-specific. Decide whether the
-   TUI consumes it or defines its own, far simpler, view of the same items.
+- **UI-3 — How much the TUI reuses.** *Settled:* **neither.** Which fields exist and what
+   they are was already shared — both read the same description of the type, which the logic
+   layer holds, see [../logic/doc.md](../logic/doc.md). The presentation half was the open
+   part, and the TUI takes none of it: a tab per type in the order the types are given, every
+   single-valued field in the order the type declares it, and no grouping, ordering or
+   labelling of its own. So the GUI's shared description of fields and grouping (see
+   [gui/doc.md](gui/doc.md)) stays the GUI's.
+
+   What that buys is that a type added to the logic layer appears in the terminal without the
+   terminal changing, which is what makes this front end a check on the layer below rather
+   than a second place to describe the same items.
 
 Settled: desktop and phone are **one application sharing its structure**, differing
 only in layout. See [gui/doc.md](gui/doc.md).

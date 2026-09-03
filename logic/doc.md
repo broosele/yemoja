@@ -69,10 +69,15 @@ logic/
   reconciliation.md  merging an import into the logbook
   uddf.md         UDDF against this model, field by field
   src/commonMain/kotlin/yemoja/logic/
+                  Logbook.kt    opening one, which a front end asks for and does not do
                   Types.kt      what a person, a region and a piece of gear are
   src/commonTest/kotlin/yemoja/logic/
                   the tests, beside what they cover
 ```
+
+`Logbook` stands in for the **Universe**, which nothing has built. It is the one place in
+this layer that names a source, and it exists so that `ui/doc.md`'s rule holds meanwhile: a
+front end names a folder and never opens one. It goes when the Universe arrives.
 
 **Three types so far, and only the fields holding one value.** Lists, keyed collections
 and owned items are absent, so a person has no `courses` and a region no `parents`; the

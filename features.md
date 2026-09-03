@@ -71,6 +71,7 @@ them.
 ## Future
 
 - **FEAT-11 — A terminal interface.** Deliberately raw; see [ui/tui/doc.md](ui/tui/doc.md).
+  *Partly built:* it reads a logbook and shows it. Nothing is written.
 - **FEAT-12 — A programmatic interface.** See [ui/api/doc.md](ui/api/doc.md).
 - **FEAT-13 — Export to other applications' formats.** Waits on `RECON-4`.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
