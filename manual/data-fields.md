@@ -31,9 +31,10 @@ and let you fill it in later. What it is called does not change when you do, bec
 things point at that name; renaming is its own operation and Yemoja does it across the
 whole logbook at once.
 
-Every kind of item has a `remarks` field: multiline text of any length, for whatever
-you want to note that has no field of its own. It is never required, and it is not
-repeated in the lists below.
+Nearly every kind of item has a `remarks` field: multiline text of any length, for
+whatever you want to note that has no field of its own. It is never required. It is a
+convention rather than a rule, so each kind lists its own below and a kind may be
+defined without one.
 
 It is the one field where a line break is allowed. Everywhere else a piece of text is a
 single line — a dive site called `Blue Quarry`, not a dive site with a paragraph in its
@@ -147,6 +148,8 @@ Fields you record:
   profile — the times, the depths, the temperatures — is reported as something it cannot
   work out rather than guessed at.
 - `gas_sources` (keyed owned items) — what you breathed from.
+- `remarks` (multiline text) — how the dive went. The seal that flooded, the shoal
+  that came past, why you turned round early.
 
 Worked out for you:
 
@@ -191,6 +194,8 @@ One per dive.
 - `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
   the leg: a trip's list of dives gathers its own and those of everything beneath it.
 - `operator` (reference) — who you dived with.
+- `remarks` (multiline text) — anything about how the dive was arranged that the
+  tags and the trip do not carry.
 
 #### Environment
 
@@ -213,6 +218,8 @@ One per dive. What the conditions were.
   at sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge
   reads against; it is the pressure itself. Correct it when you know better; weather moves
   it about, and altitude matters more than most divers expect.
+- `remarks` (multiline text) — the conditions in words, where six steps and a
+  handful of numbers do not tell it.
 
 #### Dive gear
 
@@ -225,6 +232,7 @@ own; this is what you took on one particular dive and how it served you.
   `very cold`, `cold`, `good`, `warm` and `too warm`.
 - `buoyancy_evaluation` (text) — how the weighting felt. The usual answers are `way too
   heavy`, `too heavy`, `good`, `too light` and `way too light`.
+- `remarks` (multiline text) — how the kit served you, beyond the two evaluations.
 
 Worked out for you:
 
@@ -302,6 +310,8 @@ that is the only record of it.
   computer set to fresh, and the depths it wrote down will say so.
 - `tolerances` (owned item) — how much detail was dropped when the recording was taken
   in, where that is known. Described below.
+- `remarks` (multiline text) — anything about the recording itself: a computer you
+  do not trust, a transmitter that dropped out.
 
 Worked out for you:
 
@@ -338,6 +348,8 @@ records here how far it was willing to stray.
 
 - `depth`, `temperature`, `pressure` (number) — the most any kept point may differ from
   what was thrown away, in that measurement's own units.
+- `remarks` (multiline text) — what was known about the thinning, where the figures
+  do not say it.
 
 All of these are optional, and a missing one claims nothing. It does not mean the series
 was left alone: it means nobody recorded what was done to it — a recording that arrived
@@ -365,6 +377,7 @@ keeps them apart.
   `stage`, `deco` and `travel`.
 - `configuration` (text) — how it was carried. Anything you like; the usual ones are
   `back mounted`, `sidemount`, `pony` and `staged`.
+- `remarks` (multiline text) — anything about the cylinder or the fill.
 
 Worked out for you:
 
@@ -398,6 +411,8 @@ Fields you record:
 - `courses` (keyed owned items) — the qualifications this person has earned, described
   under *Course* below.
 - `insurance` (owned item) — cover this person holds.
+- `remarks` (multiline text) — whatever you want to keep about them that has no
+  field of its own.
 
 Worked out for you:
 
@@ -414,6 +429,8 @@ than scattered through the item.
 - `blood_group` (text)
 - `height` (number)
 - `body_mass` (number)
+- `remarks` (multiline text) — anything worth keeping: an allergy, a medication,
+  what the examiner said.
 
 Yemoja does not work out whether a medical is still valid, and does not remind you to
 renew one. How long a check counts for depends on who is asking — the agency, the
@@ -430,6 +447,7 @@ another. It is the same cover continuing.
 - `policy` (text) — the policy number.
 - `start_date` (date) — when the cover begins.
 - `end_date` (date) — when it runs out.
+- `remarks` (multiline text) — what the cover includes, and what it does not.
 
 Worked out for you:
 
@@ -444,6 +462,7 @@ A list on a person, one entry for each qualification earned.
 - `instructor` (reference) — who taught it.
 - `date` (date) — when it was granted.
 - `dives` (list of references) — the dives that formed part of it.
+- `remarks` (multiline text) — how it went, and what it covered.
 
 ### Region
 
@@ -466,6 +485,8 @@ Fields you record:
   date line unremarkable. The Pacific runs from `west: 120` to `east: -70`, and that is
   simply where it starts and where it ends, not a mistake and not something Yemoja will
   correct. Latitude does not wrap, so `north` is always above `south`.
+- `remarks` (multiline text) — what you know about the region that the box and the
+  category do not say.
 
 Worked out for you:
 
@@ -514,6 +535,8 @@ Fields you record:
   `bottom` on a gas source, which is the gas you breathed at depth.
 - `facilities` (list of text) — what is there: parking, air fills, toilets, a slipway,
   and so on.
+- `remarks` (multiline text) — how to dive the place: entries, hazards, where to
+  park, what the tide does.
 
 ### Wreck
 
@@ -540,6 +563,8 @@ Fields you record:
   or gross register tonnage, which is a volume and not a weight at all. Where you cannot
   tell, leave this empty and put what the book said in `remarks`. A figure you had to
   guess the units of is worse than no figure.
+- `remarks` (multiline text) — her history, and whatever a book said that no field
+  here can hold.
 
 Most of this is not diving. Where she was built and what flag she flew make no
 difference underwater, and they are here because a wreck diver wants to know — the ship
@@ -572,6 +597,8 @@ Fields you record:
 - `buoyancy` (owned item) — what the item does in the water.
 - `maintenances` (keyed owned items) — what has been done to it and when, described
   under *Maintenance* below.
+- `remarks` (multiline text) — anything about the item: how it fits, what it came
+  with, where you bought it.
 
 A **generic** item is a description of equipment in general — a five millimetre wetsuit,
 a two kilogram weight — rather than a particular thing sitting in your garage. Most of
@@ -597,6 +624,8 @@ buoyancy, so that weighting can be worked out from the kit you took.
   and any gas sealed inside it. Not the same as a cylinder's `capacity`, which is what
   fits inside it: a twelve-litre cylinder holds 12 and displaces rather more, because its
   walls take up room too.
+- `remarks` (multiline text) — how the figures were arrived at: weighed, measured in
+  a pool, or taken from the maker.
 
   Water that floods in and out is not part of the item and is not counted. **A soaked
   wetsuit is heavier on the boat and behaves exactly as it did before in the water**,
@@ -657,8 +686,8 @@ intact.
   repair that resets the service clock says `service` here; a repair is something that
   happened, not something owed.
 - `operator` (reference) — who did the work.
-- `remarks` (multiline text) — what was found, which is often worth more than the fact that the
-  work happened.
+- `remarks` (multiline text) — what was found, which is often worth more than the
+  fact that the work happened.
 
 Worked out for you:
 
@@ -690,6 +719,7 @@ Fields you record:
   qualification supersedes the one before it.
 - `category` (text) — what sort of qualification it is. Anything you like; the usual
   ones are `progression`, `technical`, `specialisation` and `professional`.
+- `remarks` (multiline text) — what the qualification covers, and what it required.
 
 ### Operator
 
@@ -711,6 +741,7 @@ Fields you record:
   are `dive center`, `hotel`, `dive resort`, `boat operator`, `dive club` and
   `liveaboard operator`.
 - `rating` (whole number) — what you make of them, as a whole number from 1 to 10.
+- `remarks` (multiline text) — what they were like to dive with.
 
 ### Dive trip
 
@@ -728,6 +759,8 @@ Fields you record:
 - `parent` (reference) — the larger trip this one is part of, where there is one.
 - `region` (reference) — where it went.
 - `operator` (reference) — who ran it.
+- `remarks` (multiline text) — how the trip went as a whole, which is not the same
+  as how any one dive on it went.
 
 Worked out for you:
 

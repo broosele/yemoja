@@ -34,9 +34,6 @@ KINDS = {
     'owned item': 'OwnedItemDescription',
 }
 
-# Defined in the manual's introduction rather than in any one type's list. A key is
-# not among them: an entry sits *under* its key and never carries one as a field.
-COMMON = {'remarks'}
 # Fields holding a single owned item, and the section describing it.
 OWNED = {
     'details': 'Details', 'environment': 'Environment', 'gear': 'Dive gear',
@@ -128,7 +125,7 @@ def manual_fields():
         heading = re.match(r'^#{3,5} (.+)$', line)
         if heading:
             current = heading.group(1)
-            fields[current] = set(COMMON)
+            fields[current] = set()
         item = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*)', line)
         if item and current:
             fields[current] |= set(re.findall(r'`([a-z_]+)`', item.group(1)))
@@ -140,8 +137,6 @@ def manual_kinds():
 
     One bullet may open with several names sharing a kind -- `west`, `east`, `south`,
     `north` are all numbers -- so every name in the opening run takes the same one.
-    `remarks` is defined in the introduction rather than in a bullet, and is the only
-    multiline text there is.
     """
     text = io.open(MANUAL, encoding='utf-8').read()
     kinds, current = {}, None
@@ -149,7 +144,6 @@ def manual_kinds():
         heading = re.match(r'^#{3,5} (.+)$', line)
         if heading:
             current = heading.group(1)
-            kinds[(current, 'remarks')] = 'multiline text'
         bullet = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)\)', line)
         if bullet and current:
             for name in re.findall(r'`([a-z_]+)`', bullet.group(1)):
