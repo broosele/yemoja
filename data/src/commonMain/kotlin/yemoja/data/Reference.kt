@@ -19,6 +19,11 @@ sealed class Reference {
     /** As written in a file, `@` and all. */
     abstract val asWritten: String
 
+    // Final, so that the two below stay out of the business of saying what they are. A data class
+    // writes its own unless a superclass has settled it, and `Identified(id=tuesday)` is not a
+    // reference: DATA-76 has a writer read back what format wrote, and that would not survive it.
+    final override fun toString(): String = asWritten
+
     /** Identified is a reference to a particular item, written `@john`. */
     data class Identified(val id: String) : Reference() {
         init {

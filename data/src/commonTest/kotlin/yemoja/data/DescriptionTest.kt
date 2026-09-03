@@ -214,6 +214,9 @@ class ValueDescriptionTest {
             TimeDescription("at") to "09:15:00",
             BooleanDescription("covered") to "true",
             GasDescription("mix") to "EAN32",
+            ReferenceDescription("round", targetType = "round") to "@tuesday",
+            ReferenceDescription("who", targetType = "person", oneOffAllowed = true) to "Anna",
+            KeyReferenceDescription("from", collection = "profiles") to "*p1",
         )
         for ((description, text) in cases) {
             val value = usable(description, text)
