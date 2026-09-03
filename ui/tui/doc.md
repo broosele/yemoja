@@ -36,25 +36,51 @@ all of them. Where the screen is too narrow it stops at the first that will not 
 than passing over it for a shorter one — a bar that keeps its order is one whose front a
 reader learns.
 
+**The bar draws the arrow keys and spells the rest** — `[<,>]`, `[^,v]`, against `[esc]`,
+`[enter]`, `[space]` and `[(shift)-tab]`. Each is what its own key cap shows. Drawn in ASCII
+because no arrow character survives a console on code page 437, which is what this one opens
+on: `←` shows as `?` there, and so does `◀`. That code page does hold arrow glyphs, at
+0x18 to 0x1b, but those are the control-code positions and nothing encodes to them. The two
+together also keep `[enter] open` on the bar at eighty columns, which spelling them out
+would push off the end.
+
 | Key | Does |
 |---|---|
-| left, right | change tab, round the ring |
-| up, down | move through whatever is in front of you, stopping at its ends |
-| tab, shift-tab | move between the chosen item's fields, round the ring |
+| tab, shift-tab | change tab, round the ring — the types, or the keys of an open field |
+| left, right | move through the list of items, stopping at its ends |
+| up, down | move through whatever fields are in front of you |
 | space | open the item the chosen field names |
 | enter | go one step further in |
-| escape | come one step back out, or leave where there is nothing to |
-| `q`, ctrl-C | leave |
+| escape | come one step back out, and nothing where there is nothing to |
+| `q`, ctrl-C | leave, from wherever you are |
+
+**Each key does one job and does it everywhere.** Tab is for tabs, whether those are the
+types or the keys of an open field; the arrows are for what sits under them. That is what
+decided the map: the alternative gave a key two meanings depending on which half of the
+screen was live, which meant the screen had to say which half that was, and a reader had to
+read it before every press.
+
+**Escape is held to that too, which is why it does not leave.** It used to, where nothing was
+open, and that put ending the session one key past the mildest thing a reader does. Leaving
+belongs to `q` and ctrl-C, which work from four levels into a keyed field as readily as from
+the list, so nothing is gained by lending escape a second meaning. `TUI-6`.
+
+The cost is that the item list answers to left and right rather than to up and down, which
+reads oddly against a column of ids. It was taken knowingly: an odd direction is learnt once,
+and a key whose meaning moves is read every time.
 
 A list stops at its ends because one that wraps loses the user's place on a long one; the
 tabs and the fields wrap, being short enough to see whole. Leaving takes two keys of its own
-because raw mode swallows the usual one, and escape is a third where nothing is open.
+because raw mode swallows the usual one, and `[q] quit` leads both bars: the key a reader
+wants without hunting for it is the one that gets them out, so it is the one thing a screen
+too narrow for anything else still says.
 
-**Up and down move through whatever is in front of you**: the list of items, or the values of
-an open field that holds several, or the rows themselves where an open field holds one value
-longer than the screen. A field holds one or the other and never both, so one key does all
-three without ever being ambiguous — and a list of 75 regions, which `children` will bring,
-needs a cursor rather than a page of bullets nobody can point at.
+**Up and down move through whatever fields are in front of you**: the chosen item's, or the
+fields of an item inside an open field, or the values of an open field that holds several, or
+the rows themselves where an open field holds one value longer than the screen. A field holds
+one or the other and never both, so one key does all of them without ever being ambiguous —
+and a list of 75 regions, which `children` will bring, needs a cursor rather than a page of
+bullets nobody can point at.
 
 **The layout is the descriptions and nothing else.** Nothing in this front end names a type
 or a field, so a type added to the logic layer appears here without this changing. `UI-3`.
@@ -89,12 +115,16 @@ Enter opens the chosen field alone, and goes on opening from there. The top line
 — `dive / 2025-05-30#2 / profiles / p1 / pressures / g1` — so a reader who has gone four steps
 down knows where they are, and escape brings them back up one at a time.
 
-**Up and down move over whatever is in front of you, and the bar names it.** At a field holding
-one item that is its fields; at a field holding several it is the keys; at a list it is the
-values; and at a single value there is nothing to move between, so they scroll instead.
+**A field holding several is a tab apiece**, the open one in brackets, with what is under it
+below — the same row of names the types get, and the same key moving along it, because it is
+the same thing: several of a kind, one of them open. Tab is left alone where an open field has
+no keys, there being nothing for it to move between. Opening such a field arrives at the first
+key rather than at a list of them, and **a key is not a stop of its own**: coming back out of
+one goes to the field that held it.
 
-**A key is a step of its own.** Coming out of one entry of a keyed field lands on its keys
-rather than skipping past them, since the keys are a place a reader chose to be.
+**Up and down move over whatever is in front of you, and the bar names it.** Inside an item
+that is its fields; at a list it is the values; and at a single value there is nothing to move
+between, so they scroll instead.
 
 The cursor lands on what was just left rather than at the top, the way each tab keeps the row
 it was on: coming out of something is not the same as arriving somewhere.
@@ -182,8 +212,8 @@ The supplied libraries load, so a logbook declaring them shows them under its ow
 they travel inside the application and need no second argument, `LIB-6`.
 
 **An item inside an item is indented under the name of the field holding it**, and each of its
-fields is a row that can be chosen like any other — tab walks all of them, at whatever depth
-they sit. Values line up in one column however deep their names sit, which is what lets an eye
+fields is a row that can be chosen like any other — up and down walk all of them, at whatever
+depth they sit. Values line up in one column however deep their names sit, which is what lets an eye
 run down them, and only the chosen row is set apart, not the rows under it: a whole item
 reversed is a wall rather than a cursor.
 
@@ -196,8 +226,8 @@ That is the line between the two: **what a field holds is expanded where it is b
 summarised where it is not.** One item is a handful of fields and always the same handful; a
 list, a series and a set of keys are however many somebody wrote.
 
-The column scrolls, since an item holding items is easily taller than a screen. Tab moves it,
-keeping the chosen row in view.
+The column scrolls, since an item holding items is easily taller than a screen. Up and down
+move it, keeping the chosen row in view.
 
 Every shape the model has is reachable now that a dive is described: its profiles under keys,
 a profile's depth against time, and its pressures one series per gas source, which is the only
@@ -229,11 +259,31 @@ where the user is in it.
   A stack would be state kept for a journey nobody has to retrace. There is no hierarchy to be
   lost in: every item in the logbook is a tab and a few rows away, and the row a reader was on
   is still chosen when they come back to its tab, because each tab remembers its own. What a
-  back key would buy over that is one keystroke, against a second meaning for a key that has
-  two already.
+  back key would buy over that is one keystroke, against a second meaning for escape, which
+  `TUI-6` has just finished reducing to one.
 
   It also keeps the interface honest about what it is. A reader following references is
   reading, not navigating a history, and the thing they were looking at has not gone anywhere.
+
+- **TUI-6 — Whether escape leaves the interface.** *Settled:* **no.** Escape comes one step
+  back out and does nothing where there is nothing to come out of. Leaving is `q` and ctrl-C,
+  and both work from wherever the reader is.
+
+  It used to leave where nothing was open, which put ending the session one key past the
+  mildest thing a reader does: escape out of one level too many and the application is gone.
+  A step back should not be a thing to be careful with.
+
+  Nothing is lost, because nothing was gained. Quitting was already available at any depth —
+  what was missing was the bar saying so, which is why escape looked like the only way out and
+  so had to be given a second job. `[q] quit` now leads both bars and the problem dissolves.
+
+  The alternatives were a confirmation at the top level, and a double press. Both rehabilitate
+  a meaning worth dropping, and both add state to do it: one a prompt, the other a timeout or
+  a nag line.
+
+  Editing will test this again rather than settle differently. Once enter opens an editor, `q`
+  is a character somebody is typing and escape means *cancel this edit*; ctrl-C is the only one
+  that survives intact. `TUI-3`.
 
 - **TUI-2 — Whether it is shipped to users or stays a development tool.** Affects how much
    input validation and error recovery it needs.

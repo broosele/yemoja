@@ -27,9 +27,9 @@ class KeysTest {
     }
 
     @Test
-    fun `tab moves between fields, and enter opens one`() {
-        assertEquals(Key.NEXT_FIELD, keyOf("Tab"))
-        assertEquals(Key.PREVIOUS_FIELD, keyOf("Tab", shift = true))
+    fun `tab moves between tabs, and enter opens a field`() {
+        assertEquals(Key.NEXT_TAB, keyOf("Tab"))
+        assertEquals(Key.PREVIOUS_TAB, keyOf("Tab", shift = true))
         assertEquals(Key.FOLLOW, keyOf(" "))
         assertEquals(Key.OPEN, keyOf("Enter"))
     }

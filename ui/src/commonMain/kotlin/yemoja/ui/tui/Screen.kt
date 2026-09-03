@@ -15,7 +15,7 @@ import yemoja.data.Units
 
 /** Key is a keystroke this interface answers to. Everything else is ignored. */
 enum class Key {
-    LEFT, RIGHT, UP, DOWN, NEXT_FIELD, PREVIOUS_FIELD, FOLLOW, OPEN, CLOSE, QUIT
+    LEFT, RIGHT, UP, DOWN, NEXT_TAB, PREVIOUS_TAB, FOLLOW, OPEN, CLOSE, QUIT
 }
 
 /**
@@ -114,19 +114,20 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     /**
      * Answer [key], and say whether the interface is still running.
      *
-     * Left and right change tab and wrap round, so three tabs are reached in two presses from
-     * either end. Up and down move within the list and stop at its ends, because a list that
-     * wraps loses the user's place on a long one. Tab moves between the fields of the chosen item
-     * and does wrap, a field list being short enough to see whole.
+     * **Each key does one job, and does it wherever the reader is.** Tab moves between tabs — the
+     * types, or the keys of an open field — and wraps round, so either end is one press from the
+     * other. Left and right move through the list of items, stopping at its ends, because a list
+     * that wraps loses the user's place on a long one. Up and down move through the fields in
+     * front of the reader, and wrap, a field list being short enough to see whole.
      */
     fun press(key: Key): Boolean {
         when (key) {
-            Key.LEFT -> tab = (tab + types.size - 1) % types.size
-            Key.RIGHT -> tab = (tab + 1) % types.size
-            Key.UP -> move(-1)
-            Key.DOWN -> move(1)
-            Key.NEXT_FIELD -> step(1)
-            Key.PREVIOUS_FIELD -> step(-1)
+            Key.LEFT -> alongItems(-1)
+            Key.RIGHT -> alongItems(1)
+            Key.UP -> alongFields(-1)
+            Key.DOWN -> alongFields(1)
+            Key.NEXT_TAB -> alongTabs(1)
+            Key.PREVIOUS_TAB -> alongTabs(-1)
             Key.FOLLOW -> follow()
             Key.OPEN -> open()
             Key.CLOSE -> close()
@@ -143,25 +144,6 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     }
 
     /**
-     * Move [by] through whatever is in front of the user.
-     *
-     * The list of items where nothing is open; the values of an open field that holds several;
-     * and the rows themselves where an open field holds one value, which may be longer than the
-     * screen. A field holds one or the other, never both, so the two never have to be told apart
-     * by a second key.
-     */
-    private fun move(by: Int) {
-        val count = entries()
-        when {
-            !opened -> chosen[tab] = chosen[tab] + by
-            count != null ->
-                chosenEntry = (chosenEntry + by).coerceIn(0, (count - 1).coerceAtLeast(0))
-
-            else -> within = (within + by).coerceAtLeast(0)
-        }
-    }
-
-    /**
      * Go one step further in, where there is one.
      *
      * From the list that is the chosen field. Inside an item it is the field the cursor is on,
@@ -171,15 +153,12 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     private fun open() {
         val item = item ?: return
         if (!opened) {
-            path.addAll((row ?: return).steps)
+            val steps = (row ?: return).steps
+            path.addAll(steps.dropLast(1))
+            add(steps.last().first)
         } else {
             when (val ends = endsOf(item, path)) {
-                is Ends.Within -> path.add(ends.item.description.fields[chosenEntry] to null)
-                is Ends.Keys -> {
-                    val last = path.removeAt(path.size - 1)
-                    path.add(last.first to ends.held[chosenEntry].first)
-                }
-
+                is Ends.Within -> add(ends.item.description.fields[chosenEntry])
                 else -> return
             }
         }
@@ -188,18 +167,31 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     }
 
     /**
-     * Come one step back out, and leave where there is nothing to come out of.
+     * Go one step in, to [field] and, where it holds one thing per key, to the first of them.
      *
-     * A key is a step of its own, so leaving one entry of a keyed field lands on its keys
-     * rather than skipping past them.
+     * A key is not a stop of its own. The keys are a row of tabs above what is under the chosen
+     * one, so arriving at a field holding several is arriving at one of them.
+     */
+    private fun add(field: FieldDescription) {
+        val keyed = field.cardinality == Cardinality.KEYED ||
+            field.cardinality == Cardinality.KEYED_SERIES
+        val first = if (!keyed) null else {
+            val ends = endsOf(item ?: return, path + (field to null))
+            (ends as? Ends.Keys)?.held?.firstOrNull()?.first
+        }
+        path.add(field to first)
+    }
+
+    /**
+     * Come one step back out, and do nothing where there is nothing to come out of.
+     *
+     * **Escape never leaves.** It used to, where nothing was open, which made one key too many
+     * out of a step back the mildest thing a reader does. Leaving is [Key.QUIT]'s, and that
+     * works from wherever the reader is.
      */
     private fun close() {
-        if (!opened) {
-            running = false
-            return
-        }
+        if (!opened) return
         val last = path.removeAt(path.size - 1)
-        if (last.second != null) path.add(last.first to null)
         // The cursor lands on what was just left rather than at the top, the way each tab keeps
         // the row it was on: coming out of something is not the same as arriving somewhere.
         chosenEntry = when (val ends = item?.let { endsOf(it, path) }) {
@@ -212,18 +204,69 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         within = 0
     }
 
-    /** Move [by] fields, round the end. */
-    private fun step(by: Int) {
-        val many = rows.size
-        if (many == 0) return
-        chosenField[tab] = (chosenField[tab] + by + many) % many
-        // Another field is another value, so where the reader was in the last one means nothing.
-        if (opened) {
-            path.clear()
-            path.addAll(row?.steps.orEmpty())
+    /**
+     * Move [by] tabs, round the end.
+     *
+     * The types where nothing is open, and the keys of a field holding several where one is:
+     * both are a row of names with one of them in brackets, so both are tabs and both answer to
+     * the key named after them.
+     */
+    private fun alongTabs(by: Int) {
+        if (!opened) {
+            tab = (tab + by + types.size) % types.size
+            return
         }
+        val keys = keysHere()
+        if (keys.isEmpty()) return
+        val at = keys.indexOf(path.last().second).coerceAtLeast(0)
+        val last = path.removeAt(path.size - 1)
+        path.add(last.first to keys[(at + by + keys.size) % keys.size])
         within = 0
         chosenEntry = 0
+    }
+
+    /**
+     * Move [by] through the list of items.
+     *
+     * Only where the list is what a reader is looking at. Inside an open field the item beneath
+     * it is what the path was worked out against, and moving it would leave the path pointing at
+     * an item that never had it.
+     */
+    private fun alongItems(by: Int) {
+        if (opened) return
+        chosen[tab] = (chosen[tab] + by).coerceIn(0, (items.size - 1).coerceAtLeast(0))
+    }
+
+    /**
+     * The keys of the field the reader is inside, or none where they are not inside one.
+     *
+     * Asked of the same walk that resolves everything else, one step shorter: what the keys of
+     * a field are is what that field looks like before a key is chosen.
+     */
+    private fun keysHere(): List<String> {
+        val last = path.lastOrNull() ?: return emptyList()
+        if (last.second == null) return emptyList()
+        val ends = endsOf(item ?: return emptyList(), path.dropLast(1) + (last.first to null))
+        return (ends as? Ends.Keys)?.held?.map { it.first }.orEmpty()
+    }
+
+    /**
+     * Move [by] through whatever fields are in front of the reader.
+     *
+     * The chosen item's, where the list is what is shown; and where a field is open, the fields
+     * of the item inside it, the values of a list, or the rows of a value too long to see at
+     * once. One key for one job, wherever it is done.
+     */
+    private fun alongFields(by: Int) {
+        if (!opened) {
+            val many = rows.size
+            if (many == 0) return
+            chosenField[tab] = (chosenField[tab] + by + many) % many
+            return
+        }
+        val count = entries()
+        if (count == null) within = (within + by).coerceAtLeast(0)
+        else chosenEntry = (chosenEntry + by).coerceIn(0, (count - 1).coerceAtLeast(0))
     }
 
     /**
@@ -239,13 +282,24 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * state kept for a journey nobody has to retrace. `TUI-5`.
      */
     private fun follow() {
+        val item = item ?: return
         val steps = if (opened) path else row?.steps ?: return
-        val ends = endsOf(item ?: return, steps) as? Ends.Value ?: return
+        // Inside an item the path ends at the item, and what a reader is pointing at is the
+        // field the cursor is on. One step further is what they meant.
+        val at = endsOf(item, steps)
+        val ends = when {
+            opened && at is Ends.Within -> at.item.description.fields.getOrNull(chosenEntry)
+                ?.let { endsOf(item, steps + (it to null)) }
+
+            else -> at
+        } as? Ends.Value ?: return
         val naming = ends.field as? ReferenceDescription ?: return
         val read = ends.read as? Result.Usable ?: return
-        // Open, the one the user chose. On the row, the first that can be opened, which is the
-        // one the row is showing.
-        val order: Iterable<Int> = if (opened) listOf(chosenEntry) else 0..<howMany(read.value)
+        // The cursor picks a value only where the values are what is in front of the reader.
+        // Inside an item it picks a field, and which of that field's values to follow is the
+        // same question a row asks: the first that can be opened.
+        val order: Iterable<Int> =
+            if (opened && at is Ends.Value) listOf(chosenEntry) else 0..<howMany(read.value)
         for (at in order) {
             val named = namedAt(read.value, at) ?: continue
             val target = set[named.id] ?: continue
@@ -304,6 +358,21 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
     private fun rule(width: Int): Line = Line(listOf(Span("-".repeat(width))))
 
+    /**
+     * A tab per key above what is under the chosen one, where the reader is inside such a field.
+     *
+     * The same row of names the types get, and the same key moves along it, because it is the
+     * same thing: several of a kind, one of them open.
+     */
+    private fun keyBar(): List<Line> {
+        val keys = keysHere()
+        if (keys.isEmpty()) return emptyList()
+        val here = path.last().second
+        // No blank under it: what follows opens with one of its own.
+        val said = keys.joinToString("  ") { if (it == here) "[$it]" else " $it " }
+        return listOf(Line(listOf(Span(said))))
+    }
+
     /** What is being looked at: the types, or how far into an item a reader has gone. */
     private fun where(): String {
         if (!opened) return tabs()
@@ -321,18 +390,20 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      */
     private fun actions(width: Int): String {
         val said = if (opened) {
-            listOf(
+            listOfNotNull(
+                QUITS,
                 "[esc] back",
-                "[up,down] " + moving(),
-                if (deeper()) "[enter] open" else FIELD,
+                if (keysHere().isEmpty()) null else "$TABS key",
+                "$FIELDS " + moving(),
+                if (deeper()) "[enter] open" else null,
                 "[space] follow",
             )
         } else {
             listOf(
-                "[esc] exit",
-                "[<-,->] type",
-                "[up,down] item",
-                FIELD,
+                QUITS,
+                "$TABS type",
+                "$ITEMS item",
+                "$FIELDS field",
                 "[enter] open",
                 "[space] follow",
             )
@@ -348,16 +419,13 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     /** What up and down move over where the reader is, in the word for that thing. */
     private fun moving(): String = when (endsOf(item ?: return "scroll", path)) {
         is Ends.Within -> "field"
-        is Ends.Keys -> "key"
         is Ends.Value -> if (entries() != null) "value" else "scroll"
-        null -> "scroll"
+        // A field holding several, holding none: there is nothing to move between.
+        is Ends.Keys, null -> "scroll"
     }
 
     /** Whether there is anywhere further in to go from where the reader is. */
-    private fun deeper(): Boolean = when (endsOf(item ?: return false, path)) {
-        is Ends.Within, is Ends.Keys -> true
-        else -> false
-    }
+    private fun deeper(): Boolean = endsOf(item ?: return false, path) is Ends.Within
 
     /** The list of items against the chosen one's fields. */
     private fun listed(width: Int, rows: Int): List<Line> {
@@ -379,12 +447,13 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         val item = item
         val ends = if (item == null) null else endsOf(item, path)
         if (ends == null) return List(rows) { Line(fitted(emptyList(), width)) }
-        val lines = when (ends) {
+        val under = when (ends) {
             is Ends.Value -> fieldLines(ends.field, ends.read, ends.item, chosenEntry)
             is Ends.Within -> withinLines(ends.item, chosenEntry)
-            is Ends.Keys -> keyLines(ends.field, ends.held, chosenEntry)
+            // A field holding several, holding none. There is no key to be at.
+            is Ends.Keys -> listOf(Line(listOf(Span("  (empty)"))))
         }
-        val body = lines.flatMap { wrapped(it, width) }
+        val body = (keyBar() + under).flatMap { wrapped(it, width) }
         val at = body.indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
         showing(at, rows, body.size)
         return List(rows) { row ->
@@ -528,8 +597,27 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         /** What stands between one key and the next in the bar. */
         private const val BETWEEN = " | "
 
-        /** Both directions in one, since a key that only goes forwards is half a key. */
-        private const val FIELD = "[(shift)-tab] field"
+        /**
+         * The keys the bar names, both directions in one: a key that only goes forwards is
+         * half a key.
+         *
+         * The arrows are drawn rather than spelled, which is what their key caps show, and no
+         * arrow character survives a console on code page 437. `<` and `^` are what is left.
+         */
+        private const val TABS = "[(shift)-tab]"
+
+        private const val ITEMS = "[<,>]"
+
+        private const val FIELDS = "[^,v]"
+
+        /**
+         * Leaving, which is said first in both bars.
+         *
+         * The one key a reader wants without hunting is the one that gets them out, so it is
+         * the one thing a screen too narrow for anything else still says. Ctrl-C leaves too and
+         * is not named: a bar has room for the key somebody would look for.
+         */
+        private const val QUITS = "[q] quit"
 
         /** What a line break is shown as, which is how a file writes one. */
         private const val ESCAPED = "\\n"

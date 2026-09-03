@@ -9,7 +9,8 @@ package yemoja.ui.tui
  * unexpected, and lets it be tested without one.
  *
  * Leaving is two keys because a terminal in raw mode swallows the usual one: `q` and ctrl-C.
- * Escape closes whatever is open, and leaves where nothing is open.
+ * Both work wherever the reader is. Escape closes whatever is open and does nothing else, so a
+ * step back cannot overshoot into leaving.
  */
 fun keyOf(name: String, ctrl: Boolean = false, shift: Boolean = false): Key? = when {
     ctrl -> if (name.equals("c", ignoreCase = true)) Key.QUIT else null
@@ -17,7 +18,7 @@ fun keyOf(name: String, ctrl: Boolean = false, shift: Boolean = false): Key? = w
     name == "ArrowRight" -> Key.RIGHT
     name == "ArrowUp" -> Key.UP
     name == "ArrowDown" -> Key.DOWN
-    name == "Tab" -> if (shift) Key.PREVIOUS_FIELD else Key.NEXT_FIELD
+    name == "Tab" -> if (shift) Key.PREVIOUS_TAB else Key.NEXT_TAB
     name == " " -> Key.FOLLOW
     name == "Enter" -> Key.OPEN
     name == "Escape" -> Key.CLOSE
