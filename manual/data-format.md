@@ -205,12 +205,17 @@ Everything in that file is then read in those units. Anything the block does not
 mention keeps the unit from the table.
 
 **Write the name exactly as it appears above**, capitals included: `C` is Celsius and
-`K` is kelvin. Those are the only names Yemoja knows, and a name it does not recognise
-means it cannot tell what any number in that file measures — so it will show you none of
-them, and tell you which name it did not understand. The rest of the file still opens.
-This is deliberate: reading a depth in feet as though it were metres would be silently
-wrong by a factor of three, and being told nothing is better than being told something
-false.
+`K` is kelvin. Those are the only names Yemoja knows. A name it does not recognise means
+Yemoja cannot tell what the measurements of that one kind mean, so it shows you none of
+them and tells you which name it did not understand. Everything else in the file opens as
+usual: an unreadable `length` costs you the depths and the distances, and leaves the
+temperatures and the pressures alone.
+
+Both halves of that are deliberate. Reading a depth in feet as though it were metres
+would be silently wrong by a factor of three, so a unit that cannot be understood is
+never guessed at. But the damage stops at the kind of measurement it applies to, because
+a later version of Yemoja may know a name this one does not, and a file written with it
+should cost you the one kind of number it affects rather than everything in the file.
 
 **A `units` block applies to its own file and to nothing else.** There is no setting
 elsewhere that changes how a file is read — not in `yemoja.json`, not in another file,
@@ -222,11 +227,19 @@ and imperial cylinders, and your gear is all in one `gear.json`, they have to be
 written the same way. You can put each piece of gear in its own file instead — see
 *Where your data is kept* above — and then each says what it likes.
 
-In a file holding several items, `units` sits alongside them. No item can be called
-`units`, for the obvious reason.
+In a file holding several items, `units` sits alongside them; in a file holding one, it
+sits alongside that item's own fields. So `units` is a name nothing else may take: no
+item is called that, and neither is any field.
 
 If you set units by hand, Yemoja keeps your choice. It will not rewrite your file into
 different units.
+
+A measurement is written with at most twelve digits, counting from the first that is not a
+zero, and with no zeros added on the end — `108000`, not `108000.0`. Twelve is far more
+than anyone writes by hand, and stopping there keeps a number from growing a tail of
+decimals nobody typed each time the file is saved. Converting into a unit that does not
+divide evenly can move the last digit once, the first time Yemoja writes a value it read
+from somewhere else; after that the file stays as it is.
 
 The ready-made data described below says what its own units are, so your choices never
 change what it means. Your choice of litres does not change what the supplied equipment

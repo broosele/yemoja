@@ -4,6 +4,7 @@ import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
 import yemoja.data.Stored
+import yemoja.data.Units
 
 /**
  * LogbookFormatException is thrown when a folder is not a logbook this version can read.
@@ -32,6 +33,14 @@ object LogbookReader {
     const val MANIFEST: String = "yemoja.json"
 
     /**
+     * The key a file declares its units under, in either shape.
+     *
+     * Reserved, so no item and no field may be called this. In a file holding many items it sits
+     * among their ids, and in a file holding one it sits among that item's fields. `DATA-46`.
+     */
+    const val UNITS: String = "units"
+
+    /**
      * Every item in [store], of the [types] given.
      *
      * Where two files give one id the first wins and the second is passed over, which is how a
@@ -48,8 +57,8 @@ object LogbookReader {
         val set = ItemSet(types)
         for (description in types) {
             val named = declared[description.name].orEmpty()
-            for ((id, stored) in itemsOf(store, description.name, named)) {
-                set.add(id, ItemReader.read(description, stored, set))
+            for ((id, held) in itemsOf(store, description.name, named)) {
+                set.add(id, ItemReader.read(description, held.members, set, held.units))
             }
         }
         return set
@@ -84,31 +93,52 @@ object LogbookReader {
         "${FileStore.LIBRARIES}.$type in $MANIFEST should be a list of library names",
     )
 
+    /** One item as a file held it, with what the numbers of that file are written in. */
+    private class Held(val members: Stored.Members, val units: Units)
+
     private fun itemsOf(
         store: FileStore,
         type: String,
         libraries: List<String>,
-    ): Map<String, Stored.Members> {
+    ): Map<String, Held> {
         val paths = try {
             store.getPaths(type, libraries)
         } catch (stored: FileStoreAmbiguous) {
             throw LogbookFormatException(stored.message!!)
         }
-        val items = LinkedHashMap<String, Stored.Members>()
+        val items = LinkedHashMap<String, Held>()
         for (path in paths) {
             val read = membersOf(store, path)
+            val units = unitsOf(read, path)
+            val rest = Stored.Members(read.members - UNITS)
             // A file inside the type's own folder is one item and its name is the id. A file's own
             // order is kept otherwise: unlike a folder listing it is an order somebody chose, and a
             // writer emits it settled so that saving an unchanged logbook produces no diff.
             if (path.startsWith("$type/")) {
-                items.putIfAbsent(path.removePrefix("$type/").removeSuffix(".json"), read)
+                val id = path.removePrefix("$type/").removeSuffix(".json")
+                items.putIfAbsent(id, Held(rest, units))
             } else {
-                for ((id, held) in read.members) {
-                    items.putIfAbsent(id, held as? Stored.Members ?: throw fieldsExpected(id, path))
+                for ((id, held) in rest.members) {
+                    val members = held as? Stored.Members ?: throw fieldsExpected(id, path)
+                    items.putIfAbsent(id, Held(members, units))
                 }
             }
         }
         return items
+    }
+
+    /**
+     * What the numbers of one file are written in.
+     *
+     * A file declaring nothing is written in the defaults. A name nobody knows is kept and refuses
+     * its own dimension when a value is read, so it does not stop the file. `DATA-87`.
+     */
+    private fun unitsOf(read: Stored.Members, path: String): Units {
+        val declared = read.members[UNITS] ?: return Units.DEFAULT
+        if (declared !is Stored.Members) {
+            throw LogbookFormatException("$UNITS in $path should name a unit for each dimension")
+        }
+        return Units.of(declared.members.mapValues { (it.value as? Stored.Leaf)?.value })
     }
 
     private fun fieldsExpected(id: String, path: String): LogbookFormatException =

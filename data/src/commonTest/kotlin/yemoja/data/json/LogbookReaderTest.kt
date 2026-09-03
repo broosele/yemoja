@@ -1,9 +1,12 @@
 package yemoja.data.json
 
+import yemoja.data.Dimension
 import yemoja.data.ItemDescription
+import yemoja.data.NumberDescription
 import yemoja.data.ItemSet
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
+import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.data.WholeNumberDescription
 import kotlin.test.Test
@@ -17,6 +20,7 @@ private val POSTBOX = ItemDescription(
     "postbox",
     listOf(
         TextDescription("name"),
+        NumberDescription("height", Dimension.LENGTH),
         WholeNumberDescription("collections_per_day", range = 0..9),
         ReferenceDescription("round", targetType = "round"),
     ),
@@ -355,5 +359,88 @@ class LogbookItemTest {
         val read = item.fields.getValue("collections_per_day")
         assertTrue(read is Result.Unusable)
         assertEquals(1, logbook.size)
+    }
+}
+
+/** `DATA-46`: `units` is a key, not an item and not a field. `DATA-87` for a bad one. */
+class UnitsInAFileTest {
+
+    private fun height(set: ItemSet, id: String): Double? =
+        ((set[id]?.fields?.get("height")) as? Result.Usable)?.value as Double?
+
+    @Test
+    fun `a units block in a file of many items is not one of them`() {
+        val set = logbook(
+            "postbox.json" to
+                """{"units": {"length": "ft"}, "market_square": {"height": 10.0}}""",
+        )
+        assertEquals(listOf("market_square"), set.allOf(POSTBOX).map { set.idOf(it) })
+        assertEquals(3.048, height(set, "market_square"))
+    }
+
+    @Test
+    fun `a units block in a file of one item is not one of its fields`() {
+        val set = logbook(
+            "postbox/market_square.json" to """{"units": {"length": "ft"}, "height": 10.0}""",
+        )
+        assertEquals(1, set.size)
+        assertEquals(3.048, height(set, "market_square"))
+        // Not kept as something the description did not name, either. DATA-65.
+        assertEquals(emptySet(), set["market_square"]!!.unrecognisedFields.keys)
+    }
+
+    @Test
+    fun `a declaration reaches its own file and no other`() {
+        val set = logbook(
+            "postbox/in_feet.json" to """{"units": {"length": "ft"}, "height": 10.0}""",
+            "postbox/in_metres.json" to """{"height": 10.0}""",
+        )
+        assertEquals(3.048, height(set, "in_feet"))
+        assertEquals(10.0, height(set, "in_metres"))
+    }
+
+    @Test
+    fun `a library declares its own units, and its items are read in them`() {
+        // Every supplied library file carries one, which is why this had to work.
+        val set = withLibraries(
+            mapOf(
+                "libraries/postbox/supplied.json" to
+                    """{"units": {"length": "ft"}, "almshouse": {"height": 10.0}}""",
+            ),
+            listOf("postbox/supplied"),
+        )
+        assertEquals(listOf("almshouse"), set.allOf(POSTBOX).map { set.idOf(it) })
+        assertEquals(3.048, height(set, "almshouse"))
+    }
+
+    @Test
+    fun `a unit nobody knows costs that dimension and leaves the file open`() {
+        val set = logbook(
+            "postbox.json" to """{
+                "units": {"length": "fathom"},
+                "market_square": {
+                    "name": "Market Square", "height": 10.0, "collections_per_day": 2
+                }
+            }""",
+        )
+        val item = set["market_square"]!!
+        val refused = item.fields.getValue("height")
+        assertTrue(refused is Result.Unusable)
+        assertEquals("height cannot be read: fathom is not a unit of length", refused.reason)
+        assertEquals(Stored.Leaf(10.0), refused.raw)
+        // The rest of the item reads normally.
+        assertEquals("Market Square", name(set, "market_square"))
+        assertEquals(2, (item.fields.getValue("collections_per_day") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a units block that is not a set of names stops the read`() {
+        val refused = assertFailsWith<LogbookFormatException> {
+            logbook("postbox.json" to """{"units": "ft"}""")
+        }
+        assertEquals(
+            "units in postbox.json should name a unit for each dimension",
+            refused.message,
+        )
     }
 }

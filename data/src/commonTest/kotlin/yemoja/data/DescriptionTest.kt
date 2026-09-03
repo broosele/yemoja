@@ -9,13 +9,13 @@ import kotlin.test.assertTrue
 
 /** Invented fields on an invented type. This layer knows nothing about diving. `TEST-4`. */
 private fun usable(description: FieldDescription, given: Any?): Any {
-    val read = description.interpret(given, false)
+    val read = description.read(given, false, Units.DEFAULT)
     assertIs<Result.Usable<Any>>(read, "$given should have read as a value")
     return read.value
 }
 
 private fun unusable(description: FieldDescription, given: Any?): Result.Unusable {
-    val read = description.interpret(given, false)
+    val read = description.read(given, false, Units.DEFAULT)
     assertIs<Result.Unusable>(read, "$given should not have read as a value")
     assertEquals(Stored.Leaf(given), read.raw, "what was there should be kept as it was")
     return read
@@ -38,8 +38,8 @@ class FieldDescriptionTest {
     @Test
     fun `a stored value carries where it came from`() {
         val height = NumberDescription("height", Dimension.LENGTH)
-        val stored = height.interpret("1.5", false) as Result.Usable
-        val overridden = height.interpret("1.5", true) as Result.Usable
+        val stored = height.read("1.5", false, Units.DEFAULT) as Result.Usable
+        val overridden = height.read("1.5", true, Units.DEFAULT) as Result.Usable
         assertEquals(Result.Origin.STORED, stored.origin)
         assertEquals(Result.Origin.OVERRIDDEN, overridden.origin)
     }
@@ -217,7 +217,7 @@ class ValueDescriptionTest {
         )
         for ((description, text) in cases) {
             val value = usable(description, text)
-            assertEquals(text, description.format(value), description.name)
+            assertEquals(text, description.format(value, Units.DEFAULT), description.name)
         }
     }
 
@@ -303,7 +303,7 @@ class MadeValueTest {
     @Test
     fun `a made value carries the origin it is given`() {
         val day = DateDescription("day")
-        val read = day.interpret(Date(2026, 2, 23), true) as Result.Usable
+        val read = day.read(Date(2026, 2, 23), true, Units.DEFAULT) as Result.Usable
         assertEquals(Result.Origin.OVERRIDDEN, read.origin)
     }
 

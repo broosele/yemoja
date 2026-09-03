@@ -242,7 +242,9 @@ diving — 200 bar is 20000000 Pa, 14 °C is 287.15 K, a twelve-litre cylinder i
 Any file may carry a `units` declaration replacing any of them for that file, and that
 is the whole of the rule. **A declaration reaches no further than the file it is
 written in.** There is no logbook-wide setting, nothing inherited from `yemoja.json`,
-and no per-item declaration inside a file holding several items.
+and no per-item declaration inside a file holding several items. A name the build does
+not know costs that dimension its measurements and leaves the rest of the file alone.
+`DATA-87`.
 
 That is a deliberate loss of expressiveness. Two cylinders in one `gear.json` cannot be
 written in different volumes, and a user who owns both metric and imperial kit has to
@@ -263,11 +265,23 @@ Three things follow:
 - **Every numeric field has a dimension** — length, mass, time, temperature, volume,
   pressure, angle — recorded in the schema. That is how a declaration knows which
   fields it governs.
-- **A declaration is data.** It must survive a read-and-write cycle untouched, or the
-  units someone chose by hand are silently replaced on the next save.
-- **Values are kept as written and converted at the point of use.** Converting to SI
-  on read and back on write risks drift, and a value that changes in the last decimal
-  on every save produces noise in exactly the diffs versioning depends on.
+- **Values are converted on the way in and back on the way out.** *Amended:* this said
+  the opposite — kept as written, converted at the point of use — to avoid the drift that
+  converting twice causes. The drift is real and was measured: 18.3 pounds returns as
+  18.300000000000004, and a value changing in the last decimal on every save is noise in
+  exactly the diffs versioning depends on.
+
+  What decided it the other way is that a **range has to mean one thing**. A bound like
+  `0.0..332.35` is metres, and a depth in feet must become metres before it is checked, or
+  every bound needs a unit and every comparison a conversion. Converting early keeps that
+  in one place, and nothing above a description ever meets a foot.
+
+  The drift is then a writing problem, and `DATA-88` settles it: twelve significant digits,
+  which is past where the tail lives and short of anything anyone writes.
+
+  What a writer must still do is keep the declaration. A file's `units` block is data and
+  has to survive a read-and-write cycle untouched, or the units someone chose by hand are
+  silently replaced on the next save.
 
 **Sample times inside a profile are always seconds**, and no declaration reaches them.
 They are exempt for the reason dates are: a profile holds thousands of numbers, so a
@@ -797,6 +811,7 @@ data/
                                    and what a parser throws
                   Series.kt        values against time, and one sample of them
                   Stored.kt        what a source holds, before anything judges it
+                  Units.kt         what the numbers of one file are written in
                   json/DiskFileStore.kt  the machine's own files, the one place Okio
                                    is named
                   json/FileStore.kt      which files hold a type, and one store in memory
@@ -1958,6 +1973,52 @@ Kept with their identifiers so earlier discussion still resolves.
   1.025, and two spellings a thousand apart is exactly the confusion this set exists to
   prevent.
 
+- **DATA-87 — What an unrecognised unit name spoils.** *Settled:* the measurements of
+  that dimension, and nothing else. A file declaring `"length": "fathom"` gives up its
+  depths and its distances, as unusable values carrying what was written and a reason
+  naming the unit. Its temperatures and its pressures read normally, and the file opens.
+
+  Guessing is not the alternative. A depth in feet read as metres is wrong by a factor of
+  three and looks perfectly ordinary, so a unit that cannot be understood is never assumed
+  away. The question is only how far the refusal reaches.
+
+  **Forward compatibility decides it.** A later version may add a name to `DATA-8`, as
+  `DATA-61` already added `m3` and `Pa`. A logbook written with it, opened by an older
+  build, should cost the one dimension that name governs — not every measurement in the
+  file. The wider rule would turn each addition to the set into a file that older builds
+  read as blank, which is a heavy price for a compatible change, and it is paid by the
+  user rather than by whoever added the unit.
+
+  A misspelled dimension key is the same case and takes the same answer: `"lenght": "ft"`
+  is a dimension this build does not know, so the lengths keep their default and nothing
+  else is touched. There is no reading under which it should silence the temperatures.
+
+  The manual states this to the user in *Units*.
+
+- **DATA-88 — How many digits a measurement is written with.** *Settled:* **twelve
+  significant digits, no trailing zeros, and never an exponent.**
+
+  Converting a number into a unit and back is exact only to about the sixteenth digit, so a
+  value written straight from a double gains a tail on every save. Rounding at twelve is
+  past where that tail lives and far past anything written by hand — a position, the longest
+  figure in the model, is nowhere near twelve.
+
+  **Significant digits rather than decimal places.** A rule counting places means something
+  different in every unit, and `DATA-8` has two far larger than the default they convert
+  into. Six places would write a 0.0456 litre item in cubic metres as `0.000046`, losing a
+  digit off exactly the values with none to spare; the supplied gear library already holds
+  volumes that small.
+
+  **No exponent**, because `4.56E-5` and `2.0E7` are both JSON and both read back correctly,
+  and neither belongs in a file a diver opens in a text editor. A pressure in pascal is
+  `20000000`. **No trailing zeros** either: `108000` is what a file holds and `108000.0` is
+  noise.
+
+  What this does not buy is an exact round trip through a unit that divides unevenly. 3661
+  seconds is 1.0169444… hours and no finite decimal writes it, so the first save rounds it.
+  What has to hold is that saving an unchanged logbook produces no diff, and that does: the
+  writing is settled after one pass.
+
   **What a user writes decides the default, not the set.** `l` for litre is kept over the
   `L` the SI brochure permits because `l` is what users write — the ambiguity with `1` is
   a display concern, and every place the application shows a unit can choose its own
@@ -2139,9 +2200,15 @@ Kept with their identifiers so earlier discussion still resolves.
 - **DATA-47 — Whether a library file declares the type of its items.** *Settled:* it
   does not. The logbook names its libraries by type, so a library file stays an ordinary
   id-keyed map and holds exactly one type.
-- **DATA-46 — Reserved keys in a file holding several items.** *Settled:* `units` is
-  reserved. In a file keyed by id it declares the units for that file, and no
-  item may be called `units`. Every library file carries one.
+- **DATA-46 — Reserved keys in a file.** *Settled:* `units` is reserved. In a file keyed
+  by id it declares the units for that file, and no item may be called `units`. Every
+  library file carries one.
+
+  *Amended:* it is reserved in a file holding one item too, where it sits beside that
+  item's fields rather than beside other items, so no **field** may be called `units`
+  either. The question was written when only the grouped shape was in view, and its title
+  said so; both shapes may carry a declaration, so both reserve the name. None of the
+  fields in `manual/data-fields.md` was affected.
 - **DATA-3 — Where do items live?** *Settled:* in this layer, with the items.
 - **DATA-20 — Which layer owns the loaded items.** *Settled:* this one, as
   an **`ItemSet`**. Structural validation belongs with it; domain rules do not, and

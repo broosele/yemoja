@@ -26,9 +26,10 @@ object ItemReader {
         description: ItemDescription,
         stored: Stored.Members,
         set: ItemSet,
+        units: Units,
     ): ReferenceableItem = ReferenceableItem(
         description,
-        { item -> fieldsOf(description, stored, item) },
+        { item -> fieldsOf(description, stored, item, units) },
         set,
         unrecognisedOf(description, stored),
     )
@@ -38,9 +39,10 @@ object ItemReader {
         description: ItemDescription,
         stored: Stored.Members,
         parent: Item,
+        units: Units,
     ): OwnedItem = OwnedItem(
         description,
-        { item -> fieldsOf(description, stored, item) },
+        { item -> fieldsOf(description, stored, item, units) },
         parent,
         unrecognisedOf(description, stored),
     )
@@ -54,24 +56,30 @@ object ItemReader {
         description: ItemDescription,
         stored: Stored.Members,
         item: Item,
+        units: Units,
     ): Map<String, Result<Any>> {
         val fields = LinkedHashMap<String, Result<Any>>()
         for ((name, held) in stored.members) {
             val field = description[name] ?: continue
-            fields[name] = fieldOf(field, held, item)
+            fields[name] = fieldOf(field, held, item, units)
         }
         return fields
     }
 
-    private fun fieldOf(field: FieldDescription, held: Stored, parent: Item): Result<Any> {
+    private fun fieldOf(
+        field: FieldDescription,
+        held: Stored,
+        parent: Item,
+        units: Units,
+    ): Result<Any> {
         val origin =
             if (field.role is Role.Overrideable) Result.Origin.OVERRIDDEN else Result.Origin.STORED
         return when (field.cardinality) {
-            Cardinality.SINGLE -> single(field, held, parent, origin)
-            Cardinality.LIST -> list(field, held, parent, origin)
-            Cardinality.KEYED -> keyed(field, held, parent, origin)
-            Cardinality.SERIES -> series(field, held, parent, origin)
-            Cardinality.KEYED_SERIES -> keyedSeries(field, held, parent, origin)
+            Cardinality.SINGLE -> single(field, held, parent, origin, units)
+            Cardinality.LIST -> list(field, held, parent, origin, units)
+            Cardinality.KEYED -> keyed(field, held, parent, origin, units)
+            Cardinality.SERIES -> series(field, held, parent, origin, units)
+            Cardinality.KEYED_SERIES -> keyedSeries(field, held, parent, origin, units)
         }
     }
 
@@ -80,7 +88,8 @@ object ItemReader {
         held: Stored,
         parent: Item,
         origin: Result.Origin,
-    ): Result<Any> = when (val member = memberOf(field, held, parent)) {
+        units: Units,
+    ): Result<Any> = when (val member = memberOf(field, held, parent, units)) {
         is Element.Usable -> Result.Usable(member.value, origin)
         is Element.Unusable -> Result.Unusable(member.raw, member.reason)
     }
@@ -96,11 +105,12 @@ object ItemReader {
         held: Stored,
         parent: Item,
         origin: Result.Origin,
+        units: Units,
     ): Result<Any> = when (held) {
         is Stored.Elements ->
-            Result.Usable(held.elements.map { memberOf(field, it, parent) }, origin)
+            Result.Usable(held.elements.map { memberOf(field, it, parent, units) }, origin)
 
-        is Stored.Leaf -> Result.Usable(listOf(memberOf(field, held, parent)), origin)
+        is Stored.Leaf -> Result.Usable(listOf(memberOf(field, held, parent, units)), origin)
         is Stored.Members -> Result.Unusable(held, "${field.name} should be a list")
     }
 
@@ -109,9 +119,13 @@ object ItemReader {
         held: Stored,
         parent: Item,
         origin: Result.Origin,
+        units: Units,
     ): Result<Any> =
         if (held is Stored.Members) {
-            Result.Usable(held.members.mapValues { memberOf(field, it.value, parent) }, origin)
+            Result.Usable(
+                held.members.mapValues { memberOf(field, it.value, parent, units) },
+                origin,
+            )
         } else {
             Result.Unusable(held, "${field.name} should be entries under keys")
         }
@@ -129,6 +143,7 @@ object ItemReader {
         held: Stored,
         parent: Item,
         origin: Result.Origin,
+        units: Units,
     ): Result<Any> {
         if (held !is Stored.Elements) {
             return Result.Unusable(held, "${field.name} should be a series of times and values")
@@ -144,7 +159,7 @@ object ItemReader {
             }
             seconds[index] = secondOf(sample.elements[0])
                 ?: return Result.Unusable(held, "${field.name} should be timed in whole seconds")
-            values.add(memberOf(field, sample.elements[1], parent))
+            values.add(memberOf(field, sample.elements[1], parent, units))
         }
         return try {
             Result.Usable(Series(seconds, values), origin)
@@ -159,10 +174,11 @@ object ItemReader {
         held: Stored,
         parent: Item,
         origin: Result.Origin,
+        units: Units,
     ): Result<Any> =
         if (held is Stored.Members) {
             Result.Usable(
-                held.members.mapValues { seriesMemberOf(field, it.value, parent) },
+                held.members.mapValues { seriesMemberOf(field, it.value, parent, units) },
                 origin,
             )
         } else {
@@ -173,7 +189,9 @@ object ItemReader {
         field: FieldDescription,
         held: Stored,
         parent: Item,
-    ): Element<Series> = when (val read = series(field, held, parent, Result.Origin.STORED)) {
+        units: Units,
+    ): Element<Series> =
+        when (val read = series(field, held, parent, Result.Origin.STORED, units)) {
         is Result.Usable -> Element.Usable(read.value as Series)
         is Result.Unusable -> Element.Unusable(read.raw, read.reason)
         Result.Absent -> Element.Unusable(held, "${field.name} should be a series")
@@ -183,13 +201,20 @@ object ItemReader {
      * One piece read as the field's kind: an owned item where that is what the field holds, and
      * otherwise a leaf handed to the description.
      */
-    private fun memberOf(field: FieldDescription, held: Stored, parent: Item): Element<Any> =
+    private fun memberOf(
+        field: FieldDescription,
+        held: Stored,
+        parent: Item,
+        units: Units,
+    ): Element<Any> =
         if (field is OwnedItemDescription) {
-            if (held is Stored.Members) Element.Usable(owned(field.description, held, parent))
+            if (held is Stored.Members) {
+                Element.Usable(owned(field.description, held, parent, units))
+            }
             else Element.Unusable(held, "${field.name} should be a set of fields")
         } else if (held is Stored.Leaf) {
             // The origin belongs to the field, not to one of its pieces, so it is settled above.
-            when (val read = field.interpret(held.value, false)) {
+            when (val read = field.read(held.value, false, units)) {
                 is Result.Usable -> Element.Usable(read.value)
                 is Result.Unusable -> Element.Unusable(read.raw, read.reason)
                 Result.Absent -> Element.Unusable(held, "${field.name} should be a value")

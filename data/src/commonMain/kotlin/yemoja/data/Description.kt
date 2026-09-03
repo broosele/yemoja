@@ -1,5 +1,10 @@
 package yemoja.data
 
+import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.pow
+import kotlin.math.round
 import kotlin.reflect.KClass
 
 /*
@@ -106,17 +111,30 @@ sealed class FieldDescription(
      * which decides the origin. It is given, not defaulted. Whoever reads knows which case it is,
      * and the wrong answer here is a correct-looking one.
      */
-    abstract fun interpret(given: Any?, overrides: Boolean): Result<Any>
+    protected abstract fun interpret(given: Any?, overrides: Boolean): Result<Any>
 
     /**
-     * The written form of [value].
+     * [given], read as this field, in the units [units] gives.
+     *
+     * The one way in. Reading a value happens in the unit context of the file it came from, and a
+     * kind with a dimension is the only one that has anything to do about it — so this carries
+     * the units and [interpret] does not, and every other kind never mentions them. `DATA-8`.
+     *
+     * Everything [interpret] says about [given] and [overrides] holds here.
+     */
+    open fun read(given: Any?, overrides: Boolean, units: Units): Result<Any> =
+        interpret(given, overrides)
+
+    /**
+     * The written form of [value], in the units [units] gives.
      *
      * The inverse of reading text, and only of that. Reading is wider than writing: a date may
-     * arrive already made, and this has no counterpart for it. So `format(interpret(x))` returns
-     * text for any `x` a kind accepts, while `interpret(format(v))` is the round trip a writer
-     * relies on. `DATA-76`.
+     * arrive already made, and this has no counterpart for it. So `format(read(x))` returns text
+     * for any `x` a kind accepts, while `read(format(v, units), units)` is the round trip a writer
+     * relies on, in any units. That identity is what keeps a file the user wrote in feet in feet.
+     * `DATA-76`.
      */
-    open fun format(value: Any): String = value.toString()
+    open fun format(value: Any, units: Units): String = value.toString()
 
     /**
      * The result of reading [given] as [value], which is what every kind's [interpret] ends with.
@@ -174,6 +192,55 @@ sealed class ValueDescription(
     cardinality: Cardinality,
 ) : FieldDescription(name, label, role, cardinality)
 
+/** How many digits of a measurement are written, counted from the first one that is not a zero. */
+private const val SIGNIFICANT_DIGITS = 12
+
+/**
+ * [value] as a file writes it: twelve significant digits, and no trailing zeros.
+ *
+ * Twelve because converting a number into a unit and back is exact only to about the sixteenth
+ * digit, so a value written straight from a Double would gain a tail on every save — `18.3` in
+ * pounds returns as `18.300000000000004`, and versioning would show a change nobody made.
+ * Rounding at twelve removes the tail while leaving every digit anyone wrote.
+ *
+ * **Significant digits, not decimal places.** A rule counting places means something different in
+ * every unit, and `DATA-8` has two that are far larger than the default they convert into: six
+ * places would write a 0.0456 litre item in cubic metres as `0.000046`, losing a digit off exactly
+ * the small values that have none to spare.
+ *
+ * A whole one is written whole, since `108000` is what a file holds and `108000.0` is noise.
+ */
+private fun written(value: Double): String {
+    if (value == 0.0 || !value.isFinite()) return "0"
+    val scale = 10.0.pow(SIGNIFICANT_DIGITS - 1 - floor(log10(abs(value))))
+    return plain((round(value * scale) / scale).toString())
+}
+
+/**
+ * [written] with its exponent spelled out, and no trailing zeros.
+ *
+ * Kotlin writes a small number as `4.56E-5` and a large one as `2.0E7`. Both are JSON and both
+ * are read back correctly, and neither belongs in a file a diver opens in a text editor. A
+ * pressure in pascal is `20000000`.
+ */
+private fun plain(written: String): String {
+    val mark = written.indexOfFirst { it == 'e' || it == 'E' }
+    if (mark < 0) return written.removeSuffix(".0")
+    val exponent = written.substring(mark + 1).toInt()
+    val mantissa = written.substring(0, mark)
+    val body = mantissa.removePrefix("-")
+    val dot = body.indexOf('.')
+    val digits = body.replace(".", "")
+    val point = (if (dot < 0) body.length else dot) + exponent
+    val spelled = when {
+        point <= 0 -> "0." + "0".repeat(-point) + digits
+        point >= digits.length -> digits + "0".repeat(point - digits.length)
+        else -> digits.substring(0, point) + "." + digits.substring(point)
+    }
+    val trimmed = if ('.' in spelled) spelled.trimEnd('0').trimEnd('.') else spelled
+    return if (mantissa.startsWith("-")) "-$trimmed" else trimmed
+}
+
 /** NumberDescription is a field holding a measurement. */
 class NumberDescription(
     name: String,
@@ -187,23 +254,44 @@ class NumberDescription(
 
     override val valueType: KClass<*> get() = Double::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
-        // A whole one is a number too. Every file writes 108000 rather than 108000.0.
-        is Double -> resultOf(given, given, overrides)
-        is Long -> resultOf(given.toDouble(), given, overrides)
-        is Int -> resultOf(given.toDouble(), given, overrides)
-        is String -> given.trim().toDoubleOrNull()
-            ?.let { resultOf(it, given, overrides) }
-            ?: Result.Unusable(Stored.Leaf(given), "$name should be a number")
-
-        else -> Result.Unusable(Stored.Leaf(given), "$name should be a number")
+    /**
+     * The dimension refuses first, then the number is read, then it is converted.
+     *
+     * Converting before [validate] runs is what makes a range mean one thing: `0.0..90.0` is
+     * ninety metres whatever the file is written in. Converting after would check a depth in feet
+     * against a bound in metres.
+     */
+    override fun read(given: Any?, overrides: Boolean, units: Units): Result<Any> {
+        units.refusal(dimension)?.let {
+            return Result.Unusable(Stored.Leaf(given), "$name cannot be read: $it")
+        }
+        val written = when (given) {
+            // A whole one is a number too. Every file writes 108000 rather than 108000.0.
+            is Double -> given
+            is Long -> given.toDouble()
+            is Int -> given.toDouble()
+            is String -> given.trim().toDoubleOrNull()
+            else -> null
+        } ?: return Result.Unusable(Stored.Leaf(given), "$name should be a number")
+        return resultOf(units.toDefault(dimension, written), given, overrides)
     }
+
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
+        read(given, overrides, Units.DEFAULT)
+
+    override fun format(value: Any, units: Units): String =
+        if (value is Double) written(units.fromDefault(dimension, value)) else value.toString()
 
     override fun validate(value: Any): Validity = when {
         value !is Double -> Validity.Invalid("$name should be a number")
-        range != null && value !in range -> Validity.Invalid("$name should be within $range")
+        range != null && value !in range ->
+            Validity.Invalid("$name should be within $range$unit, but was $value$unit")
+
         else -> Validity.Valid
     }
+
+    /** The unit a bound and a value are stated in, for a message. Empty where there is none. */
+    private val unit: String get() = Units.defaultName(dimension)?.let { " $it" } ?: ""
 }
 
 /**
@@ -222,7 +310,7 @@ class WholeNumberDescription(
 
     override val valueType: KClass<*> get() = Int::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
         // A fraction is refused however it arrives, so 7.0 is no more a rating than "7.0" is.
         is Int -> resultOf(given, given, overrides)
         is Long -> {
@@ -306,7 +394,7 @@ class TextDescription(
      */
     val suggestedSet: Set<String>? = suggestedSet?.toSet()
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
         if (given is String) resultOf(given, given, overrides)
         else Result.Unusable(Stored.Leaf(given), "$name should be text")
 
@@ -345,7 +433,7 @@ class MultilineTextDescription(
 
     override val valueType: KClass<*> get() = String::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
         if (given is String) resultOf(given, given, overrides)
         else Result.Unusable(Stored.Leaf(given), "$name should be text")
 
@@ -371,7 +459,7 @@ class DateDescription(
 
     override val valueType: KClass<*> get() = Date::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
         is Date -> resultOf(given, given, overrides)
         is String -> try {
             resultOf(Date.parse(given), given, overrides)
@@ -396,7 +484,7 @@ class TimeDescription(
 
     override val valueType: KClass<*> get() = Time::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
         is Time -> resultOf(given, given, overrides)
         is String -> try {
             resultOf(Time.parse(given), given, overrides)
@@ -433,7 +521,7 @@ class BooleanDescription(
 
     override val valueType: KClass<*> get() = Boolean::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
         is Boolean -> resultOf(given, given, overrides)
         is String -> when (given.trim().lowercase()) {
             in TRUE_FORMS -> resultOf(true, given, overrides)
@@ -462,7 +550,7 @@ class GasDescription(
 
     override val valueType: KClass<*> get() = Gas::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
         is Gas -> resultOf(given, given, overrides)
         is String -> try {
             resultOf(Gas.parse(given), given, overrides)
@@ -489,7 +577,7 @@ class KeyReferenceDescription(
 
     override val valueType: KClass<*> get() = KeyReference::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
         is KeyReference -> resultOf(given, given, overrides)
         is String -> try {
             resultOf(KeyReference.parse(given), given, overrides)
@@ -531,7 +619,7 @@ class ReferenceDescription(
 
     override val valueType: KClass<*> get() = Reference::class
 
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
         is Reference -> resultOf(given, given, overrides)
         is String -> try {
             resultOf(Reference.parse(given, oneOffAllowed), given, overrides)
@@ -577,7 +665,7 @@ class OwnedItemDescription(
     override val valueType: KClass<*> get() = OwnedItem::class
 
     /** An owned item is a set of fields, so no single value is ever one. */
-    override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> =
         Result.Unusable(Stored.Leaf(given), "$name should be a set of fields, not one value")
 }
 
