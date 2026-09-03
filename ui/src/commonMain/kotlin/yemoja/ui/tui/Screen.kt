@@ -321,7 +321,8 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * says which values have more to them, which a value simply ending does not.
      */
     private fun cut(text: String): String =
-        if (text.length <= VALUE_WIDTH) text else text.take(VALUE_WIDTH - 1) + MORE
+        if (text.length <= VALUE_WIDTH) text
+        else text.take(VALUE_WIDTH - MORE.length) + MORE
 
     /**
      * [text] with no line break left in it.
@@ -347,8 +348,15 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         /** How much of a value the list shows. Past this it is cut and marked. */
         const val VALUE_WIDTH: Int = 32
 
-        /** That a value goes on past where the list stopped showing it. */
-        private const val MORE = "\u2026"
+        /**
+         * That a value goes on past where the list stopped showing it.
+         *
+         * Three dots rather than the one character that means them. A Windows
+         * console on a code page that is not UTF-8 shows that character as a
+         * question mark, which reads as a value nobody could make sense of
+         * rather than as a value that was cut.
+         */
+        private const val MORE = "..."
 
         private const val LEAST_LIST_WIDTH = 12
 

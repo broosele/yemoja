@@ -488,9 +488,17 @@ class CutValueTest {
     fun `a long value is cut, and marked so that the cut is visible`() {
         val screen = invented("""postbox.json""" to """{"a": {"name": "$long"}}""")
         val shown = value(screen)
-        assertEquals(Screen.VALUE_WIDTH, shown.length)
-        assertTrue(shown.endsWith("…"), shown)
-        assertEquals("x".repeat(Screen.VALUE_WIDTH - 1), shown.dropLast(1))
+        assertEquals(Screen.VALUE_WIDTH, shown.length, "the mark counts towards it")
+        assertEquals("x".repeat(Screen.VALUE_WIDTH - 3) + "...", shown)
+    }
+
+    @Test
+    fun `the mark is written in characters every console has`() {
+        // One character meaning three dots shows as a question mark where the code page
+        // is not UTF-8, which reads as a value nobody could make sense of rather than as
+        // a value that was cut.
+        val screen = invented("postbox.json" to """{"a": {"name": "$long"}}""")
+        assertTrue(value(screen).all { it.code < 127 }, value(screen))
     }
 
     @Test

@@ -66,9 +66,12 @@ specified and is the one mark here that is a choice rather than a rule: it has t
 the three above, which say what a value *is*, and from the list's `>`, since both cursors are
 live at once.
 
-**A value is cut at thirty-two characters** and marked where it was cut, since a column wide
-enough for the longest remark anybody writes would be a column of mostly nothing. What was cut
-is not lost: the field opened on its own shows all of it.
+**A value is cut at thirty-two characters** and marked with `...` where it was cut, since a
+column wide enough for the longest remark anybody writes would be a column of mostly nothing.
+Three dots rather than the one character that means them: a Windows console on a code page
+that is not UTF-8 shows that character as a question mark, which reads as a value nobody could
+make sense of rather than as a value that was cut. What was cut is not lost — the field opened
+on its own shows all of it.
 
 ## One field on its own
 
