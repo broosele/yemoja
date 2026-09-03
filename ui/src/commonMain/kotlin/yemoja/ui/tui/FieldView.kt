@@ -102,7 +102,7 @@ private fun said(dimension: Dimension): String =
     else dimension.name.lowercase()
 
 private fun holding(cardinality: Cardinality): String = when (cardinality) {
-    Cardinality.SINGLE -> "one value"
+    Cardinality.SINGLE -> "single value"
     Cardinality.LIST -> "several, in the order written"
     Cardinality.KEYED -> "several, each under a key"
     Cardinality.SERIES -> "values against time"

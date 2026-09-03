@@ -661,7 +661,7 @@ class OpenFieldTest {
         val said = opened(screen)
         assertTrue("field round" in said, said.toString())
         assertTrue("kind reference" in said, said.toString())
-        assertTrue("holds one value" in said, said.toString())
+        assertTrue("holds single value" in said, said.toString())
         assertTrue("names a round" in said, said.toString())
         // Nothing is said about a plain name where one is not allowed, which is the norm.
         assertTrue(said.none { "plain name" in it }, said.toString())
