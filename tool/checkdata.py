@@ -28,6 +28,8 @@ KINDS = {
     'true or false': 'BooleanDescription',
     'gas': 'GasDescription',
     'reference': 'ReferenceDescription',
+    'list of references': 'ReferenceDescription',
+    'list of references or text': 'ReferenceDescription',
     'key reference': 'KeyReferenceDescription',
     'owned item': 'OwnedItemDescription',
 }
@@ -167,14 +169,14 @@ def described_types():
     shared = {
         name: (kind, field)
         for name, kind, field in re.findall(
-            r'val ([A-Z_]+)[^=\n]*=\s*(\w+Description)\("([a-z_]+)"', text)
+            r'val ([A-Z_]+)[^=\n]*=\s*(\w+Description)\(\s*"([a-z_]+)"', text)
     }
     types = {}
     for match in re.finditer(
             r'ItemDescription\(\s*"([a-z_]+)"\s*,\s*listOf\(', text):
         body = balanced(text, text.index('(', match.end() - len('listOf(')))
         fields = {field: kind for kind, field in
-                  re.findall(r'(\w+Description)\("([a-z_]+)"', body)}
+                  re.findall(r'(\w+Description)\(\s*"([a-z_]+)"', body)}
         for name in re.findall(r'\b([A-Z_]{2,})\b', body):
             if name in shared:
                 fields[shared[name][1]] = shared[name][0]
