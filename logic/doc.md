@@ -84,13 +84,29 @@ front end names a folder and never opens one. It goes when the Universe arrives.
 last of them: its profiles and its gas sources under keys, a profile's depth and temperature
 against time, and its pressures one series per gas source.
 
-**What is absent is what is worked out rather than recorded** — thirty-five fields of the
-hundred and eighty-nine, each for want of something to work from. A dive's own name, dates,
-duration, depth and `deco` come from the profile it was recorded on, its `surface_interval`
-from the dive before it, and its `buddy_count` from the list; a trip's `dives`, `parts` and
-dates from the dives naming it; a region's `children` from every other region's `parents`; and
-`days_left` and `expired` from today's date, which nothing in this project knows. Each type
-says which of its own are missing.
+**What is worked out rather than recorded is built where it can be** — twenty of the
+hundred and eighty-nine fields are still absent, each for want of something to work from.
+
+Six are here. A person's `name` is assembled from the parts; a dive's is its id, which the set
+it belongs to answers for. `buddy_count` counts the list. A region's `children` and a trip's
+`parts` are the far side of a reference, gathered by asking every item of that type what it
+names — one walk serves both, since a region has many `parents` and a trip has one `parent`,
+and each is asked the same question. A gas source's `volume` comes from the `capacity` of the
+cylinder it names.
+
+**A derivation that cannot answer says so.** `volume` is the one so far with somewhere to go
+wrong: a reference to a regulator, or to a cylinder whose capacity was never filled in, is
+*unusable* rather than absent, because a blank looks like a field nobody wrote and this is a
+mistake worth seeing. `DATA-50`. Absent is kept for the case that is not a mistake at all — a
+rented cylinder nobody has an item for.
+
+What is left wants three things nothing has done once: a walk into a recording through a key
+reference, a reduction over a series, and arithmetic on dates across midnight. A dive's dates,
+`duration`, `max_depth` and `deco` need all three, a profile's own dates need two, and a trip's
+`dives` and dates wait on the dives. `days_left` and `expired` want the date `LOGIC-9` hands
+in.
+`Profile.density` wants a fact nobody has written down: what each maker takes salt water to
+weigh. Each type says which of its own are missing.
 
 [manual/data-fields.md](../manual/data-fields.md) is the source of truth for every field,
 and where it and `Types.kt` disagree the manual is right. `tool/checkdata.py` holds the two

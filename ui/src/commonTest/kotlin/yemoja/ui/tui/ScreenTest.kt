@@ -188,6 +188,7 @@ class DetailTest {
             listOf(
                 "Name North Sea",
                 "Parents",
+                "Children (empty)",
                 "Category sea",
                 "West",
                 "East",
@@ -308,7 +309,8 @@ class PaintingTest {
         )
         val screen = screen(set)
         toTab(screen, "region")
-        val remarks = screen.paint(80, 12).map { it.text }.first { "Remarks" in it }
+        // Tall enough for every field of a region, remarks being the last of them.
+        val remarks = screen.paint(80, 16).map { it.text }.first { "Remarks" in it }
         assertTrue("Remarks   First." + ESCAPE + "Second." in remarks, remarks)
     }
 
@@ -753,8 +755,7 @@ class OpenFieldTest {
             Types.ALL,
         )
         toTab(screen, "region")
-        repeat(6) { screen.press(Key.DOWN) }
-        assertEquals("north", screen.field?.name)
+        toField(screen, "north")
         screen.press(Key.OPEN)
         val said = opened(screen)
         assertTrue("What it holds (written, and could not be read)" in said, said.toString())

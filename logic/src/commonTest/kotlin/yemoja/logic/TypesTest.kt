@@ -12,6 +12,7 @@ import yemoja.data.NumberDescription
 import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
+import yemoja.data.Role
 import yemoja.data.TextDescription
 import yemoja.data.Validity
 import yemoja.data.json.LogbookReader
@@ -64,15 +65,15 @@ class EveryTypeTest {
     }
 
     @Test
-    fun `every type but a dive has a name, which its id is worked out from`() {
-        // A dive's name is its date and its number within that day, which is worked out from
-        // the profile it was recorded on. Nothing works that out yet, so a dive has none.
-        for (type in Types.ALL - Types.DIVE) {
+    fun `every type has a name, and an id is worked out from it`() {
+        for (type in Types.ALL) {
             val name = assertNotNull(type["name"], "${type.name} should have a name")
             assertEquals(Cardinality.SINGLE, name.cardinality, type.name)
             assertEquals(String::class, name.valueType, type.name)
         }
-        assertNull(Types.DIVE["name"])
+        // A dive runs the other way: its name is the id rather than what the id came from, so
+        // correcting one would be renaming the dive.
+        assertIs<Role.Derived>(assertNotNull(Types.DIVE["name"]).role)
     }
 
     @Test

@@ -3,6 +3,7 @@ package yemoja.logic
 import yemoja.data.BooleanDescription
 import yemoja.data.Cardinality
 import yemoja.data.DateDescription
+import yemoja.data.Element
 import yemoja.data.Dimension
 import yemoja.data.Item
 import yemoja.data.GasDescription
@@ -10,10 +11,13 @@ import yemoja.data.ItemDescription
 import yemoja.data.KeyReferenceDescription
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
+import yemoja.data.Reference
 import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceDescription
+import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Role
+import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.data.TimeDescription
 import yemoja.data.WholeNumberDescription
@@ -44,14 +48,17 @@ object Types {
     /**
      * Dive is one dive, and the largest thing here.
      *
-     * Absent so far: everything the manual works out. `name`, `start_date`, `start_time`,
-     * `end_time`, `end_date`, `duration`, `max_depth` and `deco` come from the primary profile,
-     * `surface_interval` from the dive before it, and `buddy_count` from the list of buddies.
-     * Each needs a computation over what is around it rather than a description of its own.
+     * Absent so far: `start_date`, `start_time`, `end_time`, `end_date`, `duration`,
+     * `max_depth` and `deco`, which come from the primary profile, and `surface_interval`,
+     * which comes from the dive before it. Each wants a walk into a recording and arithmetic
+     * over dates that nothing here does yet.
      */
     val DIVE: ItemDescription = ItemDescription(
         "dive",
         listOf(
+            // The id, which is what a dive is listed and linked as. Not correctable: writing
+            // one would be renaming the dive, which the Universe does with its references.
+            TextDescription("name", role = Role.Derived(::divesId)),
             // The user's own numbering, which nothing renumbers. Not every diver keeps one.
             WholeNumberDescription("dive_number"),
             ReferenceDescription("dive_site", targetType = "dive_site"),
@@ -63,6 +70,9 @@ object Types {
                 cardinality = Cardinality.LIST,
                 oneOffAllowed = true,
             ),
+            // Corrected where the names are fewer than the people: a diver remembers how many
+            // were there without remembering all of them.
+            WholeNumberDescription("buddy_count", role = Role.Overrideable(::buddyCount)),
             WholeNumberDescription("rating", range = 1..10),
             OwnedItemDescription("details", DETAILS),
             OwnedItemDescription("environment", ENVIRONMENT),
@@ -112,8 +122,7 @@ object Types {
     /**
      * Region is a part of the world: a continent, an ocean, a country, a sea.
      *
-     * Absent so far: the `children` worked out from `parents`, which needs a computation over
-     * every region rather than a description.
+     * Absent so far: nothing of its own.
      */
     val REGION: ItemDescription = ItemDescription(
         "region",
@@ -121,6 +130,14 @@ object Types {
             TextDescription("name"),
             // More than one, since a region often sits inside several at once.
             ReferenceDescription("parents", targetType = "region", cardinality = Cardinality.LIST),
+            // The other side of `parents`, gathered from every region there is, the supplied
+            // ones included. Never written: it would be the same fact twice.
+            ReferenceDescription(
+                "children",
+                targetType = "region",
+                cardinality = Cardinality.LIST,
+                role = Role.Derived(::regionsChildren),
+            ),
             TextDescription("category", suggestedSet = REGION_CATEGORIES),
             // The four edges of a box holding the region, for placing it on a map. `east` is the
             // edge reached travelling east from `west`, which is what makes the date line
@@ -264,8 +281,8 @@ object Types {
     /**
      * DiveTrip is diving done on one occasion or in one place.
      *
-     * Absent so far: `dives` and `parts`, which follow from what names this trip, and the
-     * `start_date` and `end_date` taken from the dives on it.
+     * Absent so far: `dives`, which gathers from this trip and everything beneath it, and
+     * the `start_date` and `end_date` taken from those dives.
      */
     val DIVE_TRIP: ItemDescription = ItemDescription(
         "dive_trip",
@@ -273,6 +290,13 @@ object Types {
             TextDescription("name"),
             // The larger trip this one is part of, where there is one.
             ReferenceDescription("parent", targetType = "dive_trip"),
+            // The other side of `parent`. A leg names the trip; the trip does not name its legs.
+            ReferenceDescription(
+                "parts",
+                targetType = "dive_trip",
+                cardinality = Cardinality.LIST,
+                role = Role.Derived(::tripsParts),
+            ),
             ReferenceDescription("region", targetType = "region"),
             ReferenceDescription("operator", targetType = "operator"),
             REMARKS,
@@ -479,7 +503,7 @@ private val PROFILE = ItemDescription(
 /**
  * GasSource is one thing breathed from on a dive, under a key on that dive.
  *
- * Absent so far: `volume`, taken from the capacity of the cylinder it names.
+ * Absent so far: nothing of its own.
  */
 private val GAS_SOURCE = ItemDescription(
     "gas_source",
@@ -491,6 +515,13 @@ private val GAS_SOURCE = ItemDescription(
         GasDescription("gas_type"),
         TextDescription("usage", suggestedSet = GAS_USAGES),
         TextDescription("configuration", suggestedSet = GAS_CONFIGURATIONS),
+        // From the cylinder's own `capacity`, and written by hand where no cylinder is named
+        // or the one dived was not the one recorded.
+        NumberDescription(
+            "volume",
+            Dimension.VOLUME,
+            role = Role.Overrideable(::cylindersVolume),
+        ),
         REMARKS,
     ),
 )
@@ -575,6 +606,111 @@ private val MAINTENANCE = ItemDescription(
         REMARKS,
     ),
 )
+
+/**
+ * A dive's name, which is its id.
+ *
+ * An item does not carry its id, so this asks the set it belongs to. Absent for a dive inside
+ * no set, which nothing that reads a logbook produces.
+ */
+private fun divesId(dive: Item): Result<Any> {
+    val id = (dive as? ReferenceableItem)?.let { dive.set.idOf(it) } ?: return Result.Absent
+    return Result.Usable(id, Result.Origin.DERIVED)
+}
+
+/**
+ * How many people were on a dive, counted from the list of them.
+ *
+ * Every entry counts: a plain name as much as a reference, and one that would not read as much
+ * as either. The question is how many were there, and an entry nobody can resolve is still
+ * somebody. Absent where the list was not written, which is not a dive with nobody on it.
+ */
+private fun buddyCount(dive: Item): Result<Any> {
+    val buddies = dive.list<Reference>("buddies") as? Result.Usable ?: return Result.Absent
+    return Result.Usable(buddies.value.size, Result.Origin.DERIVED)
+}
+
+/**
+ * The regions naming [region] as a parent.
+ *
+ * Gathered from every region in the set, the supplied ones included, so a country added to a
+ * logbook appears among the children of a continent nothing touched. Empty rather than absent:
+ * a region with nothing inside it has been asked and answered.
+ */
+private fun regionsChildren(region: Item): Result<Any> =
+    pointingAt(region, Types.REGION, "parents")
+
+/**
+ * The trips naming [trip] as their parent.
+ *
+ * The other side of `parent`, gathered the way [regionsChildren] is.
+ */
+private fun tripsParts(trip: Item): Result<Any> =
+    pointingAt(trip, Types.DIVE_TRIP, "parent")
+
+/**
+ * Every item of [type] whose [field] names [item], as references to them.
+ *
+ * One walk for both sides of a back-reference, whether the naming field holds one or several: a
+ * region has many `parents` and a trip has one `parent`, and each is asked the same question. An
+ * entry that would not read names nothing and is passed over.
+ */
+private fun pointingAt(item: Item, type: ItemDescription, field: String): Result<Any> {
+    val id = (item as? ReferenceableItem)?.let { item.set.idOf(it) } ?: return Result.Absent
+    val found = item.set.allOf(type)
+        .filter { other -> id in namesIn(other, field) }
+        .mapNotNull { other -> item.set.idOf(other) }
+        .map { Element.Usable(Reference.Identified(it) as Any) }
+    return Result.Usable(found, Result.Origin.DERIVED)
+}
+
+/** The ids [field] names on [item], however many it holds and whatever it failed to read. */
+private fun namesIn(item: Item, field: String): List<String> {
+    val naming = item.description[field] ?: return emptyList()
+    val read = item.read(field) as? Result.Usable ?: return emptyList()
+    val values = if (naming.cardinality == Cardinality.LIST) {
+        (read.value as? List<*>).orEmpty().mapNotNull { (it as? Element.Usable<*>)?.value }
+    } else {
+        listOf(read.value)
+    }
+    return values.filterIsInstance<Reference.Identified>().map { it.id }
+}
+
+/**
+ * What a cylinder holds, from the `capacity` of the gear item it names.
+ *
+ * **Unusable rather than absent where the reference leads anywhere but a cylinder.** Pointing at
+ * a regulator, or at a cylinder whose capacity was never filled in, is a mistake worth seeing,
+ * and a blank field looks like one nobody wrote. Absent only where no cylinder is named, which
+ * is the ordinary case for a rented one.
+ */
+private fun cylindersVolume(source: Item): Result<Any> {
+    val named = source.single<Reference>("cylinder") as? Result.Usable ?: return Result.Absent
+    val id = (named.value as? Reference.Identified)?.id
+        ?: return unusable("a volume needs a cylinder with an id to take it from")
+    val gear = source.set[id]
+        ?: return unusable("$id is not in this logbook, so its capacity cannot be read")
+    if (gear.description != Types.GEAR) {
+        return unusable("$id is a ${gear.description.name} rather than a piece of gear")
+    }
+    val category = (gear.single<String>("category") as? Result.Usable)?.value
+    if (category != CYLINDER) return unusable("$id is not in the $CYLINDER category")
+    val capacity = gear.single<Double>("capacity") as? Result.Usable
+        ?: return unusable("$id has no capacity written on it")
+    return Result.Usable(capacity.value, Result.Origin.DERIVED)
+}
+
+/**
+ * A derived value that could not be worked out, which `DATA-50` makes a fault not an absence.
+ *
+ * The raw form is an empty leaf. `Result.Unusable` carries what the source held so that a bad
+ * value can be shown in place, and nothing was written here: the fault is in what this was
+ * worked out from, not in anything a file says.
+ */
+private fun unusable(reason: String): Result<Any> = Result.Unusable(Stored.Leaf(null), reason)
+
+/** The gear category a cylinder is in, without which its capacity means nothing. */
+private const val CYLINDER = "cylinder"
 
 /**
  * A person's full name, assembled from the parts.
