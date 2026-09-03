@@ -180,7 +180,7 @@ You can also write a plain value, without the `@`:
 }
 ```
 
-This items that you dived with someone called John without claiming to know who.
+This means that you dived with someone called John without claiming to know who.
 Two dives that each list `john` are **not** treated as the same person, which is what
 you want when you simply cannot remember, or when two different Johns are involved.
 
@@ -269,9 +269,27 @@ after the field.
   mark the two kinds of pointer, and may not contain a line break, a tab, or any other
   character you would not see. Characters that reorder what is shown are refused as well,
   so that what a file says is what you read.
-- **multiline text** — line breaks are allowed, and so is a leading `@` or `*`, since
-  nothing here is ever read as a pointer. Tabs are not, nor is anything else you would
-  not see.
+- **multiline text** — line breaks are allowed. Tabs are not, nor is anything else you
+  would not see.
+
+  **`@` and `*` point at things here too**, as they do in a field: writing `@willy` in
+  a remark names the item with that id. It is a convention and nothing more — a remark is
+  free text, so nothing has to act on a pointer and a name matching nothing is simply what
+  you wrote. What an interface makes of one is up to it: a link, the item's name in its
+  place, or nothing at all.
+
+  A pointer is an `@` and the name that follows it, ending where the name does. A trailing
+  `.`, `-` or `_` is punctuation rather than part of it, since no id ends with one, so
+  `We met @willy, who was on his @padi_wreck course.` points at two items and the comma
+  and the full stop are punctuation. A dot inside a name is kept —
+  `@generic_0.5_kg_lead_weight` is one pointer. Capitals do not matter: `@Willy` at the
+  start of a sentence finds the same item as `@willy`.
+
+  **Nothing else about an `@` is examined**, because nothing could be. You may write an
+  address, a handle from somewhere else, or simply mean *at* — `max depth @ 22m` — and no
+  rule can tell those from a name. It does not matter: a pointer means something only
+  when an item of that name is really there, and one that finds nothing is the text you
+  wrote. `tom@example.invalid` is your address and stays your address.
 - **whole number** — no decimal point: `12`.
 - **number** — with or without one: `31.4`.
 

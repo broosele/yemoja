@@ -73,6 +73,10 @@ them.
 - **FEAT-11 — A terminal interface.** Deliberately raw; see [ui/tui/doc.md](ui/tui/doc.md).
   *Partly built:* it reads a logbook and shows it. Nothing is written.
 - **FEAT-12 — A programmatic interface.** See [ui/api/doc.md](ui/api/doc.md).
+- **FEAT-23 — Following a mention written in a remark.** `@willy` in free text names an
+  item by convention, settled in `JSON-23`. Drawing one as a link is each interface's own
+  choice and no interface does it yet. Whether a rename carries mentions along with it is
+  a question of its own and is open: `JSON-24`.
 - **FEAT-13 — Export to other applications' formats.** Waits on `RECON-4`.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).

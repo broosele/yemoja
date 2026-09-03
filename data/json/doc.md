@@ -340,6 +340,27 @@ To settle when we discuss architecture:
    **This is `REQ-14` in another guise** — whether a conflict is per item or per
    field. Storage that keeps whole items and merging that compares fields can coexist,
    but the two questions have to be answered together or the answers will disagree.
+- **JSON-24 — Whether a rename carries the mentions in free text.** `JSON-17` makes a rename
+   one changeset rewriting every reference to the old id. A mention is not a reference, so
+   nothing carries it, and `@willy` goes on naming an id that no longer exists.
+
+   For carrying it: the user wrote the mention meaning the person, and leaving it behind is
+   data quietly decaying under a rename the user asked for. The machinery exists — a rename
+   is already a changeset touching many items, and one more kind of edit is reversible like
+   the rest.
+
+   Against: a remark is prose somebody typed, and rewriting the middle of a sentence is editing
+   their words rather than repointing a link. Worse, `JSON-23` makes a mention *have no fixed
+   meaning*, so nothing can know that `@willy` was meant as one rather than being text that
+   looks like one — rewriting it asserts a reading the format declines to make. And a partial
+   guarantee may be worse than a stated absence: `*<key>` and `@<id>*<key>` cannot be resolved
+   without a description, so only the plain `@<id>` form could ever be carried.
+
+   Two things bear on it. Whether a journal action can address part of a string, or only
+   replace a field whole, which is `JSON-16`'s neighbourhood. And what happens to a mention in
+   a library item, which a logbook may not rewrite at all.
+
+   Until this is settled nothing is promised either way, and the manual says nothing about it.
 - **JSON-13 — When an action or a changeset may be moved or dropped.** Two actions commute
    if they touch different items, or different fields of one item; outside that they
    depend on each other. Either the journal refuses a change that would break a
@@ -517,7 +538,8 @@ To settle when we discuss architecture:
   the file says which entry.
 
   Two things follow. Text may not begin with `*` any more than with `@`. And multiline
-  text is unaffected, since nothing in it is read as a reference of either kind.
+  text is where both markers stop being structure and become a convention, which
+  `JSON-23` settles.
 
   **The two markers compose, should reaching into another item ever be wanted.**
   `@<id>*<key>` reads as the entry keyed *key* inside the item *id* — `@anna_devries*c1`
@@ -614,6 +636,76 @@ To settle when we discuss architecture:
   format meant to be legible without the application, that is a real loss, accepted
   because a good id is recognisable on sight and the alternative pays on every reference
   in every file to serve a rare reading.
+
+- **JSON-23 — Whether `@` and `*` mean anything inside multiline text.** *Settled:* **yes,
+  by convention, and nothing enforces it.**
+
+  A mention in free text — `@willy`, `*p1`, `@anna_devries*c1` — names an item, an entry
+  of this item, or an entry of another one, in the two markers `JSON-19` already gives a
+  field. An interface may draw it as a link, or show the item's name in its place, or pass
+  over it entirely.
+
+  **The text is the value.** A remark holding `@willy` holds those six characters. Reading,
+  writing and comparing never see anything else, nothing is resolved on load or rewritten
+  on save, and a mention naming an item that is not there is not a fault — it is text that
+  happens to look like a mention. That is what free text means, and it is why this costs
+  the reader nothing: no kind changes, and `remarks` is parsed exactly as before.
+
+  One consequence follows, and it is the price of the convention rather than a defect: **a
+  mention cannot be broken**, having never been a link, so `tool/checkdata.py` counts
+  references and passes over these.
+
+  **What a rename does to a mention is not settled here.** `JSON-17` makes a rename one
+  changeset rewriting every reference, and a reference is a field; a mention sits inside a
+  string nobody parsed, so the machinery that carries the one does not reach the other by
+  itself. Whether it should be made to is `JSON-24`.
+
+  **What a mention looks like.** After an `@`, the longest run of ASCII letters, digits,
+  `_`, `-`, `.` and `#` — the characters `DATA-84` allows in an id. A trailing `_`, `-`,
+  `.` or `#` comes off, no id ending in one, so a full stop closing a sentence stays a
+  full stop. An empty run is no candidate at all. The run is folded to lowercase, which
+  `DATA-84` makes unambiguous — an id is lowercase ASCII exactly so that `Anna` and `anna`
+  cannot be two of them — so `@Willy` opening a sentence finds *willy* rather than finding
+  nothing in silence.
+
+  So `@willy,` names *willy*, `@blue_hole.` ends a sentence and names *blue_hole*,
+  `@generic_0.5_kg_lead_weight` keeps the dot carrying its decimal, `@2026-02-23#0` names
+  a dive whole, and `@ 22m` names nothing, the run being empty.
+
+  **Nothing says where a mention may begin**, and no rule should. An `@` in a remark may
+  be an address, a handle from another system, `@media` in a snippet, or the word *at* —
+  which in a dive log is the likeliest of all: `max depth @ 22m`, `gas switch @ 21min`.
+  What separates those from a mention is intent, and this question declines to read it.
+
+  A rule was tried and dropped: that a mention must follow a space or a line start. It
+  refused `tom@example.invalid` for a reason that turns out to be luck, an email's local
+  part happening to be built from characters an id may hold, and it refused `(@willy)` and
+  `"@willy"` along with it, which is prose anybody writes. It aimed at intent through a
+  correlation and hit ordinary punctuation instead.
+
+  **What makes a candidate safe is resolution, not grammar.** `@example.invalid` inside an
+  address is looked up, found to be nothing, and goes on being the text it always was.
+  `@30m` likewise. The candidate that does resolve is the one that was meant: `dived
+  @ravensgate_quarry today` links the site.
+
+  **So an interface marks only what resolves.** One that helpfully highlighted unresolved
+  candidates, to catch a typo the way a spell checker does, would light up every address
+  and every `@media` in the logbook. That is the one thing this convention asks of a
+  reader, and it is the whole of it.
+
+  **A mention is still read more narrowly than a field.** `DATA-84` binds where an id is
+  minted, and reading a reference refuses only whitespace and `*`, so a field holding
+  `@André` resolves or dangles visibly. A mention cannot be that generous: it has to find
+  where a word ends, which a field holding one value never has to, so it stops at the `é`
+  and offers *andr* — a candidate like any other, and like most of them one that resolves
+  to nothing.
+
+  **A bare `*<key>` is the weakest of the three.** `JSON-19` has a field's description say
+  which collection a key belongs to, and free text has no description, so `*p1` says only
+  *some entry keyed p1 on the item this is written on* — and an interface facing two
+  collections that both hold that key must choose or decline. `@<id>*<key>` is no better
+  off. Neither is pinned down further, because nothing depends on it: an interface that
+  cannot resolve a mention unambiguously leaves it as the text it already is.
 
 - **JSON-22 — How a logbook says whose it is.** *Settled:* a `user` key holding a reference
   to a person, `"user": "@jacques_cousteau"`, and it is **optional**.

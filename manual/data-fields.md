@@ -40,6 +40,10 @@ It is the one field where a line break is allowed. Everywhere else a piece of te
 single line — a dive site called `Blue Quarry`, not a dive site with a paragraph in its
 name.
 
+It is also where you can write `@willy` and mean the person: pointing at an item inside a
+remark is a convention Yemoja understands and never acts on by itself. See *What the
+values look like* in [data-format.md](data-format.md).
+
 JSON has no way of writing a string across several lines, so a line break inside
 `remarks` is written as `\n`:
 
