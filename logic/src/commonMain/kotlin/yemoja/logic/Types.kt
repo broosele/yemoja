@@ -516,7 +516,7 @@ private val MEDICAL = ItemDescription(
  * Insurance is the cover a person holds.
  *
  * Absent so far: `days_left` and `expired`, which are worked out from `end_date` against today.
- * Nothing in this project knows what today is.
+ * The day is given to this layer rather than read from a clock. `LOGIC-9`.
  */
 private val INSURANCE = ItemDescription(
     "insurance",

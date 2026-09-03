@@ -189,6 +189,37 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-9 — Where *today* comes from.** *Settled:* **the local calendar date, handed to
+   this layer rather than read inside a derivation.**
+
+   Four fields want it: `days_left` and `expired` on an insurance and on a maintenance.
+   Nothing else in the project asks what day it is, and until these are written nothing
+   does.
+
+   **Local, and the zone is not worth deciding.** Recordings are GMT — `DATA-58` — and a
+   moment in GMT is already tomorrow in Auckland, so the two disagree for a third of every
+   day. That gap does not matter here: these fields are hints, and no renewal turns on
+   which side of midnight it is judged from. A cover that ran out this morning and one that
+   runs out tonight are the same news.
+
+   **Handed in, not read.** A derivation is `(Item) -> Result<Any>` and an item carries the
+   set it belongs to, so everything else these need is already in reach. A clock is not: a
+   derivation that reached for one would give two answers to one question, and every test
+   touching `expired` would depend on the day it ran. The layer takes the date it is
+   built with, so a test states the day it means and production passes the machine's.
+
+   **No dependency follows.** `kotlin.time.Clock.System.now()` is in the standard library
+   and needs nothing added, but it answers with an instant, and turning an instant into a
+   calendar day needs a zone the standard library does not carry. Each front end knows its
+   own local date without help, so the date arrives from above and the question of a
+   date-and-time library stays unopened. It would reopen if something wanted a zone
+   properly — a reminder that fires at a particular hour, say — and that is `LOGIC-7`'s
+   neighbourhood rather than this one's.
+
+   This does not make a medical's validity a computation. The manual is deliberate that
+   Yemoja does not judge one, because how long a check counts for depends on who is
+   asking. What is settled here is only where the day comes from for the fields that
+   already have an end date written on them.
 - **LOGIC-5 — Concurrency.** *Settled:* **there is none.** One thread, one operation at a
   time, and a long operation takes the application over until it finishes.
 
