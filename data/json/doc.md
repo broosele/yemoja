@@ -262,7 +262,12 @@ dive would renumber its neighbours and break every reference to them.
 
 ## Reading
 
-Two readers, both ours, in `src/commonMain/kotlin/yemoja/data/json/`. `LogbookReader` turns
+Everything here is in `src/commonMain/kotlin/yemoja/data/json/`, the two stores included.
+`FileStore` and `DiskFileStore` are files rather than JSON, but what they are asked is this
+format's question — which files hold a type, given that one is a `.json` file or a folder of
+them — so they sit with it and not at the layer's root. `DATA-86` argues the dependency.
+
+Two readers, both ours. `LogbookReader` turns
 a logbook's files into a set of items. *Which* files those are is the store's to answer, by
 the convention `JSON-21` settles and with nothing declaring the layout; this turns each of
 them into items, whether it is one item named by its file or many under their own ids. `Json`

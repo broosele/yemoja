@@ -2,7 +2,6 @@ package yemoja.data.json
 
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
-import yemoja.data.MemoryFileStore
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.TextDescription

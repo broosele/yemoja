@@ -1,4 +1,4 @@
-package yemoja.data
+package yemoja.data.json
 
 /**
  * FileStoreMissing is thrown when a path is asked for something it cannot answer.

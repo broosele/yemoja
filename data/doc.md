@@ -772,7 +772,10 @@ dependency on logic, UI, or a specific source.
 
 **One library**, and it is named in one file. Common Kotlin has no file access at all, so
 reading a logbook needs something outside; `DATA-86` chose Okio and put it behind a small
-interface, so `DiskFileStore` is the only place that knows which library it is.
+interface, so `json/DiskFileStore` is the only place that knows which library it is. Both
+live with the JSON source rather than at the root, because what they answer is shaped by
+that format: `getPaths` knows a type is a `.json` file or a folder of them, which is the
+convention `JSON-21` settles and not something every source would share.
 
 ## Structure
 
@@ -784,8 +787,6 @@ data/
   json/           the JSON file source (doc.md, requirements.md)
   src/commonMain/kotlin/yemoja/data/
                   Description.kt   what a type is, and what a field is
-                  DiskFileStore.kt the machine's own files, the one place Okio is named
-                  FileStore.kt     which files hold a type, and one store in memory
                   Gas.kt           a breathing mix, in whole percentages
                   Item.kt          one item of one type, referenceable or owned
                   ItemReader.kt    a description and a tree, walked into an item
@@ -796,6 +797,9 @@ data/
                                    and what a parser throws
                   Series.kt        values against time, and one sample of them
                   Stored.kt        what a source holds, before anything judges it
+                  json/DiskFileStore.kt  the machine's own files, the one place Okio
+                                   is named
+                  json/FileStore.kt      which files hold a type, and one store in memory
                   json/Json.kt     a JSON text, read into that
                   json/LogbookReader.kt  a folder of them, read into a set of items
   src/commonTest/kotlin/yemoja/data/

@@ -1,7 +1,5 @@
 package yemoja.data.json
 
-import yemoja.data.FileStore
-import yemoja.data.FileStoreAmbiguous
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet

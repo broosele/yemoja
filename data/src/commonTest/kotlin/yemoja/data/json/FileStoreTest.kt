@@ -1,4 +1,4 @@
-package yemoja.data
+package yemoja.data.json
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

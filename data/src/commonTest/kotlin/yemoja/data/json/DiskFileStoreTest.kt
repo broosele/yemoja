@@ -1,4 +1,4 @@
-package yemoja.data
+package yemoja.data.json
 
 import okio.FileSystem
 import okio.Path
