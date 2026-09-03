@@ -28,10 +28,23 @@ GUI's feature set. If the TUI needs to be pretty, that is what the GUI is for.
 ## What it does
 
 `yemoja tui <logbook folder>`. A tab per item type, the ids of that type down the left, and
-the chosen item's fields on the right. Left and right change tab and wrap round;
-up and down move within the list and stop at its ends, because a list that wraps loses the
-user's place on a long one. `q`, escape and ctrl-C all leave, since raw mode swallows the
-usual one.
+the chosen item's fields on the right.
+
+| Key | Does |
+|---|---|
+| left, right | change tab, round the ring |
+| up, down | move in the list, stopping at its ends |
+| tab, shift-tab | move between the chosen item's fields, round the ring |
+| space | open the item the chosen field names |
+| enter | open the chosen field on its own |
+| escape | close what is open, or leave where nothing is |
+| `q`, ctrl-C | leave |
+
+A list stops at its ends because one that wraps loses the user's place on a long one; the
+tabs and the fields wrap, being short enough to see whole. Leaving takes two keys of its own
+because raw mode swallows the usual one, and escape is a third where nothing is open. Up and
+down move in whatever is in front of the user: the list, or an open field too long to see at
+once.
 
 **The layout is the descriptions and nothing else.** Nothing in this front end names a type
 or a field, so a type added to the logic layer appears here without this changing. `UI-3`.
@@ -42,9 +55,48 @@ not be read shows why — `! north should be within -90.0..90.0 deg, but was 91.
 than a blank, which is what an absent field looks like and is not the same thing. And a value
 is shown in the form a file writes, `DATA-76`, so what is on screen is what is on disk.
 
+**What a value is, is shown rather than told.** A reference is underlined, so what can be
+followed is visible before it is tried. A value written over one that would have been worked
+out is bold, and one that was worked out is italic; a value simply written is plain, which is
+most of them. All three come from the description and from the origin the layer below answers
+with, so nothing here decides which is which.
+
+The chosen field is set apart by reversing its row to the edge of the screen. That was not
+specified and is the one mark here that is a choice rather than a rule: it has to differ from
+the three above, which say what a value *is*, and from the list's `>`, since both cursors are
+live at once.
+
+**A value is cut at thirty-two characters** and marked where it was cut, since a column wide
+enough for the longest remark anybody writes would be a column of mostly nothing. What was cut
+is not lost: the field opened on its own shows all of it.
+
+## One field on its own
+
+Enter opens the chosen field alone. It says where it came from — type, item and field — so
+that a reader who followed a reference into it knows where they are, then what the field *is*,
+then the whole of what it holds.
+
+What a field is, is read off its description: its name and label, its kind in the words the
+manual uses for the same thing, what it holds, whether it is recorded or worked out, and then
+whatever only that kind has to say — a number's dimension and the unit it is held in, a range,
+a vocabulary, what a reference points at. The `when` over the kinds is exhaustive, so a kind
+added to the layer below is a compiler error here rather than a field this view has nothing to
+say about.
+
+What it holds is the value uncut, wrapped over as many rows as it takes and scrolled with up
+and down. A value that could not be read shows both the reason and what was written, since the
+two together are what a reader needs in order to fix it.
+
+**Editing is not here.** Enter opens; it does not yet change anything, and neither does
+anything else.
+
+**Nothing shown today is a reference.** No field of a person, a region or a piece of gear is
+one — the only single references the manual defines sit inside owned items, which are neither
+described nor shown — so underlining and space are correct and unreachable until those
+arrive. They are tested against invented types.
+
 **A painted line holds no line break.** `remarks` is the one multiline field and a terminal row
-is not multiline, so a break is shown as `
-`, the escape a file writes it with. Taken instead,
+is not multiline, so a break is shown as `\n`, the escape a file writes it with. Taken instead,
 one remark would occupy three rows while measuring as one, and in raw mode leave the cursor
 wherever the last of them ended. A remark longer than the column is cut there; showing it whole
 would mean a field taking several rows, which is a layout question nobody has asked yet.
@@ -61,10 +113,12 @@ It must be started from a real terminal, which is why it cannot be run through G
 gives a child process no terminal, so there is no run task and `./gradlew :ui:installDist`
 writes the start scripts instead.
 
-`Screen` holds no terminal. It answers a key and paints a rectangle of text, so the whole
+`Screen` holds no terminal. It answers a key and paints rows of styled text, so the whole
 interface is tested without one; the terminal lives in one file beside it and does nothing
-else. That is why `Screen` is deliberately mutable, which `ui/doc.md` allows a front end to
-be about where the user is in it.
+else. A row is spans rather than text with escapes in it, so its width is the number of
+characters a reader sees and what a style becomes is known only where a terminal is. That is
+also why `Screen` is deliberately mutable, which `ui/doc.md` allows a front end to be about
+where the user is in it.
 
 ## Open questions
 

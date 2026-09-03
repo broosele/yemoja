@@ -52,7 +52,7 @@ private fun show(screen: Screen): Int {
             while (screen.running) {
                 paint(terminal, screen)
                 val event = it.readKey() ?: break
-                keyOf(event.key, event.ctrl)?.let { key -> screen.press(key) }
+                keyOf(event.key, event.ctrl, event.shift)?.let { key -> screen.press(key) }
             }
         }
     } finally {
@@ -75,9 +75,30 @@ private fun paint(terminal: Terminal, screen: Screen) {
     val size = terminal.size
     val width = size.width.coerceAtLeast(Screen.LEAST_WIDTH)
     val height = size.height.coerceAtLeast(Screen.LEAST_HEIGHT)
-    print(HOME + screen.paint(width, height).joinToString("\r\n"))
+    print(HOME + screen.paint(width, height).joinToString("\r\n") { shown(it) })
     System.out.flush()
 }
+
+/**
+ * One row, with what sets its pieces apart turned into what a terminal understands.
+ *
+ * Every span is closed as it ends rather than left open to the next, which costs a few characters
+ * and means a row can be cut anywhere without the rest of the screen taking its style.
+ */
+private fun shown(line: Line): String = line.spans.joinToString("") { span ->
+    if (span.styles.isEmpty()) span.text
+    else span.styles.joinToString("") { CODES.getValue(it) } + span.text + PLAIN
+}
+
+/** What each style is, in the escapes a terminal has understood since the VT100. */
+private val CODES = mapOf(
+    Style.BOLD to "\u001B[1m",
+    Style.ITALIC to "\u001B[3m",
+    Style.UNDERLINED to "\u001B[4m",
+    Style.SELECTED to "\u001B[7m",
+)
+
+private const val PLAIN = "\u001B[0m"
 
 /** The alternate screen, so a user's scrollback is where they left it, and no cursor. */
 private const val ENTER = "\u001B[?1049h\u001B[?25l"

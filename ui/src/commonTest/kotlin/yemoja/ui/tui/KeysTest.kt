@@ -15,17 +15,29 @@ class KeysTest {
     }
 
     @Test
-    fun `three keys leave, because raw mode swallows the usual one`() {
+    fun `two keys leave, because raw mode swallows the usual one`() {
         assertEquals(Key.QUIT, keyOf("q"))
         assertEquals(Key.QUIT, keyOf("Q"))
-        assertEquals(Key.QUIT, keyOf("Escape"))
         assertEquals(Key.QUIT, keyOf("c", ctrl = true))
+    }
+
+    @Test
+    fun `escape closes, which is leaving where nothing is open`() {
+        assertEquals(Key.CLOSE, keyOf("Escape"))
+    }
+
+    @Test
+    fun `tab moves between fields, and enter opens one`() {
+        assertEquals(Key.NEXT_FIELD, keyOf("Tab"))
+        assertEquals(Key.PREVIOUS_FIELD, keyOf("Tab", shift = true))
+        assertEquals(Key.FOLLOW, keyOf(" "))
+        assertEquals(Key.OPEN, keyOf("Enter"))
     }
 
     @Test
     fun `anything else is ignored rather than guessed at`() {
         assertNull(keyOf("a"))
-        assertNull(keyOf("Enter"))
+        assertNull(keyOf("Backspace"))
         assertNull(keyOf("F1"))
         assertNull(keyOf(""))
     }
