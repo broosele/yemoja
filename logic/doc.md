@@ -80,13 +80,17 @@ logic/
 this layer that names a source, and it exists so that `ui/doc.md`'s rule holds meanwhile: a
 front end names a folder and never opens one. It goes when the Universe arrives.
 
-**Three types so far, and every shape but a series.** A person carries their medical, their
-insurance and their courses; a piece of gear its buoyancy and its maintenances. What is absent
-is a series, which only a dive profile has, and the six other item types entirely.
+**Every item type the manual names, and every shape a field can take.** A dive brings the
+last of them: its profiles and its gas sources under keys, a profile's depth and temperature
+against time, and its pressures one series per gas source.
 
-Three worked-out fields are absent too, each for want of something to work from: a region's
-`children` needs every other region's `parents`, and an insurance's and a maintenance's
-`days_left` and `expired` need to know what today is, which nothing in this project does.
+**What is absent is what is worked out rather than recorded** — thirty-five fields of the
+hundred and eighty-nine, each for want of something to work from. A dive's own name, dates,
+duration, depth and `deco` come from the profile it was recorded on, its `surface_interval`
+from the dive before it, and its `buddy_count` from the list; a trip's `dives`, `parts` and
+dates from the dives naming it; a region's `children` from every other region's `parents`; and
+`days_left` and `expired` from today's date, which nothing in this project knows. Each type
+says which of its own are missing.
 
 [manual/data-fields.md](../manual/data-fields.md) is the source of truth for every field,
 and where it and `Types.kt` disagree the manual is right. `tool/checkdata.py` holds the two

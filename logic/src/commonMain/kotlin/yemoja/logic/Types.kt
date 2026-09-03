@@ -5,19 +5,23 @@ import yemoja.data.Cardinality
 import yemoja.data.DateDescription
 import yemoja.data.Dimension
 import yemoja.data.Item
+import yemoja.data.GasDescription
 import yemoja.data.ItemDescription
+import yemoja.data.KeyReferenceDescription
 import yemoja.data.MultilineTextDescription
-import yemoja.data.OwnedItemDescription
 import yemoja.data.NumberDescription
+import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.Role
 import yemoja.data.TextDescription
+import yemoja.data.TimeDescription
+import yemoja.data.WholeNumberDescription
 
 /*
- * What a region, a piece of gear and a person are. The machinery that reads and resolves these
- * is in the data layer, which knows nothing about diving; the descriptions are here because
- * they do.
+ * What a dive, a person, a place and a piece of gear are. The machinery that reads and resolves
+ * these is in the data layer, which knows nothing about diving; the descriptions are here
+ * because they do.
  *
  * manual/data-fields.md is the source of truth for every field. Where this and that document
  * disagree, that one is right and this one is a bug.
@@ -31,11 +35,45 @@ import yemoja.data.TextDescription
  * An `ItemSet` is built with these, so this list is what the whole application shares as its
  * vocabulary. A front end may name a type; it may not describe one.
  *
- * **Every shape but a series.** A person carries their medical, their insurance and their
- * courses; a piece of gear its buoyancy and its maintenances. What is absent is a series, which
- * only a dive profile has, and the six item types the manual describes besides these three.
+ * **Every item type the manual defines, and every shape a field can take.** What is absent is
+ * a field that is worked out rather than recorded, wherever what it would be worked out from is
+ * not there to work from. Each type says which of its own are missing.
  */
 object Types {
+
+    /**
+     * Dive is one dive, and the largest thing here.
+     *
+     * Absent so far: everything the manual works out. `name`, `start_date`, `start_time`,
+     * `end_time`, `end_date`, `duration`, `max_depth` and `deco` come from the primary profile,
+     * `surface_interval` from the dive before it, and `buddy_count` from the list of buddies.
+     * Each needs a computation over what is around it rather than a description of its own.
+     */
+    val DIVE: ItemDescription = ItemDescription(
+        "dive",
+        listOf(
+            // The user's own numbering, which nothing renumbers. Not every diver keeps one.
+            WholeNumberDescription("dive_number"),
+            ReferenceDescription("dive_site", targetType = "dive_site"),
+            // The dive still being carried gas from when this one began.
+            ReferenceDescription("previous_dive", targetType = "dive"),
+            ReferenceDescription(
+                "buddies",
+                targetType = "person",
+                cardinality = Cardinality.LIST,
+                oneOffAllowed = true,
+            ),
+            WholeNumberDescription("rating", range = 1..10),
+            OwnedItemDescription("details", DETAILS),
+            OwnedItemDescription("environment", ENVIRONMENT),
+            OwnedItemDescription("gear", DIVE_GEAR),
+            OwnedItemDescription("profiles", PROFILE, cardinality = Cardinality.KEYED),
+            // Which of them to work from. Leaving it out where there is one is the ordinary case.
+            KeyReferenceDescription("primary_profile", collection = "profiles"),
+            OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
+            REMARKS,
+        ),
+    )
 
     /**
      * Person is anyone who appears in a logbook, whether or not they dive.
@@ -125,9 +163,331 @@ object Types {
         ),
     )
 
+    /**
+     * DiveSite is a place dived at.
+     *
+     * Absent so far: nothing of its own.
+     */
+    val DIVE_SITE: ItemDescription = ItemDescription(
+        "dive_site",
+        listOf(
+            TextDescription("name"),
+            TextDescription("alternative_names", cardinality = Cardinality.LIST),
+            ReferenceDescription("regions", targetType = "region", cardinality = Cardinality.LIST),
+            NumberDescription("longitude", Dimension.ANGLE, range = LONGITUDE),
+            NumberDescription("latitude", Dimension.ANGLE, range = LATITUDE),
+            // The height of the water above sea level, which changes how a dive is worked out.
+            NumberDescription("elevation", Dimension.LENGTH),
+            TextDescription("water_type", fixedSet = WATER_TYPES),
+            // The site's own depth, not how deep anybody went.
+            NumberDescription("max_depth", Dimension.LENGTH),
+            WholeNumberDescription("rating", range = 1..10),
+            TextDescription("environment_type", fixedSet = ENVIRONMENT_TYPES),
+            ReferenceDescription("wrecks", targetType = "wreck", cardinality = Cardinality.LIST),
+            // A description rather than a classification, so no list to choose from.
+            TextDescription("substrate"),
+            TextDescription("facilities", cardinality = Cardinality.LIST),
+            REMARKS,
+        ),
+    )
+
+    /**
+     * Wreck is a ship lying at a site.
+     *
+     * Absent so far: nothing of its own.
+     */
+    val WRECK: ItemDescription = ItemDescription(
+        "wreck",
+        listOf(
+            TextDescription("name"),
+            TextDescription("alternative_names", cardinality = Cardinality.LIST),
+            TextDescription("ship_type", suggestedSet = SHIP_TYPES),
+            TextDescription("nationality"),
+            TextDescription("shipyard"),
+            DateDescription("launched"),
+            DateDescription("sunk"),
+            NumberDescription("length", Dimension.LENGTH),
+            NumberDescription("beam", Dimension.LENGTH),
+            NumberDescription("draught", Dimension.LENGTH),
+            // The weight of water she pushed aside, which is a mass like any other.
+            NumberDescription("displacement", Dimension.MASS),
+            REMARKS,
+        ),
+    )
+
+    /**
+     * Certification is a diving qualification.
+     *
+     * Absent so far: nothing of its own.
+     */
+    val CERTIFICATION: ItemDescription = ItemDescription(
+        "certification",
+        listOf(
+            TextDescription("name"),
+            TextDescription("abbreviation"),
+            // Who awards it, written as a plain name rather than as an item.
+            TextDescription("organisation"),
+            NumberDescription("max_depth", Dimension.LENGTH),
+            ReferenceDescription(
+                "supersedes",
+                targetType = "certification",
+                cardinality = Cardinality.LIST,
+            ),
+            TextDescription("category", suggestedSet = CERTIFICATION_CATEGORIES),
+            REMARKS,
+        ),
+    )
+
+    /**
+     * Operator is anyone who takes a user diving or looks after their gear.
+     *
+     * Absent so far: nothing of its own.
+     */
+    val OPERATOR: ItemDescription = ItemDescription(
+        "operator",
+        listOf(
+            TextDescription("name"),
+            // What they were called before. Dive centres are bought and rebranded, and the dives
+            // done there were with the old name.
+            TextDescription("alternative_names", cardinality = Cardinality.LIST),
+            ReferenceDescription("region", targetType = "region"),
+            TextDescription("address"),
+            TextDescription("phone"),
+            TextDescription("email"),
+            TextDescription("website"),
+            TextDescription("category", suggestedSet = OPERATOR_CATEGORIES),
+            WholeNumberDescription("rating", range = 1..10),
+            REMARKS,
+        ),
+    )
+
+    /**
+     * DiveTrip is diving done on one occasion or in one place.
+     *
+     * Absent so far: `dives` and `parts`, which follow from what names this trip, and the
+     * `start_date` and `end_date` taken from the dives on it.
+     */
+    val DIVE_TRIP: ItemDescription = ItemDescription(
+        "dive_trip",
+        listOf(
+            TextDescription("name"),
+            // The larger trip this one is part of, where there is one.
+            ReferenceDescription("parent", targetType = "dive_trip"),
+            ReferenceDescription("region", targetType = "region"),
+            ReferenceDescription("operator", targetType = "operator"),
+            REMARKS,
+        ),
+    )
+
     /** Every type, which is what an item set is built with. */
-    val ALL: List<ItemDescription> = listOf(PERSON, REGION, GEAR)
+    val ALL: List<ItemDescription> = listOf(
+        DIVE,
+        PERSON,
+        REGION,
+        DIVE_SITE,
+        WRECK,
+        GEAR,
+        CERTIFICATION,
+        OPERATOR,
+        DIVE_TRIP,
+    )
 }
+
+/** Closed: what a site is in, and what a computer was set to. */
+private val WATER_TYPES = setOf("salt", "fresh", "en13319")
+
+/** Closed: what kind of place a site is. */
+private val ENVIRONMENT_TYPES = setOf(
+    "ocean", "sea", "lake", "river", "quarry", "spring", "cave", "cavern", "under ice", "pool",
+    "hyperbaric chamber",
+)
+
+/** Closed: six steps, for a current and for the state of the surface alike. */
+private val STRENGTHS = setOf("none", "very mild", "mild", "moderate", "hard", "very hard")
+
+/** Closed: what a dive computer warns about. */
+private val ALARMS = setOf(
+    "ascent", "breath", "deco", "error", "link", "microbubbles", "rbt", "skincooling", "surface",
+)
+
+/** Anything is allowed; these are the ones the manual names. */
+private val WARMTHS = setOf("very cold", "cold", "good", "warm", "too warm")
+
+/** Anything is allowed; these are the ones the manual names. */
+private val WEIGHTINGS = setOf("way too heavy", "too heavy", "good", "too light", "way too light")
+
+/** Anything is allowed; these are the ones the manual names. */
+private val GAS_USAGES = setOf("bottom", "stage", "deco", "travel")
+
+/** Anything is allowed; these are the ones the manual names. */
+private val GAS_CONFIGURATIONS = setOf("back mounted", "sidemount", "pony", "staged")
+
+/** Anything is allowed; these are the ones the manual names. */
+private val SHIP_TYPES = setOf("freighter", "tanker", "warship", "hospital ship")
+
+/** Anything is allowed; these are the ones the supplied certifications use. */
+private val CERTIFICATION_CATEGORIES =
+    setOf("progression", "specialisation", "technical", "professional")
+
+/** Anything is allowed; these are the ones the manual names. */
+private val OPERATOR_CATEGORIES = setOf(
+    "dive center", "hotel", "dive resort", "boat operator", "dive club", "liveaboard operator",
+)
+
+/** Anything is allowed; these are the ones the supplied regions use. */
+private val REGION_CATEGORIES = setOf("world", "continent", "ocean", "sea", "country", "area")
+
+/** Anything is allowed; these are the ones the manual names. */
+private val GEAR_CATEGORIES = setOf(
+    "ABC",
+    "BCD",
+    "regulator",
+    "cylinder",
+    "suit",
+    "weights",
+    "instruments",
+    "lighting",
+    "photography",
+    "accessory",
+)
+
+private val LONGITUDE = -180.0..180.0
+
+private val LATITUDE = -90.0..90.0
+
+/** Anything is allowed; these are the ones the manual names. */
+private val MAINTENANCE_TYPES =
+    setOf("visual inspection", "repair", "service", "cleaning")
+
+/** Details is the labels on a dive, and which trip and operator it belonged to. */
+private val DETAILS = ItemDescription(
+    "details",
+    listOf(
+        TextDescription("tags", cardinality = Cardinality.LIST),
+        ReferenceDescription("dive_trip", targetType = "dive_trip"),
+        ReferenceDescription("operator", targetType = "operator"),
+    ),
+)
+
+/** Environment is the conditions a dive was found in. */
+private val ENVIRONMENT = ItemDescription(
+    "environment",
+    listOf(
+        TextDescription("current", fixedSet = STRENGTHS),
+        TextDescription("waves", fixedSet = STRENGTHS),
+        // One figure rather than a range, which is what a diver remembers.
+        NumberDescription("visibility", Dimension.LENGTH),
+        NumberDescription("air_temperature", Dimension.TEMPERATURE),
+        NumberDescription("bottom_temperature", Dimension.TEMPERATURE),
+        // From where the dive was, and absolute: about a bar at sea level.
+        NumberDescription("atmospheric_pressure", Dimension.PRESSURE),
+    ),
+)
+
+/**
+ * DiveGear is what was taken on a dive, and how it worked out.
+ *
+ * Absent so far: `weight`, added up from the items taken.
+ */
+private val DIVE_GEAR = ItemDescription(
+    "dive_gear",
+    listOf(
+        ReferenceDescription("items", targetType = "gear", cardinality = Cardinality.LIST),
+        NumberDescription("mass", Dimension.MASS),
+        TextDescription("temperature_evaluation", suggestedSet = WARMTHS),
+        TextDescription("buoyancy_evaluation", suggestedSet = WEIGHTINGS),
+    ),
+)
+
+/**
+ * Tolerances is how much detail a recording dropped, one figure per thing recorded.
+ *
+ * The most any kept point may differ from what was measured.
+ */
+private val TOLERANCES = ItemDescription(
+    "tolerances",
+    listOf(
+        NumberDescription("depth", Dimension.LENGTH),
+        NumberDescription("temperature", Dimension.TEMPERATURE),
+        NumberDescription("pressure", Dimension.PRESSURE),
+    ),
+)
+
+/**
+ * Profile is one recording through a dive, under a key on that dive.
+ *
+ * Absent so far: `end_date`, `end_time` and `duration`, which come from the last sample, and
+ * `density`, which comes from the water type.
+ */
+private val PROFILE = ItemDescription(
+    "profile",
+    listOf(
+        // A plain name works for a computer that is nobody's item.
+        ReferenceDescription("dive_computer", targetType = "gear", oneOffAllowed = true),
+        DateDescription("start_date"),
+        TimeDescription("start_time"),
+        // A length of time like any other, and scoped like one. `DATA-10`.
+        NumberDescription("gmt_offset", Dimension.TIME, label = "GMT offset"),
+        NumberDescription("depth", Dimension.LENGTH, cardinality = Cardinality.SERIES),
+        NumberDescription(
+            "temperature",
+            Dimension.TEMPERATURE,
+            cardinality = Cardinality.SERIES,
+        ),
+        // Gauge pressure left in each cylinder: one series per gas source.
+        NumberDescription(
+            "pressures",
+            Dimension.PRESSURE,
+            cardinality = Cardinality.KEYED_SERIES,
+        ),
+        TextDescription("alarms", fixedSet = ALARMS, cardinality = Cardinality.SERIES),
+        // Each naming the gas source moved to.
+        KeyReferenceDescription(
+            "gas_switches",
+            collection = "gas_sources",
+            cardinality = Cardinality.SERIES,
+        ),
+        // A rounded depth rather than a continuous ceiling: three metres, six, nine.
+        NumberDescription("decostop", Dimension.LENGTH, cardinality = Cardinality.SERIES),
+        NumberDescription("no_deco_time", Dimension.TIME, cardinality = Cardinality.SERIES),
+        NumberDescription("no_flight_time", Dimension.TIME),
+        NumberDescription("desaturation_time", Dimension.TIME),
+        // Recognised as a percentage, which is how everyone quotes it.
+        NumberDescription(
+            "cns",
+            Dimension.DIMENSIONLESS,
+            label = "CNS",
+            cardinality = Cardinality.SERIES,
+        ),
+        NumberDescription(
+            "otu",
+            Dimension.DIMENSIONLESS,
+            label = "OTU",
+            cardinality = Cardinality.SERIES,
+        ),
+        // What the computer was set to while it recorded, which is not what the site is.
+        TextDescription("water_type", fixedSet = WATER_TYPES),
+        OwnedItemDescription("tolerances", TOLERANCES),
+    ),
+)
+
+/**
+ * GasSource is one thing breathed from on a dive, under a key on that dive.
+ *
+ * Absent so far: `volume`, taken from the capacity of the cylinder it names.
+ */
+private val GAS_SOURCE = ItemDescription(
+    "gas_source",
+    listOf(
+        // Left out where what was breathed from is nobody's item.
+        ReferenceDescription("cylinder", targetType = "gear"),
+        NumberDescription("start_pressure", Dimension.PRESSURE),
+        NumberDescription("end_pressure", Dimension.PRESSURE),
+        GasDescription("gas_type"),
+        TextDescription("usage", suggestedSet = GAS_USAGES),
+        TextDescription("configuration", suggestedSet = GAS_CONFIGURATIONS),
+    ),
+)
 
 /**
  * Medical is a person's health details, kept together rather than scattered through the item.
@@ -187,10 +547,6 @@ private val BUOYANCY = ItemDescription(
     ),
 )
 
-/** Anything is allowed; these are the ones the manual names. */
-private val MAINTENANCE_TYPES =
-    setOf("visual inspection", "repair", "service", "cleaning")
-
 /**
  * Maintenance is one thing done to a piece of gear, under a key on that gear.
  *
@@ -233,24 +589,3 @@ private val NAME_PARTS = listOf("first_name", "middle_names", "last_name")
  * list of each type is its own.
  */
 private val REMARKS: MultilineTextDescription get() = MultilineTextDescription("remarks")
-
-/** Anything is allowed; these are the ones the supplied regions use. */
-private val REGION_CATEGORIES = setOf("world", "continent", "ocean", "sea", "country", "area")
-
-/** Anything is allowed; these are the ones the manual names. */
-private val GEAR_CATEGORIES = setOf(
-    "ABC",
-    "BCD",
-    "regulator",
-    "cylinder",
-    "suit",
-    "weights",
-    "instruments",
-    "lighting",
-    "photography",
-    "accessory",
-)
-
-private val LONGITUDE = -180.0..180.0
-
-private val LATITUDE = -90.0..90.0

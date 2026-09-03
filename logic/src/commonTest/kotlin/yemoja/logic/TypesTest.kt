@@ -3,19 +3,24 @@ package yemoja.logic
 import yemoja.data.Cardinality
 import yemoja.data.Date
 import yemoja.data.Dimension
+import yemoja.data.GasDescription
 import yemoja.data.Item
+import yemoja.data.ItemDescription
+import yemoja.data.KeyReferenceDescription
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
 import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.TextDescription
+import yemoja.data.Validity
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** A logbook of these files, read with every type the application knows. */
@@ -32,16 +37,25 @@ class EveryTypeTest {
 
     @Test
     fun `a type is named as its files are`() {
-        assertEquals(listOf("person", "region", "gear"), Types.ALL.map { it.name })
+        assertEquals(
+            listOf(
+                "dive", "person", "region", "dive_site", "wreck", "gear", "certification",
+                "operator", "dive_trip",
+            ),
+            Types.ALL.map { it.name },
+        )
     }
 
     @Test
-    fun `every type has a name, which its id is worked out from`() {
-        for (type in Types.ALL) {
+    fun `every type but a dive has a name, which its id is worked out from`() {
+        // A dive's name is its date and its number within that day, which is worked out from
+        // the profile it was recorded on. Nothing works that out yet, so a dive has none.
+        for (type in Types.ALL - Types.DIVE) {
             val name = assertNotNull(type["name"], "${type.name} should have a name")
             assertEquals(Cardinality.SINGLE, name.cardinality, type.name)
             assertEquals(String::class, name.valueType, type.name)
         }
+        assertNull(Types.DIVE["name"])
     }
 
     @Test
@@ -305,5 +319,87 @@ class ReadingAWholeLogbookTest {
     fun `a field no type describes is kept apart rather than lost`() {
         val set = logbook("region.json" to """{"north_sea": {"name": "North Sea", "sea_id": 7}}""")
         assertEquals(setOf("sea_id"), set["north_sea"]!!.unrecognisedFields.keys)
+    }
+}
+
+/** The types a dive brings with it, which are the last shapes the model had none of. */
+class DiveTest {
+
+    private fun inside(type: ItemDescription, field: String): ItemDescription =
+        assertNotNull(type[field] as? OwnedItemDescription, field).description
+
+    @Test
+    fun `every item type the manual names is described`() {
+        // The manual's own list, in its own order.
+        assertEquals(9, Types.ALL.size)
+        for (name in listOf(
+            "dive", "person", "region", "dive_site", "wreck", "gear", "certification",
+            "operator", "dive_trip",
+        )) {
+            assertTrue(Types.ALL.any { it.name == name }, "$name should be described")
+        }
+    }
+
+    @Test
+    fun `a dive holds its profiles and its gas sources under keys`() {
+        for (field in listOf("profiles", "gas_sources")) {
+            val held = assertNotNull(Types.DIVE[field] as? OwnedItemDescription, field)
+            assertEquals(Cardinality.KEYED, held.cardinality, field)
+        }
+        assertEquals("profile", inside(Types.DIVE, "profiles").name)
+        assertEquals("gas_source", inside(Types.DIVE, "gas_sources").name)
+    }
+
+    @Test
+    fun `which profile to work from is a key reference into the profiles`() {
+        val primary = assertIs<KeyReferenceDescription>(Types.DIVE["primary_profile"])
+        assertEquals("profiles", primary.collection)
+    }
+
+    @Test
+    fun `a profile records values against time`() {
+        val profile = inside(Types.DIVE, "profiles")
+        for (field in listOf("depth", "temperature", "no_deco_time", "cns", "otu")) {
+            assertEquals(Cardinality.SERIES, profile[field]?.cardinality, field)
+        }
+        assertEquals(Dimension.LENGTH, assertIs<NumberDescription>(profile["depth"]).dimension)
+    }
+
+    @Test
+    fun `the pressures of a profile are one series per gas source`() {
+        val pressures = assertIs<NumberDescription>(inside(Types.DIVE, "profiles")["pressures"])
+        assertEquals(Cardinality.KEYED_SERIES, pressures.cardinality)
+        assertEquals(Dimension.PRESSURE, pressures.dimension)
+    }
+
+    @Test
+    fun `a gas switch names the gas source moved to`() {
+        val switches = assertIs<KeyReferenceDescription>(
+            inside(Types.DIVE, "profiles")["gas_switches"],
+        )
+        assertEquals(Cardinality.SERIES, switches.cardinality)
+        assertEquals("gas_sources", switches.collection)
+    }
+
+    @Test
+    fun `what was breathed is a gas mix, read for its fractions`() {
+        assertIs<GasDescription>(inside(Types.DIVE, "gas_sources")["gas_type"])
+    }
+
+    @Test
+    fun `a closed vocabulary refuses what is outside it`() {
+        val water = assertIs<TextDescription>(Types.DIVE_SITE["water_type"])
+        assertEquals(setOf("salt", "fresh", "en13319"), water.fixedSet)
+        assertIs<Validity.Invalid>(water.validate("brackish"))
+        assertIs<Validity.Valid>(water.validate("fresh"))
+    }
+
+    @Test
+    fun `a profile sits three deep, and its tolerances four`() {
+        val tolerances = inside(inside(Types.DIVE, "profiles"), "tolerances")
+        assertEquals(
+            listOf("depth", "temperature", "pressure"),
+            tolerances.fields.map { it.name },
+        )
     }
 }

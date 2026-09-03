@@ -257,8 +257,8 @@ that is the only record of it.
   one you borrowed and keep no item for.
 - `start_date` (date) — the day the recording began, as the computer had it.
 - `start_time` (time) — the moment it began, as the computer had it.
-- `gmt_offset` (number) — how many seconds to add to the two above to reach GMT. Always
-  seconds, whatever the file says about units.
+- `gmt_offset` (number) — how much to add to the two above to reach GMT. Seconds, unless
+  the file says otherwise, the same as any other length of time.
 
   It covers three things at once, because they are one thing to arithmetic: a computer set
   to the wrong time, a clock that has drifted, and a computer set to a different zone from

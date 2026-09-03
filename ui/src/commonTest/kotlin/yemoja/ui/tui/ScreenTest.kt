@@ -35,6 +35,12 @@ private val THREE = logbook(
 private fun screen(set: ItemSet = THREE): Screen = Screen(set, Types.ALL)
 
 /** The chosen row of the list column, without its marker or its padding. */
+/** Change tab until the type called [name] is open, however many there are. */
+private fun toTab(screen: Screen, name: String) {
+    repeat(Types.ALL.size) { if (screen.type.name != name) screen.press(Key.RIGHT) }
+    assertEquals(name, screen.type.name)
+}
+
 /** The rows between the rule under the heading and the rule above the bar. */
 private fun body(screen: Screen, width: Int = 60, height: Int = 12): List<Line> =
     screen.paint(width, height).drop(2).dropLast(2)
@@ -54,31 +60,34 @@ class TabTest {
 
     @Test
     fun `there is a tab for every type, in the order the types are given`() {
-        assertEquals("[person]   region    gear", screen().paint(60, 6)[0].text.trim())
+        // Not trimmed: an unopened tab is spaced on both sides, the last one included.
+        val bar = screen().paint(200, 6)[0].text
+        assertTrue(bar.startsWith("[dive]"), bar)
+        for (type in Types.ALL.drop(1)) assertTrue(" ${type.name} " in bar, bar)
     }
 
     @Test
     fun `right moves to the next tab and left back again`() {
         val screen = screen()
         screen.press(Key.RIGHT)
-        assertEquals(Types.REGION, screen.type)
-        screen.press(Key.LEFT)
         assertEquals(Types.PERSON, screen.type)
+        screen.press(Key.LEFT)
+        assertEquals(Types.DIVE, screen.type)
     }
 
     @Test
     fun `the tabs are a ring, so either end is one press from the other`() {
         val screen = screen()
         screen.press(Key.LEFT)
-        assertEquals(Types.GEAR, screen.type)
+        assertEquals(Types.ALL.last(), screen.type)
         screen.press(Key.RIGHT)
-        assertEquals(Types.PERSON, screen.type)
+        assertEquals(Types.DIVE, screen.type)
     }
 
     @Test
     fun `leaving a tab and coming back returns to where the user was`() {
         val screen = screen()
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         screen.press(Key.DOWN)
         assertEquals("wadden_sea", chosen(screen))
         screen.press(Key.RIGHT)
@@ -89,7 +98,7 @@ class TabTest {
     @Test
     fun `a type with no items still has a tab, and says so`() {
         val screen = screen(logbook("gear.json" to """{"faber_12": {}}"""))
-        assertTrue(body(screen, 60, 8).first().text.startsWith("  (no person)"))
+        assertTrue(body(screen, 60, 8).first().text.startsWith("  (no dive)"))
         assertEquals(null, screen.item)
     }
 }
@@ -99,7 +108,7 @@ class ListTest {
     @Test
     fun `the list holds the ids of the open type and nothing else`() {
         val screen = screen()
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         val ids = body(screen, 60, 8)
             .map { it.text.take(14).trim() }
             .filter { it.isNotEmpty() }
@@ -109,7 +118,7 @@ class ListTest {
     @Test
     fun `down moves the choice and up moves it back`() {
         val screen = screen()
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         assertEquals("north_sea", chosen(screen))
         screen.press(Key.DOWN)
         assertEquals("wadden_sea", chosen(screen))
@@ -121,7 +130,7 @@ class ListTest {
     fun `the choice stops at the ends rather than wrapping`() {
         // A list that wraps loses the user's place on a long one.
         val screen = screen()
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         repeat(5) { screen.press(Key.DOWN) }
         assertEquals("wadden_sea", chosen(screen))
         repeat(5) { screen.press(Key.UP) }
@@ -132,7 +141,7 @@ class ListTest {
     fun `a long list scrolls to keep the choice in view`() {
         val many = (1..40).joinToString(", ") { """"region_$it": {"name": "Region $it"}""" }
         val screen = screen(logbook("region.json" to "{$many}"))
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         repeat(20) { screen.press(Key.DOWN) }
         val list = body(screen).map { it.text.take(14).trim() }
         assertTrue("> region_21" in list, "the chosen row should be on screen, and $list is not")
@@ -143,7 +152,7 @@ class ListTest {
     fun `the window moves as little as the choice allows`() {
         val many = (1..40).joinToString(", ") { """"region_$it": {}""" }
         val screen = screen(logbook("region.json" to "{$many}"))
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         repeat(12) { screen.press(Key.DOWN) }
         // Twelve down on ten rows shows rows four to thirteen, not the chosen one at the top.
         val list = body(screen).map { it.text.take(14).trim() }
@@ -162,7 +171,7 @@ class DetailTest {
     @Test
     fun `every shown field of the chosen item is there, in the type's order`() {
         val screen = screen()
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         assertEquals(
             listOf(
                 "Name North Sea",
@@ -182,13 +191,16 @@ class DetailTest {
     fun `a field with nothing in it is still listed`() {
         // What a type can hold is half of what this interface is for.
         val screen = screen()
+        toTab(screen, "person")
         assertTrue(detail(screen).any { it.startsWith("Birthday") })
     }
 
     @Test
     fun `a worked-out field shows what was worked out`() {
+        val screen = screen()
+        toTab(screen, "person")
         assertTrue(
-            detail(screen()).any { it.startsWith("Name") && it.endsWith("Anna de Vries") },
+            detail(screen).any { it.startsWith("Name") && it.endsWith("Anna de Vries") },
             "the assembled name should show",
         )
     }
@@ -196,7 +208,7 @@ class DetailTest {
     @Test
     fun `a value that cannot be read says why, rather than showing a blank`() {
         val screen = screen(logbook("region.json" to """{"north_sea": {"north": 91.0}}"""))
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         assertTrue(
             detail(screen).any { it.contains("! north should be within") },
             "an unusable value should say why, and ${detail(screen)} does not",
@@ -206,7 +218,7 @@ class DetailTest {
     @Test
     fun `a number is shown as a file writes it`() {
         val screen = screen()
-        screen.press(Key.LEFT)
+        toTab(screen, "gear")
         assertTrue("Capacity 12" in detail(screen), detail(screen).toString())
     }
 
@@ -238,7 +250,7 @@ class PaintingTest {
                 "remarks": "First line.\nSecond line.\r\nThird."}}""",
         )
         val screen = screen(set)
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         for (line in screen.paint(80, 12).map { it.text }) {
             assertTrue(line.none { it < ' ' }, "one row per line, and |$line| is not")
             assertEquals(80, line.length)
@@ -251,7 +263,7 @@ class PaintingTest {
             "region.json" to """{"north_sea": {"remarks": "First.\nSecond."}}""",
         )
         val screen = screen(set)
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         val remarks = screen.paint(80, 12).map { it.text }.first { "Remarks" in it }
         assertTrue("Remarks   First." + ESCAPE + "Second." in remarks, remarks)
     }
@@ -583,8 +595,7 @@ class OpenFieldTest {
             ),
             Types.ALL,
         )
-        screen.press(Key.RIGHT)
-        screen.press(Key.RIGHT)
+        toTab(screen, "gear")
         repeat(7) { screen.press(Key.NEXT_FIELD) }
         assertEquals("capacity", screen.field?.name)
         screen.press(Key.OPEN)
@@ -621,7 +632,7 @@ class OpenFieldTest {
             ),
             Types.ALL,
         )
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         repeat(6) { screen.press(Key.NEXT_FIELD) }
         assertEquals("north", screen.field?.name)
         screen.press(Key.OPEN)
@@ -1044,6 +1055,7 @@ class ActionsTest {
     @Test
     fun `it says something else where a field is open`() {
         val screen = screen()
+        toTab(screen, "person")
         screen.press(Key.OPEN)
         val said = bar(screen, 120)
         assertTrue(said.startsWith("[esc] back"), said)
@@ -1054,12 +1066,13 @@ class ActionsTest {
     @Test
     fun `an open field says whether up and down move or scroll`() {
         val screen = screen()
+        toTab(screen, "person")
         screen.press(Key.OPEN)
         assertTrue("[up,down] scroll" in bar(screen), bar(screen))
         // Parents holds a list, so there are values to move between rather than rows to scroll,
         // whether or not this region has any written.
         screen.press(Key.CLOSE)
-        screen.press(Key.RIGHT)
+        toTab(screen, "region")
         screen.press(Key.NEXT_FIELD)
         screen.press(Key.OPEN)
         assertTrue("[up,down] value" in bar(screen), bar(screen))
@@ -1215,13 +1228,17 @@ class SeriesTest2 {
 /** An item inside an item, indented under the name of the field holding it. */
 class NestedTest {
 
-    private fun person(fields: String): Screen = Screen(
-        LogbookReader.read(
-            MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
+    private fun person(fields: String): Screen {
+        val screen = Screen(
+            LogbookReader.read(
+                MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
+                Types.ALL,
+            ),
             Types.ALL,
-        ),
-        Types.ALL,
-    )
+        )
+        toTab(screen, "person")
+        return screen
+    }
 
     /** The column of fields, without the list beside it. */
     private fun rows(screen: Screen, width: Int = 90, height: Int = 26): List<String> =

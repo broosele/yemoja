@@ -2191,8 +2191,18 @@ Kept with their identifiers so earlier discussion still resolves.
   `name`, and every id is proposed from one, dives included.
 - **DATA-10 — Whether dates, times and durations participate in unit scoping.** *Settled:*
   dates and times do not — one notation, everywhere. Durations do, being quantities with
-  the time dimension. A profile's `gmt_offset` does not, being a correction to a clock
-  rather than a length of time — see `DATA-41`.
+  the time dimension.
+
+  *Amended:* a profile's `gmt_offset` does too. It was exempt, on the grounds that it
+  corrects a clock rather than measuring a length of time. It is still that, but the
+  distinction bought an exemption the model has no way to state: what a `units` declaration
+  reaches is a dimension, so the only way to keep one off a measurement is to say it measures
+  nothing. That describes the field wrongly to say something true about it, and an exemption
+  nothing can express is one nothing enforces.
+
+  So it is a number of seconds unless its file says otherwise, like every other quantity with
+  the time dimension. A file writing its times in minutes writes this in minutes too, which is
+  at worst odd to read and never wrong.
 - **DATA-39 — How a duration is written.** *Settled:* as a number of seconds, and so
   not a distinct kind of value at all. The only duration left is a dive's, which the
   interface formats for reading; a maintenance item now states a `valid_until` date

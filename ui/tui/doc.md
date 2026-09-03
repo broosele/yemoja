@@ -173,10 +173,9 @@ the chosen field's own row is set apart — a whole item reversed is a wall rath
 The column of fields scrolls, since an item holding items is easily taller than a screen. Tab
 moves it, keeping the chosen field in view.
 
-**Nothing shown today is a series.** Every series the manual defines belongs to `Profile`,
-which is a keyed owned item of a dive, so both a series and a keyed series are correct and
-unreachable until dives are described — the same way a reference was until a region gained its
-parents. Both are tested against invented types.
+Every shape the model has is reachable now that a dive is described: its profiles under keys,
+a profile's depth against time, and its pressures one series per gas source, which is the only
+keyed series there is.
 
 Two rows above the body and two below: where the reader is, a rule, and then a rule and the
 keys. A screen too small to hold one row of body between them is refused rather than drawn.
