@@ -156,6 +156,14 @@ def manual_kinds():
     return kinds
 
 
+# What an item inside an item is called where the logic layer describes it. The manual heads
+# each with its own name, and the description takes the same one in the project's spelling.
+INSIDE = {
+    heading.lower().replace(' ', '_'): heading
+    for heading in set(OWNED.values()) | set(KEYED.values())
+}
+
+
 def described_types():
     """Every item type the logic layer describes, as {storage name: {field: class}}.
 
@@ -166,10 +174,13 @@ def described_types():
     if not os.path.exists(DESCRIPTIONS):
         return {}
     text = re.sub(r'//[^\n]*', '', io.open(DESCRIPTIONS, encoding='utf-8').read())
+    # An item type held in a value is a type of its own rather than a field, and is found as
+    # one below.
     shared = {
         name: (kind, field)
         for name, kind, field in re.findall(
             r'val ([A-Z_]+)[^=\n]*=\s*(\w+Description)\(\s*"([a-z_]+)"', text)
+        if kind != 'ItemDescription'
     }
     types = {}
     for match in re.finditer(
@@ -210,9 +221,9 @@ def check_descriptions(fields, kinds):
     """
     problems, described, total = [], 0, 0
     for storage, present in sorted(described_types().items()):
-        heading = TYPE_NAMES.get(storage)
+        heading = TYPE_NAMES.get(storage) or INSIDE.get(storage)
         if heading is None or heading not in fields:
-            problems.append('%s is described and is no item type the manual names'
+            problems.append('%s is described and is nothing the manual names'
                             % storage)
             continue
         total += len(fields[heading])
