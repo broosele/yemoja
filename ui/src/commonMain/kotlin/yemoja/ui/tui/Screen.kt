@@ -163,8 +163,18 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         first[tab] = first[tab].coerceIn(0, (items.size - rows).coerceAtLeast(0))
     }
 
-    private fun fitted(text: String, width: Int): String =
-        if (text.length > width) text.take(width) else text.padEnd(width)
+    /**
+     * [text] as one line of exactly [width] characters.
+     *
+     * **A painted line holds no line break.** `remarks` is multiline and a terminal row is not,
+     * so a break is shown as the escape a file writes it with rather than taken: a value holding
+     * one would otherwise occupy three rows while measuring as one, and in raw mode leave the
+     * cursor wherever the last row ended.
+     */
+    private fun fitted(text: String, width: Int): String {
+        val flat = text.replace("\r\n", ESCAPED).replace("\n", ESCAPED).replace("\r", ESCAPED)
+        return if (flat.length > width) flat.take(width) else flat.padEnd(width)
+    }
 
     companion object {
 
@@ -173,6 +183,9 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
         /** The tab bar, its rule, and one row of list. */
         const val LEAST_HEIGHT: Int = 3
+
+        /** What a line break is shown as, which is how a file writes one. */
+        private const val ESCAPED = "\\n"
 
         private const val LEAST_LIST_WIDTH = 12
 

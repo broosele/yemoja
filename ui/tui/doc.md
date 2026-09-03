@@ -42,6 +42,13 @@ not be read shows why — `! north should be within -90.0..90.0 deg, but was 91.
 than a blank, which is what an absent field looks like and is not the same thing. And a value
 is shown in the form a file writes, `DATA-76`, so what is on screen is what is on disk.
 
+**A painted line holds no line break.** `remarks` is the one multiline field and a terminal row
+is not multiline, so a break is shown as `
+`, the escape a file writes it with. Taken instead,
+one remark would occupy three rows while measuring as one, and in raw mode leave the cursor
+wherever the last of them ended. A remark longer than the column is cut there; showing it whole
+would mean a field taking several rows, which is a layout question nobody has asked yet.
+
 The supplied libraries load, so a logbook declaring them shows them under its own items —
 they travel inside the application and need no second argument, `LIB-6`.
 

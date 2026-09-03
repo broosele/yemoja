@@ -31,6 +31,9 @@ private fun chosen(screen: Screen): String? = screen.paint(60, 12)
     ?.removePrefix("> ")
 
 /** One line with its runs of spaces squeezed, so a test states content and not padding. */
+/** What Screen shows a line break as: a backslash and an n, as a file writes one. */
+private const val ESCAPE = "\\n"
+
 private fun squeezed(line: String): String = line.trim().replace(Regex(" +"), " ")
 
 class TabTest {
@@ -209,6 +212,32 @@ class PaintingTest {
                 for (line in painted) assertEquals(width, line.length, "$width by $height")
             }
         }
+    }
+
+    @Test
+    fun `a painted line holds no control character, whatever an item holds`() {
+        // Counting the characters is not enough: a line break measures as one and takes a row.
+        val set = logbook(
+            "region.json" to """{"north_sea": {"name": "North Sea",
+                "remarks": "First line.\nSecond line.\r\nThird."}}""",
+        )
+        val screen = screen(set)
+        screen.press(Key.RIGHT)
+        for (line in screen.paint(80, 12)) {
+            assertTrue(line.none { it < ' ' }, "one row per line, and |$line| is not")
+            assertEquals(80, line.length)
+        }
+    }
+
+    @Test
+    fun `a line break is shown as the escape a file writes it with`() {
+        val set = logbook(
+            "region.json" to """{"north_sea": {"remarks": "First.\nSecond."}}""",
+        )
+        val screen = screen(set)
+        screen.press(Key.RIGHT)
+        val remarks = screen.paint(80, 12).first { "Remarks" in it }
+        assertTrue("Remarks   First." + ESCAPE + "Second." in remarks, remarks)
     }
 
     @Test
