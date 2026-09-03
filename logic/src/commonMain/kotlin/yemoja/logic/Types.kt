@@ -2,23 +2,26 @@ package yemoja.logic
 
 import yemoja.data.BooleanDescription
 import yemoja.data.Cardinality
+import yemoja.data.Date
 import yemoja.data.DateDescription
-import yemoja.data.Element
 import yemoja.data.Dimension
-import yemoja.data.Item
+import yemoja.data.Element
 import yemoja.data.GasDescription
+import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.KeyReferenceDescription
+import yemoja.data.Moment
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
-import yemoja.data.Reference
 import yemoja.data.OwnedItemDescription
+import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Role
-import yemoja.data.Stored
+import yemoja.data.Series
 import yemoja.data.TextDescription
+import yemoja.data.Time
 import yemoja.data.TimeDescription
 import yemoja.data.WholeNumberDescription
 
@@ -48,10 +51,7 @@ object Types {
     /**
      * Dive is one dive, and the largest thing here.
      *
-     * Absent so far: `start_date`, `start_time`, `end_time`, `end_date`, `duration`,
-     * `max_depth` and `deco`, which come from the primary profile, and `surface_interval`,
-     * which comes from the dive before it. Each wants a walk into a recording and arithmetic
-     * over dates that nothing here does yet.
+     * Absent so far: nothing of its own.
      */
     val DIVE: ItemDescription = ItemDescription(
         "dive",
@@ -64,6 +64,14 @@ object Types {
             ReferenceDescription("dive_site", targetType = "dive_site"),
             // The dive still being carried gas from when this one began.
             ReferenceDescription("previous_dive", targetType = "dive"),
+            // From `previous_dive`'s end to this dive's start. Written by hand for a dive whose
+            // predecessor is not in this logbook, which an import often knows without knowing
+            // the dive.
+            NumberDescription(
+                "surface_interval",
+                Dimension.TIME,
+                role = Role.Overrideable(::surfaceInterval),
+            ),
             ReferenceDescription(
                 "buddies",
                 targetType = "person",
@@ -81,6 +89,25 @@ object Types {
             // Which of them to work from. Leaving it out where there is one is the ordinary case.
             KeyReferenceDescription("primary_profile", collection = "profiles"),
             OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
+            // All five from the primary profile, in GMT, and all five correctable: the computer
+            // was there and the user was busy, but a recording can still be wrong.
+            DateDescription("start_date", role = Role.Overrideable(::divesStartDate)),
+            TimeDescription("start_time", role = Role.Overrideable(::divesStartTime)),
+            DateDescription("end_date", role = Role.Overrideable(::divesEndDate)),
+            TimeDescription("end_time", role = Role.Overrideable(::divesEndTime)),
+            NumberDescription(
+                "duration",
+                Dimension.TIME,
+                role = Role.Overrideable(::divesDuration),
+            ),
+            // Worth correcting: a computer usually reports a better figure than its own
+            // recorded profile, which is sampled only every few seconds.
+            NumberDescription(
+                "max_depth",
+                Dimension.LENGTH,
+                role = Role.Overrideable(::divesMaxDepth),
+            ),
+            BooleanDescription("deco", role = Role.Overrideable(::divesDeco)),
             REMARKS,
         ),
     )
@@ -281,8 +308,7 @@ object Types {
     /**
      * DiveTrip is diving done on one occasion or in one place.
      *
-     * Absent so far: `dives`, which gathers from this trip and everything beneath it, and
-     * the `start_date` and `end_date` taken from those dives.
+     * Absent so far: nothing of its own.
      */
     val DIVE_TRIP: ItemDescription = ItemDescription(
         "dive_trip",
@@ -299,6 +325,18 @@ object Types {
             ),
             ReferenceDescription("region", targetType = "region"),
             ReferenceDescription("operator", targetType = "operator"),
+            // Every dive naming this trip, and every dive of a trip beneath it. Never written:
+            // each dive says which trip it belongs to, so the two cannot disagree.
+            ReferenceDescription(
+                "dives",
+                targetType = "dive",
+                cardinality = Cardinality.LIST,
+                role = Role.Derived(::tripsDives),
+            ),
+            // From the dives on it, and corrected where the trip was longer than the diving:
+            // a travelling day at either end, or a trip set up before anything was logged.
+            DateDescription("start_date", role = Role.Overrideable(::tripsStartDate)),
+            DateDescription("end_date", role = Role.Overrideable(::tripsEndDate)),
             REMARKS,
         ),
     )
@@ -413,13 +451,15 @@ private val ENVIRONMENT = ItemDescription(
 /**
  * DiveGear is what was taken on a dive, and how it worked out.
  *
- * Absent so far: `weight`, added up from the items taken.
+ * Absent so far: nothing of its own.
  */
 private val DIVE_GEAR = ItemDescription(
     "dive_gear",
     listOf(
         ReferenceDescription("items", targetType = "gear", cardinality = Cardinality.LIST),
         NumberDescription("mass", Dimension.MASS),
+        // The lead among the items. Corrected where they do not tell the whole story.
+        NumberDescription("weight", Dimension.MASS, role = Role.Overrideable(::leadCarried)),
         TextDescription("temperature_evaluation", suggestedSet = WARMTHS),
         TextDescription("buoyancy_evaluation", suggestedSet = WEIGHTINGS),
         REMARKS,
@@ -444,8 +484,8 @@ private val TOLERANCES = ItemDescription(
 /**
  * Profile is one recording through a dive, under a key on that dive.
  *
- * Absent so far: `end_date`, `end_time` and `duration`, which come from the last sample, and
- * `density`, which comes from the water type.
+ * Absent so far: `density`, which comes from the water type and, for salt, from the make of
+ * computer as well. Nothing here records what each maker takes salt water to weigh.
  */
 private val PROFILE = ItemDescription(
     "profile",
@@ -495,6 +535,15 @@ private val PROFILE = ItemDescription(
         ),
         // What the computer was set to while it recorded, which is not what the site is.
         TextDescription("water_type", fixedSet = WATER_TYPES),
+        // From the last sample, and correctable where the recording stopped before the user
+        // surfaced.
+        DateDescription("end_date", role = Role.Overrideable(::profilesEndDate)),
+        TimeDescription("end_time", role = Role.Overrideable(::profilesEndTime)),
+        NumberDescription(
+            "duration",
+            Dimension.TIME,
+            role = Role.Overrideable(::profilesDuration),
+        ),
         OwnedItemDescription("tolerances", TOLERANCES),
         REMARKS,
     ),
@@ -546,8 +595,7 @@ private val MEDICAL = ItemDescription(
 /**
  * Insurance is the cover a person holds.
  *
- * Absent so far: `days_left` and `expired`, which are worked out from `end_date` against today.
- * The day is given to this layer rather than read from a clock. `LOGIC-9`.
+ * Absent so far: nothing of its own.
  */
 private val INSURANCE = ItemDescription(
     "insurance",
@@ -556,6 +604,9 @@ private val INSURANCE = ItemDescription(
         TextDescription("policy"),
         DateDescription("start_date"),
         DateDescription("end_date"),
+        // Against today, which is the only thing here worked out from outside the logbook.
+        WholeNumberDescription("days_left", role = Role.Derived(::insurancesDaysLeft)),
+        BooleanDescription("expired", role = Role.Derived(::insurancesExpired)),
         REMARKS,
     ),
 )
@@ -591,7 +642,7 @@ private val BUOYANCY = ItemDescription(
 /**
  * Maintenance is one thing done to a piece of gear, under a key on that gear.
  *
- * Absent so far: `days_left` and `expired`, for the reason [INSURANCE] gives.
+ * Absent so far: nothing of its own.
  */
 private val MAINTENANCE = ItemDescription(
     "maintenance",
@@ -603,6 +654,9 @@ private val MAINTENANCE = ItemDescription(
         DateDescription("valid_until"),
         TextDescription("follow_up_type", suggestedSet = MAINTENANCE_TYPES),
         ReferenceDescription("operator", targetType = "operator"),
+        // Against `valid_until` rather than `end_date`, and otherwise [INSURANCE]'s question.
+        WholeNumberDescription("days_left", role = Role.Derived(::maintenancesDaysLeft)),
+        BooleanDescription("expired", role = Role.Derived(::maintenancesExpired)),
         REMARKS,
     ),
 )
@@ -665,7 +719,7 @@ private fun pointingAt(item: Item, type: ItemDescription, field: String): Result
 }
 
 /** The ids [field] names on [item], however many it holds and whatever it failed to read. */
-private fun namesIn(item: Item, field: String): List<String> {
+internal fun namesIn(item: Item, field: String): List<String> {
     val naming = item.description[field] ?: return emptyList()
     val read = item.read(field) as? Result.Usable ?: return emptyList()
     val values = if (naming.cardinality == Cardinality.LIST) {
@@ -699,15 +753,6 @@ private fun cylindersVolume(source: Item): Result<Any> {
         ?: return unusable("$id has no capacity written on it")
     return Result.Usable(capacity.value, Result.Origin.DERIVED)
 }
-
-/**
- * A derived value that could not be worked out, which `DATA-50` makes a fault not an absence.
- *
- * The raw form is an empty leaf. `Result.Unusable` carries what the source held so that a bad
- * value can be shown in place, and nothing was written here: the fault is in what this was
- * worked out from, not in anything a file says.
- */
-private fun unusable(reason: String): Result<Any> = Result.Unusable(Stored.Leaf(null), reason)
 
 /** The gear category a cylinder is in, without which its capacity means nothing. */
 private const val CYLINDER = "cylinder"

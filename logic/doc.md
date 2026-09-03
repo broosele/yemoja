@@ -100,13 +100,28 @@ wrong: a reference to a regulator, or to a cylinder whose capacity was never fil
 mistake worth seeing. `DATA-50`. Absent is kept for the case that is not a mistake at all — a
 rented cylinder nobody has an item for.
 
-What is left wants three things nothing has done once: a walk into a recording through a key
-reference, a reduction over a series, and arithmetic on dates across midnight. A dive's dates,
-`duration`, `max_depth` and `deco` need all three, a profile's own dates need two, and a trip's
-`dives` and dates wait on the dives. `days_left` and `expired` want the date `LOGIC-9` hands
-in.
-`Profile.density` wants a fact nobody has written down: what each maker takes salt water to
-weigh. Each type says which of its own are missing.
+**One is left.** `Profile.density` wants a fact nobody has written down: what each maker takes
+salt water to weigh, fresh being 1000 and `en13319` exactly 1020. Each type says which of its
+own are missing.
+
+`DiveGear.weight` counts every item in the `weights` category and nothing else. A
+weight-integrated harness is not one: its own mass is the pockets, and the lead that went in
+them is a `weights` item of its own, so the category counts each block once and no harness
+twice.
+
+**One derivation reaches outside the logbook, and only one.** Every other is a pure function of
+the items: the same logbook answers the same way forever. `days_left` and `expired`, on an
+insurance and on a maintenance, are counted against the day the logbook was opened, so they
+change overnight with nothing edited. That is why the day is handed in rather than read from a
+clock — `LOGIC-9` — and it is survivable because `DATA-6` already has nothing announced and
+whatever shows a worked-out value asking again.
+
+The day reaches them the only way anything can. A derivation is handed an item, and an item's
+one route outward is the set it belongs to, so `ItemSet` carries the date whoever opened the
+logbook supplied. Ownership is the Universe's — one day for the application, so an open
+logbook and its import candidates cannot disagree — and the set holds it as the channel, the
+way it already holds the descriptions. A set built without one says so: those two fields are
+*unusable* rather than blank, a blank being what cover with no end date looks like.
 
 [manual/data-fields.md](../manual/data-fields.md) is the source of truth for every field,
 and where it and `Types.kt` disagree the manual is right. `tool/checkdata.py` holds the two
@@ -223,6 +238,18 @@ To settle when we discuss architecture and features:
    derivation that reached for one would give two answers to one question, and every test
    touching `expired` would depend on the day it ran. The layer takes the date it is
    built with, so a test states the day it means and production passes the machine's.
+
+   **The Universe owns it and `ItemSet` carries it.** Not a compromise between the two: the
+   data layer calls a derivation and holds only the item, so `item.set` is the one channel
+   that exists, and an item cannot name a Universe without inverting the dependency between
+   the layers. Ownership still sits above — one day for the application, so a logbook and its
+   import candidates cannot disagree — while the set holds it the way it already holds the
+   descriptions, as something from above that is only ever read.
+
+   A `Date` rather than an opaque context box. The second thing wanting to reach a derivation
+   would earn the box, and there is no second thing yet: `LOGIC-7`'s judgement sits above the
+   field, `UI-2`'s units are applied when a value is read, and `LOGIC-6`'s gradient factors
+   belong to a service computing a fresh answer rather than to a stored one.
 
    **No dependency follows.** `kotlin.time.Clock.System.now()` is in the standard library
    and needs nothing added, but it answers with an instant, and turning an instant into a

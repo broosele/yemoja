@@ -1,0 +1,291 @@
+package yemoja.logic
+
+import yemoja.data.Date
+import yemoja.data.Element
+import yemoja.data.Item
+import yemoja.data.ItemSet
+import yemoja.data.Reference
+import yemoja.data.Result
+import yemoja.data.Time
+import yemoja.data.json.LogbookReader
+import yemoja.data.json.MemoryFileStore
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+/*
+ * The fields a dive takes from the recording it was made on.
+ *
+ * See ../../../../../doc.md — the layer's own document is logic/doc.md.
+ */
+
+private fun set(vararg files: Pair<String, String>): ItemSet =
+    LogbookReader.read(MemoryFileStore(mapOf(*files)), Types.ALL)
+
+private fun value(item: Item, field: String): Any? =
+    (item.read(field) as? Result.Usable)?.value
+
+/** A dive with one profile, begun at the given local moment and corrected by [offset]. */
+private fun dived(
+    start: String = """"start_date": "2026-06-21", "start_time": "10:00:00"""",
+    offset: Int = 0,
+    series: String = """"depth": [[0, 0], [60, 12.4], [1800, 18.9], [3600, 0]]""",
+    dive: String = "",
+): Item = set(
+    "dive/d#0.json" to """{"profiles": {"p1": {$start, "gmt_offset": $offset, $series}}$dive}""",
+)["d#0"]!!
+
+class ProfileTimesTest {
+
+    private fun profile(dive: Item): Item {
+        val held = assertIs<Result.Usable<*>>(dive.read("profiles")).value
+        @Suppress("UNCHECKED_CAST")
+        val entries = held as Map<String, Element<Any>>
+        return (entries["p1"] as Element.Usable).value as Item
+    }
+
+    @Test
+    fun `a recording ends at its last sample`() {
+        val recording = profile(dived())
+        assertEquals(Date(2026, 6, 21), value(recording, "end_date"))
+        assertEquals(Time(11, 0, 0), value(recording, "end_time"))
+        assertEquals(3600.0, value(recording, "duration"))
+    }
+
+    @Test
+    fun `the last sample of any series counts, not the depth alone`() {
+        val recording = profile(
+            dived(series = """"depth": [[0, 0], [600, 0]], "temperature": [[0, 21], [900, 20]]"""),
+        )
+        assertEquals(900.0, value(recording, "duration"))
+    }
+
+    @Test
+    fun `a recording with no samples has no end`() {
+        val recording = profile(dived(series = """"depth": []"""))
+        assertEquals(Result.Absent, recording.read("end_date"))
+        assertEquals(Result.Absent, recording.read("duration"))
+    }
+}
+
+class DiveTimesTest {
+
+    @Test
+    fun `a dive takes its times from the recording, in GMT`() {
+        // A recording two hours ahead of GMT: the offset comes off rather than going on.
+        val dive = dived(offset = 7200)
+        assertEquals(Date(2026, 6, 21), value(dive, "start_date"))
+        assertEquals(Time(8, 0, 0), value(dive, "start_time"))
+        assertEquals(Time(9, 0, 0), value(dive, "end_time"))
+        assertEquals(3600.0, value(dive, "duration"))
+    }
+
+    @Test
+    fun `the correction moves the date where it has to`() {
+        // Two minutes past midnight, with two hours coming off, is late the previous evening.
+        val dive = dived(
+            start = """"start_date": "2026-06-21", "start_time": "00:02:00"""",
+            offset = 7200,
+        )
+        assertEquals(Date(2026, 6, 20), value(dive, "start_date"))
+        assertEquals(Time(22, 2, 0), value(dive, "start_time"))
+    }
+
+    @Test
+    fun `a dive that ran past midnight ends on the following day`() {
+        val dive = dived(
+            start = """"start_date": "2025-09-06", "start_time": "23:20:00"""",
+            series = """"depth": [[0, 0], [2700, 0]]""",
+        )
+        assertEquals(Date(2025, 9, 6), value(dive, "start_date"))
+        assertEquals(Date(2025, 9, 7), value(dive, "end_date"))
+        assertEquals(Time(0, 5, 0), value(dive, "end_time"))
+    }
+
+    @Test
+    fun `a dive with no recording has no times`() {
+        val dive = set("dive/d#0.json" to """{"dive_number": 1}""")["d#0"]!!
+        assertEquals(Result.Absent, dive.read("start_date"))
+        assertEquals(Result.Absent, dive.read("duration"))
+    }
+
+    @Test
+    fun `a written time wins over the recording`() {
+        val dive = dived(dive = ""","start_time": "07:30:00"""")
+        val read = assertIs<Result.Usable<*>>(dive.read("start_time"))
+        assertEquals(Time(7, 30, 0), read.value)
+        assertEquals(Result.Origin.OVERRIDDEN, read.origin)
+    }
+}
+
+class PrimaryProfileTest {
+
+    private val two = """"p1": {"start_date": "2026-06-21", "start_time": "10:00:00",
+        "depth": [[0, 0], [1800, 30.0]]},
+        "p2": {"start_date": "2026-06-21", "start_time": "10:01:00",
+        "depth": [[0, 0], [1500, 28.0]]}"""
+
+    @Test
+    fun `one profile needs no naming, there being nothing to choose between`() {
+        assertEquals(18.9, value(dived(), "max_depth"))
+    }
+
+    @Test
+    fun `several and none named is reported rather than guessed at`() {
+        val dive = set("dive/d#0.json" to """{"profiles": {$two}}""")["d#0"]!!
+        val read = assertIs<Result.Unusable>(dive.read("max_depth"))
+        assertTrue("which is primary" in read.reason, read.reason)
+        // Every field taken from a recording says the same thing, not just this one.
+        assertIs<Result.Unusable>(dive.read("start_date"))
+        assertIs<Result.Unusable>(dive.read("duration"))
+    }
+
+    @Test
+    fun `the named one is the one used`() {
+        val dive = set(
+            "dive/d#0.json" to """{"profiles": {$two}, "primary_profile": "*p2"}""",
+        )["d#0"]!!
+        assertEquals(28.0, value(dive, "max_depth"))
+    }
+
+    @Test
+    fun `naming a profile that is not there is a fault`() {
+        val dive = set(
+            "dive/d#0.json" to """{"profiles": {$two}, "primary_profile": "*p9"}""",
+        )["d#0"]!!
+        val read = assertIs<Result.Unusable>(dive.read("max_depth"))
+        assertTrue("p9" in read.reason, read.reason)
+    }
+}
+
+class DecoTest {
+
+    private fun deco(series: String): Result<Any> =
+        dived(series = """"depth": [[0, 0], [600, 0]], $series""").read("deco")
+
+    @Test
+    fun `a stop above zero anywhere means yes`() {
+        assertEquals(true, (deco(""""decostop": [[0, 0], [300, 3.0], [600, 0]]""") as
+            Result.Usable).value)
+    }
+
+    @Test
+    fun `a recorded stop that never rose above zero means no`() {
+        assertEquals(false, (deco(""""decostop": [[0, 0], [600, 0]]""") as Result.Usable).value)
+    }
+
+    @Test
+    fun `no stops written, and a no-deco time that never ran out, means no`() {
+        assertEquals(false, (deco(""""no_deco_time": [[0, 3600], [600, 1200]]""") as
+            Result.Usable).value)
+    }
+
+    @Test
+    fun `a no-deco time that reached zero means yes`() {
+        assertEquals(true, (deco(""""no_deco_time": [[0, 3600], [600, 0]]""") as
+            Result.Usable).value)
+    }
+
+    @Test
+    fun `neither recorded is left for the user, not answered`() {
+        // The computer decided this at the time, with settings nothing here can reproduce.
+        assertEquals(Result.Absent, deco(""""temperature": [[0, 21]]"""))
+    }
+}
+
+class SurfaceIntervalTest {
+
+    private val two = set(
+        "dive/a#0.json" to """{"profiles": {"p1": {"start_date": "2026-06-21",
+            "start_time": "09:00:00", "depth": [[0, 0], [3600, 0]]}}}""",
+        "dive/b#0.json" to """{"previous_dive": "@a#0", "profiles": {"p1": {
+            "start_date": "2026-06-21", "start_time": "12:00:00",
+            "depth": [[0, 0], [1800, 0]]}}}""",
+    )
+
+    @Test
+    fun `the interval runs from one dive's end to the next dive's start`() {
+        // Out at 10:00, back in at 12:00.
+        assertEquals(7200.0, value(two["b#0"]!!, "surface_interval"))
+    }
+
+    @Test
+    fun `a dive starting clean has none, which is most of them`() {
+        assertEquals(Result.Absent, two["a#0"]!!.read("surface_interval"))
+    }
+
+    @Test
+    fun `a previous dive that is not in the logbook is a fault`() {
+        val dive = set("dive/b#0.json" to """{"previous_dive": "@gone"}""")["b#0"]!!
+        val read = assertIs<Result.Unusable>(dive.read("surface_interval"))
+        assertTrue("gone" in read.reason, read.reason)
+    }
+
+    @Test
+    fun `a previous dive that ended later is a fault, not a negative interval`() {
+        val wrong = set(
+            "dive/a#0.json" to """{"profiles": {"p1": {"start_date": "2026-06-21",
+                "start_time": "15:00:00", "depth": [[0, 0], [3600, 0]]}}}""",
+            "dive/b#0.json" to """{"previous_dive": "@a#0", "profiles": {"p1": {
+                "start_date": "2026-06-21", "start_time": "09:00:00",
+                "depth": [[0, 0], [1800, 0]]}}}""",
+        )
+        assertIs<Result.Unusable>(wrong["b#0"]!!.read("surface_interval"))
+    }
+}
+
+class TripDivesTest {
+
+    private val trip = set(
+        "dive_trip.json" to """{
+            "week": {"name": "Week"},
+            "leg_one": {"name": "Leg one", "parent": "@week"},
+            "leg_two": {"name": "Leg two", "parent": "@leg_one"},
+            "elsewhere": {"name": "Elsewhere"}
+        }""",
+        "dive/a#0.json" to """{"details": {"dive_trip": "@leg_one"},
+            "profiles": {"p1": {"start_date": "2026-06-21", "depth": [[0, 0], [60, 5]]}}}""",
+        "dive/b#0.json" to """{"details": {"dive_trip": "@leg_two"},
+            "profiles": {"p1": {"start_date": "2026-06-25", "depth": [[0, 0], [60, 5]]}}}""",
+        "dive/c#0.json" to """{"details": {"dive_trip": "@elsewhere"},
+            "profiles": {"p1": {"start_date": "2026-07-01", "depth": [[0, 0], [60, 5]]}}}""",
+    )
+
+    private fun named(item: Item, field: String): List<String> {
+        val read = assertIs<Result.Usable<*>>(item.read(field))
+        return (read.value as List<*>).map { (it as Element.Usable<*>).value }
+            .map { (it as Reference.Identified).id }
+    }
+
+    @Test
+    fun `a trip gathers the dives of everything beneath it, however deep`() {
+        assertEquals(listOf("a#0", "b#0"), named(trip["week"]!!, "dives"))
+        assertEquals(listOf("a#0", "b#0"), named(trip["leg_one"]!!, "dives"))
+        assertEquals(listOf("b#0"), named(trip["leg_two"]!!, "dives"))
+    }
+
+    @Test
+    fun `a trip's dates are the span of those dives`() {
+        assertEquals(Date(2026, 6, 21), value(trip["week"]!!, "start_date"))
+        assertEquals(Date(2026, 6, 25), value(trip["week"]!!, "end_date"))
+    }
+
+    @Test
+    fun `a trip with no diving on it yet has no dates`() {
+        val empty = set("dive_trip.json" to """{"planned": {"name": "Planned"}}""")
+        assertEquals(Result.Absent, empty["planned"]!!.read("start_date"))
+    }
+
+    @Test
+    fun `a trip inside itself is reported rather than walked forever`() {
+        val looped = set(
+            "dive_trip.json" to """{
+                "a": {"name": "A", "parent": "@b"},
+                "b": {"name": "B", "parent": "@a"}
+            }""",
+        )
+        val read = assertIs<Result.Unusable>(looped["a"]!!.read("dives"))
+        assertTrue("inside itself" in read.reason, read.reason)
+    }
+}
