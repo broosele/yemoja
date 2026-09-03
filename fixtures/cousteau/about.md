@@ -192,6 +192,13 @@ Between them they exercise every profile and gas source field except `density` a
 - `remarks` on an item inside an item: on a medical, on a dive's environment and on
   its gear. Every kind of item has one, owned items included, and only the maintenance
   under `my_drysuit` exercised that until now.
+- `2024-06-15#0` mentions four items in its remarks and gives an e-mail address in the
+  same breath, which is the awkward case whichever interface acts on `JSON-23` first will
+  meet. Between them they carry every part of the rule: a mention ended by a comma, one
+  ended by a full stop, one whose own name holds a dot — `@generic_0.5_kg_lead_weight`,
+  from the libraries — and an e-mail address, whose `@example.invalid` is a candidate
+  like any other that resolves to nothing. Nothing in the data layer tells them apart,
+  which is the point: what makes the address harmless is that no item is called that.
 
 ## What it does not cover
 
