@@ -114,8 +114,9 @@ Each of these is here because it is awkward, not because it is typical.
   are gross tonnages, which are volumes and not weights, and `DATA-62` says a figure you
   had to guess the units of is worse than no figure. The fixture takes its own advice.
 - Both recordings carry a `gmt_offset` of 7200: summer time in Provence and in the North
-  Sea alike. Nothing in the fixture exercises a computer left on home time in another
-  country, which is the case the field exists for — that wants a fixture of its own.
+  Sea alike, both two hours ahead of GMT, so two hours come off to reach it. Nothing in the
+  fixture exercises a computer left on home time in another country, which is the case the
+  field exists for — that wants a fixture of its own.
 - Repetitive dives are chained with `previous_dive` where the gap was short: both dives
   of 15 June 2024 and of 21 September 2024, all three of 30 May 2025, and both of 14 March
   2026 — which makes a chain three long. The overnight pairs are deliberately *not*

@@ -269,8 +269,11 @@ that is the only record of it.
   one you borrowed and keep no item for.
 - `start_date` (date) — the day the recording began, as the computer had it.
 - `start_time` (time) — the moment it began, as the computer had it.
-- `gmt_offset` (number) — how much to add to the two above to reach GMT. Seconds, unless
-  the file says otherwise, the same as any other length of time.
+- `gmt_offset` (number) — how far ahead of GMT the two above read, which is what has to come
+  off them. Seconds, unless the file says otherwise, the same as any other length of time.
+
+  A computer set to Egyptian time writes `7200`, Egypt being two hours ahead, so a recording
+  that says `09:00` began at `07:00` GMT. One reading two hours behind writes `-7200`.
 
   It covers three things at once, because they are one thing to arithmetic: a computer set
   to the wrong time, a clock that has drifted, and a computer set to a different zone from
@@ -286,7 +289,7 @@ that is the only record of it.
   because in GMT it was.
 
   The correction moves the date as well as the time where it has to: two minutes past
-  midnight, corrected by minus two hours, is late the previous evening.
+  midnight, with two hours coming off, is late the previous evening.
 - `depth` (series) — how deep, throughout.
 - `temperature` (series) — how cold, throughout. Often sampled far less often than
   depth, which is why it is a series of its own rather than a column beside it.
