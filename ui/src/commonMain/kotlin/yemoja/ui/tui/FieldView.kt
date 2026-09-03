@@ -15,6 +15,7 @@ import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
+import yemoja.data.Series
 import yemoja.data.Role
 import yemoja.data.TextDescription
 import yemoja.data.TimeDescription
@@ -52,7 +53,7 @@ internal fun fieldLines(item: Item, field: FieldDescription, chosen: Int = 0): L
     return heading("This field") +
         about.map { (name, said) -> Line(listOf(Span("  ${name.padEnd(width)}  $said"))) } +
         heading("What it holds (${saying(read)})") +
-        held(field, read, chosen)
+        held(item, field, read, chosen)
 }
 
 /**
@@ -171,6 +172,25 @@ private fun said(field: FieldDescription, value: Any): Span = Span(
 )
 
 /**
+ * A series as one row per sample: when it was taken, and what was read.
+ *
+ * The time is seconds from the start of the recording, which is what the file holds and what
+ * `DATA-58` fixes whatever else a file declares. Times are lined up on the right so that the
+ * values stand in a column of their own, a profile being read down rather than across.
+ */
+private fun samples(field: FieldDescription, series: Series): List<Line> {
+    if (series.size == 0) return listOf(Line(listOf(Span("  (empty)"))))
+    val width = (0..<series.size).maxOf { series.secondAt(it).toString().length }
+    return (0..<series.size).map { at ->
+        val said = when (val value = series.valueAt(at)) {
+            is Element.Usable -> said(field, value.value)
+            is Element.Unusable -> Span("! " + value.reason)
+        }
+        Line(listOf(Span("  " + series.secondAt(at).toString().padStart(width) + "  "), said))
+    }
+}
+
+/**
  * What the field holds, whole and uncut.
  *
  * A value that could not be read shows both what was written and why it was refused, since the
@@ -180,8 +200,14 @@ private fun said(field: FieldDescription, value: Any): Span = Span(
  * A field holding nothing says so in the heading and adds nothing here, there being nothing to
  * add.
  */
-private fun held(field: FieldDescription, read: Result<Any>, chosen: Int): List<Line> =
-    when (read) {
+private fun held(
+    item: Item,
+    field: FieldDescription,
+    read: Result<Any>,
+    chosen: Int,
+): List<Line> {
+    if (nested(field)) return inside(field, item)
+    return when (read) {
         is Result.Usable -> entries(field, read.value, chosen)
 
         is Result.Unusable -> listOf(
@@ -192,6 +218,29 @@ private fun held(field: FieldDescription, read: Result<Any>, chosen: Int): List<
 
         Result.Absent -> emptyList()
     }
+}
+
+/** Whether a field holds items rather than values, and so is shown as rows under its own name. */
+private fun nested(field: FieldDescription): Boolean =
+    field is OwnedItemDescription ||
+        field.cardinality == Cardinality.KEYED ||
+        field.cardinality == Cardinality.KEYED_SERIES
+
+/**
+ * A field holding items, as the rows it takes.
+ *
+ * The row naming the field is dropped and everything moves in by one, the heading above having
+ * said which field this is already.
+ */
+private fun inside(field: FieldDescription, item: Item): List<Line> {
+    val rows = rowsOf(field, item).drop(1)
+    if (rows.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
+    val width = rows.maxOf { (it.indent - 1) * STEP + it.label.length }
+    return rows.map { row ->
+        val name = " ".repeat((row.indent - 1) * STEP) + row.label
+        Line(listOf(Span("  " + name.padEnd(width) + "  ")) + row.value)
+    }
+}
 
 /**
  * A single value on its own row, and a list as a bullet apiece with [chosen] set apart.
@@ -200,6 +249,7 @@ private fun held(field: FieldDescription, read: Result<Any>, chosen: Int): List<
  * is nothing to choose between and a mark would say there was.
  */
 private fun entries(field: FieldDescription, value: Any, chosen: Int): List<Line> {
+    if (value is Series) return samples(field, value)
     val held = entriesOf(field, value)
     if (field.cardinality != Cardinality.LIST) return held.map { Line(listOf(Span("  "), it)) }
     // A written list with nothing in it is not the same as a field nobody wrote, and a row of

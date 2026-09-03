@@ -102,7 +102,11 @@ A row answering *yes* or *no* to a question said the same amount either way.
 The `when` over the kinds is exhaustive, so a kind added to the layer below is a compiler error
 here rather than a field this view has nothing to say about.
 
-What it holds is the value uncut, wrapped over as many rows as it takes. **How it came to hold
+What it holds is the value uncut, wrapped over as many rows as it takes. A field holding an
+item shows what is in it rather than the value it has none of, without naming the field a
+second time — the heading above has done that.
+
+ **How it came to hold
 it goes in brackets beside that heading** — `What it holds (worked out)` — rather than on a row
 of its own, since it is one word about the whole of what follows and a reader would otherwise
 count it among the values. A field holding nothing says so there and adds nothing under it. A
@@ -118,6 +122,16 @@ how many is what a plain cut cannot: three dots at the end of a list of regions 
 more or forty, and which it is decides whether opening the field is worth it. A list somebody
 wrote with nothing in it says `(empty)`, since that is not the same as a field nobody wrote.
 
+**A field holding a series** says how many samples it has and no more — `1000 samples`. A
+profile holds thousands, and the first two of them say nothing a reader wants from a row.
+Opened, it is one row per sample: when it was taken and what was read, the times lined up on
+the right so the values stand in a column, a profile being read down rather than across. The
+time is seconds from the start of the recording, which is what the file holds whatever else it
+declares — `DATA-58`.
+
+There is no cursor over a series and up and down scroll it, there being nothing in one to
+follow.
+
 Opened, a list is a bullet apiece and nothing is left out, which is what makes it possible to
 see where one value ends and the next begins. One bullet is set apart, the same way the chosen
 field is on the row, and up and down move between them.
@@ -128,10 +142,14 @@ underlined is each value that names one — a plain name asserting no id is not,
 an entry that would not read, because neither opens anything and the underline is the promise
 that something will.
 
-**Space opens the item a field names.** On the row that is the first one that can be opened,
+**Space opens the item a field names, and does not come back.** On the row that is the first
+one that can be opened,
 which is the one the row is showing — so a region with one parent needs no drilling in. In an
 open field it is the value the cursor is on, which is how one of several is chosen. Following
 closes the open field, the reader having arrived somewhere else.
+
+Nothing records where a reader came from, and nothing will: every item is a tab and a few rows
+away, and each tab remembers the row it was on. `TUI-5`.
 
 A plain name asserting no id is not followed, there being nothing to open, and neither is a
 value that would not read. Both still count as a value the cursor moves over: it moves over
@@ -146,9 +164,19 @@ would mean a field taking several rows, which is a layout question nobody has as
 The supplied libraries load, so a logbook declaring them shows them under its own items —
 they travel inside the application and need no second argument, `LIB-6`.
 
-**A keyed collection, an owned item and a series are still left out** until it is settled how
-each is shown. Only [`Types`](../../logic/doc.md) knows the difference, and none of the three
-is described there yet anyway.
+**An item inside an item is indented under the name of the field holding it**, and one held
+under keys has a row per key with its own fields further in again. Nothing is folded away: a
+reader who cannot see that a dive has three profiles cannot ask for them either. Values line up
+in one column however deep their names sit, which is what lets an eye run down them, and only
+the chosen field's own row is set apart — a whole item reversed is a wall rather than a cursor.
+
+The column of fields scrolls, since an item holding items is easily taller than a screen. Tab
+moves it, keeping the chosen field in view.
+
+**Nothing shown today is a series.** Every series the manual defines belongs to `Profile`,
+which is a keyed owned item of a dive, so both a series and a keyed series are correct and
+unreachable until dives are described — the same way a reference was until a region gained its
+parents. Both are tested against invented types.
 
 Two rows above the body and two below: where the reader is, a rule, and then a rule and the
 keys. A screen too small to hold one row of body between them is refused rather than drawn.
@@ -170,6 +198,18 @@ where the user is in it.
   interactive. The tabs, the list and the cursor keys are what was asked for, and a REPL
   would be less code but would not show a whole item at once, which is the thing this exists
   to do.
+- **TUI-5 — Whether following a reference can be undone.** *Settled:* **no**, and nothing
+  records where a reader came from.
+
+  A stack would be state kept for a journey nobody has to retrace. There is no hierarchy to be
+  lost in: every item in the logbook is a tab and a few rows away, and the row a reader was on
+  is still chosen when they come back to its tab, because each tab remembers its own. What a
+  back key would buy over that is one keystroke, against a second meaning for a key that has
+  two already.
+
+  It also keeps the interface honest about what it is. A reader following references is
+  reading, not navigating a history, and the thing they were looking at has not gone anywhere.
+
 - **TUI-2 — Whether it is shipped to users or stays a development tool.** Affects how much
    input validation and error recovery it needs.
 - **TUI-3 — Whether it can edit fields the GUI cannot**, and if so, how it avoids letting

@@ -6,6 +6,7 @@ import yemoja.data.Dimension
 import yemoja.data.Item
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
+import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.TextDescription
@@ -51,14 +52,53 @@ class EveryTypeTest {
     }
 
     @Test
-    fun `only single values and lists of them are described yet`() {
-        // Keyed collections and owned items are still to come.
-        val shown = setOf(Cardinality.SINGLE, Cardinality.LIST)
+    fun `no series is described yet, only a dive profile having one`() {
         for (type in Types.ALL) {
             for (field in type.fields) {
-                assertTrue(field.cardinality in shown, "${type.name}.${field.name}")
+                assertTrue(
+                    field.cardinality != Cardinality.SERIES &&
+                        field.cardinality != Cardinality.KEYED_SERIES,
+                    "${type.name}.${field.name}",
+                )
             }
         }
+    }
+
+    @Test
+    fun `a person carries their medical, their insurance and their courses`() {
+        assertIs<OwnedItemDescription>(Types.PERSON["medical"])
+        assertEquals(Cardinality.SINGLE, Types.PERSON["medical"]?.cardinality)
+        assertIs<OwnedItemDescription>(Types.PERSON["insurance"])
+        val courses = assertNotNull(Types.PERSON["courses"] as? OwnedItemDescription)
+        assertEquals(Cardinality.KEYED, courses.cardinality, "one course per key")
+        assertEquals("course", courses.description.name)
+    }
+
+    @Test
+    fun `a piece of gear carries its buoyancy and its maintenances`() {
+        assertIs<OwnedItemDescription>(Types.GEAR["buoyancy"])
+        val maintenances = assertNotNull(Types.GEAR["maintenances"] as? OwnedItemDescription)
+        assertEquals(Cardinality.KEYED, maintenances.cardinality)
+        assertEquals("maintenance", maintenances.description.name)
+    }
+
+    @Test
+    fun `an item inside an item describes its own fields`() {
+        val medical = assertNotNull(Types.PERSON["medical"] as? OwnedItemDescription)
+        assertEquals(
+            listOf("last_medical_check", "blood_group", "height", "body_mass"),
+            medical.description.fields.map { it.name },
+        )
+        val height = assertIs<NumberDescription>(medical.description["height"])
+        assertEquals(Dimension.LENGTH, height.dimension)
+    }
+
+    @Test
+    fun `a fraction of a fraction is bounded, being a fraction`() {
+        val buoyancy = assertNotNull(Types.GEAR["buoyancy"] as? OwnedItemDescription)
+        val part = assertIs<NumberDescription>(buoyancy.description["compressible_fraction"])
+        assertEquals(Dimension.DIMENSIONLESS, part.dimension)
+        assertEquals(0.0..1.0, part.range)
     }
 
     @Test

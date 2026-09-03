@@ -10,6 +10,7 @@ import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.data.Series
 import yemoja.data.Units
 
 /** Key is a keystroke this interface answers to. Everything else is ignored. */
@@ -55,6 +56,9 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
     private val first = IntArray(types.size)
 
+    // How far down the column of fields is scrolled, which an item holding items can need.
+    private val deep = IntArray(types.size)
+
     /** Whether the chosen field is open on its own, rather than the list being shown. */
     var opened: Boolean = false
         private set
@@ -75,13 +79,13 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     val item: ReferenceableItem? get() = items.getOrNull(chosen[tab])
 
     /**
-     * The fields shown, which are those holding one value and those holding a list of them.
+     * The fields of the open type, which are all of them.
      *
-     * A keyed collection and a series are left out until it is settled how each is shown, so
-     * nothing here has to guess at one.
+     * Every shape has a way of being shown now: one value beside its name, several separated by
+     * commas, a series as how many samples it holds, and an item inside an item indented under
+     * its own name.
      */
-    val fields: List<FieldDescription>
-        get() = type.fields.filter { it.cardinality in SHOWN }
+    val fields: List<FieldDescription> get() = type.fields
 
     /** The chosen field, or absent where the open type has none. */
     val field: FieldDescription? get() = fields.getOrNull(chosenField[tab])
@@ -175,9 +179,9 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * no id, and a reference to a type this screen has no tab for are all the same answer: stay
      * where we are.
      *
-     * Following is one way — nothing records where the user came from, so there is no going back
-     * yet. Which of several to follow, where a reader wants one further down the row, wants a
-     * cursor inside the field and is not settled.
+     * **Following is one way and stays that way.** Nothing records where the reader came from,
+     * because nothing needs to: every item is a tab and a few rows away, so a stack would be
+     * state kept for a journey nobody has to retrace. `TUI-5`.
      */
     private fun follow() {
         val naming = field as? ReferenceDescription ?: return
@@ -362,82 +366,49 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     }
 
     /**
-     * Every shown field of the chosen item, as a label and what it holds.
+     * The chosen item's fields, and the fields of anything inside them.
      *
      * A field with nothing in it is still listed, because what a type *can* hold is half of what
-     * this interface is for. The chosen one is set apart whole, label and value together, so that
-     * the cursor reads as a bar rather than as another mark like the list's.
+     * this interface is for. The chosen one is set apart across its own row, so that the cursor
+     * reads as a bar rather than as another mark like the list's; only that row and none of the
+     * rows under it, since a whole item reversed is a wall rather than a cursor.
+     *
+     * Values line up in one column however deep their names sit, which is what lets a reader run
+     * an eye down them.
      */
     private fun detailed(rows: Int, width: Int): List<List<Span>> {
         val item = item ?: return List(rows) { fitted(emptyList(), width) }
-        val labelWidth = fields.maxOf { it.label.length }
-        val lines = fields.mapIndexed { at, field ->
-            val here = if (at == chosenField[tab]) setOf(Style.SELECTED) else emptySet()
-            here to listOf(
-                Span(field.label.padEnd(labelWidth) + "  ", here),
-                Span(cut(flat(shown(item, field))), styles(item, field) + here),
-            )
-        }
+        val all = rowsOf(item)
+        if (all.isEmpty()) return List(rows) { fitted(emptyList(), width) }
+        val labelWidth = all.maxOf { it.indent * STEP + it.label.length }
+        scrollFields(all, rows)
         return List(rows) { row ->
-            val line = lines.getOrNull(row)
-            fitted(line?.second.orEmpty(), width, line?.first.orEmpty())
+            val at = all.getOrNull(deep[tab] + row)
+            if (at == null) fitted(emptyList(), width) else fitted(spansOf(at, labelWidth), width,
+                marking(at))
         }
     }
 
-    /**
-     * What one field holds, as a user should see it.
-     *
-     * The written form, which is the form the file holds. A raw interface showing what is on disk
-     * is the point of this one, and display preference is a settled question nobody has answered.
-     * `UI-2`.
-     *
-     * A value that could not be read shows why instead of showing nothing, since a blank is what
-     * an absent field looks like and the two are not the same thing.
-     */
-    private fun shown(item: Item, field: FieldDescription): String =
-        when (val read = item.read(field.name)) {
-            is Result.Usable -> shortened(entriesOf(field, read.value).map { flat(it.text) })
-            is Result.Unusable -> cut(flat("! ${read.reason}"))
-            Result.Absent -> ""
-        }
-
-    /**
-     * Several values on one row: as many as fit, and how many did not.
-     *
-     * Saying how many were left out is what a plain cut cannot: three dots at the end of a list
-     * of regions could be one more or forty, and the difference is what decides whether opening
-     * the field is worth it.
-     */
-    private fun shortened(entries: List<String>): String {
-        if (entries.isEmpty()) return EMPTY
-        val whole = entries.joinToString(SEPARATOR)
-        if (entries.size <= 1 || whole.length <= VALUE_WIDTH) return cut(whole)
-        for (count in entries.size - 1 downTo 1) {
-            val rest = entries.size - count
-            val said = entries.take(count).joinToString(SEPARATOR) +
-                " $MORE ($rest other${if (rest == 1) "" else "s"})"
-            if (said.length <= VALUE_WIDTH) return said
-        }
-        // Not even the first entry fits beside the count, so only the count is worth saying.
-        return cut("(${entries.size} entries)")
+    /** One row: its name where its depth puts it, and what it holds in the value column. */
+    private fun spansOf(row: Row, labelWidth: Int): List<Span> {
+        val here = marking(row)
+        val name = " ".repeat(row.indent * STEP) + row.label
+        return listOf(Span(name.padEnd(labelWidth) + "  ", here)) +
+            row.value.map { Span(it.text, it.styles + here) }
     }
 
-    /**
-     * How a field's value is set apart, which says what kind of value it is.
-     *
-     * Underlined names another item, so a reader knows what can be followed before trying it.
-     * Bold is a value written over one that would have been worked out, and italic one that was
-     * worked out. Plain is a value simply written, which is most of them.
-     */
-    private fun styles(item: Item, field: FieldDescription): Set<Style> {
-        val styles = mutableSetOf<Style>()
-        if (field is ReferenceDescription) styles.add(Style.UNDERLINED)
-        when ((item.read(field.name) as? Result.Usable)?.origin) {
-            Result.Origin.OVERRIDDEN -> styles.add(Style.BOLD)
-            Result.Origin.DERIVED -> styles.add(Style.ITALIC)
-            else -> Unit
+    /** The chosen field's own row, and none of the rows it brought with it. */
+    private fun marking(row: Row): Set<Style> =
+        if (row.indent == 0 && row.top == chosenField[tab]) setOf(Style.SELECTED) else emptySet()
+
+    /** Move the column as little as it takes to show the chosen field's own row. */
+    private fun scrollFields(all: List<Row>, rows: Int) {
+        val at = all.indexOfFirst { it.indent == 0 && it.top == chosenField[tab] }
+        if (at >= 0) {
+            if (at < deep[tab]) deep[tab] = at
+            if (at >= deep[tab] + rows) deep[tab] = at - rows + 1
         }
-        return styles
+        deep[tab] = deep[tab].coerceIn(0, (all.size - rows).coerceAtLeast(0))
     }
 
     /** Move the window as little as the chosen row allows, so the list stays where it was. */
@@ -468,27 +439,6 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     private fun fit(text: String, width: Int): String =
         if (text.length > width) text.take(width) else text.padEnd(width)
 
-    /**
-     * [text] short enough to sit in the list beside its neighbours.
-     *
-     * A column wide enough for the longest remark anybody writes would be a column of
-     * mostly nothing, so a value is cut here and shown whole where it is opened. The mark
-     * says which values have more to them, which a value simply ending does not.
-     */
-    private fun cut(text: String): String =
-        if (text.length <= VALUE_WIDTH) text
-        else text.take(VALUE_WIDTH - MORE.length) + MORE
-
-    /**
-     * [text] with no line break left in it.
-     *
-     * `remarks` is multiline and a terminal row is not, so a break is shown as the escape a file
-     * writes it with rather than taken: a value holding one would otherwise occupy three rows
-     * while measuring as one, and in raw mode leave the cursor wherever the last row ended.
-     */
-    private fun flat(text: String): String =
-        text.replace("\r\n", ESCAPED).replace("\n", ESCAPED).replace("\r", ESCAPED)
-
     companion object {
 
         /** Narrower than this and the list and the fields have nothing to stand in. */
@@ -508,28 +458,6 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
         /** What a line break is shown as, which is how a file writes one. */
         private const val ESCAPED = "\\n"
-
-        /** How much of a value the list shows. Past this it is cut and marked. */
-        const val VALUE_WIDTH: Int = 32
-
-        /**
-         * That a value goes on past where the list stopped showing it.
-         *
-         * Three dots rather than the one character that means them. A Windows
-         * console on a code page that is not UTF-8 shows that character as a
-         * question mark, which reads as a value nobody could make sense of
-         * rather than as a value that was cut.
-         */
-        private const val MORE = "..."
-
-        /** What sits between two values of one field on a row. */
-        private const val SEPARATOR = ", "
-
-        /** A list somebody wrote with nothing in it, which is not a field nobody wrote. */
-        private const val EMPTY = "(empty)"
-
-        /** The cardinalities this interface knows how to show. */
-        private val SHOWN = setOf(Cardinality.SINGLE, Cardinality.LIST)
 
         private const val LEAST_LIST_WIDTH = 12
 

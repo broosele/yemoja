@@ -1,7 +1,9 @@
 package yemoja.ui.tui
 
 import yemoja.data.Cardinality
+import yemoja.data.Dimension
 import yemoja.data.ItemDescription
+import yemoja.data.NumberDescription
 import yemoja.data.ItemSet
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
@@ -495,8 +497,8 @@ class CutValueTest {
     fun `a long value is cut, and marked so that the cut is visible`() {
         val screen = invented("""postbox.json""" to """{"a": {"name": "$long"}}""")
         val shown = value(screen)
-        assertEquals(Screen.VALUE_WIDTH, shown.length, "the mark counts towards it")
-        assertEquals("x".repeat(Screen.VALUE_WIDTH - 3) + "...", shown)
+        assertEquals(VALUE_WIDTH, shown.length, "the mark counts towards it")
+        assertEquals("x".repeat(VALUE_WIDTH - 3) + "...", shown)
     }
 
     @Test
@@ -510,7 +512,7 @@ class CutValueTest {
 
     @Test
     fun `a value exactly as long as the column is not marked`() {
-        val edge = "x".repeat(Screen.VALUE_WIDTH)
+        val edge = "x".repeat(VALUE_WIDTH)
         val screen = invented("postbox.json" to """{"a": {"name": "$edge"}}""")
         assertEquals(edge, value(screen))
     }
@@ -704,7 +706,7 @@ class ListTest2 {
     fun `too many to fit says how many were left out`() {
         val many = (1..9).joinToString(", ") { """"@region_$it"""" }
         val shown = row(walk("[$many]"))
-        assertTrue(shown.length <= Screen.VALUE_WIDTH, shown)
+        assertTrue(shown.length <= VALUE_WIDTH, shown)
         assertTrue(shown.endsWith("others)"), shown)
         assertTrue(shown.startsWith("@region_1 "), shown)
     }
@@ -1109,5 +1111,206 @@ class PlainNameTest {
     fun `a field that does not simply says what it names`() {
         assertTrue("names a person" in opened(false), opened(false).toString())
         assertTrue(opened(false).none { "plain name" in it }, opened(false).toString())
+    }
+}
+
+/** A field holding values against time. No described type has one until dives do. */
+class SeriesTest2 {
+
+    private val DIVE = ItemDescription(
+        "dive",
+        listOf(
+            TextDescription("name"),
+            NumberDescription("depth", Dimension.LENGTH, cardinality = Cardinality.SERIES),
+        ),
+    )
+
+    private val TYPES = listOf(DIVE)
+
+    private fun dive(depth: String): Screen = Screen(
+        LogbookReader.read(
+            MemoryFileStore(mapOf("dive.json" to """{"a": {"depth": $depth}}""")),
+            TYPES,
+        ),
+        TYPES,
+    )
+
+    private fun row(screen: Screen): String = body(screen, 90, 8)[1].spans[2].text.trimEnd()
+
+    private fun opened(screen: Screen): List<String> {
+        screen.press(Key.NEXT_FIELD)
+        screen.press(Key.OPEN)
+        return screen.paint(90, 24).map { squeezed(it.text) }
+    }
+
+    private val three = "[[0, 0.0], [30, 8.4], [90, 12.1]]"
+
+    @Test
+    fun `the row says how many samples there are`() {
+        assertEquals("3 samples", row(dive(three)))
+    }
+
+    @Test
+    fun `one sample is one sample`() {
+        assertEquals("1 sample", row(dive("[[0, 0.0]]")))
+    }
+
+    @Test
+    fun `a thousand samples still take one row`() {
+        val many = (0..<1000).joinToString(", ") { "[${it * 10}, ${it % 40}.0]" }
+        val said = row(dive("[$many]"))
+        assertEquals("1000 samples", said)
+        assertTrue(said.length <= VALUE_WIDTH, said)
+    }
+
+    @Test
+    fun `opened, each sample is a row of its own`() {
+        val said = opened(dive(three))
+        assertTrue("0 0" in said, said.toString())
+        assertTrue("30 8.4" in said, said.toString())
+        assertTrue("90 12.1" in said, said.toString())
+    }
+
+    @Test
+    fun `the times are lined up on the right, so the values make a column`() {
+        // A sample is two spans: the time, and what was read. They line up when every time
+        // takes the same room, whatever number of digits it has.
+        val screen = dive("[[0, 0.0], [30, 8.4], [1830, 12.1]]")
+        screen.press(Key.NEXT_FIELD)
+        screen.press(Key.OPEN)
+        val times = screen.paint(90, 24)
+            .map { it.spans.first() }
+            .filter { it.text.trim().toIntOrNull() != null }
+        assertEquals(listOf("0", "30", "1830"), times.map { it.text.trim() })
+        assertTrue(times.all { it.text.length == times.first().text.length }, times.toString())
+    }
+
+    @Test
+    fun `a sample that could not be read says why, in its place`() {
+        val said = opened(dive("""[[0, 0.0], [30, "deep"], [90, 12.1]]"""))
+        assertTrue(said.any { it.startsWith("30 !") }, said.toString())
+        assertTrue("90 12.1" in said, said.toString())
+    }
+
+    @Test
+    fun `a series with nothing in it says so`() {
+        assertEquals("0 samples", row(dive("[]")))
+        assertTrue("(empty)" in opened(dive("[]")))
+    }
+
+    @Test
+    fun `up and down scroll a series rather than moving between samples`() {
+        // There is nothing to follow in a series, so a cursor over one would buy nothing.
+        val many = (0..<200).joinToString(", ") { "[${it * 10}, ${it % 40}.0]" }
+        val screen = dive("[$many]")
+        screen.press(Key.NEXT_FIELD)
+        screen.press(Key.OPEN)
+        assertTrue("[up,down] scroll" in screen.paint(90, 12).last().text, "it scrolls")
+        val top = screen.paint(60, 12).map { it.text }
+        repeat(5) { screen.press(Key.DOWN) }
+        assertNotEquals(top, screen.paint(60, 12).map { it.text })
+    }
+}
+
+/** An item inside an item, indented under the name of the field holding it. */
+class NestedTest {
+
+    private fun person(fields: String): Screen = Screen(
+        LogbookReader.read(
+            MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
+            Types.ALL,
+        ),
+        Types.ALL,
+    )
+
+    /** The column of fields, without the list beside it. */
+    private fun rows(screen: Screen, width: Int = 90, height: Int = 26): List<String> =
+        body(screen, width, height)
+            .map { it.text.substring(width / 3 + 1).trimEnd() }
+            .filter { it.isNotBlank() }
+
+    /** Tab along until the field called [name] is the chosen one. */
+    private fun toField(screen: Screen, name: String) {
+        repeat(screen.fields.size) { if (screen.field?.name != name) screen.press(Key.NEXT_FIELD) }
+        assertEquals(name, screen.field?.name)
+    }
+
+    private val medical = """{"medical": {"blood_group": "O+", "height": 1.78}}"""
+
+    @Test
+    fun `a field holding one item names it and sets its fields in`() {
+        val said = rows(person(medical))
+        assertTrue("Medical" in said, said.toString())
+        assertTrue(said.any { it.startsWith("  Blood group") }, said.toString())
+        assertTrue(said.any { it.startsWith("  Height") }, said.toString())
+    }
+
+    @Test
+    fun `the value of a field inside an item is beside its own name`() {
+        assertTrue(rows(person(medical)).any { squeezed(it) == "Blood group O+" })
+    }
+
+    @Test
+    fun `a field holding several names each key and sets its fields in further`() {
+        val courses = """{"courses": {"k1": {"date": "2019-06-02"}, "k2": {}}}"""
+        val said = rows(person(courses))
+        assertTrue("Courses" in said, said.toString())
+        assertTrue(said.any { it.startsWith("  k1") }, said.toString())
+        assertTrue(said.any { it.startsWith("  k2") }, said.toString())
+        assertTrue(said.any { it.startsWith("    Date") }, said.toString())
+    }
+
+    @Test
+    fun `a field holding an item nobody wrote is named and has nothing under it`() {
+        val said = rows(person("{}"))
+        val at = said.indexOf("Medical")
+        assertTrue(at >= 0, said.toString())
+        assertEquals("Insurance", said[at + 1], "nothing between them: $said")
+    }
+
+    @Test
+    fun `values line up in one column however deep their names sit`() {
+        val labels = body(person(medical), 90, 26)
+            .filter { it.spans.size > 2 && it.spans[2].text.isNotBlank() }
+            .map { it.spans[1].text.length }
+        assertTrue(labels.isNotEmpty(), "there should be values")
+        assertTrue(labels.all { it == labels.first() }, labels.toString())
+    }
+
+    @Test
+    fun `only the chosen field's own row is set apart, not what is under it`() {
+        val screen = person(medical)
+        toField(screen, "medical")
+        val marked = body(screen, 90, 26).filter { row ->
+            row.spans.any { Style.SELECTED in it.styles }
+        }
+        assertEquals(1, marked.size, "one row, not the whole item")
+        assertEquals("Medical", marked.single().text.substring(31).trim())
+    }
+
+    @Test
+    fun `the column scrolls to keep the chosen field in view`() {
+        val screen = person(medical)
+        toField(screen, "remarks")
+        assertTrue("Remarks" in rows(screen, 90, 12), "it should be on screen")
+    }
+
+    @Test
+    fun `opened, a field holding an item shows what is in it and not its own name twice`() {
+        val screen = person(medical)
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        val said = screen.paint(90, 24).map { squeezed(it.text) }
+        assertEquals("person / anna / medical", said.first())
+        assertTrue("Blood group O+" in said, said.toString())
+        assertTrue(said.none { it == "Medical" }, "the heading names it already: $said")
+    }
+
+    @Test
+    fun `opened, a field holding nothing says so`() {
+        val screen = person("{}")
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        assertTrue("(empty)" in screen.paint(90, 24).map { squeezed(it.text) })
     }
 }
