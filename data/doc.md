@@ -938,13 +938,16 @@ To settle when we discuss architecture:
   Writing widens this when there is a writer; guessing at it now would be designing against
   no implementation.
 
-  **A store is built from both folders**, the logbook's and the installation's library
-  directory. They are apart because a logbook contains itself and may be copied, while
-  libraries belong to the device it is opened on. The four operations run over one namespace
-  spanning the two: a path under `libraries` resolves against the library directory and any
-  other against the logbook. That is what lets a path be handed back to the store that gave
-  it, and `libraries` cannot collide, because a type is stored under its own name and no type
-  is called that.
+  **A store spans two places**, the logbook's folder and whatever holds the supplied
+  libraries. They are apart because a logbook contains itself and may be copied, while
+  libraries belong to the application. The four operations run over one namespace spanning
+  both: a path under `libraries` resolves against the supplied set and any other against the
+  logbook. That is what lets a path be handed back to the store that gave it, and `libraries`
+  cannot collide, because a type is stored under its own name and no type is called that.
+
+  Where the supplied set is, is `LIB-6`: inside the application, read from its class path,
+  because there is no reliable way to ask a JVM where it was installed and on a phone no such
+  place exists.
 
   **Asking for a type gives the files that hold it, in reading order**: each file in the
   logbook's `dive` folder, or its single `dive.json`, and then the libraries declared for that

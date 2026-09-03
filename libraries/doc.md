@@ -20,6 +20,12 @@ certification/mda   →  libraries/certification/mda.json
 Names may nest where that groups them usefully, and need not where it does not. The
 folders are for whoever maintains these files; the application only resolves names.
 
+**These files are packaged into the application**, under the same names, and read from
+there rather than from any directory on the machine — `LIB-6` in
+[data/libraries.md](../data/libraries.md). `LICENSE` goes with them, since its terms travel
+with the data. So this directory is both where they are maintained and, unchanged, what
+ships.
+
 ## Format
 
 A library file is a logbook file: an object keyed by item id, and nothing else.

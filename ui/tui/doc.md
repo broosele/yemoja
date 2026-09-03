@@ -42,12 +42,13 @@ not be read shows why — `! north should be within -90.0..90.0 deg, but was 91.
 than a blank, which is what an absent field looks like and is not the same thing. And a value
 is shown in the form a file writes, `DATA-76`, so what is on screen is what is on disk.
 
-Two things are absent for now. **Fields holding more than one value are left out** until it
-is settled how a list, a keyed collection, an owned item and a series are each shown; only
-[`Types`](../../logic/doc.md) knows the difference and only single values are described so
-far anyway. And **libraries do not load**: the one argument names a logbook, nothing tells
-this where the installation keeps its supplied files, so a logbook using them shows only its
-own items.
+The supplied libraries load, so a logbook declaring them shows them under its own items —
+they travel inside the application and need no second argument, `LIB-6`.
+
+One thing is absent for now. **Fields holding more than one value are left out** until it is
+settled how a list, a keyed collection, an owned item and a series are each shown; only
+[`Types`](../../logic/doc.md) knows the difference, and only single values are described so
+far anyway.
 
 `Screen` holds no terminal. It answers a key and paints a rectangle of text, so the whole
 interface is tested without one; the terminal lives in one file beside it and does nothing

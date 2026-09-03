@@ -65,7 +65,8 @@ what diving is:
 ```
 logic/
   doc.md          this file
-  build.gradle.kts  the module, which depends on data and on nothing else
+  build.gradle.kts  the module, which depends on data and on nothing else, and which
+                    packages the supplied libraries into the application
   reconciliation.md  merging an import into the logbook
   uddf.md         UDDF against this model, field by field
   src/commonMain/kotlin/yemoja/logic/

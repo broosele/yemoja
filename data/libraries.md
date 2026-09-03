@@ -63,8 +63,8 @@ moment the logbook is synced to a phone.
 ```
 
 The logbook declares *which* libraries it uses, grouped by the kind of item they
-hold. Where they live is the application's business, resolved against its own library
-directory, and may differ on every device the logbook is opened on.
+hold. Where they live is the application's business — they travel inside it, `LIB-6` — and
+what a device has may differ on every device the logbook is opened on.
 
 A name is an identifier, not a file name: no directory prefix and no extension. The
 application supplies both, and the type comes from the declaration rather than from
@@ -164,19 +164,44 @@ it becomes theirs.
   nothing on screen to notice, and every reference to the supplied item would quietly
   change target.
 
-- **LIB-3 — Ordering between libraries.** *Settled:* allowed, and the last listed wins —
-  as reference resolution already has it, with each library laid over the one before.
+- **LIB-3 — Ordering between libraries.** *Settled:* allowed, and the first listed wins —
+  as reference resolution already has it, the list being the order they are looked in.
+
+  *Amended:* this said the last listed wins, when each library was laid over the one before.
+  Reversing that rule left this sentence behind, saying the opposite of what the code does.
 
   Two libraries defining one id is not necessarily a fault. A club correcting a supplied
   dive site is `FEAT-16`'s whole purpose, and refusing the collision would force it to
   ship a replacement for the entire set instead of the one item it disagrees with. The
   user controls which wins by the order they are listed in, which is a thing they can see
-  and change.
+  and change: the correction goes above the set it corrects.
 
   This is the one place where the collision rules differ by side, and deliberately: a
   *user* cannot shadow a library item by accident, because `LIB-2` gives their new item
   an index, while a *library* may shadow another on purpose, because that is what
   publishing a correction means.
+
+- **LIB-6 — Where the supplied libraries are, at runtime.** *Settled:* **inside the
+  application**, on its class path, read as resources. Nothing looks for a directory.
+
+  The question this avoids is *where was the application installed*, which has no good
+  answer. On the JVM the code source location is null under some class loaders and points
+  into a build directory when running from source, so development and a release would differ
+  exactly where a fault would hide. A property or an environment variable set by a launcher
+  works until something starts the application another way, and then needs a fallback that is
+  one of the other answers anyway. Per-platform conventions are five implementations. And on
+  a phone the question does not arise: there is no installation directory to name.
+
+  **The shape already fitted.** Libraries are named and never listed — see *How a library is
+  named* — and a resource can be opened by name and cannot be listed. The two operations a
+  library needs are the two a class path offers.
+
+  What it costs is that the supplied set cannot be edited, which is already the rule: a
+  library item is shadowed rather than changed, `LIB-2`, and never deleted. Replacing one
+  means a release, which `LIB-5` and *Publishing is close to permanent* already say it does.
+
+  This does not settle user-supplied libraries. If they are ever wanted, resolution gains a
+  directory beside the resources and nothing about the logbook changes.
 
 - **LIB-5 — Whether a library can be versioned or pinned.** *Settled:* no. Libraries
   carry no edition and a logbook records none. A user who wants a supplied item to stop
