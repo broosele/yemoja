@@ -267,6 +267,11 @@ Everything here is in `src/commonMain/kotlin/yemoja/data/json/`, the two stores 
 format's question — which files hold a type, given that one is a `.json` file or a folder of
 them — so they sit with it and not at the layer's root. `DATA-86` argues the dependency.
 
+`LogbookReader` starts at `yemoja.json`, which names the libraries the logbook uses; a
+logbook without one reads as a logbook declaring none, since whether the file is required has
+never been settled and being strict would make a folder of dives unreadable for want of a file
+saying only what it has none of. Nothing reads the owner it also declares.
+
 Two readers, both ours. `LogbookReader` turns
 a logbook's files into a set of items. *Which* files those are is the store's to answer, by
 the convention `JSON-21` settles and with nothing declaring the layout; this turns each of

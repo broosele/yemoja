@@ -937,13 +937,14 @@ To settle when we discuss architecture:
   logbook item is met before a supplied one and an earlier library before a later. It is
   written once against the four operations rather than by each platform.
 
-  **Which libraries those are is given, not found.** A store is handed the `libraries`
-  declaration from `yemoja.json` when it is built, so nothing at this layer parses a format to
-  learn what to read, and a library sitting in the directory that the logbook does not declare
-  is left alone. A declared one the installation has not got is passed over rather than
-  refused: a logbook carried to a device with an older installation names libraries that
-  device may not have, and refusing to open it would be a harsh answer to a missing list of
-  regions. The references into it go unresolved, which is a state the model already carries.
+  **Which libraries those are is given to the store, not found by it.** They are declared in
+  `yemoja.json` and the reader starts there, so the store parses no format and cannot fail to
+  be built by a manifest that will not read. A library sitting in the directory that the
+  logbook does not name is left alone. A named one the installation has not got is passed over
+  rather than refused: a logbook carried to a device with an older installation names libraries
+  that device may not have, and refusing to open it would be a harsh answer to a missing list
+  of regions. The references into it go unresolved, which is a state the model already
+  carries.
 
   **The interface earns itself twice over in tests.** A second implementation holds the files
   in memory, so nothing above needs a disk, and it needs no fake-file-system library to do it.

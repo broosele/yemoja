@@ -15,11 +15,7 @@ import okio.Path.Companion.toPath
  * gives none, and every library is then passed over. Paths given to this are relative and use `/`,
  * and are resolved a segment at a time so no separator is assumed.
  */
-class DiskFileStore(
-    root: String,
-    libraryRoot: String? = null,
-    override val libraries: Map<String, List<String>> = emptyMap(),
-) : FileStore {
+class DiskFileStore(root: String, libraryRoot: String? = null) : FileStore {
 
     private val root: Path = root.toPath()
 

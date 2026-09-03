@@ -35,15 +35,6 @@ class FileStoreAmbiguous(message: String) : RuntimeException(message)
  */
 interface FileStore {
 
-    /**
-     * The libraries the logbook declares, by the type they hold and in the order they are wanted.
-     *
-     * Given rather than found. The declaration is the `libraries` object in `yemoja.json`, and
-     * whoever opens the logbook reads it and hands it over, so nothing here parses a format. A
-     * library the installation has not got is passed over. See `data/libraries.md`.
-     */
-    val libraries: Map<String, List<String>>
-
     /** Whether something is there and is a file. False where nothing is there at all. */
     fun isFile(path: String): Boolean
 
@@ -65,19 +56,24 @@ interface FileStore {
      * Every file holding items of [type], in the order they are to be read.
      *
      * The logbook's own come first — each file in its `type` folder, or the single `type.json`,
-     * whichever is there — and then the libraries declared for that type. That is the order
-     * shadowing is settled in: the first to define an id wins, so a logbook item is met before a
-     * supplied one, and an earlier library before a later. See `data/libraries.md`.
+     * whichever is there — and then the [libraries] named, in the order they are named. That is
+     * the order shadowing is settled in: the first to define an id wins, so a logbook item is met
+     * before a supplied one, and an earlier library before a later. See `data/libraries.md`.
+     *
+     * The names are given rather than found here, because they are declared in `yemoja.json` and
+     * reading that is the reader's job. A library sitting in the directory that the logbook does
+     * not name is left alone, and a named one the installation has not got is passed over.
      *
      * A type the logbook holds neither way contributes nothing from it, which is how a logbook
-     * with no wrecks in it reads. A declared library the installation has not got is passed over.
+     * with no wrecks in it reads.
      *
      * Throws [FileStoreAmbiguous] where the logbook holds the type both ways at once.
      *
      * For example, `getPaths("dive")` gives every file in the `dive` folder, and
-     * `getPaths("region")` gives `region.json` followed by `libraries/region/world.json`.
+     * `getPaths("region", listOf("region/world"))` gives `region.json` followed by
+     * `libraries/region/world.json`.
      */
-    fun getPaths(type: String): List<String> {
+    fun getPaths(type: String, libraries: List<String> = emptyList()): List<String> {
         val file = "$type.json"
         val asFolder = isFolder(type)
         val asFile = isFile(file)
@@ -95,7 +91,7 @@ interface FileStore {
         } else if (asFile) {
             paths.add(file)
         }
-        for (name in libraries[type].orEmpty()) {
+        for (name in libraries) {
             val at = "$LIBRARIES/$name.json"
             if (isFile(at)) paths.add(at)
         }
@@ -116,10 +112,7 @@ interface FileStore {
  * `dive` a folder without its being declared. That is how a real one behaves, and it keeps the
  * fixture to one map with the libraries in it under [FileStore.LIBRARIES].
  */
-class MemoryFileStore(
-    files: Map<String, String>,
-    override val libraries: Map<String, List<String>> = emptyMap(),
-) : FileStore {
+class MemoryFileStore(files: Map<String, String>) : FileStore {
 
     // Copied. A Map is read-only, not immutable.
     private val files: Map<String, String> = files.toMap()

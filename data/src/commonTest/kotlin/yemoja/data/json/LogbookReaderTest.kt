@@ -29,10 +29,16 @@ private val TYPES = listOf(POSTBOX, ROUND)
 private fun logbook(vararg files: Pair<String, String>): ItemSet =
     LogbookReader.read(MemoryFileStore(mapOf(*files)), TYPES)
 
+/** A logbook whose manifest declares [libraries] for `postbox`, unless [type] says otherwise. */
 private fun withLibraries(
     files: Map<String, String>,
-    libraries: Map<String, List<String>>,
-): ItemSet = LogbookReader.read(MemoryFileStore(files, libraries), TYPES)
+    libraries: List<String>,
+    type: String = "postbox",
+): ItemSet {
+    val declared = libraries.joinToString(", ") { "\"$it\"" }
+    val manifest = """{"libraries": {"$type": [$declared]}}"""
+    return LogbookReader.read(MemoryFileStore(files + (LogbookReader.MANIFEST to manifest)), TYPES)
+}
 
 private fun name(set: ItemSet, id: String): Any? =
     (set[id]?.fields?.get("name") as? Result.Usable)?.value
@@ -153,6 +159,87 @@ class LogbookShapeTest {
     }
 }
 
+class ManifestTest {
+
+    private val supplied = "libraries/postbox/supplied.json" to """{"almshouse": {}}"""
+
+    private fun withManifest(manifest: String): ItemSet =
+        LogbookReader.read(
+            MemoryFileStore(mapOf(supplied, LogbookReader.MANIFEST to manifest)),
+            TYPES,
+        )
+
+    @Test
+    fun `the manifest says which libraries a logbook uses`() {
+        val set = withManifest("""{"libraries": {"postbox": ["postbox/supplied"]}}""")
+        assertEquals(1, set.size)
+    }
+
+    @Test
+    fun `a library the manifest does not name is left alone, though it is there`() {
+        assertEquals(0, withManifest("""{"libraries": {}}""").size)
+    }
+
+    @Test
+    fun `the rest of the manifest is passed over`() {
+        // The owner is declared and nothing reads it yet.
+        val set = withManifest(
+            """{"user": "@anna_devries", "libraries": {"postbox": ["postbox/supplied"]}}""",
+        )
+        assertEquals(1, set.size)
+    }
+
+    @Test
+    fun `a manifest declaring no libraries at all reads them as none`() {
+        assertEquals(0, withManifest("""{"user": "@anna_devries"}""").size)
+    }
+
+    @Test
+    fun `a logbook without a manifest reads as one declaring nothing`() {
+        // Whether the file is required has never been settled.
+        assertEquals(0, logbook(supplied).size)
+    }
+
+    @Test
+    fun `a manifest that is not JSON stops the read, and says which file`() {
+        val refused = assertFailsWith<LogbookFormatException> { withManifest("{oh dear") }
+        assertTrue(refused.message!!.startsWith("yemoja.json should be JSON"))
+    }
+
+    @Test
+    fun `libraries that are not grouped by type are refused`() {
+        val refused = assertFailsWith<LogbookFormatException> {
+            withManifest("""{"libraries": ["postbox/supplied"]}""")
+        }
+        assertEquals(
+            "libraries in yemoja.json should hold a list of names for each type",
+            refused.message,
+        )
+    }
+
+    @Test
+    fun `a type naming one library rather than a list of them is refused`() {
+        val refused = assertFailsWith<LogbookFormatException> {
+            withManifest("""{"libraries": {"postbox": "postbox/supplied"}}""")
+        }
+        assertEquals(
+            "libraries.postbox in yemoja.json should be a list of library names",
+            refused.message,
+        )
+    }
+
+    @Test
+    fun `a library name that is not text is refused`() {
+        val refused = assertFailsWith<LogbookFormatException> {
+            withManifest("""{"libraries": {"postbox": [7]}}""")
+        }
+        assertEquals(
+            "libraries.postbox in yemoja.json should be a list of library names",
+            refused.message,
+        )
+    }
+}
+
 class LibraryTest {
 
     @Test
@@ -162,7 +249,7 @@ class LibraryTest {
                 "postbox.json" to """{"market_square": {"name": "Market Square"}}""",
                 "libraries/postbox/supplied.json" to """{"almshouse": {"name": "Almshouse"}}""",
             ),
-            mapOf("postbox" to listOf("postbox/supplied")),
+            listOf("postbox/supplied"),
         )
         assertEquals(2, set.size)
         assertEquals("Almshouse", name(set, "almshouse"))
@@ -175,7 +262,7 @@ class LibraryTest {
                 "postbox.json" to """{"almshouse": {"name": "Mine"}}""",
                 "libraries/postbox/supplied.json" to """{"almshouse": {"name": "Theirs"}}""",
             ),
-            mapOf("postbox" to listOf("postbox/supplied")),
+            listOf("postbox/supplied"),
         )
         assertEquals(1, set.size)
         assertEquals("Mine", name(set, "almshouse"))
@@ -188,7 +275,7 @@ class LibraryTest {
                 "libraries/postbox/first.json" to """{"almshouse": {"name": "First"}}""",
                 "libraries/postbox/second.json" to """{"almshouse": {"name": "Second"}}""",
             ),
-            mapOf("postbox" to listOf("postbox/first", "postbox/second")),
+            listOf("postbox/first", "postbox/second"),
         )
         assertEquals(1, set.size)
         assertEquals("First", name(set, "almshouse"))
@@ -201,7 +288,7 @@ class LibraryTest {
                 "postbox/almshouse.json" to """{"name": "Mine"}""",
                 "libraries/postbox/supplied.json" to """{"almshouse": {"name": "Theirs"}}""",
             ),
-            mapOf("postbox" to listOf("postbox/supplied")),
+            listOf("postbox/supplied"),
         )
         assertEquals(1, set.size)
         assertEquals("Mine", name(set, "almshouse"))
@@ -211,7 +298,8 @@ class LibraryTest {
     fun `a library declared for one type does not reach another`() {
         val set = withLibraries(
             mapOf("libraries/round/supplied.json" to """{"tuesday": {"name": "Tuesday"}}"""),
-            mapOf("round" to listOf("round/supplied")),
+            listOf("round/supplied"),
+            "round",
         )
         assertEquals(1, set.size)
         assertEquals(listOf("tuesday"), set.allOf(ROUND).map { set.idOf(it) })

@@ -16,10 +16,7 @@ import kotlin.test.assertFalse
  */
 class DiskFileStoreTest : GetPathsTest() {
 
-    override fun storeOf(
-        files: Map<String, String>,
-        libraries: Map<String, List<String>>,
-    ): FileStore {
+    override fun storeOf(files: Map<String, String>): FileStore {
         val at = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "yemoja-${Random.nextLong()}"
         val within = "${FileStore.LIBRARIES}/"
         write(at / "logbook", files.filterKeys { !it.startsWith(within) })
@@ -27,11 +24,7 @@ class DiskFileStoreTest : GetPathsTest() {
             at / "libraries",
             files.filterKeys { it.startsWith(within) }.mapKeys { it.key.removePrefix(within) },
         )
-        return DiskFileStore(
-            (at / "logbook").toString(),
-            (at / "libraries").toString(),
-            libraries,
-        )
+        return DiskFileStore((at / "logbook").toString(), (at / "libraries").toString())
     }
 
     private fun write(root: Path, files: Map<String, String>) {
@@ -48,8 +41,8 @@ class DiskFileStoreTest : GetPathsTest() {
     fun `an installation with no library folder passes over every library`() {
         val root = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "yemoja-${Random.nextLong()}"
         write(root, mapOf("region.json" to "{}"))
-        val store = DiskFileStore(root.toString(), null, mapOf("region" to listOf("region/world")))
+        val store = DiskFileStore(root.toString())
         assertFalse(store.isFile("libraries/region/world.json"))
-        assertEquals(listOf("region.json"), store.getPaths("region"))
+        assertEquals(listOf("region.json"), store.getPaths("region", listOf("region/world")))
     }
 }

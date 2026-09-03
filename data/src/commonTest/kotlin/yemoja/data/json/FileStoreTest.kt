@@ -12,11 +12,8 @@ import kotlin.test.assertTrue
  */
 abstract class FileStoreTest {
 
-    /** A store over these files, libraries included under `libraries`, declaring these. */
-    abstract fun storeOf(
-        files: Map<String, String>,
-        libraries: Map<String, List<String>> = emptyMap(),
-    ): FileStore
+    /** A store over these files, the libraries among them under `libraries`. */
+    abstract fun storeOf(files: Map<String, String>): FileStore
 
     private val logbook = mapOf(
         "yemoja.json" to """{"version": 1}""",
@@ -123,12 +120,11 @@ abstract class GetPathsTest : FileStoreTest() {
                 "libraries/region/world.json" to "{}",
                 "libraries/region/europe.json" to "{}",
             ),
-            mapOf("region" to listOf("region/europe", "region/world")),
         )
         // The order shadowing is settled in: the first to define an id wins.
         assertEquals(
             listOf("region.json", "libraries/region/europe.json", "libraries/region/world.json"),
-            store.getPaths("region"),
+            store.getPaths("region", listOf("region/europe", "region/world")),
         )
     }
 
@@ -136,27 +132,22 @@ abstract class GetPathsTest : FileStoreTest() {
     fun `a library the logbook does not declare is not read, though it is there`() {
         val store = storeOf(
             mapOf("libraries/region/world.json" to "{}", "libraries/region/europe.json" to "{}"),
-            mapOf("region" to listOf("region/world")),
         )
-        assertEquals(listOf("libraries/region/world.json"), store.getPaths("region"))
+        assertEquals(
+            listOf("libraries/region/world.json"),
+            store.getPaths("region", listOf("region/world")),
+        )
     }
 
     @Test
     fun `a declared library this installation has not got is passed over`() {
         val store = storeOf(
             mapOf("libraries/region/world.json" to "{}"),
-            mapOf("region" to listOf("region/atlantis", "region/world")),
         )
-        assertEquals(listOf("libraries/region/world.json"), store.getPaths("region"))
-    }
-
-    @Test
-    fun `libraries declared for another type are not read`() {
-        val store = storeOf(
-            mapOf("libraries/region/world.json" to "{}", "libraries/gear/generic.json" to "{}"),
-            mapOf("region" to listOf("region/world"), "gear" to listOf("gear/generic")),
+        assertEquals(
+            listOf("libraries/region/world.json"),
+            store.getPaths("region", listOf("region/atlantis", "region/world")),
         )
-        assertEquals(listOf("libraries/region/world.json"), store.getPaths("region"))
     }
 
     @Test
@@ -178,10 +169,7 @@ abstract class GetPathsTest : FileStoreTest() {
 
 class MemoryFileStoreTest : GetPathsTest() {
 
-    override fun storeOf(
-        files: Map<String, String>,
-        libraries: Map<String, List<String>>,
-    ): FileStore = MemoryFileStore(files, libraries)
+    override fun storeOf(files: Map<String, String>): FileStore = MemoryFileStore(files)
 
     @Test
     fun `a folder exists because something is under it`() {

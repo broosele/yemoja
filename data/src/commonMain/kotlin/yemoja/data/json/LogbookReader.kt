@@ -17,15 +17,19 @@ class LogbookFormatException(message: String) : RuntimeException(message)
 /**
  * LogbookReader reads a logbook's files, and the libraries it declares, into a set of items.
  *
- * Which files those are is [FileStore.getPaths]'s to answer, and it answers in reading order. This
- * turns each of them into items: a file inside a type's folder is one item under the name of the
- * file, and any other file holds many under ids of their own.
+ * It starts at [MANIFEST], which names the libraries the logbook uses. Which files then hold a
+ * type is [FileStore.getPaths]'s to answer, and it answers in reading order. This turns each of
+ * them into items: a file inside a type's folder is one item under the name of the file, and any
+ * other file holds many under ids of their own.
  *
  * **A type is stored under its own name.** `dive` holds dives, so nothing here maps one name to
  * another and nothing here holds a list of type names — which it could not, being a source that
  * must work for a subject other than diving. `JSON-21`.
  */
 object LogbookReader {
+
+    /** The file at the top of a logbook, saying whose it is and which libraries it uses. */
+    const val MANIFEST: String = "yemoja.json"
 
     /**
      * Every item in [store], of the [types] given.
@@ -40,18 +44,53 @@ object LogbookReader {
      * carrying on would need somewhere to report to, and nothing has settled what that is.
      */
     fun read(store: FileStore, types: List<ItemDescription>): ItemSet {
+        val declared = librariesOf(store)
         val set = ItemSet(types)
         for (description in types) {
-            for ((id, stored) in itemsOf(store, description.name)) {
+            val named = declared[description.name].orEmpty()
+            for ((id, stored) in itemsOf(store, description.name, named)) {
                 set.add(id, ItemReader.read(description, stored, set))
             }
         }
         return set
     }
 
-    private fun itemsOf(store: FileStore, type: String): Map<String, Stored.Members> {
+    /**
+     * The libraries [MANIFEST] declares, by the type they hold.
+     *
+     * **A logbook without a manifest reads as one declaring nothing.** Whether the file is
+     * required has never been settled, and being strict would make a folder of dives unreadable
+     * for want of a file saying only what it has none of.
+     */
+    private fun librariesOf(store: FileStore): Map<String, List<String>> {
+        if (!store.isFile(MANIFEST)) return emptyMap()
+        val declared = membersOf(store, MANIFEST).members[FileStore.LIBRARIES] ?: return emptyMap()
+        if (declared !is Stored.Members) {
+            throw LogbookFormatException(
+                "${FileStore.LIBRARIES} in $MANIFEST should hold a list of names for each type",
+            )
+        }
+        return declared.members.mapValues { (type, named) -> namesOf(type, named) }
+    }
+
+    private fun namesOf(type: String, named: Stored): List<String> {
+        if (named !is Stored.Elements) throw namesExpected(type)
+        return named.elements.map {
+            (it as? Stored.Leaf)?.value as? String ?: throw namesExpected(type)
+        }
+    }
+
+    private fun namesExpected(type: String): LogbookFormatException = LogbookFormatException(
+        "${FileStore.LIBRARIES}.$type in $MANIFEST should be a list of library names",
+    )
+
+    private fun itemsOf(
+        store: FileStore,
+        type: String,
+        libraries: List<String>,
+    ): Map<String, Stored.Members> {
         val paths = try {
-            store.getPaths(type)
+            store.getPaths(type, libraries)
         } catch (stored: FileStoreAmbiguous) {
             throw LogbookFormatException(stored.message!!)
         }
