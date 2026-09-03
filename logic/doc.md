@@ -24,10 +24,10 @@ layer for anything it *does* is a bug in the design.
 - **Import from dive computers**, and import of other logbook formats — folded into
   the logbook by the shared machinery in [reconciliation.md](reconciliation.md).
 - **Search and filtering** — the definitions of "recent", "deep", "with this buddy".
-- Unit handling for *display and entry*: what a user is shown and what they type.
-  Values are stored and held in the units they were written in — see
-  [../data/doc.md](../data/doc.md) — so this layer converts when presenting, not on the
-  way in or out of storage.
+- Unit handling for *display and entry*: what a user is shown and what they type. A file
+  declares what its own numbers are written in and the data layer converts on the way in,
+  so a value held here is in the model's own unit — see [../data/doc.md](../data/doc.md).
+  What a user is shown is a separate choice, and it is this layer's.
 
 ## Not in scope
 
@@ -59,6 +59,26 @@ what diving is:
   anything. They produce findings, each aimed at an item and carrying a severity, which
   is what the home tab shows. A dive beyond your certification is not invalid data: it
   happened, and it is worth remarking on.
+
+## Structure
+
+```
+logic/
+  doc.md          this file
+  build.gradle.kts  the module, which depends on data and on nothing else
+  reconciliation.md  merging an import into the logbook
+  uddf.md         UDDF against this model, field by field
+  src/commonMain/kotlin/yemoja/logic/
+                  Types.kt      what a person, a region and a piece of gear are
+  src/commonTest/kotlin/yemoja/logic/
+                  the tests, beside what they cover
+```
+
+**Three types so far, and only the fields holding one value.** Lists, keyed collections
+and owned items are absent, so a person has no `courses` and a region no `parents`; the
+six other item types are absent entirely. [manual/data-fields.md](../manual/data-fields.md)
+is the source of truth for every field, and where it and `Types.kt` disagree the manual is
+right. Nothing checks that automatically yet.
 
 ## The Universe
 
