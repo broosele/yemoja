@@ -94,7 +94,8 @@
     "email": "tom@example.invalid",
     "medical": {
       "last_medical_check": "2024-04-19",
-      "blood_group": "B+"
+      "blood_group": "B+",
+      "remarks": "Height and mass were never asked for at the time."
     },
     "courses": {
       "k1": {

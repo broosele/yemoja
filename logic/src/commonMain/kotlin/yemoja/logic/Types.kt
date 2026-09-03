@@ -366,6 +366,7 @@ private val DETAILS = ItemDescription(
         TextDescription("tags", cardinality = Cardinality.LIST),
         ReferenceDescription("dive_trip", targetType = "dive_trip"),
         ReferenceDescription("operator", targetType = "operator"),
+        REMARKS,
     ),
 )
 
@@ -381,6 +382,7 @@ private val ENVIRONMENT = ItemDescription(
         NumberDescription("bottom_temperature", Dimension.TEMPERATURE),
         // From where the dive was, and absolute: about a bar at sea level.
         NumberDescription("atmospheric_pressure", Dimension.PRESSURE),
+        REMARKS,
     ),
 )
 
@@ -396,6 +398,7 @@ private val DIVE_GEAR = ItemDescription(
         NumberDescription("mass", Dimension.MASS),
         TextDescription("temperature_evaluation", suggestedSet = WARMTHS),
         TextDescription("buoyancy_evaluation", suggestedSet = WEIGHTINGS),
+        REMARKS,
     ),
 )
 
@@ -410,6 +413,7 @@ private val TOLERANCES = ItemDescription(
         NumberDescription("depth", Dimension.LENGTH),
         NumberDescription("temperature", Dimension.TEMPERATURE),
         NumberDescription("pressure", Dimension.PRESSURE),
+        REMARKS,
     ),
 )
 
@@ -468,6 +472,7 @@ private val PROFILE = ItemDescription(
         // What the computer was set to while it recorded, which is not what the site is.
         TextDescription("water_type", fixedSet = WATER_TYPES),
         OwnedItemDescription("tolerances", TOLERANCES),
+        REMARKS,
     ),
 )
 
@@ -486,6 +491,7 @@ private val GAS_SOURCE = ItemDescription(
         GasDescription("gas_type"),
         TextDescription("usage", suggestedSet = GAS_USAGES),
         TextDescription("configuration", suggestedSet = GAS_CONFIGURATIONS),
+        REMARKS,
     ),
 )
 
@@ -502,6 +508,7 @@ private val MEDICAL = ItemDescription(
         TextDescription("blood_group"),
         NumberDescription("height", Dimension.LENGTH),
         NumberDescription("body_mass", Dimension.MASS),
+        REMARKS,
     ),
 )
 
@@ -518,6 +525,7 @@ private val INSURANCE = ItemDescription(
         TextDescription("policy"),
         DateDescription("start_date"),
         DateDescription("end_date"),
+        REMARKS,
     ),
 )
 
@@ -529,6 +537,7 @@ private val COURSE = ItemDescription(
         ReferenceDescription("instructor", targetType = "person"),
         DateDescription("date"),
         ReferenceDescription("dives", targetType = "dive", cardinality = Cardinality.LIST),
+        REMARKS,
     ),
 )
 
@@ -544,6 +553,7 @@ private val BUOYANCY = ItemDescription(
         // accounted for. It is not the foam's real gas content, which is higher.
         NumberDescription("compressible_fraction", Dimension.DIMENSIONLESS, range = 0.0..1.0),
         NumberDescription("lift_volume", Dimension.VOLUME),
+        REMARKS,
     ),
 )
 
@@ -562,7 +572,7 @@ private val MAINTENANCE = ItemDescription(
         DateDescription("valid_until"),
         TextDescription("follow_up_type", suggestedSet = MAINTENANCE_TYPES),
         ReferenceDescription("operator", targetType = "operator"),
-        MultilineTextDescription("remarks"),
+        REMARKS,
     ),
 )
 

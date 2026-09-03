@@ -1321,7 +1321,10 @@ class NestedTest {
     @Test
     fun `the column scrolls to keep the chosen field in view`() {
         val screen = person(medical)
-        toField(screen, "remarks")
+        // Up from the top wraps to the last row, which a medical's own fields put off a short
+        // screen. Named this way rather than by field, a medical having a remarks of its own.
+        screen.press(Key.UP)
+        assertEquals("remarks", screen.field?.name)
         assertTrue("Remarks" in rows(screen, 90, 12), "it should be on screen")
     }
 

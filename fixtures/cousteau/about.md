@@ -189,6 +189,9 @@ Between them they exercise every profile and gas source field except `density` a
   side, neither hiding the other. Neither sets a `follow_up_type`, because each is its own
   obligation.
 - Several `remarks` run to more than one line.
+- `remarks` on an item inside an item: on a medical, on a dive's environment and on
+  its gear. Every kind of item has one, owned items included, and only the maintenance
+  under `my_drysuit` exercised that until now.
 
 ## What it does not cover
 

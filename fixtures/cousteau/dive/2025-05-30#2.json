@@ -14,7 +14,8 @@
   "environment": {
     "current": "none",
     "waves": "none",
-    "visibility": 18
+    "visibility": 18,
+    "remarks": "Flat calm all afternoon.\nVisibility dropped to about 12 over the sand."
   },
   "gear": {
     "items": [
@@ -29,7 +30,8 @@
     "mass": 24,
     "weight": 4,
     "temperature_evaluation": "good",
-    "buoyancy_evaluation": "good"
+    "buoyancy_evaluation": "good",
+    "remarks": "Two kilos less than the morning dive and still comfortable."
   },
   "profiles": {
     "p1": {

@@ -30,6 +30,23 @@ private fun logbook(vararg files: Pair<String, String>) =
 private fun text(item: Item, name: String): String? =
     (item.single<String>(name) as? Result.Usable)?.value
 
+/**
+ * Every type described, the ones inside another item included.
+ *
+ * `Types.ALL` holds the nine a logbook stores files of. Walking a description that only reaches
+ * those checks a claim about every type against half of them, which is how ten owned items came
+ * to have no `remarks` while a test said every type had one.
+ */
+private fun everyType(): List<ItemDescription> {
+    val all = LinkedHashMap<String, ItemDescription>()
+    fun walk(type: ItemDescription) {
+        if (all.put(type.name, type) != null) return
+        for (field in type.fields) if (field is OwnedItemDescription) walk(field.description)
+    }
+    Types.ALL.forEach { walk(it) }
+    return all.values.toList()
+}
+
 private fun number(item: Item, name: String): Double? =
     (item.single<Double>(name) as? Result.Usable)?.value
 
@@ -60,7 +77,11 @@ class EveryTypeTest {
 
     @Test
     fun `every type has remarks, and only there is a line break allowed`() {
-        for (type in Types.ALL) {
+        // Owned items included. The manual gives one to every kind of item, and an owned item
+        // is a kind of item: a note about a medical has nowhere else to go.
+        val types = everyType()
+        assertEquals(20, types.size, "nine stored types and eleven owned")
+        for (type in types) {
             assertIs<MultilineTextDescription>(type["remarks"], type.name)
         }
     }
@@ -100,7 +121,7 @@ class EveryTypeTest {
     fun `an item inside an item describes its own fields`() {
         val medical = assertNotNull(Types.PERSON["medical"] as? OwnedItemDescription)
         assertEquals(
-            listOf("last_medical_check", "blood_group", "height", "body_mass"),
+            listOf("last_medical_check", "blood_group", "height", "body_mass", "remarks"),
             medical.description.fields.map { it.name },
         )
         val height = assertIs<NumberDescription>(medical.description["height"])
@@ -398,7 +419,7 @@ class DiveTest {
     fun `a profile sits three deep, and its tolerances four`() {
         val tolerances = inside(inside(Types.DIVE, "profiles"), "tolerances")
         assertEquals(
-            listOf("depth", "temperature", "pressure"),
+            listOf("depth", "temperature", "pressure", "remarks"),
             tolerances.fields.map { it.name },
         )
     }
