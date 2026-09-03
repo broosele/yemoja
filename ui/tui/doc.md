@@ -30,6 +30,12 @@ GUI's feature set. If the TUI needs to be pretty, that is what the GUI is for.
 `yemoja tui <logbook folder>`. A tab per item type, the ids of that type down the left, and
 the chosen item's fields on the right.
 
+**The bottom row says what the keys do**, and says what they do *here*: the list and an open
+field answer to different things, so a reader is told the ones in front of them rather than
+all of them. Where the screen is too narrow it stops at the first that will not fit, rather
+than passing over it for a shorter one — a bar that keeps its order is one whose front a
+reader learns.
+
 | Key | Does |
 |---|---|
 | left, right | change tab, round the ring |
@@ -137,6 +143,9 @@ they travel inside the application and need no second argument, `LIB-6`.
 **A keyed collection, an owned item and a series are still left out** until it is settled how
 each is shown. Only [`Types`](../../logic/doc.md) knows the difference, and none of the three
 is described there yet anyway.
+
+Two rows above the body and two below: where the reader is, a rule, and then a rule and the
+keys. A screen too small to hold one row of body between them is refused rather than drawn.
 
 It must be started from a real terminal, which is why it cannot be run through Gradle: Gradle
 gives a child process no terminal, so there is no run task and `./gradlew :ui:installDist`

@@ -33,7 +33,11 @@ private val THREE = logbook(
 private fun screen(set: ItemSet = THREE): Screen = Screen(set, Types.ALL)
 
 /** The chosen row of the list column, without its marker or its padding. */
-private fun chosen(screen: Screen): String? = screen.paint(60, 12).map { it.text }
+/** The rows between the rule under the heading and the rule above the bar. */
+private fun body(screen: Screen, width: Int = 60, height: Int = 12): List<Line> =
+    screen.paint(width, height).drop(2).dropLast(2)
+
+private fun chosen(screen: Screen): String? = body(screen).map { it.text }
     .firstOrNull { it.startsWith("> ") }
     ?.substringBefore("  ")
     ?.removePrefix("> ")
@@ -83,7 +87,7 @@ class TabTest {
     @Test
     fun `a type with no items still has a tab, and says so`() {
         val screen = screen(logbook("gear.json" to """{"faber_12": {}}"""))
-        assertTrue(screen.paint(60, 6)[2].text.startsWith("  (no person)"))
+        assertTrue(body(screen, 60, 8).first().text.startsWith("  (no person)"))
         assertEquals(null, screen.item)
     }
 }
@@ -94,7 +98,7 @@ class ListTest {
     fun `the list holds the ids of the open type and nothing else`() {
         val screen = screen()
         screen.press(Key.RIGHT)
-        val ids = screen.paint(60, 8).drop(2)
+        val ids = body(screen, 60, 8)
             .map { it.text.take(14).trim() }
             .filter { it.isNotEmpty() }
         assertEquals(listOf("> north_sea", "wadden_sea"), ids)
@@ -128,9 +132,9 @@ class ListTest {
         val screen = screen(logbook("region.json" to "{$many}"))
         screen.press(Key.RIGHT)
         repeat(20) { screen.press(Key.DOWN) }
-        val list = screen.paint(60, 12).drop(2).map { it.text.take(14).trim() }
+        val list = body(screen).map { it.text.take(14).trim() }
         assertTrue("> region_21" in list, "the chosen row should be on screen, and $list is not")
-        assertEquals(10, list.size)
+        assertEquals(8, list.size)
     }
 
     @Test
@@ -140,8 +144,8 @@ class ListTest {
         screen.press(Key.RIGHT)
         repeat(12) { screen.press(Key.DOWN) }
         // Twelve down on ten rows shows rows four to thirteen, not the chosen one at the top.
-        val list = screen.paint(60, 12).drop(2).map { it.text.take(14).trim() }
-        assertEquals("region_4", list.first())
+        val list = body(screen).map { it.text.take(14).trim() }
+        assertEquals("region_6", list.first())
         assertEquals("> region_13", list.last())
     }
 }
@@ -149,8 +153,7 @@ class ListTest {
 class DetailTest {
 
     // The list column is a third of the width, and the detail begins one space after it.
-    private fun detail(screen: Screen): List<String> = screen.paint(72, 14)
-        .drop(2)
+    private fun detail(screen: Screen): List<String> = body(screen, 72, 16)
         .map { squeezed(it.text.substring(72 / 3 + 1)) }
         .filter { it.isNotEmpty() }
 
@@ -217,7 +220,7 @@ class PaintingTest {
     @Test
     fun `the screen is exactly the rectangle it was asked for`() {
         for (width in listOf(20, 40, 61, 100)) {
-            for (height in listOf(3, 10, 25)) {
+            for (height in listOf(5, 10, 25)) {
                 val painted = screen().paint(width, height)
                 assertEquals(height, painted.size, "$width by $height")
                 for (line in painted) assertEquals(width, line.width, "$width by $height")
@@ -253,13 +256,15 @@ class PaintingTest {
 
     @Test
     fun `a rule sits under the tabs`() {
-        assertEquals("-".repeat(30), screen().paint(30, 5)[1].text)
+        val painted = screen().paint(30, 6)
+        assertEquals("-".repeat(30), painted[1].text)
+        assertEquals("-".repeat(30), painted[painted.size - 2].text)
     }
 
     @Test
     fun `a screen too small to hold anything is a fault rather than a drawing`() {
         assertFailsWith<IllegalArgumentException> { screen().paint(19, 10) }
-        assertFailsWith<IllegalArgumentException> { screen().paint(40, 2) }
+        assertFailsWith<IllegalArgumentException> { screen().paint(40, 4) }
     }
 
     @Test
@@ -305,7 +310,7 @@ private fun invented(vararg files: Pair<String, String>): Screen =
 /** The styles of one row of the detail column, by the text they are on. */
 private fun styling(screen: Screen, width: Int = 70): Map<String, Set<Style>> {
     val detail = width / 3 + 1
-    return screen.paint(width, 10).drop(2)
+    return body(screen, width, 12)
         .flatMap { line ->
             var at = 0
             line.spans.mapNotNull { span ->
@@ -370,7 +375,7 @@ class StyleTest {
     @Test
     fun `the chosen row is set apart to the edge of the screen`() {
         val screen = invented(*logbook)
-        val row = screen.paint(70, 10).drop(2).first { Style.SELECTED in it.spans.last().styles }
+        val row = body(screen, 70, 12).first { Style.SELECTED in it.spans.last().styles }
         assertTrue(row.spans.last().text.isBlank(), "the padding should carry the row's style")
         assertEquals(70, row.width)
     }
@@ -478,7 +483,7 @@ class CutValueTest {
     private val long = "x".repeat(80)
 
     // The row is the list, then the label, then the value, then the padding.
-    private fun value(screen: Screen): String = screen.paint(90, 6)[2].spans[2].text
+    private fun value(screen: Screen): String = body(screen, 90, 8).first().spans[2].text
 
     @Test
     fun `a value short enough is shown as it is`() {
@@ -633,7 +638,7 @@ class OpenFieldTest {
         assertNotEquals(top, opened(screen, 40), "the open field should have moved")
         // And the list did not move under it.
         screen.press(Key.CLOSE)
-        assertEquals("> a", screen.paint(60, 8)[2].text.take(20).trim())
+        assertEquals("> a", body(screen, 60, 8).first().text.take(20).trim())
     }
 
     @Test
@@ -680,7 +685,7 @@ class ListTest2 {
     )
 
     /** The value column of the row the chosen field is on. */
-    private fun row(screen: Screen): String = screen.paint(90, 6)[3].spans[2].text.trimEnd()
+    private fun row(screen: Screen): String = body(screen, 90, 8)[1].spans[2].text.trimEnd()
 
     private fun opened(screen: Screen): List<String> {
         screen.press(Key.NEXT_FIELD)
@@ -1005,5 +1010,69 @@ class OpenedUnderliningTest {
     fun `a value that names nothing is text, and text is not underlined`() {
         val said = opened("""{"name": "Market Square"}""", steps = 2)
         assertEquals(emptySet(), said["Market Square"])
+    }
+}
+
+/** The bar at the bottom saying what the keys do here. */
+class ActionsTest {
+
+    private fun bar(screen: Screen, width: Int = 90): String =
+        screen.paint(width, 12).last().text.trim()
+
+    @Test
+    fun `the bar sits under a rule at the bottom`() {
+        val painted = screen().paint(60, 12)
+        assertEquals("-".repeat(60), painted[painted.size - 2].text)
+        assertTrue(painted.last().text.startsWith("[esc] exit"), painted.last().text)
+    }
+
+    @Test
+    fun `it says what each key does where the list is`() {
+        val said = bar(screen())
+        assertEquals(
+            "[esc] exit | [<-,->] type | [up,down] item | [tab] field | [enter] open | " +
+                "[space] follow",
+            said,
+        )
+    }
+
+    @Test
+    fun `it says something else where a field is open`() {
+        val screen = screen()
+        screen.press(Key.OPEN)
+        val said = bar(screen)
+        assertTrue(said.startsWith("[esc] back"), said)
+        assertTrue("[space] follow" in said, said)
+        assertTrue("[<-,->]" !in said, "the tabs do not change from inside a field: $said")
+    }
+
+    @Test
+    fun `an open field says whether up and down move or scroll`() {
+        val screen = screen()
+        screen.press(Key.OPEN)
+        assertTrue("[up,down] scroll" in bar(screen), bar(screen))
+        // Parents holds a list, so there are values to move between rather than rows to scroll,
+        // whether or not this region has any written.
+        screen.press(Key.CLOSE)
+        screen.press(Key.RIGHT)
+        screen.press(Key.NEXT_FIELD)
+        screen.press(Key.OPEN)
+        assertTrue("[up,down] value" in bar(screen), bar(screen))
+    }
+
+    @Test
+    fun `a narrow screen says fewer things rather than half a thing`() {
+        val said = bar(screen(), 40)
+        assertTrue(said.length <= 40, said)
+        assertTrue(said.startsWith("[esc] exit | [<-,->] type"), said)
+        assertFalse(said.endsWith("|"), "no dangling separator: $said")
+        assertFalse(said.contains("[ente"), "no half a key: $said")
+        // It stops rather than skipping to something shorter, so the front is always the same.
+        assertFalse("[tab]" in said, "nothing from past the cut: $said")
+    }
+
+    @Test
+    fun `the narrowest screen there is still says one thing`() {
+        assertEquals("[esc] exit", bar(screen(), Screen.LEAST_WIDTH))
     }
 }

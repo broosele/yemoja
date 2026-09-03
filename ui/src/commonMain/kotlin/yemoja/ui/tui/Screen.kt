@@ -92,14 +92,18 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * What decides whether there is anything to move between inside an open field. A single
      * value is one thing however many rows it wraps over.
      *
+     * It answers by the field rather than by what happens to be written, so a list nobody has
+     * filled in yet is still a list and the bar at the bottom does not change its mind from one
+     * item to the next.
+     *
      * A function rather than a property, because inside a property's own accessor `field` is
      * Kotlin's word for the backing field rather than this class's.
      */
     private fun entries(): Int? {
         val naming = field ?: return null
         if (naming.cardinality != Cardinality.LIST) return null
-        val read = item?.read(naming.name) as? Result.Usable ?: return null
-        return (read.value as? List<*>)?.size
+        val read = item?.read(naming.name) as? Result.Usable ?: return 0
+        return (read.value as? List<*>)?.size ?: 0
     }
 
     /**
@@ -158,6 +162,9 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     private fun step(by: Int) {
         if (fields.isEmpty()) return
         chosenField[tab] = (chosenField[tab] + by + fields.size) % fields.size
+        // Another field is another value, so where the reader was in the last one means nothing.
+        within = 0
+        chosenEntry = 0
     }
 
     /**
@@ -222,17 +229,67 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         require(height >= LEAST_HEIGHT) {
             "a screen should be $LEAST_HEIGHT high at least, was $height"
         }
-        val rows = height - 2
-        if (opened) return opened(width, rows)
+        val rows = height - CHROME
+        val body = if (opened) opened(width, rows) else listed(width, rows)
+        val lines = ArrayList<Line>(height)
+        lines.add(Line(fitted(listOf(Span(where())), width)))
+        lines.add(rule(width))
+        lines.addAll(body)
+        lines.add(rule(width))
+        lines.add(Line(fitted(listOf(Span(actions(width))), width)))
+        return lines
+    }
+
+    private fun rule(width: Int): Line = Line(listOf(Span("-".repeat(width))))
+
+    /** What is being looked at: the types, or the field that is open. */
+    private fun where(): String {
+        if (!opened) return tabs()
+        val field = field ?: return tabs()
+        return "${type.name} / ${item?.let { set.idOf(it) }} / ${field.name}"
+    }
+
+    /**
+     * What the keys do, as many of them as the screen is wide enough to say.
+     *
+     * Cut from the end rather than squeezed, because half a word about a key is worse than no
+     * word about it, and it stops at the first that will not fit rather than passing over it for
+     * a shorter one: a bar that keeps its order is one a reader learns the front of. What a key
+     * does depends on what is in front of the user, so this says what it does here.
+     */
+    private fun actions(width: Int): String {
+        val said = if (opened) {
+            listOf(
+                "[esc] back",
+                if (entries() != null) "[up,down] value" else "[up,down] scroll",
+                "[tab] field",
+                "[space] follow",
+            )
+        } else {
+            listOf(
+                "[esc] exit",
+                "[<-,->] type",
+                "[up,down] item",
+                "[tab] field",
+                "[enter] open",
+                "[space] follow",
+            )
+        }
+        var shown = said.first()
+        for (next in said.drop(1)) {
+            if (shown.length + BETWEEN.length + next.length > width) break
+            shown += BETWEEN + next
+        }
+        return shown
+    }
+
+    /** The list of items against the chosen one's fields. */
+    private fun listed(width: Int, rows: Int): List<Line> {
         val listWidth = (width / 3).coerceIn(LEAST_LIST_WIDTH, MOST_LIST_WIDTH)
         scrollTo(chosen[tab], rows)
-        val list = listed(rows, listWidth)
+        val list = ids(rows, listWidth)
         val detail = detailed(rows, width - listWidth - 1)
-        val lines = ArrayList<Line>(height)
-        lines.add(Line(fitted(listOf(Span(tabs())), width)))
-        lines.add(Line(listOf(Span("-".repeat(width)))))
-        for (row in 0..<rows) lines.add(Line(listOf(Span(list[row] + " ")) + detail[row]))
-        return lines
+        return List(rows) { row -> Line(listOf(Span(list[row] + " ")) + detail[row]) }
     }
 
     /**
@@ -243,21 +300,17 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * rather than cut, this being the one place that shows all of it.
      */
     private fun opened(width: Int, rows: Int): List<Line> {
-        val item = item ?: return emptyList()
-        val field = field ?: return emptyList()
-        val where = "${type.name} / ${set.idOf(item)} / ${field.name}"
+        val item = item
+        val field = field
+        if (item == null || field == null) return List(rows) { Line(fitted(emptyList(), width)) }
         val body = fieldLines(item, field, chosenEntry).flatMap { wrapped(it, width) }
         val at = body.indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
         showing(at, rows, body.size)
-        val lines = ArrayList<Line>(rows + 2)
-        lines.add(Line(fitted(listOf(Span(where)), width)))
-        lines.add(Line(listOf(Span("-".repeat(width)))))
-        for (row in 0..<rows) {
+        return List(rows) { row ->
             val spans = body.getOrNull(within + row)?.spans.orEmpty()
             val here = spans.firstOrNull()?.styles.orEmpty().intersect(setOf(Style.SELECTED))
-            lines.add(Line(fitted(spans, width, here)))
+            Line(fitted(spans, width, here))
         }
-        return lines
     }
 
     /**
@@ -294,7 +347,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         }
 
     /** The ids of the open type, the chosen one marked, as many as fit. */
-    private fun listed(rows: Int, width: Int): List<String> {
+    private fun ids(rows: Int, width: Int): List<String> {
         val ids = items.map { set.idOf(it) ?: "?" }
         return List(rows) { row ->
             val at = first[tab] + row
@@ -441,8 +494,14 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         /** Narrower than this and the list and the fields have nothing to stand in. */
         const val LEAST_WIDTH: Int = 20
 
-        /** The tab bar, its rule, and one row of list. */
-        const val LEAST_HEIGHT: Int = 3
+        /** The rows that are not body: where the reader is and a rule, a rule and the keys. */
+        private const val CHROME = 4
+
+        /** Where the reader is, a rule, one row of body, a rule, and what the keys do. */
+        const val LEAST_HEIGHT: Int = CHROME + 1
+
+        /** What stands between one key and the next in the bar. */
+        private const val BETWEEN = " | "
 
         /** What a line break is shown as, which is how a file writes one. */
         private const val ESCAPED = "\\n"
