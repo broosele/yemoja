@@ -41,6 +41,7 @@ COMMON = {'remarks'}
 OWNED = {
     'details': 'Details', 'environment': 'Environment', 'gear': 'Dive gear',
     'medical': 'Medical', 'insurance': 'Insurance', 'buoyancy': 'Buoyancy',
+    'tolerances': 'Tolerances',
 }
 # Fields holding several owned items, each under a key. Both are JSON objects, so
 # only this tells them apart: here the values are the entries, there the fields are.
