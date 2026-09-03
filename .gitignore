@@ -20,3 +20,6 @@ __pycache__/
 # Gradle build output
 .gradle/
 build/
+
+# Kotlin's own scratch space, beside the Gradle one
+.kotlin/
