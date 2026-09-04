@@ -70,8 +70,8 @@ class EveryTypeTest {
     fun `a type is named as its files are`() {
         assertEquals(
             listOf(
-                "dive", "dive_site", "dive_trip", "person", "gear", "certification",
-                "operator", "wreck", "region",
+                "dive", "dive_trip", "gear", "region", "dive_site", "wreck", "person",
+                "operator", "certification",
             ),
             Types.ALL.map { it.name },
         )

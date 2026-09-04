@@ -62,19 +62,20 @@ object Types {
     /**
      * Every type, which is what an item set is built with.
      *
-     * In the order an interface offers them, which is most used first: the dive, then what a
-     * dive is filed under, then the people and the kit, then what is looked up rather than
-     * kept. A front end takes this order as given. `UI-3`.
+     * In the order an interface offers them: the dive, then the trip it was made on and the
+     * gear it was made in; then where, from the largest thing to the smallest, a region holding
+     * sites and a site holding wrecks; then who, and what they award. A front end takes this
+     * order as given. `UI-3`.
      */
     val ALL: List<ItemDescription> = listOf(
         DIVE,
-        DIVE_SITE,
         DIVE_TRIP,
-        PERSON,
         GEAR,
-        CERTIFICATION,
-        OPERATOR,
-        WRECK,
         REGION,
+        DIVE_SITE,
+        WRECK,
+        PERSON,
+        OPERATOR,
+        CERTIFICATION,
     )
 }
