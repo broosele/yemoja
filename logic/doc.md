@@ -226,6 +226,106 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-13 — What a download's deco samples become.** *Settled:* **`NDL` fills
+   `no_deco_time` and `DECOSTOP` fills `decostop`. A safety stop and a deep stop are dropped.**
+
+   `DC_SAMPLE_DECO` carries a type, a time, a depth and a time to surface, and the type is one
+   of four: no-decompression limit, decompression stop, safety stop, deep stop. This model has
+   two series and neither is a home for the last two.
+
+   **`decostop` is a required stop**, which the manual is explicit about — a rounded depth,
+   three metres or six or nine — and neither of the others is required. Folding them in would
+   be the simplest mapping and wrong in the way that matters: `deco` derives true from any
+   `decostop` above zero, so every recreational dive that held an ordinary three-minute safety
+   stop would come back labelled a decompression dive. Dropping is the only choice under which
+   `deco` stays honest.
+
+   What is lost is that the diver stopped at all, which the depth profile still shows as a flat
+   stretch at five metres. A field of their own was the alternative and was refused for now: a
+   fifth series that no other format carries and UDDF cannot export, bought by widening the
+   model for something the profile already implies. `LOGIC-10` covers the dropping, and it can
+   be modelled later on its own merits.
+
+   `tts` is dropped with them. Time to surface is what the computer predicted rather than what
+   happened, and nothing here holds a prediction.
+
+   **The two series are sparse and interleaved, not parallel.** A sample is one of the four at
+   a time, so `no_deco_time` says nothing during a stop and `decostop` says nothing before one.
+   That is what a series already is — values against time, with gaps meaning no sample rather
+   than no value — so it needs no accommodating.
+- **LOGIC-12 — What a download's gas mixes and tanks become.** *Settled:* **one gas source per
+   tank, plus a gas source for any mix that was breathed without one. A mix that was neither is
+   dropped.**
+
+   A download gives two arrays. `DC_FIELD_GASMIX` holds fractions; `DC_FIELD_TANK` holds a
+   cylinder's pressures and volume and an index into the first. This model holds one keyed
+   collection where a gas and the cylinder it came out of sit together, so two become one.
+
+   A tank is a gas source, taking its fractions from the mix it names. Two tanks on one mix stay
+   two, which is what a diver who logged twins or a pair of stages gets back.
+
+   **A mix with no tank counts only if it was used**, and a switch naming it is what says so.
+   Most recreational computers report no tanks at all, so without this the gas a diver actually
+   breathed would be dropped for want of a transmitter. Against that, a computer commonly holds
+   gases programmed and never breathed — a plan rather than a record — and those are dropped
+   under `LOGIC-10`.
+
+   **What counts as used at the start of a dive is an assumption**, not something the header
+   settles: a dive on one gas that never switches names nothing, and reading *used* strictly
+   would give it no gas source at all. So the mix in effect before any switch counts as used,
+   which for a dive that never switches is the one gas it was breathed on.
+
+   Two mappings follow and need no decision of their own. `DC_SAMPLE_PRESSURE` is indexed by
+   tank, so it lands on the gas source that tank became. `DC_SAMPLE_GASMIX` is indexed by mix,
+   so it lands on a gas source carrying that mix — **the first, where two tanks share one.**
+   That is imprecise and cannot be otherwise: a computer records which gas was switched to and
+   has no idea which cylinder the diver reached for.
+- **LOGIC-11 — Where a downloaded dive's `gmt_offset` comes from.** *Settled:* **asked once
+   for the download, and changeable per dive afterwards.**
+
+   A dive computer reports the moment its own clock said and nothing about which zone that
+   clock was in, so this is the one field a download cannot fill from what it was given. Every
+   date, every time and every surface interval rests on it.
+
+   The download asks, and offers the machine's own current offset as the answer. That guess is
+   right whenever the two were set together, which is the ordinary case, and the asking is what
+   makes it a stated assumption rather than a silent one. A user who leaves a computer on home
+   time in another country — the case the field exists for — corrects one number.
+
+   **Per dive costs nothing, because of how a review already works.** An import applies to the
+   live data without saving it and the user keeps or discards the result, see
+   [reconciliation.md](reconciliation.md), so a downloaded dive is an ordinary item in an
+   ordinary logbook before anything is written. `gmt_offset` is a plain recorded field on a
+   profile, so changing one during that review is editing a field, not a special path through
+   the importer. A download that crossed a zone, or a clock reset halfway through a trip, is
+   handled by the machinery already there.
+
+   **The offset is always written, even when it is zero.** Otherwise a download would leave the
+   field absent, and absent reads as zero — a dive whose zone nobody knows would be
+   indistinguishable from one taken on a computer set to GMT. Writing it says what was assumed.
+- **LOGIC-10 — What a download does with a value the model has no field for.** *Settled:*
+   **it is dropped, and the download says what it dropped.**
+
+   A dive computer offers more than this model keeps: average depth, dive mode, ppO2, a
+   rebreather setpoint, remaining bottom time, heart rate, a compass bearing, and whatever a
+   maker puts in its own strings. None of those has a field, and inventing one for each in
+   order to lose nothing would be letting the devices decide what a dive is.
+
+   **Keeping them unrecognised was the tempting answer and is the wrong one.** The format
+   already keeps a field it does not know, so that a newer version's data survives a round
+   trip through an older one. That works because such a field came from Yemoja and will mean
+   something again. A vendor string never will, and a ppO2 series that no version of this
+   application reads is not waiting to be understood — it is being stored. Putting the two in
+   one place would say they are the same kind of thing.
+
+   Dropping is only honest if it is visible, which is why the second half is not decoration.
+   A download reports what it took and what it left, the way [reconciliation](reconciliation.md)
+   reports everything else, so a user who wanted a figure knows it was seen and refused rather
+   than never noticed.
+
+   Each of the eight can still be modelled later, on its own merits and as a feature. `divemode`
+   is the precedent: it was looked at for UDDF and deliberately left out. What this settles is
+   that they are not modelled by accident, in a bag, because the alternative was work.
 - **LOGIC-9 — Where *today* comes from.** *Settled:* **the local calendar date, from a
    `today()` this layer implements per platform.**
 
