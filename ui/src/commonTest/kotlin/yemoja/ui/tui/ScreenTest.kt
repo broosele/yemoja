@@ -187,9 +187,9 @@ class DetailTest {
         assertEquals(
             listOf(
                 "Name North Sea",
+                "Category sea",
                 "Parents",
                 "Children (empty)",
-                "Category sea",
                 "West",
                 "East",
                 "South",
@@ -718,8 +718,7 @@ class OpenFieldTest {
             Types.ALL,
         )
         toTab(screen, "gear")
-        repeat(7) { screen.press(Key.DOWN) }
-        assertEquals("capacity", screen.field?.name)
+        toField(screen, "capacity")
         screen.press(Key.OPEN)
         val said = opened(screen)
         assertTrue("measures volume" in said, said.toString())
@@ -1194,7 +1193,7 @@ class ActionsTest {
         // whether or not this region has any written.
         screen.press(Key.CLOSE)
         toTab(screen, "region")
-        screen.press(Key.DOWN)
+        toField(screen, "parents")
         screen.press(Key.OPEN)
         assertTrue("[^,v] value" in bar(screen), bar(screen))
     }

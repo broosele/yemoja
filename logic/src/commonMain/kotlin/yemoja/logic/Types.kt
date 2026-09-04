@@ -61,39 +61,6 @@ object Types {
             TextDescription("name", role = Role.Derived(::divesId)),
             // The user's own numbering, which nothing renumbers. Not every diver keeps one.
             WholeNumberDescription("dive_number"),
-            ReferenceDescription("dive_site", targetType = "dive_site"),
-            // How the water was got into and out of. Two fields because they differ: a drift
-            // dive goes in off a boat and comes out on a beach. Neither is assumed from the
-            // other, which would hide exactly that case.
-            TextDescription("entry", suggestedSet = ENTRIES_AND_EXITS),
-            TextDescription("exit", suggestedSet = ENTRIES_AND_EXITS),
-            // The dive still being carried gas from when this one began.
-            ReferenceDescription("previous_dive", targetType = "dive"),
-            // From `previous_dive`'s end to this dive's start. Written by hand for a dive whose
-            // predecessor is not in this logbook, which an import often knows without knowing
-            // the dive.
-            NumberDescription(
-                "surface_interval",
-                Dimension.TIME,
-                role = Role.Overrideable(::surfaceInterval),
-            ),
-            ReferenceDescription(
-                "buddies",
-                targetType = "person",
-                cardinality = Cardinality.LIST,
-                oneOffAllowed = true,
-            ),
-            // Corrected where the names are fewer than the people: a diver remembers how many
-            // were there without remembering all of them.
-            WholeNumberDescription("buddy_count", role = Role.Overrideable(::buddyCount)),
-            WholeNumberDescription("rating", range = 1..10),
-            OwnedItemDescription("details", DETAILS),
-            OwnedItemDescription("environment", ENVIRONMENT),
-            OwnedItemDescription("gear", DIVE_GEAR),
-            OwnedItemDescription("profiles", PROFILE, cardinality = Cardinality.KEYED),
-            // Which of them to work from. Leaving it out where there is one is the ordinary case.
-            KeyReferenceDescription("primary_profile", collection = "profiles"),
-            OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
             // All five from the primary profile, in GMT, and all five correctable: the computer
             // was there and the user was busy, but a recording can still be wrong.
             DateDescription("start_date", role = Role.Overrideable(::divesStartDate)),
@@ -118,6 +85,40 @@ object Types {
                 role = Role.Overrideable(::divesAverageDepth),
             ),
             BooleanDescription("deco", role = Role.Overrideable(::divesDeco)),
+            ReferenceDescription("dive_site", targetType = "dive_site"),
+            // How the water was got into and out of. Two fields because they differ: a drift
+            // dive goes in off a boat and comes out on a beach. Neither is assumed from the
+            // other, which would hide exactly that case.
+            TextDescription("entry", suggestedSet = ENTRIES_AND_EXITS),
+            TextDescription("exit", suggestedSet = ENTRIES_AND_EXITS),
+            ReferenceDescription(
+                "buddies",
+                targetType = "person",
+                cardinality = Cardinality.LIST,
+                oneOffAllowed = true,
+            ),
+            // Corrected where `buddies` names fewer than were there: a diver remembers how many
+            // came without remembering all of them.
+            WholeNumberDescription("buddy_count", role = Role.Overrideable(::buddyCount)),
+            WholeNumberDescription("rating", range = 1..10),
+            // The dive still being carried gas from when this one began.
+            ReferenceDescription("previous_dive", targetType = "dive"),
+            // From `previous_dive`'s end to this dive's start. Written by hand for a dive whose
+            // predecessor is not in this logbook, which an import often knows without knowing
+            // the dive.
+            NumberDescription(
+                "surface_interval",
+                Dimension.TIME,
+                role = Role.Overrideable(::surfaceInterval),
+            ),
+            // Which of `profiles` to work from. Leaving it out where there is one is the
+            // ordinary case.
+            KeyReferenceDescription("primary_profile", collection = "profiles"),
+            OwnedItemDescription("details", DETAILS),
+            OwnedItemDescription("environment", ENVIRONMENT),
+            OwnedItemDescription("gear", DIVE_GEAR),
+            OwnedItemDescription("profiles", PROFILE, cardinality = Cardinality.KEYED),
+            OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
             REMARKS,
         ),
     )
@@ -138,9 +139,9 @@ object Types {
             TextDescription("middle_names"),
             TextDescription("last_name"),
             DateDescription("birthday"),
-            TextDescription("address"),
             TextDescription("email"),
             TextDescription("phone"),
+            TextDescription("address"),
             // Their own number as an instructor. Text: letters and leading zeros are ordinary
             // and nothing is added up.
             TextDescription("instructor_number"),
@@ -168,6 +169,7 @@ object Types {
         "region",
         listOf(
             TextDescription("name"),
+            TextDescription("category", suggestedSet = REGION_CATEGORIES),
             // More than one, since a region often sits inside several at once.
             ReferenceDescription("parents", targetType = "region", cardinality = Cardinality.LIST),
             // The other side of `parents`, gathered from every region there is, the supplied
@@ -178,7 +180,6 @@ object Types {
                 cardinality = Cardinality.LIST,
                 role = Role.Derived(::regionsChildren),
             ),
-            TextDescription("category", suggestedSet = REGION_CATEGORIES),
             // The four edges of a box holding the region, for placing it on a map. `east` is the
             // edge reached travelling east from `west`, which is what makes the date line
             // unremarkable: the Pacific runs from 120 to -70. Latitude does not wrap.
@@ -202,6 +203,9 @@ object Types {
             TextDescription("brand"),
             TextDescription("model"),
             TextDescription("serial"),
+            // Whether this describes a kind of item rather than one the user owns. Absent is
+            // false: your own gear is your own.
+            BooleanDescription("generic"),
             TextDescription("category", suggestedSet = GEAR_CATEGORIES),
             // What the item is, more finely than its category: a wing within BCD, gloves within
             // suit. No vocabulary is suggested, because the manual gives examples rather than a
@@ -215,9 +219,6 @@ object Types {
             // pressure and divides by this to show a depth, so the maker's figure is baked
             // into every depth it wrote.
             NumberDescription("salt_density", Dimension.DENSITY),
-            // Whether this describes a kind of item rather than one the user owns. Absent is
-            // false: your own gear is your own.
-            BooleanDescription("generic"),
             OwnedItemDescription("buoyancy", BUOYANCY),
             OwnedItemDescription("maintenances", MAINTENANCE, cardinality = Cardinality.KEYED),
             REMARKS,
@@ -235,19 +236,19 @@ object Types {
             TextDescription("name"),
             TextDescription("alternative_names", cardinality = Cardinality.LIST),
             ReferenceDescription("regions", targetType = "region", cardinality = Cardinality.LIST),
-            NumberDescription("longitude", Dimension.ANGLE, range = LONGITUDE),
-            NumberDescription("latitude", Dimension.ANGLE, range = LATITUDE),
-            // The height of the water above sea level, which changes how a dive is worked out.
-            NumberDescription("elevation", Dimension.LENGTH),
+            TextDescription("environment_type", fixedSet = ENVIRONMENT_TYPES),
             TextDescription("water_type", fixedSet = WATER_TYPES),
             // The site's own depth, not how deep anybody went.
             NumberDescription("max_depth", Dimension.LENGTH),
             WholeNumberDescription("rating", range = 1..10),
-            TextDescription("environment_type", fixedSet = ENVIRONMENT_TYPES),
-            ReferenceDescription("wrecks", targetType = "wreck", cardinality = Cardinality.LIST),
             // A description rather than a classification, so no list to choose from.
             TextDescription("substrate"),
+            ReferenceDescription("wrecks", targetType = "wreck", cardinality = Cardinality.LIST),
             TextDescription("facilities", cardinality = Cardinality.LIST),
+            // The height of the water above sea level, which changes how a dive is worked out.
+            NumberDescription("elevation", Dimension.LENGTH),
+            NumberDescription("longitude", Dimension.ANGLE, range = LONGITUDE),
+            NumberDescription("latitude", Dimension.ANGLE, range = LATITUDE),
             REMARKS,
         ),
     )
@@ -288,13 +289,13 @@ object Types {
             TextDescription("abbreviation"),
             // Who awards it, written as a plain name rather than as an item.
             TextDescription("organisation"),
+            TextDescription("category", suggestedSet = CERTIFICATION_CATEGORIES),
             NumberDescription("max_depth", Dimension.LENGTH),
             ReferenceDescription(
                 "supersedes",
                 targetType = "certification",
                 cardinality = Cardinality.LIST,
             ),
-            TextDescription("category", suggestedSet = CERTIFICATION_CATEGORIES),
             REMARKS,
         ),
     )
@@ -331,6 +332,12 @@ object Types {
         "dive_trip",
         listOf(
             TextDescription("name"),
+            // From the dives on it, and corrected where the trip was longer than the diving:
+            // a travelling day at either end, or a trip set up before anything was logged.
+            DateDescription("start_date", role = Role.Overrideable(::tripsStartDate)),
+            DateDescription("end_date", role = Role.Overrideable(::tripsEndDate)),
+            ReferenceDescription("region", targetType = "region"),
+            ReferenceDescription("operator", targetType = "operator"),
             // The larger trip this one is part of, where there is one.
             ReferenceDescription("parent", targetType = "dive_trip"),
             // The other side of `parent`. A leg names the trip; the trip does not name its legs.
@@ -340,8 +347,6 @@ object Types {
                 cardinality = Cardinality.LIST,
                 role = Role.Derived(::tripsParts),
             ),
-            ReferenceDescription("region", targetType = "region"),
-            ReferenceDescription("operator", targetType = "operator"),
             // Every dive naming this trip, and every dive of a trip beneath it. Never written:
             // each dive says which trip it belongs to, so the two cannot disagree.
             ReferenceDescription(
@@ -350,10 +355,6 @@ object Types {
                 cardinality = Cardinality.LIST,
                 role = Role.Derived(::tripsDives),
             ),
-            // From the dives on it, and corrected where the trip was longer than the diving:
-            // a travelling day at either end, or a trip set up before anything was logged.
-            DateDescription("start_date", role = Role.Overrideable(::tripsStartDate)),
-            DateDescription("end_date", role = Role.Overrideable(::tripsEndDate)),
             REMARKS,
         ),
     )
@@ -463,9 +464,9 @@ private val MAINTENANCE_TYPES =
 private val DETAILS = ItemDescription(
     "details",
     listOf(
-        TextDescription("tags", cardinality = Cardinality.LIST),
         ReferenceDescription("dive_trip", targetType = "dive_trip"),
         ReferenceDescription("operator", targetType = "operator"),
+        TextDescription("tags", cardinality = Cardinality.LIST),
         REMARKS,
     ),
 )
@@ -479,10 +480,10 @@ private val ENVIRONMENT = ItemDescription(
         // One figure rather than a range, which is what a diver remembers.
         NumberDescription("visibility", Dimension.LENGTH),
         NumberDescription("air_temperature", Dimension.TEMPERATURE),
-        NumberDescription("bottom_temperature", Dimension.TEMPERATURE),
         // The water at the surface, which is not the air above it. A computer reporting a
         // surface temperature is nearly always reporting water.
         NumberDescription("surface_temperature", Dimension.TEMPERATURE),
+        NumberDescription("bottom_temperature", Dimension.TEMPERATURE),
         // From where the dive was, and absolute: about a bar at sea level.
         NumberDescription("atmospheric_pressure", Dimension.PRESSURE),
         REMARKS,
@@ -536,47 +537,26 @@ private val PROFILE = ItemDescription(
         TimeDescription("start_time"),
         // A length of time like any other, and scoped like one. `DATA-10`.
         NumberDescription("gmt_offset", Dimension.TIME, label = "GMT offset"),
-        NumberDescription("depth", Dimension.LENGTH, cardinality = Cardinality.SERIES),
+        // From the last sample, and correctable where the recording stopped before the user
+        // surfaced.
+        DateDescription("end_date", role = Role.Overrideable(::profilesEndDate)),
+        TimeDescription("end_time", role = Role.Overrideable(::profilesEndTime)),
         NumberDescription(
-            "temperature",
-            Dimension.TEMPERATURE,
-            cardinality = Cardinality.SERIES,
-        ),
-        // Gauge pressure left in each cylinder: one series per gas source.
-        NumberDescription(
-            "pressures",
-            Dimension.PRESSURE,
-            cardinality = Cardinality.KEYED_SERIES,
-        ),
-        TextDescription("alarms", fixedSet = ALARMS, cardinality = Cardinality.SERIES),
-        // Each naming the gas source moved to.
-        KeyReferenceDescription(
-            "gas_switches",
-            collection = "gas_sources",
-            cardinality = Cardinality.SERIES,
-        ),
-        // A rounded depth rather than a continuous ceiling: three metres, six, nine.
-        NumberDescription("decostop", Dimension.LENGTH, cardinality = Cardinality.SERIES),
-        NumberDescription("no_deco_time", Dimension.TIME, cardinality = Cardinality.SERIES),
-        NumberDescription("no_flight_time", Dimension.TIME),
-        NumberDescription("desaturation_time", Dimension.TIME),
-        // Recognised as a percentage, which is how everyone quotes it.
-        NumberDescription(
-            "cns",
-            Dimension.DIMENSIONLESS,
-            label = "CNS",
-            cardinality = Cardinality.SERIES,
-        ),
-        NumberDescription(
-            "otu",
-            Dimension.DIMENSIONLESS,
-            label = "OTU",
-            cardinality = Cardinality.SERIES,
+            "duration",
+            Dimension.TIME,
+            role = Role.Overrideable(::profilesDuration),
         ),
         // What the computer was set to while it recorded, which is not what the site is.
         TextDescription("water_type", fixedSet = WATER_TYPES),
-        // What the figures above were computed with. Suggested rather than fixed: a maker may
-        // run something none of the four names, and nothing exports this to a closed list.
+        // What the recorded depths were made with, which is what reading them back needs.
+        NumberDescription(
+            "density",
+            Dimension.DENSITY,
+            role = Role.Overrideable(::profilesDensity),
+        ),
+        // What `decostop` and `no_deco_time` were computed with. Suggested rather than fixed: a
+        // maker may run something none of the four names, and nothing exports this to a closed
+        // list.
         TextDescription("deco_model", suggestedSet = DECO_MODELS),
         // A proportion, so from 0 to 1: a computer set to 30/70 records 0.3 and 0.7.
         NumberDescription(
@@ -592,22 +572,44 @@ private val PROFILE = ItemDescription(
         // A dial position, whose meaning is the device's own. No range, since each make
         // numbers its own scale.
         WholeNumberDescription("conservatism"),
-        // From the last sample, and correctable where the recording stopped before the user
-        // surfaced.
-        DateDescription("end_date", role = Role.Overrideable(::profilesEndDate)),
-        TimeDescription("end_time", role = Role.Overrideable(::profilesEndTime)),
-        NumberDescription(
-            "duration",
-            Dimension.TIME,
-            role = Role.Overrideable(::profilesDuration),
-        ),
-        // What the recorded depths were made with, which is what reading them back needs.
-        NumberDescription(
-            "density",
-            Dimension.DENSITY,
-            role = Role.Overrideable(::profilesDensity),
-        ),
+        NumberDescription("no_flight_time", Dimension.TIME),
+        NumberDescription("desaturation_time", Dimension.TIME),
         OwnedItemDescription("tolerances", TOLERANCES),
+        NumberDescription("depth", Dimension.LENGTH, cardinality = Cardinality.SERIES),
+        NumberDescription(
+            "temperature",
+            Dimension.TEMPERATURE,
+            cardinality = Cardinality.SERIES,
+        ),
+        // A rounded depth rather than a continuous ceiling: three metres, six, nine.
+        NumberDescription("decostop", Dimension.LENGTH, cardinality = Cardinality.SERIES),
+        NumberDescription("no_deco_time", Dimension.TIME, cardinality = Cardinality.SERIES),
+        // Recognised as a percentage, which is how everyone quotes it.
+        NumberDescription(
+            "cns",
+            Dimension.DIMENSIONLESS,
+            label = "CNS",
+            cardinality = Cardinality.SERIES,
+        ),
+        NumberDescription(
+            "otu",
+            Dimension.DIMENSIONLESS,
+            label = "OTU",
+            cardinality = Cardinality.SERIES,
+        ),
+        TextDescription("alarms", fixedSet = ALARMS, cardinality = Cardinality.SERIES),
+        // Each naming the gas source moved to.
+        KeyReferenceDescription(
+            "gas_switches",
+            collection = "gas_sources",
+            cardinality = Cardinality.SERIES,
+        ),
+        // Gauge pressure left in each cylinder: one series per gas source.
+        NumberDescription(
+            "pressures",
+            Dimension.PRESSURE,
+            cardinality = Cardinality.KEYED_SERIES,
+        ),
         REMARKS,
     ),
 )
@@ -620,13 +622,13 @@ private val PROFILE = ItemDescription(
 private val GAS_SOURCE = ItemDescription(
     "gas_source",
     listOf(
-        // Left out where what was breathed from is nobody's item.
-        ReferenceDescription("cylinder", targetType = "gear"),
+        GasDescription("gas_type"),
         NumberDescription("start_pressure", Dimension.PRESSURE),
         NumberDescription("end_pressure", Dimension.PRESSURE),
-        GasDescription("gas_type"),
         TextDescription("usage", suggestedSet = GAS_USAGES),
         TextDescription("configuration", suggestedSet = GAS_CONFIGURATIONS),
+        // Left out where what was breathed from is nobody's item.
+        ReferenceDescription("cylinder", targetType = "gear"),
         // From the cylinder's own `capacity`, and written by hand where no cylinder is named
         // or the one dived was not the one recorded.
         NumberDescription(
@@ -681,9 +683,9 @@ private val COURSE = ItemDescription(
         ReferenceDescription("certification", targetType = "certification"),
         // The number on the card, which names this award rather than the qualification.
         TextDescription("number"),
+        DateDescription("date"),
         // Whose own number is on them rather than here: a course points at the person.
         ReferenceDescription("instructor", targetType = "person"),
-        DateDescription("date"),
         ReferenceDescription("dives", targetType = "dive", cardinality = Cardinality.LIST),
         REMARKS,
     ),
@@ -718,11 +720,11 @@ private val MAINTENANCE = ItemDescription(
         // A date, always. Where an interval is counted in dives rather than months, the user
         // works out roughly when that falls and writes it.
         DateDescription("valid_until"),
-        TextDescription("follow_up_type", suggestedSet = MAINTENANCE_TYPES),
-        ReferenceDescription("operator", targetType = "operator"),
         // Against `valid_until` rather than `end_date`, and otherwise [INSURANCE]'s question.
         WholeNumberDescription("days_left", role = Role.Derived(::maintenancesDaysLeft)),
         BooleanDescription("expired", role = Role.Derived(::maintenancesExpired)),
+        TextDescription("follow_up_type", suggestedSet = MAINTENANCE_TYPES),
+        ReferenceDescription("operator", targetType = "operator"),
         REMARKS,
     ),
 )

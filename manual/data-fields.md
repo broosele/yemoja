@@ -131,47 +131,6 @@ All five can be corrected where the working out is wrong.
 - `dive_number` (whole number) — your own numbering, if you keep one. Not every diver
   numbers every dive, and Yemoja does not require it. This is unrelated to the number at
   the end of the item's id.
-- `dive_site` (reference) — where the dive was.
-
-- `entry`, `exit` (text) — how you got in, and how you got out. Anything you like; the
-  usual ones are `shore`, `pier`, `boat`, `hard boat`, `rib`, `liveaboard`, `platform`
-  and `pool`.
-
-  Two fields rather than one because they differ more often than you would think: a drift
-  dive goes in off a boat and comes out on a beach, and a shore dive in a swell sometimes
-  comes out up a ladder. Where they are the same, write the same word twice — Yemoja does
-  not assume one from the other, because assuming would make the interesting case invisible.
-
-  This is a property of the *dive*, not of the site. The same quarry is a shore dive one
-  day and a boat dive the next.
-
-- `previous_dive` (reference) — the dive you were still carrying gas from when you went
-  back in. Leave it out for a dive you started clean, which is most of them. Yemoja does
-  not work this out from the clock: whether a surface interval was long enough to ignore
-  is a judgement, and any threshold that decided it for you would be wrong for somebody.
-  It must name a dive that started earlier than this one.
-- `surface_interval` (number, worked out) — how long you were out of the water before this
-  dive, from `previous_dive`'s end time to this dive's start. Nothing is worked out when
-  `previous_dive` is unset. Write it yourself for a dive whose predecessor is not in this
-  logbook — an imported dive often knows the interval without knowing the dive.
-- `buddies` (list of references or text) — who you dived with. Plain names are allowed
-  for people you have no item for.
-- `buddy_count` (whole number, worked out) — from the list. Correct it when you remember how
-  many people were there but not all their names.
-- `rating` (whole number) — what you made of it, from 1 to 10.
-- `details` (owned item) — tags, and which trip and operator the dive belonged to.
-  Described under *Details* below.
-- `environment` (owned item) — the conditions you found.
-- `gear` (owned item) — what you took, and how it worked out. Described under *Dive gear*
-  below.
-- `profiles` (keyed owned items) — the depth records through the dive, one of them the
-  primary.
-- `primary_profile` (key reference) — which of them to work from: `"*p1"`. Leave it out
-  when there is only one profile, since there is nothing to choose between. With several
-  and none named, Yemoja cannot tell which to believe, and everything worked out from a
-  profile — the times, the depths, the temperatures — is reported as something it cannot
-  work out rather than guessed at.
-- `gas_sources` (keyed owned items) — what you breathed from.
 - `start_date` (date, worked out) — the day the dive began, in GMT. From the primary profile,
   corrected by its `gmt_offset`, or from you.
 - `start_time` (time, worked out) — when you went in, in GMT.
@@ -200,6 +159,47 @@ All five can be corrected where the working out is wrong.
   application cannot reproduce, and a second opinion arrived at years later would be
   answering a different question.
 
+- `dive_site` (reference) — where the dive was.
+
+- `entry`, `exit` (text) — how you got in, and how you got out. Anything you like; the
+  usual ones are `shore`, `pier`, `boat`, `hard boat`, `rib`, `liveaboard`, `platform`
+  and `pool`.
+
+  Two fields rather than one because they differ more often than you would think: a drift
+  dive goes in off a boat and comes out on a beach, and a shore dive in a swell sometimes
+  comes out up a ladder. Where they are the same, write the same word twice — Yemoja does
+  not assume one from the other, because assuming would make the interesting case invisible.
+
+  This is a property of the *dive*, not of the site. The same quarry is a shore dive one
+  day and a boat dive the next.
+
+- `buddies` (list of references or text) — who you dived with. Plain names are allowed
+  for people you have no item for.
+- `buddy_count` (whole number, worked out) — from the list. Correct it when you remember how
+  many people were there but not all their names.
+- `rating` (whole number) — what you made of it, from 1 to 10.
+- `previous_dive` (reference) — the dive you were still carrying gas from when you went
+  back in. Leave it out for a dive you started clean, which is most of them. Yemoja does
+  not work this out from the clock: whether a surface interval was long enough to ignore
+  is a judgement, and any threshold that decided it for you would be wrong for somebody.
+  It must name a dive that started earlier than this one.
+- `surface_interval` (number, worked out) — how long you were out of the water before this
+  dive, from `previous_dive`'s end time to this dive's start. Nothing is worked out when
+  `previous_dive` is unset. Write it yourself for a dive whose predecessor is not in this
+  logbook — an imported dive often knows the interval without knowing the dive.
+- `primary_profile` (key reference) — which of them to work from: `"*p1"`. Leave it out
+  when there is only one profile, since there is nothing to choose between. With several
+  and none named, Yemoja cannot tell which to believe, and everything worked out from a
+  profile — the times, the depths, the temperatures — is reported as something it cannot
+  work out rather than guessed at.
+- `details` (owned item) — tags, and which trip and operator the dive belonged to.
+  Described under *Details* below.
+- `environment` (owned item) — the conditions you found.
+- `gear` (owned item) — what you took, and how it worked out. Described under *Dive gear*
+  below.
+- `profiles` (keyed owned items) — the depth records through the dive, one of them the
+  primary.
+- `gas_sources` (keyed owned items) — what you breathed from.
 - `remarks` (multiline text) — how the dive went. The seal that flooded, the shoal
   that came past, why you turned round early.
 
@@ -207,11 +207,11 @@ All five can be corrected where the working out is wrong.
 
 One per dive.
 
-- `tags` (list of text) — your own labels. Anything you like; `solo` and `wreck` are
-  examples.
 - `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
   the leg: a trip's list of dives gathers its own and those of everything beneath it.
 - `operator` (reference) — who you dived with.
+- `tags` (list of text) — your own labels. Anything you like; `solo` and `wreck` are
+  examples.
 - `remarks` (multiline text) — anything about how the dive was arranged that the
   tags and the trip do not carry.
 
@@ -229,13 +229,13 @@ One per dive. What the conditions were.
   a middle.
 - `air_temperature` (number) — what it was like on the surface. Nothing works it out for
   you; write it if you want it.
-- `bottom_temperature` (number) — the coldest water you were in, from the primary
-  profile. Correct it where there is no profile, or where it did not measure
-  temperature.
 - `surface_temperature` (number) — the water at the surface, which is what you felt
   getting in. Not the air: a computer that reports a *surface* temperature is nearly
   always reporting water, which is why this is a field of its own rather than a second
   source for `air_temperature`.
+- `bottom_temperature` (number) — the coldest water you were in, from the primary
+  profile. Correct it where there is no profile, or where it did not measure
+  temperature.
 - `atmospheric_pressure` (number) — from where the dive was, and **absolute**: about 1 bar
   at sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge
   reads against; it is the pressure itself. Correct it when you know better; weather moves
@@ -307,31 +307,18 @@ that is the only record of it.
   The correction moves the date as well as the time where it has to: two minutes past
   midnight, with two hours coming off, is late the previous evening.
 
-- `depth` (series) — how deep, throughout.
-- `temperature` (series) — how cold, throughout. Often sampled far less often than
-  depth, which is why it is a series of its own rather than a column beside it.
-- `pressures` (keyed series) — gauge pressure left in each cylinder, throughout: one series
-  under each `gas_sources` key it measured, so a dive on twins with a stage has three,
-  and two computers watching one cylinder keep their readings apart.
-- `alarms` (series) — what the computer warned about, and when. Each is one of `ascent`,
-  `breath`, `deco`, `error`, `link`, `microbubbles`, `rbt`, `skincooling` or `surface`.
-- `gas_switches` (series) — when you changed gas, each naming the `gas_sources` entry you
-  moved to: `[[1260, "*g2"]]`.
-- `decostop` (series) — the stop it was holding you to, throughout. A stop is a rounded
-  depth rather than a continuous ceiling — three metres, six, nine — and a computer may
-  skip the shallowest depending on how it is set.
-- `no_deco_time` (series) — how much longer it said you could stay.
-- `no_flight_time` (number) — how long the computer said to wait before flying, at the
-  end of the dive.
-- `desaturation_time` (number) — how long it reckoned you would take to offgas.
-- `cns` (series) — the central nervous system oxygen clock the computer was keeping, as a
-  percentage. It runs past 100 on a long or deep dive, and the computer decides when to
-  say so.
-- `otu` (series) — oxygen tolerance units accumulated, which is a count and not a
-  percentage. A different measure of a different risk, on its own scale.
+- `end_date` (date, worked out) — the day the recording ended, from the last sample.
+- `end_time` (time, worked out) — the moment it ended.
+- `duration` (number, worked out) — how long it ran. Correct any of these where the recording
+  stopped before you surfaced.
 - `water_type` (fixed set) — what the computer was **set to** while it recorded: `salt`,
   `fresh` or `en13319`. Not what the water actually was — you can dive the sea with a
   computer set to fresh, and the depths it wrote down will say so.
+- `density` (number, worked out) — how heavy the water was taken to be, in kilograms per cubic
+  metre unless the file says otherwise. Fresh is 1000 and `en13319` is exactly 1020, both of
+  them fixed. Salt is whatever the computer was set to, so it comes from the `salt_density` of
+  the gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
+  figure on it. Write it in yourself if you know better.
 - `deco_model` (text) — which decompression model the computer was running: `buhlmann`,
   `vpm`, `rgbm` or `dciem`. Anything you like, since a maker may use something else.
 - `gradient_factor_low`, `gradient_factor_high` (number) — how conservative a Bühlmann
@@ -347,17 +334,30 @@ that is the only record of it.
   here — but a `decostop` read years later means little without knowing whether the computer
   was set to 30/70 or to 85/85.
 
-- `end_date` (date, worked out) — the day the recording ended, from the last sample.
-- `end_time` (time, worked out) — the moment it ended.
-- `duration` (number, worked out) — how long it ran. Correct any of these where the recording
-  stopped before you surfaced.
-- `density` (number, worked out) — how heavy the water was taken to be, in kilograms per cubic
-  metre unless the file says otherwise. Fresh is 1000 and `en13319` is exactly 1020, both of
-  them fixed. Salt is whatever the computer was set to, so it comes from the `salt_density` of
-  the gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
-  figure on it. Write it in yourself if you know better.
+- `no_flight_time` (number) — how long the computer said to wait before flying, at the
+  end of the dive.
+- `desaturation_time` (number) — how long it reckoned you would take to offgas.
 - `tolerances` (owned item) — how much detail was dropped when the recording was taken
   in, where that is known. Described below.
+- `depth` (series) — how deep, throughout.
+- `temperature` (series) — how cold, throughout. Often sampled far less often than
+  depth, which is why it is a series of its own rather than a column beside it.
+- `decostop` (series) — the stop it was holding you to, throughout. A stop is a rounded
+  depth rather than a continuous ceiling — three metres, six, nine — and a computer may
+  skip the shallowest depending on how it is set.
+- `no_deco_time` (series) — how much longer it said you could stay.
+- `cns` (series) — the central nervous system oxygen clock the computer was keeping, as a
+  percentage. It runs past 100 on a long or deep dive, and the computer decides when to
+  say so.
+- `otu` (series) — oxygen tolerance units accumulated, which is a count and not a
+  percentage. A different measure of a different risk, on its own scale.
+- `alarms` (series) — what the computer warned about, and when. Each is one of `ascent`,
+  `breath`, `deco`, `error`, `link`, `microbubbles`, `rbt`, `skincooling` or `surface`.
+- `gas_switches` (series) — when you changed gas, each naming the `gas_sources` entry you
+  moved to: `[[1260, "*g2"]]`.
+- `pressures` (keyed series) — gauge pressure left in each cylinder, throughout: one series
+  under each `gas_sources` key it measured, so a dive on twins with a stage has three,
+  and two computers watching one cylinder keep their readings apart.
 - `remarks` (multiline text) — anything about the recording itself: a computer you
   do not trust, a transmitter that dropped out.
 
@@ -401,8 +401,7 @@ discarded from what it reported.
 One entry for each cylinder you breathed from on the dive, so a dive on several gases
 keeps them apart.
 
-- `cylinder` (reference) — the gear item it was, where it is one you own. Leave it out
-  for a rented or borrowed cylinder you have no item for.
+- `gas_type` (gas) — what was in it: `AIR`, `EAN32`, `TMX18/35`.
 - `start_pressure` (number) — what the gauge read as you went in.
 
 - `end_pressure` (number) — what it read as you came out.
@@ -411,11 +410,12 @@ keeps them apart.
   cylinder at the surface. That is what you read and what you write, and Yemoja adds the
   atmosphere itself wherever a calculation needs the absolute figure.
 
-- `gas_type` (gas) — what was in it: `AIR`, `EAN32`, `TMX18/35`.
 - `usage` (text) — what it was for. Anything you like; the usual ones are `bottom`,
   `stage`, `deco` and `travel`.
 - `configuration` (text) — how it was carried. Anything you like; the usual ones are
   `back mounted`, `sidemount`, `pony` and `staged`.
+- `cylinder` (reference) — the gear item it was, where it is one you own. Leave it out
+  for a rented or borrowed cylinder you have no item for.
 
 - `volume` (number, worked out) — how much the cylinder holds, taken from the `capacity` of the
   gear item named in `cylinder`. Write it yourself where no cylinder is named, or where the one
@@ -441,9 +441,9 @@ emergency contacts, and yourself. They need not be divers.
 - `middle_names` (text) — all of them together, if there are several.
 - `last_name` (text)
 - `birthday` (date)
-- `address` (text)
 - `email` (text)
 - `phone` (text)
+- `address` (text)
 - `instructor_number` (text) — their number as an instructor, where they are one. Text
   rather than a number: it may carry letters and leading zeros, and nothing is ever added
   up. Someone who instructs for two agencies has two, so record the one that matters to you
@@ -495,9 +495,9 @@ A list on a person, one entry for each qualification earned.
 - `certification` (reference) — which qualification it was.
 - `number` (text) — the number on the card, which identifies this award rather than the
   qualification. Text, for the same reason as `instructor_number`.
+- `date` (date) — when it was granted.
 - `instructor` (reference) — who taught it. Their own number is on them, not here: a course
   points at the person and the person carries it.
-- `date` (date) — when it was granted.
 - `dives` (list of references) — the dives that formed part of it.
 - `remarks` (multiline text) — how it went, and what it covered.
 
@@ -508,14 +508,14 @@ Yemoja, so you normally only record one it does not already know.
 
 - `name` (text) — what the region is called. The item's id is worked out from
   it.
+- `category` (text) — what sort of region it is. Anything you like; `continent`,
+  `ocean`, `country` and `sea` are the usual ones.
 - `parents` (list of references) — the larger regions this one belongs to. There can be
   more than one, since a region often sits inside several at once.
 - `children` (list of references, worked out) — the regions that name this one as a parent. You
   never write this: it follows from the `parents` of every other region, including the ones
   supplied with Yemoja. Adding a country to your own logbook makes it appear among the children
   of its continent, without that continent being touched.
-- `category` (text) — what sort of region it is. Anything you like; `continent`,
-  `ocean`, `country` and `sea` are the usual ones.
 
 - `west`, `east`, `south`, `north` (number) — the four edges of a box containing the
   region, used to place it on a map. All four are in degrees: `west` and `east` are
@@ -538,9 +538,13 @@ A place you dive.
   called one thing locally and another on the chart.
 - `regions` (list of references) — the regions the site lies in. There can be more than
   one.
-- `longitude`, `latitude` (number) — where it is, in degrees.
-- `elevation` (number) — the height of the water above sea level. It matters for more
-  than the map: diving at altitude changes how a dive is worked out.
+- `environment_type` (fixed set) — what kind of place it is: `ocean`, `sea`, `lake`,
+  `quarry`, `river`, `spring`, `cave`, `cavern`, `pool`, `under ice` or
+  `hyperbaric chamber`, and nothing else. A closed list because it has to be written out
+  to other formats, which have closed lists of their own; anything outside it could not be
+  exported. This says what the site *is*, not how dense the water is — that is
+  `water_type`, and the two do not follow from each other: a cave can be salt or fresh,
+  and a salt lake is neither an ocean nor fresh water.
 - `water_type` (fixed set) — `salt`, `fresh` or `en13319`, and nothing else. What the
   water at this site is actually like. It is not what your depths were computed with —
   that is the same field on a recording, which says what your computer was set to, and
@@ -551,22 +555,18 @@ A place you dive.
   went: a dive there may have turned round anywhere above it.
 - `rating` (whole number) — what you make of the site, from 1 to 10. Your view of the
   place itself, which is not the same as your view of a dive you did there.
-- `environment_type` (fixed set) — what kind of place it is: `ocean`, `sea`, `lake`,
-  `quarry`, `river`, `spring`, `cave`, `cavern`, `pool`, `under ice` or
-  `hyperbaric chamber`, and nothing else. A closed list because it has to be written out
-  to other formats, which have closed lists of their own; anything outside it could not be
-  exported. This says what the site *is*, not how dense the water is — that is
-  `water_type`, and the two do not follow from each other: a cave can be salt or fresh,
-  and a salt lake is neither an ocean nor fresh water.
-- `wrecks` (list of references) — the ships lying there, if any. A site may hold more
-  than one; a wreck may be reachable from more than one site.
 - `substrate` (text) — what the ground is made of, in whatever words suit: `sand`,
   `silt over rock`, `broken shale and weed`. No list to choose from; it is a description,
   not a classification, so write what you saw rather than looking for the nearest word.
   The word covers a quarry floor and a lake bed as readily as a seabed, and keeps clear of
   `bottom` on a gas source, which is the gas you breathed at depth.
+- `wrecks` (list of references) — the ships lying there, if any. A site may hold more
+  than one; a wreck may be reachable from more than one site.
 - `facilities` (list of text) — what is there: parking, air fills, toilets, a slipway,
   and so on.
+- `elevation` (number) — the height of the water above sea level. It matters for more
+  than the map: diving at altitude changes how a dive is worked out.
+- `longitude`, `latitude` (number) — where it is, in degrees.
 - `remarks` (multiline text) — how to dive the place: entries, hazards, where to
   park, what the tide does.
 
@@ -611,6 +611,8 @@ A piece of equipment. A dive computer is gear like anything else you own.
 - `brand` (text)
 - `model` (text)
 - `serial` (text) — the serial number, where it has one.
+- `generic` (true or false) — whether this describes a *kind* of item rather than one you
+  own. Leave it out and it is `false`: your own gear is your own. See below.
 - `category` (text) — the broad group it belongs to. Anything you like; the usual ones
   are `ABC`, `BCD`, `regulator`, `cylinder`, `suit`, `weights`, `instruments`,
   `lighting`, `photography` and `accessory`. `instruments` covers anything you read: a
@@ -635,8 +637,6 @@ A piece of equipment. A dive computer is gear like anything else you own.
   Leave it out and Yemoja uses 1030, which is the usual figure. Fresh water and `en13319` do
   not need it: those are 1000 and exactly 1020 whatever the computer is.
 
-- `generic` (true or false) — whether this describes a *kind* of item rather than one you
-  own. Leave it out and it is `false`: your own gear is your own. See below.
 - `buoyancy` (owned item) — what the item does in the water.
 - `maintenances` (keyed owned items) — what has been done to it and when, described
   under *Maintenance* below.
@@ -728,12 +728,12 @@ intact.
 - `valid_until` (date) — when the next one falls due. A date, always: where a service
   interval is counted in dives rather than months, work out roughly when that will fall
   and write it.
+- `days_left` (whole number, worked out) — how long until `valid_until`.
+- `expired` (true or false, worked out) — whether it has passed.
 - `follow_up_type` (text) — what falls due then, where it is not the same as `type`. A
   repair that resets the service clock says `service` here; a repair is something that
   happened, not something owed.
 - `operator` (reference) — who did the work.
-- `days_left` (whole number, worked out) — how long until `valid_until`.
-- `expired` (true or false, worked out) — whether it has passed.
 - `remarks` (multiline text) — what was found, which is often worth more than the
   fact that the work happened.
 
@@ -755,11 +755,11 @@ qualifications are recorded as courses on your person item.
 - `name` (text) — the item's id is worked out from it.
 - `abbreviation` (text) — the short form it is usually known by.
 - `organisation` (text) — who awards it, written as a plain name.
+- `category` (text) — what sort of qualification it is. Anything you like; the usual
+  ones are `progression`, `technical`, `specialisation` and `professional`.
 - `max_depth` (number) — the depth the qualification is granted for.
 - `supersedes` (list of references) — the qualifications this one replaces. An advanced
   qualification supersedes the one before it.
-- `category` (text) — what sort of qualification it is. Anything you like; the usual
-  ones are `progression`, `technical`, `specialisation` and `professional`.
 - `remarks` (multiline text) — what the qualification covers, and what it required.
 
 ### Operator
@@ -793,17 +793,17 @@ its `parent`. A dive always belongs to the trip it was actually on, which is the
 rather than the fortnight.
 
 - `name` (text) — the item's id is worked out from it.
-- `parent` (reference) — the larger trip this one is part of, where there is one.
-- `parts` (list of references, worked out) — the trips naming this one as their parent. This
-  follows from their `parent` in the same way.
-- `region` (reference) — where it went.
-- `operator` (reference) — who ran it.
-- `dives` (list of references, worked out) — the dives made on this trip, and on any trip
-  beneath it. You never list them here: each dive says which trip it belongs to, and this
-  follows from that, so the two can never disagree.
 - `start_date`, `end_date` (date, worked out) — when the trip ran, taken from the dives on it.
   Correct them where the trip was longer than the diving — a travelling day at either end — or
   where you have set it up before logging anything.
+- `region` (reference) — where it went.
+- `operator` (reference) — who ran it.
+- `parent` (reference) — the larger trip this one is part of, where there is one.
+- `parts` (list of references, worked out) — the trips naming this one as their parent. This
+  follows from their `parent` in the same way.
+- `dives` (list of references, worked out) — the dives made on this trip, and on any trip
+  beneath it. You never list them here: each dive says which trip it belongs to, and this
+  follows from that, so the two can never disagree.
 - `remarks` (multiline text) — how the trip went as a whole, which is not the same
   as how any one dive on it went.
 
