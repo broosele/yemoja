@@ -30,11 +30,16 @@ GUI's feature set. If the TUI needs to be pretty, that is what the GUI is for.
 `yemoja tui <logbook folder>`. A tab per item type, the ids of that type down the left, and
 the chosen item's fields on the right.
 
-**Both orders come from the descriptions.** The tabs are the types in the order the logic
-layer gives them, and the list under each is what that type's `orderedBy` asks for — dives
+**Both orders come from the descriptions.** The tabs are the types the item set was built
+with, in that order, and the list under each is what that type's `orderedBy` asks for — dives
 and trips newest first, everything else alphabetical. Nothing here names a type or a field to
 do it, so a type that changes its mind about its own order changes nothing in this front end.
 `DATA-89`.
+
+The screen is handed a logbook and nothing else. It once took the type list beside it, which
+was the same list twice by two routes and left a way for them to disagree: a screen given one
+list over a set built from another would draw a tab for a type the set could never hold, and
+nothing would object. Taking them from the set makes that unsayable.
 
 The list is worked out once per tab and kept until the set gains an item. A sort key can be
 worked out from a whole profile, so listing on every keystroke would walk the logbook to

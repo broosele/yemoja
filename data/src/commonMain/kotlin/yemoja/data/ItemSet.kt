@@ -31,7 +31,16 @@ package yemoja.data
 class ItemSet(descriptions: List<ItemDescription>) {
 
     // Copied. A List is read-only, not immutable.
-    /** The types this set may hold. They come from the logic layer, since a dive is its subject. */
+    /**
+     * The types this set may hold, in the order they were given.
+     *
+     * From the logic layer, since a dive is its subject. The order is kept because a front end
+     * offers the types in it, and taking that from here rather than beside it is what stops an
+     * interface showing a tab for a type the set could never hold. `UI-3`.
+     *
+     * **Nothing is refused by it yet.** [add] checks the id and not the type, so this says what
+     * the set was built for rather than what it enforces. `DATA-66`.
+     */
     val descriptions: List<ItemDescription> = descriptions.toList()
 
     private val byId = LinkedHashMap<String, ReferenceableItem>()

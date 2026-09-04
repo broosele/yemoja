@@ -93,10 +93,11 @@ ui/
 - **UI-3 — How much the TUI reuses.** *Settled:* **neither.** Which fields exist and what
    they are was already shared — both read the same description of the type, which the logic
    layer holds, see [../logic/doc.md](../logic/doc.md). The presentation half was the open
-   part, and the TUI takes none of it: a tab per type in the order the types are given, every
-   single-valued field in the order the type declares it, the items of a type in the order
-   that type asks for, and no grouping, ordering or labelling of its own. So the GUI's shared
-   description of fields and grouping (see [gui/doc.md](gui/doc.md)) stays the GUI's.
+   part, and the TUI takes none of it: a tab per type in the order the item set was built
+   with, every single-valued field in the order the type declares it, the items of a type in
+   the order that type asks for, and no grouping, ordering or labelling of its own. So the
+   GUI's shared description of fields and grouping (see [gui/doc.md](gui/doc.md)) stays the
+   GUI's.
 
    The item order came later and was made to obey this rather than to work around it: it is
    `orderedBy` on the type, applied by a front end that never learns what it names. `DATA-89`.

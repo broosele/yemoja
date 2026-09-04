@@ -31,11 +31,15 @@ enum class Key {
  * one.
  *
  * **The layout comes from the descriptions and nowhere else.** A tab per type in the order the
- * types are given, and every single-valued field of the chosen item, in the order the type
+ * set was built with, and every single-valued field of the chosen item, in the order the type
  * declares them. Nothing here names a type or a field, so a type added to the logic layer appears
  * without this changing.
  */
-class Screen(private val set: ItemSet, private val types: List<ItemDescription>) {
+class Screen(private val set: ItemSet) {
+
+    // The set's own, so a tab cannot name a type the set could never hold. The order is the
+    // logic layer's, which is what built the set. `UI-3`.
+    private val types: List<ItemDescription> = set.descriptions
 
     init {
         require(types.isNotEmpty()) { "a screen should have at least one type, and had none" }

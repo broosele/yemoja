@@ -33,7 +33,7 @@ private val THREE = logbook(
     "gear.json" to """{"faber_12": {"name": "Faber 12", "capacity": 12.0}}""",
 )
 
-private fun screen(set: ItemSet = THREE): Screen = Screen(set, Types.ALL)
+private fun screen(set: ItemSet = THREE): Screen = Screen(set)
 
 /** Move down until the field called [name] is chosen, at whatever depth it sits. */
 private fun toField(screen: Screen, name: String) {
@@ -128,7 +128,7 @@ class TabTest {
     fun `an item added while the screen is open is listed, in its place`() {
         // The list is worked out once and kept, sorting being too dear to redo per keystroke.
         val set = logbook("region.json" to """{"north_sea": {"name": "North Sea"}}""")
-        val screen = Screen(set, Types.ALL)
+        val screen = Screen(set)
         toTab(screen, "region")
         assertEquals(listOf("north_sea"), screen.items.map { set.idOf(it) })
         val named = mapOf("name" to Result.Usable("Irish Sea", Result.Origin.STORED))
@@ -436,7 +436,8 @@ class PaintingTest {
 
     @Test
     fun `a screen with no types at all is a fault`() {
-        assertFailsWith<IllegalArgumentException> { Screen(THREE, emptyList()) }
+        // A set built with no descriptions can hold nothing, so there is no tab to draw.
+        assertFailsWith<IllegalArgumentException> { Screen(ItemSet(emptyList())) }
     }
 }
 
@@ -483,7 +484,7 @@ private val POSTBOX = ItemDescription(
 private val INVENTED = listOf(POSTBOX, ROUND)
 
 private fun invented(vararg files: Pair<String, String>): Screen =
-    Screen(LogbookReader.read(MemoryFileStore(mapOf(*files)), INVENTED), INVENTED)
+    Screen(LogbookReader.read(MemoryFileStore(mapOf(*files)), INVENTED))
 
 /** The styles of one row of the detail column, by the text they are on. */
 private fun styling(screen: Screen, width: Int = 70): Map<String, Set<Style>> {
@@ -597,8 +598,7 @@ class FieldTest {
     @Test
     fun `a type with no shown fields has no chosen field`() {
         val empty = ItemDescription("empty", emptyList())
-        val screen = Screen(LogbookReader.read(MemoryFileStore(emptyMap()), listOf(empty)),
-            listOf(empty))
+        val screen = Screen(LogbookReader.read(MemoryFileStore(emptyMap()), listOf(empty)))
         assertNull(screen.field)
         screen.press(Key.DOWN)
         assertNull(screen.field)
@@ -759,7 +759,6 @@ class OpenFieldTest {
                 MemoryFileStore(mapOf("gear.json" to """{"g": {"capacity": 12.0}}""")),
                 Types.ALL,
             ),
-            Types.ALL,
         )
         toTab(screen, "gear")
         toField(screen, "capacity")
@@ -795,7 +794,6 @@ class OpenFieldTest {
                 MemoryFileStore(mapOf("region.json" to """{"r": {"north": 91.0}}""")),
                 Types.ALL,
             ),
-            Types.ALL,
         )
         toTab(screen, "region")
         toField(screen, "north")
@@ -860,7 +858,6 @@ class ListTest2 {
             MemoryFileStore(mapOf("walk.json" to """{"a": {"rounds": $rounds}}""")),
             TYPES,
         ),
-        TYPES,
     )
 
     /** The value column of the row the chosen field is on. */
@@ -957,7 +954,7 @@ class FollowListTest {
 
     private fun walk(rounds: String, vararg rest: Pair<String, String>): Screen {
         val files = mapOf("walk.json" to """{"a": {"rounds": $rounds}}""") + mapOf(*rest)
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
         screen.press(Key.DOWN)
         return screen
     }
@@ -1031,7 +1028,7 @@ class EntryCursorTest {
     /** A walk with these rounds, opened on the field that holds them. */
     private fun opened(rounds_: String): Screen {
         val files = mapOf("walk.json" to """{"a": {"rounds": $rounds_}}""") + mapOf(rounds)
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
         screen.press(Key.DOWN)
         screen.press(Key.OPEN)
         return screen
@@ -1105,7 +1102,7 @@ class EntryCursorTest {
     fun `a field holding one value has no cursor, and up and down scroll its rows`() {
         val long = "x".repeat(600)
         val files = mapOf("walk.json" to """{"a": {"name": "$long"}}""")
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
         screen.press(Key.OPEN)
         assertEquals(null, chosenEntry(screen, 12), "one value is not chosen between")
         val top = screen.paint(40, 12).map { it.text }
@@ -1153,7 +1150,7 @@ class OpenedUnderliningTest {
             "walk.json" to """{"a": $fields}""",
             "round.json" to """{"tuesday": {"name": "Tuesday"}}""",
         )
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES), TYPES)
+        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
         repeat(steps) { screen.press(Key.DOWN) }
         screen.press(Key.OPEN)
         return screen.paint(70, 20)
@@ -1274,7 +1271,6 @@ class PlainNameTest {
         val types = listOf(walk)
         val screen = Screen(
             LogbookReader.read(MemoryFileStore(mapOf("walk.json" to """{"a": {}}""")), types),
-            types,
         )
         screen.press(Key.OPEN)
         return screen.paint(90, 20).map { squeezed(it.text) }
@@ -1313,7 +1309,6 @@ class SeriesTest2 {
             MemoryFileStore(mapOf("dive.json" to """{"a": {"depth": $depth}}""")),
             TYPES,
         ),
-        TYPES,
     )
 
     private fun row(screen: Screen): String = body(screen, 90, 8)[1].spans[2].text.trimEnd()
@@ -1402,7 +1397,6 @@ class NestedTest {
                 MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
                 Types.ALL,
             ),
-            Types.ALL,
         )
         toTab(screen, "person")
         return screen
@@ -1509,7 +1503,6 @@ class PathTest {
                 MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
                 Types.ALL,
             ),
-            Types.ALL,
         )
         toTab(screen, "person")
         return screen
@@ -1630,7 +1623,6 @@ class PathTest {
                 ),
                 Types.ALL,
             ),
-            Types.ALL,
         )
         toTab(screen, "person")
         toField(screen, "courses")
@@ -1727,7 +1719,6 @@ class PathTest {
                 MemoryFileStore(mapOf("person.json" to """{"anna": {}}""")),
                 Types.ALL,
             ),
-            Types.ALL,
         )
         toTab(screen, "person")
         toField(screen, "medical")
