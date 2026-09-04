@@ -50,8 +50,46 @@ ui/
 
 - **UI-1 — Presentation logic ownership.** Formatting a depth, naming a gas mix, ordering
    a dive list — shared across front ends, but presentation. Where does it live?
-- **UI-2 — Units and language** are per-user settings that every front end needs. Which
-   layer owns them?
+- **UI-4 — Which language a front end shows.** Split out of `UI-2`, which bundled it with
+   units on the assumption that both were the same question. They are not, and the reason is
+   that **user-facing text is produced below this layer.** `north should be within
+   -90.0..90.0 deg, but was 91.0 deg` is a validation message from the data layer, and the
+   project's own code style requires such a message to say what was expected and what arrived
+   precisely because it reaches a user: reading a field splices it into the reason on an
+   unusable result. A field's `label` has the same problem one layer up, in the logic layer's
+   descriptions.
+
+   So translating is not a matter of a front end choosing words. Either the layers below learn
+   about languages, which neither should, or what they produce stops being text — a message
+   becomes a named fault with values, and a front end says it. That is a larger change than
+   picking an owner, and nothing waits on it: an English-only application is a working one.
+- **UI-2 — Which layer owns the units a user wants shown.** *Settled:* **the Universe holds
+  the setting, and a front end asks it.**
+
+  Two kinds of unit already exist and neither is this one. A file declares what *it* is
+  written in, which `DATA-8` settles and which the data layer reads because it is a fact about
+  the file. Reading converts that into the defaults, so a value in memory is in metres and bar
+  whatever its file said. What a user wants *shown* is a third thing, and it is in no file the
+  format owns — `manual/settings.md` puts settings beside the logbook and says outright that
+  they belong to the application rather than to the format.
+
+  The machinery for it was already complete. `format(value, units)` takes a `Units` on every
+  kind of field, and it takes one precisely so that a value can be written in a file's units
+  and shown in the user's — two answers from one value. Nothing new is needed below; what was
+  missing was somewhere for the choice to live.
+
+  **The Universe is where application state lives**, so the choice is read once from the
+  settings and every front end asks the same question of the same object. The alternative was
+  each front end reading the settings itself, which is less machinery and lets a TUI and a GUI
+  disagree about what the user chose. Putting it in the data layer was refused for the reason
+  the third kind exists at all: a source-neutral layer holding a user's preference would make
+  `format` answer one way when there are two right answers.
+
+  The manual has promised this since it was written — *"your preferences: the units you want to
+  be shown"* — and listed only gradient factors. `FEAT-19` is the neighbouring want, units
+  declared per item, and is separate: that is about what a file may say, not about what a
+  screen shows.
+
 - **UI-3 — How much the TUI reuses.** *Settled:* **neither.** Which fields exist and what
    they are was already shared — both read the same description of the type, which the logic
    layer holds, see [../logic/doc.md](../logic/doc.md). The presentation half was the open
