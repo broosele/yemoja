@@ -23,6 +23,25 @@ it, and not the user's to change.
   shadow brings the supplied one back, which is how a user undoes a copy and takes up
   whatever the library says now.
 
+## What a region's box says
+
+The four edges of a region — `west`, `east`, `south`, `north` — are for **placing it on a
+map**, which is what `manual/data-fields.md` says and all that anything asks of them.
+
+**A region is not necessarily inside its parent's box.** Fifty-eight of the three hundred and
+fifty supplied regions are not, and each for the same honest reason: a country's box covers
+the land it is mostly made of, while its islands may be a thousand kilometres away. Cape
+Verde is in Africa and sits off it. India's box does not reach the Andamans. South Africa's
+does not reach the Prince Edward Islands, and the continent's does not reach South Africa's.
+
+So **containment is not a test for membership**, and anything that treats it as one will
+lose islands — which in a diving application is the wrong set to lose. `parents` says what a
+region belongs to; the box says roughly where to draw it. The two answer different questions
+and only look like they answer the same one.
+
+Nothing in the model depends on this today. It is written down because the assumption is an
+easy one to make later, and because the data will not object when it is made.
+
 ## Reference resolution
 
 A reference names an id, not a place. Think of it as a search, in one order:
