@@ -72,15 +72,46 @@ logic/
   divecomputer.md  a dive computer against this model, the same way
   src/commonMain/kotlin/yemoja/logic/
                   Logbook.kt    opening one, which a front end asks for and does not do
-                  Types.kt      what a person, a region and a piece of gear are
-                  Derivations.kt  what every worked-out field answers with
-                  Recordings.kt   the walk into a profile that most of them share
-                  Today.kt        what day it is, which four fields count against
+                  Types.kt      every type gathered, and nothing else
+                  Dive.kt       one file per stored type, holding what it owns: a dive's
+                  Person.kt       details, environment, gear, profiles and gas sources are
+                  Gear.kt         here, a person's medical, insurance and courses here, a
+                  DiveSite.kt     piece of gear's buoyancy and maintenances here
+                  DiveTrip.kt   ... nine of them, and every field worked out from each
+                  Certification.kt
+                  Operator.kt
+                  Wreck.kt
+                  Region.kt
+                  Vocabularies.kt  what more than one type is described with
+                  References.kt    the far side of a reference, for children and parts
+                  Recordings.kt    the walk into a profile that a dive's fields share
+                  Expiry.kt        what has run out, for an insurance and a maintenance
+                  Today.kt         what day it is, which four fields count against
   src/jvmMain/kotlin/yemoja/logic/
                   Today.kt      the machine's own date, a day needing a zone
   src/commonTest/kotlin/yemoja/logic/
                   the tests, beside what they cover
 ```
+
+**One file per stored type, and a derivation sits with the type it belongs to.** A dive's
+`average_depth` is written under the dive rather than in a file of derivations, so what a type
+is and what is worked out from it are read together. An owned item goes with its owner: a
+profile is only ever reached through a dive, and reading the two apart was reading half a
+question.
+
+**An owned item is declared above the type that owns it**, a property being unusable in a file
+above its own declaration. So `Dive.kt` builds from the inside out — the tolerances, then the
+profile that holds them, then the dive — and the dive is the last of its descriptions rather
+than the first.
+
+That order is what the file's shape costs, and what it buys is visibility. Nearly every
+derivation is `private` now: `divesAverageDepth` is used by the description four lines above it
+and by nothing else, which a reader can see without searching. Only the nine stored descriptions
+and what genuinely crosses a file are `internal`.
+
+`Types.kt` keeps `object Types`, which is the vocabulary a front end names. Each of its nine
+members is the description written in that type's own file; the eleven owned types are reached
+through the types that own them and are not named there.
 
 `Logbook` stands in for the **Universe**, which nothing has built. It is the one place in
 this layer that names a source, and it exists so that `ui/doc.md`'s rule holds meanwhile: a

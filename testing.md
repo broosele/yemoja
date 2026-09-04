@@ -68,12 +68,17 @@ the build refuses.
   and numeric ranges hold. The last two read their vocabularies out of the manual's
   prose, so the manual stays the only place a value is written down.
 
-  `tool/checkdata.py` also reads the item types out of `logic/Types.kt` and holds them to
-  the same manual: a field described in code that the manual does not define is a fault,
-  and so is a kind the two disagree on. It reads the source rather than running it, which
-  keeps the checkers one Python script with no Kotlin behind them. A field the manual
+  `tool/checkdata.py` also reads the item types out of the logic layer's sources and holds
+  them to the same manual: a field described in code that the manual does not define is a
+  fault, and so is a kind the two disagree on. It reads the source rather than running it,
+  which keeps the checkers one Python script with no Kotlin behind them. A field the manual
   defines and nothing describes yet is counted rather than complained about, because that
   is work not done and not a disagreement.
+
+  It reads the whole folder rather than one file, and **it refuses to pass having found no
+  types at all**. It once read `Types.kt` alone, which was every type until they were split
+  one to a file; after that it reported no problems against nothing, which is the one answer
+  a checker must not give quietly.
 
   **They are Python, and stay that way** — and they are not tests. They check documents
   against data rather than code against expectations, which is why they sit outside the

@@ -11,8 +11,24 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANUAL = os.path.join(ROOT, 'manual', 'data-fields.md')
-DESCRIPTIONS = os.path.join(
-    ROOT, 'logic', 'src', 'commonMain', 'kotlin', 'yemoja', 'logic', 'Types.kt')
+DESCRIBED = os.path.join(ROOT, 'logic', 'src', 'commonMain', 'kotlin', 'yemoja', 'logic')
+
+
+def described_source():
+    """Every logic-layer source as one text, comments stripped.
+
+    A folder rather than a file, the types being written one to a file. Reading `Types.kt`
+    alone was the same thing until they were split up, after which this went on reporting no
+    problems while describing nothing at all -- which is why `main` now refuses an empty
+    answer rather than passing it.
+    """
+    if not os.path.isdir(DESCRIBED):
+        return ''
+    parts = [
+        io.open(os.path.join(DESCRIBED, name), encoding='utf-8').read()
+        for name in sorted(os.listdir(DESCRIBED)) if name.endswith('.kt')
+    ]
+    return re.sub(r'//[^\n]*', '', '\n'.join(parts))
 
 # What each kind in the manual is written as in the logic layer. The manual names a kind
 # in prose -- `(text)`, `(true or false)` -- and one class implements each. A kind absent
@@ -157,9 +173,7 @@ def manual_order():
 
 def described_roles():
     """Which fields carry a role, per type, read the same way the rest of the source is."""
-    if not os.path.exists(DESCRIPTIONS):
-        return {}
-    text = re.sub(r'//[^\n]*', '', io.open(DESCRIPTIONS, encoding='utf-8').read())
+    text = described_source()
     shared = {
         field for field, tail in re.findall(
             r'val [A-Z_]+[^=\n]*=\s*\w+Description\(\s*"([a-z_]+)"([^\n]*)', text)
@@ -235,9 +249,7 @@ def described_types():
     with no Kotlin toolchain behind it. A field written through a shared value --
     `REMARKS` -- is resolved from that value's own declaration.
     """
-    if not os.path.exists(DESCRIPTIONS):
-        return {}
-    text = re.sub(r'//[^\n]*', '', io.open(DESCRIPTIONS, encoding='utf-8').read())
+    text = described_source()
     # An item type held in a value is a type of its own rather than a field, and is found as
     # one below.
     shared = {
@@ -272,7 +284,7 @@ def balanced(text, opening):
             if depth == 0:
                 return text[opening + 1:at]
         at += 1
-    raise ValueError('unbalanced brackets in %s' % DESCRIPTIONS)
+    raise ValueError('unbalanced brackets in the logic layer')
 
 
 def check_descriptions(fields, kinds):
@@ -499,6 +511,12 @@ def main():
     described, count, total = check_descriptions(checker.fields, manual_kinds())
     checker.problems.extend(described)
     checker.problems.extend(check_order())
+    # A checker that finds nothing to check passes, which is the one answer it must not give
+    # quietly. Splitting the types one to a file left this reading a source that no longer
+    # held any, and it reported no problems against no fields.
+    if not described_types():
+        checker.problems.append('no item types were found in the logic layer, so nothing '
+                                'about it was checked')
 
     print('checked %d items and %d references, against %d fixed sets and %d ranges'
           % (checker.items, len(checker.references), len(sets), len(ranges)))
