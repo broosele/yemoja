@@ -11,13 +11,14 @@ spelled — is a chapter of its own: see [data-format.md](data-format.md).
 Yemoja stores these kinds of item:
 
 - **Dive** — a single dive.
-- **Person** — someone who appears in your logbook, including yourself.
+- **Dive trip** — diving done on one occasion or in one place.
+- **Gear** — a piece of equipment. A dive computer is gear like anything else you own.
 - **Region** — a part of the world.
 - **Dive site** — a place you dive.
-- **Gear** — a piece of equipment. A dive computer is gear like anything else you own.
-- **Certification** — a diving qualification, such as an agency's open water award.
+- **Wreck** — a ship on the bottom, which is not the same thing as the site it lies at.
+- **Person** — someone who appears in your logbook, including yourself.
 - **Operator** — a dive school or dive centre.
-- **Dive trip** — diving done on one occasion or in one place.
+- **Certification** — a diving qualification, such as an agency's open water award.
 
 More may be added later.
 
@@ -431,179 +432,30 @@ keeps them apart.
 
 - `remarks` (multiline text) — anything about the cylinder or the fill.
 
-### Person
+### Dive trip
 
-Anyone who appears in your logbook: the people you dive with, your instructors, your
-emergency contacts, and yourself. They need not be divers.
+Diving done on one occasion: a week on a boat, a weekend at a lake, a fortnight moving
+between three islands.
 
-- `name` (text, worked out) — the person's full name, assembled from the parts above, and what
-  Yemoja works the item's id out from. Correct it whenever the assembly is wrong: names do not
-  all follow the same pattern, and yours is the one that counts.
-- `first_name` (text)
-- `middle_names` (text) — all of them together, if there are several.
-- `last_name` (text)
-- `birthday` (date)
-- `email` (text)
-- `phone` (text)
-- `address` (text)
-- `instructor_number` (text) — their number as an instructor, where they are one. Text
-  rather than a number: it may carry letters and leading zeros, and nothing is ever added
-  up. Someone who instructs for two agencies has two, so record the one that matters to you
-  and put the other in `remarks`.
-- `emergency_contacts` (list of references or text) — who to contact about this person
-  in an emergency. A plain name works if you do not want a full item for them.
-- `medical` (owned item) — this person's health details.
-- `insurance` (owned item) — cover this person holds.
-- `courses` (keyed owned items) — the qualifications this person has earned, described
-  under *Course* below.
-- `remarks` (multiline text) — whatever you want to keep about them that has no
-  field of its own.
+Most trips are one item and nothing more. Where a trip has legs — different places, or
+different people to dive with — each leg is a trip of its own naming the larger one as
+its `parent`. A dive always belongs to the trip it was actually on, which is the leg
+rather than the fortnight.
 
-#### Medical
-
-One per person. Health details, kept together rather
-than scattered through the item.
-
-- `last_medical_check` (date) — when this person was last examined.
-- `blood_group` (text)
-- `height` (number)
-- `body_mass` (number)
-- `remarks` (multiline text) — anything worth keeping: an allergy, a medication,
-  what the examiner said.
-
-Yemoja does not work out whether a medical is still valid, and does not remind you to
-renew one. How long a check counts for depends on who is asking — the agency, the
-operator, the country — not on the examination itself.
-
-#### Insurance
-
-One per person. The policy they hold.
-
-When you renew, change the dates on the policy that is there rather than adding
-another. It is the same cover continuing.
-
-- `name` (text) — the insurer, or what the cover is called.
-- `policy` (text) — the policy number.
-- `start_date` (date) — when the cover begins.
-- `end_date` (date) — when it runs out.
-- `days_left` (whole number, worked out) — how much longer the cover runs.
-- `expired` (true or false, worked out) — whether it has run out.
-- `remarks` (multiline text) — what the cover includes, and what it does not.
-
-#### Course
-
-A list on a person, one entry for each qualification earned.
-
-- `certification` (reference) — which qualification it was.
-- `number` (text) — the number on the card, which identifies this award rather than the
-  qualification. Text, for the same reason as `instructor_number`.
-- `date` (date) — when it was granted.
-- `instructor` (reference) — who taught it. Their own number is on them, not here: a course
-  points at the person and the person carries it.
-- `dives` (list of references) — the dives that formed part of it.
-- `remarks` (multiline text) — how it went, and what it covered.
-
-### Region
-
-A part of the world: a continent, an ocean, a country, a sea. Many regions come with
-Yemoja, so you normally only record one it does not already know.
-
-- `name` (text) — what the region is called. The item's id is worked out from
-  it.
-- `category` (text) — what sort of region it is. Anything you like; `continent`,
-  `ocean`, `country` and `sea` are the usual ones.
-- `parents` (list of references) — the larger regions this one belongs to. There can be
-  more than one, since a region often sits inside several at once.
-- `children` (list of references, worked out) — the regions that name this one as a parent. You
-  never write this: it follows from the `parents` of every other region, including the ones
-  supplied with Yemoja. Adding a country to your own logbook makes it appear among the children
-  of its continent, without that continent being touched.
-
-- `west`, `east`, `south`, `north` (number) — the four edges of a box containing the
-  region, used to place it on a map. All four are in degrees: `west` and `east` are
-  longitudes, `south` and `north` latitudes.
-
-  `east` is the edge you reach travelling **east** from `west` — which is what makes the
-  date line unremarkable. The Pacific runs from `west: 120` to `east: -70`, and that is
-  simply where it starts and where it ends, not a mistake and not something Yemoja will
-  correct. Latitude does not wrap, so `north` is always above `south`.
-
-- `remarks` (multiline text) — what you know about the region that the box and the
-  category do not say.
-
-### Dive site
-
-A place you dive.
-
-- `name` (text) — what the site is called. The item's id is worked out from it.
-- `alternative_names` (list of text) — other names the site goes by. Useful where it is
-  called one thing locally and another on the chart.
-- `regions` (list of references) — the regions the site lies in. There can be more than
-  one.
-- `environment_type` (fixed set) — what kind of place it is: `ocean`, `sea`, `lake`,
-  `quarry`, `river`, `spring`, `cave`, `cavern`, `pool`, `under ice` or
-  `hyperbaric chamber`, and nothing else. A closed list because it has to be written out
-  to other formats, which have closed lists of their own; anything outside it could not be
-  exported. This says what the site *is*, not how dense the water is — that is
-  `water_type`, and the two do not follow from each other: a cave can be salt or fresh,
-  and a salt lake is neither an ocean nor fresh water.
-- `water_type` (fixed set) — `salt`, `fresh` or `en13319`, and nothing else. What the
-  water at this site is actually like. It is not what your depths were computed with —
-  that is the same field on a recording, which says what your computer was set to, and
-  the two can disagree. `en13319` is the nominal density laid down by the
-  European standard for depth gauges, which is what many dive computers use in place of
-  either real value.
-- `max_depth` (number) — how deep the site goes. The site's own depth, not how deep you
-  went: a dive there may have turned round anywhere above it.
-- `rating` (whole number) — what you make of the site, from 1 to 10. Your view of the
-  place itself, which is not the same as your view of a dive you did there.
-- `substrate` (text) — what the ground is made of, in whatever words suit: `sand`,
-  `silt over rock`, `broken shale and weed`. No list to choose from; it is a description,
-  not a classification, so write what you saw rather than looking for the nearest word.
-  The word covers a quarry floor and a lake bed as readily as a seabed, and keeps clear of
-  `bottom` on a gas source, which is the gas you breathed at depth.
-- `wrecks` (list of references) — the ships lying there, if any. A site may hold more
-  than one; a wreck may be reachable from more than one site.
-- `facilities` (list of text) — what is there: parking, air fills, toilets, a slipway,
-  and so on.
-- `elevation` (number) — the height of the water above sea level. It matters for more
-  than the map: diving at altitude changes how a dive is worked out.
-- `longitude`, `latitude` (number) — where it is, in degrees.
-- `remarks` (multiline text) — how to dive the place: entries, hazards, where to
-  park, what the tide does.
-
-### Wreck
-
-A ship on the bottom. Kept apart from the dive site because the two are not the same
-thing: a site is a place with coordinates, a wreck is a vessel with a history, and one
-site may hold several while one large wreck may be dived from more than one.
-
-- `name` (text) — what she was called. The item's id is worked out from it.
-- `alternative_names` (list of text) — other names she went by, before a rename or a
-  change of owner.
-- `ship_type` (text) — what she was: `freighter`, `tanker`, `warship`, `hospital ship`.
-- `nationality` (text) — where she was registered.
-- `shipyard` (text) — who built her.
-- `launched` (date) — when she went into the water the first time.
-- `sunk` (date) — and when she went under for good.
-- `length`, `beam`, `draught` (number) — how big she was.
-
-- `displacement` (number) — what she weighed, which for a ship means the weight of water
-  she pushed aside. A mass like any other, so it is in kilograms unless the file says
-  otherwise: a large ship runs to eight digits.
-
-  Wreck books quote tonnages that will not say which kind they are — long tons, tonnes,
-  or gross register tonnage, which is a volume and not a weight at all. Where you cannot
-  tell, leave this empty and put what the book said in `remarks`. A figure you had to
-  guess the units of is worse than no figure.
-
-- `remarks` (multiline text) — her history, and whatever a book said that no field
-  here can hold.
-
-Most of this is not diving. Where she was built and what flag she flew make no
-difference underwater, and they are here because a wreck diver wants to know — the ship
-is half the reason for the dive.
-
+- `name` (text) — the item's id is worked out from it.
+- `start_date`, `end_date` (date, worked out) — when the trip ran, taken from the dives on it.
+  Correct them where the trip was longer than the diving — a travelling day at either end — or
+  where you have set it up before logging anything.
+- `region` (reference) — where it went.
+- `operator` (reference) — who ran it.
+- `parent` (reference) — the larger trip this one is part of, where there is one.
+- `parts` (list of references, worked out) — the trips naming this one as their parent. This
+  follows from their `parent` in the same way.
+- `dives` (list of references, worked out) — the dives made on this trip, and on any trip
+  beneath it. You never list them here: each dive says which trip it belongs to, and this
+  follows from that, so the two can never disagree.
+- `remarks` (multiline text) — how the trip went as a whole, which is not the same
+  as how any one dive on it went.
 
 ### Gear
 
@@ -749,20 +601,178 @@ make the inspection look current.
 Entries with no `valid_until` owe nothing and start no clock. A cleaning is worth
 recording and is not a due date.
 
-### Certification
+### Region
 
-A qualification as an agency awards it — not one person's award of it. Your own
-qualifications are recorded as courses on your person item.
+A part of the world: a continent, an ocean, a country, a sea. Many regions come with
+Yemoja, so you normally only record one it does not already know.
 
-- `name` (text) — the item's id is worked out from it.
-- `abbreviation` (text) — the short form it is usually known by.
-- `organisation` (text) — who awards it, written as a plain name.
-- `category` (text) — what sort of qualification it is. Anything you like; the usual
-  ones are `progression`, `technical`, `specialisation` and `professional`.
-- `max_depth` (number) — the depth the qualification is granted for.
-- `supersedes` (list of references) — the qualifications this one replaces. An advanced
-  qualification supersedes the one before it.
-- `remarks` (multiline text) — what the qualification covers, and what it required.
+- `name` (text) — what the region is called. The item's id is worked out from
+  it.
+- `category` (text) — what sort of region it is. Anything you like; `continent`,
+  `ocean`, `country` and `sea` are the usual ones.
+- `parents` (list of references) — the larger regions this one belongs to. There can be
+  more than one, since a region often sits inside several at once.
+- `children` (list of references, worked out) — the regions that name this one as a parent. You
+  never write this: it follows from the `parents` of every other region, including the ones
+  supplied with Yemoja. Adding a country to your own logbook makes it appear among the children
+  of its continent, without that continent being touched.
+
+- `west`, `east`, `south`, `north` (number) — the four edges of a box containing the
+  region, used to place it on a map. All four are in degrees: `west` and `east` are
+  longitudes, `south` and `north` latitudes.
+
+  `east` is the edge you reach travelling **east** from `west` — which is what makes the
+  date line unremarkable. The Pacific runs from `west: 120` to `east: -70`, and that is
+  simply where it starts and where it ends, not a mistake and not something Yemoja will
+  correct. Latitude does not wrap, so `north` is always above `south`.
+
+- `remarks` (multiline text) — what you know about the region that the box and the
+  category do not say.
+
+### Dive site
+
+A place you dive.
+
+- `name` (text) — what the site is called. The item's id is worked out from it.
+- `alternative_names` (list of text) — other names the site goes by. Useful where it is
+  called one thing locally and another on the chart.
+- `regions` (list of references) — the regions the site lies in. There can be more than
+  one.
+- `environment_type` (fixed set) — what kind of place it is: `ocean`, `sea`, `lake`,
+  `quarry`, `river`, `spring`, `cave`, `cavern`, `pool`, `under ice` or
+  `hyperbaric chamber`, and nothing else. A closed list because it has to be written out
+  to other formats, which have closed lists of their own; anything outside it could not be
+  exported. This says what the site *is*, not how dense the water is — that is
+  `water_type`, and the two do not follow from each other: a cave can be salt or fresh,
+  and a salt lake is neither an ocean nor fresh water.
+- `water_type` (fixed set) — `salt`, `fresh` or `en13319`, and nothing else. What the
+  water at this site is actually like. It is not what your depths were computed with —
+  that is the same field on a recording, which says what your computer was set to, and
+  the two can disagree. `en13319` is the nominal density laid down by the
+  European standard for depth gauges, which is what many dive computers use in place of
+  either real value.
+- `max_depth` (number) — how deep the site goes. The site's own depth, not how deep you
+  went: a dive there may have turned round anywhere above it.
+- `rating` (whole number) — what you make of the site, from 1 to 10. Your view of the
+  place itself, which is not the same as your view of a dive you did there.
+- `substrate` (text) — what the ground is made of, in whatever words suit: `sand`,
+  `silt over rock`, `broken shale and weed`. No list to choose from; it is a description,
+  not a classification, so write what you saw rather than looking for the nearest word.
+  The word covers a quarry floor and a lake bed as readily as a seabed, and keeps clear of
+  `bottom` on a gas source, which is the gas you breathed at depth.
+- `wrecks` (list of references) — the ships lying there, if any. A site may hold more
+  than one; a wreck may be reachable from more than one site.
+- `facilities` (list of text) — what is there: parking, air fills, toilets, a slipway,
+  and so on.
+- `elevation` (number) — the height of the water above sea level. It matters for more
+  than the map: diving at altitude changes how a dive is worked out.
+- `longitude`, `latitude` (number) — where it is, in degrees.
+- `remarks` (multiline text) — how to dive the place: entries, hazards, where to
+  park, what the tide does.
+
+### Wreck
+
+A ship on the bottom. Kept apart from the dive site because the two are not the same
+thing: a site is a place with coordinates, a wreck is a vessel with a history, and one
+site may hold several while one large wreck may be dived from more than one.
+
+- `name` (text) — what she was called. The item's id is worked out from it.
+- `alternative_names` (list of text) — other names she went by, before a rename or a
+  change of owner.
+- `ship_type` (text) — what she was: `freighter`, `tanker`, `warship`, `hospital ship`.
+- `nationality` (text) — where she was registered.
+- `shipyard` (text) — who built her.
+- `launched` (date) — when she went into the water the first time.
+- `sunk` (date) — and when she went under for good.
+- `length`, `beam`, `draught` (number) — how big she was.
+
+- `displacement` (number) — what she weighed, which for a ship means the weight of water
+  she pushed aside. A mass like any other, so it is in kilograms unless the file says
+  otherwise: a large ship runs to eight digits.
+
+  Wreck books quote tonnages that will not say which kind they are — long tons, tonnes,
+  or gross register tonnage, which is a volume and not a weight at all. Where you cannot
+  tell, leave this empty and put what the book said in `remarks`. A figure you had to
+  guess the units of is worse than no figure.
+
+- `remarks` (multiline text) — her history, and whatever a book said that no field
+  here can hold.
+
+Most of this is not diving. Where she was built and what flag she flew make no
+difference underwater, and they are here because a wreck diver wants to know — the ship
+is half the reason for the dive.
+
+### Person
+
+Anyone who appears in your logbook: the people you dive with, your instructors, your
+emergency contacts, and yourself. They need not be divers.
+
+- `name` (text, worked out) — the person's full name, assembled from the parts above, and what
+  Yemoja works the item's id out from. Correct it whenever the assembly is wrong: names do not
+  all follow the same pattern, and yours is the one that counts.
+- `first_name` (text)
+- `middle_names` (text) — all of them together, if there are several.
+- `last_name` (text)
+- `birthday` (date)
+- `email` (text)
+- `phone` (text)
+- `address` (text)
+- `instructor_number` (text) — their number as an instructor, where they are one. Text
+  rather than a number: it may carry letters and leading zeros, and nothing is ever added
+  up. Someone who instructs for two agencies has two, so record the one that matters to you
+  and put the other in `remarks`.
+- `emergency_contacts` (list of references or text) — who to contact about this person
+  in an emergency. A plain name works if you do not want a full item for them.
+- `medical` (owned item) — this person's health details.
+- `insurance` (owned item) — cover this person holds.
+- `courses` (keyed owned items) — the qualifications this person has earned, described
+  under *Course* below.
+- `remarks` (multiline text) — whatever you want to keep about them that has no
+  field of its own.
+
+#### Medical
+
+One per person. Health details, kept together rather
+than scattered through the item.
+
+- `last_medical_check` (date) — when this person was last examined.
+- `blood_group` (text)
+- `height` (number)
+- `body_mass` (number)
+- `remarks` (multiline text) — anything worth keeping: an allergy, a medication,
+  what the examiner said.
+
+Yemoja does not work out whether a medical is still valid, and does not remind you to
+renew one. How long a check counts for depends on who is asking — the agency, the
+operator, the country — not on the examination itself.
+
+#### Insurance
+
+One per person. The policy they hold.
+
+When you renew, change the dates on the policy that is there rather than adding
+another. It is the same cover continuing.
+
+- `name` (text) — the insurer, or what the cover is called.
+- `policy` (text) — the policy number.
+- `start_date` (date) — when the cover begins.
+- `end_date` (date) — when it runs out.
+- `days_left` (whole number, worked out) — how much longer the cover runs.
+- `expired` (true or false, worked out) — whether it has run out.
+- `remarks` (multiline text) — what the cover includes, and what it does not.
+
+#### Course
+
+A list on a person, one entry for each qualification earned.
+
+- `certification` (reference) — which qualification it was.
+- `number` (text) — the number on the card, which identifies this award rather than the
+  qualification. Text, for the same reason as `instructor_number`.
+- `date` (date) — when it was granted.
+- `instructor` (reference) — who taught it. Their own number is on them, not here: a course
+  points at the person and the person carries it.
+- `dives` (list of references) — the dives that formed part of it.
+- `remarks` (multiline text) — how it went, and what it covered.
 
 ### Operator
 
@@ -784,30 +794,20 @@ centre, a club, a resort, a boat.
 - `rating` (whole number) — what you make of them, as a whole number from 1 to 10.
 - `remarks` (multiline text) — what they were like to dive with.
 
-### Dive trip
+### Certification
 
-Diving done on one occasion: a week on a boat, a weekend at a lake, a fortnight moving
-between three islands.
-
-Most trips are one item and nothing more. Where a trip has legs — different places, or
-different people to dive with — each leg is a trip of its own naming the larger one as
-its `parent`. A dive always belongs to the trip it was actually on, which is the leg
-rather than the fortnight.
+A qualification as an agency awards it — not one person's award of it. Your own
+qualifications are recorded as courses on your person item.
 
 - `name` (text) — the item's id is worked out from it.
-- `start_date`, `end_date` (date, worked out) — when the trip ran, taken from the dives on it.
-  Correct them where the trip was longer than the diving — a travelling day at either end — or
-  where you have set it up before logging anything.
-- `region` (reference) — where it went.
-- `operator` (reference) — who ran it.
-- `parent` (reference) — the larger trip this one is part of, where there is one.
-- `parts` (list of references, worked out) — the trips naming this one as their parent. This
-  follows from their `parent` in the same way.
-- `dives` (list of references, worked out) — the dives made on this trip, and on any trip
-  beneath it. You never list them here: each dive says which trip it belongs to, and this
-  follows from that, so the two can never disagree.
-- `remarks` (multiline text) — how the trip went as a whole, which is not the same
-  as how any one dive on it went.
+- `abbreviation` (text) — the short form it is usually known by.
+- `organisation` (text) — who awards it, written as a plain name.
+- `category` (text) — what sort of qualification it is. Anything you like; the usual
+  ones are `progression`, `technical`, `specialisation` and `professional`.
+- `max_depth` (number) — the depth the qualification is granted for.
+- `supersedes` (list of references) — the qualifications this one replaces. An advanced
+  qualification supersedes the one before it.
+- `remarks` (multiline text) — what the qualification covers, and what it required.
 
 ---
 

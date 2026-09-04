@@ -191,6 +191,44 @@ def described_roles():
     return roles
 
 
+def described_order():
+    """The stored types in the order `Types.ALL` gives them.
+
+    That order is what a front end offers its tabs in, so the manual's chapters follow it and
+    one order serves both.
+    """
+    source = described_source()
+    named = dict(re.findall(
+        r'val ([A-Z_]+): ItemDescription = ItemDescription\(\s*"([a-z_]+)"', source))
+    listed = re.search(r'val ALL: List<ItemDescription> = listOf\((.*?)\)', source, re.S)
+    if not listed:
+        return []
+    return [named[name] for name in re.findall(r'\b([A-Z_]+),', listed.group(1)) if name in named]
+
+
+def check_sections():
+    """The manual's chapters, and the list that introduces them, against `Types.ALL`.
+
+    Its field lists have been held to the descriptions since the order was settled; its
+    chapters were not, and drifted a whole release behind without anything saying so. The
+    opening list is checked with them because it had been missing `Wreck` outright.
+    """
+    wanted = [TYPE_NAMES[name] for name in described_order() if name in TYPE_NAMES]
+    if not wanted:
+        return []
+    text = io.open(MANUAL, encoding='utf-8').read()
+    problems = []
+    chapters = re.findall(r'^### (.+)$', text, re.M)
+    if chapters != wanted:
+        problems.append('the manual lists its item types in a different order from Types.ALL: %s'
+                        % ', '.join(chapters))
+    listed = re.findall(r'^- \*\*([A-Z][a-z ]+)\*\* —', text, re.M)
+    if listed != wanted:
+        problems.append('the manual introduces a different set of item types from the chapters '
+                        'it then gives: %s' % ', '.join(listed))
+    return problems
+
+
 def check_order():
     """The manual against the descriptions, on order and on what is worked out."""
     problems = []
@@ -511,6 +549,7 @@ def main():
     described, count, total = check_descriptions(checker.fields, manual_kinds())
     checker.problems.extend(described)
     checker.problems.extend(check_order())
+    checker.problems.extend(check_sections())
     # A checker that finds nothing to check passes, which is the one answer it must not give
     # quietly. Splitting the types one to a file left this reading a source that no longer
     # held any, and it reported no problems against no fields.

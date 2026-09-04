@@ -80,6 +80,12 @@ the build refuses.
   one to a file; after that it reported no problems against nothing, which is the one answer
   a checker must not give quietly.
 
+  It also holds the manual's **order** to the code: each type's fields in the order the
+  description declares them, and the chapters themselves in the order `Types.ALL` gives.
+  The chapters went unchecked while the fields were checked, and drifted two commits behind
+  before anyone looked. The list introducing them is checked with them, having been missing
+  `Wreck` outright.
+
   **They are Python, and stay that way** — and they are not tests. They check documents
   against data rather than code against expectations, which is why they sit outside the
   suite and run on their own. `TEST-2` records why.
