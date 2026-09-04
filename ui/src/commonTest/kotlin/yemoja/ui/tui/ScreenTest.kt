@@ -72,11 +72,17 @@ private fun held(painted: List<String>): List<String> = painted
 class TabTest {
 
     @Test
-    fun `there is a tab for every type, in the order the types are given`() {
+    fun `there is a tab for every type, in the order the set was built with`() {
         // Not trimmed: an unopened tab is spaced on both sides, the last one included.
         val bar = screen().paint(200, 6)[0].text
         assertTrue(bar.startsWith("[dive]"), bar)
-        for (type in Types.ALL.drop(1)) assertTrue(" ${type.name} " in bar, bar)
+        // Each one after the last, so this says the order and not just the membership.
+        var at = 0
+        for (type in Types.ALL.drop(1)) {
+            val found = bar.indexOf(" ${type.name} ", at)
+            assertTrue(found > at, "${type.name} should come after what precedes it, in $bar")
+            at = found
+        }
     }
 
     @Test

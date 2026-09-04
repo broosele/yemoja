@@ -181,8 +181,9 @@ anybody. It is per platform because a day needs a zone and the standard library 
 its clock answers with an instant, which is the same moment everywhere and so a day nowhere.
 
 [manual/data-fields.md](../manual/data-fields.md) is the source of truth for every field,
-and where it and `Types.kt` disagree the manual is right. `tool/checkdata.py` holds the two
-together — see [testing.md](../testing.md).
+and where it and the descriptions disagree the manual is right. `tool/checkdata.py` holds the
+two together — on which fields exist, what kind each is, the order they are declared in, and
+the order of the types themselves. See [testing.md](../testing.md).
 
 ## The Universe
 

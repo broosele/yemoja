@@ -215,7 +215,10 @@ def check_sections():
     """
     wanted = [TYPE_NAMES[name] for name in described_order() if name in TYPE_NAMES]
     if not wanted:
-        return []
+        # Nothing to compare against passes, so say why rather than passing. `described_source`
+        # had to learn this once already; the same trap was dug again here a commit later.
+        return [] if not described_types() else [
+            'the types are described but Types.ALL was not found, so their order is unchecked']
     text = io.open(MANUAL, encoding='utf-8').read()
     problems = []
     chapters = re.findall(r'^### (.+)$', text, re.M)

@@ -16,7 +16,8 @@ import yemoja.data.Time
  * What a dive's times and depths are worked out from: the recording a computer made.
  *
  * Every one of these walks the same way in — a dive to its primary profile, a profile to its
- * samples — so the walk lives here once and the fields in Types.kt say what they take from it.
+ * samples — so the walk lives here once and the derivations in Dive.kt say what they take
+ * from it. It is here rather than there because a dive and the profiles it owns both use it.
  *
  * See ../../../../../doc.md — the layer's own document is logic/doc.md.
  */

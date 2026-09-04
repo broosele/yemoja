@@ -2023,8 +2023,9 @@ Kept with their identifiers so earlier discussion still resolves.
   **A unit's precision is the finest thing written in it, not the finest a diver reads.** A
   depth wants one decimal; the litre carries three, because the supplied gear holds displaced
   volumes of `0.04` litres, and the bar three because an atmospheric pressure is `0.88`.
-  Choosing by how a depth reads would have rounded fifty-three supplied items to nothing. The
-  figures were taken from what the data actually holds.
+  One decimal writes that volume as `0`, and crushes the five supplied items under a tenth of
+  a litre onto `0` or `0.1`. The figures were taken from what the data actually holds, which
+  is the only way to find that out.
 
   **Steps of three, and a unit takes the smallest that holds what is written in it.** Three
   decimals suits nearly everything. Six is for the hour, where three would be steps of 3.6
@@ -2083,7 +2084,7 @@ Kept with their identifiers so earlier discussion still resolves.
   It had to live in the description, because `UI-3` gives the terminal front end nothing but
   the descriptions and the whole point of that is that a type added below appears above
   without anything above changing. An order coded in a front end is a second place that has
-  to learn about every type, and the four front ends planned would each learn it separately.
+  to learn about every type, and the three front ends planned would each learn it separately.
 
   **The direction is written down rather than worked out.** The first shape had it follow the
   kind — text ascending, dates descending — which gave the right answer for all nine types

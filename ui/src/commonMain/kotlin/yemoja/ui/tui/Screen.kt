@@ -45,7 +45,7 @@ class Screen(private val set: ItemSet) {
         require(types.isNotEmpty()) { "a screen should have at least one type, and had none" }
     }
 
-    /** Which tab is open, as an index into the types given. */
+    /** Which tab is open, as an index into the set's own types. */
     var tab: Int = 0
         private set
 

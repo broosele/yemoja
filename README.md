@@ -163,7 +163,7 @@ involved — see [data/json/doc.md](data/json/doc.md).
   reference it rather than restating them.
 - **Features are registered, not remembered.** Anything deferred goes in
   [features.md](features.md) with a status, so setting an idea aside does not lose it.
-- **Open questions carry stable identifiers** — `DATA-3`, `GUI-2`, `RECON-1` — so they
+- **Open questions carry stable identifiers** — `DATA-3`, `GUI-3`, `RECON-1` — so they
   can be referred to in discussion. An identifier is never reused and never
   renumbered; a settled question keeps its number and records the answer.
 - **Detail belongs at the narrowest level it applies to.** General GUI structure goes
