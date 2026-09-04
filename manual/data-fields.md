@@ -134,12 +134,14 @@ All five can be corrected where the working out is wrong.
 - `start_date` (date, worked out) — the day the dive began, in GMT. From the primary profile,
   corrected by its `gmt_offset`, or from you.
 - `start_time` (time, worked out) — when you went in, in GMT.
-- `end_date` (date, worked out) — the day the dive finished. An end time earlier than the start
-  means it ran past midnight. Correct it for the rare dive spanning more than one night, or
-  where the clocks moved underneath you.
+- `end_date` (date, worked out) — the day the dive finished. From the primary profile, or from
+  your own times: an end time earlier than the start means it ran past midnight. Correct it for
+  the rare dive spanning more than one night, or where the clocks moved underneath you. A dive
+  with no start time leaves this blank, there being nothing to tell the two days apart.
 - `end_time` (time, worked out) — when you came out.
 - `duration` (number, worked out) — how long the dive lasted, in seconds unless the file says
-  otherwise.
+  otherwise. From the primary profile, or from your start and end times where there is no
+  recording.
 - `max_depth` (number, worked out) — the deepest point reached, from the primary profile. Worth
   correcting: a dive computer usually reports a better figure than its own recorded profile,
   which is only sampled every few seconds.

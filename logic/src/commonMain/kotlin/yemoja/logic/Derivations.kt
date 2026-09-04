@@ -50,11 +50,54 @@ internal fun divesStartDate(dive: Item): Result<Any> =
 internal fun divesStartTime(dive: Item): Result<Any> =
     fromProfile(dive) { began(it)?.let { moment -> timeOf(moment) } ?: Result.Absent }
 
-internal fun divesEndDate(dive: Item): Result<Any> = fromProfile(dive, ::profilesEndDate)
+internal fun divesEndDate(dive: Item): Result<Any> =
+    fromProfile(dive, ::profilesEndDate).orElse { finished(dive)?.let(::dateOf) ?: Result.Absent }
 
 internal fun divesEndTime(dive: Item): Result<Any> = fromProfile(dive, ::profilesEndTime)
 
-internal fun divesDuration(dive: Item): Result<Any> = fromProfile(dive, ::profilesDuration)
+internal fun divesDuration(dive: Item): Result<Any> =
+    fromProfile(dive, ::profilesDuration).orElse { lasted(dive) }
+
+/**
+ * [this] unless there was nothing to work it out from, in which case what [instead] makes of it.
+ *
+ * A recording that cannot be chosen still travels. `primaryProfile` reports a dive holding
+ * several profiles and naming none, and falling back there would answer a question the dive has
+ * asked twice and settled neither time.
+ */
+private fun Result<Any>.orElse(instead: () -> Result<Any>): Result<Any> =
+    if (this == Result.Absent) instead() else this
+
+/**
+ * When a dive ended, from what it says about itself rather than from a recording.
+ *
+ * The day it started, or the day after where the end time is earlier than the start time. No
+ * dive runs for twenty-four hours, so an end before a start is the following morning and nothing
+ * else. The manual states this to the user under `end_date`.
+ *
+ * **A dive with no start time is left alone.** There is then nothing for the end time to be
+ * earlier than, so whether midnight was crossed is unknown rather than unlikely.
+ */
+private fun finished(dive: Item): Moment? {
+    val began = begun(dive) ?: return null
+    val end = (dive.single<Time>("end_time") as? Result.Usable)?.value ?: return null
+    val day = if (end < began.time) Date.ofEpochDay(began.date.epochDay + 1) else began.date
+    return Moment(day, end)
+}
+
+/** How long a dive ran, from its own times, or absent where they do not place both ends. */
+private fun lasted(dive: Item): Result<Any> {
+    val began = begun(dive) ?: return Result.Absent
+    val ended = finished(dive) ?: return Result.Absent
+    return Result.Usable(began.secondsUntil(ended).toDouble(), Result.Origin.DERIVED)
+}
+
+/** When a dive says it began, both halves being needed before either is any use. */
+private fun begun(dive: Item): Moment? {
+    val date = (dive.single<Date>("start_date") as? Result.Usable)?.value ?: return null
+    val time = (dive.single<Time>("start_time") as? Result.Usable)?.value ?: return null
+    return Moment(date, time)
+}
 
 /**
  * The deepest point a recording reached.

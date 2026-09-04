@@ -111,6 +111,64 @@ class DiveTimesTest {
     }
 
     @Test
+    fun `a hand-logged dive ends on the day it started`() {
+        val dive = logged("2024-06-15", "10:05:00", "10:41:00")
+        assertEquals(Date(2024, 6, 15), value(dive, "end_date"))
+        assertEquals(2160.0, value(dive, "duration"))
+    }
+
+    @Test
+    fun `a hand-logged dive ending before it started ran past midnight`() {
+        val dive = logged("2025-09-06", "23:20:00", "00:05:00")
+        assertEquals(Date(2025, 9, 7), value(dive, "end_date"))
+        assertEquals(2700.0, value(dive, "duration"))
+    }
+
+    @Test
+    fun `a hand-logged dive with no start time is not placed either side of midnight`() {
+        // Nothing for the end time to be earlier than, so whether the day turned is unknown.
+        val dive = set(
+            "dive/d#0.json" to """{"start_date": "2024-06-15", "end_time": "10:41:00"}""",
+        )["d#0"]!!
+        assertEquals(Result.Absent, dive.read("end_date"))
+        assertEquals(Result.Absent, dive.read("duration"))
+    }
+
+    @Test
+    fun `a hand-logged dive with no end time has no end`() {
+        val dive = set(
+            "dive/d#0.json" to """{"start_date": "2024-06-15", "start_time": "10:05:00"}""",
+        )["d#0"]!!
+        assertEquals(Result.Absent, dive.read("end_date"))
+        assertEquals(Result.Absent, dive.read("duration"))
+    }
+
+    @Test
+    fun `a recording still wins over the dive's own times`() {
+        val dive = dived(dive = ""","end_time": "23:59:00"""")
+        assertEquals(Date(2026, 6, 21), value(dive, "end_date"))
+        assertEquals(3600.0, value(dive, "duration"))
+    }
+
+    @Test
+    fun `a dive that cannot choose a recording says so rather than falling back`() {
+        val dive = set(
+            "dive/d#0.json" to """{
+                "start_date": "2024-06-15", "start_time": "10:05:00", "end_time": "10:41:00",
+                "profiles": {"p1": {"depth": [[0, 0]]}, "p2": {"depth": [[0, 0]]}}
+            }""",
+        )["d#0"]!!
+        assertIs<Result.Unusable>(dive.read("end_date"))
+        assertIs<Result.Unusable>(dive.read("duration"))
+    }
+
+    /** A dive as a diver writes one: dates and times, and no recording at all. */
+    private fun logged(date: String, start: String, end: String): Item = set(
+        "dive/d#0.json" to
+            """{"start_date": "$date", "start_time": "$start", "end_time": "$end"}""",
+    )["d#0"]!!
+
+    @Test
     fun `a written time wins over the recording`() {
         val dive = dived(dive = ""","start_time": "07:30:00"""")
         val read = assertIs<Result.Usable<*>>(dive.read("start_time"))
