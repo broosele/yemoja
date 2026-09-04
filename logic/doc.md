@@ -84,30 +84,40 @@ front end names a folder and never opens one. It goes when the Universe arrives.
 last of them: its profiles and its gas sources under keys, a profile's depth and temperature
 against time, and its pressures one series per gas source.
 
-**What is worked out rather than recorded is built where it can be** — twenty of the
-hundred and eighty-nine fields are still absent, each for want of something to work from.
+**Every field the manual defines is described**, all hundred and ninety of them, and every one
+it works out is worked out.
 
-Six are here. A person's `name` is assembled from the parts; a dive's is its id, which the set
-it belongs to answers for. `buddy_count` counts the list. A region's `children` and a trip's
+A person's `name` is assembled from the parts; a dive's is its id, which the set it belongs to
+answers for. `buddy_count` counts the list. A region's `children` and a trip's
 `parts` are the far side of a reference, gathered by asking every item of that type what it
 names — one walk serves both, since a region has many `parents` and a trip has one `parent`,
 and each is asked the same question. A gas source's `volume` comes from the `capacity` of the
 cylinder it names.
 
-**A derivation that cannot answer says so.** `volume` is the one so far with somewhere to go
-wrong: a reference to a regulator, or to a cylinder whose capacity was never filled in, is
-*unusable* rather than absent, because a blank looks like a field nobody wrote and this is a
-mistake worth seeing. `DATA-50`. Absent is kept for the case that is not a mistake at all — a
-rented cylinder nobody has an item for.
-
-**One is left.** `Profile.density` wants a fact nobody has written down: what each maker takes
-salt water to weigh, fresh being 1000 and `en13319` exactly 1020. Each type says which of its
-own are missing.
+**A derivation that cannot answer says so.** `volume` pointed at a regulator, a dive whose
+recording cannot be chosen, a trip that is its own ancestor: each is *unusable* rather than
+absent, because a blank looks like a field nobody wrote and each of these is a mistake worth
+seeing. `DATA-50`. Absent is kept for what is not a mistake at all — a rented cylinder nobody
+has an item for, a dive with no recording, a trip nothing has been logged against yet.
 
 `DiveGear.weight` counts every item in the `weights` category and nothing else. A
 weight-integrated harness is not one: its own mass is the pockets, and the lead that went in
 them is a `weights` item of its own, so the category counts each block once and no harness
 twice.
+
+`Profile.density` was the last, and it moved a field rather than needing a table. A computer
+never measures depth: it measures pressure and divides by an assumed density, so the maker's
+figure is baked into every depth it wrote. Fresh is 1000 and `en13319` exactly 1020, both
+fixed. Salt is whatever that computer was set to, which the gear item now records as
+`salt_density`, falling back to 1030 where there is no computer, no item for it, or no figure
+on it. Recording it on the item beats keying a table on `brand`: two models from one maker can
+differ, `brand` is open text nothing constrains, and a user who looks their computer up can
+simply write the number.
+
+It is absent where the recording does not say what it was set to, which is every profile
+imported from UDDF. `DATA-59` calls that the sharpest gap in the mapping: UDDF keeps the
+converted depth and discards the conversion, and its own `density` is a fact about the site
+rather than about the device.
 
 **One derivation reaches outside the logbook, and only one.** Every other is a pure function of
 the items: the same logbook answers the same way forever. `days_left` and `expired`, on an

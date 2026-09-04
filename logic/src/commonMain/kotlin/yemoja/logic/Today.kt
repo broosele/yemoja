@@ -11,9 +11,9 @@ import yemoja.data.Date
 /**
  * The day this is running on, in whatever zone the machine is set to.
  *
- * **Local, and the zone is not worth deciding.** Recordings are GMT — `DATA-58` — and a moment in
- * GMT is already tomorrow in Auckland, so the two disagree for a third of every day. That gap does
- * not matter here: `days_left` and `expired` are hints, and no renewal turns on which side of
+ * **Local, and the zone is not worth deciding.** Recordings are GMT — `DATA-58` — and a moment
+ * in GMT is already tomorrow in Auckland, so the two disagree for a third of every day. That gap
+ * does not matter here: `days_left` and `expired` are hints, and no renewal turns on which side of
  * midnight it was judged from.
  *
  * Per platform because a calendar day needs a zone, and the standard library carries none. Its

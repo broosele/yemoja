@@ -157,6 +157,13 @@ every dive came off a computer would not be one anybody has.
   metre shallower throughout and was set to `en13319` where `p1` was set to `salt`, so the
   same dive has two depths and two densities behind them.
 
+  Those two densities come out differently on purpose. `p2` is `en13319`, which is 1020
+  whatever recorded it, so its borrowed computer being a plain name costs nothing. `p1` is
+  salt, so it asks `reef_computer`, which carries `salt_density` 1025 — not the 1030 Yemoja
+  falls back to, so a derivation that ignored the field would be visible here. What the
+  fixture does *not* exercise is that fallback: a salt recording off a computer with no
+  figure on it wants a fixture of its own.
+
   It keeps `max_depth` written down at 52.4 while `p1`'s deepest sample is 51.9. That is
   the documented correction, not an inconsistency: a computer usually reports a better
   figure than the profile it kept, which is sampled every few seconds.

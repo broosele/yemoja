@@ -198,6 +198,10 @@ object Types {
             // For a cylinder, how much water it would hold. A twelve-litre has a capacity of 12.
             // An American cylinder named for the gas it delivers is not named by this.
             NumberDescription("capacity", Dimension.VOLUME),
+            // For a dive computer, what it takes salt water to weigh. A computer measures
+            // pressure and divides by this to show a depth, so the maker's figure is baked
+            // into every depth it wrote.
+            NumberDescription("salt_density", Dimension.DENSITY),
             // Whether this describes a kind of item rather than one the user owns. Absent is
             // false: your own gear is your own.
             BooleanDescription("generic"),
@@ -484,8 +488,7 @@ private val TOLERANCES = ItemDescription(
 /**
  * Profile is one recording through a dive, under a key on that dive.
  *
- * Absent so far: `density`, which comes from the water type and, for salt, from the make of
- * computer as well. Nothing here records what each maker takes salt water to weigh.
+ * Absent so far: nothing of its own.
  */
 private val PROFILE = ItemDescription(
     "profile",
@@ -543,6 +546,12 @@ private val PROFILE = ItemDescription(
             "duration",
             Dimension.TIME,
             role = Role.Overrideable(::profilesDuration),
+        ),
+        // What the recorded depths were made with, which is what reading them back needs.
+        NumberDescription(
+            "density",
+            Dimension.DENSITY,
+            role = Role.Overrideable(::profilesDensity),
         ),
         OwnedItemDescription("tolerances", TOLERANCES),
         REMARKS,

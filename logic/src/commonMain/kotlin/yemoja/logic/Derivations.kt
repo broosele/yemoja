@@ -122,6 +122,51 @@ private fun momentOf(item: Item, dateField: String, timeField: String): Moment? 
 }
 
 /**
+ * What a recording's depths were made with, in kilograms per cubic metre.
+ *
+ * **A computer never measures depth.** It measures the pressure around it and divides by an
+ * assumed density, so the figure the maker chose is baked into every depth it wrote, and reading
+ * one back to a pressure needs that same figure. `DATA-59`.
+ *
+ * Fresh and `en13319` are fixed, the second being the nominal figure the European standard for
+ * depth gauges lays down. Salt is whatever the computer was set to, taken from the `salt_density`
+ * of the gear item it names and falling back to [USUAL_SALT] where there is no computer, no item
+ * for it, or no figure on it.
+ *
+ * Absent where nothing says what the computer was set to, which is every profile imported from
+ * UDDF: it records the converted depth and discards the conversion.
+ */
+internal fun profilesDensity(profile: Item): Result<Any> {
+    val water = (profile.single<String>("water_type") as? Result.Usable)?.value
+        ?: return Result.Absent
+    val fixed = FIXED_DENSITIES[water]
+    if (fixed != null) return Result.Usable(fixed, Result.Origin.DERIVED)
+    if (water != SALT) return unusable("$water is not a water type this knows a density for")
+    return Result.Usable(saltDensity(profile), Result.Origin.DERIVED)
+}
+
+/** What the computer this recording came off takes salt water to weigh. */
+private fun saltDensity(profile: Item): Double {
+    val named = profile.single<Reference>("dive_computer") as? Result.Usable
+    val id = ((named?.value) as? Reference.Identified)?.id ?: return USUAL_SALT
+    val computer = profile.set[id] ?: return USUAL_SALT
+    return (computer.single<Double>("salt_density") as? Result.Usable)?.value ?: USUAL_SALT
+}
+
+/**
+ * The two water types whose density is settled whatever the computer is.
+ *
+ * `en13319` is not a measurement of anything: it is the nominal figure the European standard
+ * lays down for depth gauges, deliberately below real seawater so a gauge reads slightly deep.
+ */
+private val FIXED_DENSITIES = mapOf("fresh" to 1000.0, "en13319" to 1020.0)
+
+private const val SALT = "salt"
+
+/** What salt water weighs where nothing says otherwise, which is the usual figure. */
+private const val USUAL_SALT = 1030.0
+
+/**
  * How much lead a dive carried, added up from the items taken.
  *
  * **Every item in the `weights` category, and nothing else.** A weight-integrated harness is not

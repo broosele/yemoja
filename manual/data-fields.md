@@ -327,9 +327,10 @@ Worked out for you:
 - `duration` (number) — how long it ran. Correct any of these where the recording
   stopped before you surfaced.
 - `density` (number) — how heavy the water was taken to be, in kilograms per cubic metre
-  unless the file says otherwise. Worked out from `water_type`, and for salt from the make of computer too, since
-  makers disagree: fresh is 1000, `en13319` is exactly 1020, and salt is somewhere
-  between 1025 and 1035. Write it in yourself if you know better.
+  unless the file says otherwise. Fresh is 1000 and `en13319` is exactly 1020, both of them
+  fixed. Salt is whatever the computer was set to, so it comes from the `salt_density` of the
+  gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
+  figure on it. Write it in yourself if you know better.
 
 **Depth is not a measurement.** A computer measures the pressure around it and turns
 that into a depth using the density it was set for, so every depth here has a water type
@@ -599,6 +600,17 @@ Fields you record:
   a metric cylinder is named by: a twelve-litre has a capacity of 12. An American
   cylinder named for the gas it delivers — a forty, an eighty — is not named by this, so
   write the water capacity rather than the number in the name.
+- `salt_density` (number) — for a dive computer, how heavy it takes salt water to be, in
+  kilograms per cubic metre unless the file says otherwise. Look it up in the computer's own
+  manual and write it once.
+
+  It matters because **a computer never measures depth**. It measures the pressure around it
+  and divides by an assumed density, so the figure the maker chose is baked into every depth
+  it wrote. Two computers on one dive, both set to salt, disagree by the better part of a
+  metre at forty because one assumed 1025 and the other 1035.
+
+  Leave it out and Yemoja uses 1030, which is the usual figure. Fresh water and `en13319` do
+  not need it: those are 1000 and exactly 1020 whatever the computer is.
 - `generic` (true or false) — whether this describes a *kind* of item rather than one you
   own. Leave it out and it is `false`: your own gear is your own. See below.
 - `buoyancy` (owned item) — what the item does in the water.
