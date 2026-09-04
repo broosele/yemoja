@@ -54,11 +54,24 @@ private fun number(item: Item, name: String): Double? =
 class EveryTypeTest {
 
     @Test
+    fun `every type says how its items are listed, on fields it has`() {
+        // A field named wrongly here fails no read and throws nothing: the key comes back
+        // absent, every item ties, and the list quietly falls to the ids.
+        for (type in Types.ALL) {
+            val by = type.orderedBy
+            assertTrue(by.isNotEmpty(), "${type.name} should say how it is listed")
+            for (step in by) {
+                assertNotNull(type[step.field], "${type.name} has no ${step.field} to list by")
+            }
+        }
+    }
+
+    @Test
     fun `a type is named as its files are`() {
         assertEquals(
             listOf(
-                "dive", "person", "region", "dive_site", "wreck", "gear", "certification",
-                "operator", "dive_trip",
+                "dive", "dive_site", "dive_trip", "person", "gear", "certification",
+                "operator", "wreck", "region",
             ),
             Types.ALL.map { it.name },
         )

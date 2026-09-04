@@ -7,8 +7,9 @@ package yemoja.data
  * one item across every type, because a reference carries the id and nothing else.
  *
  * **Two questions, and no more.** Resolve an id, and list everything of a type. `DATA-4`. A logbook
- * is small enough to hold entirely, so filtering, sorting and searching happen above this layer
- * over ordinary collections, and items navigate themselves.
+ * is small enough to hold entirely, so filtering, sorting and searching happen over ordinary
+ * collections rather than here, and items navigate themselves. [inOrder] is such a thing: a
+ * function beside this class that composes both questions, not a third one on it.
  *
  * It answers in both directions. An item cannot say what it is called, but an interface offering
  * "add this person as a buddy" holds one and has to write a reference to it.

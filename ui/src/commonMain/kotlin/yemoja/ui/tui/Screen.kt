@@ -6,6 +6,7 @@ import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
+import yemoja.data.inOrder
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
@@ -75,8 +76,22 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     /** The type whose tab is open. */
     val type: ItemDescription get() = types[tab]
 
-    /** Every item of the open type, in the order the set holds them. */
-    val items: List<ReferenceableItem> get() = set.allOf(type)
+    // What each tab last listed, and how big the set was when it did. Sorting reads every sort
+    // key, and a key can be worked out from a whole profile, so doing it per keypress would
+    // walk the logbook to redraw one row. An added item changes the size and the tab is listed
+    // again; an edited one does not, which is a hole to close when editing arrives. `TUI-3`.
+    private val listed = HashMap<ItemDescription, List<ReferenceableItem>>()
+
+    private var counted = -1
+
+    /** Every item of the open type, in the order that type asks for. */
+    val items: List<ReferenceableItem> get() {
+        if (counted != set.size) {
+            listed.clear()
+            counted = set.size
+        }
+        return listed.getOrPut(type) { set.inOrder(type) }
+    }
 
     /** The chosen item, or absent where the open type has none. */
     val item: ReferenceableItem? get() = items.getOrNull(chosen[tab])
@@ -331,7 +346,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         if (to < 0) return false
         path.clear()
         tab = to
-        chosen[tab] = set.allOf(target.description).indexOf(target)
+        chosen[tab] = items.indexOf(target)
         chosenField[tab] = 0
         return true
     }

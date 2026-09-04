@@ -6,6 +6,7 @@ import yemoja.data.ItemDescription
 import yemoja.data.NumberDescription
 import yemoja.data.ItemSet
 import yemoja.data.ReferenceDescription
+import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Role
 import yemoja.data.TextDescription
@@ -80,11 +81,12 @@ class TabTest {
 
     @Test
     fun `tab moves to the next type and shift-tab back again`() {
+        // By position, the test being about the movement rather than about which types.
         val screen = screen()
         screen.press(Key.NEXT_TAB)
-        assertEquals(Types.PERSON, screen.type)
+        assertEquals(Types.ALL[1], screen.type)
         screen.press(Key.PREVIOUS_TAB)
-        assertEquals(Types.DIVE, screen.type)
+        assertEquals(Types.ALL[0], screen.type)
     }
 
     @Test
@@ -105,6 +107,33 @@ class TabTest {
         screen.press(Key.NEXT_TAB)
         screen.press(Key.PREVIOUS_TAB)
         assertEquals("wadden_sea", chosen(screen))
+    }
+
+    @Test
+    fun `the list is in the order the type asks for, not the order the files were read`() {
+        // Written the wrong way round on purpose. Nothing here names the field they sort on.
+        val screen = screen(logbook("region.json" to """{
+            "wadden_sea": {"name": "Wadden Sea"},
+            "north_sea": {"name": "North Sea"},
+            "irish_sea": {"name": "Irish Sea"}
+        }"""))
+        toTab(screen, "region")
+        assertEquals(
+            listOf("> irish_sea", "north_sea", "wadden_sea"),
+            body(screen).map { it.text.take(14).trim() }.filter { it.isNotEmpty() },
+        )
+    }
+
+    @Test
+    fun `an item added while the screen is open is listed, in its place`() {
+        // The list is worked out once and kept, sorting being too dear to redo per keystroke.
+        val set = logbook("region.json" to """{"north_sea": {"name": "North Sea"}}""")
+        val screen = Screen(set, Types.ALL)
+        toTab(screen, "region")
+        assertEquals(listOf("north_sea"), screen.items.map { set.idOf(it) })
+        val named = mapOf("name" to Result.Usable("Irish Sea", Result.Origin.STORED))
+        set.add("irish_sea", ReferenceableItem(Types.REGION, named, set))
+        assertEquals(listOf("irish_sea", "north_sea"), screen.items.map { set.idOf(it) })
     }
 
     @Test
@@ -155,8 +184,7 @@ class ListTest {
 
     @Test
     fun `a long list scrolls to keep the choice in view`() {
-        val many = (1..40).joinToString(", ") { """"region_$it": {"name": "Region $it"}""" }
-        val screen = screen(logbook("region.json" to "{$many}"))
+        val screen = screen(logbook("region.json" to numbered { """"name": "Region $it"""" }))
         toTab(screen, "region")
         repeat(20) { screen.press(Key.RIGHT) }
         val list = body(screen).map { it.text.take(14).trim() }
@@ -166,15 +194,27 @@ class ListTest {
 
     @Test
     fun `the window moves as little as the choice allows`() {
-        val many = (1..40).joinToString(", ") { """"region_$it": {}""" }
-        val screen = screen(logbook("region.json" to "{$many}"))
+        // No names, so the list falls to the ids, which run the same way.
+        val screen = screen(logbook("region.json" to numbered { "" }))
         toTab(screen, "region")
         repeat(12) { screen.press(Key.RIGHT) }
         // Twelve down on ten rows shows rows four to thirteen, not the chosen one at the top.
         val list = body(screen).map { it.text.take(14).trim() }
-        assertEquals("region_6", list.first())
+        assertEquals("region_06", list.first())
         assertEquals("> region_13", list.last())
     }
+
+    /**
+     * Forty regions, [held] apiece, numbered so that the alphabet and the count agree.
+     *
+     * `region_9` sorts after `region_10`, which would make a test about scrolling turn on the
+     * ordering instead.
+     */
+    private fun numbered(held: (String) -> String): String =
+        (1..40).joinToString(", ", "{", "}") {
+            val at = it.toString().padStart(2, '0')
+            """"region_$at": {${held(at)}}"""
+        }
 }
 
 class DetailTest {
@@ -1579,8 +1619,9 @@ class PathTest {
             LogbookReader.read(
                 MemoryFileStore(
                     mapOf(
+                        // Named, so that the list puts Anna before Tom and lands on her.
                         "person.json" to """{
-                            "anna": {"courses": {"k1": {
+                            "anna": {"first_name": "Anna", "courses": {"k1": {
                                 "certification": "@padi", "instructor": "@tom"}}},
                             "tom": {"first_name": "Tom"}
                         }""",

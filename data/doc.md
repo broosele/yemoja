@@ -481,7 +481,8 @@ everything of a type. Nothing else, and what comes back is always a whole item o
 type asked for, constructed in full when the data is read. There are no summaries, no
 projections and no half-built items — one kind of thing to ask for and one kind of
 thing to get. A logbook is small enough to hold entirely, so
-filtering, sorting and searching are done above this layer over ordinary collections,
+filtering, sorting and searching are done over ordinary collections rather than by the
+set — `inOrder` is a function beside it and not a third question, `DATA-89` —
 and items navigate themselves — a region asks for its children, a reference resolves,
 a dive reaches its site. The interface stays small because there is nothing to add to
 it, which is a better reason than restraint.
@@ -2038,6 +2039,39 @@ Kept with their identifiers so earlier discussion still resolves.
   That blast radius is the reason to be generous now. One typo costs a whole file, and a
   name added in a later version has the same effect on every version before it, so the
   imperial units are in from the start rather than waiting to be needed.
+
+- **DATA-89 — What order items of one type are listed in.** *Settled:* **the type says so,
+  as a list of fields with a direction apiece.** `ItemDescription` carries `orderedBy`, and
+  a front end applies it without knowing what it names. Dives and trips are listed on
+  `start_date` descending; everything else on `name` ascending.
+
+  It had to live in the description, because `UI-3` gives the terminal front end nothing but
+  the descriptions and the whole point of that is that a type added below appears above
+  without anything above changing. An order coded in a front end is a second place that has
+  to learn about every type, and the four front ends planned would each learn it separately.
+
+  **The direction is written down rather than worked out.** The first shape had it follow the
+  kind — text ascending, dates descending — which gave the right answer for all nine types
+  and read wrongly: `orderedBy = listOf("start_date")` says *ordered by start date*, and every
+  reader takes that to mean oldest first. Being right about the nine types was what made the
+  rule look sound. Ascending is the default, so the seven alphabetical types still say one
+  word, and the two that reverse say which way in the declaration.
+
+  **Absent goes last in both directions.** A dive with no date is not the oldest and not the
+  newest, and it is decided before the direction is applied — the sign that reverses a
+  descending step would otherwise lift the unknown to the top.
+
+  **The id breaks every tie**, so the order is total and does not depend on which file an item
+  was written in. Without it a type kept in one file and the same type kept in a folder would
+  list differently, and `JSON-21` lets a logbook use either.
+
+  Text compares without case. Comparing code points puts `Zoo` before `apples`, which is not a
+  list anyone reads. Accents still sort by code point, common Kotlin having no collation, and
+  that is a real limitation rather than a decision.
+
+  Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
+  an item, and `inOrder` composes those two over an ordinary list.
+
 - **DATA-51 — Whether typed accessors exist, and for which fields.** *Settled:* three
   ways in, and not one of them is per field.
 

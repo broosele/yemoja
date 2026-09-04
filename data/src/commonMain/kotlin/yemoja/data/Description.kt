@@ -670,18 +670,26 @@ class OwnedItemDescription(
 }
 
 /**
- * ItemDescription is one item type: its name, and its fields in the order an interface offers
- * them.
+ * ItemDescription is one item type: its name, its fields in the order an interface offers them,
+ * and the order its items are listed in.
  *
  * Immutable.
  */
 class ItemDescription(
     val name: String,
     fields: List<FieldDescription>,
+    orderedBy: List<Ordering> = emptyList(),
 ) {
 
     // Copied. A List is read-only, not immutable.
     val fields: List<FieldDescription> = fields.toList()
+
+    /**
+     * How to sort items of this type, most significant first, or empty to leave them as read.
+     *
+     * `DATA-89`.
+     */
+    val orderedBy: List<Ordering> = orderedBy.toList()
 
     /** Built on first use. Every read is by name, and a scan per read is the wrong shape. */
     val byName: Map<String, FieldDescription> by lazy { fields.associateBy { it.name } }

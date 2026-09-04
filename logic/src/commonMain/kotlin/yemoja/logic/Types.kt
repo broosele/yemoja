@@ -5,6 +5,7 @@ import yemoja.data.Cardinality
 import yemoja.data.Date
 import yemoja.data.DateDescription
 import yemoja.data.Dimension
+import yemoja.data.Direction
 import yemoja.data.Element
 import yemoja.data.GasDescription
 import yemoja.data.Item
@@ -13,6 +14,7 @@ import yemoja.data.KeyReferenceDescription
 import yemoja.data.Moment
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
+import yemoja.data.Ordering
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
@@ -121,6 +123,10 @@ object Types {
             OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
             REMARKS,
         ),
+        orderedBy = listOf(
+            Ordering("start_date", Direction.DESCENDING),
+            Ordering("start_time", Direction.DESCENDING),
+        ),
     )
 
     /**
@@ -158,6 +164,7 @@ object Types {
             OwnedItemDescription("courses", COURSE, cardinality = Cardinality.KEYED),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("name")),
     )
 
     /**
@@ -189,6 +196,7 @@ object Types {
             NumberDescription("north", Dimension.ANGLE, range = LATITUDE),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("name")),
     )
 
     /**
@@ -223,6 +231,7 @@ object Types {
             OwnedItemDescription("maintenances", MAINTENANCE, cardinality = Cardinality.KEYED),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("name")),
     )
 
     /**
@@ -251,6 +260,7 @@ object Types {
             NumberDescription("latitude", Dimension.ANGLE, range = LATITUDE),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("name")),
     )
 
     /**
@@ -275,6 +285,7 @@ object Types {
             NumberDescription("displacement", Dimension.MASS),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("name")),
     )
 
     /**
@@ -298,6 +309,7 @@ object Types {
             ),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("name")),
     )
 
     /**
@@ -321,6 +333,7 @@ object Types {
             WholeNumberDescription("rating", range = 1..10),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("name")),
     )
 
     /**
@@ -357,19 +370,26 @@ object Types {
             ),
             REMARKS,
         ),
+        orderedBy = listOf(Ordering("start_date", Direction.DESCENDING)),
     )
 
-    /** Every type, which is what an item set is built with. */
+    /**
+     * Every type, which is what an item set is built with.
+     *
+     * In the order an interface offers them, which is most used first: the dive, then what a
+     * dive is filed under, then the people and the kit, then what is looked up rather than
+     * kept. A front end takes this order as given. `UI-3`.
+     */
     val ALL: List<ItemDescription> = listOf(
         DIVE,
-        PERSON,
-        REGION,
         DIVE_SITE,
-        WRECK,
+        DIVE_TRIP,
+        PERSON,
         GEAR,
         CERTIFICATION,
         OPERATOR,
-        DIVE_TRIP,
+        WRECK,
+        REGION,
     )
 }
 
