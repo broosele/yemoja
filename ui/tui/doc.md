@@ -250,6 +250,11 @@ A line still too wide for the screen carries on below, and the rows after the fi
 far as the line itself is, so a value that wraps stays in its own column rather than running back
 to the edge.
 
+**A row is cut span by span**, so a mention or a reference straddling the break keeps its
+underline on both halves. Painting each row with the first span's styles was easier and lost the
+mark off anything long enough to need a second row — and the first span of a value row is the
+indent, which is styled with nothing at all.
+
 Both go through one function, and it flattens whatever it is given whether or not the text fits.
 Measuring the escaped form and painting the unescaped one is exactly the bug that was there: a
 break short enough to fit was painted as a break, the terminal took it, and the rest of the value

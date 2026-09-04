@@ -88,6 +88,29 @@ class MentionFollowingTest {
     }
 
     @Test
+    fun `a mention keeps its underline when the row it sits on wraps`() {
+        // The wrap used to paint every row with the first span's styles, which on a value row
+        // is the indent: empty. A reference long enough to need a second row lost its mark.
+        val long = "Ran into @tom_janssen halfway along the wall, which is a good deal " +
+            "further than anybody expected to get on the ebb."
+        val set = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "person.json" to """{"tom_janssen": {"first_name": "Tom"}}""",
+                    "dive/d#0.json" to """{"remarks": "$long"}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val screen = Screen(set, Types.ALL)
+        repeat(screen.rows.size) { if (screen.field?.name != "remarks") screen.press(Key.DOWN) }
+        screen.press(Key.OPEN)
+        val painted = screen.paint(60, 24)
+        assertTrue(painted.any { it.spans.size > 2 }, "the remark should wrap over rows")
+        assertEquals(listOf("@tom_janssen"), styled(screen, Style.UNDERLINED))
+    }
+
+    @Test
     fun `a remark with nothing to follow scrolls as it always did`() {
         val set = LogbookReader.read(
             MemoryFileStore(mapOf("dive/d#0.json" to """{"remarks": "Flat calm all day."}""")),

@@ -513,25 +513,62 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         // holding one now, since a remark is broken into rows before this and every other
         // text is refused a break. The flattening stays as the guarantee rather than the
         // repair: this is what makes a Line one row, and it should not rest on who calls it.
-        val text = flat(line.text)
-        // Span by span, so that what each one is underlined or set apart for survives.
-        if (text.length <= width) {
-            return listOf(Line(line.spans.map { Span(flat(it.text), it.styles) }))
-        }
-        val styles = line.spans.firstOrNull()?.styles.orEmpty()
-        val indent = " ".repeat(text.takeWhile { it == ' ' }.length.coerceAtMost(width / 4))
-        val pieces = ArrayList<String>()
-        var rest = text
+        // Span by span throughout, so that what each one is underlined or set apart for
+        // survives the wrap. Collapsing to the first span's styles was easier and lost the
+        // underline off any reference long enough to need a second row.
+        var rest = line.spans.map { Span(flat(it.text), it.styles) }
+        if (widthOf(rest) <= width) return listOf(Line(rest))
+        val indent = " ".repeat(
+            textOf(rest).takeWhile { it == ' ' }.length.coerceAtMost(width / 4),
+        )
+        val rows = ArrayList<Line>()
         var room = width
-        while (rest.length > room) {
-            val at = breakAt(rest, room)
-            pieces.add(rest.take(at).trimEnd())
+        while (widthOf(rest) > room) {
+            val at = breakAt(textOf(rest), room)
+            rows.add(Line(trimmed(cut(rest, 0, at))))
             // The space broken at is the break, so it is not carried to the next row.
-            rest = indent + rest.drop(at).trimStart()
-            room = (width - indent.length).coerceAtLeast(1) + indent.length
+            val on = cut(rest, at, widthOf(rest))
+            val from = textOf(on).indexOfFirst { it != ' ' }.coerceAtLeast(0)
+            rest = listOf(Span(indent)) + cut(on, from, widthOf(on))
+            room = width
         }
-        pieces.add(rest)
-        return pieces.map { Line(listOf(Span(it, styles))) }
+        rows.add(Line(rest))
+        return rows
+    }
+
+    /** How many characters [spans] paint. */
+    private fun widthOf(spans: List<Span>): Int = spans.sumOf { it.text.length }
+
+    /** What [spans] paint, as one piece of text, for finding a place to break. */
+    private fun textOf(spans: List<Span>): String = spans.joinToString("") { it.text }
+
+    /**
+     * The characters of [spans] from [from] up to [to], each keeping its own styles.
+     *
+     * A break falls wherever the text allows and takes no notice of where one span ends, so a
+     * span straddling it is cut and both halves keep what it was.
+     */
+    private fun cut(spans: List<Span>, from: Int, to: Int): List<Span> {
+        val taken = ArrayList<Span>()
+        var at = 0
+        for (span in spans) {
+            val starts = maxOf(from, at)
+            val ends = minOf(to, at + span.text.length)
+            if (ends > starts) {
+                taken.add(Span(span.text.substring(starts - at, ends - at), span.styles))
+            }
+            at += span.text.length
+        }
+        return taken
+    }
+
+    /** [spans] with the trailing spaces off the last of them, a row not ending in a break. */
+    private fun trimmed(spans: List<Span>): List<Span> {
+        val last = spans.lastOrNull() ?: return spans
+        val kept = last.text.trimEnd()
+        if (kept == last.text) return spans
+        val rest = spans.dropLast(1)
+        return if (kept.isEmpty()) rest else rest + Span(kept, last.styles)
     }
 
     /**
