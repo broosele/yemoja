@@ -47,7 +47,7 @@ would push off the end.
 | Key | Does |
 |---|---|
 | tab, shift-tab | change tab, round the ring — the types, or the keys of an open field |
-| left, right | move through the list of items, stopping at its ends |
+| left, right | move through the list of items, round the ring |
 | up, down | move through whatever fields are in front of you |
 | space | open the item the chosen field names |
 | enter | go one step further in |
@@ -69,8 +69,16 @@ The cost is that the item list answers to left and right rather than to up and d
 reads oddly against a column of ids. It was taken knowingly: an odd direction is learnt once,
 and a key whose meaning moves is read every time.
 
-A list stops at its ends because one that wraps loses the user's place on a long one; the
-tabs and the fields wrap, being short enough to see whole. Leaving takes two keys of its own
+**Choosing goes round the ends; scrolling stops at them.** The tabs, the item list, the
+fields and the values of an open field all wrap, so the far end of any of them is one key
+away. Scrolling does not: a value too long to see is one thing being looked through rather
+than several being picked between, and running off the bottom of it back to the top would
+hide that there was no more to read.
+
+The item list stopped at its ends until `TUI-7`, on the grounds that wrapping loses the
+user's place on a long one. What that overlooked is that the key is the same key: four
+things move under the arrows, and three of them wrapping made the fourth read as broken
+rather than as careful. Leaving takes two keys of its own
 because raw mode swallows the usual one, and `[q] quit` leads both bars: the key a reader
 wants without hunting for it is the one that gets them out, so it is the one thing a screen
 too narrow for anything else still says.
@@ -342,6 +350,26 @@ worth as much as one still to make.
   Editing will test this again rather than settle differently. Once enter opens an editor, `q`
   is a character somebody is typing and escape means *cancel this edit*; ctrl-C is the only one
   that survives intact. `TUI-3`.
+
+- **TUI-7 — Whether the item list wraps.** *Settled:* **yes**, and so do the values of an
+  open field. Everything a reader chooses between now goes round its ends: the tabs, the item
+  list, the fields, and the values inside a field. Scrolling a value too long to see is the
+  one thing that still stops, because it is one thing being looked through rather than several
+  being picked between.
+
+  The list used to stop, on the argument that wrapping loses the user's place on a long one —
+  a logbook holds thousands of dives, and a jump from the last to the first is not a step. That
+  argument still holds on its own terms and was not enough, because the reader does not meet
+  four lists. They meet two arrow keys, and a key that goes round three times out of four and
+  stops the fourth reads as a fault rather than as a kindness.
+
+  The line that would have been drawn instead is between what the type bounds and what the
+  data bounds: ten tabs and forty-odd fields against a logbook's worth of items. It is a real
+  line and it is invisible from the keyboard, which is where the decision is felt.
+
+  What the old rule was protecting is worth keeping in view when editing arrives. Wrapping past
+  the end of a long list is cheap while every key is a movement and nothing is written; it is
+  not obviously cheap once a key can change something. `TUI-3`.
 
 - **TUI-2 — Whether it is shipped to users or stays a development tool.** *Settled:*
   **shipped**, as a power tool. Not yet, since nothing writes and a tool that only reads is

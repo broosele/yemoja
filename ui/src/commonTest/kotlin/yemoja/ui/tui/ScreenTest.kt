@@ -139,14 +139,18 @@ class ListTest {
     }
 
     @Test
-    fun `the choice stops at the ends rather than wrapping`() {
-        // A list that wraps loses the user's place on a long one.
-        val screen = screen()
+    fun `the choice goes round the ends rather than stopping at them`() {
+        // Three, so that a step back from the first is not also a step forward from it.
+        val screen = screen(logbook("region.json" to """{
+            "first": {"name": "First"},
+            "second": {"name": "Second"},
+            "third": {"name": "Third"}
+        }"""))
         toTab(screen, "region")
-        repeat(5) { screen.press(Key.RIGHT) }
-        assertEquals("wadden_sea", chosen(screen))
-        repeat(5) { screen.press(Key.LEFT) }
-        assertEquals("north_sea", chosen(screen))
+        screen.press(Key.LEFT)
+        assertEquals("third", chosen(screen))
+        screen.press(Key.RIGHT)
+        assertEquals("first", chosen(screen))
     }
 
     @Test
@@ -1017,11 +1021,11 @@ class EntryCursorTest {
     }
 
     @Test
-    fun `the cursor stops at the ends`() {
+    fun `the cursor goes round the ends`() {
         val screen = opened(three)
-        repeat(5) { screen.press(Key.DOWN) }
+        screen.press(Key.UP)
         assertEquals("@friday", chosenEntry(screen))
-        repeat(5) { screen.press(Key.UP) }
+        screen.press(Key.DOWN)
         assertEquals("@monday", chosenEntry(screen))
     }
 
@@ -1067,6 +1071,10 @@ class EntryCursorTest {
         val top = screen.paint(40, 12).map { it.text }
         repeat(4) { screen.press(Key.DOWN) }
         assertNotEquals(top, screen.paint(40, 12).map { it.text }, "it should have scrolled")
+        // Scrolling stops where choosing goes round: running off the bottom back to the top
+        // would hide that there was no more to read.
+        repeat(8) { screen.press(Key.UP) }
+        assertEquals(top, screen.paint(40, 12).map { it.text }, "it should be back at the top")
     }
 
     @Test

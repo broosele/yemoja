@@ -115,10 +115,11 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * Answer [key], and say whether the interface is still running.
      *
      * **Each key does one job, and does it wherever the reader is.** Tab moves between tabs — the
-     * types, or the keys of an open field — and wraps round, so either end is one press from the
-     * other. Left and right move through the list of items, stopping at its ends, because a list
-     * that wraps loses the user's place on a long one. Up and down move through the fields in
-     * front of the reader, and wrap, a field list being short enough to see whole.
+     * types, or the keys of an open field. Left and right move through the list of items. Up and
+     * down move through the fields in front of the reader.
+     *
+     * Choosing goes round the ends and scrolling stops at them, so either end of any list is one
+     * press from the other. `TUI-7`.
      */
     fun press(key: Key): Boolean {
         when (key) {
@@ -226,7 +227,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     }
 
     /**
-     * Move [by] through the list of items.
+     * Move [by] through the list of items, round the ends.
      *
      * Only where the list is what a reader is looking at. Inside an open field the item beneath
      * it is what the path was worked out against, and moving it would leave the path pointing at
@@ -234,7 +235,9 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      */
     private fun alongItems(by: Int) {
         if (opened) return
-        chosen[tab] = (chosen[tab] + by).coerceIn(0, (items.size - 1).coerceAtLeast(0))
+        val many = items.size
+        if (many == 0) return
+        chosen[tab] = (chosen[tab] + by + many) % many
     }
 
     /**
@@ -256,6 +259,10 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
      * The chosen item's, where the list is what is shown; and where a field is open, the fields
      * of the item inside it, the values of a list, or the rows of a value too long to see at
      * once. One key for one job, wherever it is done.
+     *
+     * Choosing goes round the ends; scrolling stops at them. A value too long to see is one
+     * thing being looked through rather than several being picked between, and running off the
+     * bottom of it back to the top would hide that there was no more to read.
      */
     private fun alongFields(by: Int) {
         if (!opened) {
@@ -266,7 +273,7 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
         }
         val count = entries()
         if (count == null) within = (within + by).coerceAtLeast(0)
-        else chosenEntry = (chosenEntry + by).coerceIn(0, (count - 1).coerceAtLeast(0))
+        else chosenEntry = if (count == 0) 0 else (chosenEntry + by + count) % count
     }
 
     /**
