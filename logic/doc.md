@@ -111,17 +111,13 @@ twice.
 
 **One derivation reaches outside the logbook, and only one.** Every other is a pure function of
 the items: the same logbook answers the same way forever. `days_left` and `expired`, on an
-insurance and on a maintenance, are counted against the day the logbook was opened, so they
-change overnight with nothing edited. That is why the day is handed in rather than read from a
-clock — `LOGIC-9` — and it is survivable because `DATA-6` already has nothing announced and
-whatever shows a worked-out value asking again.
+insurance and on a maintenance, are counted against today, so they change overnight with
+nothing edited. That is survivable because `DATA-6` already has nothing announced and whatever
+shows a worked-out value asking again. `LOGIC-9`.
 
-The day reaches them the only way anything can. A derivation is handed an item, and an item's
-one route outward is the set it belongs to, so `ItemSet` carries the date whoever opened the
-logbook supplied. Ownership is the Universe's — one day for the application, so an open
-logbook and its import candidates cannot disagree — and the set holds it as the channel, the
-way it already holds the descriptions. A set built without one says so: those two fields are
-*unusable* rather than blank, a blank being what cover with no end date looks like.
+They ask `today()`, which reads the machine's own calendar date and needs nothing from
+anybody. It is per platform because a day needs a zone and the standard library carries none:
+its clock answers with an instant, which is the same moment everywhere and so a day nowhere.
 
 [manual/data-fields.md](../manual/data-fields.md) is the source of truth for every field,
 and where it and `Types.kt` disagree the manual is right. `tool/checkdata.py` holds the two
@@ -220,8 +216,8 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
-- **LOGIC-9 — Where *today* comes from.** *Settled:* **the local calendar date, handed to
-   this layer rather than read inside a derivation.**
+- **LOGIC-9 — Where *today* comes from.** *Settled:* **the local calendar date, from a
+   `today()` this layer implements per platform.**
 
    Four fields want it: `days_left` and `expired` on an insurance and on a maintenance.
    Nothing else in the project asks what day it is, and until these are written nothing
@@ -233,23 +229,38 @@ To settle when we discuss architecture and features:
    which side of midnight it is judged from. A cover that ran out this morning and one that
    runs out tonight are the same news.
 
-   **Handed in, not read.** A derivation is `(Item) -> Result<Any>` and an item carries the
-   set it belongs to, so everything else these need is already in reach. A clock is not: a
-   derivation that reached for one would give two answers to one question, and every test
-   touching `expired` would depend on the day it ran. The layer takes the date it is
-   built with, so a test states the day it means and production passes the machine's.
+   **Asked, not handed in.** *Today* needs no context: it is the same answer for every item
+   in every set, so nothing has to carry it and nothing has to be told it. A derivation calls
+   `today()` where it needs one, and no signature anywhere mentions a day.
 
-   **The Universe owns it and `ItemSet` carries it.** Not a compromise between the two: the
-   data layer calls a derivation and holds only the item, so `item.set` is the one channel
-   that exists, and an item cannot name a Universe without inverting the dependency between
-   the layers. Ownership still sits above — one day for the application, so a logbook and its
-   import candidates cannot disagree — while the set holds it the way it already holds the
-   descriptions, as something from above that is only ever read.
+   It was built the other way first — the date threaded from the front end through
+   `Logbook.open`, the reader and `ItemSet`, which a derivation then read off `item.set`. That
+   arrangement was forced by a real constraint, since the data layer calls a derivation holding
+   only the item and `item.set` is its one route outward, so context that genuinely varies
+   would have to arrive that way. This does not vary. Threading it cost `ItemSet` the claim its
+   own document makes — *two questions, and no more* — put a parameter on three signatures,
+   and made forgetting it silent, since it had to default to absent or every test would carry
+   a day it did not care about.
 
-   A `Date` rather than an opaque context box. The second thing wanting to reach a derivation
-   would earn the box, and there is no second thing yet: `LOGIC-7`'s judgement sits above the
-   field, `UI-2`'s units are applied when a value is read, and `LOGIC-6`'s gradient factors
-   belong to a service computing a fresh answer rather than to a stored one.
+   **The argument for handing it in was testability, and it was weaker than it looked.** A
+   derivation reading a clock does make a test time-dependent — but only one that names a day.
+   Written as an offset from `today()`, a test pins the arithmetic and both boundaries without
+   naming one: cover ending twenty-seven days out has twenty-seven left; ending today has none
+   left and has not expired; ending yesterday has minus one and has. `Date.daysUntil` is
+   covered where it lives.
+
+   **Per platform, because a calendar day needs a zone.** `kotlin.time.Clock.System.now()` is
+   in the standard library and needs no dependency, but it answers with an instant. Using it
+   as a day would mean UTC, which tells somebody in New Zealand it is yesterday for thirteen
+   hours out of every twenty-four — small, and exactly the off-by-one a reader notices on
+   `days_left`. So `expect fun today()` here and an `actual` per target, of which the JVM's is
+   the only one built.
+
+   This says nothing about context that does vary. Should a derivation ever need something
+   that differs between one set and another, `item.set` is still the only channel and the
+   question reopens then. `LOGIC-7`'s judgement sits above the field, `UI-2`'s units are
+   applied when a value is read, and `LOGIC-6`'s gradient factors belong to a service
+   computing a fresh answer rather than to a stored one, so nothing is waiting.
 
    **No dependency follows.** `kotlin.time.Clock.System.now()` is in the standard library
    and needs nothing added, but it answers with an instant, and turning an instant into a

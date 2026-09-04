@@ -27,22 +27,7 @@ package yemoja.data
  *
  * Not immutable: reading a logbook fills a set, and a logbook gains items while it is open.
  */
-class ItemSet(
-    descriptions: List<ItemDescription>,
-    /**
-     * The day this set is being read on, where whoever built it knew.
-     *
-     * **The one thing here that is not an item.** Four fields are worked out against today
-     * rather than against the logbook — an insurance and a maintenance each say how many days
-     * are left and whether they have run out — and a derivation is handed an item, whose only
-     * way out is the set it belongs to. So the day arrives here, from whoever opened the
-     * logbook. `LOGIC-9`.
-     *
-     * Absent where nobody said. A set built without one cannot answer those four and says so,
-     * which is the honest answer and not a blank.
-     */
-    val today: Date? = null,
-) {
+class ItemSet(descriptions: List<ItemDescription>) {
 
     // Copied. A List is read-only, not immutable.
     /** The types this set may hold. They come from the logic layer, since a dive is its subject. */

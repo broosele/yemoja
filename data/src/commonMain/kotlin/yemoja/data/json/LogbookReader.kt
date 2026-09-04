@@ -1,6 +1,5 @@
 package yemoja.data.json
 
-import yemoja.data.Date
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
@@ -84,9 +83,8 @@ object LogbookReader {
         store: FileStore,
         types: List<ItemDescription>,
         manifest: Manifest = manifest(store),
-        today: Date? = null,
     ): ItemSet {
-        val set = ItemSet(types, today)
+        val set = ItemSet(types)
         for (description in types) {
             val named = manifest.libraries[description.name].orEmpty()
             for ((id, held) in itemsOf(store, description.name, named)) {

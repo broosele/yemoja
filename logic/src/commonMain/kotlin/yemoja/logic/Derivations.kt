@@ -156,23 +156,12 @@ private const val WEIGHTS = "weights"
  * of one fact rather than two calculations.
  */
 private fun daysLeft(item: Item, until: String): Long? {
-    val today = item.set.today ?: return null
     val ends = (item.single<Date>(until) as? Result.Usable)?.value ?: return null
-    return today.daysUntil(ends)
+    return today().daysUntil(ends)
 }
 
-/**
- * [item]'s remaining days, or why they cannot be counted.
- *
- * **Unusable rather than absent where nobody said what day it is.** A set can be built without
- * one — a tool reading a logbook, a test stating no day — and a blank would read as cover with
- * no end date rather than as a question nothing here can answer. `DATA-50`.
- */
+/** [item]'s remaining days, or absent where it owes nothing by any date. */
 private fun remaining(item: Item, until: String): Result<Any> {
-    if (item.set.today == null) {
-        if (item.read(until) !is Result.Usable) return Result.Absent
-        return unusable("nothing here knows what day it is, so $until counts against nothing")
-    }
     val left = daysLeft(item, until) ?: return Result.Absent
     return Result.Usable(left.toInt(), Result.Origin.DERIVED)
 }
