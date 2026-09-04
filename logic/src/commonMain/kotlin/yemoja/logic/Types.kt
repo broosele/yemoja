@@ -416,7 +416,6 @@ private val OPERATOR_CATEGORIES = setOf(
 /** Anything is allowed; these are the ones the supplied regions use. */
 private val REGION_CATEGORIES = setOf("world", "continent", "ocean", "sea", "country", "area")
 
-/** Anything is allowed; these are the ones the manual names. */
 /**
  * How a diver crosses the waterline, at either end of a dive.
  *
@@ -438,6 +437,7 @@ private val ENTRIES_AND_EXITS = setOf(
 /** The models a dive computer may be running, as libdivecomputer names them. */
 private val DECO_MODELS = setOf("buhlmann", "vpm", "rgbm", "dciem")
 
+/** Anything is allowed; these are the ones the manual names. */
 private val GEAR_CATEGORIES = setOf(
     "ABC",
     "BCD",
