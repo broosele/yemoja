@@ -56,7 +56,7 @@ always pick an item themselves, the dives being live before they are saved.
 | `datetime.timezone` | `profile.gmt_offset` | where reported; else asked: `LOGIC-11` |
 | `DIVETIME` | `profile.duration` | written as an override: `LOGIC-19` |
 | `MAXDEPTH` | `dive.max_depth` | written as an override |
-| `AVGDEPTH` | — | dropped: `LOGIC-10` |
+| `AVGDEPTH` | `dive.average_depth` | written as an override |
 | `GASMIX`, `GASMIX_COUNT` | `dive.gas_sources` | with the tanks: `LOGIC-12` |
 | `TANK`, `TANK_COUNT` | `dive.gas_sources` | `LOGIC-12` |
 | `SALINITY` | `profile.water_type`, `density` | type and density both: `LOGIC-14` |

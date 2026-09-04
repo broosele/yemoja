@@ -25,6 +25,7 @@
     "courses": {
       "k1": {
         "certification": "@padi_open_water_diver",
+        "number": "OW-1503-QT44",
         "instructor": "@tom_janssen",
         "date": "2019-06-02",
         "dives": [
@@ -92,6 +93,7 @@
     "first_name": "Tom",
     "last_name": "Janssen",
     "email": "tom@example.invalid",
+    "instructor_number": "IN-2208",
     "medical": {
       "last_medical_check": "2024-04-19",
       "blood_group": "B+",

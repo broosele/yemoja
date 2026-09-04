@@ -586,10 +586,14 @@ To settle when we discuss architecture and features:
 - **LOGIC-10 — What a download does with a value the model has no field for.** *Settled:*
    **it is dropped, and the download says what it dropped.**
 
-   A dive computer offers more than this model keeps: average depth, dive mode, ppO2, a
-   rebreather setpoint, remaining bottom time, heart rate, a compass bearing, and whatever a
-   maker puts in its own strings. None of those has a field, and inventing one for each in
-   order to lose nothing would be letting the devices decide what a dive is.
+   A dive computer offers more than this model keeps: dive mode, ppO2, a rebreather setpoint,
+   remaining bottom time, heart rate, a compass bearing, and whatever a maker puts in its own
+   strings. None of those has a field, and inventing one for each in order to lose nothing
+   would be letting the devices decide what a dive is.
+
+   Average depth was on that list until the model gained a field for it, and is now an
+   override like `MAXDEPTH`. That is the question working rather than failing: a thing is
+   dropped *because* nothing models it, so modelling it is the way off the list.
 
    **Keeping them unrecognised was the tempting answer and is the wrong one.** The format
    already keeps a field it does not know, so that a newer version's data survives a round

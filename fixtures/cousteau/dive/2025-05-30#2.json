@@ -1,6 +1,8 @@
 {
   "dive_number": 38,
   "dive_site": "@lantern_reef",
+  "entry": "boat",
+  "exit": "boat",
   "previous_dive": "@2025-05-30#1",
   "buddies": [
     "@jacques_cousteau"

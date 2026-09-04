@@ -131,6 +131,17 @@ Fields you record:
   numbers every dive, and Yemoja does not require it. This is unrelated to the number at
   the end of the item's id.
 - `dive_site` (reference) — where the dive was.
+- `entry`, `exit` (text) — how you got in, and how you got out. Anything you like; the
+  usual ones are `shore`, `pier`, `boat`, `hard boat`, `rib`, `liveaboard`, `platform`
+  and `pool`.
+
+  Two fields rather than one because they differ more often than you would think: a drift
+  dive goes in off a boat and comes out on a beach, and a shore dive in a swell sometimes
+  comes out up a ladder. Where they are the same, write the same word twice — Yemoja does
+  not assume one from the other, because assuming would make the interesting case invisible.
+
+  This is a property of the *dive*, not of the site. The same quarry is a shore dive one
+  day and a boat dive the next.
 - `previous_dive` (reference) — the dive you were still carrying gas from when you went
   back in. Leave it out for a dive you started clean, which is most of them. Yemoja does
   not work this out from the clock: whether a surface interval was long enough to ignore
@@ -171,6 +182,9 @@ Worked out for you:
 - `max_depth` (number) — the deepest point reached, from the primary profile. Worth
   correcting: a dive computer usually reports a better figure than its own recorded
   profile, which is only sampled every few seconds.
+- `average_depth` (number) — how deep the dive was on average, weighted by time rather than
+  by sample. A computer records unevenly, so counting samples would let a slow ascent drag
+  the figure down for no reason. Correct it for the same reason as `max_depth`.
 - `surface_interval` (number) — how long you were out of the water before this dive,
   from `previous_dive`'s end time to this dive's start. Nothing is worked out when
   `previous_dive` is unset. Write it yourself for a dive whose predecessor is not in this
@@ -430,6 +444,10 @@ Fields you record:
 - `address` (text)
 - `email` (text)
 - `phone` (text)
+- `instructor_number` (text) — their number as an instructor, where they are one. Text
+  rather than a number: it may carry letters and leading zeros, and nothing is ever added
+  up. Someone who instructs for two agencies has two, so record the one that matters to you
+  and put the other in `remarks`.
 - `medical` (owned item) — this person's health details.
 - `emergency_contacts` (list of references or text) — who to contact about this person
   in an emergency. A plain name works if you do not want a full item for them.
@@ -484,7 +502,10 @@ Worked out for you:
 A list on a person, one entry for each qualification earned.
 
 - `certification` (reference) — which qualification it was.
-- `instructor` (reference) — who taught it.
+- `number` (text) — the number on the card, which identifies this award rather than the
+  qualification. Text, for the same reason as `instructor_number`.
+- `instructor` (reference) — who taught it. Their own number is on them, not here: a course
+  points at the person and the person carries it.
 - `date` (date) — when it was granted.
 - `dives` (list of references) — the dives that formed part of it.
 - `remarks` (multiline text) — how it went, and what it covered.

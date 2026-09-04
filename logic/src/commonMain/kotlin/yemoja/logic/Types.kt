@@ -62,6 +62,11 @@ object Types {
             // The user's own numbering, which nothing renumbers. Not every diver keeps one.
             WholeNumberDescription("dive_number"),
             ReferenceDescription("dive_site", targetType = "dive_site"),
+            // How the water was got into and out of. Two fields because they differ: a drift
+            // dive goes in off a boat and comes out on a beach. Neither is assumed from the
+            // other, which would hide exactly that case.
+            TextDescription("entry", suggestedSet = ENTRIES_AND_EXITS),
+            TextDescription("exit", suggestedSet = ENTRIES_AND_EXITS),
             // The dive still being carried gas from when this one began.
             ReferenceDescription("previous_dive", targetType = "dive"),
             // From `previous_dive`'s end to this dive's start. Written by hand for a dive whose
@@ -107,6 +112,11 @@ object Types {
                 Dimension.LENGTH,
                 role = Role.Overrideable(::divesMaxDepth),
             ),
+            NumberDescription(
+                "average_depth",
+                Dimension.LENGTH,
+                role = Role.Overrideable(::divesAverageDepth),
+            ),
             BooleanDescription("deco", role = Role.Overrideable(::divesDeco)),
             REMARKS,
         ),
@@ -131,6 +141,9 @@ object Types {
             TextDescription("address"),
             TextDescription("email"),
             TextDescription("phone"),
+            // Their own number as an instructor. Text: letters and leading zeros are ordinary
+            // and nothing is added up.
+            TextDescription("instructor_number"),
             // A plain name stands in for someone with no item of their own, which is what makes
             // this the one reference here that allows one.
             ReferenceDescription(
@@ -404,6 +417,24 @@ private val OPERATOR_CATEGORIES = setOf(
 private val REGION_CATEGORIES = setOf("world", "continent", "ocean", "sea", "country", "area")
 
 /** Anything is allowed; these are the ones the manual names. */
+/**
+ * How a diver crosses the waterline, at either end of a dive.
+ *
+ * Suggested rather than fixed. A closed list would have to be right the first time and this
+ * one is not closeable — ice, a marina ladder, a helicopter — and nothing exports it to
+ * another format's closed list, which is what `water_type` and `environment_type` are held to.
+ */
+private val ENTRIES_AND_EXITS = setOf(
+    "shore",
+    "pier",
+    "boat",
+    "hard boat",
+    "rib",
+    "liveaboard",
+    "platform",
+    "pool",
+)
+
 /** The models a dive computer may be running, as libdivecomputer names them. */
 private val DECO_MODELS = setOf("buhlmann", "vpm", "rgbm", "dciem")
 
@@ -648,6 +679,9 @@ private val COURSE = ItemDescription(
     "course",
     listOf(
         ReferenceDescription("certification", targetType = "certification"),
+        // The number on the card, which names this award rather than the qualification.
+        TextDescription("number"),
+        // Whose own number is on them rather than here: a course points at the person.
         ReferenceDescription("instructor", targetType = "person"),
         DateDescription("date"),
         ReferenceDescription("dives", targetType = "dive", cardinality = Cardinality.LIST),

@@ -75,9 +75,15 @@ Each of these is here because it is awkward, not because it is typical.
 - `jacques_cousteau` is both the logbook's owner and a buddy on dives.
 - `simone_cousteau` and `jacques_cousteau` name each other as emergency contacts.
 - Courses point at the dives that formed them.
+- `jacques_cousteau`'s first course carries a card `number`, and `tom_janssen` who taught it
+  carries an `instructor_number`. The two sit apart on purpose: a card number names one
+  award and an instructor's number names the instructor, so the course holds the first and
+  the person the second, with the course's reference joining them.
 
 **Sparse and absent**
 
+- `2024-06-15#0` goes in from the shore and comes out on the pier, which is why `entry` and
+  `exit` are two fields. Every other dive that carries them has the same word twice.
 - `2026-05-02#0` has a date, a time and a remark, and nothing else.
 - `omar_haddad` has a first and last name and nothing else.
 - `old_lock_basin` has no coordinates.

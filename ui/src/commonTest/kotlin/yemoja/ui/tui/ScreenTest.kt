@@ -1475,6 +1475,17 @@ class PathTest {
         .firstOrNull { row -> row.spans.any { Style.SELECTED in it.styles } }
         ?.let { squeezed(it.text) }
 
+    /**
+     * Move down inside an open item until the chosen row is [label]'s.
+     *
+     * By name rather than by counting presses. A type gaining a field used to move every
+     * cursor below it and break tests that had nothing to do with the field.
+     */
+    private fun toRow(screen: Screen, label: String) {
+        repeat(20) { if (chosenRow(screen)?.startsWith(label) != true) screen.press(Key.DOWN) }
+        assertEquals(true, chosenRow(screen)?.startsWith(label), chosenRow(screen))
+    }
+
     @Test
     fun `opening a field that holds an item shows that item's own fields`() {
         val screen = person()
@@ -1550,7 +1561,9 @@ class PathTest {
         screen.press(Key.OPEN)
         assertEquals("Certification", chosenRow(screen))
         screen.press(Key.DOWN)
-        assertEquals("Instructor", chosenRow(screen))
+        assertEquals("Number", chosenRow(screen))
+        screen.press(Key.UP)
+        assertEquals("Certification", chosenRow(screen))
     }
 
     /** A course naming both a certification and an instructor, each of which is there. */
@@ -1589,7 +1602,7 @@ class PathTest {
     @Test
     fun `it follows the one the cursor moved to, not the first`() {
         val screen = course()
-        screen.press(Key.DOWN)
+        toRow(screen, "Instructor")
         screen.press(Key.FOLLOW)
         assertEquals(Types.PERSON, screen.type)
         assertEquals("Tom", (screen.item?.single<String>("name") as? Result.Usable)?.value)
@@ -1600,7 +1613,7 @@ class PathTest {
         val screen = person()
         toField(screen, "courses")
         screen.press(Key.OPEN)
-        repeat(2) { screen.press(Key.DOWN) }
+        toRow(screen, "Date")
         screen.press(Key.OPEN)
         assertEquals("person / anna / courses / k1 / date", said(screen).first())
     }
@@ -1622,7 +1635,7 @@ class PathTest {
         val screen = person()
         toField(screen, "courses")
         screen.press(Key.OPEN)
-        repeat(2) { screen.press(Key.DOWN) }
+        toRow(screen, "Date")
         screen.press(Key.OPEN)
         screen.press(Key.CLOSE)
         assertEquals("person / anna / courses / k1", said(screen).first())

@@ -115,8 +115,14 @@ omission, and none is yet decided:
 - `workload` — physical exertion. `manual/decompression.md` names exertion among the
   things the model cannot know, so recording it would be honest even unused.
 - `problems`, `equipmentmalfunction` — what went wrong. Currently only `remarks`.
-- `platform`, `apparatus`, `purpose`, `program`, `stateofrestbeforedive`, `diveplan`,
-  `pressuredrop`, `internaldivenumber`, `applicationdata`.
+- `apparatus`, `purpose`, `program`, `stateofrestbeforedive`, `diveplan`, `pressuredrop`,
+  `internaldivenumber`, `applicationdata`.
+
+**`platform` has a counterpart now.** It was on the list above until this model gained `entry`
+and `exit`, which say how a diver got in and how they got out. What is not yet compared is the
+two vocabularies: ours is a suggested set of eight and UDDF's is whatever its own page says,
+which nobody has read against it. One field there against two here also means an export must
+choose, and a drift dive is exactly where the two differ.
 
 ## The profile
 

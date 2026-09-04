@@ -4,6 +4,8 @@
   "start_time": "10:05:00",
   "end_time": "10:41:00",
   "dive_site": "@ravensgate_quarry",
+  "entry": "shore",
+  "exit": "pier",
   "buddies": [
     "@tom_janssen"
   ],

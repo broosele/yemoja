@@ -143,6 +143,16 @@ them.
 
 Entries here keep their reason, so that a decision already taken is not taken again.
 
+- **FEAT-24 — A state on a piece of gear.** Whether an item is new, in use, retired or sold.
+  Considered against a real logbook that records one, and declined: a logbook is not an
+  inventory, and neither reading of the word earns a field. Condition overlaps what
+  `maintenances` already records, and standing answers a question nobody asked.
+
+  What raised it is worth keeping, because it does not go away with the field. **Gear cannot
+  be deleted once a dive names it** — a wetsuit named by forty dives would take them with it —
+  so a kit list only ever grows. Whoever wants to shorten one will meet this again, and
+  `remarks` is where it goes until then.
+
 - **FEAT-21 — Closed and semi-closed circuit diving.** Rebreather support, and the data
   that comes with it: set, measured and calculated oxygen partial pressures through a
   dive, and the dive modes that distinguish a rebreather from open circuit. Ruled out for

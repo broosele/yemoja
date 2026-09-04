@@ -69,6 +69,34 @@ internal fun divesMaxDepth(dive: Item): Result<Any> = fromProfile(dive) { profil
 }
 
 /**
+ * How deep a dive was on average, weighted by time.
+ *
+ * **Not the mean of the samples.** A computer records unevenly — often densely on the way
+ * down and sparsely at a safety stop — so counting samples would weight a crowded minute the
+ * same as an empty ten. Each interval between two samples contributes the depth it spent
+ * there, which is the area under the profile divided by how long it ran.
+ *
+ * A profile is read as piecewise linear, so an interval's depth is the mean of its two ends.
+ * A sample that could not be read breaks the pair it belongs to and both its intervals are
+ * passed over; the rest of the dive is unaffected.
+ */
+internal fun divesAverageDepth(dive: Item): Result<Any> = fromProfile(dive) { profile ->
+    val depth = (profile.read("depth") as? Result.Usable)?.value as? Series
+        ?: return@fromProfile Result.Absent
+    var area = 0.0
+    var ran = 0
+    for (at in 1..<depth.size) {
+        val before = (depth.valueAt(at - 1) as? Element.Usable)?.value as? Double
+        val after = (depth.valueAt(at) as? Element.Usable)?.value as? Double
+        if (before == null || after == null) continue
+        val seconds = depth.secondAt(at) - depth.secondAt(at - 1)
+        area += (before + after) / 2 * seconds
+        ran += seconds
+    }
+    if (ran == 0) Result.Absent else Result.Usable(area / ran, Result.Origin.DERIVED)
+}
+
+/**
  * Whether a dive went past the no-decompression limit.
  *
  * A `decostop` above zero at any point means yes. Failing that, a `no_deco_time` that never

@@ -159,6 +159,50 @@ class PrimaryProfileTest {
     }
 }
 
+class AverageDepthTest {
+
+    @Test
+    fun `it is weighted by time, not by sample`() {
+        // Ten minutes at 30, then one minute at 10 taken in four crowded samples. Counting
+        // samples would call this about 17 metres; the dive was nearer 29.
+        val dive = dived(
+            series = """"depth": [[0, 30.0], [600, 30.0], [615, 10.0], [630, 10.0],
+                [645, 10.0], [660, 10.0]]""",
+        )
+        val read = assertIs<Result.Usable<*>>(dive.read("average_depth"))
+        val depth = read.value as Double
+        assertTrue(depth > 28.0 && depth < 30.0, "time-weighted, and was $depth")
+        assertEquals(Result.Origin.DERIVED, read.origin)
+    }
+
+    @Test
+    fun `a square profile averages its own depth`() {
+        val dive = dived(series = """"depth": [[0, 20.0], [1800, 20.0]]""")
+        assertEquals(20.0, (dive.read("average_depth") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a straight descent averages half its depth`() {
+        // Read as piecewise linear, so a line from nothing to forty spends its time at twenty.
+        val dive = dived(series = """"depth": [[0, 0.0], [600, 40.0]]""")
+        assertEquals(20.0, (dive.read("average_depth") as Result.Usable).value)
+    }
+
+    @Test
+    fun `one sample is no interval, so there is nothing to average`() {
+        assertEquals(Result.Absent, dived(series = """"depth": [[0, 12.0]]""")
+            .read("average_depth"))
+    }
+
+    @Test
+    fun `a written average wins over the recording`() {
+        val dive = dived(dive = ""","average_depth": 14.0""")
+        val read = assertIs<Result.Usable<*>>(dive.read("average_depth"))
+        assertEquals(14.0, read.value)
+        assertEquals(Result.Origin.OVERRIDDEN, read.origin)
+    }
+}
+
 class DecoTest {
 
     private fun deco(series: String): Result<Any> =
