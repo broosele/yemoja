@@ -226,6 +226,56 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-15 — What an import does about a recording's density.** *Settled:* **it thins, and
+   writes what the thinning cost into `tolerances`.**
+
+   A computer sampling every two seconds gives eighteen hundred depths in an hour, and a profile
+   drawn from those is no better than one drawn from a couple of hundred. Points lying on a line
+   the others already describe carry nothing.
+
+   This is not about disk. A logbook is small either way, and `../data/json/doc.md` says so —
+   twenty dives is about forty kilobytes. It is about a recording being legible by hand, which
+   is what the format exists for.
+
+   **The figure is written because a missing one claims nothing.** The manual is explicit: an
+   absent tolerance does not mean the series was left alone, it means nobody recorded what was
+   done to it. Thinning without recording would produce a recording that lies by omission about
+   its own precision, which is worse than either alternative.
+
+   **Only the three series with a tolerance figure are thinned**, and the model says which by
+   holding exactly three: depth, temperature and pressure. That is not a coincidence to work
+   around but the answer — a straight line between two samples is a claim about a quantity that
+   varies continuously. `alarms` and `gas_switches` are events, where dropping one that lies
+   "between" two others would drop the event itself. `decostop` is stepped rather than
+   continuous, and smoothing a step is inventing a ceiling that was never held.
+
+   **A tolerance of zero keeps everything**, which is what a user who wants the recording
+   untouched sets. The three figures are a setting rather than a constant, and are **not chosen
+   here**: they are stated in the default units — metres, degrees Celsius and bar — so that
+   whoever picks them is not picking a number in the wrong scale.
+- **LOGIC-14 — What a download's salinity becomes.** *Settled:* **`water_type` as reported,
+   and the reported density written beside it.**
+
+   `DC_FIELD_SALINITY` gives a type and a density together, and the type is one of two: fresh
+   or salt. This is the field that closes what `DATA-59` calls the sharpest gap in the UDDF
+   mapping. UDDF stores a converted depth and discards the conversion; a download hands the
+   conversion over, so a downloaded profile knows what its depths were made with and the
+   `salt_density` a gear item carries is never consulted for one.
+
+   The density is written whatever it is. `density` is overrideable, so a written figure sits
+   on top of whatever the water type would have given and wins, which is exactly the case the
+   field was made overrideable for.
+
+   **`en13319` can never come out of a download**, and is not inferred. A computer set to the
+   standard's nominal figure reports salt at 1020, and so does a computer genuinely set to salt
+   water at 1020 — nothing distinguishes them. Reading 1020 as the standard would be right most
+   of the time and unfalsifiable when it was not: the label would change under the user with
+   nothing to show a choice had been made. So the third value stays what a user picks, and a
+   download only ever writes the two it was told.
+
+   Nothing is lost by that. The label reads a little oddly on a computer using the standard —
+   salt, at 1020 — while the depths are right either way, since they follow the density and the
+   density is the reported one.
 - **LOGIC-13 — What a download's deco samples become.** *Settled:* **`NDL` fills
    `no_deco_time` and `DECOSTOP` fills `decostop`. A safety stop and a deep stop are dropped.**
 
