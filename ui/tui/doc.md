@@ -304,6 +304,9 @@ where the user is in it.
 
 ## Open questions
 
+**None are open.** All six are settled and kept here, since a decision not to relitigate is
+worth as much as one still to make.
+
 - **TUI-1 — Full-screen interactive or a command-driven REPL?** *Settled:* full-screen
   interactive. The tabs, the list and the cursor keys are what was asked for, and a REPL
   would be less code but would not show a whole item at once, which is the thing this exists
@@ -352,8 +355,29 @@ where the user is in it.
   The raw look stays. Raw is what a power tool is for, and *no polish* was never the same
   claim as *no care*. Nor does this make the TUI the GUI in a terminal: what is out of scope
   above stays out, and `TUI-3` is still open about what it may edit.
-- **TUI-3 — Whether it can edit fields the GUI cannot**, and if so, how it avoids letting
-   someone write data the GUI then cannot display.
+- **TUI-3 — Whether it can edit fields the GUI cannot.** *Settled:* **no, and the question
+  turns out not to arise.**
+
+  It was written against a real risk: data written in one front end that another cannot show
+  or correct, leaving a logbook only one interface can maintain. What closes it is a decision
+  the GUI had already taken. `ui/gui/doc.md` splits that interface in two — the item view
+  presents and never changes anything, the edit view is *"every field the item has, laid out
+  to be filled in rather than admired"*. So the GUI hides fields from **reading**, which
+  `GUI-16` leaves to each item type, and from writing it hides none.
+
+  Both front ends therefore reach every field, and this one keeps its purpose — getting at
+  everything without waiting for a screen to be grown for it — without ever holding a licence
+  the other lacks.
+
+  **What may not be written is a property of the field, not of the interface.** A `Role.Derived`
+  field refuses a written value wherever it is offered: a dive's `name` is the id, and writing
+  one would be renaming the dive, which belongs to the Universe with its references. No front
+  end can get that wrong, because none of them decides it.
+
+  The limit that does exist runs the other way. A series is thousands of samples, and nothing
+  will type one into a terminal — so there are shapes this interface cannot practically edit
+  and the GUI can. That is a gap in this front end rather than a hazard from it, and a value it
+  cannot edit it can still show.
 - **TUI-4 — What reads the keyboard.** *Settled:* **Mordant**, with its JNA module.
 
   Raw keys and the terminal's size are the two things the JDK offers no way to ask for, and
