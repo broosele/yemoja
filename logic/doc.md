@@ -69,9 +69,15 @@ logic/
                     packages the supplied libraries into the application
   reconciliation.md  merging an import into the logbook
   uddf.md         UDDF against this model, field by field
+  divecomputer.md  a dive computer against this model, the same way
   src/commonMain/kotlin/yemoja/logic/
                   Logbook.kt    opening one, which a front end asks for and does not do
                   Types.kt      what a person, a region and a piece of gear are
+                  Derivations.kt  what every worked-out field answers with
+                  Recordings.kt   the walk into a profile that most of them share
+                  Today.kt        what day it is, which four fields count against
+  src/jvmMain/kotlin/yemoja/logic/
+                  Today.kt      the machine's own date, a day needing a zone
   src/commonTest/kotlin/yemoja/logic/
                   the tests, beside what they cover
 ```
@@ -176,6 +182,9 @@ To settle when we discuss architecture and features:
    Where the *reconciliation* belongs is settled — see
    [reconciliation.md](reconciliation.md) — but where the device-facing half lives,
    given it needs platform capabilities the logic layer should not have, is not.
+
+   What a download *means* is settled and does not wait on this: `LOGIC-10` to `LOGIC-19`
+   answer it field by field, and [divecomputer.md](divecomputer.md) is the map.
 
    The language change moved this. The platform that matters most is now the one where
    Bluetooth and a native library are least awkward, and the three routes to

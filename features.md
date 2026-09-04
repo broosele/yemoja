@@ -52,6 +52,8 @@ them.
 - **FEAT-3 — Download from a dive computer**, over Bluetooth among other transports.
   Moved from *Core*: it is how most dives will arrive in practice, but a dive typed in
   by hand is a dive, and this brings a native library and per-platform Bluetooth with it.
+  What a download carries and what it drops is decided already, field by field, in
+  [logic/divecomputer.md](logic/divecomputer.md).
 
 - **FEAT-6 — Dive planning with decompression.** Carries the safety obligation recorded
   in [logic/doc.md](logic/doc.md). Moved here from *Core*: logging what you did
