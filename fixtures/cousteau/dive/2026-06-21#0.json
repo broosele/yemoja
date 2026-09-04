@@ -47,6 +47,9 @@
       "start_time": "08:50:00",
       "gmt_offset": 7200,
       "water_type": "salt",
+      "deco_model": "buhlmann",
+      "gradient_factor_low": 0.3,
+      "gradient_factor_high": 0.7,
       "depth": [
         [0, 0],
         [60, 18.2],

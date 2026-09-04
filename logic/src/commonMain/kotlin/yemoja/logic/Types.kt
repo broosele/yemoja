@@ -404,6 +404,9 @@ private val OPERATOR_CATEGORIES = setOf(
 private val REGION_CATEGORIES = setOf("world", "continent", "ocean", "sea", "country", "area")
 
 /** Anything is allowed; these are the ones the manual names. */
+/** The models a dive computer may be running, as libdivecomputer names them. */
+private val DECO_MODELS = setOf("buhlmann", "vpm", "rgbm", "dciem")
+
 private val GEAR_CATEGORIES = setOf(
     "ABC",
     "BCD",
@@ -538,6 +541,23 @@ private val PROFILE = ItemDescription(
         ),
         // What the computer was set to while it recorded, which is not what the site is.
         TextDescription("water_type", fixedSet = WATER_TYPES),
+        // What the figures above were computed with. Suggested rather than fixed: a maker may
+        // run something none of the four names, and nothing exports this to a closed list.
+        TextDescription("deco_model", suggestedSet = DECO_MODELS),
+        // A proportion, so from 0 to 1: a computer set to 30/70 records 0.3 and 0.7.
+        NumberDescription(
+            "gradient_factor_low",
+            Dimension.DIMENSIONLESS,
+            range = 0.0..1.0,
+        ),
+        NumberDescription(
+            "gradient_factor_high",
+            Dimension.DIMENSIONLESS,
+            range = 0.0..1.0,
+        ),
+        // A dial position, whose meaning is the device's own. No range, since each make
+        // numbers its own scale.
+        WholeNumberDescription("conservatism"),
         // From the last sample, and correctable where the recording stopped before the user
         // surfaced.
         DateDescription("end_date", role = Role.Overrideable(::profilesEndDate)),

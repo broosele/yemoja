@@ -168,6 +168,11 @@ every dive came off a computer would not be one anybody has.
   the documented correction, not an inconsistency: a computer usually reports a better
   figure than the profile it kept, which is sampled every few seconds.
 
+  `p1` records what it was computed with: Bühlmann at 30/70. `p2` records nothing of the
+  kind, its computer having been borrowed — which is the ordinary case, since only a
+  download or a careful user fills those in. Neither carries a `conservatism`: gradient
+  factors and a dial position are alternatives, and this computer offers the first.
+
   The gas sources are `g1`, back-mounted trimix, and `g2`, a staged deco mix. `pressures`
   holds a series under each of those keys, `gas_switches` points at the second with `*g2`,
   and `decostop`, `alarms`, `no_deco_time`, `cns` and `otu` are all there.

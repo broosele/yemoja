@@ -315,6 +315,19 @@ that is the only record of it.
 - `water_type` (fixed set) — what the computer was **set to** while it recorded: `salt`,
   `fresh` or `en13319`. Not what the water actually was — you can dive the sea with a
   computer set to fresh, and the depths it wrote down will say so.
+- `deco_model` (text) — which decompression model the computer was running: `buhlmann`,
+  `vpm`, `rgbm` or `dciem`. Anything you like, since a maker may use something else.
+- `gradient_factor_low`, `gradient_factor_high` (number) — how conservative a Bühlmann
+  computer was set to be. Written from 0 to 1 like any other proportion, so a computer set
+  to 30/70 records `0.3` and `0.7`. Only Bühlmann has them.
+- `conservatism` (whole number) — the setting a computer offers instead of, or alongside,
+  gradient factors. It is the dial position and nothing more: `2` means one thing on one
+  make and something else on another, so it is worth recording and not worth comparing.
+
+  These three say what the numbers above were worked out with. **They do not let Yemoja
+  recompute anything** — the device also knew the diving you had done before, which is not
+  here — but a `decostop` read years later means little without knowing whether the computer
+  was set to 30/70 or to 85/85.
 - `tolerances` (owned item) — how much detail was dropped when the recording was taken
   in, where that is known. Described below.
 - `remarks` (multiline text) — anything about the recording itself: a computer you

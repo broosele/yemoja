@@ -226,6 +226,69 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-17 — What a download's decompression model becomes.** *Settled:* **four fields on a
+   profile — `deco_model`, `gradient_factor_low`, `gradient_factor_high` and `conservatism`.**
+
+   `DC_FIELD_DECOMODEL` gives a model, a conservatism and, for Bühlmann, a pair of gradient
+   factors. Nothing here held any of it.
+
+   **This is the one thing a download offers that `LOGIC-10` should not drop**, and the reason
+   is the distinction that decision rests on. A ppO2 series or a heart rate is data this model
+   does not keep. This is *metadata about data it does keep*: the manual already says
+   `decostop`, `no_deco_time`, `cns` and the rest are what the computer said, "calculated with
+   that device's own model, its settings and the diving you had done before". Two of those three
+   clauses arrive with the recording, and a `decostop` read years later means little without
+   knowing whether the computer was on 30/70 or on 85/85.
+
+   It does not let anything be recomputed, and is not meant to. `LOGIC-6` settles that `deco` is
+   read off the recording rather than worked out, and the third clause — the diving done before
+   — is not here and never will be.
+
+   **The format had already decided how a gradient factor is written.** `data-format.md` says a
+   proportion runs from 0 to 1 and gives a gradient factor of 20 as `0.2`, so a computer set to
+   30/70 records `0.3` and `0.7`. Two numbers rather than one piece of text, because they are
+   two numbers.
+
+   `deco_model` is a suggested set rather than a fixed one — `buhlmann`, `vpm`, `rgbm`, `dciem`,
+   which is what libdivecomputer names. A maker may run something else, and unlike `water_type`
+   or `alarms` nothing exports this to a closed list, so a name outside the four is not a
+   problem to refuse.
+
+   `conservatism` gets no range. It is a dial position whose meaning is the device's own: `2` is
+   one thing on one make and something else on another, so it is worth recording and not worth
+   comparing.
+- **LOGIC-16 — What a download's events become.** *Settled:* **five map to alarms, a gas
+   change is a gas switch, and the rest are dropped. An interval is kept at its start.**
+
+   `parser_sample_event_t` holds twenty-six kinds and `alarms` is nine closed words. The nine
+   were taken from UDDF so that mapping stays exact — `DATA-45` took its six steps rather than
+   inventing a scale, and the same reasoning applies here — so the question is which of the
+   twenty-six have an honest home, not how to widen the nine.
+
+   Five do: ascent, remaining bottom time, surface, transmitter to `link`, and RGBM to
+   `microbubbles`. Everything else is dropped under `LOGIC-10`.
+
+   **Stretching the mapping was the alternative and is refused.** A ceiling is not a
+   decompression alarm and a high partial pressure is not an error, so reading them as `deco`
+   and `error` would fill our words at the cost of what they mean: a user reading *error* could
+   no longer tell which of two things the computer said. Four of the nine — `breath`, `deco`,
+   `error`, `skincooling` — therefore go unfed by a download, and are fed by UDDF and by the
+   user. A word with no source is better than a word with the wrong one.
+
+   **A gas change is not an alarm.** `GASCHANGE` and `GASCHANGE2` carry the mix, so on many
+   devices a switch arrives as an event rather than as `DC_SAMPLE_GASMIX`. Where it lands is
+   `LOGIC-12`'s; what this settles is only that events are a second source for the same thing.
+
+   **A bookmark is dropped deliberately**, on the reasoning already recorded against UDDF's
+   `setmarker`: a marker says something was interesting and nothing about what, which the dive's
+   remarks do better.
+
+   **An interval is recorded at its start.** `SAMPLE_FLAGS_BEGIN` and `SAMPLE_FLAGS_END` make an
+   event a state starting or stopping, and `alarms` is a series of instants. Keeping both ends
+   would put two identical words in the series with nothing to say which was which, so an ascent
+   beginning and an ascent ending would read as two ascents. Keeping the beginning says the
+   thing happened and when, which is what an alarm is for. Saying how long it lasted would want
+   a field of its own, and nothing reads this stream yet.
 - **LOGIC-15 — What an import does about a recording's density.** *Settled:* **it thins, and
    writes what the thinning cost into `tolerances`.**
 
