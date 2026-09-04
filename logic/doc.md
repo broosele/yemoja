@@ -235,6 +235,51 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-20 — What a download is allowed to create.** *Settled:* **dives, and a dive site
+   where the user asks for one. Nothing else.**
+
+   The rule falls out of the decisions above rather than constraining them, and is written
+   down so it need not be re-derived. A download creates dives and, with them, the owned items
+   a dive holds — its environment, its gear, its profiles, its gas sources. Beyond that it
+   creates one thing, a `dive_site`, and only after `LOGIC-18` has asked.
+
+   **No gear, no person, no operator, no trip, no region, no wreck, no certification.** What
+   separates the site from the rest is that a fix *proposes* a place even though it is not one.
+   Nothing in a download proposes a cylinder — a tank has no identity at all — and nothing in
+   it mentions a buddy, an operator or a trip.
+
+   **A downloaded dive is therefore a skeleton**, and deliberately. It has its times, its
+   depths, its gas and what the computer thought; it has no site until asked, no buddies, no
+   rating, no trip, no tags, and nothing about the conditions but temperature and pressure.
+   That is not a shortfall in the mapping — a computer does not know those things — and the
+   review is where a user adds them.
+
+   **Filling a reference is not creating one.** `profile.dive_computer` is the case.
+   `dc_descriptor_get_vendor` and `dc_descriptor_get_product` name the device, and
+   `oneOffAllowed` makes that name a real answer rather than a failure — so the name is what a
+   download writes unless something better is certain.
+
+   **Only a serial proposes a gear item.** `DC_EVENT_DEVINFO` carries one, once per download
+   rather than per dive, and it is the only thing that tells two identical computers apart. A
+   brand and a model do not: a user diving their own Halo 2 and a club's are the same two
+   strings, and a proposal that is a coin flip is worse than none, on the same reasoning that
+   refuses to read a density of 1020 as `en13319`.
+
+   **Proposing is not choosing.** Nothing here stops a user picking their own gear item at
+   review — the dives are live before they are saved, and `dive_computer` is a field like any
+   other. What a serial buys is Yemoja being right without being asked; what serial-only costs
+   is that it usually will not be, and the user links their computer themselves the first time.
+
+   And usually it will not fire at all: the device gives an `unsigned int`, while a serial a
+   user types is the string on the case — `TW-H2-77120`. That is accepted rather than worked
+   around. A match nobody can trust is not worth the code that makes it.
+
+   `model` and `firmware` come with the serial and are dropped. The descriptor already gives
+   the product by name, which is what a user reads, and a firmware revision belongs to a device
+   rather than to a dive.
+
+   That is exactly what a cylinder cannot have. A dive computer has an identity to match on; a
+   tank has a volume and two pressures, which describe thousands of cylinders equally well.
 - **LOGIC-19 — Two small ones: surface temperature, and dive time.** *Settled:* **a
    `surface_temperature` on the environment, and `DIVETIME` written as an override.**
 
@@ -471,11 +516,33 @@ To settle when we discuss architecture and features:
    `gas_source.usage` is left unfed by a download. `bottom`, `stage`, `deco` and `travel` are a
    diver's words for what a cylinder was *for*, and no computer records that.
 
-   **A tank's `workpressure` is consumed rather than kept.** `dc_tankvolume_t` says whether a
-   volume is metric or imperial, and an imperial one is free gas at the working pressure rather
-   than water capacity, so the pressure is what converts the one into the other. Nothing holds
-   it afterwards. A `working_pressure` on a gear item would be a field added because data
-   arrived, which is what `LOGIC-10` exists to prevent.
+   **A download creates no gear**, and cannot. A tank has no identity — no serial, no name,
+   nothing but a volume and two pressures — so there is nothing to match an existing cylinder
+   on and nothing to name a new one. A dive site is the contrast: coordinates propose a place
+   even though they are not one, which is what makes `LOGIC-18` possible. A tank proposes
+   nothing.
+
+   So `gas_source.cylinder` is left unset and `volume` is written directly. That is not a
+   workaround but the case the field was made overrideable for, and the manual describes it:
+   a rented or borrowed cylinder the user has no item for.
+
+   **A tank's `volume` is already water capacity**, in litres, for metric and imperial alike.
+   The library converts an imperial tank's air capacity before handing it over and says so:
+   *"The volume has been converted from air capacity to water capacity."* An earlier draft of
+   this question had us doing that conversion, which was wrong — it was read off the enumerator
+   names rather than the header.
+
+   `tank.type` is consumed rather than kept, and it is the only thing here that is: `NONE`
+   means the volume and the work pressure are both zero, so it says whether there is a volume
+   to write at all.
+
+   **`workpressure` is dropped**, because there is nowhere for it to go. It is the one route
+   back to how an imperial cylinder is named — *Vair = Vwater × Pwork / Patm* — so an eighty
+   arrives as eleven litres and cannot be shown as an eighty again. That is a real loss and is
+   recorded as one rather than reasoned away. It follows from creating no gear: a work pressure
+   is a property of the cylinder and not of the dive, and there is no cylinder to put it on.
+   Whether a hand-entered gear item should gain a `working_pressure` of its own is a separate
+   want, and would serve the same purpose for cylinders a user does record.
 - **LOGIC-11 — Where a downloaded dive's `gmt_offset` comes from.** *Settled:* **asked once
    for the download, and changeable per dive afterwards.**
 
@@ -487,6 +554,16 @@ To settle when we discuss architecture and features:
    right whenever the two were set together, which is the ordinary case, and the asking is what
    makes it a stated assumption rather than a silent one. A user who leaves a computer on home
    time in another country — the case the field exists for — corrects one number.
+
+   **There may be a better default than that guess, and it is not settled.**
+   `dc_event_clock_t` pairs a `devtime` with a `systime`, which is shaped exactly like the
+   difference between the computer's clock and the machine's — and that difference, against the
+   machine's own offset, would give the device's offset from GMT by measurement rather than by
+   assumption. The published header carries no comment on either member, so what they mean
+   cannot be established from the interface, and settling it by reading the implementation is
+   what this project's provenance rule forbids. It wants the library's own documentation or a
+   trial against a real device. Until then the asking stands, and it would remain the way to
+   correct whatever a measurement proposed.
 
    **Per dive costs nothing, because of how a review already works.** An import applies to the
    live data without saving it and the user keeps or discards the result, see

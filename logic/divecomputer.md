@@ -28,11 +28,31 @@ from the same file tomorrow. A dive computer's log is a ring buffer: it overwrit
 and a dive dropped on the way in is usually gone for good. That is why `LOGIC-10` insists a
 download report what it dropped, and why `LOGIC-17` modelled rather than dropped.
 
+## What a download creates
+
+**Dives, and a dive site where the user asks for one.** With a dive come the owned items it
+holds — its environment, its gear, its profiles, its gas sources — and nothing else is made at
+all: no gear, no person, no operator, no trip, no region. `LOGIC-20`.
+
+So a downloaded dive is a skeleton, deliberately. It has its times, its depths, its gas and
+what the computer thought; it has no site until asked, no buddies, no rating, no trip, no
+tags, and nothing about the conditions but temperature and pressure. A computer does not know
+those things, and the review is where a user adds them.
+
+Filling a reference is not creating one. `profile.dive_computer` takes the device's name,
+and a gear item only where the serial identifies one exactly. A brand and a model are the same
+two strings on a user's computer and on a club's, so they propose nothing — though the user may
+always pick an item themselves, the dives being live before they are saved.
+
 ## The dive as a whole
 
 | libdivecomputer | ours | |
 |---|---|---|
 | `datetime` | `profile.start_date`, `start_time` | as the computer's clock read |
+| the descriptor | `profile.dive_computer` | the device by name, no gear proposed |
+| `devinfo.serial` | — | the only thing that proposes a gear item |
+| `devinfo.model`, `.firmware` | — | dropped: the product name is what a user reads |
+| `clock.devtime`, `.systime` | — | may bear on `gmt_offset`; unverified, `LOGIC-11` |
 | — | `profile.gmt_offset` | nothing gives it: `LOGIC-11` |
 | `DIVETIME` | `profile.duration` | written as an override: `LOGIC-19` |
 | `MAXDEPTH` | `dive.max_depth` | written as an override |
@@ -77,9 +97,9 @@ them.
 | `gasmix.oxygen`, `.helium`, `.nitrogen` | `gas_source.gas_type` | the mix as divers write it |
 | `gasmix.usage`, `tank.usage` | `gas_source.configuration`, for `SIDEMOUNT` only | `LOGIC-12` |
 | `tank.gasmix` | which mix a gas source carries | `LOGIC-12` |
-| `tank.type` | — | says whether `volume` is metric or imperial |
-| `tank.volume` | `gas_source.volume` | water capacity, converted where imperial |
-| `tank.workpressure` | — | consumed by that conversion, then dropped |
+| `tank.type` | — | consumed: `NONE` means there is no volume to write |
+| `tank.volume` | `gas_source.volume` | already water capacity, both kinds |
+| `tank.workpressure` | — | dropped: no gear is created, so nothing holds it |
 | `tank.beginpressure`, `.endpressure` | `start_pressure`, `end_pressure` | gauge in both |
 | `salinity.type`, `.density` | `profile.water_type`, `density` | `LOGIC-14` |
 | `decomodel.type` | `profile.deco_model` | `LOGIC-17` |
@@ -108,6 +128,8 @@ from:
   does not report them. They come from UDDF, or from the user.
 - **`gas_source.usage`** — `bottom`, `stage`, `deco` and `travel` are a diver's words for what
   a cylinder was *for*, and no computer records that. `LOGIC-12`.
+- **`gas_source.cylinder`** — a download creates no gear and a tank has no identity to match one
+  by, so nothing points at a gear item. `volume` is written directly instead. `LOGIC-12`.
 - **`alarms`: `breath`, `deco`, `error`, `skincooling`** — four of our nine words that no
   event maps onto. `LOGIC-16` refuses to stretch a near-miss into them.
 
@@ -115,8 +137,10 @@ from:
 
 Four places where the difference is structural rather than a name.
 
-**Two arrays against one collection.** Gas mixes and tanks are separate lists there, the
-second indexing into the first; here a gas and the cylinder it came out of are one thing.
+**Two arrays against one collection, and no cylinder in either.** Gas mixes and tanks are
+separate lists there, the second indexing into the first; here a gas and the cylinder it came
+out of are one thing. But a tank is not a cylinder: it has no identity, so a download creates
+no gear and names none.
 `LOGIC-12` makes a tank a gas source and adds one for any mix that was breathed without a
 tank. What follows is that a gas switch names a mix, and where two tanks share one, only the
 first can be pointed at — a computer records which gas was switched to and has no idea which
