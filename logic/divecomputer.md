@@ -52,8 +52,8 @@ always pick an item themselves, the dives being live before they are saved.
 | the descriptor | `profile.dive_computer` | the device by name, no gear proposed |
 | `devinfo.serial` | — | the only thing that proposes a gear item |
 | `devinfo.model`, `.firmware` | — | dropped: the product name is what a user reads |
-| `clock.devtime`, `.systime` | — | may bear on `gmt_offset`; unverified, `LOGIC-11` |
-| — | `profile.gmt_offset` | nothing gives it: `LOGIC-11` |
+| `clock.devtime`, `.systime` | — | a second route to the offset, unverified |
+| `datetime.timezone` | `profile.gmt_offset` | where reported; else asked: `LOGIC-11` |
 | `DIVETIME` | `profile.duration` | written as an override: `LOGIC-19` |
 | `MAXDEPTH` | `dive.max_depth` | written as an override |
 | `AVGDEPTH` | — | dropped: `LOGIC-10` |
@@ -117,11 +117,11 @@ them.
 
 ## What has no source at all
 
-Five things this model holds that no download supplies, and each has somewhere else to come
-from:
+Five things this model holds that a download may not supply, and each has somewhere else to
+come from:
 
-- **`profile.gmt_offset`** — the one field a download cannot fill from what it was given.
-  `LOGIC-11` asks for it once and lets the user change it per dive.
+- **`profile.gmt_offset`** — where the device reports no zone, which some do not.
+  `LOGIC-11` asks for it once then and lets the user change it per dive either way.
 - **`profile.tolerances`** — nothing gives it because nothing else does the thinning.
   `LOGIC-15` makes the import owe the figures.
 - **`otu`, `no_flight_time`, `desaturation_time`** — computers display them; the library

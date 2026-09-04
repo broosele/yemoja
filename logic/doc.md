@@ -546,24 +546,31 @@ To settle when we discuss architecture and features:
 - **LOGIC-11 — Where a downloaded dive's `gmt_offset` comes from.** *Settled:* **asked once
    for the download, and changeable per dive afterwards.**
 
-   A dive computer reports the moment its own clock said and nothing about which zone that
-   clock was in, so this is the one field a download cannot fill from what it was given. Every
-   date, every time and every surface interval rests on it.
+   **The device is asked first, and the user where it has nothing to say.** `dc_datetime_t`
+   carries a `timezone` beside the date and the time, and `DC_TIMEZONE_NONE` exists to mean
+   the device did not report one — so some do and some do not. An earlier draft of this
+   question said the offset was the one field a download could not fill from what it was
+   given, which was written before that struct was looked at and is wrong.
 
-   The download asks, and offers the machine's own current offset as the answer. That guess is
-   right whenever the two were set together, which is the ordinary case, and the asking is what
-   makes it a stated assumption rather than a silent one. A user who leaves a computer on home
-   time in another country — the case the field exists for — corrects one number.
+   Where nothing is reported, the download asks and offers the machine's own current offset as
+   the answer. That guess is right whenever the two were set together, which is the ordinary
+   case, and the asking is what makes it a stated assumption rather than a silent one. A user
+   who leaves a computer on home time in another country — the case the field exists for —
+   corrects one number.
 
-   **There may be a better default than that guess, and it is not settled.**
-   `dc_event_clock_t` pairs a `devtime` with a `systime`, which is shaped exactly like the
-   difference between the computer's clock and the machine's — and that difference, against the
-   machine's own offset, would give the device's offset from GMT by measurement rather than by
-   assumption. The published header carries no comment on either member, so what they mean
-   cannot be established from the interface, and settling it by reading the implementation is
-   what this project's provenance rule forbids. It wants the library's own documentation or a
-   trial against a real device. Until then the asking stands, and it would remain the way to
-   correct whatever a measurement proposed.
+   **The asking survives either way**, since a reported zone is as correctable as a guessed
+   one: a computer set to the wrong zone reports the wrong zone confidently. What a device
+   gives is a better default, not an answer beyond question.
+
+   **Two things about that member are unverified**, and both matter enough not to assume. Its
+   unit — seconds, minutes or hours — and its sign. The header carries no comment on either;
+   the sign in particular is what this project's own `gmt_offset` got backwards once, so it
+   wants the library's documentation or a trial against a device rather than a reading of the
+   enumerator's neighbours.
+
+   `dc_event_clock_t` pairs a `devtime` with a `systime` and would give the same figure by
+   measuring the device's clock against the machine's. That is a second route with the same
+   two unknowns, and it is worth less now that a device may simply say.
 
    **Per dive costs nothing, because of how a review already works.** An import applies to the
    live data without saving it and the user keeps or discards the result, see
