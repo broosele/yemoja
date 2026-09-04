@@ -560,5 +560,223 @@
     "south": 59.8,
     "north": 83.6,
     "remarks": "The largest island in the world, and about eighty percent ice. Diving here means icebergs, and icebergs roll without warning."
+  },
+  "anguilla": {
+    "name": "Anguilla",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -63.2,
+    "east": -62.9,
+    "south": 18.1,
+    "north": 18.3,
+    "remarks": "Flat, dry and ringed with reef, with a shelf shallow enough that most of the diving is inside twenty metres. Seven ships were sunk deliberately in the nineties to give it wrecks it did not have."
+  },
+  "montserrat": {
+    "name": "Montserrat",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -62.3,
+    "east": -62.1,
+    "south": 16.6,
+    "north": 16.9,
+    "remarks": "Half the island is an exclusion zone and has been since the Soufriere Hills erupted in 1995. The diving is on the north-west coast, over reef that the ash fall reshaped and is still reshaping."
+  },
+  "guadeloupe": {
+    "name": "Guadeloupe",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -61.9,
+    "east": -60.9,
+    "south": 15.8,
+    "north": 16.6,
+    "remarks": "Two islands joined by a mangrove channel, with the Cousteau Reserve off Pigeon Island on the leeward side. He asked for it to be protected in 1959 and it was."
+  },
+  "martinique": {
+    "name": "Martinique",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -61.3,
+    "east": -60.8,
+    "south": 14.4,
+    "north": 14.9,
+    "remarks": "Saint-Pierre bay holds a dozen ships sunk in minutes by the eruption of Mont Pelee in 1902. They lie deep and steep, and the town above them was rebuilt over its own ruins."
+  },
+  "saint_barthelemy": {
+    "name": "Saint Barthelemy",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -63.0,
+    "east": -62.7,
+    "south": 17.8,
+    "north": 18.0,
+    "remarks": "Small, volcanic and surrounded by a marine reserve in five separate pieces. The diving is on rock rather than on coral, which is what the whole northern Lesser Antilles offers."
+  },
+  "saint_martin": {
+    "name": "Saint Martin",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -63.2,
+    "east": -62.9,
+    "south": 18.0,
+    "north": 18.2,
+    "remarks": "The northern half of an island split between two countries since 1648. Its reefs are the shallow kind that a hurricane rearranges, and several have been rearranged twice this century."
+  },
+  "sint_maarten": {
+    "name": "Sint Maarten",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -63.2,
+    "east": -63.0,
+    "south": 18.0,
+    "north": 18.1,
+    "remarks": "The southern half of the same island, and the busier one. Its wrecks were put there on purpose, the Proselyte excepted, which struck a reef in 1801 and is now mostly ballast and cannon."
+  },
+  "saba": {
+    "name": "Saba",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -63.3,
+    "east": -63.2,
+    "south": 17.6,
+    "north": 17.7,
+    "remarks": "A volcano with no beach, whose diving is on pinnacles that rise from deep water and stop short of the surface. The whole shelf is a marine park and has been since 1987."
+  },
+  "sint_eustatius": {
+    "name": "Sint Eustatius",
+    "category": "country",
+    "parents": [
+      "@north_america",
+      "@caribbean_sea",
+      "@lesser_antilles"
+    ],
+    "west": -63.0,
+    "east": -62.9,
+    "south": 17.4,
+    "north": 17.6,
+    "remarks": "Once one of the busiest ports in the Atlantic, and the anchorage is still paved with what its ships dropped. Blue trade beads wash up, and the reef grows over eighteenth-century walls."
+  },
+  "cozumel": {
+    "name": "Cozumel",
+    "category": "area",
+    "parents": [
+      "@mexico",
+      "@caribbean_sea"
+    ],
+    "west": -87.1,
+    "east": -86.7,
+    "south": 20.2,
+    "north": 20.6,
+    "remarks": "A current runs north along the western shelf and the diving is done in it: you enter, you drift, and the boat follows your bubbles. Palancar and Santa Rosa are ridges cut through by swim-throughs."
+  },
+  "bay_islands": {
+    "name": "Bay Islands",
+    "category": "area",
+    "parents": [
+      "@honduras",
+      "@caribbean_sea"
+    ],
+    "west": -86.6,
+    "east": -85.8,
+    "south": 16.0,
+    "north": 16.6,
+    "remarks": "Roatan, Utila and Guanaja sit on the southern end of the Mesoamerican reef, the second largest in the world. Utila has whale sharks often enough that people plan around them."
+  },
+  "isla_de_la_juventud": {
+    "name": "Isla de la Juventud",
+    "category": "area",
+    "parents": [
+      "@cuba",
+      "@caribbean_sea",
+      "@greater_antilles"
+    ],
+    "west": -83.2,
+    "east": -82.5,
+    "south": 21.4,
+    "north": 21.9,
+    "remarks": "Punta Frances on its western tip is protected and remote enough to have stayed that way. Getting there is most of the effort, which is why the walls look as they do."
+  },
+  "los_roques": {
+    "name": "Los Roques",
+    "category": "area",
+    "parents": [
+      "@venezuela",
+      "@caribbean_sea"
+    ],
+    "west": -66.9,
+    "east": -66.4,
+    "south": 11.7,
+    "north": 12.0,
+    "remarks": "An atoll of some three hundred cays on a bank a hundred kilometres offshore, and a national park since 1972. Nothing is built on most of it."
+  },
+  "san_andres": {
+    "name": "San Andres and Providencia",
+    "category": "area",
+    "parents": [
+      "@colombia",
+      "@caribbean_sea"
+    ],
+    "west": -81.8,
+    "east": -81.3,
+    "south": 12.4,
+    "north": 13.4,
+    "remarks": "Colombian islands lying two hundred kilometres off Nicaragua, which is why the sea around them was argued over at the Hague. The barrier reef at Providencia is the third longest anywhere."
+  },
+  "corn_islands": {
+    "name": "Corn Islands",
+    "category": "area",
+    "parents": [
+      "@nicaragua",
+      "@caribbean_sea"
+    ],
+    "west": -83.1,
+    "east": -82.9,
+    "south": 12.1,
+    "north": 12.4,
+    "remarks": "Two islands seventy kilometres off the Mosquito Coast, one small and one smaller. Little Corn has no cars, and the diving is on coral heads that nobody queues for."
+  },
+  "bocas_del_toro": {
+    "name": "Bocas del Toro",
+    "category": "area",
+    "parents": [
+      "@panama",
+      "@caribbean_sea"
+    ],
+    "west": -82.6,
+    "east": -81.9,
+    "south": 9.0,
+    "north": 9.6,
+    "remarks": "An archipelago of mangrove and shallow reef where the rain keeps visibility honest. It is a nursery rather than a wall, and what it lacks in depth it returns in small things."
   }
 }
