@@ -104,6 +104,12 @@
         "certification": "@padi_divemaster",
         "instructor": "@lena_okafor",
         "date": "2012-11-30"
+      },
+      "k2": {
+        "certification": "@padi_open_water_scuba_instructor",
+        "number": "OWSI-2208-NL",
+        "instructor": "@lena_okafor",
+        "date": "2014-02-21"
       }
     },
     "remarks": "Instructor. His last medical is long past, which Yemoja records but does not judge."
@@ -113,6 +119,7 @@
     "last_name": "Okafor",
     "email": "lena@example.invalid",
     "phone": "+31 6 00 00 00 02",
+    "instructor_number": "IN-1174",
     "medical": {
       "last_medical_check": "2026-02-01",
       "blood_group": "AB+",
@@ -127,7 +134,12 @@
       },
       "k2": {
         "certification": "@padi_divemaster",
-        "date": "2018-04-02"
+        "date": "2008-09-13"
+      },
+      "k3": {
+        "certification": "@padi_open_water_scuba_instructor",
+        "number": "OWSI-1174-KE",
+        "date": "2010-03-27"
       }
     }
   },

@@ -79,6 +79,15 @@ Each of these is here because it is awkward, not because it is typical.
   carries an `instructor_number`. The two sit apart on purpose: a card number names one
   award and an instructor's number names the instructor, so the course holds the first and
   the person the second, with the course's reference joining them.
+- **Everyone who teaches here can.** `tom_janssen` and `lena_okafor` both hold
+  `padi_open_water_scuba_instructor`, dated before the first course each of them taught,
+  and Lena taught Tom's. They held only a divemaster until this was noticed, which made
+  every open water course in the fixture one a divemaster cannot certify — and Lena's own
+  divemaster was dated 2018 while she certified Tom's in 2012, which is a paradox rather
+  than a technicality. Her divemaster moved back to 2008.
+- `maria_ferreira` taught Lena's trimix and has no courses recorded at all. That is
+  deliberate and is not the same fault: an absent qualification claims nothing, and nobody
+  writes down the full history of the person who taught them.
 
 **Sparse and absent**
 
