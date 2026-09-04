@@ -218,6 +218,10 @@ One per dive. What the conditions were.
 - `bottom_temperature` (number) — the coldest water you were in, from the primary
   profile. Correct it where there is no profile, or where it did not measure
   temperature.
+- `surface_temperature` (number) — the water at the surface, which is what you felt
+  getting in. Not the air: a computer that reports a *surface* temperature is nearly
+  always reporting water, which is why this is a field of its own rather than a second
+  source for `air_temperature`.
 - `atmospheric_pressure` (number) — from where the dive was, and **absolute**: about 1 bar
   at sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge
   reads against; it is the pressure itself. Correct it when you know better; weather moves

@@ -449,6 +449,9 @@ private val ENVIRONMENT = ItemDescription(
         NumberDescription("visibility", Dimension.LENGTH),
         NumberDescription("air_temperature", Dimension.TEMPERATURE),
         NumberDescription("bottom_temperature", Dimension.TEMPERATURE),
+        // The water at the surface, which is not the air above it. A computer reporting a
+        // surface temperature is nearly always reporting water.
+        NumberDescription("surface_temperature", Dimension.TEMPERATURE),
         // From where the dive was, and absolute: about a bar at sea level.
         NumberDescription("atmospheric_pressure", Dimension.PRESSURE),
         REMARKS,

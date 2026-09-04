@@ -226,6 +226,60 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-19 — Two small ones: surface temperature, and dive time.** *Settled:* **a
+   `surface_temperature` on the environment, and `DIVETIME` written as an override.**
+
+   `DC_FIELD_TEMPERATURE_SURFACE` had no home and would have been dropped. On nearly every
+   computer it is the *water* at the surface rather than the air, so putting it in
+   `air_temperature` would say something the device did not — and the manual is explicit that
+   nothing works that field out for you. It is a fact worth keeping and a fact of its own, so
+   it gets a field beside the other two temperatures, on the environment where the conditions
+   of a dive live.
+
+   `DC_FIELD_TEMPERATURE_MAXIMUM` is still dropped. The warmest water at any point in a dive is
+   neither the surface nor the bottom, and nothing here asks for it.
+
+   **`DIVETIME` is written as an override**, the way `MAXDEPTH` is. `duration` derives from the
+   last sample, and the manual makes both correctable for the same reason: a device reports
+   better than the profile it kept. A computer that stopped sampling before the diver surfaced
+   still knows how long the dive was, and the TUI already shows an overridden value in bold, so
+   the difference is visible rather than silent.
+- **LOGIC-18 — What a download's coordinates become.** *Settled:* **a proposal at review, with
+   three answers: an existing site, a new one, or nothing. The per-sample track is dropped.**
+
+   `DC_FIELD_LOCATION` gives a latitude, a longitude and an altitude. A dive has no position —
+   only a `dive_site` does, and a dive names one by reference. So this is the one row of the
+   mapping that is not a field going into a field.
+
+   **A fix is not a site.** A site is a place returned to: ten dives on one reef are one site
+   with ten dives naming it, while ten downloads give ten positions differing by tens of metres,
+   which is the boat and the satellites rather than ten places. And a site has a name, a water
+   type, an environment type and its regions, none of which a fix supplies — one minted from
+   coordinates alone would be `unknown_dive_site` at a decimal position.
+
+   So the download carries the fix into the review and the user answers it. **Ignoring is one of
+   the three answers**, not a failure to choose: a drifting boat, a site not worth recording,
+   or a position the user simply does not want. Nothing is written that they have not seen,
+   which is what keeps a logbook free of items nobody asked for.
+
+   **The nearest sites are offered in order of distance, and no threshold is chosen.** A radius
+   would be a number nobody can pick well — too small and a site is missed, too large and the
+   list is noise — while a handful sorted by distance, each shown with its distance, lets the
+   user judge what a threshold would have judged for them.
+
+   A fix never overwrites a site a dive already names. That case arises when reconciliation
+   matches a downloaded dive to one already in the logbook, and there the dive's own answer
+   stands.
+
+   `DC_SAMPLE_LOCATION` is dropped under `LOGIC-10`. It is a track through the dive rather than
+   a position, and nothing here holds one.
+
+   The altitude is available for a site's `elevation` where one is created, which is the height
+   of the water above sea level and what a fix at the surface measures. Whether it is good
+   enough to use unasked is not settled here.
+
+   This gives [reconciliation.md](reconciliation.md) a kind of candidate that is not an item
+   being imported, which bears on `RECON-2`.
 - **LOGIC-17 — What a download's decompression model becomes.** *Settled:* **four fields on a
    profile — `deco_model`, `gradient_factor_low`, `gradient_factor_high` and `conservatism`.**
 
