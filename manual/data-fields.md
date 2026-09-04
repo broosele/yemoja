@@ -89,13 +89,14 @@ a saved file does not churn, and reads them in any order at all. Where an order 
 to you — courses by when you took them, services by when they were done — it comes from
 the dates inside them, never from where they sit in the file.
 
-Each kind is described below in two parts:
+Each kind lists its fields in one run below, in the order an interface shows them. A field
+you record and a field Yemoja works out sit together where they belong together — a count
+beside the list it counts, a depth beside the profile it came from.
 
-- **Fields you record** — what you write yourself.
-- **Worked out for you** — what Yemoja calculates. These are not stored in your files.
-  Some of them can be corrected: if you know better than the calculation, write the
-  field in yourself and your value is kept and used from then on. The rest are
-  recalculated every time and writing them has no effect.
+**A field marked *worked out* is one Yemoja calculates**, and it is not stored in your files.
+Some of them can be corrected: if you know better than the calculation, write the field in
+yourself and your value is kept and used from then on. The rest are recalculated every time
+and writing them has no effect. Each field says which of the two it is.
 
 Some fields hold an **owned item** rather than a value — a dive's conditions, a
 person's health details, a gear item's service history. An owned item is written as an
@@ -125,12 +126,13 @@ duration follows from the two.
 
 All five can be corrected where the working out is wrong.
 
-Fields you record:
-
+- `name` (text, worked out) — the dive's date and its number within that day, as
+  `2026-02-23#0`. This is what a dive is listed and linked as.
 - `dive_number` (whole number) — your own numbering, if you keep one. Not every diver
   numbers every dive, and Yemoja does not require it. This is unrelated to the number at
   the end of the item's id.
 - `dive_site` (reference) — where the dive was.
+
 - `entry`, `exit` (text) — how you got in, and how you got out. Anything you like; the
   usual ones are `shore`, `pier`, `boat`, `hard boat`, `rib`, `liveaboard`, `platform`
   and `pool`.
@@ -142,13 +144,20 @@ Fields you record:
 
   This is a property of the *dive*, not of the site. The same quarry is a shore dive one
   day and a boat dive the next.
+
 - `previous_dive` (reference) — the dive you were still carrying gas from when you went
   back in. Leave it out for a dive you started clean, which is most of them. Yemoja does
   not work this out from the clock: whether a surface interval was long enough to ignore
   is a judgement, and any threshold that decided it for you would be wrong for somebody.
   It must name a dive that started earlier than this one.
+- `surface_interval` (number, worked out) — how long you were out of the water before this
+  dive, from `previous_dive`'s end time to this dive's start. Nothing is worked out when
+  `previous_dive` is unset. Write it yourself for a dive whose predecessor is not in this
+  logbook — an imported dive often knows the interval without knowing the dive.
 - `buddies` (list of references or text) — who you dived with. Plain names are allowed
   for people you have no item for.
+- `buddy_count` (whole number, worked out) — from the list. Correct it when you remember how
+  many people were there but not all their names.
 - `rating` (whole number) — what you made of it, from 1 to 10.
 - `details` (owned item) — tags, and which trip and operator the dive belonged to.
   Described under *Details* below.
@@ -163,45 +172,36 @@ Fields you record:
   profile — the times, the depths, the temperatures — is reported as something it cannot
   work out rather than guessed at.
 - `gas_sources` (keyed owned items) — what you breathed from.
-- `remarks` (multiline text) — how the dive went. The seal that flooded, the shoal
-  that came past, why you turned round early.
-
-Worked out for you:
-
-- `name` (text) — the dive's date and its number within that day, as `2026-02-23#0`.
-  This is what a dive is listed and linked as.
-- `start_date` (date) — the day the dive began, in GMT. From the primary profile,
+- `start_date` (date, worked out) — the day the dive began, in GMT. From the primary profile,
   corrected by its `gmt_offset`, or from you.
-- `start_time` (time) — when you went in, in GMT.
-- `end_time` (time) — when you came out.
-- `end_date` (date) — the day the dive finished. An end time earlier than the start
-  means it ran past midnight. Correct it for the rare dive spanning more than one night,
-  or where the clocks moved underneath you.
-- `duration` (number) — how long the dive lasted, in seconds unless the file says
+- `start_time` (time, worked out) — when you went in, in GMT.
+- `end_date` (date, worked out) — the day the dive finished. An end time earlier than the start
+  means it ran past midnight. Correct it for the rare dive spanning more than one night, or
+  where the clocks moved underneath you.
+- `end_time` (time, worked out) — when you came out.
+- `duration` (number, worked out) — how long the dive lasted, in seconds unless the file says
   otherwise.
-- `max_depth` (number) — the deepest point reached, from the primary profile. Worth
-  correcting: a dive computer usually reports a better figure than its own recorded
-  profile, which is only sampled every few seconds.
-- `average_depth` (number) — how deep the dive was on average, weighted by time rather than
-  by sample. A computer records unevenly, so counting samples would let a slow ascent drag
-  the figure down for no reason. Correct it for the same reason as `max_depth`.
-- `surface_interval` (number) — how long you were out of the water before this dive,
-  from `previous_dive`'s end time to this dive's start. Nothing is worked out when
-  `previous_dive` is unset. Write it yourself for a dive whose predecessor is not in this
-  logbook — an imported dive often knows the interval without knowing the dive.
-- `buddy_count` (whole number) — from the list. Correct it when you remember how many
-  people were there but not all their names.
-- `deco` (true or false) — whether the dive went past the no-decompression limit, so that
-  stops were required on the way up. Taken from the primary profile: a `decostop` above
-  zero at any point means yes, and failing that a `no_deco_time` that never reached zero
-  means no. Most computers write stops only when there are stops, which is why the second
-  reading matters.
+- `max_depth` (number, worked out) — the deepest point reached, from the primary profile. Worth
+  correcting: a dive computer usually reports a better figure than its own recorded profile,
+  which is only sampled every few seconds.
+- `average_depth` (number, worked out) — how deep the dive was on average, weighted by time
+  rather than by sample. A computer records unevenly, so counting samples would let a slow
+  ascent drag the figure down for no reason. Correct it for the same reason as `max_depth`.
+
+- `deco` (true or false, worked out) — whether the dive went past the no-decompression limit,
+  so that stops were required on the way up. Taken from the primary profile: a `decostop` above
+  zero at any point means yes, and failing that a `no_deco_time` that never reached zero means
+  no. Most computers write stops only when there are stops, which is why the second reading
+  matters.
 
   Where the recording has neither, or there is no profile at all, nothing is worked out
   and the field is empty for you to answer. Yemoja will not decide this one for you — your
   computer decided it at the time, with you in the water and with settings this
   application cannot reproduce, and a second opinion arrived at years later would be
   answering a different question.
+
+- `remarks` (multiline text) — how the dive went. The seal that flooded, the shoal
+  that came past, why you turned round early.
 
 #### Details
 
@@ -250,16 +250,13 @@ own; this is what you took on one particular dive and how it served you.
 
 - `items` (list of references) — the equipment used.
 - `mass` (number) — the total mass of what you carried.
+- `weight` (number, worked out) — how much lead you carried, added up from the items. Correct
+  it when the items do not tell the whole story.
 - `temperature_evaluation` (text) — how you fared for warmth. The usual answers are
   `very cold`, `cold`, `good`, `warm` and `too warm`.
 - `buoyancy_evaluation` (text) — how the weighting felt. The usual answers are `way too
   heavy`, `too heavy`, `good`, `too light` and `way too light`.
 - `remarks` (multiline text) — how the kit served you, beyond the two evaluations.
-
-Worked out for you:
-
-- `weight` (number) — how much lead you carried, added up from the items. Correct it
-  when the items do not tell the whole story.
 
 #### Profile
 
@@ -287,6 +284,7 @@ that is the only record of it.
   one you borrowed and keep no item for.
 - `start_date` (date) — the day the recording began, as the computer had it.
 - `start_time` (time) — the moment it began, as the computer had it.
+
 - `gmt_offset` (number) — how far ahead of GMT the two above read, which is what has to come
   off them. Seconds, unless the file says otherwise, the same as any other length of time.
 
@@ -308,6 +306,7 @@ that is the only record of it.
 
   The correction moves the date as well as the time where it has to: two minutes past
   midnight, with two hours coming off, is late the previous evening.
+
 - `depth` (series) — how deep, throughout.
 - `temperature` (series) — how cold, throughout. Often sampled far less often than
   depth, which is why it is a series of its own rather than a column beside it.
@@ -338,6 +337,7 @@ that is the only record of it.
 - `gradient_factor_low`, `gradient_factor_high` (number) — how conservative a Bühlmann
   computer was set to be. Written from 0 to 1 like any other proportion, so a computer set
   to 30/70 records `0.3` and `0.7`. Only Bühlmann has them.
+
 - `conservatism` (whole number) — the setting a computer offers instead of, or alongside,
   gradient factors. It is the dial position and nothing more: `2` means one thing on one
   make and something else on another, so it is worth recording and not worth comparing.
@@ -346,22 +346,20 @@ that is the only record of it.
   recompute anything** — the device also knew the diving you had done before, which is not
   here — but a `decostop` read years later means little without knowing whether the computer
   was set to 30/70 or to 85/85.
+
+- `end_date` (date, worked out) — the day the recording ended, from the last sample.
+- `end_time` (time, worked out) — the moment it ended.
+- `duration` (number, worked out) — how long it ran. Correct any of these where the recording
+  stopped before you surfaced.
+- `density` (number, worked out) — how heavy the water was taken to be, in kilograms per cubic
+  metre unless the file says otherwise. Fresh is 1000 and `en13319` is exactly 1020, both of
+  them fixed. Salt is whatever the computer was set to, so it comes from the `salt_density` of
+  the gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
+  figure on it. Write it in yourself if you know better.
 - `tolerances` (owned item) — how much detail was dropped when the recording was taken
   in, where that is known. Described below.
 - `remarks` (multiline text) — anything about the recording itself: a computer you
   do not trust, a transmitter that dropped out.
-
-Worked out for you:
-
-- `end_date` (date) — the day the recording ended, from the last sample.
-- `end_time` (time) — the moment it ended.
-- `duration` (number) — how long it ran. Correct any of these where the recording
-  stopped before you surfaced.
-- `density` (number) — how heavy the water was taken to be, in kilograms per cubic metre
-  unless the file says otherwise. Fresh is 1000 and `en13319` is exactly 1020, both of them
-  fixed. Salt is whatever the computer was set to, so it comes from the `salt_density` of the
-  gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
-  figure on it. Write it in yourself if you know better.
 
 **Depth is not a measurement.** A computer measures the pressure around it and turns
 that into a depth using the density it was set for, so every depth here has a water type
@@ -406,22 +404,21 @@ keeps them apart.
 - `cylinder` (reference) — the gear item it was, where it is one you own. Leave it out
   for a rented or borrowed cylinder you have no item for.
 - `start_pressure` (number) — what the gauge read as you went in.
+
 - `end_pressure` (number) — what it read as you came out.
 
   Both are **gauge** pressure: what the needle showed, which is zero for an empty
   cylinder at the surface. That is what you read and what you write, and Yemoja adds the
   atmosphere itself wherever a calculation needs the absolute figure.
+
 - `gas_type` (gas) — what was in it: `AIR`, `EAN32`, `TMX18/35`.
 - `usage` (text) — what it was for. Anything you like; the usual ones are `bottom`,
   `stage`, `deco` and `travel`.
 - `configuration` (text) — how it was carried. Anything you like; the usual ones are
   `back mounted`, `sidemount`, `pony` and `staged`.
-- `remarks` (multiline text) — anything about the cylinder or the fill.
 
-Worked out for you:
-
-- `volume` (number) — how much the cylinder holds, taken from the `capacity` of the gear
-  item named in `cylinder`. Write it yourself where no cylinder is named, or where the one
+- `volume` (number, worked out) — how much the cylinder holds, taken from the `capacity` of the
+  gear item named in `cylinder`. Write it yourself where no cylinder is named, or where the one
   you had was not the one recorded.
 
   Working it out needs a `cylinder` that really is one — a gear item in the `cylinder`
@@ -430,13 +427,16 @@ Worked out for you:
   regulator, or at a cylinder whose capacity was never filled in, is a mistake worth
   seeing. Writing a volume yourself settles it either way.
 
+- `remarks` (multiline text) — anything about the cylinder or the fill.
+
 ### Person
 
 Anyone who appears in your logbook: the people you dive with, your instructors, your
 emergency contacts, and yourself. They need not be divers.
 
-Fields you record:
-
+- `name` (text, worked out) — the person's full name, assembled from the parts above, and what
+  Yemoja works the item's id out from. Correct it whenever the assembly is wrong: names do not
+  all follow the same pattern, and yours is the one that counts.
 - `first_name` (text)
 - `middle_names` (text) — all of them together, if there are several.
 - `last_name` (text)
@@ -448,20 +448,14 @@ Fields you record:
   rather than a number: it may carry letters and leading zeros, and nothing is ever added
   up. Someone who instructs for two agencies has two, so record the one that matters to you
   and put the other in `remarks`.
-- `medical` (owned item) — this person's health details.
 - `emergency_contacts` (list of references or text) — who to contact about this person
   in an emergency. A plain name works if you do not want a full item for them.
+- `medical` (owned item) — this person's health details.
+- `insurance` (owned item) — cover this person holds.
 - `courses` (keyed owned items) — the qualifications this person has earned, described
   under *Course* below.
-- `insurance` (owned item) — cover this person holds.
 - `remarks` (multiline text) — whatever you want to keep about them that has no
   field of its own.
-
-Worked out for you:
-
-- `name` (text) — the person's full name, assembled from the parts above, and what
-  Yemoja works the item's id out from. Correct it whenever the assembly is
-  wrong: names do not all follow the same pattern, and yours is the one that counts.
 
 #### Medical
 
@@ -490,12 +484,9 @@ another. It is the same cover continuing.
 - `policy` (text) — the policy number.
 - `start_date` (date) — when the cover begins.
 - `end_date` (date) — when it runs out.
+- `days_left` (whole number, worked out) — how much longer the cover runs.
+- `expired` (true or false, worked out) — whether it has run out.
 - `remarks` (multiline text) — what the cover includes, and what it does not.
-
-Worked out for you:
-
-- `days_left` (whole number) — how much longer the cover runs.
-- `expired` (true or false) — whether it has run out.
 
 #### Course
 
@@ -515,14 +506,17 @@ A list on a person, one entry for each qualification earned.
 A part of the world: a continent, an ocean, a country, a sea. Many regions come with
 Yemoja, so you normally only record one it does not already know.
 
-Fields you record:
-
 - `name` (text) — what the region is called. The item's id is worked out from
   it.
 - `parents` (list of references) — the larger regions this one belongs to. There can be
   more than one, since a region often sits inside several at once.
+- `children` (list of references, worked out) — the regions that name this one as a parent. You
+  never write this: it follows from the `parents` of every other region, including the ones
+  supplied with Yemoja. Adding a country to your own logbook makes it appear among the children
+  of its continent, without that continent being touched.
 - `category` (text) — what sort of region it is. Anything you like; `continent`,
   `ocean`, `country` and `sea` are the usual ones.
+
 - `west`, `east`, `south`, `north` (number) — the four edges of a box containing the
   region, used to place it on a map. All four are in degrees: `west` and `east` are
   longitudes, `south` and `north` latitudes.
@@ -531,21 +525,13 @@ Fields you record:
   date line unremarkable. The Pacific runs from `west: 120` to `east: -70`, and that is
   simply where it starts and where it ends, not a mistake and not something Yemoja will
   correct. Latitude does not wrap, so `north` is always above `south`.
+
 - `remarks` (multiline text) — what you know about the region that the box and the
   category do not say.
-
-Worked out for you:
-
-- `children` (list of references) — the regions that name this one as a parent. You
-  never write this: it follows from the `parents` of every other region, including the
-  ones supplied with Yemoja. Adding a country to your own logbook makes it appear among
-  the children of its continent, without that continent being touched.
 
 ### Dive site
 
 A place you dive.
-
-Fields you record:
 
 - `name` (text) — what the site is called. The item's id is worked out from it.
 - `alternative_names` (list of text) — other names the site goes by. Useful where it is
@@ -590,8 +576,6 @@ A ship on the bottom. Kept apart from the dive site because the two are not the 
 thing: a site is a place with coordinates, a wreck is a vessel with a history, and one
 site may hold several while one large wreck may be dived from more than one.
 
-Fields you record:
-
 - `name` (text) — what she was called. The item's id is worked out from it.
 - `alternative_names` (list of text) — other names she went by, before a rename or a
   change of owner.
@@ -601,6 +585,7 @@ Fields you record:
 - `launched` (date) — when she went into the water the first time.
 - `sunk` (date) — and when she went under for good.
 - `length`, `beam`, `draught` (number) — how big she was.
+
 - `displacement` (number) — what she weighed, which for a ship means the weight of water
   she pushed aside. A mass like any other, so it is in kilograms unless the file says
   otherwise: a large ship runs to eight digits.
@@ -609,6 +594,7 @@ Fields you record:
   or gross register tonnage, which is a volume and not a weight at all. Where you cannot
   tell, leave this empty and put what the book said in `remarks`. A figure you had to
   guess the units of is worse than no figure.
+
 - `remarks` (multiline text) — her history, and whatever a book said that no field
   here can hold.
 
@@ -620,8 +606,6 @@ is half the reason for the dive.
 ### Gear
 
 A piece of equipment. A dive computer is gear like anything else you own.
-
-Fields you record:
 
 - `name` (text) — the item's id is worked out from it.
 - `brand` (text)
@@ -638,6 +622,7 @@ Fields you record:
   a metric cylinder is named by: a twelve-litre has a capacity of 12. An American
   cylinder named for the gas it delivers — a forty, an eighty — is not named by this, so
   write the water capacity rather than the number in the name.
+
 - `salt_density` (number) — for a dive computer, how heavy it takes salt water to be, in
   kilograms per cubic metre unless the file says otherwise. Look it up in the computer's own
   manual and write it once.
@@ -649,6 +634,7 @@ Fields you record:
 
   Leave it out and Yemoja uses 1030, which is the usual figure. Fresh water and `en13319` do
   not need it: those are 1000 and exactly 1020 whatever the computer is.
+
 - `generic` (true or false) — whether this describes a *kind* of item rather than one you
   own. Leave it out and it is `false`: your own gear is your own. See below.
 - `buoyancy` (owned item) — what the item does in the water.
@@ -681,15 +667,7 @@ buoyancy, so that weighting can be worked out from the kit you took.
   and any gas sealed inside it. Not the same as a cylinder's `capacity`, which is what
   fits inside it: a twelve-litre cylinder holds 12 and displaces rather more, because its
   walls take up room too.
-- `remarks` (multiline text) — how the figures were arrived at: weighed, measured in
-  a pool, or taken from the maker.
 
-  Water that floods in and out is not part of the item and is not counted. **A soaked
-  wetsuit is heavier on the boat and behaves exactly as it did before in the water**,
-  because the water it took on displaces its own weight; there is nothing to record and no
-  figure that changes. A suit that has grown genuinely less buoyant over the years has
-  lost gas from the neoprene itself — that is a smaller `displaced_volume`, corrected on
-  the item.
 - `compressible_fraction` (number) — how much of `displaced_volume` is gas rather than
   solid, from 0 to 1, so that a suit losing buoyancy with depth is accounted for.
 
@@ -708,6 +686,7 @@ buoyancy, so that weighting can be worked out from the kit you took.
   belongs here is the fraction that *behaves* as gas — the figure that reproduces the
   buoyancy you actually lose. If your 5 mm suit loses about half its lift by ten metres,
   the number that says so is right, whatever the foam is made of.
+
 - `lift_volume` (number) — the gas the item can take on, over and above
   `displaced_volume`. A wing, a lift bag and a drysuit are all this: something with a
   volume of its own that a valve makes larger.
@@ -723,6 +702,16 @@ buoyancy, so that weighting can be worked out from the kit you took.
   the difference between the two figures: one is what the item is, the other is what you
   are doing with it. A drysuit is where it matters most, since its suit compresses and its
   inflation is you answering that.
+
+- `remarks` (multiline text) — how the figures were arrived at: weighed, measured in
+  a pool, or taken from the maker.
+
+  Water that floods in and out is not part of the item and is not counted. **A soaked
+  wetsuit is heavier on the boat and behaves exactly as it did before in the water**,
+  because the water it took on displaces its own weight; there is nothing to record and no
+  figure that changes. A suit that has grown genuinely less buoyant over the years has
+  lost gas from the neoprene itself — that is a smaller `displaced_volume`, corrected on
+  the item.
 
 Nothing here records the gas in a cylinder. Its weight follows from the cylinder's
 `capacity`, the pressure at the time and what is in it, so recording it on the gear item
@@ -743,13 +732,10 @@ intact.
   repair that resets the service clock says `service` here; a repair is something that
   happened, not something owed.
 - `operator` (reference) — who did the work.
+- `days_left` (whole number, worked out) — how long until `valid_until`.
+- `expired` (true or false, worked out) — whether it has passed.
 - `remarks` (multiline text) — what was found, which is often worth more than the
   fact that the work happened.
-
-Worked out for you:
-
-- `days_left` (whole number) — how long until `valid_until`.
-- `expired` (true or false) — whether it has passed.
 
 **An item can owe more than one thing at once**, and this list holds them all. A cylinder
 needs a visual inspection every year and a pressure test every five: those are not
@@ -766,8 +752,6 @@ recording and is not a due date.
 A qualification as an agency awards it — not one person's award of it. Your own
 qualifications are recorded as courses on your person item.
 
-Fields you record:
-
 - `name` (text) — the item's id is worked out from it.
 - `abbreviation` (text) — the short form it is usually known by.
 - `organisation` (text) — who awards it, written as a plain name.
@@ -782,8 +766,6 @@ Fields you record:
 
 Anyone who takes you diving or looks after your gear while you are there: a dive
 centre, a club, a resort, a boat.
-
-Fields you record:
 
 - `name` (text) — the item's id is worked out from it.
 - `alternative_names` (list of text) — what they were called before. Dive centres are
@@ -810,25 +792,20 @@ different people to dive with — each leg is a trip of its own naming the large
 its `parent`. A dive always belongs to the trip it was actually on, which is the leg
 rather than the fortnight.
 
-Fields you record:
-
 - `name` (text) — the item's id is worked out from it.
 - `parent` (reference) — the larger trip this one is part of, where there is one.
+- `parts` (list of references, worked out) — the trips naming this one as their parent. This
+  follows from their `parent` in the same way.
 - `region` (reference) — where it went.
 - `operator` (reference) — who ran it.
+- `dives` (list of references, worked out) — the dives made on this trip, and on any trip
+  beneath it. You never list them here: each dive says which trip it belongs to, and this
+  follows from that, so the two can never disagree.
+- `start_date`, `end_date` (date, worked out) — when the trip ran, taken from the dives on it.
+  Correct them where the trip was longer than the diving — a travelling day at either end — or
+  where you have set it up before logging anything.
 - `remarks` (multiline text) — how the trip went as a whole, which is not the same
   as how any one dive on it went.
-
-Worked out for you:
-
-- `dives` (list of references) — the dives made on this trip, and on any trip beneath it.
-  You never list them here: each dive says which trip it belongs to, and this follows
-  from that, so the two can never disagree.
-- `parts` (list of references) — the trips naming this one as their parent. This follows
-  from their `parent` in the same way.
-- `start_date`, `end_date` (date) — when the trip ran, taken from the dives on it.
-  Correct them where the trip was longer than the diving — a travelling day at either
-  end — or where you have set it up before logging anything.
 
 ---
 

@@ -132,6 +132,74 @@ def manual_fields():
     return fields
 
 
+def manual_order():
+    """The fields of each type in the order the manual lists them, and which it marks.
+
+    The order is checked because it is one an interface follows: `ItemDescription` holds
+    its fields "in the order an interface offers them". The manual groups them the same
+    way rather than by whether they are recorded, so that one order serves both.
+    """
+    text = io.open(MANUAL, encoding='utf-8').read()
+    order, worked, current = {}, {}, None
+    for line in text.split('\n'):
+        heading = re.match(r'^#{3,5} (.+)$', line)
+        if heading:
+            current = heading.group(1)
+            order[current], worked[current] = [], set()
+        item = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(, worked out)?\)', line)
+        if item and current:
+            names = re.findall(r'`([a-z_]+)`', item.group(1))
+            order[current].extend(names)
+            if item.group(3):
+                worked[current] |= set(names)
+    return order, worked
+
+
+def described_roles():
+    """Which fields carry a role, per type, read the same way the rest of the source is."""
+    if not os.path.exists(DESCRIPTIONS):
+        return {}
+    text = re.sub(r'//[^\n]*', '', io.open(DESCRIPTIONS, encoding='utf-8').read())
+    shared = {
+        field for field, tail in re.findall(
+            r'val [A-Z_]+[^=\n]*=\s*\w+Description\(\s*"([a-z_]+)"([^\n]*)', text)
+        if 'Role.' in tail
+    }
+    roles = {}
+    for match in re.finditer(r'ItemDescription\(\s*"([a-z_]+)"\s*,\s*listOf\(', text):
+        body = balanced(text, text.index('(', match.end() - len('listOf(')))
+        here = set(shared)
+        for piece in re.split(r'(?=\w+Description\(\s*")', body):
+            named = re.match(r'\w+Description\(\s*"([a-z_]+)"', piece)
+            if named and 'Role.' in piece:
+                here.add(named.group(1))
+        roles[match.group(1)] = here
+    return roles
+
+
+def check_order():
+    """The manual against the descriptions, on order and on what is worked out."""
+    problems = []
+    order, marked = manual_order()
+    roles = described_roles()
+    for storage, present in sorted(described_types().items()):
+        heading = TYPE_NAMES.get(storage) or INSIDE.get(storage)
+        if heading is None or heading not in order:
+            continue
+        if order[heading] != list(present):
+            problems.append(
+                '%s lists its fields in a different order from the manual' % storage)
+        for field in sorted(set(present) & set(order[heading])):
+            says = field in marked[heading]
+            does = field in roles.get(storage, set())
+            if says and not does:
+                problems.append('%s.%s is marked worked out and has no role' % (storage, field))
+            if does and not says:
+                problems.append('%s.%s has a role and is not marked worked out'
+                                % (storage, field))
+    return problems
+
+
 def manual_kinds():
     """The kind the manual gives each field, per item type and owned item.
 
@@ -144,7 +212,8 @@ def manual_kinds():
         heading = re.match(r'^#{3,5} (.+)$', line)
         if heading:
             current = heading.group(1)
-        bullet = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)\)', line)
+        bullet = re.match(
+            r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(?:, worked out)?\)', line)
         if bullet and current:
             for name in re.findall(r'`([a-z_]+)`', bullet.group(1)):
                 kinds[(current, name)] = bullet.group(2)
@@ -429,6 +498,7 @@ def main():
 
     described, count, total = check_descriptions(checker.fields, manual_kinds())
     checker.problems.extend(described)
+    checker.problems.extend(check_order())
 
     print('checked %d items and %d references, against %d fixed sets and %d ranges'
           % (checker.items, len(checker.references), len(sets), len(ranges)))
