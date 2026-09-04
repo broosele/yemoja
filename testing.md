@@ -82,9 +82,15 @@ the build refuses.
 
   It also holds the manual's **order** to the code: each type's fields in the order the
   description declares them, and the chapters themselves in the order `Types.ALL` gives.
-  The chapters went unchecked while the fields were checked, and drifted two commits behind
-  before anyone looked. The list introducing them is checked with them, having been missing
-  `Wreck` outright.
+  The chapters went unchecked while the fields were checked, and were two reorderings behind
+  by the time anyone looked. The list introducing them is checked with them, having been
+  missing `Wreck` outright.
+
+  **A suggested vocabulary is checked too**, against the values the manual names for that
+  field. A fixed set is checked both ways already — the data is held to it and the manual
+  states it — but a suggested set is open, so no value can be wrong and nothing was comparing
+  the two lists. They had diverged: the supplied regions use `world` and `area`, the
+  description offered both, and the manual named neither.
 
   **They are Python, and stay that way** — and they are not tests. They check documents
   against data rather than code against expectations, which is why they sit outside the

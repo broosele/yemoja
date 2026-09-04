@@ -608,8 +608,9 @@ Yemoja, so you normally only record one it does not already know.
 
 - `name` (text) — what the region is called. The item's id is worked out from
   it.
-- `category` (text) — what sort of region it is. Anything you like; `continent`,
-  `ocean`, `country` and `sea` are the usual ones.
+- `category` (text) — what sort of region it is. Anything you like; `world`, `continent`,
+  `ocean`, `sea`, `country` and `area` are the usual ones, and are what the supplied
+  regions use — `area` for anything inside a country, from a coastline to a marine park.
 - `parents` (list of references) — the larger regions this one belongs to. There can be
   more than one, since a region often sits inside several at once.
 - `children` (list of references, worked out) — the regions that name this one as a parent. You

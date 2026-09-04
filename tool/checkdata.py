@@ -191,6 +191,74 @@ def described_roles():
     return roles
 
 
+def manual_bullets():
+    """Each field's bullet, whole, keyed by the heading it sits under and by its own name.
+
+    A bullet may open with several names — ``entry``, ``exit`` — and is then the bullet for
+    each of them. Keyed by heading as well as name because five types have a `category`.
+    """
+    bullets, here, names, held = {}, None, [], []
+
+    def close():
+        for one in names:
+            bullets[(here, one)] = ' '.join(held)
+
+    for line in io.open(MANUAL, encoding='utf-8').read().split('\n'):
+        heading = re.match(r'^#{3,5} (.+)$', line)
+        start = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(', line)
+        if heading or start or (line.startswith('- ') and names):
+            close()
+            names, held = [], []
+        if heading:
+            here = heading.group(1)
+        elif start:
+            names = re.findall(r'`([a-z_]+)`', start.group(1))
+            held = [line]
+        elif names and line.startswith('  '):
+            held.append(line.strip())
+    close()
+    return bullets
+
+
+def check_suggested():
+    """The values a suggested set offers, against the ones the manual names for that field.
+
+    A fixed set is already checked, both ways: the data is held to it and the manual states
+    it. A suggested set is open, so no value can be wrong -- but the manual says *these are
+    the usual ones*, and if the two lists differ then one of them is out of date. They did:
+    the supplied regions use `world` and `area`, the description offered both, and the manual
+    named neither.
+    """
+    source = described_source()
+    offered = {}
+    for match in re.finditer(r'ItemDescription\(\s*"([a-z_]+)"\s*,\s*listOf\(', source):
+        body = balanced(source, source.index('(', match.end() - len('listOf(')))
+        for field, name in re.findall(r'"([a-z_]+)"[^\n]*suggestedSet = ([A-Z_]+)', body):
+            offered.setdefault(name, set()).add((match.group(1), field))
+    sets = {name: set(re.findall(r'"([^"]+)"', body)) for name, body in
+            re.findall(r'val ([A-Z_]+) = setOf\(([^)]*)\)', source, re.S)}
+
+    bullets = manual_bullets()
+    sections = dict(TYPE_NAMES)
+    sections.update(INSIDE)
+    known = set().union(*manual_fields().values())
+    problems = []
+    for name in sorted(offered):
+        if name not in sets:
+            continue
+        for storage, field in sorted(offered[name]):
+            bullet = bullets.get((sections.get(storage), field), '')
+            said = set(re.findall(r'`([A-Za-z0-9_ /]+)`', bullet))
+            # A bullet backticks other field names while explaining itself, and those are not
+            # values. One that is also a value stays, being named among the others.
+            said -= known - sets[name]
+            if said != sets[name]:
+                problems.append(
+                    '%s.%s suggests %s, and the manual names %s'
+                    % (storage, field, sorted(sets[name]), sorted(said)))
+    return problems
+
+
 def described_order():
     """The stored types in the order `Types.ALL` gives them.
 
@@ -553,6 +621,7 @@ def main():
     checker.problems.extend(described)
     checker.problems.extend(check_order())
     checker.problems.extend(check_sections())
+    checker.problems.extend(check_suggested())
     # A checker that finds nothing to check passes, which is the one answer it must not give
     # quietly. Splitting the types one to a file left this reading a source that no longer
     # held any, and it reported no problems against no fields.
