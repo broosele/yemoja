@@ -76,8 +76,8 @@ them.
 - **FEAT-23 — Following a mention written in a remark.** `@willy` in free text names an
   item by convention, settled in `JSON-23`. *Built in the TUI:* opened, a remark's mentions are
   what up and down move over and space follows the one the cursor is on, and only those that
-  resolve are marked. Whether a rename carries mentions along with it is a question of its own
-  and is open: `JSON-24`.
+  resolve are marked. A rename carries them with it, which is `JSON-24` and waits on there
+  being a rename at all.
 - **FEAT-13 — Export to other applications' formats.** Waits on `RECON-4`.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).

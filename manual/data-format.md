@@ -290,6 +290,14 @@ after the field.
   rule can tell those from a name. It does not matter: a pointer means something only
   when an item of that name is really there, and one that finds nothing is the text you
   wrote. `tom@example.invalid` is your address and stays your address.
+
+  **Renaming an item carries your pointers with it.** Rename *willy* and every remark saying
+  `@willy` says the new name afterwards, in the same step, which you can undo like any other.
+  Only pointers that actually found that item are changed — an address is never touched, and
+  neither is a pointer at anything else.
+
+  The one thing that does not survive is a capital. `@Willy` finds the same person as
+  `@willy`, and what it becomes is the new name as Yemoja writes it, in lower case.
 - **whole number** — no decimal point: `12`.
 - **number** — with or without one: `31.4`.
 

@@ -340,27 +340,6 @@ To settle when we discuss architecture:
    **This is `REQ-14` in another guise** — whether a conflict is per item or per
    field. Storage that keeps whole items and merging that compares fields can coexist,
    but the two questions have to be answered together or the answers will disagree.
-- **JSON-24 — Whether a rename carries the mentions in free text.** `JSON-17` makes a rename
-   one changeset rewriting every reference to the old id. A mention is not a reference, so
-   nothing carries it, and `@willy` goes on naming an id that no longer exists.
-
-   For carrying it: the user wrote the mention meaning the person, and leaving it behind is
-   data quietly decaying under a rename the user asked for. The machinery exists — a rename
-   is already a changeset touching many items, and one more kind of edit is reversible like
-   the rest.
-
-   Against: a remark is prose somebody typed, and rewriting the middle of a sentence is editing
-   their words rather than repointing a link. Worse, `JSON-23` makes a mention *have no fixed
-   meaning*, so nothing can know that `@willy` was meant as one rather than being text that
-   looks like one — rewriting it asserts a reading the format declines to make. And a partial
-   guarantee may be worse than a stated absence: `*<key>` and `@<id>*<key>` cannot be resolved
-   without a description, so only the plain `@<id>` form could ever be carried.
-
-   Two things bear on it. Whether a journal action can address part of a string, or only
-   replace a field whole, which is `JSON-16`'s neighbourhood. And what happens to a mention in
-   a library item, which a logbook may not rewrite at all.
-
-   Until this is settled nothing is promised either way, and the manual says nothing about it.
 - **JSON-13 — When an action or a changeset may be moved or dropped.** Two actions commute
    if they touch different items, or different fields of one item; outside that they
    depend on each other. Either the journal refuses a change that would break a
@@ -637,6 +616,44 @@ To settle when we discuss architecture:
   because a good id is recognisable on sight and the alternative pays on every reference
   in every file to serve a rare reading.
 
+- **JSON-24 — Whether a rename carries the mentions in free text.** *Settled:* **yes, and
+  exactly the ones that resolve to the item being renamed.**
+
+  `JSON-17` makes a rename one changeset rewriting every reference to the old id. A mention is
+  not a reference, so nothing carried it and `@willy` went on naming an id that no longer
+  existed. The user wrote it meaning the person, and leaving it behind is data decaying under
+  a rename the user asked for.
+
+  **What resolves is what changes**, and that one rule answers the objection this looked like
+  it had. `JSON-23` gives a mention no fixed meaning, so rewriting one might assert a reading
+  the format declines to make — but the set being rewritten is not *every* candidate. It is
+  the candidates naming the item whose id is changing, which is precisely the set an interface
+  already treats as links: the ones it underlines and follows, because they resolve. Nothing
+  is being decided that was not decided the moment the item existed under that name.
+
+  So an address is never touched, because `@example.invalid` names nobody. A mention of some
+  other item is never touched. `@willy` in a remark is rewritten when *willy* is renamed and
+  at no other time.
+
+  **Only the plain `@<id>` form.** `*<key>` and `@<id>*<key>` cannot be resolved without a
+  description, and what cannot be resolved cannot be known to name the thing being renamed.
+  That is a partial guarantee, and it is the same partiality the whole convention has: what
+  resolves is what counts.
+
+  **A rewritten field is recorded whole**, before and after, as a field-level replacement.
+  Addressing part of a string would be a finer action than the journal has, and a remark is
+  small. Undo then puts the sentence back exactly as it was, punctuation and capitals
+  included, which is the property that matters for prose.
+
+  One case stays outside: a library item is not the logbook's to rewrite. Nothing there should
+  name a logbook item — a library is self-contained by construction — so this is a boundary
+  rather than a gap, and an import that ever broke it would be reported rather than mended.
+
+  Case folding is the one thing lost. `@Willy` resolves to *willy*, so it is carried; it comes
+  back as the new id, in the lowercase every id is written in. A user who capitalised a name at
+  the start of a sentence gets a lowercase one there afterwards. That is a small cost against a
+  mention that would otherwise name nothing, and the alternative — matching the old
+  capitalisation onto a new name of a different length — is guesswork.
 - **JSON-23 — Whether `@` and `*` mean anything inside multiline text.** *Settled:* **yes,
   by convention, and nothing enforces it.**
 
@@ -655,10 +672,10 @@ To settle when we discuss architecture:
   mention cannot be broken**, having never been a link, so `tool/checkdata.py` counts
   references and passes over these.
 
-  **What a rename does to a mention is not settled here.** `JSON-17` makes a rename one
-  changeset rewriting every reference, and a reference is a field; a mention sits inside a
-  string nobody parsed, so the machinery that carries the one does not reach the other by
-  itself. Whether it should be made to is `JSON-24`.
+  **A rename carries a mention with it**, though the machinery that carries a reference does
+  not reach one by itself: `JSON-17` rewrites every reference, and a reference is a field
+  while a mention sits inside a string nobody parsed. What is rewritten is what resolves,
+  which is `JSON-24`.
 
   **What a mention looks like.** After an `@`, the longest run of ASCII letters, digits,
   `_`, `-`, `.` and `#` — the characters `DATA-84` allows in an id. A trailing `_`, `-`,
