@@ -346,6 +346,10 @@ To settle when we discuss architecture and features:
    `setmarker`: a marker says something was interesting and nothing about what, which the dive's
    remarks do better.
 
+   **An event's `value` is dropped with the ones that carry it.** What it means is per event and
+   per device — an ascent rate on one, something else on another — and `alarms` is a series of
+   words. The five that survive are kept for having happened, not for a magnitude.
+
    **An interval is recorded at its start.** `SAMPLE_FLAGS_BEGIN` and `SAMPLE_FLAGS_END` make an
    event a state starting or stopping, and `alarms` is a series of instants. Keeping both ends
    would put two identical words in the series with nothing to say which was which, so an ascent
@@ -456,6 +460,22 @@ To settle when we discuss architecture and features:
    so it lands on a gas source carrying that mix — **the first, where two tanks share one.**
    That is imprecise and cannot be otherwise: a computer records which gas was switched to and
    has no idea which cylinder the diver reached for.
+
+   **A `usage` sits on both a mix and a tank**, and is one of four: none, oxygen, diluent,
+   sidemount. Only one of those means anything here, and it is not a usage: `sidemount` is what
+   this model calls a **configuration**, so it lands in `gas_source.configuration`. Oxygen and
+   diluent are rebreather terms that `FEAT-21` rules out, and are dropped with the rest of
+   `DIVEMODE`'s closed and semi-closed values. Where a mix and its tank disagree the tank wins,
+   it being the cylinder that was actually carried a particular way.
+
+   `gas_source.usage` is left unfed by a download. `bottom`, `stage`, `deco` and `travel` are a
+   diver's words for what a cylinder was *for*, and no computer records that.
+
+   **A tank's `workpressure` is consumed rather than kept.** `dc_tankvolume_t` says whether a
+   volume is metric or imperial, and an imperial one is free gas at the working pressure rather
+   than water capacity, so the pressure is what converts the one into the other. Nothing holds
+   it afterwards. A `working_pressure` on a gear item would be a field added because data
+   arrived, which is what `LOGIC-10` exists to prevent.
 - **LOGIC-11 — Where a downloaded dive's `gmt_offset` comes from.** *Settled:* **asked once
    for the download, and changeable per dive afterwards.**
 

@@ -66,9 +66,38 @@ download report what it dropped, and why `LOGIC-17` modelled rather than dropped
 | `VENDOR` | — | dropped: a maker's own bytes |
 | `LOCATION` | — | dropped: a track, not a position |
 
+## What their structs carry
+
+The enumerators above say what can be asked for. Several answer with a struct, and its
+members needed deciding too — the first audit of this document checked the enums and missed
+them.
+
+| member | ours | |
+|---|---|---|
+| `gasmix.oxygen`, `.helium`, `.nitrogen` | `gas_source.gas_type` | the mix as divers write it |
+| `gasmix.usage`, `tank.usage` | `gas_source.configuration`, for `SIDEMOUNT` only | `LOGIC-12` |
+| `tank.gasmix` | which mix a gas source carries | `LOGIC-12` |
+| `tank.type` | — | says whether `volume` is metric or imperial |
+| `tank.volume` | `gas_source.volume` | water capacity, converted where imperial |
+| `tank.workpressure` | — | consumed by that conversion, then dropped |
+| `tank.beginpressure`, `.endpressure` | `start_pressure`, `end_pressure` | gauge in both |
+| `salinity.type`, `.density` | `profile.water_type`, `density` | `LOGIC-14` |
+| `decomodel.type` | `profile.deco_model` | `LOGIC-17` |
+| `decomodel.conservatism` | `profile.conservatism` | a dial position, no range |
+| `decomodel.params.gf` | `gradient_factor_low`, `_high` | 0 to 1, not 0 to 100 |
+| `location.latitude`, `.longitude` | a proposed site's | `LOGIC-18` |
+| `location.altitude` | a proposed site's `elevation` | available, not settled |
+| `sample.pressure.tank` | which gas source | `LOGIC-12` |
+| `sample.event.type`, `.flags` | `profile.alarms` | five of twenty-six, beginnings only |
+| `sample.event.value` | — | dropped: per event and per device |
+| `sample.deco.type`, `.time`, `.depth` | `decostop`, `no_deco_time` | `LOGIC-13` |
+| `sample.deco.tts` | — | dropped: a prediction, and nothing holds one |
+| `sample.ppo2.sensor` | — | moot, the sample being dropped |
+| `sample.vendor.type`, `.size`, `.data` | — | dropped: a maker's own bytes |
+
 ## What has no source at all
 
-Four things this model holds that no download supplies, and each has somewhere else to come
+Five things this model holds that no download supplies, and each has somewhere else to come
 from:
 
 - **`profile.gmt_offset`** — the one field a download cannot fill from what it was given.
@@ -77,6 +106,8 @@ from:
   `LOGIC-15` makes the import owe the figures.
 - **`otu`, `no_flight_time`, `desaturation_time`** — computers display them; the library
   does not report them. They come from UDDF, or from the user.
+- **`gas_source.usage`** — `bottom`, `stage`, `deco` and `travel` are a diver's words for what
+  a cylinder was *for*, and no computer records that. `LOGIC-12`.
 - **`alarms`: `breath`, `deco`, `error`, `skincooling`** — four of our nine words that no
   event maps onto. `LOGIC-16` refuses to stretch a near-miss into them.
 
