@@ -291,7 +291,7 @@ class WrittenFormTest {
     }
 
     @Test
-    fun `it leaves no tail for any unit in the set`() {
+    fun `no unit in the set writes past its own precision, or leaves a tail`() {
         val every = mapOf(
             Dimension.LENGTH to listOf("m", "ft"),
             Dimension.MASS to listOf("kg", "lb"),
@@ -304,25 +304,55 @@ class WrittenFormTest {
             val description = NumberDescription("x", dimension)
             for (name in names) {
                 val units = unitsOf(dimension.name.lowercase() to name)
+                val decimals = units.decimalsOf(dimension)
                 for (given in listOf(0.5, 1.0, 6.75, 12.25, 18.3, 99.9, 207.0, 1000.0)) {
                     val held = (description.read(given, false, units) as Result.Usable).value
-                    assertEquals(
-                        written(given),
-                        description.format(held as Double, units),
-                        "$given $name",
+                    val once = description.format(held as Double, units)
+                    assertTrue(
+                        once.substringAfter('.', "").length <= decimals,
+                        "$given $name wrote $once, past the $decimals decimals the unit allows",
                     )
+                    val again = (description.read(once, false, units) as Result.Usable).value
+                    assertEquals(once, description.format(again as Double, units), "$given $name")
                 }
             }
         }
     }
 
     @Test
-    fun `twelve digits survive, and the thirteenth is where the tail lives`() {
+    fun `a unit says how finely it is written, in steps of three decimals`() {
         val angle = NumberDescription("longitude", Dimension.ANGLE)
-        assertEquals("51.1234567891", angle.format(51.1234567891, Units.DEFAULT))
-        assertEquals("51.1234567891", angle.format(51.12345678912, Units.DEFAULT))
-        // A position is the longest figure written here, and it is nowhere near this long.
+        // Six decimals of a degree is about a tenth of a metre. Three would be a hundred.
+        assertEquals("51.123457", angle.format(51.1234567891, Units.DEFAULT))
         assertEquals("4.2731", angle.format(4.2731, Units.DEFAULT))
+        val length = NumberDescription("depth", Dimension.LENGTH)
+        assertEquals("22.106", length.format(22.1056451613, Units.DEFAULT))
+        assertEquals("1.85", length.format(1.85, Units.DEFAULT), "a height is a length too")
+        // The step below three is none, where the unit is already finer than anything measured.
+        // A whole pascal is a hundred-thousandth of a bar, so nothing is lost by stopping there.
+        val pascal = unitsOf("pressure" to "Pa")
+        val pressure = NumberDescription("atmospheric_pressure", Dimension.PRESSURE)
+        assertEquals("88000", pressure.format(0.880000123, pascal))
+    }
+
+    @Test
+    fun `a file keeps its own unit, so its own figures come back whole`() {
+        // 92 ft is 28.041600000000003 m, which in metres writes as 28.042. The file is in feet
+        // and gets 92 back: what a user typed survives, in the unit they typed it in.
+        val feet = unitsOf("length" to "ft")
+        val depth = NumberDescription("max_depth", Dimension.LENGTH)
+        val held = (depth.read(92.0, false, feet) as Result.Usable).value as Double
+        assertEquals("92", depth.format(held, feet))
+        assertEquals("28.042", depth.format(held, Units.DEFAULT))
+    }
+
+    @Test
+    fun `a unit's precision is the finest thing written in it, not the finest one read`() {
+        // The supplied gear holds displaced volumes of 0.04 l, and an atmospheric pressure is
+        // 0.88 bar. A figure chosen for how a depth reads would round both of them away.
+        assertEquals("0.04", volume.format(0.04, Units.DEFAULT))
+        val pressure = NumberDescription("atmospheric_pressure", Dimension.PRESSURE)
+        assertEquals("0.88", pressure.format(0.88, Units.DEFAULT))
     }
 
     @Test
@@ -334,7 +364,8 @@ class WrittenFormTest {
 
     @Test
     fun `a small value keeps its digits, which decimal places would have cost it`() {
-        // 0.0456 l is 0.0000456 m3, and six decimal places would round it to 0.000046.
+        // 0.0456 l is 0.0000456 m3, which is why the cubic metre carries eight decimals and
+        // the litre three: each unit is written as finely as things are written in it.
         val cubic = unitsOf("volume" to "m3")
         val held = (volume.read(0.0000456, false, cubic) as Result.Usable).value as Double
         assertEquals("0.0000456", volume.format(held, cubic))
@@ -347,8 +378,10 @@ class WrittenFormTest {
         val pressure = NumberDescription("pressure", Dimension.PRESSURE)
         val held = (pressure.read(200.0, false, Units.DEFAULT) as Result.Usable).value as Double
         assertEquals("20000000", pressure.format(held, pascal))
-        assertEquals("0.00001", volume.format(0.00001, Units.DEFAULT))
-        assertEquals("-0.00015", volume.format(-0.00015, Units.DEFAULT))
+        // In cubic metres, which is the unit fine enough to hold a figure this small.
+        val cubic = unitsOf("volume" to "m3")
+        assertEquals("0.00001", volume.format(0.01, cubic))
+        assertEquals("-0.00015", volume.format(-0.15, cubic))
     }
 
     @Test
@@ -360,10 +393,4 @@ class WrittenFormTest {
         val read = (duration.read(once, false, hours) as Result.Usable).value as Double
         assertEquals(once, duration.format(read, hours))
     }
-}
-
-/** The same rounding, stated as text, so the rule itself is readable. */
-private fun written(value: Double): String {
-    val description = NumberDescription("x", Dimension.DIMENSIONLESS)
-    return description.format(value, Units.DEFAULT)
 }

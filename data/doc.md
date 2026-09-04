@@ -1999,19 +1999,54 @@ Kept with their identifiers so earlier discussion still resolves.
 
   The manual states this to the user in *Units*.
 
-- **DATA-88 — How many digits a measurement is written with.** *Settled:* **twelve
-  significant digits, no trailing zeros, and never an exponent.**
+- **DATA-88 — How many digits a measurement is written with.** *Settled:* **each unit carries
+  its own precision, in decimal places, and the same figure governs showing a value and
+  storing one.** The figure is 0, 3, 6 or 9. No trailing zeros, and never an exponent.
 
   Converting a number into a unit and back is exact only to about the sixteenth digit, so a
-  value written straight from a double gains a tail on every save. Rounding at twelve is
-  past where that tail lives and far past anything written by hand — a position, the longest
-  figure in the model, is nowhere near twelve.
+  value written straight from a double gains a tail on every save. Rounding at the unit's
+  precision removes the tail at its source.
 
-  **Significant digits rather than decimal places.** A rule counting places means something
-  different in every unit, and `DATA-8` has two far larger than the default they convert
-  into. Six places would write a 0.0456 litre item in cubic metres as `0.000046`, losing a
-  digit off exactly the values with none to spare; the supplied gear library already holds
-  volumes that small.
+  **This replaces an earlier answer of twelve significant digits**, which was right about
+  files and useless on a screen. A worked-out average depth came out as `22.1056451613`, and
+  a depth of 92 feet read in metres as `28.0416`, because the interface had nothing to show a
+  number with but the form a file is written in. Adding a second rule for display would have
+  let the two drift; one figure per unit means the number a user reads and the number their
+  file holds are the same number.
+
+  **Decimal places rather than significant digits**, which is the opposite of what the earlier
+  answer chose, and for the reason that answer could not use: a place means something definite
+  once the unit is known, and here it always is. The old objection — that six places would
+  write a 0.0456 litre item in cubic metres as `0.000046` — is answered by the cubic metre
+  carrying nine places and the litre three, rather than by counting from the first digit.
+
+  **A unit's precision is the finest thing written in it, not the finest a diver reads.** A
+  depth wants one decimal; the litre carries three, because the supplied gear holds displaced
+  volumes of `0.04` litres, and the bar three because an atmospheric pressure is `0.88`.
+  Choosing by how a depth reads would have rounded fifty-three supplied items to nothing. The
+  figures were taken from what the data actually holds.
+
+  **Steps of three, and a unit takes the smallest that holds what is written in it.** Three
+  decimals suits nearly everything. Six is for the hour, where three would be steps of 3.6
+  seconds, and for the degree, where three would be a hundred metres of position — enough to
+  lose which end of a wreck a site names. Nine is for the cubic metre alone, since a weight
+  displacing 0.0456 litres is 0.0000456 of one. Nothing is for the second and the pascal,
+  which are already finer than anything measured.
+
+  The alternative was a figure per unit, chosen for each. That is eighteen small arguments to
+  make and to keep, and the differences between them were not carrying their weight: a metre
+  at two decimals and a bar at two were the same decision written twice, and the two that
+  genuinely differ are the ones a step of three still separates.
+
+  A consequence worth having: the metre gets three where a depth wants one, and that settles
+  `medical.height` without an argument of its own. `1.85` survives, where a figure picked for
+  depths would have made it `1.9`.
+
+  **Storing is lossy now, and that is the point.** A value finer than its unit allows is
+  rounded on the way out, so a logbook cannot hold precision its own units cannot express.
+  Nothing currently stored loses anything: of 1740 values in the fixtures, the only three that
+  move are a derived average and two figures written in feet, which a file in feet writes back
+  as the `92` and `13` a user typed.
 
   **No exponent**, because `4.56E-5` and `2.0E7` are both JSON and both read back correctly,
   and neither belongs in a file a diver opens in a text editor. A pressure in pascal is

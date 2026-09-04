@@ -249,12 +249,25 @@ item is called that, and neither is any field.
 If you set units by hand, Yemoja keeps your choice. It will not rewrite your file into
 different units.
 
-A measurement is written with at most twelve digits, counting from the first that is not a
-zero, and with no zeros added on the end — `108000`, not `108000.0`. Twelve is far more
-than anyone writes by hand, and stopping there keeps a number from growing a tail of
-decimals nobody typed each time the file is saved. Converting into a unit that does not
-divide evenly can move the last digit once, the first time Yemoja writes a value it read
-from somewhere else; after that the file stays as it is.
+**Each unit is written to a set number of decimals**, and no zeros are added on the end —
+`108000`, not `108000.0`. The same figure decides what Yemoja shows you, so a number on the
+screen and the number in your file are the same number.
+
+The figure is three decimals for nearly every unit — metres, feet, kilograms, bar, degrees
+Celsius. Hours and positions get six, since a thousandth of an hour is nearly four seconds
+and a thousandth of a degree is a hundred metres. Cubic metres get nine, being a very large
+unit for the volumes a logbook holds. Seconds and pascal get none, being small enough
+already.
+
+Each unit's figure is the finest thing anyone writes in it rather than the finest anyone
+reads. Litres get three decimals because a small weight displaces `0.04` of one, even
+though no depth needs that many.
+
+Two things follow. A value finer than its unit allows is rounded when it is saved, so
+Yemoja cannot keep precision your units cannot express — a depth written in feet is kept
+to a tenth of a foot. And converting into a unit that does not divide evenly can move the
+last digit once, the first time Yemoja writes a value it read from somewhere else; after
+that the file stays as it is.
 
 The ready-made data described below says what its own units are, so your choices never
 change what it means. Your choice of litres does not change what the supplied equipment

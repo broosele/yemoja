@@ -42,6 +42,21 @@ class Units private constructor(private val declared: Map<Dimension, String>) {
         return "$written is not a unit of ${dimension.name.lowercase()}"
     }
 
+    /**
+     * How many decimals [dimension] is written with here, in this file's own unit.
+     *
+     * The one figure behind both showing a value and storing one, which is why a number on the
+     * screen and the same number in the file agree. `DATA-88`.
+     *
+     * A dimension taking no unit falls back, there being no scale to ask. Only `DIMENSIONLESS`
+     * is such a dimension, and its values are proportions: a gradient factor of `0.3`, a CNS
+     * percentage.
+     */
+    fun decimalsOf(dimension: Dimension): Int =
+        scaleOf(dimension)?.decimals
+            ?: SCALES[dimension]?.values?.first()?.decimals
+            ?: WITHOUT_A_UNIT
+
     private fun scaleOf(dimension: Dimension): Scale? =
         SCALES[dimension]?.get(declared[dimension] ?: return null)
 
@@ -73,35 +88,64 @@ class Units private constructor(private val declared: Map<Dimension, String>) {
     }
 }
 
+/** What a dimension taking no unit is written with, there being no scale to carry a figure. */
+private const val WITHOUT_A_UNIT = 3
+
 /**
- * Scale is how one unit's numbers become the default unit's.
+ * Scale is how one unit's numbers become the default unit's, and how finely it is written.
  *
  * Affine, not a factor: Fahrenheit and kelvin are offset from Celsius as well as scaled, and a
  * factor alone would read 32 F as 17.8 C.
+ *
+ * [decimals] is the precision the unit is required to carry, and it governs both showing a value
+ * and storing one. One of 0, 3, 6 and 9. `DATA-88`.
  */
-private class Scale(val factor: Double, val offset: Double = 0.0)
+private class Scale(val factor: Double, val offset: Double = 0.0, val decimals: Int = 3)
 
 /**
  * `DATA-8`'s unit set, the default of each dimension first.
  *
  * Values are exact where the definition is: a foot is 0.3048 metres and a pound 0.45359237
  * kilograms by definition, and a pound-force per square inch is 6894.757293168361 pascal.
+ *
+ * **A precision is 0, 3, 6 or 9, and a unit takes the smallest that holds what is written in it.**
+ * Three decimals suits nearly everything: it keeps the `0.04` litres a supplied weight displaces
+ * and the `0.88` bar of an atmospheric pressure, both of which a figure chosen for how a depth
+ * reads would have rounded away. Where three is not enough the next step is six, and where the
+ * unit is already fine enough the step below is nothing.
+ *
+ * Steps of three rather than a figure per unit, because eighteen hand-picked numbers are
+ * eighteen small arguments, and the four that matter are `0.001`, `0.000001` and their ends.
  */
 private val SCALES: Map<Dimension, Map<String, Scale>> = mapOf(
-    Dimension.LENGTH to mapOf("m" to Scale(1.0), "ft" to Scale(0.3048)),
-    Dimension.MASS to mapOf("kg" to Scale(1.0), "lb" to Scale(0.45359237)),
-    Dimension.TIME to mapOf("s" to Scale(1.0), "min" to Scale(60.0), "h" to Scale(3600.0)),
+    Dimension.LENGTH to mapOf("m" to Scale(1.0, decimals = 3), "ft" to Scale(0.3048, 0.0, 3)),
+    Dimension.MASS to mapOf("kg" to Scale(1.0, decimals = 3), "lb" to Scale(0.45359237, 0.0, 3)),
+    Dimension.TIME to mapOf(
+        // A second is the model's own unit and nothing is written in fractions of one, so it
+        // takes none. An hour needs six: three would be steps of 3.6 seconds.
+        "s" to Scale(1.0, decimals = 0),
+        "min" to Scale(60.0, decimals = 3),
+        "h" to Scale(3600.0, decimals = 6),
+    ),
     Dimension.TEMPERATURE to mapOf(
-        "C" to Scale(1.0),
-        "F" to Scale(5.0 / 9.0, -32.0),
-        "K" to Scale(1.0, -273.15),
+        "C" to Scale(1.0, decimals = 3),
+        "F" to Scale(5.0 / 9.0, -32.0, 3),
+        "K" to Scale(1.0, -273.15, 3),
     ),
-    Dimension.VOLUME to mapOf("l" to Scale(1.0), "m3" to Scale(1000.0)),
+    Dimension.VOLUME to mapOf(
+        "l" to Scale(1.0, decimals = 3),
+        // Nine. A weight displacing 0.0456 litres is 0.0000456 cubic metres, and six decimals
+        // would write it as 0.000046 — a digit off the values with none to spare.
+        "m3" to Scale(1000.0, 0.0, 9),
+    ),
     Dimension.PRESSURE to mapOf(
-        "bar" to Scale(1.0),
-        "psi" to Scale(0.06894757293168361),
-        "Pa" to Scale(0.00001),
+        "bar" to Scale(1.0, decimals = 3),
+        "psi" to Scale(0.06894757293168361, 0.0, 3),
+        // A pascal is a hundred-thousandth of a bar, which is finer than anything measured.
+        "Pa" to Scale(0.00001, 0.0, 0),
     ),
-    Dimension.ANGLE to mapOf("deg" to Scale(1.0)),
-    Dimension.DENSITY to mapOf("kg/m3" to Scale(1.0)),
+    // Six decimals of a degree is about a tenth of a metre; three would be a hundred metres,
+    // which would not tell two ends of a wreck apart.
+    Dimension.ANGLE to mapOf("deg" to Scale(1.0, decimals = 6)),
+    Dimension.DENSITY to mapOf("kg/m3" to Scale(1.0, decimals = 3)),
 )

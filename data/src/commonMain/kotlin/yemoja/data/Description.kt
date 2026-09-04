@@ -192,27 +192,25 @@ sealed class ValueDescription(
     cardinality: Cardinality,
 ) : FieldDescription(name, label, role, cardinality)
 
-/** How many digits of a measurement are written, counted from the first one that is not a zero. */
-private const val SIGNIFICANT_DIGITS = 12
-
 /**
- * [value] as a file writes it: twelve significant digits, and no trailing zeros.
+ * [value] to [decimals] places, with no trailing zeros.
  *
- * Twelve because converting a number into a unit and back is exact only to about the sixteenth
- * digit, so a value written straight from a Double would gain a tail on every save — `18.3` in
- * pounds returns as `18.300000000000004`, and versioning would show a change nobody made.
- * Rounding at twelve removes the tail while leaving every digit anyone wrote.
+ * The unit says how many, and the same figure serves a file and a screen: a number a user reads
+ * and the number their file holds are the same number. `DATA-88`.
  *
- * **Significant digits, not decimal places.** A rule counting places means something different in
- * every unit, and `DATA-8` has two that are far larger than the default they convert into: six
- * places would write a 0.0456 litre item in cubic metres as `0.000046`, losing a digit off exactly
- * the small values that have none to spare.
+ * The precision is a unit's own, so it is the finest thing anyone writes in it rather than the
+ * finest anyone reads. A displaced volume of `0.04` litres decides the litre; a depth of `22.1`
+ * would have decided it far more coarsely and rounded that volume away.
+ *
+ * Rounding here is also what keeps a value from growing a tail. Converting into a unit and back
+ * is exact only to about the sixteenth digit, so `18.3` in pounds returns as `18.300000000000004`
+ * and versioning would show a change nobody made.
  *
  * A whole one is written whole, since `108000` is what a file holds and `108000.0` is noise.
  */
-private fun written(value: Double): String {
+private fun written(value: Double, decimals: Int): String {
     if (value == 0.0 || !value.isFinite()) return "0"
-    val scale = 10.0.pow(SIGNIFICANT_DIGITS - 1 - floor(log10(abs(value))))
+    val scale = 10.0.pow(decimals)
     return plain((round(value * scale) / scale).toString())
 }
 
@@ -280,7 +278,11 @@ class NumberDescription(
         read(given, overrides, Units.DEFAULT)
 
     override fun format(value: Any, units: Units): String =
-        if (value is Double) written(units.fromDefault(dimension, value)) else value.toString()
+        if (value is Double) {
+            written(units.fromDefault(dimension, value), units.decimalsOf(dimension))
+        } else {
+            value.toString()
+        }
 
     override fun validate(value: Any): Validity = when {
         value !is Double -> Validity.Invalid("$name should be a number")
