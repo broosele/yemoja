@@ -4,9 +4,12 @@ import yemoja.data.Cardinality
 import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
+import yemoja.data.Mention
+import yemoja.data.MultilineTextDescription
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Result
 import yemoja.data.Series
+import yemoja.data.mentionsIn
 
 /*
  * An item's fields as rows, and the fields of anything inside it under them.
@@ -250,9 +253,14 @@ internal sealed class Ends {
      * Kotlin's word for the backing field rather than this class's.
      */
     fun count(): Int? = when (this) {
-        is Value ->
-            if (field.cardinality != Cardinality.LIST) null
-            else ((read as? Result.Usable)?.value as? List<*>)?.size ?: 0
+        is Value -> when {
+            field.cardinality == Cardinality.LIST ->
+                ((read as? Result.Usable)?.value as? List<*>)?.size ?: 0
+
+            // A remark holding nothing to follow is one value like any other, so up and down
+            // go back to scrolling rather than moving over a cursor with one stop.
+            else -> mentionsOf(field, read, item).size.takeIf { it > 0 }
+        }
 
         is Within -> item.description.fields.size
         is Keys -> held.size
@@ -293,3 +301,20 @@ internal fun endsOf(item: Item, steps: List<Pair<FieldDescription, String?>>): E
 
 /** The entries of a keyed field, in the order they were written. */
 internal fun keyedOf(held: Any?): List<Pair<String, Any>> = keyed(held ?: return emptyList())
+
+/**
+ * The mentions in a field of free text that name something this logbook holds.
+ *
+ * **Only the ones that resolve.** `JSON-23` gives a mention no fixed meaning and asks an
+ * interface to mark what resolves and nothing else: one that flagged every candidate would
+ * light up each address and each `@media` in the logbook. So an id nothing answers to is left
+ * as the text it always was.
+ *
+ * Empty for every field but multiline text, mentions being a convention of free text.
+ */
+internal fun mentionsOf(field: FieldDescription, read: Result<Any>, item: Item?): List<Mention> {
+    if (field !is MultilineTextDescription) return emptyList()
+    val set = item?.set ?: return emptyList()
+    val text = (read as? Result.Usable)?.value as? String ?: return emptyList()
+    return mentionsIn(text).filter { set[it.id] != null }
+}

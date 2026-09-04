@@ -293,6 +293,12 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
 
             else -> at
         } as? Ends.Value ?: return
+        // A mention is not a reference field, so it is asked before the field's own kind is.
+        val mentions = mentionsOf(ends.field, ends.read, ends.item)
+        if (mentions.isNotEmpty()) {
+            mentions.getOrNull(if (opened) chosenEntry else 0)?.let { open(it.id) }
+            return
+        }
         val naming = ends.field as? ReferenceDescription ?: return
         val read = ends.read as? Result.Usable ?: return
         // The cursor picks a value only where the values are what is in front of the reader.
@@ -302,17 +308,25 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
             if (opened && at is Ends.Value) listOf(chosenEntry) else 0..<howMany(read.value)
         for (at in order) {
             val named = namedAt(read.value, at) ?: continue
-            val target = set[named.id] ?: continue
-            val to = types.indexOf(target.description)
-            if (to < 0) continue
-            // Where the user has arrived is a different item, so the way into the last one is
-            // not a way into this one.
-            path.clear()
-            tab = to
-            chosen[tab] = set.allOf(target.description).indexOf(target)
-            chosenField[tab] = 0
-            return
+            if (open(named.id)) return
         }
+    }
+
+    /**
+     * Show the item called [id], and say whether there was one to show.
+     *
+     * Where the user has arrived is a different item, so the way into the last one is not a way
+     * into this one and the path is dropped.
+     */
+    private fun open(id: String): Boolean {
+        val target = set[id] ?: return false
+        val to = types.indexOf(target.description)
+        if (to < 0) return false
+        path.clear()
+        tab = to
+        chosen[tab] = set.allOf(target.description).indexOf(target)
+        chosenField[tab] = 0
+        return true
     }
 
     /** How many values a field holds: one, unless it holds a list of them. */
@@ -417,9 +431,13 @@ class Screen(private val set: ItemSet, private val types: List<ItemDescription>)
     }
 
     /** What up and down move over where the reader is, in the word for that thing. */
-    private fun moving(): String = when (endsOf(item ?: return "scroll", path)) {
+    private fun moving(): String = when (val ends = endsOf(item ?: return "scroll", path)) {
         is Ends.Within -> "field"
-        is Ends.Value -> if (entries() != null) "value" else "scroll"
+        is Ends.Value -> when {
+            entries() == null -> "scroll"
+            mentionsOf(ends.field, ends.read, ends.item).isNotEmpty() -> "mention"
+            else -> "value"
+        }
         // A field holding several, holding none: there is nothing to move between.
         is Ends.Keys, null -> "scroll"
     }

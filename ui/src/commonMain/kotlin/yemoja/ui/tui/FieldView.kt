@@ -9,6 +9,7 @@ import yemoja.data.FieldDescription
 import yemoja.data.GasDescription
 import yemoja.data.Item
 import yemoja.data.KeyReferenceDescription
+import yemoja.data.Mention
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
 import yemoja.data.OwnedItemDescription
@@ -214,7 +215,7 @@ private fun held(
     // into it, so the only thing left to say here is that there is nothing to go into.
     if (nested(field) && item != null) return listOf(Line(listOf(Span("  (empty)"))))
     return when (read) {
-        is Result.Usable -> entries(field, read.value, chosen)
+        is Result.Usable -> entries(field, read.value, chosen, item, read.origin)
 
         is Result.Unusable -> listOf(
             Line(listOf(Span("  " + read.reason))),
@@ -238,10 +239,19 @@ private fun nested(field: FieldDescription): Boolean =
  * Only a list has a chosen entry. A single value is the whole of what the field holds, so there
  * is nothing to choose between and a mark would say there was.
  */
-private fun entries(field: FieldDescription, value: Any, chosen: Int): List<Line> {
+private fun entries(
+    field: FieldDescription,
+    value: Any,
+    chosen: Int,
+    item: Item?,
+    origin: Result.Origin,
+): List<Line> {
     if (value is Series) return samples(field, value)
     val held = entriesOf(field, value)
-    if (field.cardinality != Cardinality.LIST) return held.flatMap { broken(it) }
+    if (field.cardinality != Cardinality.LIST) {
+        val mentions = mentionsOf(field, Result.Usable(value, origin), item)
+        return held.flatMap { broken(it, mentions, chosen) }
+    }
     // A written list with nothing in it is not the same as a field nobody wrote, and a row of
     // bullets with no bullets in it would look like the second.
     if (held.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
@@ -259,10 +269,49 @@ private fun entries(field: FieldDescription, value: Any, chosen: Int): List<Line
  * `remarks` is escaped into one, which `ui/tui/doc.md` explains; opened, the field is being shown
  * whole, and three lines written as three are three. Each carries the same indent, so the value
  * stays in one column.
+ *
+ * [mentions] are marked where they fall, so what can be followed is visible in the sentence that
+ * holds it rather than listed away from it. The [chosen] one is set apart the way a chosen bullet
+ * is, since both are the thing the reader is pointing at.
  */
-private fun broken(value: Span): List<Line> =
-    value.text.split("\r\n", "\n", "\r")
-        .map { Line(listOf(Span("  "), Span(it, value.styles))) }
+private fun broken(value: Span, mentions: List<Mention> = emptyList(), chosen: Int = -1):
+    List<Line> {
+    var from = 0
+    return value.text.split("\r\n", "\n", "\r").map { line ->
+        val at = from
+        from += line.length + 1
+        Line(listOf(Span("  ")) + marked(line, value.styles, mentions, at, chosen))
+    }
+}
+
+/**
+ * [line] as spans, with any mention falling inside it underlined.
+ *
+ * [from] is where the line begins in the whole value, since a mention is placed against that and
+ * a line is only a stretch of it.
+ */
+private fun marked(
+    line: String,
+    styles: Set<Style>,
+    mentions: List<Mention>,
+    from: Int,
+    chosen: Int,
+): List<Span> {
+    val here = mentions.withIndex()
+        .filter { (_, it) -> it.at.first >= from && it.at.last < from + line.length }
+    if (here.isEmpty()) return listOf(Span(line, styles))
+    val spans = ArrayList<Span>()
+    var at = 0
+    for ((which, mention) in here) {
+        val starts = mention.at.first - from
+        if (starts > at) spans.add(Span(line.substring(at, starts), styles))
+        at = mention.at.last + 1 - from
+        val apart = if (which == chosen) setOf(Style.SELECTED) else emptySet()
+        spans.add(Span(line.substring(starts, at), styles + Style.UNDERLINED + apart))
+    }
+    if (at < line.length) spans.add(Span(line.substring(at), styles))
+    return spans
+}
 
 private fun originOf(origin: Result.Origin): String = when (origin) {
     Result.Origin.STORED -> "written"

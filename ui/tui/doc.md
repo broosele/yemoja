@@ -75,6 +75,10 @@ because raw mode swallows the usual one, and `[q] quit` leads both bars: the key
 wants without hunting for it is the one that gets them out, so it is the one thing a screen
 too narrow for anything else still says.
 
+**Input ending is leaving too.** A closed terminal or a pipe running out is a session over
+rather than a fault, so the loop asks Mordant for a key *or null* and stops on the null. Its
+other reader throws instead, which would have put a stack trace where a clean exit belongs.
+
 **Up and down move through whatever fields are in front of you**: the chosen item's, or the
 fields of an item inside an open field, or the values of an open field that holds several, or
 the rows themselves where an open field holds one value longer than the screen. A field holds
@@ -203,6 +207,25 @@ one that can be opened,
 which is the one the row is showing — so a region with one parent needs no drilling in. In an
 open field it is the value the cursor is on, which is how one of several is chosen. Following
 closes the open field, the reader having arrived somewhere else.
+
+**A mention written in a remark is followed the same way.** `JSON-23` makes `@willy` in free
+text name an item by convention, and this is the first interface to act on one. Opened, a
+remark's mentions are what up and down move over — the same cursor a list's values get,
+because they are the same thing: several followable things in one open field — and space
+follows the one it is on.
+
+**Only what resolves is marked.** `JSON-23` asks that of a reader and gives the reason: an
+interface that underlined every candidate would light up each address and each `@media` in the
+logbook. So `@example.invalid` inside an address stays the text it is, is not underlined, and is
+not a stop the cursor moves over. A remark with nothing to follow has nothing to move between,
+so up and down scroll it as they always did.
+
+The mention is marked where it sits in the sentence rather than listed away from it, which is
+what makes it obvious which `@willy` is meant when a remark holds two. Underlined for what it
+is, and reversed for the one the cursor is on, exactly as a chosen bullet is.
+
+Not on the row beside the list. That row shows a cut, escaped line, and there is nowhere in it
+to put a cursor.
 
 Nothing records where a reader came from, and nothing will: every item is a tab and a few rows
 away, and each tab remembers the row it was on. `TUI-5`.

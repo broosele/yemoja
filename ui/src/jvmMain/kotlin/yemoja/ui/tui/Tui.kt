@@ -51,7 +51,10 @@ private fun show(screen: Screen): Int {
         raw.use {
             while (screen.running) {
                 paint(terminal, screen)
-                val event = it.readKey() ?: break
+                // OrNull rather than readKey, which throws instead. Input can end without the
+                // user leaving — a closed terminal, a pipe running out — and that is a session
+                // over rather than a fault to report.
+                val event = it.readKeyOrNull() ?: break
                 keyOf(event.key, event.ctrl, event.shift)?.let { key -> screen.press(key) }
             }
         }
