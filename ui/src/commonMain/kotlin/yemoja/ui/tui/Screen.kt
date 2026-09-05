@@ -80,19 +80,23 @@ class Screen(private val set: ItemSet) {
     /** The type whose tab is open. */
     val type: ItemDescription get() = types[tab]
 
-    // What each tab last listed, and how big the set was when it did. Sorting reads every sort
-    // key, and a key can be worked out from a whole profile, so doing it per keypress would
-    // walk the logbook to redraw one row. An added item changes the size and the tab is listed
-    // again; an edited one does not, which is a hole to close when editing arrives. `TUI-3`.
+    // What each tab last listed, and which revision of the set it was. Sorting reads every sort
+    // key, and a key can be worked out from a whole profile, so doing it per keypress would walk
+    // the logbook to redraw one row. The set says when it has changed rather than announcing it,
+    // `DATA-6`, and an item added or taken out moves that number.
+    //
+    // A field edited does not, so a list whose order turns on an edited field is stale until the
+    // tab is left and come back to. Nothing in this front end edits anything yet, and closing it
+    // properly is `TUI-3`'s to do.
     private val listed = HashMap<ItemDescription, List<ReferenceableItem>>()
 
     private var counted = -1
 
     /** Every item of the open type, in the order that type asks for. */
     val items: List<ReferenceableItem> get() {
-        if (counted != set.size) {
+        if (counted != set.revision) {
             listed.clear()
-            counted = set.size
+            counted = set.revision
         }
         return listed.getOrPut(type) { set.inOrder(type) }
     }

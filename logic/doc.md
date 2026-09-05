@@ -73,6 +73,7 @@ logic/
   src/commonMain/kotlin/yemoja/logic/
                   Universe.kt   what is open, and the one door a front end reaches
                                   anything through
+                  Change.kt     one thing a user did, and the parts it was done in
                   Types.kt      every type gathered, and nothing else
                   Dive.kt       one file per stored type, holding what it owns: a dive's
                   Person.kt       details, environment, gear, profiles and gas sources are
@@ -213,16 +214,42 @@ Two things to hold it to, or it will quietly become the whole application:
   *through* it rather than wrapped by it. Hand-written forwarding is boilerplate that
   drifts apart the first time somebody adds to one side and forgets the other.
 
-**What is built is the state and nothing over it**: `logbook`, `user`, and `open`. That is not a
-first instalment of a facade — the two rules above say the Universe never grows methods of its
-own, so what arrives later is a service beside it and a way to reach that service. `LOGIC-1` is
-what decides the shape of those, and is untouched by this: it asks how the services are arranged,
-and there are none.
+**What is built is the state, and one thing over it**: `logbook`, `user`, `open`, and `change`.
+The rest of what the section describes — statistics, decompression, the domain rules — is a
+service beside the Universe rather than a method on it, and `LOGIC-1` decides how those are
+arranged. It is untouched by `change`, which is not one of them.
+
+**`change` is the one way anything in a logbook changes**, and it is shaped as the changeset
+`data/json/doc.md` describes: an operation, and the actions that carried it out. That is the whole
+reason it exists now rather than when something needed it. When `FEAT-4` arrives a changeset has
+to be recorded for every change, and a front end reaching past this to an item's own `write` would
+leave nothing to record it from. One choke point costs nothing today and is the difference between
+adding history later and rewriting everything that edits.
+
+Three things it guarantees, and one it does not.
+
+- **It lands whole or not at all.** Every part is judged before any is applied, so a refusal
+  leaves the logbook as it was. `REQ-2` restores a changeset whatever it holds, and something that
+  could half-happen would not be one.
+- **Saving is immediate.** There is no unsaved state and no save to forget, which is what makes
+  every change the journal's unit rather than only the ones somebody remembered. It also keeps
+  `RECON-1` about reviewing an import, which is the only place staging earns its machinery.
+- **An owned item needs no address.** A change names the item it touches, and one inside another
+  is reached by whoever walked there; the file written is the referenceable item that owns it.
+  The dotted path the journal uses — `medical.body_mass` — is how an address is *written down*,
+  and it arrives with the thing that writes it.
+- **The files are not atomic together.** A change touching two of them can be interrupted between
+  them. `JSON-25`.
 
 Two of the things named above are absent and each waits on something. **An import's candidate
 set** is the second thing the Universe is meant to hold, and waits on `RECON-2`. **The units a
 user wants shown** belong here by `UI-2` and wait on somewhere for settings to be read from;
-until then a front end formats in the model's own units.
+until then a front end formats in the model's own units, and a change is judged in them.
+
+**Minting an id is absent too.** A new item is added under an id the caller gives, and what a
+type's ids look like — `unknown_person`, then `unknown_person#1`; a dive's `2026-04-28#0` — is
+this layer's to know. `DATA-84` says what an id may contain and the manual says what each type's
+looks like; nothing yet puts the two together.
 
 ## Decompression
 

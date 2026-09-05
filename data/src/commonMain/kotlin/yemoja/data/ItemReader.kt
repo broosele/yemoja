@@ -66,7 +66,14 @@ object ItemReader {
         return fields
     }
 
-    private fun fieldOf(
+    /**
+     * What one field holds, read from [held] against [field].
+     *
+     * Reachable so that [Item.write] can put a value in by the same door a file comes through.
+     * An owned item is built here and needs [parent] to build it, `DATA-85`, which is the one
+     * thing a description cannot do on its own.
+     */
+    internal fun fieldOf(
         field: FieldDescription,
         held: Stored,
         parent: Item,

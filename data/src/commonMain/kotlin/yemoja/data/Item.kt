@@ -15,8 +15,12 @@ import kotlin.reflect.KClass
  * outward, which is how a reference resolves and how a region finds its children. **Writing an item
  * out must stop at its own fields** and never follow [set] or a parent.
  *
- * **Changing one is absent.** Nothing here sets a field, adds an owned item or deletes anything;
- * that waits on the journal.
+ * **Not immutable: an item changes in place**, which is what lets a reference held to one stay
+ * current. [write] is the whole of it, and it asks the field to judge what it is given, so the
+ * one door in is the one a file comes through. Nothing announces the change. `DATA-6`.
+ *
+ * Removing an item is not here. An id and every reference to it move together, which needs
+ * something holding all the items, and that is the Universe.
  *
  * **Nothing outside an item is read while it is being built.** The fields are built by a function
  * the constructor hands itself to, so an owned item takes the parent it belongs to and the parent
@@ -33,6 +37,8 @@ sealed class Item(
     unrecognisedFields: Map<String, Stored>,
 ) {
 
+    private val stored: MutableMap<String, Result<Any>> = LinkedHashMap(fields(this))
+
     /**
      * Every field the description names that was stored, by name, untyped.
      *
@@ -41,8 +47,11 @@ sealed class Item(
      *
      * Only stored fields. A derived one is worked out and never kept, and an absent one is not a
      * key, so [Result.Absent] never appears as a value here.
+     *
+     * Read-only to anything holding it, and not a copy: [write] changes what this shows, which is
+     * what makes a view of an item that was edited show the edit. Nothing is announced. `DATA-6`.
      */
-    val fields: Map<String, Result<Any>> = fields(this).toMap()
+    val fields: Map<String, Result<Any>> get() = stored
 
     /**
      * Fields the description does not name, kept as the source handed them over.
@@ -76,6 +85,65 @@ sealed class Item(
             is Role.Derived -> role.compute(this)
             is Role.Overrideable -> fields[name] ?: role.compute(this)
         }
+
+    /**
+     * Puts [given] in [name], or says why it does not belong there.
+     *
+     * The other way through the door [read] comes in by, and the same one a file goes through:
+     * the field parses and judges what it is given, so a value typed into a form is taken no more
+     * on trust than a value in a file. `DATA-66`. [units] is what the value is expressed in, which
+     * is the user's when a form hands one over and the file's when a file does.
+     *
+     * **Null clears the field.** On a recorded one that leaves nothing; on a correctable one it
+     * restores what the application works out, so deleting a correction is writing nothing over
+     * it rather than an operation of its own.
+     *
+     * **A worked-out field is refused as a fault**, not as a value that will not do. Nothing
+     * offers to edit one, and asking to is the same kind of mistake as naming a field that does
+     * not exist. A file holding one is a different matter: it is kept, ignored, and written back.
+     *
+     * An owned item is made by writing an empty set of fields, which is what `"medical": {}` says
+     * in a file. It cannot arrive ready-made, because an owned item is built by its owner and
+     * this is the owner. `DATA-85`.
+     *
+     * Nothing is announced, so whatever showed this asks again. `DATA-6`.
+     */
+    fun write(name: String, given: Any?, units: Units = Units.DEFAULT): Validity {
+        val made = prepared(name, given, units)
+        if (made is Result.Unusable) return Validity.Invalid(made.reason)
+        apply(name, made)
+        return Validity.Valid
+    }
+
+    /**
+     * What writing [given] to [name] would put there, without putting it.
+     *
+     * The half of [write] that can refuse. It exists apart so that a change touching several
+     * fields can be judged whole before any of it lands: applying in order and stopping at the
+     * first refusal would leave an item half changed, and nothing above could tell.
+     *
+     * [Result.Absent] is a field being cleared, which cannot be refused.
+     *
+     * **This pair is the Universe's**, and [write] is everything else's. Nothing is enforced —
+     * `internal` does not reach across a module — so it is a rule like the one holding a front
+     * end to the Universe at all.
+     */
+    fun prepared(name: String, given: Any?, units: Units): Result<Any> {
+        val field = fieldDescription(name)
+        require(field.role !is Role.Derived) {
+            "$name is worked out, and writing it would be writing to nothing"
+        }
+        if (given == null) return Result.Absent
+        // A value already made travels as a leaf, which is what a source hands over for one. A
+        // caller with a whole shape to put in -- an empty owned item, a list -- gives the Stored.
+        val held = if (given is Stored) given else Stored.Leaf(given)
+        return ItemReader.fieldOf(field, held, this, units)
+    }
+
+    /** Puts what [prepared] made, or clears the field where it made an absent. */
+    fun apply(name: String, made: Result<Any>) {
+        if (made is Result.Absent) stored.remove(name) else stored[name] = made
+    }
 
     /** A single value: `single<Double>("max_depth")`. */
     inline fun <reified T : Any> single(name: String): Result<T> =

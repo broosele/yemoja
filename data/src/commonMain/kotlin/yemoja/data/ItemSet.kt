@@ -20,8 +20,8 @@ package yemoja.data
  * More than one set can exist at a time. An import is read into its own, so candidates are whole
  * and resolvable before anything is merged.
  *
- * **Minting an id and removing an item are absent.** Minting has to know which indices were ever
- * used, since one is never reissued, and that waits on the journal.
+ * **Minting an id is absent.** Which id a new item takes is a question about what is already
+ * there and what a type's ids look like, and the second half is the logic layer's.
  *
  * Renaming is not absent so much as elsewhere. An id and every reference to it change as one act,
  * and the layer document puts that at the Universe, above here.
@@ -61,7 +61,37 @@ class ItemSet(descriptions: List<ItemDescription>) {
         }
         require(id !in byId) { "$id names an item already, and one id names one item" }
         byId[id] = item
+        revision += 1
     }
+
+    /**
+     * Takes out what [id] names, and says whether anything was there.
+     *
+     * **References to it are left dangling**, which is a state the model already carries and an
+     * interface already shows: a reference that names nothing is a person not entered yet, and
+     * a person deleted looks the same from the other end. Hunting them down would be the set
+     * deciding what a reference means, which is above it.
+     */
+    fun remove(id: String): Boolean {
+        if (byId.remove(id) == null) return false
+        revision += 1
+        return true
+    }
+
+    /**
+     * A number that changes whenever this set does.
+     *
+     * Not notification — `DATA-6` settles that nothing is announced and nothing subscribes. This
+     * is the other half of that answer: something showing a list has to ask whether what it has is
+     * still current, and counting the items does not tell it. An edit that changes a dive's date
+     * reorders the list without changing how many there are.
+     *
+     * It counts additions and removals, not edits to an item's fields, so a view keyed on it is
+     * refreshed by less than every change. `DATA-6` allows that: a view that may be out of date
+     * asks again.
+     */
+    var revision: Int = 0
+        private set
 
     /** What [id] names, or nothing where no item has it. */
     operator fun get(id: String): ReferenceableItem? = byId[id]

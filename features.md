@@ -73,7 +73,8 @@ them.
 ## Future
 
 - **FEAT-11 — A terminal interface.** Deliberately raw; see [ui/tui/doc.md](ui/tui/doc.md).
-  *Partly built:* it reads a logbook and shows it. Nothing is written.
+  *Partly built:* it reads a logbook and shows it. The layers below it can change one
+  and save it; no key in this front end asks them to.
 - **FEAT-12 — A programmatic interface.** See [ui/api/doc.md](ui/api/doc.md).
 - **FEAT-23 — Following a mention written in a remark.** `@willy` in free text names an
   item by convention, settled in `JSON-23`. *Built in the TUI:* opened, a remark's mentions are

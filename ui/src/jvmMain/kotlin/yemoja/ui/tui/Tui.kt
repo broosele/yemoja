@@ -15,8 +15,9 @@ import yemoja.logic.Types
 /**
  * Show the logbook in [folder] until the user leaves, and answer with what to exit with.
  *
- * **Nothing is written**: there is no writer anywhere in the project yet, so this cannot change a
- * logbook whatever a user presses.
+ * **Nothing is written from here.** The layers below can change a logbook and save it, and this
+ * front end asks them to do neither: no key it answers to edits anything. `TUI-3` is where that
+ * changes.
  */
 fun tui(folder: String): Int {
     val universe = try {
