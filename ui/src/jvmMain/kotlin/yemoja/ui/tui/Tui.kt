@@ -2,7 +2,7 @@ package yemoja.ui.tui
 
 import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
-import yemoja.logic.Logbook
+import yemoja.logic.Universe
 import yemoja.logic.Types
 
 /*
@@ -19,15 +19,15 @@ import yemoja.logic.Types
  * logbook whatever a user presses.
  */
 fun tui(folder: String): Int {
-    val logbook = try {
-        Logbook.open(folder)
+    val universe = try {
+        Universe.open(folder)
     } catch (refused: RuntimeException) {
         // A folder that is not a logbook, or a file in it that will not read. Either way the
         // message names what was wrong, and a terminal that never started needs no tidying up.
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    return show(Screen(logbook.items))
+    return show(Screen(universe.logbook))
 }
 
 /**

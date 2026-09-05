@@ -71,7 +71,8 @@ logic/
   uddf.md         UDDF against this model, field by field
   divecomputer.md  a dive computer against this model, the same way
   src/commonMain/kotlin/yemoja/logic/
-                  Logbook.kt    opening one, which a front end asks for and does not do
+                  Universe.kt   what is open, and the one door a front end reaches
+                                  anything through
                   Types.kt      every type gathered, and nothing else
                   Dive.kt       one file per stored type, holding what it owns: a dive's
                   Person.kt       details, environment, gear, profiles and gas sources are
@@ -113,9 +114,14 @@ and what genuinely crosses a file are `internal`.
 members is the description written in that type's own file; the eleven owned types are reached
 through the types that own them and are not named there.
 
-`Logbook` stands in for the **Universe**, which nothing has built. It is the one place in
-this layer that names a source, and it exists so that `ui/doc.md`'s rule holds meanwhile: a
-front end names a folder and never opens one. It goes when the Universe arrives.
+The **Universe** exists, holding the part of what the section below describes that there is
+anything to hold: the open logbook, and whoever it belongs to. `Universe.open` is the one place
+in this layer that names a source, which is what makes `ui/doc.md`'s rule true rather than
+aspirational — a front end names a folder and never opens one.
+
+It was called `Logbook` while that was all it did. The rename is not a new capability: it is the
+point at which a front end stops naming a stand-in, so that everything added to the Universe
+later arrives where front ends are already looking.
 
 **Every item type the manual names, and every shape a field can take.** A dive brings the
 last of them: its profiles and its gas sources under keys, a profile's depth and temperature
@@ -206,6 +212,17 @@ Two things to hold it to, or it will quietly become the whole application:
 - **It does not re-expose the data layer method by method.** An `ItemSet` is reachable
   *through* it rather than wrapped by it. Hand-written forwarding is boilerplate that
   drifts apart the first time somebody adds to one side and forgets the other.
+
+**What is built is the state and nothing over it**: `logbook`, `user`, and `open`. That is not a
+first instalment of a facade — the two rules above say the Universe never grows methods of its
+own, so what arrives later is a service beside it and a way to reach that service. `LOGIC-1` is
+what decides the shape of those, and is untouched by this: it asks how the services are arranged,
+and there are none.
+
+Two of the things named above are absent and each waits on something. **An import's candidate
+set** is the second thing the Universe is meant to hold, and waits on `RECON-2`. **The units a
+user wants shown** belong here by `UI-2` and wait on somewhere for settings to be read from;
+until then a front end formats in the model's own units.
 
 ## Decompression
 
@@ -674,7 +691,7 @@ To settle when we discuss architecture and features:
    `today()` where it needs one, and no signature anywhere mentions a day.
 
    It was built the other way first — the date threaded from the front end through
-   `Logbook.open`, the reader and `ItemSet`, which a derivation then read off `item.set`. That
+   `Universe.open`, the reader and `ItemSet`, which a derivation then read off `item.set`. That
    arrangement was forced by a real constraint, since the data layer calls a derivation holding
    only the item and `item.set` is its one route outward, so context that genuinely varies
    would have to arrive that way. This does not vary. Threading it cost `ItemSet` the claim its
