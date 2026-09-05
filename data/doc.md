@@ -974,8 +974,9 @@ To settle when we discuss architecture:
   nothing above it handles a separator, a drive letter or a home directory.
 
   Still open, and a requirement rather than a library question: `requirements.md` says nothing
-  about crash-safety — no atomic write, no temporary file, no partial write. That is what
-  decides whether the writing half needs a rename as well as a write.
+  about crash-safety — no atomic write, no temporary file, no partial write. The writing half
+  is built without one, and `JSON-25` is where that now sits: it turned out to be about a
+  change spanning several files rather than about one file, and a rename does not answer it.
 
 - **DATA-85 — How an owned item is built, when neither it nor its owner can exist first.**
   *Settled:* **the owner builds it**, by handing itself to whatever builds its fields.

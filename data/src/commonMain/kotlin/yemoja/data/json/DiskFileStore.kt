@@ -42,6 +42,18 @@ class DiskFileStore(root: String, libraryRoot: String? = null) : FileStore {
         return located(path).let { it.files.read(it.at) { readUtf8() } }
     }
 
+    override fun writeText(path: String, text: String) {
+        refuseLibrary(path)
+        val where = located(path)
+        where.at.parent?.let { where.files.createDirectories(it) }
+        where.files.write(where.at) { writeUtf8(text) }
+    }
+
+    override fun delete(path: String) {
+        refuseLibrary(path)
+        located(path).let { it.files.delete(it.at, mustExist = false) }
+    }
+
     /**
      * Where [path] is: which set of files holds it, and where in that set.
      *

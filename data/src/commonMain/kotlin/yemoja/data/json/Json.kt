@@ -34,6 +34,130 @@ object Json {
      * brace the reader can find nothing wrong with.
      */
     fun parse(text: String): Stored = Reader(text).read()
+
+    /**
+     * [stored] as JSON, laid out to be read and edited by hand.
+     *
+     * Two spaces a level, and a member to a line. A list of plain values is written on one line
+     * where it fits and a line each where it does not, so a pair of tags stays a pair of tags and
+     * a dive's gear becomes a column. Anything holding a list or a group of its own always takes
+     * a line each, which is what keeps a profile's samples one to a row.
+     *
+     * **Neither forgiveness the reader offers is emitted**: no trailing comma, and no byte order
+     * mark. And no exponent, `DATA-88`, which is why a number is written here rather than by
+     * whatever the platform prints a double as.
+     */
+    fun write(stored: Stored): String = StringBuilder().also { written(stored, "", it) }.toString()
+}
+
+/** How wide a line may be before a list of plain values is broken up. */
+private const val WIDEST = 96
+
+private fun written(stored: Stored, indent: String, out: StringBuilder) {
+    when (stored) {
+        is Stored.Leaf -> out.append(leaf(stored.value))
+        is Stored.Members -> members(stored, indent, out)
+        is Stored.Elements -> elements(stored, indent, out)
+    }
+}
+
+private fun members(stored: Stored.Members, indent: String, out: StringBuilder) {
+    if (stored.members.isEmpty()) {
+        out.append("{}")
+        return
+    }
+    val within = "$indent  "
+    out.append("{\n")
+    for ((at, member) in stored.members.entries.withIndex()) {
+        out.append(within).append(quoted(member.key)).append(": ")
+        written(member.value, within, out)
+        out.append(if (at == stored.members.size - 1) "\n" else ",\n")
+    }
+    out.append(indent).append('}')
+}
+
+private fun elements(stored: Stored.Elements, indent: String, out: StringBuilder) {
+    if (stored.elements.isEmpty()) {
+        out.append("[]")
+        return
+    }
+    val plain = stored.elements.all { it is Stored.Leaf }
+    if (plain) {
+        val inline = stored.elements
+            .joinToString(", ", "[", "]") { leaf((it as Stored.Leaf).value) }
+        if (indent.length + inline.length <= WIDEST) {
+            out.append(inline)
+            return
+        }
+    }
+    val within = "$indent  "
+    out.append("[\n")
+    for ((at, element) in stored.elements.withIndex()) {
+        out.append(within)
+        written(element, within, out)
+        out.append(if (at == stored.elements.size - 1) "\n" else ",\n")
+    }
+    out.append(indent).append(']')
+}
+
+/**
+ * One plain value as JSON.
+ *
+ * A whole number and a fractional one are told apart the way the reader tells them apart, so a
+ * value read as `18` is written `18` and one read as `18.0` keeps its point. Anything else would
+ * change a file nobody edited.
+ */
+private fun leaf(value: Any?): String = when (value) {
+    null -> "null"
+    is Boolean -> value.toString()
+    is String -> quoted(value)
+    is Double -> number(value)
+    else -> value.toString()
+}
+
+/**
+ * A fractional number with its point and without an exponent.
+ *
+ * `DATA-88` refuses an exponent in the format, and Kotlin prints one for anything far from zero.
+ * The digits are the platform's; only where they are put is decided here.
+ */
+private fun number(value: Double): String {
+    val printed = value.toString()
+    val mark = printed.indexOfFirst { it == 'e' || it == 'E' }
+    if (mark < 0) return printed
+    val exponent = printed.substring(mark + 1).toInt()
+    val body = printed.substring(0, mark)
+    val sign = if (body.startsWith("-")) "-" else ""
+    val digits = body.removePrefix("-").replace(".", "")
+    val point = (body.removePrefix("-").indexOf('.').takeIf { it >= 0 } ?: body.length) + exponent
+    return sign + when {
+        point <= 0 -> "0." + "0".repeat(-point) + digits
+        point >= digits.length -> digits + "0".repeat(point - digits.length) + ".0"
+        else -> digits.substring(0, point) + "." + digits.substring(point)
+    }
+}
+
+/** [text] as a JSON string, escaping what the format cannot carry raw. */
+private fun quoted(text: String): String {
+    val out = StringBuilder(text.length + 2).append('"')
+    for (character in text) {
+        when (character) {
+            '"' -> out.append("\\\"")
+            '\\' -> out.append("\\\\")
+            '\n' -> out.append("\\n")
+            '\r' -> out.append("\\r")
+            '\t' -> out.append("\\t")
+            '\b' -> out.append("\\b")
+            '' -> out.append("\\f")
+            else ->
+                if (character < ' ') {
+                    out.append("\\u").append(character.code.toString(16).padStart(4, '0'))
+                } else {
+                    out.append(character)
+                }
+        }
+    }
+    return out.append('"').toString()
 }
 
 /**

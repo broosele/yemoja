@@ -349,6 +349,49 @@ To settle when we discuss architecture:
    Nulls are never stored and absent means absent, so `null` is not available to mean
    "this field did not exist". Adding a field and changing one must still be told
    apart.
+- **JSON-26 — What a writer works from.** *Settled:* **the file it is about to replace**, not
+   the item set.
+
+   Two things a reader does not keep are still in the file, and a writer needs both. **What
+   units it is written in**: `LogbookReader` holds them only while converting and discards
+   them, so nothing above knows a file was written in feet, and a writer without them would
+   quietly turn an imperial logbook metric — which is exactly what `DATA-76` exists to
+   prevent. **Which items are the logbook's own**: a set holds the logbook's items and every
+   library's together, with no mark to tell them apart, so a writer rebuilding `region.json`
+   from `allOf` would copy all 350 supplied regions into somebody's own logbook.
+
+   Reading the file answers both and costs one read of a small file. It was reached by looking
+   for a place to record provenance and finding that the file already is one.
+
+   What follows is worth as much as what was asked for. Every item the writer did not touch
+   goes back as the raw it was read as, so a save changes only what changed — a newer version's
+   fields included, and a value that would not read, which `DATA-50` keeps the raw of precisely
+   so it can be shown and now also so it can be written.
+
+   The alternative was to mark provenance on the item or to hold libraries in a second set. The
+   first puts a storage fact on a source-neutral item; the second is a larger change to how a
+   reference resolves, and `logic/doc.md` already has the Universe holding more than one set for
+   a different reason. Neither is refused for ever, and neither is needed for this.
+
+- **JSON-25 — Whether a change that touches several files lands whole or not at all.**
+   One thing a user does can make two items — a dive at a new site — and each is a file.
+   `FileStore.writeText` replaces a file outright, with no temporary file and no rename, so
+   a change interrupted between the two leaves a dive pointing at a site nobody wrote.
+
+   Per-file atomicity is a temporary file and a rename, and does not answer this: the
+   process can still die between two renames. Per-*operation* needs an intent record —
+   write every new file under a temporary name, write a small file listing the moves,
+   perform them, delete it. On opening, a list left behind means finish the moves, since
+   the temporary files hold complete content and rolling forward is both correct and
+   simpler than rolling back.
+
+   That is a write-ahead log, which is to say a small ancestor of `FEAT-4`'s journal, and
+   it is worth naming as one so that it is not built twice. Deferred deliberately: the
+   exposure is a crash inside a single save of a small file, and the machinery is not
+   free.
+
+   `requirements.md` says nothing about crash-safety, which `DATA-86` already named as the
+   thing that would decide whether the writing half needs a rename as well as a write.
 
 ## Settled
 

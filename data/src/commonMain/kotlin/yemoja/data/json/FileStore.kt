@@ -13,6 +13,20 @@ class FileStoreMissing(message: String) : RuntimeException(message)
 class FileStoreAmbiguous(message: String) : RuntimeException(message)
 
 /**
+ * Refuses [path] where it names a library, which nothing writes.
+ *
+ * A library belongs to the installation and differs on every device the logbook is opened on, so
+ * writing one would put an installation's data inside somebody's logbook. A fault in the code
+ * rather than a fact about the logbook, so it is refused the way a bad id is.
+ */
+internal fun refuseLibrary(path: String) {
+    val within = FileStore.LIBRARIES
+    require(path != within && !path.startsWith("$within/")) {
+        "$path is a library, and a library is not the logbook's to write"
+    }
+}
+
+/**
  * FileStore is where a logbook's files and the installation's libraries are, seen through the few
  * operations reading them needs.
  *
@@ -26,8 +40,9 @@ class FileStoreAmbiguous(message: String) : RuntimeException(message)
  * how a path from [getPaths] can be handed straight back to [readText]. It cannot collide with a
  * logbook file: a type is stored under its own name, and no type is called `libraries`.
  *
- * The files are small enough to read whole. Writing will add to this when there is a writer;
- * guessing now at what it needs would be inventing an interface against no implementation.
+ * The files are small enough to read whole, and small enough to write whole: a file is replaced
+ * rather than amended, since the smallest thing a logbook holds is an item and an item is a file
+ * or a member of one.
  *
  * It exists so that the layer holds no library. Common Kotlin has no files at all, so something
  * outside has to supply them, and one small interface keeps that to a single implementation which
@@ -51,6 +66,19 @@ interface FileStore {
 
     /** The whole of [path] as text. Throws where it is not a file. */
     fun readText(path: String): String
+
+    /**
+     * Puts [text] at [path], making whatever folders it needs and replacing whatever was there.
+     *
+     * **No temporary file and no rename.** A change interrupted part way through can leave one
+     * file written and the next not, which is a decision deferred rather than an oversight: see
+     * `JSON-25`. The one thing refused here is a library, which belongs to the installation and
+     * not to the logbook.
+     */
+    fun writeText(path: String, text: String)
+
+    /** Removes the file at [path]. Does nothing where there is none, since the end is the same. */
+    fun delete(path: String)
 
     /**
      * Every file holding items of [type], in the order they are to be read.
@@ -114,8 +142,8 @@ interface FileStore {
  */
 class MemoryFileStore(files: Map<String, String>) : FileStore {
 
-    // Copied. A Map is read-only, not immutable.
-    private val files: Map<String, String> = files.toMap()
+    // Copied, and its own from then on: what it was built from is not changed by writing here.
+    private val files: MutableMap<String, String> = LinkedHashMap(files)
 
     override fun isFile(path: String): Boolean = path in files
 
@@ -134,4 +162,16 @@ class MemoryFileStore(files: Map<String, String>) : FileStore {
 
     override fun readText(path: String): String =
         files[path] ?: throw FileStoreMissing("$path should be a file, and is not")
+
+    // A folder is wherever something is under it, so writing a file makes its folders as it goes
+    // and there is nothing else to do.
+    override fun writeText(path: String, text: String) {
+        refuseLibrary(path)
+        files[path] = text
+    }
+
+    override fun delete(path: String) {
+        refuseLibrary(path)
+        files.remove(path)
+    }
 }

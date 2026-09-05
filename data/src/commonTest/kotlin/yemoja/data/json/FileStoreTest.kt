@@ -87,6 +87,58 @@ abstract class FileStoreTest {
         assertFalse(store.isFile("libraries/region/atlantis.json"))
         assertEquals("""{"europe": {}}""", store.readText("libraries/region/world.json"))
     }
+
+    @Test
+    fun `what is written is there, and reads back as it was written`() {
+        val store = storeOf(logbook)
+        store.writeText("wrecks.json", """{"zeelandbrug": {}}""")
+        assertTrue(store.isFile("wrecks.json"))
+        assertEquals("""{"zeelandbrug": {}}""", store.readText("wrecks.json"))
+    }
+
+    @Test
+    fun `writing makes the folders it needs`() {
+        // Nothing declares a folder, so writing a file into one that is not there creates it.
+        val store = storeOf(logbook)
+        store.writeText("wreck/zeelandbrug.json", "{}")
+        assertTrue(store.isFolder("wreck"))
+        assertEquals(listOf("zeelandbrug.json"), store.namesIn("wreck"))
+    }
+
+    @Test
+    fun `writing replaces what was there rather than adding to it`() {
+        val store = storeOf(logbook)
+        store.writeText("persons.json", """{"tom_janssen": {}}""")
+        assertEquals("""{"tom_janssen": {}}""", store.readText("persons.json"))
+    }
+
+    @Test
+    fun `a written file survives being rewritten with its own contents`() {
+        val store = storeOf(logbook)
+        val text = store.readText("persons.json")
+        store.writeText("persons.json", text)
+        assertEquals(text, store.readText("persons.json"))
+    }
+
+    @Test
+    fun `deleting removes the file, and deleting nothing is not a fault`() {
+        // The end is the same either way, and a caller that had to look first would race.
+        val store = storeOf(logbook)
+        store.delete("persons.json")
+        assertFalse(store.isFile("persons.json"))
+        store.delete("persons.json")
+    }
+
+    @Test
+    fun `a library is refused, being the installation's and not the logbook's`() {
+        val store = storeOf(mapOf("libraries/region/world.json" to """{"europe": {}}"""))
+        assertFailsWith<IllegalArgumentException> {
+            store.writeText("libraries/region/world.json", "{}")
+        }
+        assertFailsWith<IllegalArgumentException> { store.delete("libraries/region/world.json") }
+        assertFailsWith<IllegalArgumentException> { store.writeText("libraries", "{}") }
+        assertEquals("""{"europe": {}}""", store.readText("libraries/region/world.json"))
+    }
 }
 
 /** Which files hold a type, and in what order they are read. [FileStore.getPaths]. */
