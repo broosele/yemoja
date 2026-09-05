@@ -158,6 +158,14 @@ involved — see [data/json/doc.md](data/json/doc.md).
 - **Documentation lives with what it describes.** Each layer and each platform has a
   `doc.md` covering that level and nothing more. A fact has exactly one home;
   everywhere else links to it.
+
+  *With* means at the level it describes rather than in the folder the source sits in.
+  The documents are a tree of their own for two reasons. A subject's code is not in one
+  place — a front end is split across a source set per target, so the terminal interface
+  is under both `commonMain` and `jvmMain` — and there is no one directory to be beside.
+  And a level is documented before it is built:
+  [ui/gui/phone/iphone/doc.md](ui/gui/phone/iphone/doc.md) describes an application
+  nobody has started.
 - **User documentation is a separate set**, in `manual/`, written for users. It owns
   the description of the file format and of every data field; internal documents
   reference it rather than restating them.
