@@ -88,6 +88,11 @@ class Screen(private val universe: Universe) {
     // like the rest of it: nothing below this knows an edit is under way until it is saved.
     private var editing: String? = null
 
+    // Which suggestion the cursor is on while a reference is typed, or absent where it is on
+    // what is being typed. A suggestion is taken by moving onto it, so the typed text is a stop
+    // of its own in the same ring.
+    private var suggesting: Int? = null
+
     // Which of a chooser's rows the cursor is on, or absent where no chooser is open. A field
     // whose values are known is picked from rather than typed into.
     private var choosing: Int? = null
@@ -118,12 +123,15 @@ class Screen(private val universe: Universe) {
     private var counted = -1
 
     /** Every item of the open type, in the order that type asks for. */
-    val items: List<ReferenceableItem> get() {
+    val items: List<ReferenceableItem> get() = listing(type)
+
+    /** Every item of [description], in its own order, worked out once per change. */
+    private fun listing(description: ItemDescription): List<ReferenceableItem> {
         if (counted != universe.revision) {
             listed.clear()
             counted = universe.revision
         }
-        return listed.getOrPut(type) { set.inOrder(type) }
+        return listed.getOrPut(description) { set.inOrder(description) }
     }
 
     /** The chosen item, or absent where the open type has none. */
@@ -213,13 +221,75 @@ class Screen(private val universe: Universe) {
      */
     private fun typedKey(key: Key) {
         when (key) {
-            Key.OPEN -> save()
-            Key.CLOSE -> editing = null
-            Key.BACKSPACE -> editing = editing?.dropLast(1)
+            Key.OPEN -> if (suggesting == null) save() else takeSuggestion()
+            Key.CLOSE -> {
+                editing = null
+                suggesting = null
+            }
+
+            Key.BACKSPACE -> {
+                editing = editing?.dropLast(1)
+                suggesting = null
+            }
+
+            Key.UP -> alongSuggestions(-1)
+            Key.DOWN -> alongSuggestions(1)
             Key.LEAVE -> running = false
-            is Key.Typed -> editing = editing?.plus(key.character)
+            is Key.Typed -> {
+                editing = editing?.plus(key.character)
+                suggesting = null
+            }
+
             else -> Unit
         }
+    }
+
+    /**
+     * The items a reference being typed could name, narrowed by what has been typed so far.
+     *
+     * Empty for every other kind: a date and a remark have nothing to be completed from, and a
+     * field whose values are known opens a chooser instead of an editor.
+     *
+     * Matched anywhere in the id rather than at its front, since a dive's id opens with its date
+     * and somebody looking for one is as likely to remember the rest of it. In the type's own
+     * order, `DATA-89`, which is the order its tab lists it in.
+     */
+    private fun suggestionsOf(ends: Ends.Value): List<String> {
+        val field = ends.field as? ReferenceDescription ?: return emptyList()
+        val typed = editing ?: return emptyList()
+        val named = set.descriptions.firstOrNull { it.name == field.targetType }
+            ?: return emptyList()
+        val looking = typed.removePrefix("@").lowercase()
+        return listing(named).mapNotNull { set.idOf(it) }
+            .filter { looking in it.lowercase() }
+    }
+
+    /** As many suggestions as are shown, the rest being reached by typing more. */
+    private fun shownSuggestions(ends: Ends.Value): List<String> =
+        suggestionsOf(ends).take(MOST_SUGGESTIONS)
+
+    /**
+     * Move [by] over the suggestions, round the ends, with the typed text among them.
+     *
+     * The text is a stop like any other, so moving past the last suggestion arrives back at what
+     * was typed rather than sticking. `TUI-7`.
+     */
+    private fun alongSuggestions(by: Int) {
+        val ends = editable() ?: return
+        val many = shownSuggestions(ends).size
+        if (many == 0) return
+        val ring = many + 1
+        val next = ((suggesting?.plus(1) ?: 0) + by + ring) % ring
+        suggesting = if (next == 0) null else next - 1
+    }
+
+    /** Take the suggestion the cursor is on, which is an answer rather than a way to type one. */
+    private fun takeSuggestion() {
+        val ends = editable() ?: return
+        val taken = shownSuggestions(ends).getOrNull(suggesting ?: return) ?: return
+        editing = "@" + taken
+        suggesting = null
+        save()
     }
 
     /** What each key does while a value is being chosen: up and down move, enter takes one. */
@@ -474,6 +544,7 @@ class Screen(private val universe: Universe) {
      * there.
      */
     private fun edit(ends: Ends.Value) {
+        suggesting = null
         val choices = choicesOf(ends.field)
         if (choices == null) {
             editing = written(ends)
@@ -554,6 +625,7 @@ class Screen(private val universe: Universe) {
         if (saved(ends, given)) {
             editing = null
             choosing = null
+            suggesting = null
         }
     }
 
@@ -891,7 +963,13 @@ class Screen(private val universe: Universe) {
             // Escape goes back to the choices where that is where the editor was opened from,
             // a step in being undone by a step out.
             val back = if (choosing == null) "[esc] cancel" else "[esc] back"
-            listOf("[enter] save", back, "[backspace] rub out")
+            val over = editable()?.let { shownSuggestions(it) }.orEmpty()
+            listOfNotNull(
+                "[enter] save",
+                back,
+                "[backspace] rub out",
+                if (over.isEmpty()) null else "$FIELDS suggestion",
+            )
         } else if (choosing != null) {
             listOf("[enter] take it", "[esc] cancel", "$FIELDS choice")
         } else if (opened) {
@@ -997,12 +1075,33 @@ class Screen(private val universe: Universe) {
         return lines + Line(listOf(Span(""))) + Line(listOf(Span("  ! " + why)))
     }
 
-    private fun typedLines(): List<Line> {
-        val text = editing.orEmpty()
-        val said = Line(listOf(Span("  " + text + CURSOR, setOf(Style.SELECTED))))
-        val why = refusal() ?: return listOf(said)
-        return listOf(said, Line(listOf(Span(""))), Line(listOf(Span("  ! " + why))))
+    private fun typedLines(ends: Ends.Value?): List<Line> {
+        val at = suggesting
+        val here = if (at == null) setOf(Style.SELECTED) else emptySet()
+        val said = Line(listOf(Span("  " + editing.orEmpty() + CURSOR, here)))
+        val why = refusal()?.let { listOf(blank(), Line(listOf(Span("  ! " + it)))) }.orEmpty()
+        return listOf(said) + why + (ends?.let { offered(it, at) }.orEmpty())
     }
+
+    /**
+     * The suggestions under what is being typed, with the one at [at] set apart.
+     *
+     * How many were left out is said rather than shown, the way a row says it of a list: a
+     * column that stopped without a word would read as the whole of what there is.
+     */
+    private fun offered(ends: Ends.Value, at: Int?): List<Line> {
+        val shown = shownSuggestions(ends)
+        if (shown.isEmpty()) return emptyList()
+        val rest = suggestionsOf(ends).size - shown.size
+        val rows = shown.mapIndexed { which, id ->
+            val here = if (which == at) setOf(Style.SELECTED) else emptySet()
+            Line(listOf(Span("  @" + id, here)))
+        }
+        return listOf(blank()) + rows +
+            if (rest == 0) emptyList() else listOf(Line(listOf(Span("  ($rest others)"))))
+    }
+
+    private fun blank(): Line = Line(listOf(Span("")))
 
     /**
      * The chosen field on its own, whole.
@@ -1019,7 +1118,7 @@ class Screen(private val universe: Universe) {
         val at = choosing
         val under = when {
             at != null && ends is Ends.Value -> chosenLines(ends, at)
-            editing != null -> typedLines()
+            editing != null -> typedLines(ends as? Ends.Value)
             else -> whatIsThere(ends)
         }
         val body = (keyBar() + under).flatMap { wrapped(it, width) }
@@ -1265,6 +1364,10 @@ class Screen(private val universe: Universe) {
         private const val QUITS = "[q] quit"
 
         /** What a line break is shown as, which is how a file writes one. */
+        // Enough to recognise the one wanted, and few enough to leave the typed line in view
+        // on a short terminal. What is past them is reached by typing more of the id.
+        private const val MOST_SUGGESTIONS = 8
+
         private const val ESCAPED = "\\n"
 
         private const val LEAST_LIST_WIDTH = 12

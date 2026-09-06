@@ -97,9 +97,10 @@ character:
 
 | Key | Does |
 |---|---|
-| enter | save what was typed |
+| enter | save what was typed, or take the suggestion the cursor is on |
 | escape | abandon the edit and leave the value as it was |
 | backspace | rub out the last character |
+| up, down | move over the suggestions a reference offers |
 
 And while one is being chosen, shorter still:
 
@@ -449,6 +450,31 @@ rather than yes and no: what is picked here is what the row shows and what the f
 with what the logbook already uses, and the Universe does not gather that yet, so a word one
 region carries is typed again on the next. It is the *other* row that keeps this honest rather
 than limiting: nothing is refused, and the union is the logic layer's to add.
+
+**A reference offers the items it could name, and narrows them as they are typed.** They sit
+under what is being typed, in the order that type's own tab lists it in — `DATA-89` — and up and
+down move onto them. Enter takes the one the cursor is on. The typed text is a stop in the same
+ring, so moving past the last suggestion arrives back at it rather than sticking somewhere a
+reader cannot type from.
+
+**A suggestion is an offer, not a list to pick from.** A reference that allows a plain name takes
+one — `@willy` is an id and *Someone Else* is a name somebody wrote — so enter on the typed text
+saves the typed text, whether or not anything answers to it. That is also why a reference is not
+a chooser: a logbook holds thousands of dives, and what a reader needs is to type three letters
+and see the four that match, not to scroll a list of everything.
+
+Matched anywhere in the id rather than at its front, since a dive's id opens with its date and
+somebody looking for one is as likely to remember the rest of it. The `@` is how a reference is
+written rather than part of the id, so it is not matched on.
+
+**Eight at a time**, with how many were left out said under them — `(4 others)`. Enough to
+recognise the one wanted and few enough to leave the typed line on a short screen; what is past
+them is reached by typing more. Saying how many is what a column that simply stopped cannot: it
+would read as the whole of what there is.
+
+The suggestions come from the item set, so they are the items that exist rather than the ids that
+have been used. A reference naming something deleted is not offered, and one naming something
+never entered is still saveable.
 
 **`n` makes one of whatever is in front of the reader.** An item of the open type where the
 list is shown, an entry at the end of an open list, an entry under a new key in a keyed

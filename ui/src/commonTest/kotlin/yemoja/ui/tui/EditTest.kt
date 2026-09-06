@@ -517,3 +517,123 @@ class ChosenOrTypedTest {
         assertEquals("[enter] save | [esc] back | [backspace] rub out", said)
     }
 }
+
+/** What a reference being typed offers, which is the items it could name. */
+class SuggestedReferenceTest {
+
+    private fun atBuddies(vararg people: String): Pair<MemoryFileStore, Screen> {
+        val held = people.joinToString(", ") { """"$it": {}""" }
+        val (store, screen) = editable(
+            "person.json" to "{$held}",
+            "dive/d#0.json" to "{}",
+        )
+        toTab(screen, "dive")
+        toField(screen, "buddies")
+        screen.press(Key.OPEN)
+        screen.press(Key.Typed('n'))
+        screen.press(Key.OPEN)
+        return store to screen
+    }
+
+    // Tall, so that eight suggestions and what follows them are all on the screen at once.
+    private fun rows(screen: Screen): List<String> =
+        body(screen, height = 30).map { it.text.trim() }.filter { it.isNotEmpty() }
+
+    @Test
+    fun `every item of the type it names is offered before anything is typed`() {
+        val (_, screen) = atBuddies("anna", "tom")
+        assertTrue("@anna" in rows(screen), rows(screen).toString())
+        assertTrue("@tom" in rows(screen), rows(screen).toString())
+    }
+
+    @Test
+    fun `typing narrows them`() {
+        val (_, screen) = atBuddies("anna", "tom")
+        type(screen, "to")
+        assertTrue("@tom" in rows(screen), rows(screen).toString())
+        assertTrue("@anna" !in rows(screen), rows(screen).toString())
+    }
+
+    @Test
+    fun `the at is not part of what is matched`() {
+        // It is how a reference is written, not part of the id. `JSON-4`.
+        val (_, screen) = atBuddies("anna", "tom")
+        type(screen, "@an")
+        assertTrue("@anna" in rows(screen), rows(screen).toString())
+    }
+
+    @Test
+    fun `matched anywhere in the id, not only at its front`() {
+        // A dive's id opens with its date, and somebody looking for one remembers the rest.
+        val (_, screen) = atBuddies("anna_de_vries")
+        type(screen, "vries")
+        assertTrue("@anna_de_vries" in rows(screen), rows(screen).toString())
+    }
+
+    @Test
+    fun `down moves onto them and enter takes the one it is on`() {
+        val (store, screen) = atBuddies("anna", "tom")
+        type(screen, "an")
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertNull(screen.typing, "and the editor has closed")
+        assertTrue("@anna" in text(store, "dive/d#0.json"), text(store, "dive/d#0.json"))
+    }
+
+    @Test
+    fun `the typed text is a stop in the same ring`() {
+        // So moving past the last suggestion arrives back at what was typed, rather than
+        // sticking somewhere a reader cannot type from. `TUI-7`.
+        val (_, screen) = atBuddies("anna")
+        type(screen, "an")
+        screen.press(Key.DOWN)
+        screen.press(Key.DOWN)
+        type(screen, "y")
+        assertEquals("any", screen.typing, "back on the text, and typing into it")
+    }
+
+    @Test
+    fun `typing again comes off a suggestion`() {
+        val (_, screen) = atBuddies("anna", "tom")
+        screen.press(Key.DOWN)
+        screen.press(Key.BACKSPACE)
+        type(screen, "to")
+        screen.press(Key.OPEN)
+        assertNull(screen.typing, "saved what was typed, not what the cursor had been on")
+    }
+
+    @Test
+    fun `a name nobody has is still what enter saves`() {
+        // A reference that allows a plain name takes one, and the suggestions are an offer.
+        val (store, screen) = atBuddies("anna")
+        type(screen, "Someone Else")
+        screen.press(Key.OPEN)
+        assertTrue("Someone Else" in text(store, "dive/d#0.json"), text(store, "dive/d#0.json"))
+    }
+
+    @Test
+    fun `past the eighth it says how many were left out`() {
+        val many = (1..12).map { "person$it" }.toTypedArray()
+        val (_, screen) = atBuddies(*many)
+        assertEquals(8, rows(screen).count { it.startsWith("@person") })
+        assertTrue("(4 others)" in rows(screen), rows(screen).toString())
+    }
+
+    @Test
+    fun `the bar says the keys that move over them`() {
+        val (_, screen) = atBuddies("anna")
+        val said = screen.paint(120, 12).last().text.trim()
+        assertTrue("[^,v] suggestion" in said, said)
+    }
+
+    @Test
+    fun `a field naming nothing offers nothing`() {
+        val (_, screen) = editable("region.json" to """{"north_sea": {"name": "North Sea"}}""")
+        toTab(screen, "region")
+        toField(screen, "name")
+        edit(screen)
+        assertEquals(listOf("North Sea" + CURSOR), rows(screen))
+        val said = screen.paint(120, 12).last().text.trim()
+        assertTrue("[^,v]" !in said, said)
+    }
+}
