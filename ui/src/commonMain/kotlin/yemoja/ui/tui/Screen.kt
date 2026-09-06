@@ -313,17 +313,26 @@ class Screen(private val universe: Universe) {
      */
     private fun take() {
         val ends = editable() ?: return
-        if (choicesOf(ends.field)?.getOrNull(choosing ?: return) is Choice.Other) {
+        if (choices(ends.field)?.getOrNull(choosing ?: return) is Choice.Other) {
             editing = otherOf(ends)
             return
         }
         saveChoice()
     }
 
+    /**
+     * What [field] offers to choose between, or absent where its values are not known.
+     *
+     * The Universe joins a field's presets with what the logbook already uses — `DATA-25` — so
+     * this asks it rather than the description, which knows only the half it ships with.
+     */
+    private fun choices(field: FieldDescription): List<Choice>? =
+        choicesOf(field, universe.suggested(field))
+
     /** What the field holds, where the rows do not offer it, and nothing where they do. */
     private fun otherOf(ends: Ends.Value): String {
         val here = written(ends)
-        val offered = choicesOf(ends.field).orEmpty()
+        val offered = choices(ends.field).orEmpty()
             .filterIsInstance<Choice.Value>().map { it.said }
         return if (here in offered) "" else here
     }
@@ -331,7 +340,7 @@ class Screen(private val universe: Universe) {
     /** Move [by] choices, round the ends, as everything chosen between does. `TUI-7`. */
     private fun alongChoices(by: Int) {
         val ends = editable() ?: return
-        val many = choicesOf(ends.field)?.size ?: return
+        val many = choices(ends.field)?.size ?: return
         choosing = ((choosing ?: 0) + by + many) % many
     }
 
@@ -550,7 +559,7 @@ class Screen(private val universe: Universe) {
      */
     private fun edit(ends: Ends.Value) {
         suggesting = null
-        val choices = choicesOf(ends.field)
+        val choices = choices(ends.field)
         if (choices == null) {
             editing = written(ends)
             return
@@ -637,7 +646,7 @@ class Screen(private val universe: Universe) {
     /** Take the choice the cursor is on, the last of which is the field holding nothing. */
     private fun saveChoice() {
         val ends = editable() ?: return
-        val taken = choicesOf(ends.field)?.getOrNull(choosing ?: return)
+        val taken = choices(ends.field)?.getOrNull(choosing ?: return)
         val chosen = (taken as? Choice.Value)?.said
         val given: Any? = if (ends.field.cardinality != Cardinality.LIST) {
             chosen
@@ -1072,7 +1081,10 @@ class Screen(private val universe: Universe) {
 
     /** What the open field holds, which is what is shown while nothing is being typed. */
     private fun whatIsThere(ends: Ends): List<Line> = when (ends) {
-        is Ends.Value -> fieldLines(ends.field, ends.read, ends.item, chosenEntry)
+        is Ends.Value -> {
+            val field = ends.field
+            fieldLines(field, ends.read, ends.item, chosenEntry, universe.suggested(field))
+        }
         is Ends.Within -> withinLines(ends.item, chosenEntry)
         // A field holding several, holding none. There is no key to be at.
         is Ends.Keys -> listOf(Line(listOf(Span("  (empty)"))))
@@ -1091,7 +1103,8 @@ class Screen(private val universe: Universe) {
      * what is on the screen, and a bar too narrow for it would drop it silently.
      */
     private fun chosenLines(ends: Ends.Value, at: Int): List<Line> {
-        val lines = chooserLines(ends.field, at, editing, otherOf(ends))
+        val offered = choices(ends.field).orEmpty()
+        val lines = chooserLines(ends.field, offered, at, editing, otherOf(ends))
         val why = refusal() ?: return lines
         return lines + Line(listOf(Span(""))) + Line(listOf(Span("  ! " + why)))
     }

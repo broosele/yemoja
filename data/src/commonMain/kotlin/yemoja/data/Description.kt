@@ -414,7 +414,7 @@ class TextDescription(
             )
 
         fixedSet != null && value !in fixedSet ->
-            Validity.Invalid("$name should be one of ${fixedSet.sorted().joinToString(", ")}")
+            Validity.Invalid("$name should be one of ${fixedSet.joinToString(", ")}")
 
         else -> Validity.Valid
     }

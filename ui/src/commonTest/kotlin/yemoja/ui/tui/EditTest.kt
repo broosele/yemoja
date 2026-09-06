@@ -492,20 +492,49 @@ class ChosenOrTypedTest {
     }
 
     @Test
-    fun `a value the suggestions do not offer sits on the other row`() {
-        // Which is what it is. Nothing else on the screen would say where the value went.
-        val (_, screen) = atCategory(""""category": "archipelago"""")
-        assertEquals("other: archipelago", rows(screen)[screen.choice!!])
+    fun `a word one item uses is offered on the next`() {
+        // `DATA-25`: the presets are what the application ships with and the logbook adds to
+        // them, so a word typed once does not have to be typed again.
+        val (_, screen) = editable(
+            "region.json" to """{"north_sea": {}, "wadden": {"category": "archipelago"}}""",
+        )
+        toTab(screen, "region")
+        toField(screen, "category")
+        edit(screen)
+        assertTrue("archipelago" in rows(screen), rows(screen).toString())
+    }
+
+    @Test
+    fun `and it comes after the ones the field ships with`() {
+        val (_, screen) = editable(
+            "region.json" to """{"north_sea": {}, "wadden": {"category": "archipelago"}}""",
+        )
+        toTab(screen, "region")
+        toField(screen, "category")
+        edit(screen)
+        val said = rows(screen)
+        assertTrue(said.indexOf("area") < said.indexOf("archipelago"), said.toString())
+        assertEquals(listOf("archipelago", "other:", "(nothing)"), said.takeLast(3))
+    }
+
+    @Test
+    fun `a value that could not be read sits on the other row`() {
+        // Which is what it is: nothing offered holds it, and nothing else on the screen would
+        // say where the value went.
+        val (_, screen) = atCategory(""""category": 5""")
+        assertEquals("other: 5", rows(screen)[screen.choice!!])
     }
 
     @Test
     fun `and the editor there starts from that value`() {
-        val (store, screen) = atCategory(""""category": "archipelago"""")
+        val (store, screen) = atCategory(""""category": 5""")
         screen.press(Key.OPEN)
-        assertEquals("archipelago", screen.typing)
-        repeat(5) { screen.press(Key.BACKSPACE) }
+        assertEquals("5", screen.typing)
+        screen.press(Key.BACKSPACE)
+        type(screen, "sea")
         screen.press(Key.OPEN)
-        assertTrue("archi" in text(store, "region.json"), text(store, "region.json"))
+        val written = text(store, "region.json")
+        assertTrue(""""category": "sea"""" in written, written)
     }
 
     @Test

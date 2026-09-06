@@ -215,7 +215,8 @@ Two things to hold it to, or it will quietly become the whole application:
   *through* it rather than wrapped by it. Hand-written forwarding is boilerplate that
   drifts apart the first time somebody adds to one side and forgets the other.
 
-**What is built is the state, and one thing over it**: `logbook`, `user`, `open`, and `change`.
+**What is built is the state, and two things over it**: `logbook`, `user`, `open`, `change` and
+`suggested`.
 The rest of what the section describes — statistics, decompression, the domain rules — is a
 service beside the Universe rather than a method on it, and `LOGIC-1` decides how those are
 arranged. It is untouched by `change`, which is not one of them.
@@ -227,7 +228,27 @@ to be recorded for every change, and a front end reaching past this to an item's
 leave nothing to record it from. One choke point costs nothing today and is the difference between
 adding history later and rewriting everything that edits.
 
-Three things it guarantees, and one it does not.
+**`suggested` is the other half of `DATA-25`.** A field carries the words the application ships
+with; the Universe joins them with the words this logbook already uses, so a category typed once
+is offered from then on and a second spelling of it is visible beside the first rather than
+hidden. Only the Universe can do it, being the only thing that knows what is loaded.
+
+It is one walk of the logbook, kept against the revision, gathering every field at once rather
+than one per question. That is not an optimisation of a rare call: most fields that suggest
+anything sit on an owned item — a profile's model, a maintenance's type — so answering for one
+costs the same walk as answering for all, and a front end asks on every repaint.
+
+Values pool by field rather than by vocabulary. `type` and `follow_up_type` on a maintenance ship
+with the same words and are still two fields, so a word typed into one is not offered for the
+other. Pooling them would mean matching sets by their contents, which is a coincidence rather
+than a statement.
+
+The presets keep the order they were declared in and what the logbook adds follows,
+alphabetically. `none, light, moderate, strong` is a scale somebody chose and sorting it says
+`light, moderate, none, strong`; the words in use have no order of their own to keep, so they
+take the one a reader can predict.
+
+Three things `change` guarantees, and one it does not.
 
 - **It lands whole or not at all.** Every part is judged before any is applied — an added item is
   built and its fields read, an id is minted — so a refusal leaves the logbook as it was. `REQ-2`

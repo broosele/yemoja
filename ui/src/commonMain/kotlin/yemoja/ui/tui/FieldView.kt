@@ -46,6 +46,7 @@ internal fun fieldLines(
     read: Result<Any>,
     item: Item?,
     chosen: Int = 0,
+    suggested: List<String> = emptyList(),
 ): List<Line> {
     val about = listOf(
         "field" to field.name,
@@ -53,7 +54,7 @@ internal fun fieldLines(
         "kind" to kindOf(field),
         "holds" to holding(field.cardinality),
         "role" to roleOf(field.role),
-    ) + particulars(field)
+    ) + particulars(field, suggested)
     val width = about.maxOf { it.first.length }
     return heading("This field") +
         about.map { (name, said) -> Line(listOf(Span("  ${name.padEnd(width)}  $said"))) } +
@@ -117,7 +118,10 @@ private fun roleOf(role: Role): String = when (role) {
 }
 
 /** What only this kind of field has to say. Empty for the kinds that have nothing. */
-private fun particulars(field: FieldDescription): List<Pair<String, String>> = when (field) {
+private fun particulars(
+    field: FieldDescription,
+    suggested: List<String>,
+): List<Pair<String, String>> = when (field) {
     is NumberDescription -> listOfNotNull(
         "measures" to said(field.dimension),
         Units.defaultName(field.dimension)
@@ -129,9 +133,11 @@ private fun particulars(field: FieldDescription): List<Pair<String, String>> = w
         field.range?.let { "between" to "${it.first} and ${it.last}" },
     )
 
+    // Neither is sorted. A vocabulary is written in an order somebody chose, and `usually`
+    // says what the chooser offers, which is the presets joined with what the logbook uses.
     is TextDescription -> listOfNotNull(
-        field.fixedSet?.let { "one of" to it.sorted().joinToString(", ") },
-        field.suggestedSet?.let { "usually" to it.sorted().joinToString(", ") },
+        field.fixedSet?.let { "one of" to it.joinToString(", ") },
+        field.suggestedSet?.let { "usually" to suggested.joinToString(", ") },
     )
 
     // Whether a plain name may stand in belongs to what the field names rather than beside it:
@@ -408,7 +414,7 @@ internal sealed class Choice {
  * a file holds. A boolean is `true` and `false` for that reason, whatever a form would call
  * them.
  */
-internal fun choicesOf(field: FieldDescription): List<Choice>? = when {
+internal fun choicesOf(field: FieldDescription, suggested: List<String>): List<Choice>? = when {
     field is BooleanDescription ->
         listOf(Choice.Value("true"), Choice.Value("false"), Choice.Nothing)
 
@@ -416,7 +422,7 @@ internal fun choicesOf(field: FieldDescription): List<Choice>? = when {
         field.fixedSet!!.map { Choice.Value(it) } + Choice.Nothing
 
     field is TextDescription && field.suggestedSet != null ->
-        field.suggestedSet!!.map { Choice.Value(it) } + Choice.Other + Choice.Nothing
+        suggested.map { Choice.Value(it) } + Choice.Other + Choice.Nothing
 
     else -> null
 }
@@ -427,17 +433,21 @@ internal fun choicesOf(field: FieldDescription): List<Choice>? = when {
  * A boolean carries a box, since two values that exclude each other is what a box says. A set of
  * words does not: a column of boxes down a vocabulary of six says nothing the cursor has not.
  *
+ * [choices] is what [choicesOf] answered, passed in rather than asked for again: what a field
+ * suggests depends on what the logbook holds, which this file has no way to reach.
+ *
  * [typed] is what is being typed on the *other* row, and [other] what that row shows when it is
  * not being typed into — the value the field holds, where the rows do not offer it.
  */
 internal fun chooserLines(
     field: FieldDescription,
+    choices: List<Choice>,
     chosen: Int,
     typed: String? = null,
     other: String = "",
 ): List<Line> {
     val box = field is BooleanDescription
-    return choicesOf(field).orEmpty().mapIndexed { at, choice ->
+    return choices.mapIndexed { at, choice ->
         val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
         val mark = if (!box) "" else if (at == chosen) "[x] " else "[ ] "
         val said = when (choice) {

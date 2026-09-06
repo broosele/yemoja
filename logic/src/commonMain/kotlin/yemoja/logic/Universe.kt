@@ -2,14 +2,17 @@ package yemoja.logic
 
 import yemoja.data.Cardinality
 import yemoja.data.Element
+import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
+import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.data.TextDescription
 import yemoja.data.Units
 import yemoja.data.json.DiskFileStore
 import yemoja.data.json.FileStore
@@ -203,6 +206,77 @@ class Universe(
 
     private fun names(held: Element<Any>, id: String): Boolean =
         held is Element.Usable && (held.value as? Reference.Identified)?.id == id
+
+    /**
+     * The values [field] suggests: what it ships with, and what this logbook already uses.
+     *
+     * `DATA-25` writes the presets on the description and leaves the joining to the Universe,
+     * which is here because only the Universe knows what is loaded. Empty for a field that
+     * suggests nothing, a fixed set being closed rather than suggested.
+     *
+     * **The presets keep the order they were declared in.** `none, light, moderate, strong` is a
+     * scale somebody chose, and sorting it says `light, moderate, none, strong`. What the logbook
+     * has added follows, alphabetically, there being no order of its own to keep.
+     */
+    fun suggested(field: FieldDescription): List<String> {
+        val presets = (field as? TextDescription)?.suggestedSet ?: return emptyList()
+        return presets.toList() + (used()[field].orEmpty() - presets).sorted()
+    }
+
+    // Every value in use, by the field holding it, and the revision it was gathered at.
+    private var using = HashMap<FieldDescription, MutableSet<String>>()
+
+    private var gathered = -1
+
+    /**
+     * Every value in use, worked out once per change.
+     *
+     * One walk of the logbook rather than one per field. Most fields that suggest anything sit on
+     * an owned item — a profile's model, a maintenance's type — so answering for one of them
+     * costs the same walk as answering for all of them.
+     *
+     * Values pool by field rather than by vocabulary. `type` and `follow_up_type` on a
+     * maintenance ship with the same words and are still two fields, so a word typed into one is
+     * not offered for the other.
+     */
+    private fun used(): Map<FieldDescription, Set<String>> {
+        if (gathered != revision) {
+            using = HashMap()
+            for (description in logbook.descriptions) {
+                for (item in logbook.allOf(description)) gather(item)
+            }
+            gathered = revision
+        }
+        return using
+    }
+
+    /** Collect what [item] holds in every field that suggests values, and go into what it owns. */
+    private fun gather(item: Item) {
+        for (field in item.description.fields) {
+            val suggesting = field is TextDescription && field.suggestedSet != null
+            if (!suggesting && field !is OwnedItemDescription) continue
+            val read = item.read(field.name)
+            if (read !is Result.Usable) continue
+            for (value in valuesIn(read.value)) {
+                when {
+                    suggesting && value is String -> using.getOrPut(field) { HashSet() }.add(value)
+                    value is Item -> gather(value)
+                }
+            }
+        }
+    }
+
+    /**
+     * What a field holds, one value at a time, whatever its cardinality.
+     *
+     * A series is not gone into. It arrives whole and holds numbers, and no field of one
+     * suggests anything.
+     */
+    private fun valuesIn(held: Any): List<Any> = when (held) {
+        is List<*> -> held.mapNotNull { (it as? Element.Usable<*>)?.value }
+        is Map<*, *> -> held.values.mapNotNull { (it as? Element.Usable<*>)?.value }
+        else -> listOf(held)
+    }
 
     companion object {
 

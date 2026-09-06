@@ -461,15 +461,22 @@ set leaves it — sitting on *none of these* is how it says so, there being no *
 hold it.
 
 The rows are in the order the type declares them, not sorted. `none, light, moderate, strong` is
-an order somebody chose and alphabetical would be `light, moderate, none, strong`.
+an order somebody chose and alphabetical would be `light, moderate, none, strong`. The same order
+is used where the open field says `one of` and `usually`, and in the refusal a fixed set gives —
+one vocabulary written one way wherever it appears.
 
 The values are the written form, `DATA-76`, which is why a boolean reads `true` and `false`
 rather than yes and no: what is picked here is what the row shows and what the file holds.
 
-**The suggestions offered are the shipped presets and no more.** `DATA-25` asks for those joined
-with what the logbook already uses, and the Universe does not gather that yet, so a word one
-region carries is typed again on the next. It is the *other* row that keeps this honest rather
-than limiting: nothing is refused, and the union is the logic layer's to add.
+**The suggestions are the shipped presets joined with what the logbook already uses**, which the
+Universe works out — `DATA-25`. A word written once through the *other* row is a row of its own
+from then on, so it is typed once rather than once per item, and a second spelling of it is
+visible beside the first rather than hidden. The presets keep their declared order and what the
+logbook adds follows, alphabetically, there being no order of its own to keep.
+
+That is also why the *other* row rarely shows a value: what an item holds is in use by
+definition, so it is offered. What lands there is a value that could not be read — `"category":
+5` — which nothing offers and which the row is then the only place to see.
 
 **A reference offers the items it could name, and narrows them as they are typed.** They sit
 under what is being typed, in the order that type's own tab lists it in — `DATA-89` — and up and
