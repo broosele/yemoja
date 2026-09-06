@@ -471,13 +471,17 @@ class LeavingTest {
     }
 
     @Test
-    fun `quit leaves from however deep the reader has gone`() {
+    fun `q does not leave from inside something, and ctrl-C does`() {
+        // `q` is the top level's key: escape comes out, and it comes out to where q means
+        // something. Ctrl-C leaves from anywhere and is the one key an editor cannot take.
         val screen = screen()
         toTab(screen, "person")
         toField(screen, "courses")
         repeat(3) { screen.press(Key.OPEN) }
-        assertTrue(screen.opened, "and it is worth going in before leaving")
-        assertFalse(screen.press(Key.QUIT))
+        assertTrue(screen.opened, "and it is worth going in before trying to leave")
+        assertTrue(screen.press(Key.QUIT))
+        assertTrue(screen.running)
+        assertFalse(screen.press(Key.LEAVE))
         assertFalse(screen.running)
     }
 }
@@ -1229,10 +1233,10 @@ class ActionsTest {
         // Wide enough for all of them, which eighty columns is not.
         val said = bar(screen(), 120)
         assertEquals(
-            "[q] quit | [(shift)-tab] type | [<,>] item | [^,v] field | " +
-                "[enter] open | [space] follow | [n] new item",
+            "[q] quit | [n] new item | [enter] open | [space] follow | " +
+                "[(shift)-tab] type | [<,>] item | [^,v] field",
             said,
-            "and no offer to delete one, this logbook holding none",
+            "and no offer to delete one, this tab holding no items",
         )
     }
 
@@ -1242,7 +1246,8 @@ class ActionsTest {
         toTab(screen, "person")
         screen.press(Key.OPEN)
         val said = bar(screen, 120)
-        assertTrue(said.startsWith("[q] quit | [esc] back"), said)
+        assertTrue("[q] quit" !in said, "q is the top level's key, and this is not it: $said")
+        assertTrue("[esc] back" in said, said)
         assertTrue("[space] follow" in said, said)
         assertTrue("[<,>]" !in said, "the list does not move from inside a field: $said")
     }
@@ -1266,11 +1271,23 @@ class ActionsTest {
     fun `a narrow screen says fewer things rather than half a thing`() {
         val said = bar(screen(), 40)
         assertTrue(said.length <= 40, said)
-        assertTrue(said.startsWith("[q] quit | [(shift)-tab] type"), said)
+        assertTrue(said.startsWith("[q] quit | [n] new item"), said)
         assertFalse(said.endsWith("|"), "no dangling separator: $said")
-        assertFalse(said.contains("[ente"), "no half a key: $said")
+        assertFalse(said.contains("[spac"), "no half a key: $said")
         // It stops rather than skipping to something shorter, so the front is always the same.
         assertFalse("[^,v]" in said, "nothing from past the cut: $said")
+    }
+
+    @Test
+    fun `what a narrow screen drops is what a reader could have guessed`() {
+        // Eighty columns is what a console opens on. The keys that change something have to
+        // survive that, because nobody presses `n` without being told to, while everybody
+        // presses an arrow.
+        val screen = screen()
+        toTab(screen, "person")
+        val said = bar(screen, 80)
+        assertTrue("[n] new item" in said, said)
+        assertTrue("[del] delete item" in said, said)
     }
 
     @Test
@@ -1720,13 +1737,13 @@ class PathTest {
         val screen = person()
         toField(screen, "medical")
         screen.press(Key.OPEN)
-        assertTrue("[^,v] field" in screen.paint(120, 24).last().text)
+        assertTrue("[^,v] field" in screen.paint(160, 24).last().text)
         screen.press(Key.OPEN)
-        assertTrue("[^,v] scroll" in screen.paint(120, 24).last().text)
+        assertTrue("[^,v] scroll" in screen.paint(160, 24).last().text)
         val keyed = person()
         toField(keyed, "courses")
         keyed.press(Key.OPEN)
-        val bar = keyed.paint(120, 24).last().text
+        val bar = keyed.paint(160, 24).last().text
         assertTrue("[(shift)-tab] key" in bar, bar)
         assertTrue("[^,v] field" in bar, bar)
     }

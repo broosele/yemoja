@@ -56,13 +56,28 @@ all of them. Where the screen is too narrow it stops at the first that will not 
 than passing over it for a shorter one — a bar that keeps its order is one whose front a
 reader learns.
 
+**What it keeps is the order of what a reader could not have worked out.** Leaving leads the
+list's bar, then the keys that change something, then the ones that go somewhere: `[q] quit`,
+`[n] new`, `[del] delete`, `[enter]`, `[space] follow`, and the movement last. Anybody presses
+an arrow without being told to and nobody presses `n`, so the hints worth the width are the
+ones for keys nothing else would suggest. Inside a field the same order runs without the first
+of them, `q` not working there.
+
+The order used to run the other way, movement first, which was harmless while every key was a
+movement and became a fault the moment two of them changed the logbook: an eighty-column
+console — what Windows opens on — showed the arrows and neither `n` nor delete, so the two
+keys that do the most were the two nothing mentioned. Eighty columns now carries both, and
+what falls off there is `[<,>] item` and `[^,v] field`. The cost is real and is the smaller
+one: the item list answering to left and right is odd enough to be worth saying, and it is
+still found by pressing left.
+
 **The bar draws the arrow keys and spells the rest** — `[<,>]`, `[^,v]`, against `[esc]`,
 `[enter]`, `[space]` and `[(shift)-tab]`. Each is what its own key cap shows. Drawn in ASCII
 because no arrow character survives a console on code page 437, which is what this one opens
 on: `←` shows as `?` there, and so does `◀`. That code page does hold arrow glyphs, at
-0x18 to 0x1b, but those are the control-code positions and nothing encodes to them. The two
-together also keep `[enter] open` on the bar at eighty columns, which spelling them out
-would push off the end.
+0x18 to 0x1b, but those are the control-code positions and nothing encodes to them. Drawing
+them also buys back the width that spelling them out would cost, which is what lets an
+eighty-column bar reach `[space] follow`.
 
 | Key | Does |
 |---|---|
@@ -74,7 +89,8 @@ would push off the end.
 | escape | come one step back out, and nothing where there is nothing to |
 | `n` | make one of what is in front of you — an item, an entry, an owned item |
 | delete | take out what the cursor is on, asking first where it is an item |
-| `q`, ctrl-C | leave, from wherever you are |
+| `q` | leave, where nothing is open |
+| ctrl-C | leave, from wherever you are and whatever you are typing |
 
 While a value is being typed the map is a shorter one, every printable character being a
 character:
@@ -84,7 +100,6 @@ character:
 | enter | save what was typed |
 | escape | abandon the edit and leave the value as it was |
 | backspace | rub out the last character |
-| ctrl-C | leave |
 
 **What a printable character means is settled by the screen, not by the keyboard.** `keyOf`
 reports a character as itself and gives a meaning to nothing but ctrl-C, which has no other. That
@@ -99,9 +114,18 @@ screen was live, which meant the screen had to say which half that was, and a re
 read it before every press.
 
 **Escape is held to that too, which is why it does not leave.** It used to, where nothing was
-open, and that put ending the session one key past the mildest thing a reader does. Leaving
-belongs to `q` and ctrl-C, which work from four levels into a keyed field as readily as from
-the list, so nothing is gained by lending escape a second meaning. `TUI-6`.
+open, and that put ending the session one key past the mildest thing a reader does. Escape
+comes back out, one level at a time, and what it comes out to is the list. `TUI-6`.
+
+**Leaving is ctrl-C from anywhere, and `q` from the list.** `q` used to work at any depth, and
+it stopped because a reader four levels into a keyed field is not looking for the way out of
+the application — they are looking for the way out of the field, which is escape. Being able to
+end the session from there bought nothing and spent a letter. Ctrl-C is untouched and works
+from inside an editor, where every printable key is a character.
+
+The bar says `[q] quit` on the list and nothing about leaving anywhere else. Ctrl-C is left
+unsaid deliberately: it is the one key nobody has to be told about, and the bars where it is the
+only way out have three keys to explain and no width to spare.
 
 The cost is that the item list answers to left and right rather than to up and down, which
 reads oddly against a column of ids. It was taken knowingly: an odd direction is learnt once,
@@ -116,10 +140,10 @@ hide that there was no more to read.
 The item list stopped at its ends until `TUI-7`, on the grounds that wrapping loses the
 user's place on a long one. What that overlooked is that the key is the same key: four
 things move under the arrows, and three of them wrapping made the fourth read as broken
-rather than as careful. Leaving takes two keys of its own
-because raw mode swallows the usual one, and `[q] quit` leads both bars: the key a reader
-wants without hunting for it is the one that gets them out, so it is the one thing a screen
-too narrow for anything else still says.
+rather than as careful. Leaving takes two keys of its own because raw mode swallows the usual
+one, and `[q] quit` leads the list's bar: the key a reader wants without hunting for it is the
+one that gets them out, so it is the one thing a screen too narrow for anything else still
+says.
 
 **Input ending is leaving too.** A closed terminal or a pipe running out is a session over
 rather than a fault, so the loop asks Mordant for a key *or null* and stops on the null. Its
@@ -355,6 +379,9 @@ is opened into; a value is where the path stops, so enter there seeds an editor 
 field holds and every printable key types into it. Enter saves, escape abandons, backspace rubs
 out.
 
+A field that holds an item is never typed into, and that includes one holding none: what an
+editor reaches is that item's own fields, one at a time. An empty one is made with `n`.
+
 Seeded with the written form — `2026-02-23`, `@willy`, `EAN32` — which is the form the row
 already shows and the form reading it back accepts. `DATA-76`. So correcting a date is editing
 a date rather than typing one from nothing. A value that would not read is offered exactly as
@@ -401,8 +428,9 @@ the bar cannot offer what the key would refuse. The question it asks is *what am
 and a key is not a stop of its own there either — a reader inside an entry of a collection is
 standing on the collection, which is what makes `n` mean another entry.
 
-Both sit at the end of the bar, so a narrow screen drops them first. That follows from the rule
-above them: the bar keeps its order and stops at the first thing that will not fit.
+Both sit near the front of the bar, behind `[q] quit` and ahead of everything that only moves
+the cursor, so an eighty-column console says them. That is the ordering rule above at work: a
+reader finds the arrows without being told and finds `n` only by being told.
 
 **The confirmation replaces the bar and names the item** — `delete anna? | [del] delete |
 [any key] keep`. Naming it is not decoration: the list shows whatever follows under the cursor
@@ -440,8 +468,8 @@ worth as much as one still to make.
   reading, not navigating a history, and the thing they were looking at has not gone anywhere.
 
 - **TUI-6 — Whether escape leaves the interface.** *Settled:* **no.** Escape comes one step
-  back out and does nothing where there is nothing to come out of. Leaving is `q` and ctrl-C,
-  and both work from wherever the reader is.
+  back out and does nothing where there is nothing to come out of. Leaving is ctrl-C from
+  anywhere and `q` from the list.
 
   It used to leave where nothing was open, which put ending the session one key past the
   mildest thing a reader does: escape out of one level too many and the application is gone.
@@ -449,7 +477,12 @@ worth as much as one still to make.
 
   Nothing is lost, because nothing was gained. Quitting was already available at any depth —
   what was missing was the bar saying so, which is why escape looked like the only way out and
-  so had to be given a second job. `[q] quit` now leads both bars and the problem dissolves.
+  so had to be given a second job. `[q] quit` now leads the list's bar and the problem
+  dissolves.
+
+  `q` was later confined to the list, which does not reopen this. Escape still comes out one
+  level at a time and still never leaves; what changed is that the reader has to be out before
+  the letter means anything, and ctrl-C is what leaves from where they are.
 
   The alternatives were a confirmation at the top level, and a double press. Both rehabilitate
   a meaning worth dropping, and both add state to do it: one a prompt, the other a timeout or
@@ -458,7 +491,8 @@ worth as much as one still to make.
   Editing tested this and did not change it. Once enter opens an editor `q` is a character
   somebody is typing and escape means *cancel this edit*, so escape has two jobs — but they are
   the same job at two depths: it undoes the last step in, whether that step was opening a field
-  or opening an editor. Ctrl-C survives intact and is the way out from inside an editor.
+  or opening an editor. Ctrl-C survives intact and is the way out from inside an editor, which
+  is the whole reason it is carried.
 
 - **TUI-7 — Whether the item list wraps.** *Settled:* **yes**, and so do the values of an
   open field. Everything a reader chooses between now goes round its ends: the tabs, the item

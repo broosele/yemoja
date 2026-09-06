@@ -203,7 +203,9 @@ class Screen(private val universe: Universe) {
         when {
             character == ' ' -> follow()
             character.equals('n', ignoreCase = true) -> make()
-            character.equals('q', ignoreCase = true) -> running = false
+            // The top level's key. Escape is what comes out of anything opened, and it comes
+            // out to the one place `q` means something.
+            character.equals('q', ignoreCase = true) -> if (!opened) running = false
         }
     }
 
@@ -387,6 +389,7 @@ class Screen(private val universe: Universe) {
     private fun editable(): Ends.Value? {
         val ends = endsOf(item ?: return null, path) as? Ends.Value ?: return null
         if (ends.item == null || ends.field.role is Role.Derived) return null
+        if (ends.field is OwnedItemDescription) return null
         val series = ends.field.cardinality == Cardinality.SERIES ||
             ends.field.cardinality == Cardinality.KEYED_SERIES
         return if (series) null else ends
@@ -449,12 +452,12 @@ class Screen(private val universe: Universe) {
     private fun save() {
         val ends = editable() ?: return
         val text = editing ?: return
-        val owner = ends.item ?: return
         val given: Any? = if (ends.field.cardinality != Cardinality.LIST) {
             typedAs(ends.field, text).ifEmpty { null }
         } else {
             listed(ends, text)
         }
+        val owner = ends.item ?: return
         val done = universe.change(Operation.EDIT, Change.Write(owner, ends.field.name, given))
         if (done is Outcome.Done) editing = null
     }
@@ -754,6 +757,10 @@ class Screen(private val universe: Universe) {
      * word about it, and it stops at the first that will not fit rather than passing over it for
      * a shorter one: a bar that keeps its order is one a reader learns the front of. What a key
      * does depends on what is in front of the user, so this says what it does here.
+     *
+     * **The order is what a reader cannot work out for themselves.** Leaving leads it, then the
+     * keys that change something, then the ones that go somewhere. Anybody presses the arrows
+     * without being told to; nobody presses `n`.
      */
     private fun actions(width: Int): String {
         val said = if (confirming) {
@@ -762,29 +769,30 @@ class Screen(private val universe: Universe) {
             // guess from.
             listOf("delete ${item?.let { set.idOf(it) }}?", "[del] delete", "[any key] keep")
         } else if (editing != null) {
-            // No quit: `q` is a letter being typed, and ctrl-C is the way out. `TUI-6`.
-            listOf("[enter] save", "[esc] cancel", "[backspace] rub out", "[ctrl-c] quit")
+            // No quit: `q` is a letter being typed here. Ctrl-C still leaves and is not said,
+            // being the one key nobody has to be told about. `TUI-6`.
+            listOf("[enter] save", "[esc] cancel", "[backspace] rub out")
         } else if (opened) {
+            // No quit either: `q` is the top level's key, and escape is the way back to it.
             listOfNotNull(
-                QUITS,
+                madeHere()?.let { "[n] new $it" },
+                removedHere()?.let { "[del] delete $it" },
+                if (deeper()) "[enter] open" else if (editable() != null) "[enter] edit" else null,
+                "[space] follow",
                 "[esc] back",
                 if (keysHere().isEmpty()) null else "$TABS key",
                 "$FIELDS " + moving(),
-                if (deeper()) "[enter] open" else if (editable() != null) "[enter] edit" else null,
-                "[space] follow",
-                madeHere()?.let { "[n] new $it" },
-                removedHere()?.let { "[del] delete $it" },
             )
         } else {
             listOfNotNull(
                 QUITS,
+                madeHere()?.let { "[n] new $it" },
+                removedHere()?.let { "[del] delete $it" },
+                "[enter] open",
+                "[space] follow",
                 "$TABS type",
                 "$ITEMS item",
                 "$FIELDS field",
-                "[enter] open",
-                "[space] follow",
-                madeHere()?.let { "[n] new $it" },
-                removedHere()?.let { "[del] delete $it" },
             )
         }
         var shown = said.first()

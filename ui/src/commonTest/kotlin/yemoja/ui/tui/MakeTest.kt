@@ -11,7 +11,9 @@ import yemoja.logic.Types
 import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /*
@@ -275,5 +277,47 @@ class MakingOfferedTest {
         val said = bar(screen)
         assertTrue("[n]" !in said, said)
         assertTrue("[del]" !in said, said)
+    }
+}
+
+/** What the bar leaves out, which is as decided as what it says. */
+class UnsaidTest {
+
+    private fun bar(screen: Screen): String = screen.paint(160, 12).last().text.trim()
+
+    @Test
+    fun `nothing inside a field offers to quit`() {
+        // `q` does not work there, and a bar that offered it would be lying about a key.
+        val (_, screen) = over("person.json" to """{"anna": {}}""")
+        toTab(screen, "person")
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        assertTrue("[q] quit" !in bar(screen), bar(screen))
+        assertTrue("[esc] back" in bar(screen), bar(screen))
+    }
+
+    @Test
+    fun `an editor says nothing about ctrl-C`() {
+        // It works, from an editor as from anywhere. It is not worth a place on a bar that has
+        // three keys to explain and no room to spare.
+        val (_, screen) = over("region.json" to """{"north_sea": {"name": "North Sea"}}""")
+        toTab(screen, "region")
+        toField(screen, "name")
+        screen.press(Key.OPEN)
+        screen.press(Key.OPEN)
+        assertEquals("[enter] save | [esc] cancel | [backspace] rub out", bar(screen))
+        assertFalse(screen.press(Key.LEAVE), "and it still leaves")
+    }
+
+    @Test
+    fun `a field that holds an item is opened into rather than typed into`() {
+        // Its own fields are what an editor reaches, one at a time. Enter twice used to put a
+        // text editor on the field itself, which nothing below would have taken.
+        val (_, screen) = over("person.json" to """{"anna": {}}""")
+        toTab(screen, "person")
+        toField(screen, "medical")
+        screen.press(Key.OPEN)
+        screen.press(Key.OPEN)
+        assertNull(screen.typing)
     }
 }
