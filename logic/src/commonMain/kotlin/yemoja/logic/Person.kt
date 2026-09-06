@@ -74,6 +74,7 @@ private val COURSE = ItemDescription(
         ReferenceDescription("dives", targetType = "dive", cardinality = Cardinality.LIST),
         REMARKS,
     ),
+    proposedId = ::coursesProposedKey,
 )
 
 /**

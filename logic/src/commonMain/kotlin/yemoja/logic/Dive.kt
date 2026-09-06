@@ -233,6 +233,7 @@ private val PROFILE = ItemDescription(
         ),
         REMARKS,
     ),
+    proposedId = ::profilesProposedKey,
 )
 
 /** When the last sample was taken, as a moment in GMT, or absent where there is none. */
@@ -331,6 +332,7 @@ private val GAS_SOURCE = ItemDescription(
         ),
         REMARKS,
     ),
+    proposedId = ::gasSourcesProposedKey,
 )
 
 /**

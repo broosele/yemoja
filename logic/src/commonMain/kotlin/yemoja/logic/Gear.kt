@@ -61,6 +61,7 @@ private val MAINTENANCE = ItemDescription(
         ReferenceDescription("operator", targetType = "operator"),
         REMARKS,
     ),
+    proposedId = ::maintenancesProposedKey,
 )
 
 private fun maintenancesDaysLeft(work: Item): Result<Any> = remaining(work, "valid_until")

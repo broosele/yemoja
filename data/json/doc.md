@@ -423,12 +423,32 @@ To settle when we discuss architecture:
   down. A service keyed by its date reads as something; `k1` reads as nothing, and a key
   is now visible structure rather than a field among others.
 
-  The proposal rule is a property of each collection and **is not yet defined for any of
-  them**, exactly as an id's proposal is a property of each type. One collection is
-  exempt: a profile's `pressures` is keyed by the `gas_sources` entry it measured, so its
-  keys are borrowed rather than proposed, and one series per cylinder follows from that
-  rather than needing a rule. What is settled here is
-  that a key is proposed rather than counted or drawn at random.
+  The proposal rule is a property of each collection, exactly as an id's proposal is a
+  property of each type, and each is written beside the type it keys in the logic layer.
+  One collection is exempt: a profile's `pressures` is keyed by the `gas_sources` entry it
+  measured, so its keys are borrowed rather than proposed, and one series per cylinder
+  follows from that rather than needing a rule.
+
+  The other four are what a diver would say about the entry:
+
+  | Collection | Keyed by | Falling back to |
+  |---|---|---|
+  | `profiles` | the dive computer that recorded it | `profile` |
+  | `gas_sources` | what it was for — `bottom`, `deco` | the gas in it, then `gas` |
+  | `courses` | the certification it was for | the date, then `course` |
+  | `maintenances` | what was done and when | `maintenance` |
+
+  Each names the thing that tells one entry from another where there is more than one. A
+  dive has a second profile precisely when a second computer was worn; a set of cylinders
+  is divided by what each is for. `maintenances` is the one collection where the same
+  thing happens again and again, so it takes both halves: a yearly inspection and a
+  five-yearly test keyed by date alone would read as bare dates with nothing to tell them
+  apart, and nothing points at a maintenance by key, so the length costs little.
+
+  A fallback is what an empty entry gets, and an entry made by hand is empty. So one made
+  in a front end is `course`, and `course#1` where that is taken, exactly as an item made
+  by hand is `unknown_person`. Filling the fields in afterwards does not revise it, for
+  the reason an id is not revised: it is what other things point at.
 
   **A hand editor may write anything** not already present. Edits by hand exist to keep
   data lean, and someone doing that deliberately is not to be second-guessed. Uniqueness

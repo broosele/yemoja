@@ -50,6 +50,19 @@ class Universe(
 ) {
 
     /**
+     * A number that changes whenever anything in this universe does.
+     *
+     * `ItemSet` carries one of its own and it counts a narrower thing: an item added or taken
+     * out, not a field edited. A view has to refresh for both — a dive whose date was corrected
+     * moves in a list ordered by date without the count changing — so this counts every change.
+     *
+     * Not notification. `DATA-6` settles that nothing is announced and nothing subscribes; this
+     * is what lets something that may be out of date ask.
+     */
+    var revision: Int = 0
+        private set
+
+    /**
      * Does [changes] as one [operation], and saves whatever it touched.
      *
      * **The one way anything changes.** Nothing above calls a mutator on an item, and the reason
@@ -122,6 +135,7 @@ class Universe(
         for ((description, id) in touched) {
             logbook[id]?.let { LogbookWriter.write(store, description, id, it) }
         }
+        revision += 1
         return Outcome.Done(adds.map { it.first })
     }
 
@@ -140,15 +154,7 @@ class Universe(
      */
     private fun freeId(item: ReferenceableItem, minted: List<String>): String {
         val proposed = item.description.proposedId?.invoke(item) ?: unknownOf(item)
-        val taken = { id: String -> logbook[id] != null || id in minted }
-        if (!taken(proposed)) return proposed
-        // From one past whatever the proposal carried, so a proposal with no index goes to `#1`
-        // and a dive's `#0` goes to `#1`. `DATA-84` leaves index zero off unless a type always
-        // writes one, and a type that does says so by proposing it.
-        val base = proposed.substringBefore('#')
-        var at = (proposed.substringAfter('#', "").toIntOrNull() ?: 0) + 1
-        while (taken("$base#$at")) at += 1
-        return "$base#$at"
+        return freeName(proposed) { logbook[it] != null || it in minted }
     }
 
     /**
