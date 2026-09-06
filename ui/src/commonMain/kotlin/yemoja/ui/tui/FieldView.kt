@@ -363,33 +363,76 @@ private fun summary(field: FieldDescription, entry: Any): String = when (entry) 
 }
 
 /**
- * The values [field] may hold, where they are known, with nothing at the end.
+ * Choice is one row of a chooser: a value to take, a way to type one, or the field left empty.
  *
- * Absent where they are not, which is most fields: a number, a date and free text are typed.
- * The last entry is the field holding nothing, which is a state every field has and which a
- * chooser would otherwise have no way to reach.
+ * A chooser is offered where a field's values are known, so what a reader does there is pick
+ * rather than spell. The two rows that are not values are what picking cannot otherwise reach.
+ */
+internal sealed class Choice {
+
+    /** A value the field may hold, in the written form. */
+    class Value(val said: String) : Choice()
+
+    /**
+     * Type something the rows do not offer.
+     *
+     * Only where a set is suggested rather than fixed. `DATA-25` offers those values without
+     * enforcing them, so a chooser that could not leave them would refuse what the field takes.
+     */
+    object Other : Choice()
+
+    /** The field holding nothing, which is a state every field has. */
+    object Nothing : Choice()
+}
+
+/**
+ * The choices [field] offers, where its values are known, or absent where they are not.
+ *
+ * Absent for most fields: a number, a date and free text are typed. A fixed set ends with
+ * [Choice.Nothing] and a suggested one with [Choice.Other] before it, since a value outside a
+ * fixed set is unusable — `DATA-24` — and a value outside a suggested one is ordinary.
  *
  * In the written form, `DATA-76`, so a value picked here is the value a row shows and the value
  * a file holds. A boolean is `true` and `false` for that reason, whatever a form would call
  * them.
  */
-internal fun choicesOf(field: FieldDescription): List<String?>? = when {
-    field is BooleanDescription -> listOf("true", "false", null)
-    field is TextDescription && field.fixedSet != null -> field.fixedSet!!.toList() + null
+internal fun choicesOf(field: FieldDescription): List<Choice>? = when {
+    field is BooleanDescription ->
+        listOf(Choice.Value("true"), Choice.Value("false"), Choice.Nothing)
+
+    field is TextDescription && field.fixedSet != null ->
+        field.fixedSet!!.map { Choice.Value(it) } + Choice.Nothing
+
+    field is TextDescription && field.suggestedSet != null ->
+        field.suggestedSet!!.map { Choice.Value(it) } + Choice.Other + Choice.Nothing
+
     else -> null
 }
 
 /**
  * The choices of [field], one per row, with the one at [chosen] set apart.
  *
- * A boolean carries a box, since two values that exclude each other is what a box says. A fixed
- * set does not: a column of boxes down a vocabulary of six says nothing the cursor has not.
+ * A boolean carries a box, since two values that exclude each other is what a box says. A set of
+ * words does not: a column of boxes down a vocabulary of six says nothing the cursor has not.
+ *
+ * [typed] is what is being typed on the *other* row, and [other] what that row shows when it is
+ * not being typed into — the value the field holds, where the rows do not offer it.
  */
-internal fun chooserLines(field: FieldDescription, chosen: Int): List<Line> {
+internal fun chooserLines(
+    field: FieldDescription,
+    chosen: Int,
+    typed: String? = null,
+    other: String = "",
+): List<Line> {
     val box = field is BooleanDescription
     return choicesOf(field).orEmpty().mapIndexed { at, choice ->
         val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
         val mark = if (!box) "" else if (at == chosen) "[x] " else "[ ] "
-        Line(listOf(Span("  " + mark + (choice ?: "(nothing)"), here)))
+        val said = when (choice) {
+            is Choice.Value -> choice.said
+            Choice.Other -> "other: " + if (typed == null) other else typed + CURSOR
+            Choice.Nothing -> "(nothing)"
+        }
+        Line(listOf(Span("  " + mark + said, here)))
     }
 }

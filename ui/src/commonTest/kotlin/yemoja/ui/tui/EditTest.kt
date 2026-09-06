@@ -345,15 +345,10 @@ class ChosenValueTest {
     }
 
     @Test
-    fun `a suggested set is typed into too, being open to anything`() {
-        // `DATA-25` offers those values without enforcing them, so a chooser would refuse what
-        // the field does not.
-        val (_, screen) = editable("region.json" to """{"north_sea": {}}""")
-        toTab(screen, "region")
-        toField(screen, "category")
-        edit(screen)
-        assertNull(screen.choice)
-        assertEquals("", screen.typing)
+    fun `a fixed set offers no way out of it`() {
+        // `DATA-24` makes a value outside one unusable, so there is nothing to leave to.
+        val (_, screen) = atWaterType("")
+        assertTrue(rows(screen).none { it.startsWith("other") }, rows(screen).toString())
     }
 }
 
@@ -434,5 +429,91 @@ class EditorHoldsTest {
         screen.press(Key.NEXT_TAB)
         assertEquals("dive_site", screen.type.name)
         assertTrue(screen.choice != null, "and the chooser is still open")
+    }
+}
+
+/** A set that is offered rather than enforced, which is picked from or written past. */
+class ChosenOrTypedTest {
+
+    private fun atCategory(held: String): Pair<MemoryFileStore, Screen> {
+        val (store, screen) = editable("region.json" to """{"north_sea": {$held}}""")
+        toTab(screen, "region")
+        toField(screen, "category")
+        edit(screen)
+        return store to screen
+    }
+
+    private fun rows(screen: Screen): List<String> =
+        body(screen).map { it.text.trim() }.filter { it.isNotEmpty() }
+
+    @Test
+    fun `the suggestions are offered, with a way past them`() {
+        val (_, screen) = atCategory("")
+        val said = rows(screen)
+        assertTrue("sea" in said, said.toString())
+        assertEquals(listOf("other:", "(nothing)"), said.takeLast(2))
+    }
+
+    @Test
+    fun `one of them is taken like any other choice`() {
+        val (store, screen) = atCategory("")
+        while (rows(screen)[screen.choice!!] != "sea") screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertNull(screen.choice)
+        assertTrue("sea" in text(store, "region.json"), text(store, "region.json"))
+    }
+
+    @Test
+    fun `enter on the other row starts typing rather than saving`() {
+        val (store, screen) = atCategory("")
+        while (!rows(screen)[screen.choice!!].startsWith("other")) screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertEquals("", screen.typing)
+        type(screen, "archipelago")
+        val said = rows(screen)
+        assertTrue(said.any { it == "other: archipelago" + CURSOR }, said.toString())
+        screen.press(Key.OPEN)
+        assertNull(screen.typing)
+        assertNull(screen.choice, "and the chooser has closed with it")
+        assertTrue("archipelago" in text(store, "region.json"), text(store, "region.json"))
+    }
+
+    @Test
+    fun `escape from there comes back to the choices rather than out`() {
+        // A step in is undone by a step out, and picking *other* was a step in.
+        val (_, screen) = atCategory("")
+        while (!rows(screen)[screen.choice!!].startsWith("other")) screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        type(screen, "x")
+        screen.press(Key.CLOSE)
+        assertNull(screen.typing)
+        assertTrue(screen.choice != null, "still choosing")
+        assertEquals("other:", rows(screen)[screen.choice!!], "and on the row it came from")
+    }
+
+    @Test
+    fun `a value the suggestions do not offer sits on the other row`() {
+        // Which is what it is. Nothing else on the screen would say where the value went.
+        val (_, screen) = atCategory(""""category": "archipelago"""")
+        assertEquals("other: archipelago", rows(screen)[screen.choice!!])
+    }
+
+    @Test
+    fun `and the editor there starts from that value`() {
+        val (store, screen) = atCategory(""""category": "archipelago"""")
+        screen.press(Key.OPEN)
+        assertEquals("archipelago", screen.typing)
+        repeat(5) { screen.press(Key.BACKSPACE) }
+        screen.press(Key.OPEN)
+        assertTrue("archi" in text(store, "region.json"), text(store, "region.json"))
+    }
+
+    @Test
+    fun `the bar offers a step back rather than a way out`() {
+        val (_, screen) = atCategory("")
+        while (!rows(screen)[screen.choice!!].startsWith("other")) screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        val said = screen.paint(90, 12).last().text.trim()
+        assertEquals("[enter] save | [esc] back | [backspace] rub out", said)
     }
 }

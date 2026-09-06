@@ -227,11 +227,35 @@ class Screen(private val universe: Universe) {
         when (key) {
             Key.UP -> alongChoices(-1)
             Key.DOWN -> alongChoices(1)
-            Key.OPEN -> saveChoice()
+            Key.OPEN -> take()
             Key.CLOSE -> choosing = null
             Key.LEAVE -> running = false
             else -> Unit
         }
+    }
+
+    /**
+     * Take the choice the cursor is on.
+     *
+     * The *other* row is not a value but a way to reach one, so enter there opens the editor
+     * rather than saving. The chooser stays open under it, which is what escape comes back to:
+     * a step in is undone by a step out, and picking *other* was a step in.
+     */
+    private fun take() {
+        val ends = editable() ?: return
+        if (choicesOf(ends.field)?.getOrNull(choosing ?: return) is Choice.Other) {
+            editing = otherOf(ends)
+            return
+        }
+        saveChoice()
+    }
+
+    /** What the field holds, where the rows do not offer it, and nothing where they do. */
+    private fun otherOf(ends: Ends.Value): String {
+        val here = written(ends)
+        val offered = choicesOf(ends.field).orEmpty()
+            .filterIsInstance<Choice.Value>().map { it.said }
+        return if (here in offered) "" else here
     }
 
     /** Move [by] choices, round the ends, as everything chosen between does. `TUI-7`. */
@@ -456,7 +480,13 @@ class Screen(private val universe: Universe) {
             return
         }
         val here = written(ends).ifEmpty { null }
-        choosing = choices.indexOf(here).let { if (it < 0) choices.lastIndex else it }
+        val at = choices.indexOfFirst { it is Choice.Value && it.said == here }
+        val other = choices.indexOfFirst { it is Choice.Other }
+        choosing = when {
+            at >= 0 -> at
+            here != null && other >= 0 -> other
+            else -> choices.lastIndex
+        }
     }
 
     /**
@@ -521,13 +551,17 @@ class Screen(private val universe: Universe) {
         } else {
             listed(ends, text)
         }
-        if (saved(ends, given)) editing = null
+        if (saved(ends, given)) {
+            editing = null
+            choosing = null
+        }
     }
 
     /** Take the choice the cursor is on, the last of which is the field holding nothing. */
     private fun saveChoice() {
         val ends = editable() ?: return
-        val chosen = choicesOf(ends.field)?.getOrNull(choosing ?: return)
+        val taken = choicesOf(ends.field)?.getOrNull(choosing ?: return)
+        val chosen = (taken as? Choice.Value)?.said
         val given: Any? = if (ends.field.cardinality != Cardinality.LIST) {
             chosen
         } else {
@@ -854,7 +888,10 @@ class Screen(private val universe: Universe) {
         } else if (editing != null) {
             // No quit: `q` is a letter being typed here. Ctrl-C still leaves and is not said,
             // being the one key nobody has to be told about. `TUI-6`.
-            listOf("[enter] save", "[esc] cancel", "[backspace] rub out")
+            // Escape goes back to the choices where that is where the editor was opened from,
+            // a step in being undone by a step out.
+            val back = if (choosing == null) "[esc] cancel" else "[esc] back"
+            listOf("[enter] save", back, "[backspace] rub out")
         } else if (choosing != null) {
             listOf("[enter] take it", "[esc] cancel", "$FIELDS choice")
         } else if (opened) {
@@ -948,6 +985,18 @@ class Screen(private val universe: Universe) {
      * The refusal is shown where the value is rather than on the bar, because it is about what
      * is on the screen and because a bar too narrow for it would drop it silently.
      */
+    /**
+     * The choices, with whatever is being typed on the *other* row, and why it will not do.
+     *
+     * The refusal goes under the rows for the reason it goes under a typed value: it is about
+     * what is on the screen, and a bar too narrow for it would drop it silently.
+     */
+    private fun chosenLines(ends: Ends.Value, at: Int): List<Line> {
+        val lines = chooserLines(ends.field, at, editing, otherOf(ends))
+        val why = refusal() ?: return lines
+        return lines + Line(listOf(Span(""))) + Line(listOf(Span("  ! " + why)))
+    }
+
     private fun typedLines(): List<Line> {
         val text = editing.orEmpty()
         val said = Line(listOf(Span("  " + text + CURSOR, setOf(Style.SELECTED))))
@@ -969,8 +1018,8 @@ class Screen(private val universe: Universe) {
         if (ends == null) return List(rows) { Line(fitted(emptyList(), width)) }
         val at = choosing
         val under = when {
+            at != null && ends is Ends.Value -> chosenLines(ends, at)
             editing != null -> typedLines()
-            at != null && ends is Ends.Value -> chooserLines(ends.field, at)
             else -> whatIsThere(ends)
         }
         val body = (keyBar() + under).flatMap { wrapped(it, width) }

@@ -106,7 +106,7 @@ And while one is being chosen, shorter still:
 | Key | Does |
 |---|---|
 | up, down | move over the choices, round the ends |
-| enter | take the one the cursor is on |
+| enter | take the one the cursor is on, or start typing on *other* |
 | escape | leave the value as it was |
 
 **Nothing else moves while either is open.** A key that changed which field was chosen would
@@ -419,25 +419,36 @@ per row with the cursor on what the field holds; up and down move over them and 
 Typing `salt` into a field that accepts four words is spelling out what the application already
 knows, and getting it wrong is a refusal a reader did not need to meet.
 
-Two kinds have known values. A **fixed set** — `DATA-24`, a value outside it reads back unusable
-— is a list of its words. A **boolean** is the same list with a box on each row, since two values
-that exclude each other is what a box says; a fixed set gets none, a column of boxes down a
-vocabulary of six saying nothing the cursor has not.
+Three kinds have known values. A **fixed set** — `DATA-24`, a value outside it reads back
+unusable — is a list of its words. A **boolean** is the same list with a box on each row, since
+two values that exclude each other is what a box says; a set of words gets none, a column of
+boxes down a vocabulary of six saying nothing the cursor has not.
 
-A **suggested set** is not one of them. `DATA-25` offers those values without enforcing them, so
-a chooser would refuse what the field accepts. Those are typed, with the suggestions where the
-open field says what it is.
+A **suggested set** is offered the same way and carries one row more: *other:*, which opens an
+editor rather than saving. `DATA-25` offers those values without enforcing them, so a chooser
+that could not leave them would refuse what the field takes. Enter there types, enter again
+saves, and escape comes back to the choices rather than out of them — a step in is undone by a
+step out, and picking *other* was a step in.
+
+A value the suggestions do not offer sits on that row, shown there — `other: archipelago` — and
+that is where the cursor starts. Nothing else on the screen would say where the value had gone.
 
 **The last row is the field holding nothing.** Absent is a state every field has, and an empty
 box is how a typed field is cleared; a chooser has no empty box to leave, so it has a row. It is
-also where the cursor starts when the field holds nothing, or holds something the set does not
-contain — sitting on *none of these* is how it says so.
+also where the cursor starts when the field holds nothing, and where a value outside a *fixed*
+set leaves it — sitting on *none of these* is how it says so, there being no *other* row to
+hold it.
 
 The rows are in the order the type declares them, not sorted. `none, light, moderate, strong` is
 an order somebody chose and alphabetical would be `light, moderate, none, strong`.
 
 The values are the written form, `DATA-76`, which is why a boolean reads `true` and `false`
 rather than yes and no: what is picked here is what the row shows and what the file holds.
+
+**The suggestions offered are the shipped presets and no more.** `DATA-25` asks for those joined
+with what the logbook already uses, and the Universe does not gather that yet, so a word one
+region carries is typed again on the next. It is the *other* row that keeps this honest rather
+than limiting: nothing is refused, and the union is the logic layer's to add.
 
 **`n` makes one of whatever is in front of the reader.** An item of the open type where the
 list is shown, an entry at the end of an open list, an entry under a new key in a keyed
