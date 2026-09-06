@@ -1,6 +1,9 @@
 package yemoja.ui.tui
 
+import yemoja.data.Cardinality
+import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
+import yemoja.data.TextDescription
 import yemoja.data.Result
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
@@ -104,16 +107,16 @@ class TypedFieldTest {
 
     @Test
     fun `a value that will not do says why, and saving it does nothing`() {
-        val (store, screen) = editable("dive_site.json" to """{"blue_hole": {}}""")
-        toTab(screen, "dive_site")
-        toField(screen, "water_type")
+        val (store, screen) = editable("region.json" to """{"north_sea": {}}""")
+        toTab(screen, "region")
+        toField(screen, "north")
         edit(screen)
-        type(screen, "brackish")
+        type(screen, "91")
         val said = body(screen)
-        assertTrue(said.any { "! " in it.text && "salt" in it.text }, said.toString())
+        assertTrue(said.any { "! " in it.text && "-90.0" in it.text }, said.toString())
         screen.press(Key.OPEN)
-        assertEquals("brackish", screen.typing, "still being typed, since it was not taken")
-        assertTrue("brackish" !in text(store, "dive_site.json"))
+        assertEquals("91", screen.typing, "still being typed, since it was not taken")
+        assertTrue("91" !in text(store, "region.json"))
     }
 
     @Test
@@ -229,5 +232,207 @@ class TypedRemarkTest {
         screen.press(Key.OPEN)
         val read = screen.item!!.single<String>("remarks") as Result.Usable
         assertEquals("cold\nand grey", read.value)
+    }
+}
+
+/** A field whose values are known, which is picked from rather than typed into. */
+class ChosenValueTest {
+
+    private fun atWaterType(held: String): Pair<MemoryFileStore, Screen> {
+        val (store, screen) = editable("dive_site.json" to """{"blue_hole": {$held}}""")
+        toTab(screen, "dive_site")
+        toField(screen, "water_type")
+        edit(screen)
+        return store to screen
+    }
+
+    private fun rows(screen: Screen): List<String> =
+        body(screen).map { it.text.trim() }.filter { it.isNotEmpty() }
+
+    @Test
+    fun `enter offers the values rather than an empty line to type on`() {
+        val (_, screen) = atWaterType("")
+        assertNull(screen.typing, "nothing is being typed")
+        assertTrue("salt" in rows(screen), rows(screen).toString())
+        assertTrue("fresh" in rows(screen), rows(screen).toString())
+    }
+
+    @Test
+    fun `the last row is the field holding nothing`() {
+        val (_, screen) = atWaterType("")
+        assertEquals("(nothing)", rows(screen).last())
+    }
+
+    @Test
+    fun `the cursor starts on what the field holds`() {
+        val (_, screen) = atWaterType(""""water_type": "fresh"""")
+        assertEquals("fresh", rows(screen)[screen.choice!!])
+    }
+
+    @Test
+    fun `and on the row that clears it where the field holds nothing`() {
+        // Which says *none of these* by sitting there, and is where a value the set does not
+        // contain leaves it too.
+        val (_, screen) = atWaterType("")
+        assertEquals("(nothing)", rows(screen)[screen.choice!!])
+    }
+
+    @Test
+    fun `up and down move over the choices, round the ends`() {
+        val (_, screen) = atWaterType("")
+        val many = rows(screen).size
+        screen.press(Key.DOWN)
+        assertEquals(0, screen.choice, "past the last is the first again")
+        screen.press(Key.UP)
+        assertEquals(many - 1, screen.choice)
+    }
+
+    @Test
+    fun `enter takes the one the cursor is on`() {
+        val (store, screen) = atWaterType("")
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertNull(screen.choice, "and the chooser has closed")
+        assertTrue("salt" in text(store, "dive_site.json"), text(store, "dive_site.json"))
+    }
+
+    @Test
+    fun `the last row clears the field`() {
+        val (store, screen) = atWaterType(""""water_type": "fresh"""")
+        while (rows(screen)[screen.choice!!] != "(nothing)") screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertEquals(Result.Absent, screen.item!!.read("water_type"))
+        assertTrue("water_type" !in text(store, "dive_site.json"))
+    }
+
+    @Test
+    fun `escape leaves the value as it was`() {
+        val (store, screen) = atWaterType(""""water_type": "fresh"""")
+        screen.press(Key.DOWN)
+        screen.press(Key.CLOSE)
+        assertNull(screen.choice)
+        assertTrue("fresh" in text(store, "dive_site.json"))
+    }
+
+    @Test
+    fun `the bar says the three keys a chooser has`() {
+        val (_, screen) = atWaterType("")
+        val said = screen.paint(90, 12).last().text.trim()
+        assertEquals("[enter] take it | [esc] cancel | [^,v] choice", said)
+    }
+
+    @Test
+    fun `a boolean is two values and a box`() {
+        val (store, screen) = editable("gear.json" to """{"faber_12": {}}""")
+        toTab(screen, "gear")
+        toField(screen, "generic")
+        edit(screen)
+        assertEquals(listOf("[ ] true", "[ ] false", "[x] (nothing)"), rows(screen))
+        screen.press(Key.DOWN)
+        assertEquals(listOf("[x] true", "[ ] false", "[ ] (nothing)"), rows(screen))
+        screen.press(Key.OPEN)
+        assertTrue("true" in text(store, "gear.json"), text(store, "gear.json"))
+    }
+
+    @Test
+    fun `free text is still typed into`() {
+        val (_, screen) = editable("region.json" to """{"north_sea": {"name": "North Sea"}}""")
+        toTab(screen, "region")
+        toField(screen, "name")
+        edit(screen)
+        assertEquals("North Sea", screen.typing)
+        assertNull(screen.choice)
+    }
+
+    @Test
+    fun `a suggested set is typed into too, being open to anything`() {
+        // `DATA-25` offers those values without enforcing them, so a chooser would refuse what
+        // the field does not.
+        val (_, screen) = editable("region.json" to """{"north_sea": {}}""")
+        toTab(screen, "region")
+        toField(screen, "category")
+        edit(screen)
+        assertNull(screen.choice)
+        assertEquals("", screen.typing)
+    }
+}
+
+/** Invented, because no described type holds a list of a fixed set. `TEST-4`. */
+private val COLOURS = setOf("red", "green", "blue")
+
+private val FLAG = ItemDescription(
+    "flag",
+    listOf(TextDescription("stripes", fixedSet = COLOURS, cardinality = Cardinality.LIST)),
+)
+
+class ChosenEntryTest {
+
+    private fun atStripes(held: String): Pair<MemoryFileStore, Screen> {
+        val store = MemoryFileStore(mapOf("flag.json" to """{"a": {"stripes": $held}}"""))
+        val screen = Screen(Universe(LogbookReader.read(store, listOf(FLAG)), null, store))
+        screen.press(Key.OPEN)
+        return store to screen
+    }
+
+    private fun rows(screen: Screen): List<String> =
+        body(screen).map { it.text.trim() }.filter { it.isNotEmpty() }
+
+    @Test
+    fun `one entry of a list is chosen from, the others left alone`() {
+        val (store, screen) = atStripes("""["red", "blue"]""")
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertEquals("blue", rows(screen)[screen.choice!!], "the entry the cursor is on")
+        screen.press(Key.UP)
+        screen.press(Key.OPEN)
+        val written = text(store, "flag.json")
+        assertTrue("green" in written, written)
+        assertTrue("red" in written, "and the one beside it stayed: $written")
+    }
+
+    @Test
+    fun `clearing an entry takes it out of the list`() {
+        val (store, screen) = atStripes("""["red", "blue"]""")
+        screen.press(Key.OPEN)
+        while (rows(screen)[screen.choice!!] != "(nothing)") screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        val written = text(store, "flag.json")
+        assertTrue("red" !in written, written)
+        assertTrue("blue" in written, written)
+    }
+}
+
+/** What the rest of the keyboard does while an editor is open, which is nothing. */
+class EditorHoldsTest {
+
+    @Test
+    fun `moving keys are still while a value is typed`() {
+        // A key that changed which field was chosen would leave the editor saving into somewhere
+        // the reader is no longer looking at.
+        val (store, screen) = editable("region.json" to """{"north_sea": {"name": "North Sea"}}""")
+        toTab(screen, "region")
+        toField(screen, "name")
+        edit(screen)
+        repeat(9) { screen.press(Key.BACKSPACE) }
+        type(screen, "Irish Sea")
+        screen.press(Key.DOWN)
+        screen.press(Key.RIGHT)
+        screen.press(Key.NEXT_TAB)
+        assertEquals("Irish Sea", screen.typing, "still the same edit")
+        assertEquals("region", screen.type.name, "and still the same tab")
+        screen.press(Key.OPEN)
+        assertTrue("Irish Sea" in text(store, "region.json"), text(store, "region.json"))
+    }
+
+    @Test
+    fun `and while a value is chosen, apart from the two that move over it`() {
+        val (_, screen) = editable("dive_site.json" to """{"blue_hole": {}}""")
+        toTab(screen, "dive_site")
+        toField(screen, "water_type")
+        edit(screen)
+        screen.press(Key.RIGHT)
+        screen.press(Key.NEXT_TAB)
+        assertEquals("dive_site", screen.type.name)
+        assertTrue(screen.choice != null, "and the chooser is still open")
     }
 }

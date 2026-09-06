@@ -88,6 +88,10 @@ class Screen(private val universe: Universe) {
     // like the rest of it: nothing below this knows an edit is under way until it is saved.
     private var editing: String? = null
 
+    // Which of a chooser's rows the cursor is on, or absent where no chooser is open. A field
+    // whose values are known is picked from rather than typed into.
+    private var choosing: Int? = null
+
     // Whether delete has been pressed once on what the cursor is on. Nothing can be undone yet,
     // there being no journal -- `FEAT-4` -- so removing an item asks, and any other key answers
     // no. `TUI-6` refused a confirmation for quitting, where nothing is lost by pressing again.
@@ -98,6 +102,9 @@ class Screen(private val universe: Universe) {
 
     /** What is being typed, or absent where nothing is being typed. */
     val typing: String? get() = editing
+
+    /** Which choice the cursor is on, or absent where nothing is being chosen. */
+    val choice: Int? get() = choosing
 
     /** The type whose tab is open. */
     val type: ItemDescription get() = types[tab]
@@ -163,19 +170,10 @@ class Screen(private val universe: Universe) {
      * press from the other. `TUI-7`.
      */
     fun press(key: Key): Boolean {
-        when (key) {
-            Key.LEFT -> alongItems(-1)
-            Key.RIGHT -> alongItems(1)
-            Key.UP -> alongFields(-1)
-            Key.DOWN -> alongFields(1)
-            Key.NEXT_TAB -> alongTabs(1)
-            Key.PREVIOUS_TAB -> alongTabs(-1)
-            Key.OPEN -> if (editing == null) open() else save()
-            Key.CLOSE -> if (editing == null) close() else editing = null
-            Key.LEAVE -> running = false
-            is Key.Typed -> typed(key.character)
-            Key.BACKSPACE -> editing = editing?.dropLast(1)
-            Key.DELETE -> remove()
+        when {
+            editing != null -> typedKey(key)
+            choosing != null -> chosenKey(key)
+            else -> browsedKey(key)
         }
         if (key != Key.DELETE) confirming = false
         if (!opened) {
@@ -188,18 +186,67 @@ class Screen(private val universe: Universe) {
         return running
     }
 
+    /** What each key does where nothing is being edited, which is most of this interface. */
+    private fun browsedKey(key: Key) {
+        when (key) {
+            Key.LEFT -> alongItems(-1)
+            Key.RIGHT -> alongItems(1)
+            Key.UP -> alongFields(-1)
+            Key.DOWN -> alongFields(1)
+            Key.NEXT_TAB -> alongTabs(1)
+            Key.PREVIOUS_TAB -> alongTabs(-1)
+            Key.OPEN -> open()
+            Key.CLOSE -> close()
+            Key.LEAVE -> running = false
+            is Key.Typed -> typed(key.character)
+            Key.DELETE -> remove()
+            Key.BACKSPACE -> Unit
+        }
+    }
+
+    /**
+     * What each key does while a value is being typed.
+     *
+     * **Every printable character is a character**, which is what `TUI-6` said would happen to
+     * `q`. Nothing moves: a key that changed which field was chosen would leave the editor
+     * saving into somewhere the reader was no longer looking at.
+     */
+    private fun typedKey(key: Key) {
+        when (key) {
+            Key.OPEN -> save()
+            Key.CLOSE -> editing = null
+            Key.BACKSPACE -> editing = editing?.dropLast(1)
+            Key.LEAVE -> running = false
+            is Key.Typed -> editing = editing?.plus(key.character)
+            else -> Unit
+        }
+    }
+
+    /** What each key does while a value is being chosen: up and down move, enter takes one. */
+    private fun chosenKey(key: Key) {
+        when (key) {
+            Key.UP -> alongChoices(-1)
+            Key.DOWN -> alongChoices(1)
+            Key.OPEN -> saveChoice()
+            Key.CLOSE -> choosing = null
+            Key.LEAVE -> running = false
+            else -> Unit
+        }
+    }
+
+    /** Move [by] choices, round the ends, as everything chosen between does. `TUI-7`. */
+    private fun alongChoices(by: Int) {
+        val ends = editable() ?: return
+        val many = choicesOf(ends.field)?.size ?: return
+        choosing = ((choosing ?: 0) + by + many) % many
+    }
+
     /**
      * What a typed character means where the reader is.
      *
-     * Into an open editor every character is itself, which is what `TUI-6` said would happen to
-     * `q`. Outside one they are keys: space follows a reference and `n` makes something.
+     * Space follows a reference and `n` makes something. `q` leaves, and only from the list.
      */
     private fun typed(character: Char) {
-        val typed = editing
-        if (typed != null) {
-            editing = typed + character
-            return
-        }
         when {
             character == ' ' -> follow()
             character.equals('n', ignoreCase = true) -> make()
@@ -305,7 +352,6 @@ class Screen(private val universe: Universe) {
      * value, and putting it back is typing it.
      */
     private fun remove() {
-        if (editing != null) return
         when (val at = standing()) {
             is Standing.Items -> deleted()
             is Standing.Entries -> write(at.ends, listed(at.ends, ""))
@@ -396,6 +442,24 @@ class Screen(private val universe: Universe) {
     }
 
     /**
+     * Start editing [ends], in the shape its field asks for.
+     *
+     * A field whose values are known opens a chooser and every other opens a text editor. The
+     * cursor starts on what the field holds; where that is nothing, or is something the set does
+     * not contain, it starts on the row that clears it, which says *none of these* by sitting
+     * there.
+     */
+    private fun edit(ends: Ends.Value) {
+        val choices = choicesOf(ends.field)
+        if (choices == null) {
+            editing = written(ends)
+            return
+        }
+        val here = written(ends).ifEmpty { null }
+        choosing = choices.indexOf(here).let { if (it < 0) choices.lastIndex else it }
+    }
+
+    /**
      * What the field being edited holds now, as a user would have typed it.
      *
      * The written form, `DATA-76`, which is what a row shows and what reading it back accepts.
@@ -457,9 +521,28 @@ class Screen(private val universe: Universe) {
         } else {
             listed(ends, text)
         }
-        val owner = ends.item ?: return
-        val done = universe.change(Operation.EDIT, Change.Write(owner, ends.field.name, given))
-        if (done is Outcome.Done) editing = null
+        if (saved(ends, given)) editing = null
+    }
+
+    /** Take the choice the cursor is on, the last of which is the field holding nothing. */
+    private fun saveChoice() {
+        val ends = editable() ?: return
+        val chosen = choicesOf(ends.field)?.getOrNull(choosing ?: return)
+        val given: Any? = if (ends.field.cardinality != Cardinality.LIST) {
+            chosen
+        } else {
+            listed(ends, chosen.orEmpty())
+        }
+        if (saved(ends, given)) choosing = null
+    }
+
+    /** Write [given] to the field [ends] is at, and say whether it was taken. */
+    private fun saved(ends: Ends.Value, given: Any?): Boolean {
+        val owner = ends.item ?: return false
+        return universe.change(
+            Operation.EDIT,
+            Change.Write(owner, ends.field.name, given),
+        ) is Outcome.Done
     }
 
     /**
@@ -499,7 +582,7 @@ class Screen(private val universe: Universe) {
     private fun open() {
         val item = item ?: return
         editable()?.let {
-            editing = written(it)
+            edit(it)
             return
         }
         if (!opened) {
@@ -772,6 +855,8 @@ class Screen(private val universe: Universe) {
             // No quit: `q` is a letter being typed here. Ctrl-C still leaves and is not said,
             // being the one key nobody has to be told about. `TUI-6`.
             listOf("[enter] save", "[esc] cancel", "[backspace] rub out")
+        } else if (choosing != null) {
+            listOf("[enter] take it", "[esc] cancel", "$FIELDS choice")
         } else if (opened) {
             // No quit either: `q` is the top level's key, and escape is the way back to it.
             listOfNotNull(
@@ -882,13 +967,15 @@ class Screen(private val universe: Universe) {
         val item = item
         val ends = if (item == null) null else endsOf(item, path)
         if (ends == null) return List(rows) { Line(fitted(emptyList(), width)) }
+        val at = choosing
         val under = when {
             editing != null -> typedLines()
+            at != null && ends is Ends.Value -> chooserLines(ends.field, at)
             else -> whatIsThere(ends)
         }
         val body = (keyBar() + under).flatMap { wrapped(it, width) }
-        val at = body.indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
-        showing(at, rows, body.size)
+        val cursor = body.indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
+        showing(cursor, rows, body.size)
         return List(rows) { row ->
             val spans = body.getOrNull(within + row)?.spans.orEmpty()
             val here = spans.firstOrNull()?.styles.orEmpty().intersect(setOf(Style.SELECTED))

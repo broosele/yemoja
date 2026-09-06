@@ -361,3 +361,35 @@ private fun summary(field: FieldDescription, entry: Any): String = when (entry) 
     is Item -> "${entry.description.fields.size} fields"
     else -> field.format(entry, Units.DEFAULT)
 }
+
+/**
+ * The values [field] may hold, where they are known, with nothing at the end.
+ *
+ * Absent where they are not, which is most fields: a number, a date and free text are typed.
+ * The last entry is the field holding nothing, which is a state every field has and which a
+ * chooser would otherwise have no way to reach.
+ *
+ * In the written form, `DATA-76`, so a value picked here is the value a row shows and the value
+ * a file holds. A boolean is `true` and `false` for that reason, whatever a form would call
+ * them.
+ */
+internal fun choicesOf(field: FieldDescription): List<String?>? = when {
+    field is BooleanDescription -> listOf("true", "false", null)
+    field is TextDescription && field.fixedSet != null -> field.fixedSet!!.toList() + null
+    else -> null
+}
+
+/**
+ * The choices of [field], one per row, with the one at [chosen] set apart.
+ *
+ * A boolean carries a box, since two values that exclude each other is what a box says. A fixed
+ * set does not: a column of boxes down a vocabulary of six says nothing the cursor has not.
+ */
+internal fun chooserLines(field: FieldDescription, chosen: Int): List<Line> {
+    val box = field is BooleanDescription
+    return choicesOf(field).orEmpty().mapIndexed { at, choice ->
+        val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
+        val mark = if (!box) "" else if (at == chosen) "[x] " else "[ ] "
+        Line(listOf(Span("  " + mark + (choice ?: "(nothing)"), here)))
+    }
+}

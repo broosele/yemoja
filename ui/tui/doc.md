@@ -101,6 +101,18 @@ character:
 | escape | abandon the edit and leave the value as it was |
 | backspace | rub out the last character |
 
+And while one is being chosen, shorter still:
+
+| Key | Does |
+|---|---|
+| up, down | move over the choices, round the ends |
+| enter | take the one the cursor is on |
+| escape | leave the value as it was |
+
+**Nothing else moves while either is open.** A key that changed which field was chosen would
+leave the editor saving into somewhere the reader is no longer looking at, so the tab, the item
+list and the field cursor are all still until the edit is finished or abandoned.
+
 **What a printable character means is settled by the screen, not by the keyboard.** `keyOf`
 reports a character as itself and gives a meaning to nothing but ctrl-C, which has no other. That
 is what `q` and space being ordinary letters costs and buys: the screen knows whether an editor
@@ -401,6 +413,31 @@ Universe will not have.
 **A line break is typed as the two characters a row shows it as.** Enter saves, so it cannot
 also make a break in a remark, and `\n` is already how a break is painted on a row. Typing
 those two characters makes one.
+
+**A field whose values are known is chosen from rather than typed into.** Enter offers them one
+per row with the cursor on what the field holds; up and down move over them and enter takes one.
+Typing `salt` into a field that accepts four words is spelling out what the application already
+knows, and getting it wrong is a refusal a reader did not need to meet.
+
+Two kinds have known values. A **fixed set** — `DATA-24`, a value outside it reads back unusable
+— is a list of its words. A **boolean** is the same list with a box on each row, since two values
+that exclude each other is what a box says; a fixed set gets none, a column of boxes down a
+vocabulary of six saying nothing the cursor has not.
+
+A **suggested set** is not one of them. `DATA-25` offers those values without enforcing them, so
+a chooser would refuse what the field accepts. Those are typed, with the suggestions where the
+open field says what it is.
+
+**The last row is the field holding nothing.** Absent is a state every field has, and an empty
+box is how a typed field is cleared; a chooser has no empty box to leave, so it has a row. It is
+also where the cursor starts when the field holds nothing, or holds something the set does not
+contain — sitting on *none of these* is how it says so.
+
+The rows are in the order the type declares them, not sorted. `none, light, moderate, strong` is
+an order somebody chose and alphabetical would be `light, moderate, none, strong`.
+
+The values are the written form, `DATA-76`, which is why a boolean reads `true` and `false`
+rather than yes and no: what is picked here is what the row shows and what the file holds.
 
 **`n` makes one of whatever is in front of the reader.** An item of the open type where the
 list is shown, an entry at the end of an open list, an entry under a new key in a keyed
