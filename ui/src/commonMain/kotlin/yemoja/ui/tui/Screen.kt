@@ -410,16 +410,20 @@ class Screen(private val universe: Universe) {
 
     /** An empty entry at the end of an open list, and the cursor on it. */
     private fun added(ends: Ends.Value) {
-        @Suppress("UNCHECKED_CAST")
-        val held = ((ends.read as? Result.Usable)?.value as? List<Element<Any>>).orEmpty()
-        val out = held.map { one ->
-            when (one) {
-                is Element.Usable -> Stored.Leaf(ends.field.format(one.value, Units.DEFAULT))
-                is Element.Unusable -> one.raw
-            }
-        } + Stored.Leaf("")
+        val out = ArrayList<Stored>(entriesIn(ends).map { asStored(ends, it) })
+        out.add(chosenEntry.coerceIn(0, out.size), Stored.Leaf(""))
         write(ends, Stored.Elements(out))
-        chosenEntry = out.size - 1
+    }
+
+    /** The values an open list holds now, as elements. */
+    @Suppress("UNCHECKED_CAST")
+    private fun entriesIn(ends: Ends.Value): List<Element<Any>> =
+        ((ends.read as? Result.Usable)?.value as? List<Element<Any>>).orEmpty()
+
+    /** One value of an open list, back in the form a file holds it in. */
+    private fun asStored(ends: Ends.Value, one: Element<Any>): Stored = when (one) {
+        is Element.Usable -> Stored.Leaf(ends.field.format(one.value, Units.DEFAULT))
+        is Element.Unusable -> one.raw
     }
 
     /**
@@ -448,7 +452,8 @@ class Screen(private val universe: Universe) {
     private fun remove() {
         when (val at = standing()) {
             is Standing.Items -> deleted()
-            is Standing.Entries -> write(at.ends, listed(at.ends, ""))
+            is Standing.Entries ->
+                if (onEntry(at.ends)) write(at.ends, listed(at.ends, "")) else Unit
             is Standing.Collection -> if (at.at != null) unkeyedEntry(at.field, at.held)
             is Standing.Owned -> {
                 universe.change(Operation.EDIT, Change.Write(at.owner, at.field.name, null))
@@ -660,21 +665,18 @@ class Screen(private val universe: Universe) {
      * trip rather than a hope.
      */
     private fun listed(ends: Ends.Value, text: String): Stored {
-        @Suppress("UNCHECKED_CAST")
-        val held = ((ends.read as? Result.Usable)?.value as? List<Element<Any>>).orEmpty()
-        val out = ArrayList<Stored>(held.size)
+        val held = entriesIn(ends)
+        val out = ArrayList<Stored>(held.size + 1)
         for (at in held.indices) {
             if (at == chosenEntry) {
                 if (text.isNotEmpty()) out.add(Stored.Leaf(text))
                 continue
             }
-            out.add(
-                when (val one = held[at]) {
-                    is Element.Usable -> Stored.Leaf(ends.field.format(one.value, Units.DEFAULT))
-                    is Element.Unusable -> one.raw
-                },
-            )
+            out.add(asStored(ends, held[at]))
         }
+        // The place after the last value holds nothing to replace, so what is typed there is a
+        // value being added. It is the only place an empty list has.
+        if (chosenEntry >= held.size && text.isNotEmpty()) out.add(Stored.Leaf(text))
         return Stored.Elements(out)
     }
 
@@ -977,7 +979,7 @@ class Screen(private val universe: Universe) {
             listOfNotNull(
                 madeHere()?.let { "[n] new $it" },
                 removedHere()?.let { "[del] delete $it" },
-                if (deeper()) "[enter] open" else if (editable() != null) "[enter] edit" else null,
+                opening(),
                 "[space] follow",
                 "[esc] back",
                 if (keysHere().isEmpty()) null else "$TABS key",
@@ -1011,18 +1013,37 @@ class Screen(private val universe: Universe) {
      */
     private fun madeHere(): String? = when (val at = standing()) {
         is Standing.Items -> "item"
-        is Standing.Entries, is Standing.Collection -> "entry"
+        // Not at the place after the last value, where enter already makes one by being typed
+        // into. `n` still works there; the bar teaches rather than enumerates.
+        is Standing.Entries -> "entry".takeIf { onEntry(at.ends) }
+        is Standing.Collection -> "entry"
         is Standing.Empty -> at.ends.field.name
         is Standing.Owned, is Standing.Nowhere -> null
     }
 
+    /** Whether the cursor is on a value of an open list rather than at the place after them. */
+    private fun onEntry(ends: Ends.Value): Boolean = chosenEntry < entriesIn(ends).size
+
     /** The word for what the delete key would take out, or absent where it would take out none. */
     private fun removedHere(): String? = when (val at = standing()) {
         is Standing.Items -> "item".takeIf { items.isNotEmpty() }
-        is Standing.Entries -> "entry".takeIf { (at.ends.count() ?: 0) > 0 }
+        is Standing.Entries -> "entry".takeIf { onEntry(at.ends) }
         is Standing.Collection -> "entry".takeIf { at.at != null }
         is Standing.Owned -> at.field.name
         is Standing.Empty, is Standing.Nowhere -> null
+    }
+
+    /**
+     * What enter does here, or absent where it does nothing.
+     *
+     * *New entry* at the place after the last value of a list, since there is nothing there to
+     * edit and what is typed becomes a value.
+     */
+    private fun opening(): String? {
+        if (deeper()) return "[enter] open"
+        val ends = editable() ?: return null
+        val adding = ends.field.cardinality == Cardinality.LIST && !onEntry(ends)
+        return if (adding) "[enter] new entry" else "[enter] edit"
     }
 
     /** What up and down move over where the reader is, in the word for that thing. */

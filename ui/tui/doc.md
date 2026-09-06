@@ -263,7 +263,9 @@ there starts typing rather than doing nothing. Editing is described below.
 do not fit, as many as do followed by how many were left out — `@world ... (8 others)`. Saying
 how many is what a plain cut cannot: three dots at the end of a list of regions could mean one
 more or forty, and which it is decides whether opening the field is worth it. A list somebody
-wrote with nothing in it says `(empty)`, since that is not the same as a field nobody wrote.
+wrote with nothing in it says `(empty)` on the row, since that is not the same as a field nobody
+wrote. Opened, the two look alike — one empty place either way — and it is the heading that
+tells them apart, `written` against `nothing`.
 
 **A field holding a series** says how many samples it has and no more — `1000 samples`. A
 profile holds thousands, and the first two of them say nothing a reader wants from a row.
@@ -278,6 +280,24 @@ follow.
 Opened, a list is a bullet apiece and nothing is left out, which is what makes it possible to
 see where one value ends and the next begins. One bullet is set apart, the same way the chosen
 field is on the row, and up and down move between them.
+
+**A list of n values has n+1 places, and up and down move over all of them.** A value goes
+between two others, before the first or after the last, so the places are the gaps rather than
+the values, and there is always one more gap than there are values. The last of them is a row of
+its own under the bullets, carrying none itself: there is nothing there yet, and a bullet with
+nothing after it reads as a value somebody left blank.
+
+That is what makes an empty list something a reader can use. It has exactly one place, and so
+does a list nobody ever wrote, so enter there types the first value in. Before this the open
+view walked the values it had, which for an empty list was none: enter opened an editor over a
+value that did not exist, and what was typed into it was dropped without a word when it was
+saved.
+
+**`n` puts a new value at the place the cursor is on**, pushing what was there down, so a buddy
+can go between two others rather than only after them all. At the last place it does what enter
+does — there is nothing there to push — and the bar says only enter there, two names for one key
+being worse than one. Delete takes out the value the cursor is on and does nothing at a place
+that holds none, which the bar says by offering nothing.
 
 **Underlining is finer here than on the row.** The row has one piece of text for the whole
 field, so it underlines a field that names items. Open, each value stands alone, so what is

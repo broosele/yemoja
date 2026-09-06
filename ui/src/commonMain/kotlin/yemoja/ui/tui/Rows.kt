@@ -254,8 +254,11 @@ internal sealed class Ends {
      */
     fun count(): Int? = when (this) {
         is Value -> when {
+            // One more than there are values. A value goes between two of them, before the
+            // first or after the last, which is n+1 places for n values and one place for
+            // none: a list with nothing in it still has somewhere to put something.
             field.cardinality == Cardinality.LIST ->
-                ((read as? Result.Usable)?.value as? List<*>)?.size ?: 0
+                (((read as? Result.Usable)?.value as? List<*>)?.size ?: 0) + 1
 
             // A remark holding nothing to follow is one value like any other, so up and down
             // go back to scrolling rather than moving over a cursor with one stop.

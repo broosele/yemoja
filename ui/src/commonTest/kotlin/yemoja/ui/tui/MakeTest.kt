@@ -106,14 +106,47 @@ class MadeEntryTest {
     }
 
     @Test
-    fun `n adds an entry at the end and puts the cursor on it`() {
-        val (store, screen) = atBuddies("""["@anna"]""")
+    fun `n puts an entry at the place the cursor is on`() {
+        // Three values have four places and n uses the one under the cursor, so a buddy can go
+        // between two others rather than only after them all.
+        val (store, screen) = atBuddies("""["@anna", "@tom"]""")
+        screen.press(Key.DOWN)
+        screen.press(NEW)
+        screen.press(Key.OPEN)
+        for (character in "@sam") screen.press(Key.Typed(character))
+        screen.press(Key.OPEN)
+        assertEquals(listOf("@anna", "@sam", "@tom"), buddies(screen))
+        assertTrue("@sam" in store.readText("dive/d#0.json"))
+    }
+
+    @Test
+    fun `the last place is where one goes on the end`() {
+        val (_, screen) = atBuddies("""["@anna"]""")
+        screen.press(Key.DOWN)
         screen.press(NEW)
         screen.press(Key.OPEN)
         for (character in "@tom") screen.press(Key.Typed(character))
         screen.press(Key.OPEN)
         assertEquals(listOf("@anna", "@tom"), buddies(screen))
-        assertTrue("@tom" in store.readText("dive/d#0.json"))
+    }
+
+    @Test
+    fun `typing at a place with nothing in it adds a value there`() {
+        // Which is what an empty list is: one place, nothing in it. n is not needed first.
+        val (store, screen) = atBuddies("[]")
+        screen.press(Key.OPEN)
+        for (character in "@anna") screen.press(Key.Typed(character))
+        screen.press(Key.OPEN)
+        assertEquals(listOf("@anna"), buddies(screen))
+        assertTrue("@anna" in store.readText("dive/d#0.json"), store.readText("dive/d#0.json"))
+    }
+
+    @Test
+    fun `delete does nothing at the place after the last value`() {
+        val (_, screen) = atBuddies("""["@anna"]""")
+        screen.press(Key.DOWN)
+        screen.press(Key.DELETE)
+        assertEquals(listOf("@anna"), buddies(screen))
     }
 
     @Test
@@ -319,5 +352,58 @@ class UnsaidTest {
         screen.press(Key.OPEN)
         screen.press(Key.OPEN)
         assertNull(screen.typing)
+    }
+}
+
+/** The places of an open list, which are one more than its values. */
+class ListPlacesTest {
+
+    private fun rows(screen: Screen): List<String> =
+        body(screen, height = 24).map { it.text.trim() }
+
+    private fun bar(screen: Screen): String = screen.paint(160, 12).last().text.trim()
+
+    private fun atBuddies(held: String): Screen {
+        val (_, screen) = over("dive/d#0.json" to """{"buddies": $held}""")
+        toTab(screen, "dive")
+        toField(screen, "buddies")
+        screen.press(Key.OPEN)
+        return screen
+    }
+
+    /** Which row the cursor is on. */
+    private fun at(screen: Screen): Int = body(screen, height = 24)
+        .indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
+
+    @Test
+    fun `two values are three places`() {
+        val screen = atBuddies("""["@anna", "@tom"]""")
+        val first = at(screen)
+        repeat(3) { screen.press(Key.DOWN) }
+        assertEquals(first, at(screen), "three presses come back round")
+        screen.press(Key.DOWN)
+        assertTrue(at(screen) != first, "and a fourth does not")
+        assertEquals(2, rows(screen).count { it.startsWith("- ") }, rows(screen).toString())
+    }
+
+    @Test
+    fun `the place after the last carries no bullet`() {
+        // A bullet with nothing after it reads as a value somebody left blank.
+        val screen = atBuddies("""["@anna"]""")
+        screen.press(Key.DOWN)
+        val at = body(screen, height = 24)
+            .indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
+        assertEquals("", body(screen, height = 24)[at].text.trim())
+    }
+
+    @Test
+    fun `the bar offers to type one there rather than to make one`() {
+        // `n` and enter would be the same key twice at a place holding nothing.
+        val screen = atBuddies("""["@anna"]""")
+        assertTrue("[n] new entry" in bar(screen), bar(screen))
+        screen.press(Key.DOWN)
+        assertTrue("[enter] new entry" in bar(screen), bar(screen))
+        assertTrue("[n] new entry" !in bar(screen), bar(screen))
+        assertTrue("[del]" !in bar(screen), "and nothing to take out: " + bar(screen))
     }
 }

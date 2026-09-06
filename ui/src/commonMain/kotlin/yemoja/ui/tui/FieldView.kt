@@ -223,7 +223,10 @@ private fun held(
             Line(listOf(Span("  as written: " + read.raw))),
         )
 
-        Result.Absent -> emptyList()
+        // A list nobody wrote still has one place to put a value, and a reader standing there
+        // is what makes the first one typeable.
+        Result.Absent -> if (field.cardinality == Cardinality.LIST) listLines(emptyList(), chosen)
+        else emptyList()
     }
 }
 
@@ -252,15 +255,24 @@ private fun entries(
         val mentions = mentionsOf(field, Result.Usable(value, origin), item)
         return held.flatMap { broken(it, mentions, chosen) }
     }
-    // A written list with nothing in it is not the same as a field nobody wrote, and a row of
-    // bullets with no bullets in it would look like the second.
-    if (held.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
-    return held.mapIndexed { at, entry ->
-        // The mark runs across the bullet and the value alike, so the row reads as one bar.
-        val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
-        Line(listOf(Span("  - ", here), Span(entry.text, entry.styles + here)))
-    }
+    return listLines(held, chosen)
 }
+
+/**
+ * A list as bullets, with the place after the last of them below.
+ *
+ * That place is a stop like the others and is the only one a list with nothing in it has, which
+ * is what makes an empty list something a reader can type into. It carries no bullet: there is
+ * nothing there yet, and a bullet with nothing after it reads as a value somebody left blank.
+ */
+private fun listLines(held: List<Span>, chosen: Int): List<Line> =
+    held.mapIndexed { at, entry ->
+        // The mark runs across the bullet and the value alike, so the row reads as one bar.
+        val here = markIf(at == chosen)
+        Line(listOf(Span("  - ", here), Span(entry.text, entry.styles + here)))
+    } + Line(listOf(Span("  ", markIf(chosen == held.size))))
+
+private fun markIf(chosen: Boolean): Set<Style> = if (chosen) setOf(Style.SELECTED) else emptySet()
 
 /**
  * One value as a row apiece, a line break in it taken as a break.

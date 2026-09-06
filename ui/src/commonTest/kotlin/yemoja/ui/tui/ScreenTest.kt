@@ -934,8 +934,15 @@ class ListTest2 {
     }
 
     @Test
-    fun `opened, an empty list says so rather than showing nothing`() {
-        assertTrue("(empty)" in opened(walk("[]")))
+    fun `opened, an empty list is one place and nothing else`() {
+        // A written list with nothing in it is not the same as a field nobody wrote. The
+        // heading says which, and both have the one place a value can go.
+        val written = opened(walk("[]"))
+        assertTrue(written.any { "What it holds (written)" in it }, written.toString())
+        val nobody = MemoryFileStore(mapOf("walk.json" to """{"a": {}}"""))
+        val never = opened(screenOver(LogbookReader.read(nobody, TYPES)))
+        assertTrue(never.any { "What it holds (nothing)" in it }, never.toString())
+        assertTrue(never.none { it.startsWith("- ") }, "and no value in it: $never")
     }
 
     @Test
@@ -1081,10 +1088,13 @@ class EntryCursorTest {
 
     @Test
     fun `the cursor goes round the ends`() {
+        // Three values and four places, the last of them after the last value.
         val screen = opened(three)
         screen.press(Key.UP)
+        assertEquals("", chosenEntry(screen), "the place after the last value")
+        screen.press(Key.UP)
         assertEquals("@friday", chosenEntry(screen))
-        screen.press(Key.DOWN)
+        repeat(2) { screen.press(Key.DOWN) }
         assertEquals("@monday", chosenEntry(screen))
     }
 
