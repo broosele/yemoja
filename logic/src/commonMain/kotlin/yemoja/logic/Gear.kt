@@ -114,4 +114,5 @@ internal val GEAR: ItemDescription = ItemDescription(
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
+    proposedId = ::namedById,
 )

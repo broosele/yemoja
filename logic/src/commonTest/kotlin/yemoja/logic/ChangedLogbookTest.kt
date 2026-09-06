@@ -40,7 +40,7 @@ class ChangedLogbookTest {
         val (store, universe) = opened("person.json" to """{"anna": {"first_name": "Anna"}}""")
         val anna = universe.logbook["anna"]!!
         val done = universe.change(Operation.EDIT, Change.Write(anna, "phone", "0123"))
-        assertEquals(Outcome.Done, done)
+        assertEquals(Outcome.Done(), done)
         assertEquals("0123", text(saved(store).logbook["anna"], "phone"))
     }
 
@@ -98,21 +98,25 @@ class ChangedLogbookTest {
     }
 
     @Test
-    fun `an item added is in the logbook and in the files`() {
+    fun `an item added is in the logbook and in the files, under an id nobody gave`() {
         val (store, universe) = opened("person.json" to """{"anna": {}}""")
-        universe.change(Operation.EDIT, Change.Add(Types.PERSON, "tom"))
-        assertTrue(universe.logbook["tom"] != null)
-        assertTrue(saved(store).logbook["tom"] != null)
+        val done = assertIs<Outcome.Done>(universe.change(
+            Operation.EDIT,
+            Change.Add(Types.PERSON, mapOf("first_name" to "Tom", "last_name" to "Janssen")),
+        ))
+        assertEquals(listOf("tom_janssen"), done.added)
+        assertEquals("Tom", text(saved(store).logbook["tom_janssen"], "first_name"))
     }
 
     @Test
-    fun `an item added and filled in the same change is saved with its fields`() {
-        // What "an operation can be complex" means: two parts, one thing the user did.
-        val (store, universe) = opened("person.json" to """{"anna": {}}""")
-        universe.change(Operation.EDIT, Change.Add(Types.PERSON, "tom"))
-        val tom = universe.logbook["tom"]!!
-        universe.change(Operation.EDIT, Change.Write(tom, "first_name", "Tom"))
-        assertEquals("Tom", text(saved(store).logbook["tom"], "first_name"))
+    fun `an item with nothing in it is named for its type`() {
+        // The manual promises this: an item with nothing in it is a valid item, and Yemoja calls
+        // it something.
+        val (_, universe) = opened("person.json" to """{"anna": {}}""")
+        val done = assertIs<Outcome.Done>(
+            universe.change(Operation.EDIT, Change.Add(Types.PERSON)),
+        )
+        assertEquals(listOf("unknown_person"), done.added)
     }
 
     @Test
@@ -156,5 +160,116 @@ class ChangedLogbookTest {
             runCatching { universe.change(Operation.EDIT, Change.Write(dive, "name", "x")) }
                 .isFailure,
         )
+    }
+}
+
+/** What a new item is called, which the caller does not choose. `DATA-84`. */
+class MintedIdTest {
+
+    private fun added(universe: Universe, vararg fields: Pair<String, Any?>): String =
+        assertIs<Outcome.Done>(
+            universe.change(Operation.EDIT, Change.Add(Types.PERSON, mapOf(*fields))),
+        ).added.single()
+
+    @Test
+    fun `a name becomes an id a file name can carry`() {
+        val (_, universe) = opened("person.json" to "{}")
+        assertEquals("anna_de_vries", added(universe, "name" to "Anna de Vries"))
+    }
+
+    @Test
+    fun `an alphabet an id cannot hold falls back rather than being mangled`() {
+        // `DATA-84` puts this cost here on purpose. The name field keeps the real spelling.
+        val (_, universe) = opened("person.json" to "{}")
+        val id = added(universe, "name" to "Ελλάδα")
+        assertEquals("unknown_person", id)
+        assertEquals("Ελλάδα", text(universe.logbook[id], "name"))
+    }
+
+    @Test
+    fun `a proposal already taken moves to the next index`() {
+        val (_, universe) = opened("person.json" to """{"anna_de_vries": {}}""")
+        assertEquals("anna_de_vries#1", added(universe, "name" to "Anna de Vries"))
+        assertEquals("anna_de_vries#2", added(universe, "name" to "Anna de Vries"))
+    }
+
+    @Test
+    fun `two added in one change do not both take the same id`() {
+        // Minted while judging, so an id taken by one is taken for the other.
+        val (_, universe) = opened("person.json" to "{}")
+        val done = assertIs<Outcome.Done>(universe.change(
+            Operation.EDIT,
+            Change.Add(Types.PERSON, mapOf("name" to "Anna")),
+            Change.Add(Types.PERSON, mapOf("name" to "Anna")),
+        ))
+        assertEquals(listOf("anna", "anna#1"), done.added)
+    }
+
+    @Test
+    fun `a dive is named for its day and always carries an index`() {
+        val (_, universe) = opened("dive.json" to "{}")
+        val done = assertIs<Outcome.Done>(universe.change(
+            Operation.EDIT,
+            Change.Add(Types.DIVE, mapOf("start_date" to "2026-04-28")),
+            Change.Add(Types.DIVE, mapOf("start_date" to "2026-04-28")),
+        ))
+        assertEquals(listOf("2026-04-28#0", "2026-04-28#1"), done.added)
+    }
+
+    @Test
+    fun `an id freed by a deletion is handed out again`() {
+        // The rule against reuse was dropped so that re-entering a dive heals what pointed at it.
+        val (_, universe) = opened("person.json" to """{"anna": {}, "anna#1": {}}""")
+        universe.change(Operation.EDIT, Change.Delete("anna"))
+        assertEquals("anna", added(universe, "name" to "Anna"))
+    }
+
+    @Test
+    fun `a field a new item cannot take refuses the whole change`() {
+        val (store, universe) = opened("person.json" to "{}")
+        val outcome = universe.change(
+            Operation.EDIT,
+            Change.Add(Types.PERSON, mapOf("birthday" to "the fourth of never")),
+        )
+        assertIs<Outcome.Refused>(outcome)
+        assertEquals(0, universe.logbook.size, "and nothing was added")
+        assertEquals(0, saved(store).logbook.size)
+    }
+}
+
+/** Deleting, and what becomes of what pointed at it. */
+class DeletedReferencesTest {
+
+    private fun withBuddy(): Pair<yemoja.data.json.MemoryFileStore, Universe> = opened(
+        "person.json" to """{"anna": {}, "tom": {}}""",
+        "dive/2026-01-01#0.json" to """{"buddies": ["@tom", "@anna"], "previous_dive": "@x"}""",
+    )
+
+    @Test
+    fun `references are left alone by default`() {
+        val (store, universe) = withBuddy()
+        universe.change(Operation.EDIT, Change.Delete("tom"))
+        val dive = saved(store).logbook["2026-01-01#0"]!!
+        assertTrue("@tom" in dive.read("buddies").toString(), "still written")
+    }
+
+    @Test
+    fun `asked to, it takes the reference out of the list`() {
+        val (store, universe) = withBuddy()
+        universe.change(Operation.EDIT, Change.Delete("tom", alsoReferences = true))
+        val dive = saved(store).logbook["2026-01-01#0"]!!
+        val written = dive.read("buddies").toString()
+        assertTrue("@tom" !in written, written)
+        assertTrue("@anna" in written, "and the one beside it stayed")
+    }
+
+    @Test
+    fun `a single reference naming it is cleared`() {
+        val (store, universe) = opened(
+            "dive.json" to """{"a#0": {}, "b#0": {"previous_dive": "@a#0"}}""",
+        )
+        universe.change(Operation.EDIT, Change.Delete("a#0", alsoReferences = true))
+        val dive = saved(store).logbook["b#0"]!!
+        assertEquals(Result.Absent, dive.read("previous_dive"))
     }
 }

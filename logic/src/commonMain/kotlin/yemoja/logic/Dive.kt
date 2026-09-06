@@ -455,6 +455,7 @@ internal val DIVE: ItemDescription = ItemDescription(
         Ordering("start_date", Direction.DESCENDING),
         Ordering("start_time", Direction.DESCENDING),
     ),
+    proposedId = ::divesProposedId,
 )
 
 /**

@@ -1,8 +1,13 @@
 package yemoja.logic
 
+import yemoja.data.Cardinality
+import yemoja.data.Element
+import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
+import yemoja.data.Reference
+import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Units
@@ -63,44 +68,135 @@ class Universe(
      * Nothing is announced. Whatever is showing the logbook asks again. `DATA-6`.
      */
     fun change(operation: Operation, vararg changes: Change): Outcome {
-        val made = ArrayList<Pair<Change.Write, Result<Any>>>()
-        for (change in changes) {
-            if (change !is Change.Write) continue
-            val prepared = change.item.prepared(change.field, change.given, Units.DEFAULT)
-            if (prepared is Result.Unusable) return Outcome.Refused(prepared.reason)
-            made += change to prepared
-        }
-        for ((change, prepared) in made) change.item.apply(change.field, prepared)
-
-        val touched = LinkedHashSet<Pair<ItemDescription, String>>()
+        val writes = ArrayList<Pair<Change.Write, Result<Any>>>()
+        val adds = ArrayList<Pair<String, ReferenceableItem>>()
         for (change in changes) {
             when (change) {
                 is Change.Write -> {
-                    val owner = ownerOf(change.item)
-                    logbook.idOf(owner as ReferenceableItem)
-                        ?.let { touched += owner.description to it }
+                    val made = change.item.prepared(change.field, change.given, Units.DEFAULT)
+                    if (made is Result.Unusable) return Outcome.Refused(made.reason)
+                    writes += change to made
                 }
 
                 is Change.Add -> {
-                    logbook.add(change.id, ItemReader.read(
-                        change.description, nothing(), logbook, Units.DEFAULT,
-                    ))
-                    touched += change.description to change.id
+                    val item =
+                        ItemReader.read(change.description, nothing(), logbook, Units.DEFAULT)
+                    for ((name, given) in change.fields) {
+                        val made = item.prepared(name, given, Units.DEFAULT)
+                        if (made is Result.Unusable) return Outcome.Refused(made.reason)
+                        item.apply(name, made)
+                    }
+                    // Taken now rather than when it lands, so two additions in one change cannot
+                    // both be given the same id: the ones already minted are counted as taken.
+                    adds += freeId(item, adds.map { it.first }) to item
+                }
+
+                is Change.Delete -> Unit
+            }
+        }
+
+        for ((change, made) in writes) change.item.apply(change.field, made)
+        for ((id, item) in adds) logbook.add(id, item)
+
+        val touched = LinkedHashSet<Pair<ItemDescription, String>>()
+        for ((id, item) in adds) touched += item.description to id
+        for (change in changes) {
+            when (change) {
+                is Change.Write -> {
+                    val owner = ownerOf(change.item) as ReferenceableItem
+                    logbook.idOf(owner)?.let { touched += owner.description to it }
                 }
 
                 is Change.Delete -> {
                     val going = logbook[change.id] ?: continue
                     val description = going.description
+                    if (change.alsoReferences) touched += clearedOf(change.id)
                     logbook.remove(change.id)
+                    touched.remove(description to change.id)
                     LogbookWriter.delete(store, description, change.id)
                 }
+
+                is Change.Add -> Unit
             }
         }
         for ((description, id) in touched) {
             logbook[id]?.let { LogbookWriter.write(store, description, id, it) }
         }
-        return Outcome.Done
+        return Outcome.Done(adds.map { it.first })
     }
+
+    /**
+     * The first id free for [item], from what its type proposes.
+     *
+     * A proposal is not an answer: two items may propose the same thing and neither knows what is
+     * already there. Where it is taken the index moves — `2026-04-28#0` to `#1`, `anna_devries` to
+     * `anna_devries#1` — which is one rule for both, since a dive proposes an index and everything
+     * else proposes none.
+     *
+     * **The lowest free index, so a deleted item's id comes back.** An id may be reissued, which
+     * `DATA-84` once forbade: deleting a dive entered wrongly and entering it again should heal
+     * the references to it rather than leave them dangling for ever. What that costs is that a
+     * reference to something deleted can come to name something else.
+     */
+    private fun freeId(item: ReferenceableItem, minted: List<String>): String {
+        val proposed = item.description.proposedId?.invoke(item) ?: unknownOf(item)
+        val taken = { id: String -> logbook[id] != null || id in minted }
+        if (!taken(proposed)) return proposed
+        // From one past whatever the proposal carried, so a proposal with no index goes to `#1`
+        // and a dive's `#0` goes to `#1`. `DATA-84` leaves index zero off unless a type always
+        // writes one, and a type that does says so by proposing it.
+        val base = proposed.substringBefore('#')
+        var at = (proposed.substringAfter('#', "").toIntOrNull() ?: 0) + 1
+        while (taken("$base#$at")) at += 1
+        return "$base#$at"
+    }
+
+    /**
+     * Clears every reference naming [id], and says which items were changed.
+     *
+     * Only references. A mention in free text is prose, and `JSON-23` gives it no fixed meaning,
+     * so removing one would be editing what somebody wrote.
+     */
+    private fun clearedOf(id: String): List<Pair<ItemDescription, String>> {
+        val changed = ArrayList<Pair<ItemDescription, String>>()
+        for (description in logbook.descriptions) {
+            for (item in logbook.allOf(description)) {
+                if (!clearIn(item, id)) continue
+                logbook.idOf(item)?.let { changed += description to it }
+            }
+        }
+        return changed
+    }
+
+    /** Takes [id] out of every reference field of [item], and says whether anything moved. */
+    private fun clearIn(item: Item, id: String): Boolean {
+        var moved = false
+        for (field in item.description.fields) {
+            if (field !is ReferenceDescription) continue
+            when (val read = item.read(field.name)) {
+                is Result.Usable -> {
+                    if (field.cardinality == Cardinality.LIST) {
+                        @Suppress("UNCHECKED_CAST")
+                        val held = read.value as List<Element<Any>>
+                        val kept = held.filterNot { names(it, id) }
+                        if (kept.size != held.size) {
+                            item.apply(field.name, Result.Usable(kept, read.origin))
+                            moved = true
+                        }
+                    } else if (names(Element.Usable(read.value), id)) {
+                        item.apply(field.name, Result.Absent)
+                        moved = true
+                    }
+                }
+
+                else -> Unit
+            }
+        }
+        return moved
+    }
+
+    private fun names(held: Element<Any>, id: String): Boolean =
+        held is Element.Usable && (held.value as? Reference.Identified)?.id == id
 
     companion object {
 

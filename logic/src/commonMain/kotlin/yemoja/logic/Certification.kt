@@ -40,4 +40,5 @@ internal val CERTIFICATION: ItemDescription = ItemDescription(
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
+    proposedId = ::namedById,
 )

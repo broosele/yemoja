@@ -148,8 +148,10 @@ Two dives on 23 February 2026 are `2026-02-23#0` and `2026-02-23#1`.
 dives apart, handed out as they are created — so if you log the afternoon dive first, it
 gets `#0` and the morning one gets `#1`. Which came first is what the times are for.
 
-These numbers are never reused. If you delete a dive, the others keep the ids
-they have, so anything referring to them still points where you expect.
+Deleting a dive does not renumber the others: they keep the ids they have, so anything
+referring to them still points where you expect. The number you freed can be handed out
+again, which is what makes deleting a dive you entered wrongly and entering it again put
+everything back — anything that pointed at it points at it once more.
 
 ### Changing an id
 

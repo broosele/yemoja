@@ -46,11 +46,34 @@ sealed class Change {
      */
     class Write(val item: Item, val field: String, val given: Any?) : Change()
 
-    /** Makes an item of [description] under [id], holding nothing. */
-    class Add(val description: ItemDescription, val id: String) : Change()
+    /**
+     * Makes an item of [description] holding [fields], under an id the Universe works out.
+     *
+     * **The id is not given.** What a new item is called is domain knowledge — a dive is named
+     * for the day it was made on, a person for their name — and `ui/doc.md` lets a front end name
+     * a type without describing one. So the caller gives what the item holds and the Universe
+     * asks the description to propose, then takes the first id free from that proposal.
+     *
+     * Which id it was is in [Outcome.Done], in the order the additions were asked for.
+     */
+    class Add(
+        val description: ItemDescription,
+        val fields: Map<String, Any?> = emptyMap(),
+    ) : Change()
 
-    /** Takes out whatever [id] names, leaving references to it dangling. */
-    class Delete(val id: String) : Change()
+    /**
+     * Takes out whatever [id] names.
+     *
+     * References to it are **left dangling by default**, which is the honest outcome: a reference
+     * naming nothing is a state the model carries and an interface shows, and it is the same
+     * state as a person not entered yet. Rewriting other items to hide a deletion changes things
+     * the user did not ask about.
+     *
+     * [alsoReferences] clears them instead, for the case where the deletion is meant to leave no
+     * trace. It reaches only references, never a mention in free text: `JSON-23` gives a mention
+     * no fixed meaning, so removing one would be editing somebody's prose.
+     */
+    class Delete(val id: String, val alsoReferences: Boolean = false) : Change()
 }
 
 /**
@@ -62,8 +85,13 @@ sealed class Change {
  */
 sealed class Outcome {
 
-    /** Done is every part applied and every file it touched written. */
-    object Done : Outcome()
+    /**
+     * Done is every part applied and every file it touched written.
+     *
+     * [added] holds the id of each item made, in the order the additions were asked for, since
+     * the caller did not choose them and has no other way to find out.
+     */
+    data class Done(val added: List<String> = emptyList()) : Outcome()
 
     /** Refused is nothing applied, and why. */
     data class Refused(val reason: String) : Outcome()

@@ -40,4 +40,5 @@ internal val OPERATOR: ItemDescription = ItemDescription(
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
+    proposedId = ::namedById,
 )

@@ -48,4 +48,5 @@ internal val DIVE_SITE: ItemDescription = ItemDescription(
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
+    proposedId = ::namedById,
 )

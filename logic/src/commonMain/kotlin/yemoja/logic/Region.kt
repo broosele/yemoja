@@ -50,6 +50,7 @@ internal val REGION: ItemDescription = ItemDescription(
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
+    proposedId = ::namedById,
 )
 
 /**

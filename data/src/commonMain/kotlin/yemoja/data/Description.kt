@@ -673,7 +673,7 @@ class OwnedItemDescription(
 
 /**
  * ItemDescription is one item type: its name, its fields in the order an interface offers them,
- * and the order its items are listed in.
+ * the order its items are listed in, and what a new one of it should be called.
  *
  * Immutable.
  */
@@ -681,6 +681,7 @@ class ItemDescription(
     val name: String,
     fields: List<FieldDescription>,
     orderedBy: List<Ordering> = emptyList(),
+    val proposedId: ((Item) -> String)? = null,
 ) {
 
     // Copied. A List is read-only, not immutable.
@@ -692,6 +693,20 @@ class ItemDescription(
      * `DATA-89`.
      */
     val orderedBy: List<Ordering> = orderedBy.toList()
+
+    /**
+     * What a new item of this type should be called, from the item itself.
+     *
+     * A *proposal*: whoever mints takes the first id free from it, so this need not check what is
+     * already there and two items may propose the same thing. It runs against a built item, which
+     * works because an item holds no id — one is made, asked what it should be called, and added
+     * under the answer.
+     *
+     * It sits here rather than in the data layer because it is domain knowledge: a dive is named
+     * for the day it was made on, a person for their name, and `DATA-84` says the cost of the
+     * narrow character rule falls where the proposal is made. Absent on an owned type, which is
+     * never named at all.
+     */
 
     /** Built on first use. Every read is by name, and a scan per read is the wrong shape. */
     val byName: Map<String, FieldDescription> by lazy { fields.associateBy { it.name } }

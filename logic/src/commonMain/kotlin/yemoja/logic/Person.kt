@@ -112,6 +112,7 @@ internal val PERSON: ItemDescription = ItemDescription(
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
+    proposedId = ::namedById,
 )
 
 /**

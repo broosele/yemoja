@@ -74,6 +74,7 @@ logic/
                   Universe.kt   what is open, and the one door a front end reaches
                                   anything through
                   Change.kt     one thing a user did, and the parts it was done in
+                  Naming.kt     what a new item should be called, which is a proposal
                   Types.kt      every type gathered, and nothing else
                   Dive.kt       one file per stored type, holding what it owns: a dive's
                   Person.kt       details, environment, gear, profiles and gas sources are
@@ -228,9 +229,9 @@ adding history later and rewriting everything that edits.
 
 Three things it guarantees, and one it does not.
 
-- **It lands whole or not at all.** Every part is judged before any is applied, so a refusal
-  leaves the logbook as it was. `REQ-2` restores a changeset whatever it holds, and something that
-  could half-happen would not be one.
+- **It lands whole or not at all.** Every part is judged before any is applied — an added item is
+  built and its fields read, an id is minted — so a refusal leaves the logbook as it was. `REQ-2`
+  restores a changeset whatever it holds, and something that could half-happen would not be one.
 - **Saving is immediate.** There is no unsaved state and no save to forget, which is what makes
   every change the journal's unit rather than only the ones somebody remembered. It also keeps
   `RECON-1` about reviewing an import, which is the only place staging earns its machinery.
@@ -238,6 +239,11 @@ Three things it guarantees, and one it does not.
   is reached by whoever walked there; the file written is the referenceable item that owns it.
   The dotted path the journal uses — `medical.body_mass` — is how an address is *written down*,
   and it arrives with the thing that writes it.
+- **A deletion leaves references dangling**, and says so rather than hiding it: a reference naming
+  nothing is a state the model carries and an interface shows, and it is the same state as a
+  person not entered yet. `Delete` takes `alsoReferences` for the case where the deletion is meant
+  to leave no trace, and even then it reaches only references — a mention in free text is prose,
+  `JSON-23` gives it no fixed meaning, and clearing one would be editing what somebody wrote.
 - **The files are not atomic together.** A change touching two of them can be interrupted between
   them. `JSON-25`.
 
@@ -246,10 +252,22 @@ set** is the second thing the Universe is meant to hold, and waits on `RECON-2`.
 user wants shown** belong here by `UI-2` and wait on somewhere for settings to be read from;
 until then a front end formats in the model's own units, and a change is judged in them.
 
-**Minting an id is absent too.** A new item is added under an id the caller gives, and what a
-type's ids look like — `unknown_person`, then `unknown_person#1`; a dive's `2026-04-28#0` — is
-this layer's to know. `DATA-84` says what an id may contain and the manual says what each type's
-looks like; nothing yet puts the two together.
+**A new item is named here, not by whoever asked for it.** `ItemDescription` carries a
+`proposedId`, and the caller of `change` gives what the item holds rather than what it is called:
+a front end may name a type and may not describe one. The proposal runs against the built item,
+which works because an item holds no id — one is made, asked what it should be called, and added
+under the answer.
+
+Seven types propose from `name`, a dive from the day it began, and an item with nothing to go on
+falls back to `unknown_person`, which the manual promises. The Universe then takes the first id
+free from the proposal: index zero is left off unless the type proposes one, so a second Anna is
+`anna#1` and a second dive that day is `2026-04-28#1`. **The lowest free, so a deleted item's id
+comes back** — deleting a dive entered wrongly and entering it again heals what pointed at it,
+which is what dropping the rule against reuse was for, and what it costs is that a reference to
+something deleted can come to name something else.
+
+`DATA-84` puts this cost here on purpose: a name in an alphabet an id cannot carry falls back
+rather than being mangled, and the `name` field keeps the real spelling.
 
 ## Decompression
 

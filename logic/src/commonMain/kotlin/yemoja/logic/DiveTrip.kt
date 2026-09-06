@@ -57,6 +57,7 @@ internal val DIVE_TRIP: ItemDescription = ItemDescription(
         REMARKS,
     ),
     orderedBy = listOf(Ordering("start_date", Direction.DESCENDING)),
+    proposedId = ::namedById,
 )
 
 /**

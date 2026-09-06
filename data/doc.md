@@ -597,12 +597,14 @@ rename itself; the Universe can, and does it as one act — the id and every ref
 together. That is why it sits there and nowhere lower: only something holding all the
 items can find what points at one.
 
-**What stays forbidden is reuse.** An index, once assigned, is never reissued and never
-renumbered. Deleting `2026-02-23#0` does not renumber `2026-02-23#1`, and the freed index
-is not handed to a later item — otherwise ids would silently start meaning something else,
-and every reference to them would quietly change target. A deliberate rename does not do
-that, because it carries the references with it; a reissued index does, because nothing
-announces it.
+**An index is never renumbered, and may be reissued.** Deleting `2026-02-23#0` does not
+renumber `2026-02-23#1` — that would break every reference to it, and finding a forgotten
+earlier dive would do the same. But the freed index is handed out again, because the case
+that matters is deleting a dive entered wrongly and entering it again: with reuse the
+references heal, and without it they dangle for ever while the dive sits under a number
+nobody meant. What that costs is that a reference to something deleted can come to name
+something else, silently, which a deliberate rename never does since it carries the
+references with it.
 
 **Whether the index is written down is a property of the item type.** For most
 types a clash is rare, so index zero is left off and only a genuine second item
