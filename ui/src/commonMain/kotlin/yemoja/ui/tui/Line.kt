@@ -53,3 +53,12 @@ class Line(spans: List<Span>) {
 
     override fun toString(): String = text
 }
+
+/**
+ * What marks where the next character goes.
+ *
+ * An underscore rather than a block or a real cursor: the screen is painted whole on every key,
+ * so moving a terminal's own cursor would mean tracking where it is, and a character that is
+ * simply part of the line needs nothing tracked. Every console has this one.
+ */
+internal const val CURSOR: String = "_"

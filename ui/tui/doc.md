@@ -3,9 +3,11 @@
 A deliberately raw terminal interface: tables of items with new, edit and delete.
 No polish, no visual design.
 
-**Reading is built. Nothing writes.** It opens a logbook, shows what is in it, and that is
-all — which is not a choice this front end made, since nothing anywhere in the project
-writes a logbook yet.
+**Reading and writing are both built.** It opens a logbook, shows what is in it, and changes
+it: a value is typed over, an item is made or deleted, and an entry is added to a list or to a
+keyed collection. Every change goes to the Universe and is saved as it is made — there is no
+save key and nothing is held back. What it cannot do is a series, which nobody types into a
+terminal. `TUI-3`.
 
 ## Purpose
 
@@ -41,10 +43,12 @@ was the same list twice by two routes and left a way for them to disagree: a scr
 list over a set built from another would draw a tab for a type the set could never hold, and
 nothing would object. Taking them from the set makes that unsayable.
 
-The list is worked out once per tab and kept until the set gains an item. A sort key can be
-worked out from a whole profile, so listing on every keystroke would walk the logbook to
-redraw one row. An edit does not change the count and so does not refresh it, which is a hole
-to close when there is editing to close it for. `TUI-3`.
+The list is worked out once per tab and kept until the set says it has changed. A sort key can
+be worked out from a whole profile, so listing on every keystroke would walk the logbook to
+redraw one row. Nothing announces a change — `DATA-6` — so the set carries a number that moves
+when an item is added or taken out, and the list is kept against that. A field edited does not
+move it, so a list whose order turns on an edited field is stale until the tab is left and come
+back to; closing that properly is `TUI-3`'s to do.
 
 **The bottom row says what the keys do**, and says what they do *here*: the list and an open
 field answer to different things, so a reader is told the ones in front of them rather than
@@ -68,7 +72,25 @@ would push off the end.
 | space | open the item the chosen field names |
 | enter | go one step further in |
 | escape | come one step back out, and nothing where there is nothing to |
+| `n` | make one of what is in front of you — an item, an entry, an owned item |
+| delete | take out what the cursor is on, asking first where it is an item |
 | `q`, ctrl-C | leave, from wherever you are |
+
+While a value is being typed the map is a shorter one, every printable character being a
+character:
+
+| Key | Does |
+|---|---|
+| enter | save what was typed |
+| escape | abandon the edit and leave the value as it was |
+| backspace | rub out the last character |
+| ctrl-C | leave |
+
+**What a printable character means is settled by the screen, not by the keyboard.** `keyOf`
+reports a character as itself and gives a meaning to nothing but ctrl-C, which has no other. That
+is what `q` and space being ordinary letters costs and buys: the screen knows whether an editor
+is open and the keyboard cannot, so `TUI-6`'s *once enter opens an editor, `q` is a character
+somebody is typing* is answerable in one place rather than two.
 
 **Each key does one job and does it everywhere.** Tab is for tabs, whether those are the
 types or the keys of an open field; the arrows are for what sits under them. That is what
@@ -197,8 +219,8 @@ count it among the values. A field holding nothing says so there and adds nothin
 value that could not be read shows both the reason and what was written, the two together being
 what a reader needs in order to fix it.
 
-**Editing is not here.** Enter opens; it does not yet change anything, and neither does
-anything else.
+**Enter edits what it cannot open.** A value is as far in as a reader goes, so a second press
+there starts typing rather than doing nothing. Editing is described below.
 
 **A field holding several values** shows them on the row separated by commas, and where they
 do not fit, as many as do followed by how many were left out — `@world ... (8 others)`. Saying
@@ -326,6 +348,76 @@ characters a reader sees and what a style becomes is known only where a terminal
 also why `Screen` is deliberately mutable, which `ui/doc.md` allows a front end to be about
 where the user is in it.
 
+## Changing what is there
+
+**Enter opens until there is nothing further in, and then it edits.** A field holding an item
+is opened into; a value is where the path stops, so enter there seeds an editor with what the
+field holds and every printable key types into it. Enter saves, escape abandons, backspace rubs
+out.
+
+Seeded with the written form — `2026-02-23`, `@willy`, `EAN32` — which is the form the row
+already shows and the form reading it back accepts. `DATA-76`. So correcting a date is editing
+a date rather than typing one from nothing. A value that would not read is offered exactly as
+the file holds it, which is the one thing a reader wants to see when fixing a typo.
+
+**Saving nothing clears the field.** An empty editor is how a field is emptied, there being no
+second key for it, and it is what a reader would try. On a field that would otherwise be worked
+out, clearing the correction gives the worked-out value back — a duration typed over the times
+that imply it goes back to following them. On one entry of a list it takes that entry out, a
+list having no room for a value that is not there.
+
+**A value that will not do says so under it, as it is typed**, in the words the layer below
+refuses it with, and enter does not take it: the editor stays open with the text still in it.
+The check is the same door the save goes through, so the screen cannot approve something the
+Universe will not have.
+
+**A line break is typed as the two characters a row shows it as.** Enter saves, so it cannot
+also make a break in a remark, and `\n` is already how a break is painted on a row. Typing
+those two characters makes one.
+
+**`n` makes one of whatever is in front of the reader.** An item of the open type where the
+list is shown, an entry at the end of an open list, an entry under a new key in a keyed
+collection, and the owned item a field holds where it holds none. One key for one job wherever
+it is done, which is the rule the rest of the map follows.
+
+What it makes is empty, and empty is what an id and a key are then proposed from: a person made
+here is `unknown_person` and a course is `course`, both `#1` and up where those are taken. The
+name is not revised when the fields are filled in — an id given out is a thing other items point
+at. `JSON-18`, `DATA-84`.
+
+**Delete takes out what the cursor is on, and asks first where that is an item.** Nothing can
+be undone until there is a journal — `FEAT-4` — and a dive holds a recording nobody can type
+again, so removing one takes two presses of the same key and any other key answers no. An entry
+of a list or of a collection does not ask: it is one value, and putting it back is typing it.
+
+Deleting an item leaves references to it alone, which is `Change.Delete`'s default and the
+logic layer's decision rather than this one's. A reference to an item that is gone shows as
+what it is.
+
+**The bar offers both keys by the name of what they would act on** — `[n] new medical`,
+`[del] delete entry` — and offers neither where neither would do anything. It is one question
+asked once: the key and the bar work from the same answer about where the reader is standing, so
+the bar cannot offer what the key would refuse. The question it asks is *what am I standing on*,
+and a key is not a stop of its own there either — a reader inside an entry of a collection is
+standing on the collection, which is what makes `n` mean another entry.
+
+Both sit at the end of the bar, so a narrow screen drops them first. That follows from the rule
+above them: the bar keeps its order and stops at the first thing that will not fit.
+
+**The confirmation replaces the bar and names the item** — `delete anna? | [del] delete |
+[any key] keep`. Naming it is not decoration: the list shows whatever follows under the cursor
+once the item is gone, and a reader who guessed wrong would find out afterwards.
+
+**Wrapping past the end of a list stays as it is.** `TUI-7` left this open, on the grounds that
+going round the ends is cheap while every key is a movement and not obviously cheap once a key
+can change something. It turns out to cost nothing: the keys that change something are `n`,
+delete and enter, and none of them is a movement, so wrapping cannot carry a reader into a
+change they did not ask for. What it can do is land the cursor on a different item than the one
+they thought — which is why deleting one names it.
+
+**Nothing here decides what may be written.** A worked-out field refuses an editor because its
+description says so, not because this front end knows which fields those are. `TUI-3`.
+
 ## Open questions
 
 **None are open.** All six are settled and kept here, since a decision not to relitigate is
@@ -363,9 +455,10 @@ worth as much as one still to make.
   a meaning worth dropping, and both add state to do it: one a prompt, the other a timeout or
   a nag line.
 
-  Editing will test this again rather than settle differently. Once enter opens an editor, `q`
-  is a character somebody is typing and escape means *cancel this edit*; ctrl-C is the only one
-  that survives intact. `TUI-3`.
+  Editing tested this and did not change it. Once enter opens an editor `q` is a character
+  somebody is typing and escape means *cancel this edit*, so escape has two jobs — but they are
+  the same job at two depths: it undoes the last step in, whether that step was opening a field
+  or opening an editor. Ctrl-C survives intact and is the way out from inside an editor.
 
 - **TUI-7 — Whether the item list wraps.** *Settled:* **yes**, and so do the values of an
   open field. Everything a reader chooses between now goes round its ends: the tabs, the item
@@ -383,14 +476,15 @@ worth as much as one still to make.
   data bounds: ten tabs and forty-odd fields against a logbook's worth of items. It is a real
   line and it is invisible from the keyboard, which is where the decision is felt.
 
-  What the old rule was protecting is worth keeping in view when editing arrives. Wrapping past
-  the end of a long list is cheap while every key is a movement and nothing is written; it is
-  not obviously cheap once a key can change something. `TUI-3`.
+  What the old rule was protecting turned out to cost nothing once editing arrived. The keys
+  that change something — `n`, delete and enter — are none of them movements, so wrapping cannot
+  carry a reader into a change they did not ask for. It can leave the cursor on an item they did
+  not expect, which is why deleting one names it and asks.
 
 - **TUI-2 — Whether it is shipped to users or stays a development tool.** *Settled:*
-  **shipped**, as a power tool. Not yet, since nothing writes and a tool that only reads is
-  not one anybody needs, but it is built as something a user will meet rather than as a
-  workbench that happens to run.
+  **shipped**, as a power tool. It reads and writes now, so the reason to hold it back is
+  gone; what remains is the application it would ship with. It is built as something a user
+  will meet rather than as a workbench that happens to run.
 
   That decides arguments rather than features. Input validation and error recovery are held
   to the standard the rest of the application is, not to what a developer will put up with,

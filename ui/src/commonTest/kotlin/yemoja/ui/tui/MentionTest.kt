@@ -4,6 +4,7 @@ import yemoja.data.ItemSet
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
+import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -30,7 +31,7 @@ private fun logbook(): ItemSet = LogbookReader.read(
 
 /** A screen with the remark open. */
 private fun opened(): Screen {
-    val screen = Screen(logbook())
+    val screen = screenOver(logbook())
     repeat(screen.rows.size) { if (screen.field?.name != "remarks") screen.press(Key.DOWN) }
     assertEquals("remarks", screen.field?.name)
     screen.press(Key.OPEN)
@@ -102,7 +103,7 @@ class MentionFollowingTest {
             ),
             Types.ALL,
         )
-        val screen = Screen(set)
+        val screen = screenOver(set)
         repeat(screen.rows.size) { if (screen.field?.name != "remarks") screen.press(Key.DOWN) }
         screen.press(Key.OPEN)
         val painted = screen.paint(60, 24)
@@ -116,7 +117,7 @@ class MentionFollowingTest {
             MemoryFileStore(mapOf("dive/d#0.json" to """{"remarks": "Flat calm all day."}""")),
             Types.ALL,
         )
-        val screen = Screen(set)
+        val screen = screenOver(set)
         repeat(screen.rows.size) { if (screen.field?.name != "remarks") screen.press(Key.DOWN) }
         screen.press(Key.OPEN)
         assertTrue("[^,v] scroll" in screen.paint(80, 24).last().text)
@@ -129,7 +130,7 @@ class MentionFollowingTest {
             MemoryFileStore(mapOf("dive/d#0.json" to """{"remarks": "Ask @nobody about it."}""")),
             Types.ALL,
         )
-        val screen = Screen(set)
+        val screen = screenOver(set)
         repeat(screen.rows.size) { if (screen.field?.name != "remarks") screen.press(Key.DOWN) }
         screen.press(Key.OPEN)
         assertEquals(emptyList(), styled(screen, Style.UNDERLINED))

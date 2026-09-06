@@ -5,19 +5,25 @@ import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
+import yemoja.data.ItemReader
 import yemoja.data.ItemSet
+import yemoja.data.ItemWriter
 import yemoja.data.inOrder
+import yemoja.data.MultilineTextDescription
+import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.data.Role
 import yemoja.data.Series
+import yemoja.data.Stored
 import yemoja.data.Units
-
-/** Key is a keystroke this interface answers to. Everything else is ignored. */
-enum class Key {
-    LEFT, RIGHT, UP, DOWN, NEXT_TAB, PREVIOUS_TAB, FOLLOW, OPEN, CLOSE, QUIT
-}
+import yemoja.logic.Change
+import yemoja.logic.freeName
+import yemoja.logic.Operation
+import yemoja.logic.Outcome
+import yemoja.logic.Universe
 
 /**
  * Screen is the whole terminal interface: which tab is open, which item and field are chosen, and
@@ -35,11 +41,15 @@ enum class Key {
  * declares them. Nothing here names a type or a field, so a type added to the logic layer appears
  * without this changing.
  */
-class Screen(private val set: ItemSet) {
+class Screen(private val universe: Universe) {
+
+    // Everything shown comes from the logbook the universe holds; everything changed goes back
+    // through the universe itself. `ui/doc.md` holds every front end to reaching both this way.
+    private val set: ItemSet get() = universe.logbook
 
     // The set's own, so a tab cannot name a type the set could never hold. The order is the
     // logic layer's, which is what built the set. `UI-3`.
-    private val types: List<ItemDescription> = set.descriptions
+    private val types: List<ItemDescription> = universe.logbook.descriptions
 
     init {
         require(types.isNotEmpty()) { "a screen should have at least one type, and had none" }
@@ -74,29 +84,37 @@ class Screen(private val set: ItemSet) {
 
     private var chosenEntry = 0
 
+    // What is being typed into the open field, or absent where nothing is. Presentation state
+    // like the rest of it: nothing below this knows an edit is under way until it is saved.
+    private var editing: String? = null
+
+    // Whether delete has been pressed once on what the cursor is on. Nothing can be undone yet,
+    // there being no journal -- `FEAT-4` -- so removing an item asks, and any other key answers
+    // no. `TUI-6` refused a confirmation for quitting, where nothing is lost by pressing again.
+    private var confirming: Boolean = false
+
     /** Whether something is open on its own, rather than the list being shown. */
     val opened: Boolean get() = path.isNotEmpty()
+
+    /** What is being typed, or absent where nothing is being typed. */
+    val typing: String? get() = editing
 
     /** The type whose tab is open. */
     val type: ItemDescription get() = types[tab]
 
-    // What each tab last listed, and which revision of the set it was. Sorting reads every sort
-    // key, and a key can be worked out from a whole profile, so doing it per keypress would walk
-    // the logbook to redraw one row. The set says when it has changed rather than announcing it,
-    // `DATA-6`, and an item added or taken out moves that number.
-    //
-    // A field edited does not, so a list whose order turns on an edited field is stale until the
-    // tab is left and come back to. Nothing in this front end edits anything yet, and closing it
-    // properly is `TUI-3`'s to do.
+    // What each tab last listed, and which revision of the universe it was. Sorting reads every
+    // sort key, and a key can be worked out from a whole profile, so doing it per keypress would
+    // walk the logbook to redraw one row. Nothing is announced -- `DATA-6` -- so the universe
+    // carries a number that moves on every change, and this is kept against it.
     private val listed = HashMap<ItemDescription, List<ReferenceableItem>>()
 
     private var counted = -1
 
     /** Every item of the open type, in the order that type asks for. */
     val items: List<ReferenceableItem> get() {
-        if (counted != set.revision) {
+        if (counted != universe.revision) {
             listed.clear()
-            counted = set.revision
+            counted = universe.revision
         }
         return listed.getOrPut(type) { set.inOrder(type) }
     }
@@ -152,11 +170,14 @@ class Screen(private val set: ItemSet) {
             Key.DOWN -> alongFields(1)
             Key.NEXT_TAB -> alongTabs(1)
             Key.PREVIOUS_TAB -> alongTabs(-1)
-            Key.FOLLOW -> follow()
-            Key.OPEN -> open()
-            Key.CLOSE -> close()
-            Key.QUIT -> running = false
+            Key.OPEN -> if (editing == null) open() else save()
+            Key.CLOSE -> if (editing == null) close() else editing = null
+            Key.LEAVE -> running = false
+            is Key.Typed -> typed(key.character)
+            Key.BACKSPACE -> editing = editing?.dropLast(1)
+            Key.DELETE -> remove()
         }
+        if (key != Key.DELETE) confirming = false
         if (!opened) {
             within = 0
             chosenEntry = 0
@@ -168,6 +189,304 @@ class Screen(private val set: ItemSet) {
     }
 
     /**
+     * What a typed character means where the reader is.
+     *
+     * Into an open editor every character is itself, which is what `TUI-6` said would happen to
+     * `q`. Outside one they are keys: space follows a reference and `n` makes something.
+     */
+    private fun typed(character: Char) {
+        val typed = editing
+        if (typed != null) {
+            editing = typed + character
+            return
+        }
+        when {
+            character == ' ' -> follow()
+            character.equals('n', ignoreCase = true) -> make()
+            character.equals('q', ignoreCase = true) -> running = false
+        }
+    }
+
+    /**
+     * Where the reader is standing, as far as making and removing go.
+     *
+     * The keys that do the work and the bar that offers them ask this one question, so the bar
+     * cannot offer what the key would not do.
+     */
+    private fun standing(): Standing {
+        if (!opened) return Standing.Items
+        val item = item ?: return Standing.Nowhere
+        val owner = itemAt(path.size - 1) ?: return Standing.Nowhere
+        val (naming, key) = path.last()
+        return when (val ends = endsOf(item, path)) {
+            is Ends.Value -> when {
+                ends.field.cardinality == Cardinality.LIST -> Standing.Entries(ends)
+                ends.field is OwnedItemDescription -> Standing.Empty(ends)
+                else -> Standing.Nowhere
+            }
+
+            is Ends.Keys -> Standing.Collection(ends.field, owner, ends.held, null)
+            // A key is a tab rather than a stop of its own, so a reader at one is inside the
+            // entry under it, and what they are standing on is still the collection.
+            is Ends.Within -> when {
+                key != null ->
+                    Standing.Collection(naming, owner, keyedOf(held(owner, naming)), key)
+
+                naming is OwnedItemDescription -> Standing.Owned(naming, owner)
+                else -> Standing.Nowhere
+            }
+
+            null -> Standing.Nowhere
+        }
+    }
+
+    /** What [owner] holds in [field] now, or nothing where it holds nothing usable. */
+    private fun held(owner: Item, field: FieldDescription): Any? =
+        (owner.read(field.name) as? Result.Usable)?.value
+
+    /**
+     * Make a new one of whatever the reader is looking at.
+     *
+     * An item of the open type where the list is shown, an entry where a list or a keyed
+     * collection is open, and the owned item a field holds where it holds none. One key for one
+     * job wherever it is done, which is what the rest of the map is held to.
+     */
+    private fun make() {
+        when (val at = standing()) {
+            is Standing.Items -> {
+                val made = universe.change(Operation.EDIT, Change.Add(type))
+                if (made is Outcome.Done) made.added.singleOrNull()?.let { open(it) }
+            }
+
+            is Standing.Entries -> added(at.ends)
+            is Standing.Empty -> owned(at.ends)
+            is Standing.Collection -> keyedEntry(at.field, at.held)
+            is Standing.Owned, is Standing.Nowhere -> Unit
+        }
+    }
+
+    /** An empty entry at the end of an open list, and the cursor on it. */
+    private fun added(ends: Ends.Value) {
+        @Suppress("UNCHECKED_CAST")
+        val held = ((ends.read as? Result.Usable)?.value as? List<Element<Any>>).orEmpty()
+        val out = held.map { one ->
+            when (one) {
+                is Element.Usable -> Stored.Leaf(ends.field.format(one.value, Units.DEFAULT))
+                is Element.Unusable -> one.raw
+            }
+        } + Stored.Leaf("")
+        write(ends, Stored.Elements(out))
+        chosenEntry = out.size - 1
+    }
+
+    /**
+     * The owned item a field holds, where it holds none.
+     *
+     * An empty set of fields, which is what `"medical": {}` says in a file: an owned item cannot
+     * arrive ready-made, being built by the item that owns it. `DATA-85`.
+     */
+    private fun owned(ends: Ends.Value) {
+        if (ends.read is Result.Usable) return
+        write(ends, Stored.Members(emptyMap()))
+    }
+
+    private fun write(ends: Ends.Value, given: Stored) {
+        val owner = ends.item ?: return
+        universe.change(Operation.EDIT, Change.Write(owner, ends.field.name, given))
+    }
+
+    /**
+     * Remove whatever the reader is on.
+     *
+     * An item asks first, since nothing can be undone until `FEAT-4` and a dive holds a
+     * recording nobody can type again. An entry of a list or a collection does not: it is one
+     * value, and putting it back is typing it.
+     */
+    private fun remove() {
+        if (editing != null) return
+        when (val at = standing()) {
+            is Standing.Items -> deleted()
+            is Standing.Entries -> write(at.ends, listed(at.ends, ""))
+            is Standing.Collection -> if (at.at != null) unkeyedEntry(at.field, at.held)
+            is Standing.Owned -> {
+                universe.change(Operation.EDIT, Change.Write(at.owner, at.field.name, null))
+                chosenEntry = 0
+            }
+
+            is Standing.Empty, is Standing.Nowhere -> Unit
+        }
+    }
+
+    /** Deletes the chosen item, on the second press of the key. */
+    private fun deleted() {
+        val id = item?.let { set.idOf(it) } ?: return
+        if (!confirming) {
+            confirming = true
+            return
+        }
+        confirming = false
+        universe.change(Operation.EDIT, Change.Delete(id))
+    }
+
+    /**
+     * An empty entry under a key of its own, and the cursor moved to it.
+     *
+     * The key is proposed by the type of the entry and the first free one is taken, which is the
+     * same rule an id follows one level up. `JSON-18`. A hand-made entry is empty, so it takes
+     * its type's fallback — `profile`, `gas` — exactly as a hand-made item becomes
+     * `unknown_person`, and like an id it is not renamed when the entry is filled in.
+     */
+    private fun keyedEntry(field: FieldDescription, held: List<Pair<String, Any>>) {
+        val owner = itemAt(path.size - 1) ?: return
+        val within = (field as? OwnedItemDescription)?.description ?: return
+        val written = writtenEntries(held) { true }
+        val empty = ItemReader.read(within, Stored.Members(emptyMap()), set, Units.DEFAULT)
+        val key = freeName(within.proposedId?.invoke(empty) ?: within.name) { it in written }
+        written[key] = Stored.Members(emptyMap())
+        universe.change(Operation.EDIT, Change.Write(owner, field.name, Stored.Members(written)))
+        path[path.size - 1] = field to key
+    }
+
+    /** Takes the entry under the chosen key out, and moves to whatever is left. */
+    private fun unkeyedEntry(field: FieldDescription, held: List<Pair<String, Any>>) {
+        val owner = itemAt(path.size - 1) ?: return
+        val going = path.last().second ?: return
+        val kept = writtenEntries(held) { it != going }
+        universe.change(Operation.EDIT, Change.Write(owner, field.name, Stored.Members(kept)))
+        path[path.size - 1] = field to kept.keys.firstOrNull()
+        chosenEntry = 0
+    }
+
+    /** The entries [held] whose key [keeping] accepts, back in the form a file holds them in. */
+    private fun writtenEntries(
+        held: List<Pair<String, Any>>,
+        keeping: (String) -> Boolean,
+    ): LinkedHashMap<String, Stored> {
+        val out = LinkedHashMap<String, Stored>()
+        for ((key, entry) in held) {
+            if (!keeping(key)) continue
+            if (entry is Item) out[key] = ItemWriter.write(entry, Units.DEFAULT)
+        }
+        return out
+    }
+
+    /** The item the step at [at] hangs off, which is what a change to that field is written on. */
+    private fun itemAt(at: Int): Item? {
+        val above = item ?: return null
+        if (at == 0) return above
+        return (endsOf(above, path.take(at)) as? Ends.Within)?.item
+    }
+
+    /**
+     * What an edit would go into, or absent where there is nothing here to edit.
+     *
+     * A value with an item to hold it, on a field that is written rather than worked out. A
+     * series is excluded because nothing types three thousand samples into a terminal, which
+     * `TUI-3` calls a gap in this front end rather than a hazard from it.
+     */
+    private fun editable(): Ends.Value? {
+        val ends = endsOf(item ?: return null, path) as? Ends.Value ?: return null
+        if (ends.item == null || ends.field.role is Role.Derived) return null
+        val series = ends.field.cardinality == Cardinality.SERIES ||
+            ends.field.cardinality == Cardinality.KEYED_SERIES
+        return if (series) null else ends
+    }
+
+    /**
+     * What the field being edited holds now, as a user would have typed it.
+     *
+     * The written form, `DATA-76`, which is what a row shows and what reading it back accepts.
+     * A value that would not read is offered as the source held it, so correcting a typo is
+     * editing the typo rather than starting again.
+     */
+    private fun written(ends: Ends.Value): String {
+        val read = ends.read
+        if (read is Result.Unusable) return leafOf(read.raw)
+        if (read !is Result.Usable) return ""
+        if (ends.field.cardinality != Cardinality.LIST) {
+            return ends.field.format(read.value, Units.DEFAULT)
+        }
+        @Suppress("UNCHECKED_CAST")
+        return when (val held = (read.value as List<Element<Any>>).getOrNull(chosenEntry)) {
+            is Element.Usable -> ends.field.format(held.value, Units.DEFAULT)
+            is Element.Unusable -> leafOf(held.raw)
+            null -> ""
+        }
+    }
+
+    private fun leafOf(raw: Stored): String = (raw as? Stored.Leaf)?.value?.toString().orEmpty()
+
+    /**
+     * Why what is being typed will not do, or absent where it will.
+     *
+     * The same door the save goes through: a field reads what it is given and says why it cannot,
+     * so what a reader is told while typing is what happens when they press enter. `DATA-66`.
+     */
+    private fun refusal(): String? {
+        val ends = editable() ?: return null
+        val text = editing ?: return null
+        if (text.isEmpty()) return null
+        val overrides = ends.field.role is Role.Overrideable
+        val read = ends.field.read(typedAs(ends.field, text), overrides, Units.DEFAULT)
+        return (read as? Result.Unusable)?.reason
+    }
+
+    /**
+     * The typed text as the field should receive it.
+     *
+     * A line break cannot be typed, since enter saves. So in a field that allows one, `\n`
+     * becomes a break: the same two characters a row shows a break as, read the other way.
+     */
+    private fun typedAs(field: FieldDescription, text: String): String =
+        if (field is MultilineTextDescription) text.replace("\\n", "\n") else text
+
+    /**
+     * Save what is being typed, and stop typing.
+     *
+     * An empty box clears the field, which on a corrected one puts back what the application
+     * works out: deleting a correction is writing nothing over it rather than an act of its own.
+     */
+    private fun save() {
+        val ends = editable() ?: return
+        val text = editing ?: return
+        val owner = ends.item ?: return
+        val given: Any? = if (ends.field.cardinality != Cardinality.LIST) {
+            typedAs(ends.field, text).ifEmpty { null }
+        } else {
+            listed(ends, text)
+        }
+        val done = universe.change(Operation.EDIT, Change.Write(owner, ends.field.name, given))
+        if (done is Outcome.Done) editing = null
+    }
+
+    /**
+     * The whole list, with the entry the cursor is on replaced by [text], or dropped where it
+     * is empty.
+     *
+     * A list is one field, so writing one entry is writing the list. The others go back as the
+     * text they are shown as, which reads back as what they were: `DATA-76` makes that a round
+     * trip rather than a hope.
+     */
+    private fun listed(ends: Ends.Value, text: String): Stored {
+        @Suppress("UNCHECKED_CAST")
+        val held = ((ends.read as? Result.Usable)?.value as? List<Element<Any>>).orEmpty()
+        val out = ArrayList<Stored>(held.size)
+        for (at in held.indices) {
+            if (at == chosenEntry) {
+                if (text.isNotEmpty()) out.add(Stored.Leaf(text))
+                continue
+            }
+            out.add(
+                when (val one = held[at]) {
+                    is Element.Usable -> Stored.Leaf(ends.field.format(one.value, Units.DEFAULT))
+                    is Element.Unusable -> one.raw
+                },
+            )
+        }
+        return Stored.Elements(out)
+    }
+
+    /**
      * Go one step further in, where there is one.
      *
      * From the list that is the chosen field. Inside an item it is the field the cursor is on,
@@ -176,6 +495,10 @@ class Screen(private val set: ItemSet) {
      */
     private fun open() {
         val item = item ?: return
+        editable()?.let {
+            editing = written(it)
+            return
+        }
         if (!opened) {
             val steps = (row ?: return).steps
             path.addAll(steps.dropLast(1))
@@ -433,23 +756,35 @@ class Screen(private val set: ItemSet) {
      * does depends on what is in front of the user, so this says what it does here.
      */
     private fun actions(width: Int): String {
-        val said = if (opened) {
+        val said = if (confirming) {
+            // The one place a key needs an answer rather than a label. What it is about is named,
+            // since the cursor moved to whatever the list shows after it would be a poor thing to
+            // guess from.
+            listOf("delete ${item?.let { set.idOf(it) }}?", "[del] delete", "[any key] keep")
+        } else if (editing != null) {
+            // No quit: `q` is a letter being typed, and ctrl-C is the way out. `TUI-6`.
+            listOf("[enter] save", "[esc] cancel", "[backspace] rub out", "[ctrl-c] quit")
+        } else if (opened) {
             listOfNotNull(
                 QUITS,
                 "[esc] back",
                 if (keysHere().isEmpty()) null else "$TABS key",
                 "$FIELDS " + moving(),
-                if (deeper()) "[enter] open" else null,
+                if (deeper()) "[enter] open" else if (editable() != null) "[enter] edit" else null,
                 "[space] follow",
+                madeHere()?.let { "[n] new $it" },
+                removedHere()?.let { "[del] delete $it" },
             )
         } else {
-            listOf(
+            listOfNotNull(
                 QUITS,
                 "$TABS type",
                 "$ITEMS item",
                 "$FIELDS field",
                 "[enter] open",
                 "[space] follow",
+                madeHere()?.let { "[n] new $it" },
+                removedHere()?.let { "[del] delete $it" },
             )
         }
         var shown = said.first()
@@ -458,6 +793,28 @@ class Screen(private val set: ItemSet) {
             shown += BETWEEN + next
         }
         return shown
+    }
+
+    /**
+     * The word for what `n` would make where the reader is, or absent where it would make nothing.
+     *
+     * A field's own name where the thing made is that field's, so the bar says what will appear
+     * rather than naming a kind the reader would have to place.
+     */
+    private fun madeHere(): String? = when (val at = standing()) {
+        is Standing.Items -> "item"
+        is Standing.Entries, is Standing.Collection -> "entry"
+        is Standing.Empty -> at.ends.field.name
+        is Standing.Owned, is Standing.Nowhere -> null
+    }
+
+    /** The word for what the delete key would take out, or absent where it would take out none. */
+    private fun removedHere(): String? = when (val at = standing()) {
+        is Standing.Items -> "item".takeIf { items.isNotEmpty() }
+        is Standing.Entries -> "entry".takeIf { (at.ends.count() ?: 0) > 0 }
+        is Standing.Collection -> "entry".takeIf { at.at != null }
+        is Standing.Owned -> at.field.name
+        is Standing.Empty, is Standing.Nowhere -> null
     }
 
     /** What up and down move over where the reader is, in the word for that thing. */
@@ -484,22 +841,42 @@ class Screen(private val set: ItemSet) {
         return List(rows) { row -> Line(listOf(Span(list[row] + " ")) + detail[row]) }
     }
 
+    /** What the open field holds, which is what is shown while nothing is being typed. */
+    private fun whatIsThere(ends: Ends): List<Line> = when (ends) {
+        is Ends.Value -> fieldLines(ends.field, ends.read, ends.item, chosenEntry)
+        is Ends.Within -> withinLines(ends.item, chosenEntry)
+        // A field holding several, holding none. There is no key to be at.
+        is Ends.Keys -> listOf(Line(listOf(Span("  (empty)"))))
+    }
+
+    /**
+     * What is being typed, with a cursor after it, and why it will not do.
+     *
+     * The refusal is shown where the value is rather than on the bar, because it is about what
+     * is on the screen and because a bar too narrow for it would drop it silently.
+     */
+    private fun typedLines(): List<Line> {
+        val text = editing.orEmpty()
+        val said = Line(listOf(Span("  " + text + CURSOR, setOf(Style.SELECTED))))
+        val why = refusal() ?: return listOf(said)
+        return listOf(said, Line(listOf(Span(""))), Line(listOf(Span("  ! " + why))))
+    }
+
     /**
      * The chosen field on its own, whole.
      *
      * Where it came from sits at the top, so that a reader who followed a reference into
      * this knows where they are. A value too long for the screen is wrapped and scrolled
-     * rather than cut, this being the one place that shows all of it.
+     * rather than cut, this being the one place that shows all of it. What is being typed
+     * stands in place of what is there, an editor being a value part-written.
      */
     private fun opened(width: Int, rows: Int): List<Line> {
         val item = item
         val ends = if (item == null) null else endsOf(item, path)
         if (ends == null) return List(rows) { Line(fitted(emptyList(), width)) }
-        val under = when (ends) {
-            is Ends.Value -> fieldLines(ends.field, ends.read, ends.item, chosenEntry)
-            is Ends.Within -> withinLines(ends.item, chosenEntry)
-            // A field holding several, holding none. There is no key to be at.
-            is Ends.Keys -> listOf(Line(listOf(Span("  (empty)"))))
+        val under = when {
+            editing != null -> typedLines()
+            else -> whatIsThere(ends)
         }
         val body = (keyBar() + under).flatMap { wrapped(it, width) }
         val at = body.indexOfFirst { row -> row.spans.any { Style.SELECTED in it.styles } }
@@ -750,4 +1127,42 @@ class Screen(private val set: ItemSet) {
 
         private const val MOST_LIST_WIDTH = 40
     }
+}
+
+/**
+ * Standing is what the reader is on, in the terms that making and removing one need.
+ *
+ * A place rather than a thing: [Items] is the list of items, [Entries] an open list of values,
+ * and [Collection] a keyed field whether the reader is at its keys or inside one of its entries.
+ * [Screen] classifies once, and both the keys and the bar work from the answer.
+ */
+private sealed class Standing {
+
+    /** The list of items of the open type. */
+    object Items : Standing()
+
+    /** An open list of values. */
+    class Entries(val ends: Ends.Value) : Standing()
+
+    /** A field that would hold one owned item and holds none. */
+    class Empty(val ends: Ends.Value) : Standing()
+
+    /**
+     * A keyed collection of owned items.
+     *
+     * [at] is the key the reader is inside. It is absent at the keys themselves, which is where a
+     * collection holding nothing leaves them.
+     */
+    class Collection(
+        val field: FieldDescription,
+        val owner: Item,
+        val held: List<Pair<String, Any>>,
+        val at: String?,
+    ) : Standing()
+
+    /** Inside the one owned item a field holds. */
+    class Owned(val field: OwnedItemDescription, val owner: Item) : Standing()
+
+    /** Somewhere neither key does anything. */
+    object Nowhere : Standing()
 }

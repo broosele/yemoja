@@ -28,7 +28,7 @@ fun tui(folder: String): Int {
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    return show(Screen(universe.logbook))
+    return show(Screen(universe))
 }
 
 /**

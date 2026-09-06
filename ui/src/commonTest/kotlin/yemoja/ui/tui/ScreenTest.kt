@@ -6,13 +6,15 @@ import yemoja.data.ItemDescription
 import yemoja.data.NumberDescription
 import yemoja.data.ItemSet
 import yemoja.data.ReferenceDescription
-import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Role
 import yemoja.data.TextDescription
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import yemoja.logic.Change
+import yemoja.logic.Operation
 import yemoja.logic.Types
+import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -33,22 +35,31 @@ private val THREE = logbook(
     "gear.json" to """{"faber_12": {"name": "Faber 12", "capacity": 12.0}}""",
 )
 
-private fun screen(set: ItemSet = THREE): Screen = Screen(set)
+/**
+ * A screen over [set], through a universe as the real one is.
+ *
+ * The store is one held in memory and nothing writes to it unless a test asks: what is on the
+ * screen comes from the set either way.
+ */
+internal fun screenOver(set: ItemSet): Screen =
+    Screen(Universe(set, null, MemoryFileStore(emptyMap())))
+
+private fun screen(set: ItemSet = THREE): Screen = screenOver(set)
 
 /** Move down until the field called [name] is chosen, at whatever depth it sits. */
-private fun toField(screen: Screen, name: String) {
+internal fun toField(screen: Screen, name: String) {
     repeat(screen.rows.size) { if (screen.field?.name != name) screen.press(Key.DOWN) }
     assertEquals(name, screen.field?.name)
 }
 
 /** Change tab until the type called [name] is open, however many there are. */
-private fun toTab(screen: Screen, name: String) {
+internal fun toTab(screen: Screen, name: String) {
     repeat(Types.ALL.size) { if (screen.type.name != name) screen.press(Key.NEXT_TAB) }
     assertEquals(name, screen.type.name)
 }
 
 /** The rows between the rule under the heading and the rule above the bar. */
-private fun body(screen: Screen, width: Int = 60, height: Int = 12): List<Line> =
+internal fun body(screen: Screen, width: Int = 60, height: Int = 12): List<Line> =
     screen.paint(width, height).drop(2).dropLast(2)
 
 /** The chosen row of the list column, without its marker or its padding. */
@@ -132,13 +143,14 @@ class TabTest {
 
     @Test
     fun `an item added while the screen is open is listed, in its place`() {
-        // The list is worked out once and kept, sorting being too dear to redo per keystroke.
+        // The list is worked out once and kept, sorting being too dear to redo per keystroke,
+        // so what refreshes it is the universe saying it changed. `DATA-6`.
         val set = logbook("region.json" to """{"north_sea": {"name": "North Sea"}}""")
-        val screen = Screen(set)
+        val universe = Universe(set, null, MemoryFileStore(emptyMap()))
+        val screen = Screen(universe)
         toTab(screen, "region")
         assertEquals(listOf("north_sea"), screen.items.map { set.idOf(it) })
-        val named = mapOf("name" to Result.Usable("Irish Sea", Result.Origin.STORED))
-        set.add("irish_sea", ReferenceableItem(Types.REGION, named, set))
+        universe.change(Operation.EDIT, Change.Add(Types.REGION, mapOf("name" to "Irish Sea")))
         assertEquals(listOf("irish_sea", "north_sea"), screen.items.map { set.idOf(it) })
     }
 
@@ -443,7 +455,7 @@ class PaintingTest {
     @Test
     fun `a screen with no types at all is a fault`() {
         // A set built with no descriptions can hold nothing, so there is no tab to draw.
-        assertFailsWith<IllegalArgumentException> { Screen(ItemSet(emptyList())) }
+        assertFailsWith<IllegalArgumentException> { screenOver(ItemSet(emptyList())) }
     }
 }
 
@@ -490,7 +502,7 @@ private val POSTBOX = ItemDescription(
 private val INVENTED = listOf(POSTBOX, ROUND)
 
 private fun invented(vararg files: Pair<String, String>): Screen =
-    Screen(LogbookReader.read(MemoryFileStore(mapOf(*files)), INVENTED))
+    screenOver(LogbookReader.read(MemoryFileStore(mapOf(*files)), INVENTED))
 
 /** The styles of one row of the detail column, by the text they are on. */
 private fun styling(screen: Screen, width: Int = 70): Map<String, Set<Style>> {
@@ -604,7 +616,7 @@ class FieldTest {
     @Test
     fun `a type with no shown fields has no chosen field`() {
         val empty = ItemDescription("empty", emptyList())
-        val screen = Screen(LogbookReader.read(MemoryFileStore(emptyMap()), listOf(empty)))
+        val screen = screenOver(LogbookReader.read(MemoryFileStore(emptyMap()), listOf(empty)))
         assertNull(screen.field)
         screen.press(Key.DOWN)
         assertNull(screen.field)
@@ -760,7 +772,7 @@ class OpenFieldTest {
 
     @Test
     fun `it says a number's dimension and the unit it is held in`() {
-        val screen = Screen(
+        val screen = screenOver(
             LogbookReader.read(
                 MemoryFileStore(mapOf("gear.json" to """{"g": {"capacity": 12.0}}""")),
                 Types.ALL,
@@ -795,7 +807,7 @@ class OpenFieldTest {
 
     @Test
     fun `a value that could not be read says so beside the heading`() {
-        val screen = Screen(
+        val screen = screenOver(
             LogbookReader.read(
                 MemoryFileStore(mapOf("region.json" to """{"r": {"north": 91.0}}""")),
                 Types.ALL,
@@ -859,7 +871,7 @@ class ListTest2 {
 
     private val TYPES = listOf(WALK, ROUNDS)
 
-    private fun walk(rounds: String): Screen = Screen(
+    private fun walk(rounds: String): Screen = screenOver(
         LogbookReader.read(
             MemoryFileStore(mapOf("walk.json" to """{"a": {"rounds": $rounds}}""")),
             TYPES,
@@ -960,7 +972,7 @@ class FollowListTest {
 
     private fun walk(rounds: String, vararg rest: Pair<String, String>): Screen {
         val files = mapOf("walk.json" to """{"a": {"rounds": $rounds}}""") + mapOf(*rest)
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
+        val screen = screenOver(LogbookReader.read(MemoryFileStore(files), TYPES))
         screen.press(Key.DOWN)
         return screen
     }
@@ -1034,7 +1046,7 @@ class EntryCursorTest {
     /** A walk with these rounds, opened on the field that holds them. */
     private fun opened(rounds_: String): Screen {
         val files = mapOf("walk.json" to """{"a": {"rounds": $rounds_}}""") + mapOf(rounds)
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
+        val screen = screenOver(LogbookReader.read(MemoryFileStore(files), TYPES))
         screen.press(Key.DOWN)
         screen.press(Key.OPEN)
         return screen
@@ -1108,7 +1120,7 @@ class EntryCursorTest {
     fun `a field holding one value has no cursor, and up and down scroll its rows`() {
         val long = "x".repeat(600)
         val files = mapOf("walk.json" to """{"a": {"name": "$long"}}""")
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
+        val screen = screenOver(LogbookReader.read(MemoryFileStore(files), TYPES))
         screen.press(Key.OPEN)
         assertEquals(null, chosenEntry(screen, 12), "one value is not chosen between")
         val top = screen.paint(40, 12).map { it.text }
@@ -1156,7 +1168,7 @@ class OpenedUnderliningTest {
             "walk.json" to """{"a": $fields}""",
             "round.json" to """{"tuesday": {"name": "Tuesday"}}""",
         )
-        val screen = Screen(LogbookReader.read(MemoryFileStore(files), TYPES))
+        val screen = screenOver(LogbookReader.read(MemoryFileStore(files), TYPES))
         repeat(steps) { screen.press(Key.DOWN) }
         screen.press(Key.OPEN)
         return screen.paint(70, 20)
@@ -1218,8 +1230,9 @@ class ActionsTest {
         val said = bar(screen(), 120)
         assertEquals(
             "[q] quit | [(shift)-tab] type | [<,>] item | [^,v] field | " +
-                "[enter] open | [space] follow",
+                "[enter] open | [space] follow | [n] new item",
             said,
+            "and no offer to delete one, this logbook holding none",
         )
     }
 
@@ -1275,7 +1288,7 @@ class PlainNameTest {
             listOf(ReferenceDescription("who", targetType = "person", oneOffAllowed = oneOff)),
         )
         val types = listOf(walk)
-        val screen = Screen(
+        val screen = screenOver(
             LogbookReader.read(MemoryFileStore(mapOf("walk.json" to """{"a": {}}""")), types),
         )
         screen.press(Key.OPEN)
@@ -1310,7 +1323,7 @@ class SeriesTest2 {
 
     private val TYPES = listOf(DIVE)
 
-    private fun dive(depth: String): Screen = Screen(
+    private fun dive(depth: String): Screen = screenOver(
         LogbookReader.read(
             MemoryFileStore(mapOf("dive.json" to """{"a": {"depth": $depth}}""")),
             TYPES,
@@ -1398,7 +1411,7 @@ class SeriesTest2 {
 class NestedTest {
 
     private fun person(fields: String): Screen {
-        val screen = Screen(
+        val screen = screenOver(
             LogbookReader.read(
                 MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
                 Types.ALL,
@@ -1504,7 +1517,7 @@ class PathTest {
         "courses": {"k1": {"date": "2019-06-02"}, "k2": {"date": "2021-03-04"}}}"""
 
     private fun person(): Screen {
-        val screen = Screen(
+        val screen = screenOver(
             LogbookReader.read(
                 MemoryFileStore(mapOf("person.json" to """{"anna": $fields}""")),
                 Types.ALL,
@@ -1614,7 +1627,7 @@ class PathTest {
 
     /** A course naming both a certification and an instructor, each of which is there. */
     private fun course(): Screen {
-        val screen = Screen(
+        val screen = screenOver(
             LogbookReader.read(
                 MemoryFileStore(
                     mapOf(
@@ -1720,7 +1733,7 @@ class PathTest {
 
     @Test
     fun `a field holding an item nobody wrote says so rather than opening`() {
-        val screen = Screen(
+        val screen = screenOver(
             LogbookReader.read(
                 MemoryFileStore(mapOf("person.json" to """{"anna": {}}""")),
                 Types.ALL,

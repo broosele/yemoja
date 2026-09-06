@@ -15,10 +15,22 @@ class KeysTest {
     }
 
     @Test
-    fun `two keys leave, because raw mode swallows the usual one`() {
+    fun `a printable character comes back as itself, whatever it comes to mean`() {
+        // `q` leaves where nothing is being typed and is a letter inside an editor, and only the
+        // screen knows which. So this reports rather than decides. `TUI-6`.
+        assertEquals(Key.Typed('a'), keyOf("a"))
+        assertEquals(Key.Typed('4'), keyOf("4"))
+        assertEquals(Key.Typed('@'), keyOf("@"))
+        assertEquals(Key.Typed('q'), keyOf("q"))
+    }
+
+    @Test
+    fun `the two that leave are a character and a control`() {
+        // Raw mode swallows the usual one, so `q` does it where nothing is being typed and
+        // ctrl-C does it everywhere. Only the second has a meaning of its own here.
         assertEquals(Key.QUIT, keyOf("q"))
-        assertEquals(Key.QUIT, keyOf("Q"))
-        assertEquals(Key.QUIT, keyOf("c", ctrl = true))
+        assertEquals(Key.Typed('Q'), keyOf("Q"), "and the screen takes either case")
+        assertEquals(Key.LEAVE, keyOf("c", ctrl = true))
     }
 
     @Test
@@ -35,10 +47,15 @@ class KeysTest {
     }
 
     @Test
+    fun `the two an editor needs are keys of their own`() {
+        assertEquals(Key.DELETE, keyOf("Delete"))
+        assertEquals(Key.BACKSPACE, keyOf("Backspace"))
+    }
+
+    @Test
     fun `anything else is ignored rather than guessed at`() {
-        assertNull(keyOf("a"))
-        assertNull(keyOf("Backspace"))
         assertNull(keyOf("F1"))
+        assertNull(keyOf("PageDown"))
         assertNull(keyOf(""))
     }
 
