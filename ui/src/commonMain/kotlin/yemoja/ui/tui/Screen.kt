@@ -1075,7 +1075,7 @@ class Screen(private val universe: Universe) {
         }
         editing?.let {
             body += blank()
-            body += Line(listOf(Span("  folder: $it$CURSOR", setOf(Style.SELECTED))))
+            body += Line(listOf(Span("  path: $it$CURSOR", setOf(Style.SELECTED))))
         }
         message?.let {
             body += blank()
@@ -1572,7 +1572,8 @@ class Screen(private val universe: Universe) {
         // Enough to recognise the one wanted, and few enough to leave the typed line in view
         // on a short terminal. What is past them is reached by typing more of the id.
         // The two an import can come from. Only the first is built; `FEAT-3` is the other.
-        private val SOURCES = listOf("another logbook", "a dive computer")
+        // One row for two formats: a path is named and what is there says how it is read.
+        private val SOURCES = listOf("a logbook folder or a UDDF file", "a dive computer")
 
         private const val NO_DEVICE = "reading a dive computer is not built yet. FEAT-3."
 

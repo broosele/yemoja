@@ -709,7 +709,10 @@ already taken.
 ## What is built
 
 A first slice: **the dive and its recording**, read into items. `logic/uddf/` holds it — an XML
-document read into a tree, and the mapping above it. Everything else this document maps — sites,
+document read into a tree, and the mapping above it. It is reached the way another logbook is:
+the import screen takes a path, and a file at that path is read as UDDF where a folder is read as
+a logbook. A document holding no dives is refused rather than opening a review with nothing in
+it, since dives are all that is read. Everything else this document maps — sites,
 people, equipment, trips, operators, wrecks, repetitive dives, references — is analysed and not
 read yet.
 

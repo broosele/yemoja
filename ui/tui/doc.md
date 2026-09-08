@@ -148,9 +148,14 @@ and a key whose meaning moves is read every time.
 
 ## An import
 
-**`+` opens the import screen**, which offers the two an import can come from: another logbook,
-or a dive computer. Choosing a logbook asks for its folder; choosing a dive computer says that
-reading one is not built and names `FEAT-3`. Escape comes back out.
+**`+` opens the import screen**, which offers the two an import can come from: a path, or a dive
+computer. A dive computer says that reading one is not built and names `FEAT-3`. Escape comes
+back out.
+
+**One prompt takes one path, and what is there says how it is read.** A folder is another Yemoja
+logbook and a file is a UDDF document. Asking which would be putting a question to somebody who
+already knows what they are pointing at, and the answer is on the disk. Nothing after that
+differs: both arrive as a set of items and both are reviewed the same way.
 
 **What arrives is not a screen of its own.** The incoming items are listed in the tab their type
 would put them in, above the ones already there and set in italic, so what is arriving is read

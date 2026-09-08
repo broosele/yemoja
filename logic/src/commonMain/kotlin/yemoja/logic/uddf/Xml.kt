@@ -1,6 +1,7 @@
 package yemoja.logic.uddf
 
 import nl.adaptivity.xmlutil.EventType
+import nl.adaptivity.xmlutil.XmlException
 import nl.adaptivity.xmlutil.XmlReader
 import nl.adaptivity.xmlutil.xmlStreaming
 
@@ -61,13 +62,29 @@ internal class Tag(
         (said + children.joinToString("") { it.everything() }).trim()
 }
 
-/** [text] as a tree. Throws [nl.adaptivity.xmlutil.XmlException] where it is not a document. */
+/**
+ * UddfFormatException is thrown where a document is not one, or is not UDDF.
+ *
+ * What reads the XML is not named outside this package, so a caller catches one thing rather
+ * than whatever the reader of the day happens to raise.
+ */
+class UddfFormatException(message: String) : Exception(message)
+
+/** [text] as a tree. Throws [UddfFormatException] where it is not a document. */
 internal fun tagsIn(text: String): Tag {
-    val reader = xmlStreaming.newGenericReader(text)
-    while (reader.hasNext()) {
-        if (reader.next() == EventType.START_ELEMENT) return tagAt(reader)
+    val reader = try {
+        xmlStreaming.newGenericReader(text)
+    } catch (refused: XmlException) {
+        throw UddfFormatException(refused.message ?: "it is not XML")
     }
-    throw IllegalArgumentException("a document should hold at least one tag, and held none")
+    try {
+        while (reader.hasNext()) {
+            if (reader.next() == EventType.START_ELEMENT) return tagAt(reader)
+        }
+    } catch (refused: XmlException) {
+        throw UddfFormatException(refused.message ?: "it is not XML")
+    }
+    throw UddfFormatException("it should hold at least one tag, and held none")
 }
 
 /** The tag the reader has just started, and everything inside it. */

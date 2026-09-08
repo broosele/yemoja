@@ -132,7 +132,7 @@ class ImportScreenTest {
         val screen = screen()
         screen.press(Key.Typed('+'))
         assertTrue("import" in body(screen).first(), body(screen).toString())
-        assertTrue("another logbook" in body(screen), body(screen).toString())
+        assertTrue("a logbook folder or a UDDF file" in body(screen), body(screen).toString())
         assertTrue("a dive computer" in body(screen), body(screen).toString())
     }
 
@@ -146,23 +146,25 @@ class ImportScreenTest {
     }
 
     @Test
-    fun `another logbook asks for a folder`() {
+    fun `it asks for one path, whether that names a folder or a file`() {
+        // What is there says how it is read, which is one question fewer to put to somebody
+        // who already knows what they are pointing at.
         val screen = screen()
         screen.press(Key.Typed('+'))
         screen.press(Key.OPEN)
         for (character in "nowhere") screen.press(Key.Typed(character))
-        assertTrue(body(screen).any { it.startsWith("folder: nowhere") }, body(screen).toString())
+        assertTrue(body(screen).any { it.startsWith("path: nowhere") }, body(screen).toString())
     }
 
     @Test
-    fun `a folder that is not there says so and stays open`() {
+    fun `a path that is neither says so and stays open`() {
         val screen = screen()
         screen.press(Key.Typed('+'))
         screen.press(Key.OPEN)
         for (character in "nowhere") screen.press(Key.Typed(character))
         screen.press(Key.OPEN)
         assertTrue(body(screen).any { it.startsWith("!") }, body(screen).toString())
-        assertTrue(body(screen).any { "another logbook" in it }, "still on the import screen")
+        assertTrue(body(screen).any { "UDDF" in it }, "still on the import screen")
     }
 
     @Test

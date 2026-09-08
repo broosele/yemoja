@@ -19,6 +19,8 @@ import yemoja.data.json.FileStore
 import yemoja.data.json.LogbookFormatException
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
+import yemoja.logic.uddf.Uddf
+import yemoja.logic.uddf.UddfFormatException
 
 /*
  * The application's working state, and the one door a front end reaches anything through.
@@ -241,7 +243,12 @@ class Universe(
     }
 
     /**
-     * Stage the logbook in the folder at [from], beside this one.
+     * Stage whatever is at [from], beside this logbook.
+     *
+     * **What is there says how it is read.** A folder is another Yemoja logbook and a file is a
+     * UDDF document, which is one question fewer to put to somebody who already knows what they
+     * are pointing at. Nothing after that differs: both arrive as a set of items and both are
+     * reviewed the same way.
      *
      * The staging folder is this logbook's own with `.import` after it, which puts it outside the
      * logbook: what is being reviewed is not part of it and must not be read as though it were.
@@ -249,13 +256,32 @@ class Universe(
      */
     fun importFrom(from: String): Outcome {
         val store = DiskFileStore(from)
-        if (!store.isFolder("")) return Outcome.Refused("$from should be a folder, and is not")
-        val source = try {
-            LogbookReader.read(store, logbook.descriptions)
-        } catch (refused: LogbookFormatException) {
-            return Outcome.Refused(refused.message ?: "$from could not be read")
+        val staging = DiskFileStore((path ?: from) + ".import")
+        if (store.isFolder("")) {
+            val source = try {
+                LogbookReader.read(store, logbook.descriptions)
+            } catch (refused: LogbookFormatException) {
+                return Outcome.Refused(refused.message ?: "$from could not be read")
+            }
+            importFrom(source, staging)
+            return Outcome.Done()
         }
-        importFrom(source, DiskFileStore((path ?: from) + ".import"))
+        if (!store.isFile("")) {
+            return Outcome.Refused("$from should be a folder or a file, and is neither")
+        }
+        val source = try {
+            Uddf.read(store.readText(""))
+        } catch (refused: UddfFormatException) {
+            return Outcome.Refused("$from should be UDDF: ${refused.message}")
+        }
+        // Only dives are read from one yet, so a file holding none would open a review with
+        // nothing in it and no word about why.
+        if (source.allOf(Types.DIVE).isEmpty()) {
+            return Outcome.Refused("$from holds no dives, and dives are what is read from UDDF")
+        }
+        // Nothing matches: a UDDF file carries no ids of ours, so the ones its dives have were
+        // minted while reading it and say nothing about which dive is which.
+        importFrom(source, staging, Matching.NONE)
         return Outcome.Done()
     }
 
