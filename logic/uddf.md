@@ -706,6 +706,32 @@ import by choice, since severity is not comparable between makes. A second profi
 on export, for reasons set out above. None of these needs a decision beyond the one
 already taken.
 
+## What is built
+
+A first slice: **the dive and its recording**, read into items. `logic/uddf/` holds it — an XML
+document read into a tree, and the mapping above it. Everything else this document maps — sites,
+people, equipment, trips, operators, wrecks, repetitive dives, references — is analysed and not
+read yet.
+
+**No arithmetic was written.** UDDF is strict SI and `DATA-61` already has `K`, `m3` and `Pa`
+among the names a file may declare, so the reader hands `ItemReader` those units and the
+conversion is the one the model already does. What is left in the mapping is names and shape,
+which is the whole of it: a value goes in as the text the document held and the field it lands on
+reads it, exactly as a value out of a JSON file does.
+
+**Ids are minted rather than carried.** A UDDF `id` is a name for one document's own use — it
+says nothing outside the file — so a dive is named for the day it was made on, as this model
+names one. What follows is that a second import of the same file does not recognise the dives it
+already brought in: matching by id is exact between two Yemoja logbooks and means nothing here.
+`reconciliation.md` says file import matches by heuristics — start time within a tolerance,
+duration, maximum depth — and that rule is not built, so **importing the same file twice
+duplicates it**.
+
+Two things a document may hold that this slice does not read: which of a dive's two halves a
+value sits in is not relied on, since the reader looks for the name in either; and a zone after
+a `datetime` is dropped rather than kept, `gmt_offset` sitting on the profile and not being read
+yet.
+
 ## Where this stands
 
 **The comparison is complete for UDDF 3.2.3.** Every section of the logbook has been read

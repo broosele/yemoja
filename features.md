@@ -61,7 +61,9 @@ them.
   still a logbook. It also brings a whole item type with it — a plan keeps its own
   inputs — which is `DATA-57` in [data/doc.md](data/doc.md).
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
-  designed for it; see [logic/reconciliation.md](logic/reconciliation.md).
+  built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
+  — the dive and its recording — and how far it goes is under *What is built* in
+  [logic/uddf.md](logic/uddf.md).
 - **FEAT-8 — Statistics over the logbook.** Totals, counts and summaries, each reported
   with what it was based on.
 - **FEAT-9 — Renewal tracking.** One list answering what needs renewing, across

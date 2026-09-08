@@ -12,6 +12,10 @@ kotlin {
         commonMain.dependencies {
             // The layer below, and the only one. Nothing here reaches a file or a screen.
             api(project(":data"))
+            // Reading UDDF, which is XML and which common Kotlin has no reader for. Apache 2.0.
+            // Here rather than in the data layer, whose promise of no dependencies stands: UDDF
+            // is a foreign format and reading one is this layer's job. `FEAT-7`.
+            implementation("io.github.pdvrieze.xmlutil:core:0.90.3")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
