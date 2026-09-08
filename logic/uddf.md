@@ -708,8 +708,21 @@ already taken.
 
 ## What is built
 
-A first slice: **the dive and its recording**, read into items. `logic/uddf/` holds it — an XML
-document read into a tree, and the mapping above it. It is reached the way another logbook is:
+**Every type in this document is read.** `logic/uddf/` holds an XML document read into a tree,
+one file of shared reading, the equipment table, and a mapping per type. Dives, their recordings
+and their gas; sites and the wrecks in them; people, whether owner or buddy; equipment; trips;
+and operators.
+
+**Items are read in the order they point in**, so a reference resolves by the time something
+needs it: a wreck before the site that names it, an operator before the trip, and dives last,
+since a dive points at almost everything. A `link`'s `ref` is looked up in what has been read so
+far and becomes this model's own reference — which is the direct mapping this document predicted,
+the parent element supplying the role and the `ref` only saying which item.
+
+What is not read is what this document already says has nowhere to go, and one thing that has:
+the `operator` inline in a `trippart` is not made an item, since it carries no id and two of them
+naming one dive centre would be two items. A `divebase` and a `link` is the lossless reading and
+the only one taken. It is reached the way another logbook is:
 the import screen takes a path, and a file at that path is read as UDDF where a folder is read as
 a logbook. A document holding no dives is refused rather than opening a review with nothing in
 it, since dives are all that is read. Everything else this document maps — sites,
@@ -732,7 +745,8 @@ this model would have called such an item, not which item it is: two dives on on
 into the user's and wrote over what was there, which is what `Matching.NONE` exists to stop. An
 arriving item whose id is already taken is minted afresh and lands beside what was there.
 
-The cost is that **importing the same file twice, answered as new each time, puts everything in twice**. That is visible and
+The cost is that **importing the same file twice, answered as new each time, puts everything in
+twice**. That is visible and
 can be deleted, where the alternative was quietly overwriting dives the user already had. The
 rule that recognises a dive by when it was and how deep it went is what `reconciliation.md` asks
 for — start time within a tolerance, duration, maximum depth — and it is not built.

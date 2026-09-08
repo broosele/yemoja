@@ -57,6 +57,22 @@ internal class Tag(
         return null
     }
 
+    /**
+     * Every tag called [name] anywhere inside this one, not going into [apart].
+     *
+     * What [find] does for one, for all of them. Used to gather the items a document holds
+     * wherever it happens to keep them, which spares this reader from knowing the shape of every
+     * container the format wraps them in.
+     */
+    fun everywhere(name: String, apart: Set<String> = emptySet()): List<Tag> {
+        val found = ArrayList<Tag>()
+        for (child in children) {
+            if (child.name == name) found += child
+            else if (child.name !in apart) found += child.everywhere(name, apart)
+        }
+        return found
+    }
+
     /** Everything said inside this tag and everything inside that, run together. */
     fun everything(): String =
         (said + children.joinToString("") { it.everything() }).trim()

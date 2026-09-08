@@ -1,11 +1,10 @@
 package yemoja.logic.uddf
 
+import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
-import yemoja.data.ReferenceableItem
 import yemoja.data.Stored
 import yemoja.data.Units
-import yemoja.logic.DIVE
 import yemoja.logic.Types
 import yemoja.logic.freeName
 import yemoja.logic.unknownOf
@@ -24,8 +23,10 @@ import yemoja.logic.unknownOf
  * `K`, `m3` and `Pa` among the names a file may declare, so the reading is handed those units
  * and the arithmetic is the one the model already does. What is left here is names and shape.
  *
- * **What is read is dives.** Sites, people, equipment, trips, operators and wrecks are mapped in
- * `uddf.md` and are not read yet.
+ * **Items are read in the order they point in**, so that a reference is resolved by the time
+ * something needs it: a wreck before the site that names it, an operator before the trip, and
+ * dives last, since a dive points at almost everything. A `link`'s `ref` is looked up in what has
+ * been read so far and becomes this model's own reference.
  */
 object Uddf {
 
@@ -46,25 +47,84 @@ object Uddf {
      * has a rule.
      */
     fun read(text: String): ItemSet {
+        val root = tagsIn(text)
         val set = ItemSet(Types.ALL)
-        for (tag in tagsIn(text).all("profiledata")) {
-            for (group in tag.all("repetitiongroup")) {
-                for (dive in group.all("dive")) add(diveOf(dive, set), set)
+        // What this reader called each thing the document names, by the name the document used.
+        val ours = HashMap<String, String>()
+        for (tag in root.everywhere("wreck")) put(Types.WRECK, wreckIn(tag), tag, set, ours)
+        for (tag in root.everywhere("site")) {
+            val wreck = tag.one("wreck")?.attributes?.get("id")?.let { ours[it] }
+            put(Types.DIVE_SITE, siteIn(tag, wreck), tag, set, ours)
+        }
+        for (tag in root.everywhere("divebase")) {
+            put(Types.OPERATOR, operatorIn(tag), tag, set, ours)
+        }
+        for (name in listOf("owner", "buddy")) {
+            for (tag in root.everywhere(name)) {
+                put(Types.PERSON, personIn(tag), tag, set, ours)
+            }
+        }
+        for (name in GEAR) {
+            for (tag in root.everywhere(name)) put(Types.GEAR, gearIn(tag), tag, set, ours)
+        }
+        // A trip's dives are read the other way about: a dive names its trip and the trip gathers
+        // them, so what a `relateddives` says is remembered and used when the dives are read.
+        val trips = HashMap<String, String>()
+        for (tag in root.everywhere("trippart")) {
+            val id = put(Types.DIVE_TRIP, tripIn(tag, ours), tag, set, ours) ?: continue
+            for (link in tag.find("relateddives", APART)?.all("link").orEmpty()) {
+                link.attributes["ref"]?.let { trips[it] = id }
+            }
+        }
+        for (group in root.everywhere("repetitiongroup")) {
+            var before: String? = null
+            for (dive in group.all("dive")) {
+                val id = put(Types.DIVE, diveIn(dive, ours, trips, before), dive, set, ours)
+                before = id ?: before
             }
         }
         return set
     }
 
-    /** Put [item] in [set] under the first id free from what its own type proposes. */
-    private fun add(item: ReferenceableItem, set: ItemSet) {
+    /**
+     * Put an item of [description] holding [fields] in [set], and remember what it was called.
+     *
+     * The id is this model's own, minted from what the item says: a UDDF id is a name for one
+     * document's use and says nothing outside the file. What it *was* called is kept only so that
+     * the links pointing at it can be followed.
+     */
+    private fun put(
+        description: ItemDescription,
+        fields: Map<String, Stored>,
+        tag: Tag,
+        set: ItemSet,
+        ours: MutableMap<String, String>,
+    ): String? {
+        if (fields.isEmpty()) return null
+        val item = ItemReader.read(description, Stored.Members(fields), set, SI)
         val proposed = item.description.proposedId?.invoke(item) ?: unknownOf(item)
-        set.add(freeName(proposed) { set[it] != null }, item)
+        val id = freeName(proposed) { set[it] != null }
+        set.add(id, item)
+        tag.attributes["id"]?.let { ours[it] = id }
+        return id
     }
 
-    /** One `dive`, with the parts of it this model keeps. */
-    private fun diveOf(dive: Tag, set: ItemSet): ReferenceableItem {
+    /**
+     * One `dive`, with the parts of it this model keeps.
+     *
+     * [before] is the dive read just before it in the same `repetitiongroup`, which is what
+     * `previous_dive` is: this model does not group, and the chain a group describes carries the
+     * same information. `DATA-60`. The first of a group takes none, which is what `<infinity/>`
+     * says there.
+     */
+    private fun diveIn(
+        dive: Tag,
+        ours: Map<String, String>,
+        trips: Map<String, String>,
+        before: String?,
+    ): Map<String, Stored> {
         val fields = LinkedHashMap<String, Stored>()
-        val said = { name: String -> dive.find(name, setOf(SAMPLES))?.said?.trim()?.ifEmpty { null } }
+        val said = { name: String -> dive.said(name) }
         said("divenumber")?.let { fields["dive_number"] = Stored.Leaf(it) }
         said("datetime")?.let {
             fields["start_date"] = Stored.Leaf(it.substringBefore('T'))
@@ -77,12 +137,23 @@ object Uddf {
         val rating = dive.find("rating", setOf(SAMPLES))
         (rating?.text("ratingvalue") ?: rating?.said?.trim()?.ifEmpty { null })
             ?.let { fields["rating"] = Stored.Leaf(it) }
+        fields.put("dive_site", dive.points("informationbeforedive", ours))
+        if (before != null) fields["previous_dive"] = Stored.Leaf("@$before")
+        // Kept only on the first of a group, where it describes a dive the file does not hold.
+        // Anywhere else the two dives it sits between are both here and their clocks say it.
+        if (before == null) {
+            fields.put("surface_interval", dive.find("surfaceintervalbeforedive", SAMPLES_APART)
+                ?.said("passedtime"))
+        }
         environmentOf(dive, said)?.let { fields["environment"] = it }
-        gearOf(said)?.let { fields["gear"] = it }
-        detailsOf(dive)?.let { fields["details"] = it }
+        gearOf(dive, said, ours)?.let { fields["gear"] = it }
+        detailsOf(dive, trips)?.let { fields["details"] = it }
         profileOf(dive)?.let { fields["profiles"] = it }
-        return ItemReader.read(DIVE, Stored.Members(fields), set, SI)
+        gasesOf(dive, ours)?.let { fields["gas_sources"] = it }
+        return fields
     }
+
+    private val SAMPLES_APART = setOf(SAMPLES)
 
     /** The conditions of a dive, or nothing where the document said none of them. */
     private fun environmentOf(dive: Tag, said: (String) -> String?): Stored.Members? {
@@ -94,21 +165,51 @@ object Uddf {
         return fields.ifEmpty { null }?.let { Stored.Members(it) }
     }
 
-    /** What a dive says about how warm the diver was, which this model keeps with the gear. */
-    private fun gearOf(said: (String) -> String?): Stored.Members? =
-        said("thermalcomfort")?.let {
-            Stored.Members(mapOf("temperature_evaluation" to Stored.Leaf(it)))
+    /** What a dive wore, and what it says about how warm the diver was. */
+    private fun gearOf(
+        dive: Tag,
+        said: (String) -> String?,
+        ours: Map<String, String>,
+    ): Stored.Members? {
+        val fields = LinkedHashMap<String, Stored>()
+        fields.put("temperature_evaluation", said("thermalcomfort"))
+        val used = dive.find("equipmentused", SAMPLES_APART)?.all("link").orEmpty()
+            .mapNotNull { it.attributes["ref"] }.mapNotNull { ours[it] }
+        if (used.isNotEmpty()) {
+            fields["items"] = Stored.Elements(used.map { Stored.Leaf("@$it") })
         }
+        return fields.ifEmpty { null }?.let { Stored.Members(it) }
+    }
 
-    /** A dive's notes, which are prose and may be spread over paragraphs. */
-    private fun detailsOf(dive: Tag): Stored.Members? {
-        val notes = dive.find("notes", setOf(SAMPLES)) ?: return null
-        val said = notes.all("para").joinToString("\n") { it.everything() }.ifEmpty {
-            notes.everything()
+    /**
+     * The gas a dive breathed, which UDDF keeps in two places and this model in one.
+     *
+     * A `mix` defines a gas once for the whole file and a `tankdata` holds one cylinder's
+     * pressures for one dive; a gas source is both at once. `uddf.md`.
+     */
+    private fun gasesOf(dive: Tag, ours: Map<String, String>): Stored.Members? {
+        val tanks = dive.everywhere("tankdata", SAMPLES_APART)
+        if (tanks.isEmpty()) return null
+        val sources = LinkedHashMap<String, Stored>()
+        for ((at, tank) in tanks.withIndex()) {
+            val fields = LinkedHashMap<String, Stored>()
+            fields.put("start_pressure", tank.said("tankpressurebegin"))
+            fields.put("end_pressure", tank.said("tankpressureend"))
+            fields.put("volume", tank.said("tankvolume"))
+            tank.all("link").firstNotNullOfOrNull { ours[it.attributes["ref"]] }
+                ?.let { fields["cylinder"] = Stored.Leaf("@$it") }
+            if (fields.isEmpty()) continue
+            sources["gas${if (at == 0) "" else "#$at"}"] = Stored.Members(fields)
         }
-        return said.ifEmpty { null }?.let {
-            Stored.Members(mapOf("remarks" to Stored.Leaf(it)))
-        }
+        return sources.ifEmpty { null }?.let { Stored.Members(it) }
+    }
+
+    /** A dive's notes and the trip it belonged to, which this model keeps together. */
+    private fun detailsOf(dive: Tag, trips: Map<String, String>): Stored.Members? {
+        val fields = LinkedHashMap<String, Stored>()
+        fields.put("remarks", dive.prose("notes"))
+        fields.put("dive_trip", dive.attributes["id"]?.let { trips[it] }?.let { "@$it" })
+        return fields.ifEmpty { null }?.let { Stored.Members(it) }
     }
 
     /**
@@ -141,7 +242,8 @@ object Uddf {
             // read, because a series refuses one that is not: the times are what holds it
             // together rather than one of the values in it. Where it will not, the text goes in
             // and the refusal says what was written.
-            points += Stored.Elements(listOf(Stored.Leaf(at.toIntOrNull() ?: at), Stored.Leaf(value)))
+            val when_ = Stored.Leaf(at.toIntOrNull() ?: at)
+            points += Stored.Elements(listOf(when_, Stored.Leaf(value)))
         }
         return if (points.isEmpty()) null else Stored.Elements(points)
     }
