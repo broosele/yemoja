@@ -149,8 +149,17 @@ and a key whose meaning moves is read every time.
 ## An import
 
 **`+` opens the import screen**, which offers the two an import can come from: a path, or a dive
-computer. A dive computer says that reading one is not built and names `FEAT-3`. Escape comes
-back out.
+computer. Escape comes back out.
+
+**A dive computer opens onto what is attached**, one row apiece, and enter reads the one the
+cursor is on. Where nothing answers — nothing plugged in, or a platform with no way to look — it
+says so and stays where it is. What is read is only what this logbook has not seen: the newest
+recording each computer made carries the token the device knows it by, and handing that back
+means the earlier dives are never transferred. `DATA-90`.
+
+**The interface stops while a download runs.** It takes minutes on a full computer, and nothing
+here says so or offers to give up. That is what this screen owes next: the port hands dives over
+as they are read, and nothing yet paints between them.
 
 **One prompt takes one path, and what is there says how it is read.** A folder is another Yemoja
 logbook and a file is a UDDF document. Asking which would be putting a question to somebody who

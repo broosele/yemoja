@@ -20,6 +20,7 @@ import yemoja.data.Series
 import yemoja.data.Stored
 import yemoja.data.Units
 import yemoja.logic.Change
+import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.freeName
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
@@ -99,6 +100,10 @@ class Screen(private val universe: Universe) {
 
     // Which source the import screen's cursor is on, or absent where that screen is not up.
     private var sourcing: Int? = null
+
+    // The dive computers found, once somebody has asked for them. Absent until then, which is
+    // what tells the import screen whether it is showing its two sources or a list of devices.
+    private var attached: List<DiveComputer>? = null
 
     // Which answer the cursor is on while an arriving item is being asked about, or absent where
     // none is being asked about. The first is that it is new; the rest are the items it might
@@ -275,6 +280,11 @@ class Screen(private val universe: Universe) {
      * screen answers while it is up: an import is begun or it is not.
      */
     private fun sourceKey(key: Key) {
+        val devices = attached
+        if (devices != null) {
+            deviceKey(key, devices)
+            return
+        }
         val typed = editing
         if (typed != null) {
             when (key) {
@@ -305,10 +315,55 @@ class Screen(private val universe: Universe) {
         }
     }
 
-    /** Take the source the cursor is on, of which only the first is built. */
+    /** Take the source the cursor is on: a path to name, or a device to pick from. */
     private fun chose() {
         message = null
-        if (sourcing == 0) editing = "" else message = NO_DEVICE
+        if (sourcing == 0) {
+            editing = ""
+            return
+        }
+        val found = universe.attached()
+        if (found.isEmpty()) {
+            message = NO_DEVICE
+            return
+        }
+        attached = found
+        sourcing = 0
+    }
+
+    /** What each key does while the dive computers found are being picked between. */
+    private fun deviceKey(key: Key, devices: List<DiveComputer>) {
+        when (key) {
+            Key.UP -> sourcing = ((sourcing ?: 0) - 1 + devices.size) % devices.size
+            Key.DOWN -> sourcing = ((sourcing ?: 0) + 1) % devices.size
+            Key.OPEN -> devices.getOrNull(sourcing ?: 0)?.let { download(it) }
+            Key.CLOSE -> {
+                attached = null
+                sourcing = 1
+                message = null
+            }
+
+            Key.LEAVE -> running = false
+            else -> Unit
+        }
+    }
+
+    /**
+     * Read [computer] and stage what it holds.
+     *
+     * **The interface stops while this runs.** A download takes minutes on a full computer and
+     * nothing here says so or offers to give up. That is the next thing this screen owes: the
+     * port hands dives over as they are read, and nothing yet paints between them.
+     */
+    private fun download(computer: DiveComputer) {
+        when (val done = universe.downloadFrom(computer)) {
+            is Outcome.Refused -> message = done.reason
+            is Outcome.Done -> {
+                attached = null
+                sourcing = null
+                message = null
+            }
+        }
     }
 
     /** Open the logbook in [folder] as an import, or say why it could not be. */
@@ -1132,7 +1187,8 @@ class Screen(private val universe: Universe) {
     private fun sourced(width: Int, rows: Int): List<Line> {
         val at = sourcing ?: 0
         val body = ArrayList<Line>()
-        for ((which, name) in SOURCES.withIndex()) {
+        val names = attached?.map { it.name } ?: SOURCES
+        for ((which, name) in names.withIndex()) {
             val here = if (which == at) setOf(Style.SELECTED) else emptySet()
             body += Line(listOf(Span("  $name", here)))
         }
@@ -1164,7 +1220,7 @@ class Screen(private val universe: Universe) {
 
     /** What is being looked at: the types, or how far into an item a reader has gone. */
     private fun where(): String {
-        if (sourcing != null) return "import"
+        if (sourcing != null) return if (attached == null) "import" else "import / a dive computer"
         if (merging != null) return "${type.name} / what is this?"
         if (!opened) return tabs()
         val said = path.flatMap { (naming, key) -> listOfNotNull(naming.name, key) }
@@ -1187,7 +1243,8 @@ class Screen(private val universe: Universe) {
         val said = if (merging != null) {
             listOf("[enter] take it in", "[esc] cancel", "$FIELDS answer")
         } else if (sourcing != null) {
-            if (editing == null) listOf("[enter] choose", "[esc] back", "$FIELDS source")
+            if (attached != null) listOf("[enter] read it", "[esc] back", "$FIELDS computer")
+            else if (editing == null) listOf("[enter] choose", "[esc] back", "$FIELDS source")
             else listOf("[enter] open", "[esc] back", "[backspace] rub out")
         } else if (message != null) {
             listOf("! $message")
@@ -1637,11 +1694,11 @@ class Screen(private val universe: Universe) {
         /** What a line break is shown as, which is how a file writes one. */
         // Enough to recognise the one wanted, and few enough to leave the typed line in view
         // on a short terminal. What is past them is reached by typing more of the id.
-        // The two an import can come from. Only the first is built; `FEAT-3` is the other.
-        // One row for two formats: a path is named and what is there says how it is read.
+        // The two an import can come from. One row for two formats: a path is named and what
+        // is there says how it is read. The other opens onto what is attached.
         private val SOURCES = listOf("a logbook folder or a UDDF file", "a dive computer")
 
-        private const val NO_DEVICE = "reading a dive computer is not built yet. FEAT-3."
+        private const val NO_DEVICE = "no dive computer is attached, or none can be reached."
 
         private const val MOST_SUGGESTIONS = 8
 

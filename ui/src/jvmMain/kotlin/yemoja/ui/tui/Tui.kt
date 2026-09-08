@@ -3,6 +3,7 @@ package yemoja.ui.tui
 import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
 import yemoja.logic.Universe
+import yemoja.logic.divecomputer.FoundDevices
 import yemoja.logic.Types
 
 /*
@@ -15,13 +16,13 @@ import yemoja.logic.Types
 /**
  * Show the logbook in [folder] until the user leaves, and answer with what to exit with.
  *
- * **Nothing is written from here.** The layers below can change a logbook and save it, and this
- * front end asks them to do neither: no key it answers to edits anything. `TUI-3` is where that
- * changes.
+ * **What this supplies is the platform.** A terminal to draw on, and a way to look for a dive
+ * computer: finding one needs a native library, which the layers below declare a port for and do
+ * not implement. `LOGIC-2`.
  */
 fun tui(folder: String): Int {
     val universe = try {
-        Universe.open(folder)
+        Universe.open(folder, FoundDevices())
     } catch (refused: RuntimeException) {
         // A folder that is not a logbook, or a file in it that will not read. Either way the
         // message names what was wrong, and a terminal that never started needs no tidying up.

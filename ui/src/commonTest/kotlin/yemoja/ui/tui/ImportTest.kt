@@ -137,12 +137,14 @@ class ImportScreenTest {
     }
 
     @Test
-    fun `a dive computer says it is not built`() {
+    fun `a dive computer with nothing attached says so`() {
+        // This universe was given nothing to look with, which is the same answer as nothing
+        // being plugged in: the front end supplies the platform. `LOGIC-2`.
         val screen = screen()
         screen.press(Key.Typed('+'))
         screen.press(Key.DOWN)
         screen.press(Key.OPEN)
-        assertTrue(body(screen).any { "FEAT-3" in it }, body(screen).toString())
+        assertTrue(body(screen).any { "no dive computer" in it }, body(screen).toString())
     }
 
     @Test
@@ -269,5 +271,149 @@ class AskedOnInsertTest {
         screen.press(Key.INSERT)
         val said = screen.paint(90, 12).last().text.trim()
         assertEquals("[enter] take it in | [esc] cancel | [^,v] answer", said)
+    }
+}
+
+/** A dive computer that is not one, so that the screen can be driven without hardware. */
+private class Pretend(
+    override val name: String,
+    private val held: List<yemoja.logic.divecomputer.Recording> = emptyList(),
+) : yemoja.logic.divecomputer.DiveComputer {
+    override val serial: String? = null
+    var askedAfter: String? = null
+    var asked = false
+
+    override fun recordings(after: String?): Sequence<yemoja.logic.divecomputer.Recording> {
+        asked = true
+        askedAfter = after
+        return held.asSequence()
+    }
+}
+
+/** Reading a dive computer from the import screen. */
+class ReadDeviceTest {
+
+    private fun dived(day: Int, fingerprint: String? = null) =
+        yemoja.logic.divecomputer.Recording(
+            computer = "Reef Computer",
+            fingerprint = fingerprint,
+            began = yemoja.data.Date(2026, 6, day),
+            at = yemoja.data.Time(10, 5, 0),
+        )
+
+    private fun over(vararg attached: Pretend): Pair<MemoryFileStore, Screen> {
+        val store = MemoryFileStore(mapOf("dive/d#0.json" to "{}"))
+        val universe = Universe(
+            LogbookReader.read(store, Types.ALL), null, store, null,
+            object : yemoja.logic.divecomputer.Devices {
+                override fun found() = attached.toList()
+            },
+            MemoryFileStore(emptyMap()),
+        )
+        return store to Screen(universe)
+    }
+
+    private fun body(screen: Screen): List<String> =
+        screen.paint(90, 12).map { it.text.trim() }.filter { it.isNotEmpty() }
+
+    @Test
+    fun `choosing a dive computer lists what is attached`() {
+        val (_, screen) = over(Pretend("Reef Computer"), Pretend("Old Gauge"))
+        screen.press(Key.Typed('+'))
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertTrue("Reef Computer" in body(screen), body(screen).toString())
+        assertTrue("Old Gauge" in body(screen), body(screen).toString())
+        assertTrue(body(screen).first().endsWith("a dive computer"), body(screen).first())
+    }
+
+    @Test
+    fun `escape comes back to the two an import can come from`() {
+        val (_, screen) = over(Pretend("Reef Computer"))
+        screen.press(Key.Typed('+'))
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        screen.press(Key.CLOSE)
+        assertTrue("a logbook folder or a UDDF file" in body(screen), body(screen).toString())
+    }
+
+    @Test
+    fun `enter reads the one the cursor is on and stages what it holds`() {
+        val reef = Pretend("Reef Computer", listOf(dived(21)))
+        val (_, screen) = over(Pretend("Old Gauge"), reef)
+        screen.press(Key.Typed('+'))
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        assertTrue(reef.asked, "the one the cursor was on")
+        toTab(screen, "dive")
+        assertEquals(2, screen.items.size, "the arriving dive above the one already held")
+    }
+
+    @Test
+    fun `it resumes from the newest recording that computer made`() {
+        // Handing the token back means only later dives are transferred at all. `DATA-90`.
+        val store = MemoryFileStore(
+            mapOf(
+                "dive/d#0.json" to """{"start_date": "2026-06-20", "start_time": "10:00:00",
+                    "profiles": {"reef_computer": {"dive_computer": "Reef Computer",
+                    "fingerprint": "aa"}}}""",
+            ),
+        )
+        val reef = Pretend("Reef Computer", listOf(dived(21)))
+        val universe = Universe(
+            LogbookReader.read(store, Types.ALL), null, store, null,
+            object : yemoja.logic.divecomputer.Devices {
+                override fun found() = listOf<yemoja.logic.divecomputer.DiveComputer>(reef)
+            },
+            MemoryFileStore(emptyMap()),
+        )
+        val screen = Screen(universe)
+        screen.press(Key.Typed('+'))
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        screen.press(Key.OPEN)
+        assertEquals("aa", reef.askedAfter)
+    }
+
+    @Test
+    fun `one holding nothing new says so and stays open`() {
+        val (_, screen) = over(Pretend("Reef Computer"))
+        screen.press(Key.Typed('+'))
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        screen.press(Key.OPEN)
+        assertTrue(body(screen).any { it.startsWith("!") }, body(screen).toString())
+        assertTrue("Reef Computer" in body(screen), "still listed, to be tried again")
+    }
+
+    @Test
+    fun `a logbook with nowhere to stage says so rather than writing somewhere`() {
+        // One opened from a folder stages beside it; one opened from nowhere has nowhere.
+        val store = MemoryFileStore(mapOf("dive/d#0.json" to "{}"))
+        val reef = Pretend("Reef Computer", listOf(dived(21)))
+        val universe = Universe(
+            LogbookReader.read(store, Types.ALL), null, store, null,
+            object : yemoja.logic.divecomputer.Devices {
+                override fun found() = listOf<yemoja.logic.divecomputer.DiveComputer>(reef)
+            },
+        )
+        val screen = Screen(universe)
+        screen.press(Key.Typed('+'))
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        screen.press(Key.OPEN)
+        assertTrue(body(screen).any { "nowhere to stage" in it }, body(screen).toString())
+    }
+
+    @Test
+    fun `the bar says the keys the list has`() {
+        val (_, screen) = over(Pretend("Reef Computer"))
+        screen.press(Key.Typed('+'))
+        screen.press(Key.DOWN)
+        screen.press(Key.OPEN)
+        val said = screen.paint(90, 12).last().text.trim()
+        assertEquals("[enter] read it | [esc] back | [^,v] computer", said)
     }
 }

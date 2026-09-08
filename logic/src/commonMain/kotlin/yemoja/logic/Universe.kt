@@ -19,6 +19,9 @@ import yemoja.data.json.FileStore
 import yemoja.data.json.LogbookFormatException
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
+import yemoja.logic.divecomputer.DiveComputer
+import yemoja.logic.divecomputer.Devices
+import yemoja.logic.divecomputer.Download
 import yemoja.logic.uddf.Uddf
 import yemoja.logic.uddf.UddfFormatException
 
@@ -55,6 +58,20 @@ class Universe(
     private val store: FileStore,
     /** The folder this was opened from, or absent where it was not opened from one. */
     val path: String? = null,
+    /**
+     * What can look for a dive computer, or absent where nothing on this platform can.
+     *
+     * Handed in rather than reached for: finding a device needs a native library and platform
+     * Bluetooth, which this layer declares a port for and does not implement. `LOGIC-2`.
+     */
+    private val devices: Devices? = null,
+    /**
+     * Where a review is staged, or absent where it is worked out from [path].
+     *
+     * A logbook opened from a folder stages beside it. One opened from nowhere has nowhere to
+     * stage and says so rather than writing a folder wherever it happens to be running.
+     */
+    private val staging: FileStore? = null,
 ) {
 
     /**
@@ -256,14 +273,15 @@ class Universe(
      */
     fun importFrom(from: String): Outcome {
         val store = DiskFileStore(from)
-        val staging = DiskFileStore((path ?: from) + ".import")
+        val where = stagedIn(from)
+            ?: return Outcome.Refused("this logbook has nowhere to stage an import")
         if (store.isFolder("")) {
             val source = try {
                 LogbookReader.read(store, logbook.descriptions)
             } catch (refused: LogbookFormatException) {
                 return Outcome.Refused(refused.message ?: "$from could not be read")
             }
-            importFrom(source, staging)
+            importFrom(source, where)
             return Outcome.Done()
         }
         if (!store.isFile("")) {
@@ -281,8 +299,46 @@ class Universe(
         }
         // Nothing matches: a UDDF file carries no ids of ours, so the ones its dives have were
         // minted while reading it and say nothing about which dive is which.
-        importFrom(source, staging, Matching.NONE)
+        importFrom(source, where, Matching.NONE)
         return Outcome.Done()
+    }
+
+    /** Every dive computer this machine can reach now, or none where nothing can look. */
+    fun attached(): List<DiveComputer> = devices?.found().orEmpty()
+
+    /**
+     * Stage what [computer] holds that this logbook has not seen.
+     *
+     * **It resumes.** The newest recording that computer made carries the token the device knows
+     * it by, and handing that back means only later dives are transferred at all. `DATA-90`. A
+     * logbook that has none of its tokens gets everything, which is slow rather than wrong.
+     *
+     * Nothing is matched by id: a downloaded dive is named by this model on the way in, so its
+     * id says what such a dive would be called rather than which dive it is. What a re-download
+     * does bring across is proposed against what overlaps it in time.
+     */
+    fun downloadFrom(computer: DiveComputer): Outcome {
+        val where = stagedIn(null)
+            ?: return Outcome.Refused("this logbook has nowhere to stage a download")
+        val read = Download.read(computer.recordings(Download.after(logbook, computer.name)))
+        if (read.allOf(Types.DIVE).isEmpty()) {
+            return Outcome.Refused("${computer.name} holds no dives this logbook has not seen")
+        }
+        importFrom(read, where, Matching.NONE)
+        return Outcome.Done()
+    }
+
+    /**
+     * Where to stage a review of what came from [source], or absent where there is nowhere.
+     *
+     * This logbook's own folder with `.import` after it, which puts it outside the logbook: what
+     * is being reviewed is not part of it and must not be read as though it were. A logbook
+     * opened from nowhere stages beside the source instead, and a download has no source folder
+     * to stage beside.
+     */
+    private fun stagedIn(source: String?): FileStore? {
+        staging?.let { return it }
+        return (path ?: source)?.let { DiskFileStore("$it.import") }
     }
 
     /** Put the review down, leaving whatever is staged where it is. */
@@ -370,7 +426,7 @@ class Universe(
          * where it names an item this logbook does not hold — a reference that resolves to
          * nothing is a dangling one, not a reason to refuse the logbook. `JSON-22`.
          */
-        fun open(path: String): Universe {
+        fun open(path: String, devices: Devices? = null): Universe {
             val store = DiskFileStore(path)
             // A folder that is not there answers every question with no, so without this a
             // mistyped path opens as an empty logbook rather than as a mistake.
@@ -379,7 +435,7 @@ class Universe(
             val items = LogbookReader.read(store, Types.ALL, manifest)
             val user = manifest.user?.let { items[it.id] }
             val owner = if (user?.description == Types.PERSON) user else null
-            return Universe(items, owner, store, path)
+            return Universe(items, owner, store, path, devices)
         }
     }
 }
