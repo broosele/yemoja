@@ -174,6 +174,13 @@ in, and a minted id names what this model would have called such an item rather 
 it is — so nothing is matched, and an arriving item whose id is already taken is minted afresh.
 Getting that wrong loses data rather than merely confusing it.
 
+**What cannot be worked out is asked.** Where nothing is matched, taking an item in puts the
+question: is this new, or is it one already held? The answer starts on the item it overlaps in
+time — an impossibility rather than a tolerance, nobody being on two dives at once, so two
+recordings that overlap are two recordings of one dive — and on *new* where it overlaps none. It
+proposes rather than decides, so being over-eager costs a keystroke and being wrong costs
+nothing. That is what stands in for the heuristics this document asks for, which are not built.
+
 Where ids are carried, an incoming item is met in one of three ways:
 
 | Meeting | What it is | What applying does |

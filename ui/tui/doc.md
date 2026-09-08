@@ -166,6 +166,16 @@ arrows, the fields and the editor are the ones already in use.
 worked-out value is not stored and an arriving item is not held, and neither is a claim about
 what is on disk.
 
+**Insert asks what the item is, where nothing could be matched by id.** Two answers: *as new*,
+or *the same as* one already held, chosen from a list of them. It starts on the one this item
+overlaps in time — two recordings that overlap are two recordings of one dive, nobody being on
+two at once — and on *as new* where it overlaps none. A proposal rather than a decision, so
+being over-eager costs a keystroke.
+
+Where the ids were carried, as they are between two Yemoja logbooks, nothing is asked: the id
+already says which item it is. Nor is anything asked where there is nothing it could be confused
+with.
+
 **Insert takes the item in; delete leaves it out.** Either way it goes from the list, so what is
 still in italic is what has not been decided. Delete asks twice, as it does for any item — what
 is staged may have been corrected by hand, and that correction is nowhere else. Insert does not

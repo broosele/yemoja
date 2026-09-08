@@ -176,3 +176,98 @@ class ImportScreenTest {
         assertNull(screen.typing)
     }
 }
+
+/** What insert asks where nothing could be matched by id. */
+class AskedOnInsertTest {
+
+    private fun unmatched(held: String, coming: String): Pair<MemoryFileStore, Screen> {
+        val store = MemoryFileStore(mapOf("dive/d#0.json" to held))
+        val universe = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val from = MemoryFileStore(mapOf("dive/x#0.json" to coming))
+        val source = LogbookReader.read(from, Types.ALL)
+        universe.importFrom(source, MemoryFileStore(emptyMap()), yemoja.logic.Matching.NONE)
+        val screen = Screen(universe)
+        toTab(screen, "dive")
+        return store to screen
+    }
+
+    private fun body(screen: Screen): List<String> =
+        screen.paint(90, 12).map { it.text.trim() }.filter { it.isNotEmpty() }
+
+    private fun dived(at: String) =
+        """{"start_date": "2024-06-15", "start_time": "$at", "duration": 3600}"""
+
+    @Test
+    fun `it asks, offering as new and the dives already held`() {
+        val (_, screen) = unmatched(dived("10:00:00"), dived("14:00:00"))
+        screen.press(Key.INSERT)
+        assertTrue("as new" in body(screen), body(screen).toString())
+        assertTrue("the same as d#0" in body(screen), body(screen).toString())
+    }
+
+    @Test
+    fun `one that overlaps in time is what it starts on`() {
+        val (_, screen) = unmatched(dived("10:00:00"), dived("10:30:00"))
+        screen.press(Key.INSERT)
+        val at = screen.paint(90, 12).indexOfFirst { row ->
+            row.spans.any { Style.SELECTED in it.styles }
+        }
+        val said = screen.paint(90, 12)[at].text
+        assertTrue("the same as d#0" in said, said)
+    }
+
+    @Test
+    fun `one that overlaps nothing starts on as new`() {
+        val (_, screen) = unmatched(dived("10:00:00"), dived("14:00:00"))
+        screen.press(Key.INSERT)
+        val at = screen.paint(90, 12).first { row -> row.spans.any { Style.SELECTED in it.styles } }
+        assertTrue("as new" in at.text, at.text)
+    }
+
+    @Test
+    fun `enter takes the answer the cursor is on`() {
+        val (store, screen) = unmatched(dived("10:00:00"), dived("10:30:00"))
+        screen.press(Key.INSERT)
+        screen.press(Key.OPEN)
+        assertEquals(1, screen.items.size, "one dive, not two")
+        assertTrue("10:30:00" in store.readText("dive/d#0.json"), store.readText("dive/d#0.json"))
+    }
+
+    @Test
+    fun `as new puts it in beside the one already there`() {
+        val (_, screen) = unmatched(dived("10:00:00"), dived("10:30:00"))
+        screen.press(Key.INSERT)
+        screen.press(Key.UP)
+        screen.press(Key.OPEN)
+        assertEquals(2, screen.items.size)
+    }
+
+    @Test
+    fun `escape leaves it in the review`() {
+        val (_, screen) = unmatched(dived("10:00:00"), dived("10:30:00"))
+        screen.press(Key.INSERT)
+        screen.press(Key.CLOSE)
+        assertEquals(2, screen.items.size, "the arriving one and the held one, as before")
+    }
+
+    @Test
+    fun `nothing to be confused with is not asked about`() {
+        val store = MemoryFileStore(mapOf("dive/d#0.json" to "{}"))
+        val universe = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val from = MemoryFileStore(mapOf("region.json" to """{"a": {}}"""))
+        universe.importFrom(LogbookReader.read(from, Types.ALL), MemoryFileStore(emptyMap()),
+            yemoja.logic.Matching.NONE)
+        val screen = Screen(universe)
+        toTab(screen, "region")
+        screen.press(Key.INSERT)
+        assertEquals(1, screen.items.size, "it went straight in")
+    }
+
+    @Test
+    fun `the bar says the three keys the question has`() {
+        val (_, screen) = unmatched(dived("10:00:00"), dived("10:30:00"))
+        screen.press(Key.INSERT)
+        val said = screen.paint(90, 12).last().text.trim()
+        assertEquals("[enter] take it in | [esc] cancel | [^,v] answer", said)
+    }
+}

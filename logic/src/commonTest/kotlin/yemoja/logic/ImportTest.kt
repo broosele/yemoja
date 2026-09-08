@@ -6,6 +6,7 @@ import yemoja.data.json.MemoryFileStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /*
@@ -269,13 +270,15 @@ class UnmatchedImportTest {
     fun `the arriving one goes in beside it, under a name that is free`() {
         val (into, import) = minted("""{"a": {"name": "Mine"}}""", """{"a": {"name": "Theirs"}}""")
         assertIs<Outcome.Done>(import.apply())
-        assertEquals(listOf("a", "a#1"), into.logbook.allOf(Types.REGION).map { into.logbook.idOf(it) })
+        val held = into.logbook.allOf(Types.REGION).map { into.logbook.idOf(it) }
+        assertEquals(listOf("a", "a#1"), held)
         assertEquals("Theirs", nameOf(into, "a#1"))
     }
 
     @Test
     fun `two arriving under one taken name do not land on each other`() {
-        val (into, import) = minted("""{"a": {}}""", """{"a": {"name": "One"}, "b": {"name": "Two"}}""")
+        val coming = """{"a": {"name": "One"}, "b": {"name": "Two"}}"""
+        val (into, import) = minted("""{"a": {}}""", coming)
         assertIs<Outcome.Done>(import.apply())
         assertEquals(3, into.logbook.allOf(Types.REGION).size)
     }
@@ -288,10 +291,77 @@ class UnmatchedImportTest {
         val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
         val coming = """{"a": {"name": "Theirs"}}"""
         repeat(2) {
-            val source = LogbookReader.read(MemoryFileStore(mapOf("region.json" to coming)), Types.ALL)
-            into.importFrom(source, MemoryFileStore(emptyMap()), Matching.NONE)
+            val from = MemoryFileStore(mapOf("region.json" to coming))
+            into.importFrom(LogbookReader.read(from, Types.ALL), MemoryFileStore(emptyMap()),
+                Matching.NONE)
             into.importing!!.apply()
         }
         assertEquals(2, into.logbook.allOf(Types.REGION).size)
+    }
+}
+
+/** Which item already held an arriving one appears to be, where nothing was matched by id. */
+class OverlapTest {
+
+    private fun dived(at: String, long: String = "3600") =
+        """{"start_date": "2024-06-15", "start_time": "$at", "duration": $long}"""
+
+    private fun over(held: String, coming: String): Import {
+        val store = MemoryFileStore(mapOf("dive/d#0.json" to held))
+        val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val from = MemoryFileStore(mapOf("dive/x#0.json" to coming))
+        into.importFrom(LogbookReader.read(from, Types.ALL), MemoryFileStore(emptyMap()),
+            Matching.NONE)
+        return into.importing!!
+    }
+
+    @Test
+    fun `one that overlaps in time is what it appears to be`() {
+        // Nobody is on two dives at once, so two recordings that overlap are one dive's.
+        assertEquals("d#0", over(dived("10:00:00"), dived("10:30:00")).overlapping("x#0"))
+    }
+
+    @Test
+    fun `one that does not overlap is nothing`() {
+        assertNull(over(dived("10:00:00"), dived("14:00:00")).overlapping("x#0"))
+    }
+
+    @Test
+    fun `two beginning at the same instant meet, however long they say they were`() {
+        val without = """{"start_date": "2024-06-15", "start_time": "10:00:00"}"""
+        assertEquals("d#0", over(without, without).overlapping("x#0"))
+    }
+
+    @Test
+    fun `one that says no time appears to be nothing`() {
+        assertNull(over(dived("10:00:00"), """{"max_depth": 12}""").overlapping("x#0"))
+    }
+
+    @Test
+    fun `a type that keeps no times is asked about and proposes nothing`() {
+        val store = MemoryFileStore(mapOf("region.json" to """{"a": {}}"""))
+        val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val from = MemoryFileStore(mapOf("region.json" to """{"b": {}}"""))
+        into.importFrom(LogbookReader.read(from, Types.ALL), MemoryFileStore(emptyMap()),
+            Matching.NONE)
+        assertNull(into.importing!!.overlapping("b"))
+    }
+
+    @Test
+    fun `taking one in onto another writes its fields there and adds nothing`() {
+        val import = over(dived("10:00:00"), """{"start_date": "2024-06-15",
+            "start_time": "10:30:00", "max_depth": 28.4}""")
+        assertIs<Outcome.Done>(import.insert("x#0", "d#0"))
+        val into = import.staged
+        assertEquals(0, into.logbook.allOf(Types.DIVE).size, "and it left the review")
+    }
+
+    @Test
+    fun `a carried id is not asked about`() {
+        val store = MemoryFileStore(mapOf("region.json" to "{}"))
+        val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val from = MemoryFileStore(mapOf("region.json" to """{"a": {}}"""))
+        into.importFrom(LogbookReader.read(from, Types.ALL), MemoryFileStore(emptyMap()))
+        assertTrue(!into.importing!!.asked("a"))
     }
 }

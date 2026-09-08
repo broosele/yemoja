@@ -100,6 +100,11 @@ class Screen(private val universe: Universe) {
     // Which source the import screen's cursor is on, or absent where that screen is not up.
     private var sourcing: Int? = null
 
+    // Which answer the cursor is on while an arriving item is being asked about, or absent where
+    // none is being asked about. The first is that it is new; the rest are the items it might
+    // turn out to be.
+    private var merging: Int? = null
+
     // What went wrong with the last thing asked for, shown until the next key. A refusal from
     // below has to reach the reader, and an arriving item that cannot go in is the one place
     // where the thing refused stays on the screen to be refused again.
@@ -227,6 +232,7 @@ class Screen(private val universe: Universe) {
     fun press(key: Key): Boolean {
         when {
             sourcing != null -> sourceKey(key)
+            merging != null -> mergedKey(key)
             editing != null -> typedKey(key)
             choosing != null -> chosenKey(key)
             else -> browsedKey(key)
@@ -328,7 +334,44 @@ class Screen(private val universe: Universe) {
         if (opened) return
         val import = universe.importing ?: return
         val id = item?.let { import.staged.logbook.idOf(it) } ?: return
-        message = (import.insert(id) as? Outcome.Refused)?.reason
+        // Where nothing could be matched by id, only the reader can say whether this is a dive
+        // they already have. Where there is nothing it could be, there is nothing to ask.
+        val answers = answers()
+        if (!import.asked(id) || answers.size == 1) {
+            message = (import.insert(id) as? Outcome.Refused)?.reason
+            return
+        }
+        merging = import.overlapping(id)?.let { answers.indexOf(it) }?.takeIf { it > 0 } ?: 0
+    }
+
+    /**
+     * What an arriving item might turn out to be: new, or one of the ones already held.
+     *
+     * Nothing first, which is *as new*, then the items of the open type in that type's own order.
+     */
+    private fun answers(): List<String?> =
+        listOf(null) + listing(type).mapNotNull { set.idOf(it) }
+
+    /** What each key does while an arriving item is being asked about. */
+    private fun mergedKey(key: Key) {
+        val many = answers().size
+        when (key) {
+            Key.UP -> merging = ((merging ?: 0) - 1 + many) % many
+            Key.DOWN -> merging = ((merging ?: 0) + 1) % many
+            Key.OPEN -> merged()
+            Key.CLOSE -> merging = null
+            Key.LEAVE -> running = false
+            else -> Unit
+        }
+    }
+
+    /** Take the arriving item in as the answer the cursor is on says. */
+    private fun merged() {
+        val import = universe.importing ?: return
+        val id = item?.let { import.staged.logbook.idOf(it) } ?: return
+        val done = import.insert(id, answers().getOrNull(merging ?: 0))
+        message = (done as? Outcome.Refused)?.reason
+        if (done is Outcome.Done) merging = null
     }
 
     /**
@@ -1051,6 +1094,7 @@ class Screen(private val universe: Universe) {
         val rows = height - CHROME
         val body = when {
             sourcing != null -> sourced(width, rows)
+            merging != null -> asked(width, rows)
             opened -> opened(width, rows)
             else -> listed(width, rows)
         }
@@ -1064,6 +1108,26 @@ class Screen(private val universe: Universe) {
     }
 
     private fun rule(width: Int): Line = Line(listOf(Span("-".repeat(width))))
+
+    /**
+     * What an arriving item might be, one answer to a row.
+     *
+     * The one the cursor is on is what enter takes. It starts on the item this one overlaps in
+     * time, and on *as new* where it overlaps none: a proposal rather than a decision, since two
+     * recordings that overlap are two recordings of one dive and nothing else is knowable
+     * without asking.
+     */
+    private fun asked(width: Int, rows: Int): List<Line> {
+        val at = merging ?: 0
+        val body = answers().mapIndexed { which, id ->
+            val here = if (which == at) setOf(Style.SELECTED) else emptySet()
+            Line(listOf(Span(if (id == null) "  as new" else "  the same as $id", here)))
+        }
+        scrollTo(at, rows)
+        return List(rows) { row ->
+            Line(fitted(body.getOrNull(first[tab] + row)?.spans.orEmpty(), width))
+        }
+    }
 
     /** The import screen: where a set of items can come from, and the folder one comes from. */
     private fun sourced(width: Int, rows: Int): List<Line> {
@@ -1102,6 +1166,7 @@ class Screen(private val universe: Universe) {
     /** What is being looked at: the types, or how far into an item a reader has gone. */
     private fun where(): String {
         if (sourcing != null) return "import"
+        if (merging != null) return "${type.name} / what is this?"
         if (!opened) return tabs()
         val said = path.flatMap { (naming, key) -> listOfNotNull(naming.name, key) }
         return (listOf(type.name, item?.let { idOf(it) }) + said).joinToString(" / ")
@@ -1120,7 +1185,9 @@ class Screen(private val universe: Universe) {
      * without being told to; nobody presses `n`.
      */
     private fun actions(width: Int): String {
-        val said = if (sourcing != null) {
+        val said = if (merging != null) {
+            listOf("[enter] take it in", "[esc] cancel", "$FIELDS answer")
+        } else if (sourcing != null) {
             if (editing == null) listOf("[enter] choose", "[esc] back", "$FIELDS source")
             else listOf("[enter] open", "[esc] back", "[backspace] rub out")
         } else if (message != null) {

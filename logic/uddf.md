@@ -732,7 +732,7 @@ this model would have called such an item, not which item it is: two dives on on
 into the user's and wrote over what was there, which is what `Matching.NONE` exists to stop. An
 arriving item whose id is already taken is minted afresh and lands beside what was there.
 
-The cost is that **importing the same file twice puts everything in twice**. That is visible and
+The cost is that **importing the same file twice, answered as new each time, puts everything in twice**. That is visible and
 can be deleted, where the alternative was quietly overwriting dives the user already had. The
 rule that recognises a dive by when it was and how deep it went is what `reconciliation.md` asks
 for — start time within a tolerance, duration, maximum depth — and it is not built.

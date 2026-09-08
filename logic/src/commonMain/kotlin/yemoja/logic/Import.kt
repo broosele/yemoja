@@ -1,9 +1,13 @@
 package yemoja.logic
 
+import yemoja.data.Date
+import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
 import yemoja.data.ItemWriter
 import yemoja.data.ReferenceableItem
+import yemoja.data.Result
+import yemoja.data.Time
 import yemoja.data.Units
 import yemoja.data.inOrder
 import yemoja.data.json.FileStore
@@ -93,13 +97,65 @@ class Import private constructor(
     /**
      * Put the item called [id] into the logbook, and take it out of the staged one.
      *
+     * [onto] is the item already held that this one turns out to be, whose fields it writes onto.
+     * Absent means it is new. Where nothing could be matched by id, only the person reading can
+     * say which it is, so this is asked rather than worked out. `RECON-2`.
+     *
      * It is out of the staged logbook only where it went into the other, so a refusal leaves the
      * review as it was and the reason can be shown against an item still on the screen.
      */
-    fun insert(id: String): Outcome {
-        val done = into.change(Operation.IMPORT, *changesFor(listOf(id)).toTypedArray())
+    fun insert(id: String, onto: String? = null): Outcome {
+        val done = into.change(Operation.IMPORT, *changesFor(listOf(id), onto).toTypedArray())
         if (done is Outcome.Done) drop(listOf(id))
         return done
+    }
+
+    /**
+     * Whether taking [id] in is a question rather than a fact.
+     *
+     * It is where nothing could be matched by id, which is every source but another Yemoja
+     * logbook. A carried id already says which item it is and asking would be noise.
+     */
+    fun asked(id: String): Boolean =
+        matching == Matching.NONE && staged.logbook[id] != null
+
+    /**
+     * Which item already held the arriving one called [id] appears to be, or absent where none.
+     *
+     * **Overlapping in time**, which is an impossibility rather than a tolerance: nobody is on
+     * two dives at once, so two recordings that overlap are two recordings of one dive. What
+     * `reconciliation.md` asks for — a start time within a tolerance, a duration, a maximum
+     * depth — is a number nobody can pick well, and this needs none. It proposes rather than
+     * decides, so being over-eager costs a keystroke and being wrong costs nothing.
+     *
+     * Absent where either says no time, and for a type that keeps none.
+     */
+    fun overlapping(id: String): String? {
+        val here = staged.logbook[id] ?: return null
+        val span = spanOf(here) ?: return null
+        for (there in into.logbook.allOf(here.description)) {
+            val other = spanOf(there) ?: continue
+            if (span.first <= other.second && other.first <= span.second) {
+                return into.logbook.idOf(there)
+            }
+        }
+        return null
+    }
+
+    /**
+     * When [item] began and ended, in seconds, or absent where it does not say.
+     *
+     * A missing duration is no length rather than no answer, so two that began at the same
+     * instant still meet. `duration` is worked out from the times or the recording where nothing
+     * wrote one, so a dive that says when it was usually says how long it took as well.
+     */
+    private fun spanOf(item: Item): Pair<Long, Long>? {
+        if (item.description["start_date"] == null) return null
+        val date = (item.read("start_date") as? Result.Usable)?.value as? Date ?: return null
+        val time = (item.read("start_time") as? Result.Usable)?.value as? Time ?: return null
+        val began = date.epochDay * SECONDS_IN_DAY + time.secondOfDay
+        val long = (item.read("duration") as? Result.Usable)?.value as? Double ?: 0.0
+        return began to began + long.toLong()
     }
 
     /** Take [id] out of the staged logbook without putting it anywhere. */
@@ -132,13 +188,18 @@ class Import private constructor(
     }
 
     /** What putting the items called [ids] into the logbook comes to. */
-    private fun changesFor(ids: List<String>): List<Change> {
+    private fun changesFor(ids: List<String>, onto: String? = null): List<Change> {
         val changes = ArrayList<Change>()
         for (id in ids) {
             val item = staged.logbook[id] ?: continue
             val description = item.description
             val held = ItemWriter.write(item, Units.DEFAULT).members
                 .filterKeys { description[it] != null }
+            val chosen = onto?.let { into.logbook[it] }?.takeIf { it.description == description }
+            if (chosen != null) {
+                for ((field, value) in held) changes += Change.Write(chosen, field, value)
+                continue
+            }
             when (meeting(id)) {
                 // A name already taken is minted afresh, which only arises where nothing is
                 // matched: under `BY_ID` a taken id is a match rather than a clash.
@@ -174,6 +235,8 @@ class Import private constructor(
     }
 
     companion object {
+
+        private const val SECONDS_IN_DAY = 24L * 60 * 60
 
         /**
          * Stage [incoming] in [staging], to go into [into].
