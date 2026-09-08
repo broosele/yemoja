@@ -238,3 +238,60 @@ class ListedImportTest {
         assertEquals(listOf("a", "b"), said, "alphabetical, as a region's tab lists them")
     }
 }
+
+/** A source whose ids were minted here, which no id may be matched by. */
+class UnmatchedImportTest {
+
+    private fun minted(held: String, coming: String): Pair<Universe, Import> {
+        val store = MemoryFileStore(mapOf("region.json" to held))
+        val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val source = LogbookReader.read(MemoryFileStore(mapOf("region.json" to coming)), Types.ALL)
+        into.importFrom(source, MemoryFileStore(emptyMap()), Matching.NONE)
+        return into to into.importing!!
+    }
+
+    @Test
+    fun `nothing is met, however its id reads`() {
+        // A minted id says what this model would have called such an item, not which it is.
+        val (_, import) = minted("""{"a": {"name": "Mine"}}""", """{"a": {"name": "Theirs"}}""")
+        assertEquals(Meeting.NOTHING, import.meeting("a"))
+    }
+
+    @Test
+    fun `an item already held is left exactly as it was`() {
+        // The bug this exists for: an unrelated item under a colliding id was written over.
+        val (into, import) = minted("""{"a": {"name": "Mine"}}""", """{"a": {"name": "Theirs"}}""")
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals("Mine", nameOf(into, "a"))
+    }
+
+    @Test
+    fun `the arriving one goes in beside it, under a name that is free`() {
+        val (into, import) = minted("""{"a": {"name": "Mine"}}""", """{"a": {"name": "Theirs"}}""")
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals(listOf("a", "a#1"), into.logbook.allOf(Types.REGION).map { into.logbook.idOf(it) })
+        assertEquals("Theirs", nameOf(into, "a#1"))
+    }
+
+    @Test
+    fun `two arriving under one taken name do not land on each other`() {
+        val (into, import) = minted("""{"a": {}}""", """{"a": {"name": "One"}, "b": {"name": "Two"}}""")
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals(3, into.logbook.allOf(Types.REGION).size)
+    }
+
+    @Test
+    fun `importing the same thing twice puts it in twice, which is visible`() {
+        // Not what anybody wants, and better than quietly writing over what was there. The rule
+        // that recognises an item by what it says is what reconciliation.md asks for.
+        val store = MemoryFileStore(mapOf("region.json" to "{}"))
+        val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val coming = """{"a": {"name": "Theirs"}}"""
+        repeat(2) {
+            val source = LogbookReader.read(MemoryFileStore(mapOf("region.json" to coming)), Types.ALL)
+            into.importFrom(source, MemoryFileStore(emptyMap()), Matching.NONE)
+            into.importing!!.apply()
+        }
+        assertEquals(2, into.logbook.allOf(Types.REGION).size)
+    }
+}

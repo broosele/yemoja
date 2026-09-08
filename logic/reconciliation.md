@@ -168,8 +168,13 @@ Three things it still turns on, two of them unchanged:
 
 ### What applying does
 
-An incoming item is met in one of three ways, by id — which is exact between two Yemoja
-logbooks, and is what sync matches on:
+**Whether ids may be matched at all is the source's to say.** Another Yemoja logbook carries
+ids that mean the same on both sides. A source with none of its own has them minted on the way
+in, and a minted id names what this model would have called such an item rather than which item
+it is — so nothing is matched, and an arriving item whose id is already taken is minted afresh.
+Getting that wrong loses data rather than merely confusing it.
+
+Where ids are carried, an incoming item is met in one of three ways:
 
 | Meeting | What it is | What applying does |
 |---|---|---|

@@ -226,9 +226,18 @@ class Universe(
     var importing: Import? = null
         private set
 
-    /** Stage [source] in [staging], to be reviewed and taken in. */
-    fun importFrom(source: ItemSet, staging: FileStore) {
-        importing = Import.begin(source, staging, this)
+    /**
+     * Stage [source] in [staging], to be reviewed and taken in.
+     *
+     * [matching] is the source's to say, and saying it wrong loses data: an id minted on the way
+     * in names what this model would have called such an item rather than which item it is.
+     */
+    fun importFrom(
+        source: ItemSet,
+        staging: FileStore,
+        matching: Matching = Matching.BY_ID,
+    ) {
+        importing = Import.begin(source, staging, this, matching)
     }
 
     /**

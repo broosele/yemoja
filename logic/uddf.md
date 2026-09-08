@@ -721,11 +721,22 @@ reads it, exactly as a value out of a JSON file does.
 
 **Ids are minted rather than carried.** A UDDF `id` is a name for one document's own use — it
 says nothing outside the file — so a dive is named for the day it was made on, as this model
-names one. What follows is that a second import of the same file does not recognise the dives it
-already brought in: matching by id is exact between two Yemoja logbooks and means nothing here.
-`reconciliation.md` says file import matches by heuristics — start time within a tolerance,
-duration, maximum depth — and that rule is not built, so **importing the same file twice
-duplicates it**.
+names one.
+
+**So nothing is matched by id, and a UDDF import matches nothing at all.** A minted id says what
+this model would have called such an item, not which item it is: two dives on one day are both
+`2024-06-15#0` whether or not they are the same dive. Matching on that folded a stranger's dive
+into the user's and wrote over what was there, which is what `Matching.NONE` exists to stop. An
+arriving item whose id is already taken is minted afresh and lands beside what was there.
+
+The cost is that **importing the same file twice puts everything in twice**. That is visible and
+can be deleted, where the alternative was quietly overwriting dives the user already had. The
+rule that recognises a dive by when it was and how deep it went is what `reconciliation.md` asks
+for — start time within a tolerance, duration, maximum depth — and it is not built.
+
+One thing that follows and is not handled: a reference to an item whose id was minted afresh is
+not rewritten. Nothing read from UDDF points at anything else read from it yet, so there is
+nothing to follow; a source that did would need this.
 
 Two things a document may hold that this slice does not read: which of a dive's two halves a
 value sits in is not relied on, since the reader looks for the name in either; and a zone after

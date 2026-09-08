@@ -17,12 +17,31 @@ import yemoja.data.json.LogbookWriter
  */
 
 /**
- * Meeting is what an incoming item finds in the logbook it is going into.
+ * Matching is how an incoming item is recognised as one already held, which only its source knows.
  *
- * Matched by id, which is exact between two Yemoja logbooks and is what sync matches on. A source
- * that has no ids of its own — a dive computer, another application's file — owes a matching rule
- * of its own before this says anything about it.
+ * **An id means something only where it was carried.** Two Yemoja logbooks name the same item the
+ * same way, so an id matches exactly and is what sync matches on. A source with no ids of its own
+ * has them minted on the way in, and a minted id says only what this model would have called such
+ * an item — so two dives on one day are both `2024-06-15#0` whether or not they are the same
+ * dive, and matching on that would fold a stranger's dive into the user's.
  */
+enum class Matching {
+
+    /** By the id it came with, which is what another Yemoja logbook offers. */
+    BY_ID,
+
+    /**
+     * Not at all: everything is new, and an id already taken is minted afresh.
+     *
+     * The honest position for a source whose ids were minted here. Importing the same file twice
+     * puts everything in twice, which is visible and can be deleted, where the alternative is
+     * quietly writing over dives the user already had. A rule that recognises a dive by when it
+     * was and how deep it went is what `reconciliation.md` asks for and it is not built.
+     */
+    NONE,
+}
+
+/** Meeting is what an incoming item finds in the logbook it is going into. */
 enum class Meeting {
 
     /** Nothing answers to its id, so it goes in under the id it came with. */
@@ -55,6 +74,7 @@ class Import private constructor(
     /** The incoming items, as a logbook of their own. */
     val staged: Universe,
     private val into: Universe,
+    private val matching: Matching,
 ) {
 
     /** Every incoming item, each type in the order that type asks for. `DATA-89`. */
@@ -63,6 +83,7 @@ class Import private constructor(
 
     /** What the item called [id] finds in the logbook it is going into. */
     fun meeting(id: String): Meeting {
+        if (matching == Matching.NONE) return Meeting.NOTHING
         val here = staged.logbook[id] ?: return Meeting.NOTHING
         val there = into.logbook[id] ?: return Meeting.NOTHING
         return if (there.description == here.description) Meeting.THE_SAME
@@ -119,7 +140,9 @@ class Import private constructor(
             val held = ItemWriter.write(item, Units.DEFAULT).members
                 .filterKeys { description[it] != null }
             when (meeting(id)) {
-                Meeting.NOTHING -> changes += Change.Add(description, held, id)
+                // A name already taken is minted afresh, which only arises where nothing is
+                // matched: under `BY_ID` a taken id is a match rather than a clash.
+                Meeting.NOTHING -> changes += Change.Add(description, held, freeIn(id, changes))
                 Meeting.THE_SAME -> {
                     val there = into.logbook[id] ?: continue
                     for ((field, value) in held) changes += Change.Write(there, field, value)
@@ -129,6 +152,18 @@ class Import private constructor(
             }
         }
         return changes
+    }
+
+    /**
+     * The first name free from [id], counting what [going] is already adding.
+     *
+     * **A reference to a renamed item is not followed.** Nothing read from a source with minted
+     * ids points at anything else read from it yet, so there is nothing to follow; a source that
+     * did would need this to rewrite what names it, and that is not built.
+     */
+    private fun freeIn(id: String, going: List<Change>): String {
+        val minted = going.filterIsInstance<Change.Add>().mapNotNull { it.id }
+        return freeName(id) { into.logbook[it] != null || it in minted }
     }
 
     /** Take [ids] out of the staged logbook, which is what leaves the review shorter. */
@@ -147,14 +182,19 @@ class Import private constructor(
          * makes them resolvable in their own right: a dive that names a person finds that person
          * among the items that arrived with it rather than in the logbook it is going into.
          */
-        fun begin(incoming: ItemSet, staging: FileStore, into: Universe): Import {
+        fun begin(
+            incoming: ItemSet,
+            staging: FileStore,
+            into: Universe,
+            matching: Matching = Matching.BY_ID,
+        ): Import {
             for (description in incoming.descriptions) {
                 for (item in incoming.allOf(description)) {
                     val id = incoming.idOf(item) ?: continue
                     LogbookWriter.write(staging, description, id, item)
                 }
             }
-            return open(staging, incoming.descriptions, into)
+            return open(staging, incoming.descriptions, into, matching)
         }
 
         /**
@@ -164,7 +204,15 @@ class Import private constructor(
          * going into may have changed while the review was put down. What is left in the folder
          * is what has not been decided, an item taken in or turned down having left it.
          */
-        fun open(staging: FileStore, types: List<ItemDescription>, into: Universe): Import =
-            Import(Universe(LogbookReader.read(staging, types), null, staging), into)
+        fun open(
+            staging: FileStore,
+            types: List<ItemDescription>,
+            into: Universe,
+            matching: Matching = Matching.BY_ID,
+        ): Import = Import(
+            Universe(LogbookReader.read(staging, types), null, staging),
+            into,
+            matching,
+        )
     }
 }
