@@ -106,7 +106,7 @@ them.
 | `decomodel.conservatism` | `profile.conservatism` | a dial position, no range |
 | `decomodel.params.gf` | `gradient_factor_low`, `_high` | 0 to 1, not 0 to 100 |
 | `location.latitude`, `.longitude` | a proposed site's | `LOGIC-18` |
-| `location.altitude` | a proposed site's `elevation` | available, not settled |
+| `location.altitude` | a proposed site's `elevation` | filled in and shown: `LOGIC-18` |
 | `sample.pressure.tank` | which gas source | `LOGIC-12` |
 | `sample.event.type`, `.flags` | `profile.alarms` | five of twenty-six, beginnings only |
 | `sample.event.value` | — | dropped: per event and per device |

@@ -457,9 +457,34 @@ To settle when we discuss architecture and features:
    `DC_SAMPLE_LOCATION` is dropped under `LOGIC-10`. It is a track through the dive rather than
    a position, and nothing here holds one.
 
-   The altitude is available for a site's `elevation` where one is created, which is the height
-   of the water above sea level and what a fix at the surface measures. Whether it is good
-   enough to use unasked is not settled here.
+   **The altitude fills in a proposed site's `elevation`, and nothing where the device reports
+   none.** It is the height of the water above sea level and what a fix at the surface measures,
+   so it is the right quantity; the question was whether it is trustworthy enough to write.
+
+   It follows `LOGIC-11` rather than `LOGIC-10`. A vertical fix is the worst of the three
+   coordinates — satellites all sit above the horizon, so the vertical error is the large one —
+   and `elevation` is not a decoration: the manual says diving at altitude changes how a dive is
+   worked out. But the answer to a poor figure is not to drop it, because the user is already
+   looking at this one. A site is proposed and accepted, so an elevation filled into that
+   proposal is a default somebody sees and can correct, which is what `LOGIC-11` means by a
+   stated assumption rather than a silent one. Where the device reports no altitude, nothing is
+   offered: an empty field is honestly empty.
+
+   The middle answer is ruled out by this question's own reasoning. *Use it only above the
+   altitude where it starts to matter* is a threshold, and a threshold here is a number nobody
+   can pick well, which is why no radius was chosen for the sites either.
+
+   **The stakes are lower than they look, and for a reason worth stating.** `DC_FIELD_ATMOSPHERIC`
+   is already carried to `environment.atmospheric_pressure`. Ambient pressure is what
+   decompression wants and elevation is a proxy for it, so a downloaded dive records the
+   meaningful quantity by a better route. It is a typed or planned dive that leans on
+   `elevation`, and neither has a fix to take one from.
+
+   One thing this does not establish: whether devices report that altitude from satellites or
+   from their own pressure sensor. A barometric figure is derived from the quantity that matters
+   rather than from satellite geometry and would deserve more trust than the above gives it. It
+   does not change what is done with it — offered, shown, correctable — so it is worth knowing
+   and did not need to be known first.
 
    This gives [reconciliation.md](reconciliation.md) a kind of candidate that is not an item
    being imported, which bears on `RECON-2`.
