@@ -167,10 +167,10 @@ worked-out value is not stored and an arriving item is not held, and neither is 
 what is on disk.
 
 **Insert asks what the item is, where nothing could be matched by id.** Two answers: *as new*,
-or *the same as* one already held, chosen from a list of them. It starts on the one this item
-overlaps in time — two recordings that overlap are two recordings of one dive, nobody being on
-two at once — and on *as new* where it overlaps none. A proposal rather than a decision, so
-being over-eager costs a keystroke.
+or *the same as* one already held, chosen from a list of them. It starts on whichever the layer
+below proposes — one overlapping in time, or one of the same name — and on *as new* where it
+proposes none. A proposal rather than a decision, so being over-eager costs a keystroke.
+[../../logic/reconciliation.md](../../logic/reconciliation.md) has the two rules.
 
 Where the ids were carried, as they are between two Yemoja logbooks, nothing is asked: the id
 already says which item it is. Nor is anything asked where there is nothing it could be confused

@@ -175,11 +175,25 @@ it is — so nothing is matched, and an arriving item whose id is already taken 
 Getting that wrong loses data rather than merely confusing it.
 
 **What cannot be worked out is asked.** Where nothing is matched, taking an item in puts the
-question: is this new, or is it one already held? The answer starts on the item it overlaps in
-time — an impossibility rather than a tolerance, nobody being on two dives at once, so two
-recordings that overlap are two recordings of one dive — and on *new* where it overlaps none. It
-proposes rather than decides, so being over-eager costs a keystroke and being wrong costs
-nothing. That is what stands in for the heuristics this document asks for, which are not built.
+question: is this new, or is it one already held? An item is proposed as the answer and the
+reader says yes or otherwise, so being over-eager costs a keystroke and being wrong costs
+nothing. That is what stands in for the heuristics this document asks for — a start time within
+a tolerance, a duration, a maximum depth — which are three numbers nobody can pick well.
+
+**Two rules propose, and neither has a number in it.** One that says when it was is proposed by
+**overlapping in time**: an impossibility rather than a tolerance, nobody being on two dives at
+once, so two recordings that overlap are two recordings of one dive. Everything else is proposed
+by **the name its type would give it** — nine of the ten types propose an id from the item's own
+`name`, so two logbooks each holding a site called Blue Hole both propose `blue_hole`, and the
+proposal is the name match a reader would make by eye.
+
+Two things that rule deliberately does not do. The index a proposal may carry is left off, since
+it says where an item sat rather than what it is, which is what made an id unusable for matching
+in the first place. And an item nobody named proposes nothing: two of those are not one, and
+`unknown_person` says as much about either.
+
+Two people both called John Smith are proposed as one, which is `JSON-6`'s collision — met here
+where somebody can answer it rather than resolved by a rule.
 
 Where ids are carried, an incoming item is met in one of three ways:
 

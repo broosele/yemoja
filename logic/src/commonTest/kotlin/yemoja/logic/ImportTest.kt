@@ -301,7 +301,7 @@ class UnmatchedImportTest {
 }
 
 /** Which item already held an arriving one appears to be, where nothing was matched by id. */
-class OverlapTest {
+class ProposalTest {
 
     private fun dived(at: String, long: String = "3600") =
         """{"start_date": "2024-06-15", "start_time": "$at", "duration": $long}"""
@@ -318,33 +318,62 @@ class OverlapTest {
     @Test
     fun `one that overlaps in time is what it appears to be`() {
         // Nobody is on two dives at once, so two recordings that overlap are one dive's.
-        assertEquals("d#0", over(dived("10:00:00"), dived("10:30:00")).overlapping("x#0"))
+        assertEquals("d#0", over(dived("10:00:00"), dived("10:30:00")).proposal("x#0"))
     }
 
     @Test
     fun `one that does not overlap is nothing`() {
-        assertNull(over(dived("10:00:00"), dived("14:00:00")).overlapping("x#0"))
+        assertNull(over(dived("10:00:00"), dived("14:00:00")).proposal("x#0"))
     }
 
     @Test
     fun `two beginning at the same instant meet, however long they say they were`() {
         val without = """{"start_date": "2024-06-15", "start_time": "10:00:00"}"""
-        assertEquals("d#0", over(without, without).overlapping("x#0"))
+        assertEquals("d#0", over(without, without).proposal("x#0"))
     }
 
     @Test
     fun `one that says no time appears to be nothing`() {
-        assertNull(over(dived("10:00:00"), """{"max_depth": 12}""").overlapping("x#0"))
+        assertNull(over(dived("10:00:00"), """{"max_depth": 12}""").proposal("x#0"))
+    }
+
+    /** An import of one region into a logbook holding another, matching nothing. */
+    private fun regions(held: String, coming: String): Import {
+        val store = MemoryFileStore(mapOf("region.json" to held))
+        val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
+        val from = MemoryFileStore(mapOf("region.json" to coming))
+        into.importFrom(LogbookReader.read(from, Types.ALL), MemoryFileStore(emptyMap()),
+            Matching.NONE)
+        return into.importing!!
     }
 
     @Test
-    fun `a type that keeps no times is asked about and proposes nothing`() {
-        val store = MemoryFileStore(mapOf("region.json" to """{"a": {}}"""))
-        val into = Universe(LogbookReader.read(store, Types.ALL), null, store)
-        val from = MemoryFileStore(mapOf("region.json" to """{"b": {}}"""))
-        into.importFrom(LogbookReader.read(from, Types.ALL), MemoryFileStore(emptyMap()),
-            Matching.NONE)
-        assertNull(into.importing!!.overlapping("b"))
+    fun `a type that keeps no times is proposed by the name its type would give it`() {
+        // Nine of the ten propose an id from the item's own name, so the proposal is the name
+        // match: two logbooks each holding a Blue Hole both propose blue_hole.
+        val import = regions("""{"x": {"name": "North Sea"}}""", """{"y": {"name": "North Sea"}}""")
+        assertEquals("x", import.proposal("y"))
+    }
+
+    @Test
+    fun `one of another name is proposed as nothing`() {
+        val import = regions("""{"x": {"name": "North Sea"}}""", """{"y": {"name": "Red Sea"}}""")
+        assertNull(import.proposal("y"))
+    }
+
+    @Test
+    fun `two nobody named are not proposed as one`() {
+        // They would both fall back to unknown_region, which says nothing about either.
+        assertNull(regions("""{"x": {}}""", """{"y": {}}""").proposal("y"))
+    }
+
+    @Test
+    fun `the index a proposal carries is left off`() {
+        // It says where an item sat rather than what it is, which is what makes an id unusable
+        // for matching in the first place.
+        val held = """{"north_sea": {"name": "North Sea"}, "b": {"name": "North Sea"}}"""
+        val import = regions(held, """{"y": {"name": "North Sea"}}""")
+        assertEquals("north_sea", import.proposal("y"))
     }
 
     @Test

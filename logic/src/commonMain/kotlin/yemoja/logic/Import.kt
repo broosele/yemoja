@@ -122,24 +122,50 @@ class Import private constructor(
     /**
      * Which item already held the arriving one called [id] appears to be, or absent where none.
      *
-     * **Overlapping in time**, which is an impossibility rather than a tolerance: nobody is on
-     * two dives at once, so two recordings that overlap are two recordings of one dive. What
-     * `reconciliation.md` asks for — a start time within a tolerance, a duration, a maximum
-     * depth — is a number nobody can pick well, and this needs none. It proposes rather than
-     * decides, so being over-eager costs a keystroke and being wrong costs nothing.
+     * **Two rules, and neither has a number in it.**
      *
-     * Absent where either says no time, and for a type that keeps none.
+     * One that says when it was is matched by **overlapping in time**, which is an impossibility
+     * rather than a tolerance: nobody is on two dives at once, so two recordings that overlap are
+     * two recordings of one dive. What `reconciliation.md` asks for — a start time within a
+     * tolerance, a duration, a maximum depth — is three numbers nobody can pick well.
+     *
+     * Everything else is matched by **the name its type would give it**. Nine of the ten types
+     * propose an id from the item's own `name`, so two logbooks each holding a site called Blue
+     * Hole both propose `blue_hole`: the proposal is the name match, and it is the one a reader
+     * would make by eye. The index a proposal may carry is left off, saying only where an item
+     * sat rather than what it is.
+     *
+     * **It proposes and does not decide**, so being over-eager costs a keystroke. Two people both
+     * called John Smith are proposed as one and the reader says otherwise, which is `JSON-6`'s
+     * collision met where somebody can answer it.
      */
-    fun overlapping(id: String): String? {
+    fun proposal(id: String): String? {
         val here = staged.logbook[id] ?: return null
-        val span = spanOf(here) ?: return null
+        val span = spanOf(here)
+        val named = if (span == null) nameOf(here) else null
+        if (span == null && named == null) return null
         for (there in into.logbook.allOf(here.description)) {
-            val other = spanOf(there) ?: continue
-            if (span.first <= other.second && other.first <= span.second) {
-                return into.logbook.idOf(there)
-            }
+            val same =
+                if (span != null) meets(span, spanOf(there)) else nameOf(there) == named
+            if (same) return into.logbook.idOf(there)
         }
         return null
+    }
+
+    /** Whether two spans touch or overlap, a missing one meeting nothing. */
+    private fun meets(span: Pair<Long, Long>, other: Pair<Long, Long>?): Boolean =
+        other != null && span.first <= other.second && other.first <= span.second
+
+    /**
+     * What [item]'s type would call it, without the index that says only where it sat.
+     *
+     * Absent where the type falls back to `unknown_person` and the like: two items nobody named
+     * are not one item, and proposing that they are would be worse than proposing nothing.
+     */
+    private fun nameOf(item: ReferenceableItem): String? {
+        val proposed = item.description.proposedId?.invoke(item) ?: return null
+        val base = proposed.substringBefore('#')
+        return if (base.isEmpty() || base == unknownOf(item)) null else base
     }
 
     /**

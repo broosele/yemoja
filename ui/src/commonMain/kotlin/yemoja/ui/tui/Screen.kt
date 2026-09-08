@@ -341,7 +341,7 @@ class Screen(private val universe: Universe) {
             message = (import.insert(id) as? Outcome.Refused)?.reason
             return
         }
-        merging = import.overlapping(id)?.let { answers.indexOf(it) }?.takeIf { it > 0 } ?: 0
+        merging = import.proposal(id)?.let { answers.indexOf(it) }?.takeIf { it > 0 } ?: 0
     }
 
     /**
@@ -1112,10 +1112,9 @@ class Screen(private val universe: Universe) {
     /**
      * What an arriving item might be, one answer to a row.
      *
-     * The one the cursor is on is what enter takes. It starts on the item this one overlaps in
-     * time, and on *as new* where it overlaps none: a proposal rather than a decision, since two
-     * recordings that overlap are two recordings of one dive and nothing else is knowable
-     * without asking.
+     * The one the cursor is on is what enter takes. It starts on the item the layer below
+     * proposes — one overlapping in time, or one of the same name — and on *as new* where it
+     * proposes none. A proposal rather than a decision: nothing else is knowable without asking.
      */
     private fun asked(width: Int, rows: Int): List<Line> {
         val at = merging ?: 0
