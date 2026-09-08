@@ -193,10 +193,23 @@ matching rule does rather than something applying should improvise.
 
 ### What is built
 
-The shared half, and a set-to-set import that exercises it: staging, meeting by id, taking an
-item in and leaving it out, and applying as one change. Both halves of a *source* are still
-owed — `FEAT-3` reads a dive computer and `FEAT-7` another application's file, and each brings
-its own matching rule with it.
+The shared half, a set-to-set import that exercises it, and the terminal front end's half of
+reviewing one. Both halves of a *source* are still owed — `FEAT-3` reads a dive computer and
+`FEAT-7` another application's file, and each brings its own matching rule with it.
+
+**Deciding is editing.** An item taken in leaves the staged logbook and so does one turned
+down, so what is left in the folder is exactly what has not been decided. There is no list of
+decisions kept beside the items and nothing to write when a review is put down: the folder is
+the state. An earlier draft had a file of accepted and declined ids, which this replaced.
+
+**An item goes in one at a time**, through a `change` of its own. That is what the front end
+asks for and it is what makes a refusal legible — the item that could not go in is still on
+the screen with the reason beside it. The cost is that an import is not one changeset but one
+per item, which `FEAT-4` will want the other way round: taking the whole of what is left across
+in one go is `apply`, and it is what a *take it all* key would call.
+
+The staging folder is the logbook's own path with `.import` after it, which puts it outside the
+logbook. What is being reviewed is not part of it and must not be read as though it were.
 
 Three gaps worth naming rather than discovering:
 

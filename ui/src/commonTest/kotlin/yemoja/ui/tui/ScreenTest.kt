@@ -1243,7 +1243,7 @@ class ActionsTest {
         // Wide enough for all of them, which eighty columns is not.
         val said = bar(screen(), 120)
         assertEquals(
-            "[q] quit | [n] new item | [enter] open | [space] follow | " +
+            "[q] quit | [n] new item | [+] import | [enter] open | [space] follow | " +
                 "[(shift)-tab] type | [<,>] item | [^,v] field",
             said,
             "and no offer to delete one, this tab holding no items",

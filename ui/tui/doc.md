@@ -88,6 +88,8 @@ eighty-column bar reach `[space] follow`.
 | enter | go one step further in |
 | escape | come one step back out, and nothing where there is nothing to |
 | `n` | make one of what is in front of you — an item, an entry, an owned item |
+| `+` | open the import screen |
+| insert | take the arriving item the cursor is on into the logbook |
 | delete | take out what the cursor is on, asking first where it is an item |
 | `q` | leave, where nothing is open |
 | ctrl-C | leave, from wherever you are and whatever you are typing |
@@ -143,6 +145,36 @@ only way out have three keys to explain and no width to spare.
 The cost is that the item list answers to left and right rather than to up and down, which
 reads oddly against a column of ids. It was taken knowingly: an odd direction is learnt once,
 and a key whose meaning moves is read every time.
+
+## An import
+
+**`+` opens the import screen**, which offers the two an import can come from: another logbook,
+or a dive computer. Choosing a logbook asks for its folder; choosing a dive computer says that
+reading one is not built and names `FEAT-3`. Escape comes back out.
+
+**What arrives is not a screen of its own.** The incoming items are listed in the tab their type
+would put them in, above the ones already there and set in italic, so what is arriving is read
+where it will end up and against what is already there. There is nothing to learn: the tabs, the
+arrows, the fields and the editor are the ones already in use.
+
+**Italic means the same thing here as on a value**: this logbook does not hold it as written. A
+worked-out value is not stored and an arriving item is not held, and neither is a claim about
+what is on disk.
+
+**Insert takes the item in; delete leaves it out.** Either way it goes from the list, so what is
+still in italic is what has not been decided. Delete asks twice, as it does for any item — what
+is staged may have been corrected by hand, and that correction is nowhere else. Insert does not
+ask: taking something in is what an import is for, and it can be deleted afterwards.
+
+An item that cannot go in stays where it is and the bar says why. That is the one place a
+refusal survives a keystroke, because the thing refused is still on the screen and the reader
+has to be able to fix it and try again.
+
+**An arriving item is edited where it arrived.** Correcting a downloaded dive before taking it in
+writes to the staged logbook, not to this one, so nothing is touched until insert is pressed. It
+is edited by the same keys as anything else, because it is an ordinary item in an ordinary
+logbook — which is the whole reason there is no separate review screen.
+[../../logic/reconciliation.md](../../logic/reconciliation.md) has the rest.
 
 **Choosing goes round the ends; scrolling stops at them.** The tabs, the item list, the
 fields and the values of an open field all wrap, so the far end of any of them is one key

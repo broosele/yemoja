@@ -50,6 +50,9 @@ sealed class Key {
     /** Rub out the character before the cursor, which only an editor has anything to do with. */
     object BACKSPACE : Key()
 
+    /** Insert: take in whatever the reader is on, which only an arriving item is. */
+    object INSERT : Key()
+
     /**
      * Ctrl-C: leave, from wherever the reader is and whatever they are typing.
      *
@@ -89,6 +92,7 @@ fun keyOf(name: String, ctrl: Boolean = false, shift: Boolean = false): Key? = w
     name == "Enter" -> Key.OPEN
     name == "Escape" -> Key.CLOSE
     name == "Delete" -> Key.DELETE
+    name == "Insert" -> Key.INSERT
     name == "Backspace" -> Key.BACKSPACE
     name.length == 1 -> Key.Typed(name[0])
     else -> null

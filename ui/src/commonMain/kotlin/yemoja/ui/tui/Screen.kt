@@ -97,6 +97,14 @@ class Screen(private val universe: Universe) {
     // whose values are known is picked from rather than typed into.
     private var choosing: Int? = null
 
+    // Which source the import screen's cursor is on, or absent where that screen is not up.
+    private var sourcing: Int? = null
+
+    // What went wrong with the last thing asked for, shown until the next key. A refusal from
+    // below has to reach the reader, and an arriving item that cannot go in is the one place
+    // where the thing refused stays on the screen to be refused again.
+    private var message: String? = null
+
     // Whether delete has been pressed once on what the cursor is on. Nothing can be undone yet,
     // there being no journal -- `FEAT-4` -- so removing an item asks, and any other key answers
     // no. `TUI-6` refused a confirmation for quitting, where nothing is lost by pressing again.
@@ -120,19 +128,58 @@ class Screen(private val universe: Universe) {
     // carries a number that moves on every change, and this is kept against it.
     private val listed = HashMap<ItemDescription, List<ReferenceableItem>>()
 
-    private var counted = -1
+    private val coming = HashMap<ItemDescription, List<ReferenceableItem>>()
 
-    /** Every item of the open type, in the order that type asks for. */
-    val items: List<ReferenceableItem> get() = listing(type)
+    private var counted = -1 to -1
 
-    /** Every item of [description], in its own order, worked out once per change. */
+    /**
+     * Every item of the open type: what is arriving first, then what the logbook holds.
+     *
+     * An import is not a screen of its own. Its items sit in the tab their type would put them
+     * in, above the ones already there and set in italic, so what is arriving is read where it
+     * will end up and against what is already there.
+     */
+    val items: List<ReferenceableItem> get() = arriving() + listing(type)
+
+    /** The items of the open type that are arriving, or none where nothing is. */
+    private fun arriving(): List<ReferenceableItem> {
+        val import = universe.importing ?: return emptyList()
+        fresh()
+        return coming.getOrPut(type) { import.staged.logbook.inOrder(type) }
+    }
+
+    /** Every item of [description] the logbook holds, in its own order. */
     private fun listing(description: ItemDescription): List<ReferenceableItem> {
-        if (counted != universe.revision) {
-            listed.clear()
-            counted = universe.revision
-        }
+        fresh()
         return listed.getOrPut(description) { set.inOrder(description) }
     }
+
+    // Both sets are sorted once per change rather than per keystroke, and either changing is a
+    // reason to sort again: taking an item in moves it from one list to the other.
+    private fun fresh() {
+        val now = universe.revision to (universe.importing?.staged?.revision ?: -1)
+        if (counted == now) return
+        listed.clear()
+        coming.clear()
+        counted = now
+    }
+
+    /** What [item] is called, whichever of the two sets it is in. */
+    private fun idOf(item: ReferenceableItem): String? =
+        set.idOf(item) ?: universe.importing?.staged?.logbook?.idOf(item)
+
+    /** Whether the chosen item is arriving rather than held. */
+    private val chosenIsArriving: Boolean
+        get() = item?.let { universe.importing?.staged?.logbook?.idOf(it) != null } ?: false
+
+    /**
+     * The universe the chosen item lives in, which is where a change to it goes.
+     *
+     * An arriving item is edited in the logbook it arrived as, not in the one it is going into:
+     * correcting a downloaded dive before taking it in must not touch anything yet.
+     */
+    private fun holder(): Universe =
+        if (chosenIsArriving) universe.importing!!.staged else universe
 
     /** The chosen item, or absent where the open type has none. */
     val item: ReferenceableItem? get() = items.getOrNull(chosen[tab])
@@ -179,11 +226,13 @@ class Screen(private val universe: Universe) {
      */
     fun press(key: Key): Boolean {
         when {
+            sourcing != null -> sourceKey(key)
             editing != null -> typedKey(key)
             choosing != null -> chosenKey(key)
             else -> browsedKey(key)
         }
         if (key != Key.DELETE) confirming = false
+        if (sourcing == null && key != Key.INSERT) message = null
         if (!opened) {
             within = 0
             chosenEntry = 0
@@ -208,8 +257,78 @@ class Screen(private val universe: Universe) {
             Key.LEAVE -> running = false
             is Key.Typed -> typed(key.character)
             Key.DELETE -> remove()
+            Key.INSERT -> takeIn()
             Key.BACKSPACE -> Unit
         }
+    }
+
+    /**
+     * What each key does on the import screen, which is where an import is started.
+     *
+     * Two rows and, once *another logbook* is chosen, a folder to type. Nothing else on the
+     * screen answers while it is up: an import is begun or it is not.
+     */
+    private fun sourceKey(key: Key) {
+        val typed = editing
+        if (typed != null) {
+            when (key) {
+                Key.OPEN -> from(typed)
+                Key.CLOSE -> {
+                    editing = null
+                    message = null
+                }
+
+                Key.BACKSPACE -> editing = typed.dropLast(1)
+                Key.LEAVE -> running = false
+                is Key.Typed -> editing = typed + key.character
+                else -> Unit
+            }
+            return
+        }
+        when (key) {
+            Key.UP -> sourcing = (sourcing!! + SOURCES.size - 1) % SOURCES.size
+            Key.DOWN -> sourcing = (sourcing!! + 1) % SOURCES.size
+            Key.OPEN -> chose()
+            Key.CLOSE -> {
+                sourcing = null
+                message = null
+            }
+
+            Key.LEAVE -> running = false
+            else -> Unit
+        }
+    }
+
+    /** Take the source the cursor is on, of which only the first is built. */
+    private fun chose() {
+        message = null
+        if (sourcing == 0) editing = "" else message = NO_DEVICE
+    }
+
+    /** Open the logbook in [folder] as an import, or say why it could not be. */
+    private fun from(folder: String) {
+        when (val done = universe.importFrom(folder)) {
+            is Outcome.Refused -> message = done.reason
+            is Outcome.Done -> {
+                editing = null
+                sourcing = null
+                message = null
+            }
+        }
+    }
+
+    /**
+     * Take the arriving item the cursor is on into the logbook.
+     *
+     * It leaves the list as it goes, so what is left above the line is what has not been decided.
+     * A refusal leaves it where it is and says why, since an item that cannot go in is one a
+     * reader has to see in order to fix it.
+     */
+    private fun takeIn() {
+        if (opened) return
+        val import = universe.importing ?: return
+        val id = item?.let { import.staged.logbook.idOf(it) } ?: return
+        message = (import.insert(id) as? Outcome.Refused)?.reason
     }
 
     /**
@@ -352,6 +471,7 @@ class Screen(private val universe: Universe) {
     private fun typed(character: Char) {
         when {
             character == ' ' -> follow()
+            character == '+' -> sourcing = 0
             character.equals('n', ignoreCase = true) -> make()
             // The top level's key. Escape is what comes out of anything opened, and it comes
             // out to the one place `q` means something.
@@ -448,7 +568,7 @@ class Screen(private val universe: Universe) {
 
     private fun write(ends: Ends.Value, given: Stored) {
         val owner = ends.item ?: return
-        universe.change(Operation.EDIT, Change.Write(owner, ends.field.name, given))
+        holder().change(Operation.EDIT, Change.Write(owner, ends.field.name, given))
     }
 
     /**
@@ -465,7 +585,7 @@ class Screen(private val universe: Universe) {
                 if (onEntry(at.ends)) write(at.ends, listed(at.ends, "")) else Unit
             is Standing.Collection -> if (at.at != null) unkeyedEntry(at.field, at.held)
             is Standing.Owned -> {
-                universe.change(Operation.EDIT, Change.Write(at.owner, at.field.name, null))
+                holder().change(Operation.EDIT, Change.Write(at.owner, at.field.name, null))
                 chosenEntry = 0
             }
 
@@ -473,14 +593,27 @@ class Screen(private val universe: Universe) {
         }
     }
 
-    /** Deletes the chosen item, on the second press of the key. */
+    /**
+     * Deletes the chosen item, on the second press of the key.
+     *
+     * An arriving item is left out of the import instead, which takes it out of the staged
+     * logbook rather than out of this one. It asks first for the same reason: what is staged may
+     * have been corrected by hand, and that correction is not somewhere else.
+     */
     private fun deleted() {
-        val id = item?.let { set.idOf(it) } ?: return
+        val here = item ?: return
+        val import = universe.importing
+        val arriving = import?.staged?.logbook?.idOf(here)
         if (!confirming) {
             confirming = true
             return
         }
         confirming = false
+        if (arriving != null) {
+            import.remove(arriving)
+            return
+        }
+        val id = set.idOf(here) ?: return
         universe.change(Operation.EDIT, Change.Delete(id))
     }
 
@@ -499,7 +632,7 @@ class Screen(private val universe: Universe) {
         val empty = ItemReader.read(within, Stored.Members(emptyMap()), set, Units.DEFAULT)
         val key = freeName(within.proposedId?.invoke(empty) ?: within.name) { it in written }
         written[key] = Stored.Members(emptyMap())
-        universe.change(Operation.EDIT, Change.Write(owner, field.name, Stored.Members(written)))
+        holder().change(Operation.EDIT, Change.Write(owner, field.name, Stored.Members(written)))
         path[path.size - 1] = field to key
     }
 
@@ -508,7 +641,7 @@ class Screen(private val universe: Universe) {
         val owner = itemAt(path.size - 1) ?: return
         val going = path.last().second ?: return
         val kept = writtenEntries(held) { it != going }
-        universe.change(Operation.EDIT, Change.Write(owner, field.name, Stored.Members(kept)))
+        holder().change(Operation.EDIT, Change.Write(owner, field.name, Stored.Members(kept)))
         path[path.size - 1] = field to kept.keys.firstOrNull()
         chosenEntry = 0
     }
@@ -659,7 +792,7 @@ class Screen(private val universe: Universe) {
     /** Write [given] to the field [ends] is at, and say whether it was taken. */
     private fun saved(ends: Ends.Value, given: Any?): Boolean {
         val owner = ends.item ?: return false
-        return universe.change(
+        return holder().change(
             Operation.EDIT,
             Change.Write(owner, ends.field.name, given),
         ) is Outcome.Done
@@ -916,7 +1049,11 @@ class Screen(private val universe: Universe) {
             "a screen should be $LEAST_HEIGHT high at least, was $height"
         }
         val rows = height - CHROME
-        val body = if (opened) opened(width, rows) else listed(width, rows)
+        val body = when {
+            sourcing != null -> sourced(width, rows)
+            opened -> opened(width, rows)
+            else -> listed(width, rows)
+        }
         val lines = ArrayList<Line>(height)
         lines.add(Line(fitted(listOf(Span(where())), width)))
         lines.add(rule(width))
@@ -927,6 +1064,25 @@ class Screen(private val universe: Universe) {
     }
 
     private fun rule(width: Int): Line = Line(listOf(Span("-".repeat(width))))
+
+    /** The import screen: where a set of items can come from, and the folder one comes from. */
+    private fun sourced(width: Int, rows: Int): List<Line> {
+        val at = sourcing ?: 0
+        val body = ArrayList<Line>()
+        for ((which, name) in SOURCES.withIndex()) {
+            val here = if (which == at) setOf(Style.SELECTED) else emptySet()
+            body += Line(listOf(Span("  $name", here)))
+        }
+        editing?.let {
+            body += blank()
+            body += Line(listOf(Span("  folder: $it$CURSOR", setOf(Style.SELECTED))))
+        }
+        message?.let {
+            body += blank()
+            body += Line(listOf(Span("  ! $it")))
+        }
+        return List(rows) { row -> Line(fitted(body.getOrNull(row)?.spans.orEmpty(), width)) }
+    }
 
     /**
      * A tab per key above what is under the chosen one, where the reader is inside such a field.
@@ -945,9 +1101,10 @@ class Screen(private val universe: Universe) {
 
     /** What is being looked at: the types, or how far into an item a reader has gone. */
     private fun where(): String {
+        if (sourcing != null) return "import"
         if (!opened) return tabs()
         val said = path.flatMap { (naming, key) -> listOfNotNull(naming.name, key) }
-        return (listOf(type.name, item?.let { set.idOf(it) }) + said).joinToString(" / ")
+        return (listOf(type.name, item?.let { idOf(it) }) + said).joinToString(" / ")
     }
 
     /**
@@ -963,7 +1120,12 @@ class Screen(private val universe: Universe) {
      * without being told to; nobody presses `n`.
      */
     private fun actions(width: Int): String {
-        val said = if (confirming) {
+        val said = if (sourcing != null) {
+            if (editing == null) listOf("[enter] choose", "[esc] back", "$FIELDS source")
+            else listOf("[enter] open", "[esc] back", "[backspace] rub out")
+        } else if (message != null) {
+            listOf("! $message")
+        } else if (confirming) {
             // The one place a key needs an answer rather than a label. What it is about is named,
             // since the cursor moved to whatever the list shows after it would be a poor thing to
             // guess from.
@@ -997,8 +1159,11 @@ class Screen(private val universe: Universe) {
         } else {
             listOfNotNull(
                 QUITS,
+                if (!chosenIsArriving) null else "[ins] take it in",
                 madeHere()?.let { "[n] new $it" },
-                removedHere()?.let { "[del] delete $it" },
+                if (chosenIsArriving) "[del] leave it out"
+                else removedHere()?.let { "[del] delete $it" },
+                "[+] import",
                 "[enter] open",
                 "[space] follow",
                 "$TABS type",
@@ -1076,7 +1241,9 @@ class Screen(private val universe: Universe) {
         scrollTo(chosen[tab], rows)
         val list = ids(rows, listWidth)
         val detail = detailed(rows, width - listWidth - 1)
-        return List(rows) { row -> Line(listOf(Span(list[row] + " ")) + detail[row]) }
+        return List(rows) { row ->
+            Line(listOf(Span(list[row].text + " ", list[row].styles)) + detail[row])
+        }
     }
 
     /** What the open field holds, which is what is shown while nothing is being typed. */
@@ -1275,8 +1442,9 @@ class Screen(private val universe: Universe) {
         }
 
     /** The ids of the open type, the chosen one marked, as many as fit. */
-    private fun ids(rows: Int, width: Int): List<String> {
-        val ids = items.map { set.idOf(it) ?: "?" }
+    private fun ids(rows: Int, width: Int): List<Span> {
+        val ids = items.map { idOf(it) ?: "?" }
+        val many = arriving().size
         return List(rows) { row ->
             val at = first[tab] + row
             val text = when {
@@ -1285,7 +1453,10 @@ class Screen(private val universe: Universe) {
                 at == chosen[tab] -> "> ${ids[at]}"
                 else -> "  ${ids[at]}"
             }
-            fit(flat(text), width)
+            // Italic where it is not in the logbook yet, which is what it means on a value too:
+            // a row set in italic is one this logbook does not hold as written.
+            val here = if (at < many && at < ids.size) setOf(Style.ITALIC) else emptySet()
+            Span(fit(flat(text), width), here)
         }
     }
 
@@ -1400,6 +1571,11 @@ class Screen(private val universe: Universe) {
         /** What a line break is shown as, which is how a file writes one. */
         // Enough to recognise the one wanted, and few enough to leave the typed line in view
         // on a short terminal. What is past them is reached by typing more of the id.
+        // The two an import can come from. Only the first is built; `FEAT-3` is the other.
+        private val SOURCES = listOf("another logbook", "a dive computer")
+
+        private const val NO_DEVICE = "reading a dive computer is not built yet. FEAT-3."
+
         private const val MOST_SUGGESTIONS = 8
 
         private const val ESCAPED = "\\n"
