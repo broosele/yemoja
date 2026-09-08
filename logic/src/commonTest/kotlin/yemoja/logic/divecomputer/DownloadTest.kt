@@ -43,7 +43,8 @@ class DownloadedDiveTest {
 
     @Test
     fun `a dive is named for the day it was made on`() {
-        val set = Download.read(sequenceOf(Recording(began = Date(2026, 6, 21), at = Time(10, 5, 0))))
+        val one = Recording(began = Date(2026, 6, 21), at = Time(10, 5, 0))
+        val set = Download.read(sequenceOf(one))
         assertEquals(listOf("2026-06-21#0"), set.allOf(Types.DIVE).map { set.idOf(it) })
     }
 
@@ -59,7 +60,8 @@ class DownloadedDiveTest {
     @Test
     fun `a downloaded dive is a skeleton, and nothing else is created`() {
         // No gear, no person, no operator, no trip, no region. `LOGIC-20`.
-        val set = Download.read(sequenceOf(Recording(began = Date(2026, 6, 21), at = Time(10, 5, 0))))
+        val one = Recording(began = Date(2026, 6, 21), at = Time(10, 5, 0))
+        val set = Download.read(sequenceOf(one))
         assertEquals(1, Types.ALL.sumOf { set.allOf(it).size })
         val dive = set.allOf(Types.DIVE).single()
         assertEquals(Result.Absent, dive.read("dive_site"))
@@ -194,7 +196,9 @@ class DownloadedGasTest {
     private val gassed = recorded {
         it.copy(
             gases = listOf(
-                Recording.GasSource("EAN32", volume = 12.0, startPressure = 200.0, endPressure = 50.0),
+                Recording.GasSource(
+                    "EAN32", volume = 12.0, startPressure = 200.0, endPressure = 50.0,
+                ),
                 Recording.GasSource("air", volume = 11.0),
             ),
             samples = listOf(
@@ -216,7 +220,7 @@ class DownloadedGasTest {
         val sources = (gassed.keyed<OwnedItem>("gas_sources") as Result.Usable).value
         val first = (sources.values.first() as Element.Usable).value
         assertEquals(12.0, (first.single<Double>("volume") as Result.Usable).value)
-        assertEquals(Result.Absent, first.read("cylinder"), "a tank has no identity to match one by")
+        assertEquals(Result.Absent, first.read("cylinder"), "a tank has no identity of its own")
     }
 
     @Test
@@ -264,5 +268,55 @@ class DownloadedAlarmTest {
         assertNull((profile(recorded {
             it.copy(samples = listOf(Recording.Sample(0, depth = 0.0)))
         }).read("alarms") as? Result.Usable)?.value)
+    }
+}
+
+/** What the device knows a recording by, which is how a later download says where to stop. */
+class FingerprintTest {
+
+    private fun of(vararg dived: Recording): yemoja.data.ItemSet = Download.read(dived.asSequence())
+
+    private fun one(computer: String, day: Int, held: String?) = Recording(
+        computer = computer,
+        fingerprint = held,
+        began = Date(2026, 6, day),
+        at = Time(10, 5, 0),
+    )
+
+    @Test
+    fun `it lands on the profile, beside what recorded it`() {
+        val dive = recorded { it.copy(computer = "Reef", fingerprint = "a1b2") }
+        assertEquals("a1b2", (profile(dive).single<String>("fingerprint") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a recording that carries none says none`() {
+        assertEquals(Result.Absent, profile(recorded { it.copy(computer = "Reef") })
+            .read("fingerprint"))
+    }
+
+    @Test
+    fun `the one to resume from is the newest that computer made`() {
+        val set = of(one("Reef", 20, "aa"), one("Reef", 22, "bb"), one("Reef", 21, "cc"))
+        assertEquals("bb", Download.after(set, "reef"))
+    }
+
+    @Test
+    fun `another computer's is not the one to resume from`() {
+        // Two computers worn on one trip are two chains, and each says where its own got to.
+        val set = of(one("Reef", 22, "bb"), one("Other", 23, "zz"))
+        assertEquals("bb", Download.after(set, "reef"))
+    }
+
+    @Test
+    fun `a dive carrying none is passed over`() {
+        val set = of(one("Reef", 20, "aa"), one("Reef", 22, null))
+        assertEquals("aa", Download.after(set, "reef"))
+    }
+
+    @Test
+    fun `nothing to resume from is nothing`() {
+        assertNull(Download.after(of(one("Reef", 20, null)), "reef"))
+        assertNull(Download.after(of(one("Reef", 20, "aa")), "nobody"))
     }
 }

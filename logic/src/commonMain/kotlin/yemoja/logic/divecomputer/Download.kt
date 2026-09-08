@@ -1,7 +1,12 @@
 package yemoja.logic.divecomputer
 
+import yemoja.data.Element
+import yemoja.data.Item
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
+import yemoja.data.OwnedItem
+import yemoja.data.Reference
+import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.Units
 import yemoja.logic.DIVE
@@ -46,6 +51,48 @@ object Download {
             set.add(freeName(proposed) { set[it] != null }, item)
         }
         return set
+    }
+
+    /**
+     * The fingerprint to resume a download from, or absent where there is none to resume from.
+     *
+     * The newest recording in [logbook] that [computer] made and that carries one. Newest by
+     * when the dive was, which is the order a device counts in too, so handing it back says
+     * *stop when you reach this one*. `DATA-90`.
+     *
+     * Matched on the slug of what recorded it, because a profile names its computer either way:
+     * a gear item by its id, which is already one, and a borrowed one by a plain name, which is
+     * not. Slugging both is what makes *Reef Computer* and `reef_computer` the same answer.
+     */
+    fun after(logbook: ItemSet, computer: String): String? {
+        var newest: Pair<String, String>? = null
+        for (dive in logbook.allOf(DIVE)) {
+            val profiles = dive.keyed<OwnedItem>("profiles") as? Result.Usable ?: continue
+            for (element in profiles.value.values) {
+                val profile = (element as? Element.Usable)?.value ?: continue
+                if (nameOf(profile) != yemoja.logic.slug(computer)) continue
+                val held = (profile.single<String>("fingerprint") as? Result.Usable)?.value
+                    ?: continue
+                val began = whenOf(dive) ?: continue
+                if (newest == null || began > newest.first) newest = began to held
+            }
+        }
+        return newest?.second
+    }
+
+    /** What a profile says recorded it, as a slug, by id or by the plain name a one-off has. */
+    private fun nameOf(profile: Item): String? =
+        when (val held = (profile.single<Reference>("dive_computer") as? Result.Usable)?.value) {
+            is Reference.Identified -> held.id
+            is Reference.OneOff -> yemoja.logic.slug(held.name)
+            null -> null
+        }
+
+    /** When a dive began, as text that sorts, or absent where it does not say. */
+    private fun whenOf(dive: Item): String? {
+        val date = (dive.read("start_date") as? Result.Usable)?.value ?: return null
+        val at = (dive.read("start_time") as? Result.Usable)?.value ?: ""
+        return "$date $at"
     }
 
     /** What one recording says, as a dive's fields. */
@@ -103,6 +150,7 @@ object Download {
     private fun profileOf(held: Recording): Stored.Members? {
         val fields = LinkedHashMap<String, Stored>()
         held.computer?.let { fields["dive_computer"] = Stored.Leaf(it) }
+        held.fingerprint?.let { fields["fingerprint"] = Stored.Leaf(it) }
         held.began?.let { fields["start_date"] = Stored.Leaf(it) }
         held.at?.let { fields["start_time"] = Stored.Leaf(it) }
         held.offset?.let { fields["gmt_offset"] = Stored.Leaf(it) }

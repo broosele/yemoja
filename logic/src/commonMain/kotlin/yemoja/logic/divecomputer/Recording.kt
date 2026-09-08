@@ -32,6 +32,14 @@ data class Recording(
     val computer: String? = null,
     /** The device's serial, which is the only thing that proposes a gear item. `LOGIC-20`. */
     val serial: String? = null,
+    /**
+     * What the device knows this recording by, as hexadecimal.
+     *
+     * Handed back to the device before a later download, which then reports only what came
+     * after it. `DATA-90` keeps it on the profile, being a fact about the recording rather than
+     * a bookmark of the application's.
+     */
+    val fingerprint: String? = null,
     val began: Date? = null,
     val at: Time? = null,
     /** Seconds east of UTC, or absent where the device reports no zone. `LOGIC-11`. */
@@ -52,7 +60,7 @@ data class Recording(
     val samples: List<Sample> = emptyList(),
 ) {
 
-    /** The salinity a computer was set to, which is a type and the density it turned pressure by. */
+    /** The salinity a computer was set to: a type, and the density it turned pressure by. */
     data class Water(val type: String? = null, val density: Double? = null)
 
     /** What the computer worked its stops out with, which is metadata about data this keeps. */
@@ -63,7 +71,7 @@ data class Recording(
         val gradientFactorHigh: Double? = null,
     )
 
-    /** Where the device thought it was, which is a proposal at review and not a field. `LOGIC-18`. */
+    /** Where the device thought it was, a proposal at review rather than a field. `LOGIC-18`. */
     data class Fix(val latitude: Double, val longitude: Double, val elevation: Double? = null)
 
     /**
@@ -121,8 +129,14 @@ interface DiveComputer {
     /** Its serial, where the device reports one, which is what may propose a gear item. */
     val serial: String?
 
-    /** Every dive it holds, oldest first, read as the sequence is walked. */
-    fun recordings(): Sequence<Recording>
+    /**
+     * Every dive it holds, oldest first, read as the sequence is walked.
+     *
+     * [after] is the fingerprint of the last dive already held, where one is known: the device
+     * is told where to stop and reports only what came after it, so a second download transfers
+     * nothing it has given before. `DATA-90`.
+     */
+    fun recordings(after: String? = null): Sequence<Recording>
 }
 
 /**

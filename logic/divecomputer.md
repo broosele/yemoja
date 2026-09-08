@@ -190,6 +190,12 @@ did first: twenty-six seconds, because every question enumerates the bus again. 
 given no descriptor at all, so one enumeration per transport and a few thousand comparisons by
 `dc_descriptor_filter` give the same answer in about a fifth of a second.
 
+**A second download transfers only what is new.** Each dive comes with a token the device knows
+it by, and handing the last one back before the next download tells the device where to stop.
+`DATA-90` keeps it on the profile, so it travels with a synced logbook, survives a restore, and
+recognises a dive exactly rather than by proposing one. Where to resume from is a question the
+logbook answers: the newest recording that computer made and that carries one.
+
 **Nothing here has met a dive computer.** What is tested without one is the sample walk — the
 offsets a reading is taken at, and the constants that decide which stop is a required one and
 which event is an alarm — driven with memory laid out by hand. Three of those constants were

@@ -149,7 +149,7 @@ private class Attached(
     /** Not read: a serial needs the device opened, and nothing yet asks for one. `LOGIC-20`. */
     override val serial: String? = null
 
-    override fun recordings(): Sequence<Recording> {
+    override fun recordings(after: String?): Sequence<Recording> {
         val stream = open() ?: return emptySequence()
         val device = PointerByReference()
         val opened = library.dc_device_open(device, context, descriptor, stream)
@@ -157,9 +157,12 @@ private class Attached(
             library.dc_iostream_close(stream)
             return emptySequence()
         }
+        // Where the last download got to, so the device reports only what came after. `DATA-90`.
+        bytesOf(after)?.let { library.dc_device_set_fingerprint(device.value, it, it.size) }
         val held = ArrayList<Recording>()
-        val callback = Libdivecomputer.DiveCallback { data, size, _, _, _ ->
-            recordingOf(library, device.value, data, size, name)?.let { held += it }
+        val callback = Libdivecomputer.DiveCallback { data, size, fingerprint, fsize, _ ->
+            val known = hexOf(fingerprint, fsize)
+            recordingOf(library, device.value, data, size, name, known)?.let { held += it }
             // Non-zero carries on; a download that stopped at the first dive would be a download
             // of one dive.
             1
@@ -171,6 +174,26 @@ private class Attached(
     }
 }
 
+/** What a device handed out as [size] bytes, as hexadecimal. */
+internal fun hexOf(held: Pointer?, size: Int): String? {
+    if (held == null || size <= 0) return null
+    return held.getByteArray(0, size).joinToString("") {
+        val digits = (it.toInt() and 0xff).toString(16)
+        if (digits.length == 1) "0$digits" else digits
+    }
+}
+
+/** Hexadecimal back to the bytes a device takes, or absent where it is not hexadecimal. */
+internal fun bytesOf(hex: String?): ByteArray? {
+    if (hex == null || hex.length < 2 || hex.length % 2 != 0) return null
+    val out = ByteArray(hex.length / 2)
+    for (at in out.indices) {
+        val byte = hex.substring(at * 2, at * 2 + 2).toIntOrNull(16) ?: return null
+        out[at] = byte.toByte()
+    }
+    return out
+}
+
 /** One dive's bytes, parsed into what the port carries. */
 private fun recordingOf(
     library: Libdivecomputer,
@@ -178,20 +201,26 @@ private fun recordingOf(
     data: Pointer?,
     size: Int,
     name: String,
+    fingerprint: String?,
 ): Recording? {
     val parser = PointerByReference()
     if (library.dc_parser_new(parser, device, data, size.toLong()) != Libdivecomputer.SUCCESS) {
         return null
     }
     try {
-        return readingOf(library, parser.value, name)
+        return readingOf(library, parser.value, name, fingerprint)
     } finally {
         library.dc_parser_destroy(parser.value)
     }
 }
 
 /** What one parser says, as a recording. */
-private fun readingOf(library: Libdivecomputer, parser: Pointer?, name: String): Recording {
+private fun readingOf(
+    library: Libdivecomputer,
+    parser: Pointer?,
+    name: String,
+    fingerprint: String?,
+): Recording {
     val clock = CDateTime()
     val when_ = library.dc_parser_get_datetime(parser, clock) == Libdivecomputer.SUCCESS
     val salinity = fieldOf(library, parser, Field.SALINITY, CSalinity())
@@ -199,6 +228,7 @@ private fun readingOf(library: Libdivecomputer, parser: Pointer?, name: String):
     val fix = fieldOf(library, parser, Field.LOCATION, CLocation())
     return Recording(
         computer = name,
+        fingerprint = fingerprint,
         began = if (when_) Date(clock.year, clock.month, clock.day) else null,
         at = if (when_) Time(clock.hour, clock.minute, clock.second) else null,
         offset = clock.timezone.takeIf { when_ && it != CDateTime.NONE },
@@ -270,7 +300,9 @@ private fun gasesOf(library: Libdivecomputer, parser: Pointer?): List<Recording.
     val tanks = (0..<(wholeOf(library, parser, Field.TANK_COUNT) ?: 0)).map {
         fieldOf(library, parser, Field.TANK, CTank(), it)
     }
-    if (tanks.isEmpty()) return mixes.mapNotNull { it?.let { mix -> Recording.GasSource(gasOf(mix)) } }
+    if (tanks.isEmpty()) {
+        return mixes.mapNotNull { it?.let { mix -> Recording.GasSource(gasOf(mix)) } }
+    }
     return tanks.map { tank ->
         val mix = tank?.gasmix?.takeIf { it != CTank.UNKNOWN }?.let { mixes.getOrNull(it) }
         val sidemount = tank?.usage == SIDEMOUNT || mix?.usage == SIDEMOUNT

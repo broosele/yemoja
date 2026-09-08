@@ -2079,6 +2079,29 @@ Kept with their identifiers so earlier discussion still resolves.
   name added in a later version has the same effect on every version before it, so the
   imperial units are in from the start rather than waiting to be needed.
 
+- **DATA-90 — Where a download's fingerprint is kept.** *Settled:* **on the profile it
+  belongs to, as `fingerprint`.**
+
+  A dive computer hands out a token with each dive and takes one back before the next download,
+  reporting only what came after it. Without somewhere to keep it, every download transfers the
+  whole device — minutes — and every dive has to be recognised again.
+
+  **It is a fact about the recording, not a bookmark.** That is what decided the place. The
+  token identifies *that dive on that device*, so it belongs where the recording does, and
+  three things follow from putting it there rather than in a setting beside the logbook. It
+  travels: a synced installation knows where the download got to without being told. It
+  survives a restore, because it is in the logbook rather than beside it. And it recognises
+  exactly — a dive carrying a device's token *is* that dive, where matching on when it was and
+  how deep it went is a proposal somebody has to agree to.
+
+  Where to resume from is then a question the logbook answers: the newest dive whose profile
+  carries one for that computer.
+
+  **The cost is opaque text in a format argued to be legible by hand.** It is accepted because
+  it is per recording rather than one global blob, because it sits beside `dive_computer` where
+  a reader can see what it is about, and because nothing depends on it — a profile that lost it
+  reads exactly as it did, and the next download is slow rather than wrong.
+
 - **DATA-89 — What order items of one type are listed in.** *Settled:* **the type says so,
   as a list of fields with a direction apiece.** `ItemDescription` carries `orderedBy`, and
   a front end applies it without knowing what it names. Dives and trips are listed on

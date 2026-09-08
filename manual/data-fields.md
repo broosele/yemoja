@@ -285,6 +285,11 @@ that is the only record of it.
 
 - `dive_computer` (reference) — the gear item that recorded it. A plain name works for
   one you borrowed and keep no item for.
+- `fingerprint` (text) — what the computer knows this recording by, written as hexadecimal.
+  It is put there by a download and is not for reading: its whole use is that the next
+  download can hand it back and be given only the dives made since. Nothing else depends on
+  it, so a recording that lost it is a recording, and clearing it means the next download
+  fetches everything again.
 - `start_date` (date) — the day the recording began, as the computer had it.
 - `start_time` (time) — the moment it began, as the computer had it.
 

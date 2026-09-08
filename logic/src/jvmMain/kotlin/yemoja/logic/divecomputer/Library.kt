@@ -85,6 +85,8 @@ internal interface Libdivecomputer : Library {
         iostream: Pointer?,
     ): Int
 
+    fun dc_device_set_fingerprint(device: Pointer?, data: ByteArray, size: Int): Int
+
     fun dc_device_foreach(device: Pointer?, callback: DiveCallback, userdata: Pointer?): Int
 
     fun dc_device_close(device: Pointer?): Int
@@ -112,7 +114,13 @@ internal interface Libdivecomputer : Library {
 
     /** `dc_dive_callback_t`: one dive's bytes, and a non-zero answer to carry on. */
     fun interface DiveCallback : Callback {
-        fun invoke(data: Pointer?, size: Int, fingerprint: Pointer?, fsize: Int, userdata: Pointer?): Int
+        fun invoke(
+            data: Pointer?,
+            size: Int,
+            fingerprint: Pointer?,
+            fsize: Int,
+            userdata: Pointer?,
+        ): Int
     }
 
     /** `dc_sample_callback_t`: one reading, whose shape the type says. */

@@ -19,9 +19,11 @@ class WalkedTest {
 
     private val walked = Walked()
 
-    private fun at(milliseconds: Int) = walked.invoke(0, Memory(8).also { it.setInt(0, milliseconds) }, null)
+    private fun at(milliseconds: Int) =
+        walked.invoke(0, Memory(8).also { it.setInt(0, milliseconds) }, null)
 
-    private fun depth(metres: Double) = walked.invoke(1, Memory(8).also { it.setDouble(0, metres) }, null)
+    private fun depth(metres: Double) =
+        walked.invoke(1, Memory(8).also { it.setDouble(0, metres) }, null)
 
     private fun pressure(tank: Int, bar: Double) = walked.invoke(
         2,
@@ -32,7 +34,12 @@ class WalkedTest {
     /** `{ type, time, flags, value }`, each a four-byte word. */
     private fun event(type: Int, flags: Int) = walked.invoke(
         4,
-        Memory(16).also { it.setInt(0, type); it.setInt(4, 0); it.setInt(8, flags); it.setInt(12, 0) },
+        Memory(16).also {
+            it.setInt(0, type)
+            it.setInt(4, 0)
+            it.setInt(8, flags)
+            it.setInt(12, 0)
+        },
         null,
     )
 
@@ -101,12 +108,45 @@ class WalkedTest {
         event(8, 1)
         event(2, 1)
         val held = walked.done().single()
-        assertEquals(listOf("rbt"), held.alarms, "a decostop event is not our deco, nor is a bookmark")
+        assertEquals(listOf("rbt"), held.alarms, "a decostop event is not our deco")
     }
 
     @Test
     fun `nothing before the first time is a sample of its own`() {
         depth(3.0)
         assertTrue(walked.done().isEmpty())
+    }
+}
+
+/** Turning what a device hands out into text and back, which is what a fingerprint travels as. */
+class HexTest {
+
+    @Test
+    fun `bytes become hexadecimal, two digits apiece`() {
+        val held = Memory(4)
+        held.setByte(0, 0x00); held.setByte(1, 0x0f)
+        held.setByte(2, 0xa1.toByte()); held.setByte(3, 0xff.toByte())
+        assertEquals("000fa1ff", hexOf(held, 4))
+    }
+
+    @Test
+    fun `and hexadecimal back into the same bytes`() {
+        val out = bytesOf("000fa1ff")!!
+        assertEquals(listOf(0, 15, 161, 255), out.map { it.toInt() and 0xff })
+    }
+
+    @Test
+    fun `nothing in, nothing out`() {
+        assertNull(hexOf(null, 4))
+        assertNull(hexOf(Memory(4), 0))
+        assertNull(bytesOf(null))
+        assertNull(bytesOf(""))
+    }
+
+    @Test
+    fun `something that is not hexadecimal is refused rather than half read`() {
+        // It reaches a device, and half a fingerprint would say stop somewhere else entirely.
+        assertNull(bytesOf("00f"))
+        assertNull(bytesOf("zz"))
     }
 }

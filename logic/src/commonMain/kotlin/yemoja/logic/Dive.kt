@@ -154,6 +154,9 @@ private val PROFILE = ItemDescription(
     listOf(
         // A plain name works for a computer that is nobody's item.
         ReferenceDescription("dive_computer", targetType = "gear", oneOffAllowed = true),
+        // What the device knows this recording by, kept so a later download can say where it
+        // got to. `DATA-90`.
+        TextDescription("fingerprint"),
         DateDescription("start_date"),
         TimeDescription("start_time"),
         // A length of time like any other, and scoped like one. `DATA-10`.
