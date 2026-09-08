@@ -248,6 +248,12 @@ alphabetically. `none, light, moderate, strong` is a scale somebody chose and so
 `light, moderate, none, strong`; the words in use have no order of their own to keep, so they
 take the one a reader can predict.
 
+**An import is a second logbook, and `Import` is the review of one.** Items arriving from
+somewhere else are written to a folder of their own and read back from it, so reviewing them
+uses what already reads, edits and saves a logbook rather than a preview path of its own. The
+whole of it goes in through one `change`. [reconciliation.md](reconciliation.md) holds the
+reasoning; `RECON-1` and `RECON-2` are what it settled.
+
 Three things `change` guarantees, and one it does not.
 
 - **It lands whole or not at all.** Every part is judged before any is applied — an added item is

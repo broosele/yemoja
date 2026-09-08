@@ -47,18 +47,26 @@ sealed class Change {
     class Write(val item: Item, val field: String, val given: Any?) : Change()
 
     /**
-     * Makes an item of [description] holding [fields], under an id the Universe works out.
+     * Makes an item of [description] holding [fields], under [id] or under one worked out.
      *
-     * **The id is not given.** What a new item is called is domain knowledge — a dive is named
-     * for the day it was made on, a person for their name — and `ui/doc.md` lets a front end name
-     * a type without describing one. So the caller gives what the item holds and the Universe
-     * asks the description to propose, then takes the first id free from that proposal.
+     * **A front end does not give the id.** What a new item is called is domain knowledge — a
+     * dive is named for the day it was made on, a person for their name — and `ui/doc.md` lets a
+     * front end name a type without describing one. So the caller gives what the item holds and
+     * the Universe asks the description to propose, then takes the first id free from that
+     * proposal.
+     *
+     * **An item arriving from somewhere else carries one**, and it is given here. An id is what
+     * matches an item across two logbooks, and it is what the references in the same import point
+     * at: mint a new one and the dive that names the person no longer finds them. So an import
+     * hands over the id it was given rather than proposing a name it already knows. The id must
+     * be free — one taken refuses the whole change, since two items cannot answer to it.
      *
      * Which id it was is in [Outcome.Done], in the order the additions were asked for.
      */
     class Add(
         val description: ItemDescription,
         val fields: Map<String, Any?> = emptyMap(),
+        val id: String? = null,
     ) : Change()
 
     /**

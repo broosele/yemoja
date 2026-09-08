@@ -136,26 +136,78 @@ questions has failed regardless of how correct each one is.
 
 ## Reviewing before committing
 
-**There is no separate dry-run mechanism.** An import applies to the live data
-without saving it; the user reviews the result and either keeps it or discards it.
-Once saved, version history can still take it back.
+**The incoming items are a logbook of their own.** They are written to a folder of their
+own and read back from it, and the review happens there: nothing touches the real
+logbook until the whole import is applied, as one change.
 
-This reuses machinery the project needs anyway rather than building a parallel
-preview path, but it only works if three things hold:
+That is what makes the review cost nothing to build. Everything that reads, edits and
+saves a logbook reads, edits and saves these — `LogbookReader`, `LogbookWriter`, the
+Universe's `change`, and every front end. An incoming dive is corrected with the same
+keys as any other dive, and the correction is on disk the moment it is made.
+
+An earlier answer here had the import apply to the live data without saving it, and the
+user keep or discard the result. Staging is better on every count that mattered to it.
+There is no unsaved state to lose, no window in which the logbook holds something nobody
+has agreed to, and nothing for sync to be kept away from — the staged set is not the
+logbook, so the question does not arise.
+
+Three things it still turns on, two of them unchanged:
 
 - **A changeset is one unit.** An import touching four hundred items must be
   revertible as a single labelled action, not four hundred separate undos. The same
   applies to a dive computer download. The journal is built this way — a list of
   changesets, each holding its actions, see
-  [../data/json/doc.md](../data/json/doc.md) — so an import is one entry in it.
-- **The user can see what changed.** "It already happened, check it" is only
-  reviewable if the change is legible: how many items were added, merged and
-  skipped, and which. A large import is not reviewable by scrolling the logbook. The
-  summary needed here is the same one versioning needs to answer *where did this come
-  from*.
-- **Unsaved state is not visible to sync.** Syncing must act on saved data only, or
-  be blocked while a review is outstanding. Otherwise an unreviewed import propagates
-  to another installation.
+  [../data/json/doc.md](../data/json/doc.md) — so an import is one entry in it. Applying
+  goes through one call to `change`, which already lands whole or not at all.
+- **The user can see what is coming.** Reviewing four hundred items is only possible if
+  what arrived is legible: how many are new, how many answer to something already held,
+  and which. That summary is not built.
+- **Applying twice does nothing the second time.** What was added answers to its id
+  afterwards, so a second run meets it as the same item and writes what it already
+  holds. An interrupted apply is safe to repeat.
+
+### What applying does
+
+An incoming item is met in one of three ways, by id — which is exact between two Yemoja
+logbooks, and is what sync matches on:
+
+| Meeting | What it is | What applying does |
+|---|---|---|
+| **Nothing** | no item answers to its id | added under the id it came with |
+| **The same** | an item of its own type under its own id | each field it holds is written onto that item |
+| **Something else** | its id is taken by another type | nothing; it cannot go in |
+
+**The id comes across rather than being minted.** An id is what matches an item between
+two logbooks and it is what the references in the same import point at: mint a new one
+and the dive that names the person no longer finds them.
+
+**Fields the incoming item does not hold are left alone.** A source has opinions about
+some fields and none about others, and silence is not an instruction to erase — a dive
+computer knows nothing about buddies, and re-downloading a dive must not take them out.
+That is why applying writes field by field rather than replacing the item.
+
+**Something else** is rare and real: two logbooks can each mint `north_sea`, one for a
+region and one for a person. Nothing is written for one, since giving it another id would
+break every reference to it in the same import, and rewriting those is the work a
+matching rule does rather than something applying should improvise.
+
+### What is built
+
+The shared half, and a set-to-set import that exercises it: staging, meeting by id, taking an
+item in and leaving it out, and applying as one change. Both halves of a *source* are still
+owed — `FEAT-3` reads a dive computer and `FEAT-7` another application's file, and each brings
+its own matching rule with it.
+
+Three gaps worth naming rather than discovering:
+
+- **A field the running version does not recognise is dropped when applying.** `DATA-65`
+  keeps such a field through a read and a write of the same file; carrying one into
+  another logbook is a different thing and needs a way to say it, which `Change` has not
+  got.
+- **A finished staging folder is left where it is.** Nothing cleans it up.
+- **Collisions are not detected.** Every accepted item is applied; two versions of one
+  field are not noticed, let alone put to the user. That is the interaction the storage
+  requirements describe and it is not built.
 
 ## Two levels of support
 
@@ -208,12 +260,10 @@ columns mapped by the user rather than guessed.
 
 ## Open questions
 
-- **RECON-1 — Where unsaved state lives.** Held in memory, or staged on disk as a pending
-   changeset? In memory is simpler, but a phone can be killed at any moment and the
-   review work is lost — which argues for staging, at the cost of more machinery.
-- **RECON-2 — Whether an import can be accepted in part** — keeping some items and rejecting
-   others — or only as a whole. Partial acceptance is closer to per-item conflict
-   resolution and may be the same interaction.
+- **RECON-2 — Whether an import can be accepted field by field** — taking some of an
+   incoming item and not the rest. Accepting or declining a whole item is built; below the
+   item it becomes the collision interaction the storage requirements describe, and waits
+   on that.
 - **RECON-4 — Whether importers are also exporters.** Interoperating with other applications
    is likely wanted in both directions, but export raises none of these questions and
    may not belong here at all.
@@ -223,6 +273,16 @@ columns mapped by the user rather than guessed.
 
 ## Settled
 
+- **RECON-1 — Where unsaved state lives.** *Settled:* **on disk, as a logbook of its
+  own.** The question was written as a trade-off — in memory is simpler, staging is safer
+  and costs more machinery — and the trade-off turned out not to exist. Incoming items
+  are a logbook, so staging them costs nothing that is not already built, and every edit
+  made while reviewing is saved as it is made. There is no unsaved state anywhere.
+- **RECON-2 — Whether an import can be accepted in part.** *Settled:* **it can, item by
+  item.** Everything arrives accepted and declining is the decision, because what arrives
+  cleanly is meant to land and the user vetoes rather than approves. What is declined is
+  kept beside the items, so an interrupted review is not lost. Accepting *within* an item
+  is the remaining half and is still open above.
 - **RECON-3 — Whether an unresolved item can be parked.** *Settled:* it can, and is
   parked whole rather than field by field. See `REQ-17` in
   [../data/json/requirements.md](../data/json/requirements.md).

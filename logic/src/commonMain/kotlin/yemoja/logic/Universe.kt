@@ -16,6 +16,7 @@ import yemoja.data.TextDescription
 import yemoja.data.Units
 import yemoja.data.json.DiskFileStore
 import yemoja.data.json.FileStore
+import yemoja.data.json.LogbookFormatException
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
 
@@ -50,6 +51,8 @@ class Universe(
     val logbook: ItemSet,
     val user: ReferenceableItem?,
     private val store: FileStore,
+    /** The folder this was opened from, or absent where it was not opened from one. */
+    val path: String? = null,
 ) {
 
     /**
@@ -104,7 +107,14 @@ class Universe(
                     }
                     // Taken now rather than when it lands, so two additions in one change cannot
                     // both be given the same id: the ones already minted are counted as taken.
-                    adds += freeId(item, adds.map { it.first }) to item
+                    val minted = adds.map { it.first }
+                    val carried = change.id
+                    if (carried != null && (logbook[carried] != null || carried in minted)) {
+                        return Outcome.Refused(
+                            "$carried is taken, so nothing can be added under it",
+                        )
+                    }
+                    adds += (carried ?: freeId(item, minted)) to item
                 }
 
                 is Change.Delete -> Unit
@@ -208,6 +218,44 @@ class Universe(
         held is Element.Usable && (held.value as? Reference.Identified)?.id == id
 
     /**
+     * The import being reviewed, or absent where none is.
+     *
+     * Held here because `ui/doc.md` holds every front end to reaching everything through the
+     * Universe, and an import is something being worked on rather than something a screen owns.
+     */
+    var importing: Import? = null
+        private set
+
+    /** Stage [source] in [staging], to be reviewed and taken in. */
+    fun importFrom(source: ItemSet, staging: FileStore) {
+        importing = Import.begin(source, staging, this)
+    }
+
+    /**
+     * Stage the logbook in the folder at [from], beside this one.
+     *
+     * The staging folder is this logbook's own with `.import` after it, which puts it outside the
+     * logbook: what is being reviewed is not part of it and must not be read as though it were.
+     * A logbook opened from nowhere in particular stages beside the source instead.
+     */
+    fun importFrom(from: String): Outcome {
+        val store = DiskFileStore(from)
+        if (!store.isFolder("")) return Outcome.Refused("$from should be a folder, and is not")
+        val source = try {
+            LogbookReader.read(store, logbook.descriptions)
+        } catch (refused: LogbookFormatException) {
+            return Outcome.Refused(refused.message ?: "$from could not be read")
+        }
+        importFrom(source, DiskFileStore((path ?: from) + ".import"))
+        return Outcome.Done()
+    }
+
+    /** Put the review down, leaving whatever is staged where it is. */
+    fun stopImporting() {
+        importing = null
+    }
+
+    /**
      * The values [field] suggests: what it ships with, and what this logbook already uses.
      *
      * `DATA-25` writes the presets on the description and leaves the joining to the Universe,
@@ -295,7 +343,8 @@ class Universe(
             val manifest = LogbookReader.manifest(store)
             val items = LogbookReader.read(store, Types.ALL, manifest)
             val user = manifest.user?.let { items[it.id] }
-            return Universe(items, if (user?.description == Types.PERSON) user else null, store)
+            val owner = if (user?.description == Types.PERSON) user else null
+            return Universe(items, owner, store, path)
         }
     }
 }

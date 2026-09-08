@@ -1,0 +1,240 @@
+package yemoja.logic
+
+import yemoja.data.Result
+import yemoja.data.json.LogbookReader
+import yemoja.data.json.MemoryFileStore
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+/*
+ * Items arriving from somewhere else, staged, reviewed and taken in.
+ *
+ * See ../../../../../doc.md — the layer's own document is logic/reconciliation.md.
+ */
+
+/** A Universe over these files. */
+private fun logbook(vararg files: Pair<String, String>): Pair<MemoryFileStore, Universe> {
+    val store = MemoryFileStore(mapOf(*files))
+    return store to Universe(LogbookReader.read(store, Types.ALL), null, store)
+}
+
+/** An item set read from these files, which is what a source hands over. */
+private fun arriving(vararg files: Pair<String, String>) =
+    LogbookReader.read(MemoryFileStore(mapOf(*files)), Types.ALL)
+
+/** An import of [from] into [into], staged in a folder of its own. */
+private fun staged(
+    from: Array<out Pair<String, String>>,
+    into: Universe,
+): Pair<MemoryFileStore, Import> {
+    val staging = MemoryFileStore(emptyMap())
+    return staging to Import.begin(arriving(*from), staging, into)
+}
+
+private fun nameOf(universe: Universe, id: String): String? =
+    (universe.logbook[id]?.single<String>("name") as? Result.Usable)?.value
+
+class StagedImportTest {
+
+    @Test
+    fun `the incoming items are written out as a logbook of their own`() {
+        // Which is what makes reviewing one cost nothing new. `RECON-1`.
+        val (_, into) = logbook("region.json" to "{}")
+        val (staging, import) = staged(arrayOf("region.json" to """{"a": {"name": "A"}}"""), into)
+        assertTrue(staging.isFile("region.json"), staging.namesIn("").toString())
+        assertEquals("A", nameOf(import.staged, "a"))
+    }
+
+    @Test
+    fun `a reference between two incoming items resolves among them`() {
+        // Not in the logbook they are going into, which does not hold either of them yet.
+        val (_, into) = logbook("person.json" to "{}")
+        val (_, import) = staged(
+            arrayOf(
+                "person.json" to """{"tom": {"first_name": "Tom"}}""",
+                "dive/d#0.json" to """{"buddies": ["@tom"]}""",
+            ),
+            into,
+        )
+        val dive = import.staged.logbook["d#0"]!!
+        val read = dive.list<yemoja.data.Reference>("buddies")
+        assertIs<Result.Usable<*>>(read)
+        val first = ((read as Result.Usable).value.first() as yemoja.data.Element.Usable).value
+        assertIs<yemoja.data.Reference.Identified>(first)
+    }
+
+    @Test
+    fun `an incoming item can be edited before it is taken in`() {
+        // It is a logbook, so it is edited by what edits a logbook, and saved as it is edited.
+        val (_, into) = logbook("region.json" to "{}")
+        val (staging, import) = staged(arrayOf("region.json" to """{"a": {"name": "A"}}"""), into)
+        val region = import.staged.logbook["a"]!!
+        import.staged.change(Operation.EDIT, Change.Write(region, "name", "Corrected"))
+        assertTrue("Corrected" in staging.readText("region.json"), staging.readText("region.json"))
+        import.apply()
+        assertEquals("Corrected", nameOf(into, "a"))
+    }
+}
+
+class MetImportTest {
+
+    @Test
+    fun `an item nothing answers to is new`() {
+        val (_, into) = logbook("region.json" to "{}")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {}}"""), into)
+        assertEquals(Meeting.NOTHING, import.meeting("a"))
+    }
+
+    @Test
+    fun `one of the same type under the same id is the same item`() {
+        val (_, into) = logbook("region.json" to """{"a": {"name": "Mine"}}""")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {"name": "Theirs"}}"""), into)
+        assertEquals(Meeting.THE_SAME, import.meeting("a"))
+    }
+
+    @Test
+    fun `an id taken by another type is something else`() {
+        // Two logbooks can each mint north_sea, one for a region and one for a person.
+        val (_, into) = logbook("region.json" to """{"north_sea": {}}""")
+        val (_, import) = staged(arrayOf("person.json" to """{"north_sea": {}}"""), into)
+        assertEquals(Meeting.SOMETHING_ELSE, import.meeting("north_sea"))
+    }
+}
+
+class AppliedImportTest {
+
+    @Test
+    fun `a new item goes in under the id it came with`() {
+        // Mint a new one and the dive that names the person no longer finds them.
+        val (store, into) = logbook("person.json" to "{}", "dive/d#0.json" to "{}")
+        val (_, import) = staged(
+            arrayOf(
+                "person.json" to """{"tom": {"first_name": "Tom"}}""",
+                "dive/d#1.json" to """{"buddies": ["@tom"]}""",
+            ),
+            into,
+        )
+        assertIs<Outcome.Done>(import.apply())
+        assertTrue(into.logbook["tom"] != null)
+        assertTrue("@tom" in store.readText("dive/d#1.json"), store.readText("dive/d#1.json"))
+    }
+
+    @Test
+    fun `a field the incoming item holds is written onto the one already held`() {
+        val (_, into) = logbook("region.json" to """{"a": {"name": "Mine"}}""")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {"name": "Theirs"}}"""), into)
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals("Theirs", nameOf(into, "a"))
+    }
+
+    @Test
+    fun `a field it does not hold is left alone`() {
+        // Silence is not an instruction to erase: a dive computer knows nothing about buddies.
+        val (_, into) = logbook("region.json" to """{"a": {"name": "Mine", "category": "sea"}}""")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {"name": "Theirs"}}"""), into)
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals("Theirs", nameOf(into, "a"), "the one it does hold was written")
+        val category = into.logbook["a"]!!.single<String>("category")
+        assertEquals("sea", (category as Result.Usable).value, "and the one it does not survived")
+    }
+
+    @Test
+    fun `an id taken by another type is left out`() {
+        val (_, into) = logbook("region.json" to """{"north_sea": {"name": "Mine"}}""")
+        val (_, import) = staged(
+            arrayOf("person.json" to """{"north_sea": {"first_name": "Tom"}}"""),
+            into,
+        )
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals("Mine", nameOf(into, "north_sea"), "and what was there is untouched")
+    }
+
+    @Test
+    fun `applying twice does nothing the second time`() {
+        // What was added answers to its id afterwards, so it is met as the same item.
+        val (_, into) = logbook("region.json" to "{}")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {"name": "A"}}"""), into)
+        assertIs<Outcome.Done>(import.apply())
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals(1, into.logbook.allOf(Types.REGION).size)
+    }
+
+    @Test
+    fun `it lands whole or not at all`() {
+        // One change, so the journal has one thing to record and one to take back. `REQ-2`.
+        val (_, into) = logbook("region.json" to "{}")
+        val (_, import) = staged(
+            arrayOf("region.json" to """{"a": {"name": "A"}, "b": {"north": 91}}"""),
+            into,
+        )
+        assertIs<Outcome.Refused>(import.apply())
+        assertEquals(0, into.logbook.allOf(Types.REGION).size, "including the good one")
+    }
+}
+
+class DecidedImportTest {
+
+    @Test
+    fun `an item taken in leaves the staged logbook`() {
+        // Deciding is editing, so what is left in the folder is what has not been decided.
+        val (_, into) = logbook("region.json" to "{}")
+        val (staging, import) = staged(arrayOf("region.json" to """{"a": {}, "b": {}}"""), into)
+        assertIs<Outcome.Done>(import.insert("a"))
+        assertTrue(into.logbook["a"] != null)
+        assertEquals(listOf("b"), import.incoming.map { import.staged.logbook.idOf(it) })
+        assertTrue("a" !in staging.readText("region.json"), staging.readText("region.json"))
+    }
+
+    @Test
+    fun `an item turned down leaves it too, and goes nowhere`() {
+        val (_, into) = logbook("region.json" to "{}")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {}, "b": {}}"""), into)
+        import.remove("a")
+        assertEquals(listOf("b"), import.incoming.map { import.staged.logbook.idOf(it) })
+        assertEquals(0, into.logbook.allOf(Types.REGION).size)
+    }
+
+    @Test
+    fun `a refused item stays where it is`() {
+        // So the reason can be shown against an item still on the screen.
+        val (_, into) = logbook("region.json" to "{}")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {"north": 91}}"""), into)
+        assertIs<Outcome.Refused>(import.insert("a"))
+        assertEquals(listOf("a"), import.incoming.map { import.staged.logbook.idOf(it) })
+    }
+
+    @Test
+    fun `a review put down is taken up where it stopped`() {
+        val (_, into) = logbook("region.json" to "{}")
+        val (staging, import) = staged(arrayOf("region.json" to """{"a": {}, "b": {}}"""), into)
+        import.remove("a")
+        val again = Import.open(staging, Types.ALL, into)
+        assertEquals(listOf("b"), again.incoming.map { again.staged.logbook.idOf(it) })
+    }
+
+    @Test
+    fun `applying takes everything left across`() {
+        val (_, into) = logbook("region.json" to "{}")
+        val (_, import) = staged(arrayOf("region.json" to """{"a": {}, "b": {}}"""), into)
+        import.remove("a")
+        assertIs<Outcome.Done>(import.apply())
+        assertEquals(listOf("b"), into.logbook.allOf(Types.REGION).map { into.logbook.idOf(it) })
+        assertEquals(emptyList(), import.incoming, "and nothing is left to review")
+    }
+}
+
+class ListedImportTest {
+
+    @Test
+    fun `the incoming items are listed, each type in its own order`() {
+        val (_, into) = logbook("region.json" to "{}")
+        val (_, import) = staged(
+            arrayOf("region.json" to """{"b": {"name": "Bee"}, "a": {"name": "Ay"}}"""),
+            into,
+        )
+        val said = import.incoming.map { import.staged.logbook.idOf(it) }
+        assertEquals(listOf("a", "b"), said, "alphabetical, as a region's tab lists them")
+    }
+}
