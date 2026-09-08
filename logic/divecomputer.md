@@ -180,8 +180,21 @@ the port it hands it through, the thinning, and the mapping in the tables above.
 dives with their environment, their gas sources and their profile, and nothing else at all —
 `LOGIC-20`.
 
-**Not built: the port's other side.** Nothing reads a device yet. `LOGIC-2` explains why the
-boundary is where it is and what putting it there buys.
+**The port's other side, for the JVM.** libdivecomputer is called through JNA and linked as a
+shared library, which is what the licence position in README turns on. Looking finds what is
+attached over USB HID and serial; opening one walks its dives and parses each into a recording.
+
+**What is attached is enumerated once and matched in memory.** The obvious reading of the API is
+to ask each of the three hundred and fifty odd models whether it is there, and that is what this
+did first: twenty-six seconds, because every question enumerates the bus again. An iterator may be
+given no descriptor at all, so one enumeration per transport and a few thousand comparisons by
+`dc_descriptor_filter` give the same answer in about a fifth of a second.
+
+**Nothing here has met a dive computer.** What is tested without one is the sample walk — the
+offsets a reading is taken at, and the constants that decide which stop is a required one and
+which event is an alarm — driven with memory laid out by hand. Three of those constants were
+wrong when first written, and one of them mapped `decostop` onto a safety stop, which is exactly
+what `LOGIC-13` refuses.
 
 Three more gaps, each of them a decision rather than typing:
 

@@ -17,10 +17,24 @@ kotlin {
             // is a foreign format and reading one is this layer's job. `FEAT-7`.
             implementation("io.github.pdvrieze.xmlutil:core:0.90.3")
         }
+        jvmMain.dependencies {
+            // Calling libdivecomputer, which is C. Apache 2.0 under its dual licence. Here rather
+            // than in common because only a JVM reaches a library this way: `LOGIC-2` puts each
+            // target's own answer below the port.
+            implementation("net.java.dev.jna:jna:5.19.0")
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
     }
+}
+
+// Where libdivecomputer is, for the tests that call it. Absent is a fine answer: those tests
+// then check that a machine without it reads no dive computers, which is what a user gets.
+// Where it lives when the application ships is not settled -- `LOGIC-2`.
+tasks.withType<Test>().configureEach {
+    (System.getenv("LIBDIVECOMPUTER") ?: findProperty("libdivecomputer")?.toString())
+        ?.let { systemProperty("jna.library.path", it) }
 }
 
 // The supplied libraries travel inside the application, because there is no reliable way to ask
