@@ -313,19 +313,29 @@ To settle when we discuss architecture and features:
 
 - **LOGIC-1 — Shape of the interface.** One service per subject area, a single facade, or
    use-case objects? This determines what the API and TUI front ends look like.
-- **LOGIC-2 — Reading a dive computer** needs a native library and platform Bluetooth access.
-   Where the *reconciliation* belongs is settled — see
-   [reconciliation.md](reconciliation.md) — but where the device-facing half lives,
-   given it needs platform capabilities the logic layer should not have, is not.
+- **LOGIC-2 — Where the device-facing half of a download lives.** *Settled:* **a port the
+   logic layer declares and each target implements, carrying a neutral recording.**
 
-   What a download *means* is settled and does not wait on this: `LOGIC-10` to `LOGIC-19`
-   answer it field by field, and [divecomputer.md](divecomputer.md) is the map.
+   Reaching a device needs a native library and platform Bluetooth, which this layer should not
+   have. What crosses the boundary is a `Recording`: a set of readings about the dive as a whole
+   and a walk of what was recorded through it. That is what a dive computer *is* rather than what
+   one library calls it, so the half below is only *get the bytes off the device* and everything
+   above is written once.
 
-   The language change moved this. The platform that matters most is now the one where
-   Bluetooth and a native library are least awkward, and the three routes to
-   libdivecomputer — JVM, Android, iOS — are three source sets rather than one binding.
-   That argues for the boundary sitting at an interface the logic layer declares and each
-   target implements, but it is an argument, not the answer.
+   **Three things follow, and the third is why.** The mapping — the part with all of
+   [divecomputer.md](divecomputer.md)'s decided detail in it — is written once rather than once
+   per target. A recording writes to a file, so every stage above the port is testable with no
+   device and no Bluetooth, which is the difference between a feature that can be regression-
+   tested and one that can only be tried. And it is buildable without a C toolchain, an Android
+   SDK or Developer Mode, none of which this machine has.
+
+   The alternative considered was putting the port in the data layer beside `FileStore`, which
+   `DATA-86` makes a precedent for. What decided against it is `reconciliation.md`'s own
+   distinction: a **repository** is where the logbook lives and an **importer** is where items
+   come from, and the two were named apart precisely to stop a device being treated as the first.
+
+   **Values cross in the model's default units** — metres, bar, Celsius, litres, seconds — and
+   converting into them is the implementation's, so no arithmetic is written three times.
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants
@@ -571,6 +581,16 @@ To settle when we discuss architecture and features:
    This is not about disk. A logbook is small either way, and `../data/json/doc.md` says so —
    twenty dives is about forty kilobytes. It is about a recording being legible by hand, which
    is what the format exists for.
+
+   **The figures themselves are provisional and still not chosen.** What is built thins by
+   dropping any point within a tolerance of the line the points either side of it describe, so
+   what survives differs from the recording by no more than that tolerance anywhere — which is
+   exactly what the written figure then claims. A tenth of a metre, a fifth of a degree and half
+   a bar are what a first import uses; they are the numbers to argue about rather than an answer.
+
+   The error measured is vertical rather than perpendicular, because the two axes are not the
+   same quantity: one is seconds and the other is metres, and the distance between them is not a
+   length. What is being asked is how wrong the value would be if the point were dropped.
 
    **The figure is written because a missing one claims nothing.** The manual is explicit: an
    absent tolerance does not mean the series was left alone, it means nobody recorded what was

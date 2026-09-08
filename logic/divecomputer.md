@@ -173,13 +173,27 @@ carries is never consulted for one. The same is true of `DECOMODEL`: the manual 
 `decostop` and `no_deco_time` were computed with the device's own model and settings, and a
 download is where those settings arrive.
 
+## What is built
+
+**Everything above the port.** `logic/divecomputer/` holds the recording a device hands over,
+the port it hands it through, the thinning, and the mapping in the tables above. A download makes
+dives with their environment, their gas sources and their profile, and nothing else at all —
+`LOGIC-20`.
+
+**Not built: the port's other side.** Nothing reads a device yet. `LOGIC-2` explains why the
+boundary is where it is and what putting it there buys.
+
+Three more gaps, each of them a decision rather than typing:
+
+- **The drop report.** `LOGIC-10` requires a download to say what it dropped, and nothing
+  collects it. What is dropped is decided; where the list goes is not.
+- **The site proposal.** `LOGIC-18` makes a fix a question at review with three answers, and a
+  recording carries one that nothing yet asks about.
+- **`LOGIC-15`'s tolerances.** The thinning is built and the figures it uses are provisional.
+
 ## Open questions
 
 None of its own. What this document waits on is elsewhere:
 
-- **`LOGIC-2`** — where the device-facing half lives, which needs platform capabilities the
-  logic layer should not have.
 - **`RECON-2`** — whether an import can be accepted in part, which `LOGIC-18` gives a new
   kind of candidate to.
-- **`LOGIC-15`'s three figures** — the tolerances themselves are a setting and are not
-  chosen.
