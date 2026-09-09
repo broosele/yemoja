@@ -131,7 +131,8 @@ the build refuses.
   - **Logic-layer tests use the real descriptions**, with items assembled in memory: a dive
     carrying a profile, a region graph closing on itself, a certification that supersedes
     itself.
-  - **`data/json` tests and end-to-end tests read the fixtures on disk**, because the real
+  - **`data/json` tests, `logic`'s JVM tests and end-to-end tests read the fixtures on disk**,
+    because the real
     format is what they are testing. See [fixtures/doc.md](fixtures/doc.md).
 
   **A shared builder serves the middle one, under one rule: it may not know a field name.**

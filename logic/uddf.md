@@ -746,10 +746,12 @@ into the user's and wrote over what was there, which is what `Matching.NONE` exi
 arriving item whose id is already taken is minted afresh and lands beside what was there.
 
 The cost is that **importing the same file twice, answered as new each time, puts everything in
-twice**. That is visible and
-can be deleted, where the alternative was quietly overwriting dives the user already had. The
-rule that recognises a dive by when it was and how deep it went is what `reconciliation.md` asks
-for — start time within a tolerance, duration, maximum depth — and it is not built.
+twice**. That is visible and can be deleted, where the alternative was quietly overwriting dives
+the user already had. What stands in the way is a proposal rather than a rule: taking a dive in
+asks whether it is new or one already held, and starts on the one it overlaps in time. The
+three-number heuristic `reconciliation.md` once asked for — start time within a tolerance,
+duration, maximum depth — is not built and no longer wanted, a tolerance being a number nobody
+can pick well.
 
 One thing that follows and is not handled: a reference to an item whose id was minted afresh is
 not rewritten. Nothing read from UDDF points at anything else read from it yet, so there is

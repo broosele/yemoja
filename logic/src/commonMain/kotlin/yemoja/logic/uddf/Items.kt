@@ -111,9 +111,9 @@ internal fun gearIn(tag: Tag): Map<String, Stored> {
 internal fun tripIn(tag: Tag, ours: Map<String, String>): Map<String, Stored> {
     val fields = LinkedHashMap<String, Stored>()
     fields.put("name", tag.said("name"))
-    val when_ = tag.find("dateoftrip", APART)
-    fields.put("start_date", when_?.date("startdate") ?: when_?.date("datetime"))
-    fields.put("end_date", when_?.date("enddate"))
+    val dates = tag.find("dateoftrip", APART)
+    fields.put("start_date", dates?.date("startdate") ?: dates?.date("datetime"))
+    fields.put("end_date", dates?.date("enddate"))
     fields.put("operator", tag.points("operator", ours))
     fields.put("remarks", tag.prose("notes"))
     return fields

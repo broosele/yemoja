@@ -336,6 +336,12 @@ To settle when we discuss architecture and features:
 
    **Values cross in the model's default units** — metres, bar, Celsius, litres, seconds — and
    converting into them is the implementation's, so no arithmetic is written three times.
+
+   **Two decisions do cross the port and are written per target.** `LOGIC-13`'s four deco types
+   and `LOGIC-16`'s twenty-six events are translated in the library's own vocabulary, which the
+   port deliberately keeps out, so each implementation carries those two tables. The cost is
+   accepted for what it buys — a port that names no library — and it is bounded: a wrong word
+   lands in a fixed set and reads back *unusable*, not as a plausible lie.
 - **LOGIC-21 — Where a download's drop report goes.** `LOGIC-10` settled that a value this
    model has no field for is dropped *and that the download says what it dropped*. The first
    half is built and the second is not: nothing collects the saying.

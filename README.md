@@ -132,8 +132,12 @@ front end takes **Mordant** for raw keys and the terminal's size, which the JDK 
 to ask for — see `TUI-4` in [ui/tui/doc.md](ui/tui/doc.md). The logic layer takes **xmlutil**
 for reading UDDF, common Kotlin having no XML reader — Apache 2.0, and there rather than in the
 data layer, whose promise of no dependencies stands because a foreign format is not its business.
-The rest is not settled: a library for reading dive computers, and a Bluetooth LE library per
-platform. Each will be recorded with the layer that needs it, once chosen.
+The logic layer's JVM side takes **libdivecomputer** for reading dive computers — LGPL-2.1,
+linked as a shared library so the rest of the application stays its own, which *Licensing* below
+turns on — and **JNA** to call it, Apache 2.0 under its dual licence. `LOGIC-2` in
+[logic/doc.md](logic/doc.md) puts both below a port the layer declares, so Android and iOS answer
+the same port their own way. What is not settled is a Bluetooth LE library per platform; it will
+be recorded with the target that needs it, once chosen.
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.

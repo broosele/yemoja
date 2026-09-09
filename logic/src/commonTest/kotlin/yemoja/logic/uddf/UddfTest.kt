@@ -66,7 +66,8 @@ class ReadDiveTest {
 
     @Test
     fun `depths come across as they are, both being metres`() {
-        assertEquals(28.4, number(dived(after = "<greatestdepth>28.4</greatestdepth>"), "max_depth"))
+        val deepest = number(dived(after = "<greatestdepth>28.4</greatestdepth>"), "max_depth")
+        assertEquals(28.4, deepest)
     }
 
     @Test
@@ -74,7 +75,8 @@ class ReadDiveTest {
         // The one conversion that is an offset rather than a factor, and the unit set has it.
         val dive = oneDive(dived(after = "<lowesttemperature>285.15</lowesttemperature>"))
         val environment = (dive.single<OwnedItem>("environment") as Result.Usable).value
-        assertEquals(12.0, (environment.single<Double>("bottom_temperature") as Result.Usable).value)
+        val coldest = environment.single<Double>("bottom_temperature") as Result.Usable
+        assertEquals(12.0, coldest.value)
     }
 
     @Test
@@ -104,7 +106,8 @@ class ReadDiveTest {
     @Test
     fun `a field is found whichever half of the dive holds it`() {
         // Which of the two a value sits in is a detail of the format the mapping does not repeat.
-        assertEquals(28.4, number(dived(before = "<greatestdepth>28.4</greatestdepth>"), "max_depth"))
+        val deepest = number(dived(before = "<greatestdepth>28.4</greatestdepth>"), "max_depth")
+        assertEquals(28.4, deepest)
     }
 
     @Test
@@ -117,7 +120,8 @@ class ReadProfileTest {
 
     private val samples = """
         <waypoint><divetime>0</divetime><depth>0.0</depth></waypoint>
-        <waypoint><divetime>90</divetime><depth>8.6</depth><temperature>285.15</temperature></waypoint>
+        <waypoint><divetime>90</divetime><depth>8.6</depth>
+          <temperature>285.15</temperature></waypoint>
         <waypoint><divetime>180</divetime><depth>14.9</depth></waypoint>
     """
 
@@ -183,6 +187,7 @@ class ReadTagsTest {
         val notes = "<notes><para>cold &amp; grey<![CDATA[, really]]></para></notes>"
         val dive = oneDive(dived(after = notes))
         val details = (dive.single<OwnedItem>("details") as Result.Usable).value
-        assertEquals("cold & grey, really", (details.single<String>("remarks") as Result.Usable).value)
+        val remarks = details.single<String>("remarks") as Result.Usable
+        assertEquals("cold & grey, really", remarks.value)
     }
 }
