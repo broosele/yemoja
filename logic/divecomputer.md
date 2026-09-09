@@ -210,9 +210,41 @@ Three more gaps, each of them a decision rather than typing:
   recording carries one that nothing yet asks about.
 - **`LOGIC-15`'s tolerances.** The thinning is built and the figures it uses are provisional.
 
+## What is owed
+
+Decided and not built, or built and not proven. Each is here rather than in somebody's head.
+
+- **Nothing has met a dive computer.** Every test above the port runs on recordings written by
+  hand, and every test below it on memory laid out by hand. That is enough to catch a wrong
+  offset and not enough to catch a wrong reading of what a device means. Three constants were
+  wrong when first written and all three were found by re-reading the header, which is the class
+  of error still waiting: the next one will be found by a device or not at all.
+- **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
+  *and that the download says what it dropped*. What is dropped is decided field by field above;
+  where the saying goes is `LOGIC-21`.
+- **A fix is carried and nothing asks about it.** `LOGIC-18` settled that a download's
+  coordinates become a proposal at review with three answers, and `DATA-90`'s review has no
+  question in it but *is this new*. A recording carries the position; nothing offers it.
+- **A serial is carried and nothing uses it.** `LOGIC-20` makes it the one thing that may propose
+  a gear item, and the JVM does not read it: it needs the device opened, and nothing asks.
+- **A re-download overwrites a correction.** Applying writes field by field and leaves alone what
+  the recording does not hold, so buddies, site, rating and notes survive. A field the computer
+  reports *and* the user has corrected does not: a max depth fixed by hand is written over
+  without a word. That is the collision `data/json/requirements.md` describes and
+  [reconciliation.md](reconciliation.md) records as not built. The fingerprint makes it rare
+  rather than impossible, since a dive already held is not fetched again.
+
 ## Open questions
 
-None of its own. What this document waits on is elsewhere:
+- **LOGIC-21 — Where a download's drop report goes.** `LOGIC-10` requires one and nothing
+  collects it. What is dropped is known as it happens — a device field with no home, a sample
+  type this model does not keep — so the question is what carries it and who reads it: a value
+  the download answers with beside the items, something the review shows, or a line in the
+  journal `FEAT-4` will keep. It bears on `TUI-8`, both being what a download has to say for
+  itself while and after it runs.
+
+What this document also waits on is elsewhere:
 
 - **`RECON-2`** — whether an import can be accepted in part, which `LOGIC-18` gives a new
   kind of candidate to.
+- **`TUI-8`** — what a job that takes minutes looks like, which is what a download is.

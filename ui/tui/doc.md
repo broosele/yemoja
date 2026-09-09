@@ -605,8 +605,23 @@ description says so, not because this front end knows which fields those are. `T
 
 ## Open questions
 
-**None are open.** All six are settled and kept here, since a decision not to relitigate is
-worth as much as one still to make.
+One is open. The rest are settled and kept here, since a decision not to relitigate is worth as
+much as one still to make.
+
+- **TUI-8 — What a job that takes minutes looks like.** *Open.* Reading a dive computer is the
+  first thing this interface does that does not finish between one keystroke and the next. It
+  can take minutes on a full computer, and at present the screen simply stops: nothing says what
+  is happening, nothing says how far along it is, and nothing offers to give up.
+
+  The pieces are there and none of them is wired. The port hands dives over one at a time, so
+  progress is knowable. `dc_device_set_cancel` exists, so giving up is possible. What is missing
+  is a shape for it — whether the interface keeps painting while something else reads, which
+  means a thread and everything a thread brings, or whether a screen that says *reading, 12 of
+  40, [esc] to stop* between dives is enough. The second needs no concurrency and would not
+  answer a device that hangs.
+
+  It bears on `LOGIC-21`, which asks where a download's report of what it dropped goes: both are
+  what a download has to say for itself.
 
 - **TUI-1 — Full-screen interactive or a command-driven REPL?** *Settled:* full-screen
   interactive. The tabs, the list and the cursor keys are what was asked for, and a REPL

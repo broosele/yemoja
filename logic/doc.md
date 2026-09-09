@@ -336,6 +336,19 @@ To settle when we discuss architecture and features:
 
    **Values cross in the model's default units** — metres, bar, Celsius, litres, seconds — and
    converting into them is the implementation's, so no arithmetic is written three times.
+- **LOGIC-21 — Where a download's drop report goes.** `LOGIC-10` settled that a value this
+   model has no field for is dropped *and that the download says what it dropped*. The first
+   half is built and the second is not: nothing collects the saying.
+
+   What is dropped is known as it happens — a device field with no home, a sample type this
+   model does not keep — so the question is what carries it and who reads it. A value the
+   download answers with, beside the items it made; something the review shows before anything
+   is taken in; or a line in the journal `FEAT-4` will keep, which is where *what happened* is
+   meant to live. The three are not exclusive and the cheapest is the first.
+
+   Whichever it is, it bears on `TUI-8`: a download that says nothing while it runs and nothing
+   when it finishes is the same silence twice.
+
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants
