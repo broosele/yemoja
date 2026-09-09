@@ -162,11 +162,11 @@ internal class Attached(
     private val context: Pointer?,
     private val descriptor: Pointer?,
     override val name: String,
-    private val open: () -> Pointer?,
+    private val open: (Session) -> Pointer?,
 ) : DiveComputer {
 
-    override fun recordings(resume: (String?) -> String?): Sequence<Recording> {
-        val stream = open() ?: return emptySequence()
+    override fun recordings(session: Session): Sequence<Recording> {
+        val stream = open(session) ?: return emptySequence()
         val device = PointerByReference()
         val opened = library.dc_device_open(device, context, descriptor, stream)
         if (opened != Libdivecomputer.SUCCESS) {
@@ -178,7 +178,7 @@ internal class Attached(
         // which is what says whose chain this is. The device says it before the first dive, and
         // a later telling replaces an earlier one. `LOGIC-23`.
         fun stopAt(serial: String?) {
-            val known = bytesOf(resume(serial)) ?: return
+            val known = bytesOf(session.resume(serial)) ?: return
             library.dc_device_set_fingerprint(device.value, known, known.size)
         }
         stopAt(null)
@@ -206,6 +206,19 @@ internal class Attached(
 }
 
 /**
+ * What a `dc_salinity_t` says the water was, as the port carries it.
+ *
+ * **A density of zero is no figure, not a weightless sea.** The i330R names its water and leaves
+ * the number at nothing, and a zero written to the profile would override the density the model
+ * works out from the water's name and the computer's own figure. Absent is not zero. `LOGIC-12`.
+ */
+internal fun waterOf(type: Int, density: Double): Recording.Water =
+    Recording.Water(if (type == SALT) "salt" else "fresh", density.takeIf { it > 0 })
+
+/** `DC_WATER_SALT`, the other being fresh. */
+private const val SALT: Int = 1
+
+/**
  * The serial in a `dc_event_devinfo_t`, which is the third of three unsigned ints.
  *
  * As a decimal number, which is how the library has it; what the maker prints is matched
@@ -230,15 +243,7 @@ internal fun hexOf(held: Pointer?, size: Int): String? {
 }
 
 /** Hexadecimal back to the bytes a device takes, or absent where it is not hexadecimal. */
-internal fun bytesOf(hex: String?): ByteArray? {
-    if (hex == null || hex.length < 2 || hex.length % 2 != 0) return null
-    val out = ByteArray(hex.length / 2)
-    for (at in out.indices) {
-        val byte = hex.substring(at * 2, at * 2 + 2).toIntOrNull(16) ?: return null
-        out[at] = byte.toByte()
-    }
-    return out
-}
+internal fun bytesOf(hex: String?): ByteArray? = yemoja.logic.bytesOf(hex)
 
 /** One dive's bytes, parsed into what the port carries. */
 private fun recordingOf(
@@ -284,9 +289,7 @@ private fun readingOf(
         duration = wholeOf(library, parser, Field.DIVETIME)?.toDouble(),
         maxDepth = realOf(library, parser, Field.MAXDEPTH),
         averageDepth = realOf(library, parser, Field.AVGDEPTH),
-        water = salinity?.let {
-            Recording.Water(if (it.type == 1) "salt" else "fresh", it.density)
-        },
+        water = salinity?.let { waterOf(it.type, it.density) },
         atmospheric = realOf(library, parser, Field.ATMOSPHERIC),
         coldest = realOf(library, parser, Field.TEMPERATURE_MINIMUM),
         surface = realOf(library, parser, Field.TEMPERATURE_SURFACE),

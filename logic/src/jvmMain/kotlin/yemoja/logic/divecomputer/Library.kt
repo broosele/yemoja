@@ -48,6 +48,8 @@ internal interface Libdivecomputer : Library {
 
     fun dc_descriptor_get_transports(descriptor: Pointer?): Int
 
+    fun dc_descriptor_get_model(descriptor: Pointer?): Int
+
     fun dc_descriptor_free(descriptor: Pointer?)
 
     fun dc_usbhid_iterator_new(
@@ -221,6 +223,8 @@ internal interface Libdivecomputer : Library {
         /** `DC_STATUS_TIMEOUT`: the bytes asked for did not all arrive in time. */
         const val TIMEOUT: Int = -7
 
+        /** `DC_STATUS_CANCELLED`: given up, by the user rather than by a fault. */
+        const val CANCELLED: Int = -10
     }
 }
 

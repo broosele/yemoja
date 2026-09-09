@@ -613,7 +613,11 @@ much as one still to make.
   can take minutes on a full computer, and at present the screen simply stops: nothing says what
   is happening, nothing says how far along it is, and nothing offers to give up. Choosing *a dive
   computer* on the import screen now stops for four seconds before the list appears, which is
-  the Bluetooth scan listening; that is the same silence, shorter.
+  the Bluetooth scan listening; that is the same silence, shorter. One thing does speak during
+  a download: a computer that shows a code has it asked for on the bottom line, typed and
+  entered, or given up with escape. `LOGIC-24`. That is the first question put mid-download,
+  and it is put by the terminal rather than by the screen, which cannot read a line while the
+  download holds it.
 
   The pieces are there and none of them is wired. The port hands dives over one at a time, so
   progress is knowable. `dc_device_set_cancel` exists, so giving up is possible. What is missing

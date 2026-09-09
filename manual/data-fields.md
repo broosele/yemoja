@@ -477,6 +477,10 @@ A piece of equipment. A dive computer is gear like anything else you own.
 - `model` (text)
 - `serial` (text) — the serial number, where it has one. For a dive computer, put the serial
   from its own information screen here: every recording it makes finds the item by it.
+- `access_code` (text) — for a dive computer that shows a code you must type before it talks,
+  the key it hands back once you have. A download puts it here, as hexadecimal, and hands it
+  back next time so the code is not asked again. Not for reading; clear it and the computer
+  asks once more.
 - `generic` (true or false) — whether this describes a *kind* of item rather than one you
   own. Leave it out and it is `false`: your own gear is your own. See below.
 - `category` (text) — the broad group it belongs to. Anything you like; the usual ones

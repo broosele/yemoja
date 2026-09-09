@@ -83,10 +83,51 @@ class ChosenTest {
     }
 }
 
+class PreferredTest {
+
+    private val family = listOf("Petrel 2", "Perdix", "Perdix AI", "Teric", "Perdix 2")
+
+    private val none = List(5) { 0 }
+
+    /** Oceanic Pro Plus X, Aqualung i470TC, Aqualung i330R, as the library numbers them. */
+    private val oceanic = listOf("Pro Plus X", "i470TC", "i330R")
+
+    private val codes = listOf(0x4552, 0x4743, 0x4744)
+
+    @Test
+    fun `the member whose name the advertisement contains is the one`() {
+        assertEquals(3, preferred("Teric", family, none))
+    }
+
+    @Test
+    fun `the longest where several are contained`() {
+        assertEquals(4, preferred("Perdix 2", family, none), "not Perdix, which is in it too")
+        assertEquals(2, preferred("Perdix AI", family, none))
+    }
+
+    @Test
+    fun `case does not matter and nothing contained is the first`() {
+        assertEquals(1, preferred("PERDIX", family, none))
+        assertEquals(0, preferred("Nerd 2", family, none))
+    }
+
+    @Test
+    fun `two letters and then digits are a model number, and say which model`() {
+        assertEquals(2, preferred("GD312445", oceanic, codes), "GD is 0x4744")
+        assertEquals(0, preferred("er009", oceanic, codes), "ER is 0x4552, and case is nothing")
+    }
+
+    @Test
+    fun `a code no model spells, or letters where digits should be, is the first`() {
+        assertEquals(0, preferred("ZZ99", oceanic, codes), "no model is ZZ")
+        assertEquals(0, preferred("GD31A2", oceanic, codes), "a letter among the digits")
+        assertEquals(0, preferred("GD", oceanic, codes), "a prefix and no number at all")
+    }
+}
+
 /** A wire that answers what it was told to and remembers what was sent. */
 private class Laid(
     override val name: String = "Perdix",
-    override val chunk: Int = 4,
     private val answers: ArrayDeque<ByteArray> = ArrayDeque(),
     private val others: Map<Uuid, ByteArray> = emptyMap(),
 ) : Wire {
@@ -111,40 +152,51 @@ class CustomTest {
     private fun bytes(vararg values: Int) = ByteArray(values.size) { values[it].toByte() }
 
     @Test
-    fun `a read is filled from what arrived and the rest waits for the next`() {
+    fun `a read answers one packet, however much room was offered`() {
         val wire = Laid(answers = ArrayDeque(listOf(bytes(1, 2, 3), bytes(4, 5))))
+        val custom = Custom(wire)
+        val into = Memory(8)
+        val actual = Memory(8)
+        assertEquals(0, custom.read(into, 8, actual))
+        assertContentEquals(bytes(1, 2, 3), into.getByteArray(0, 3))
+        assertEquals(3L, actual.getLong(0), "the first packet, not the room")
+        assertEquals(0, custom.read(into, 8, actual))
+        assertContentEquals(bytes(4, 5), into.getByteArray(0, 2))
+        assertEquals(2L, actual.getLong(0))
+    }
+
+    @Test
+    fun `a packet larger than the room is handed over in pieces`() {
+        val wire = Laid(answers = ArrayDeque(listOf(bytes(1, 2, 3, 4, 5))))
         val custom = Custom(wire)
         val into = Memory(8)
         val actual = Memory(8)
         assertEquals(0, custom.read(into, 4, actual))
         assertContentEquals(bytes(1, 2, 3, 4), into.getByteArray(0, 4))
-        assertEquals(4L, actual.getLong(0))
-        assertEquals(0, custom.read(into, 1, actual))
+        assertEquals(0, custom.read(into, 4, actual))
         assertContentEquals(bytes(5), into.getByteArray(0, 1))
         assertEquals(1L, actual.getLong(0))
     }
 
     @Test
-    fun `a read that cannot be filled says timeout and gives what it has`() {
-        val wire = Laid(answers = ArrayDeque(listOf(bytes(9))))
-        val custom = Custom(wire)
-        val into = Memory(8)
+    fun `a read with nothing coming is a timeout, and hands over nothing`() {
+        val custom = Custom(Laid())
         val actual = Memory(8)
-        assertEquals(Libdivecomputer.TIMEOUT, custom.read(into, 3, actual))
-        assertEquals(1L, actual.getLong(0), "the one byte that came is handed over")
-        assertContentEquals(bytes(9), into.getByteArray(0, 1))
+        assertEquals(Libdivecomputer.TIMEOUT, custom.read(Memory(8), 3, actual))
+        assertEquals(0L, actual.getLong(0))
     }
 
     @Test
-    fun `a write goes out in chunks the wire can carry`() {
-        val wire = Laid(chunk = 4)
+    fun `a write goes out as one packet, however long`() {
+        // Two writes are two packets to the device: a twenty-one byte request split into
+        // twenty and one is what the i330R would not answer.
+        val wire = Laid()
         val custom = Custom(wire)
-        val from = Memory(16).also { it.write(0, bytes(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 0, 10) }
+        val from = Memory(32).also { it.write(0, ByteArray(21) { at -> at.toByte() }, 0, 21) }
         val actual = Memory(8)
-        assertEquals(0, custom.write(from, 10, actual))
-        assertEquals(listOf(4, 4, 2), wire.sent.map { it.size })
-        assertContentEquals(bytes(9, 10), wire.sent.last())
-        assertEquals(10L, actual.getLong(0))
+        assertEquals(0, custom.write(from, 21, actual))
+        assertEquals(listOf(21), wire.sent.map { it.size })
+        assertEquals(21L, actual.getLong(0))
     }
 
     @Test
@@ -174,13 +226,77 @@ class CustomTest {
     @Test
     fun `a request this stream has no answer to is unsupported`() {
         val custom = Custom(Laid())
-        val pincode = (1 shl 30) or ('b'.code shl 8) or 1
-        assertEquals(Libdivecomputer.UNSUPPORTED, custom.ioctl(pincode, Memory(8), 8))
+        val unknown = (1 shl 30) or ('b'.code shl 8) or 9
+        assertEquals(Libdivecomputer.UNSUPPORTED, custom.ioctl(unknown, Memory(8), 8))
     }
 
     @Test
     fun `the request numbers are the header's`() {
         assertEquals(0x40006200, Custom.GET_NAME)
+        assertEquals(0x40006201, Custom.GET_PINCODE)
+        assertEquals(0x40006202, Custom.GET_ACCESSCODE)
+        assertEquals(0x80006202.toInt(), Custom.SET_ACCESSCODE)
         assertEquals(0x40006203, Custom.CHARACTERISTIC_READ)
+    }
+}
+
+/** A session that remembers what it was asked and answers what it was told to. */
+private class Answering(
+    private val typed: String? = null,
+    private val kept: ByteArray? = null,
+) : Session {
+    val askedFor = ArrayList<String>()
+    var given: Pair<String, ByteArray>? = null
+
+    override fun pin(name: String): String? {
+        askedFor += name
+        return typed
+    }
+
+    override fun accessCode(name: String): ByteArray? = kept
+
+    override fun keep(name: String, accessCode: ByteArray) {
+        given = name to accessCode
+    }
+}
+
+class GuardedTest {
+
+    private fun bytes(vararg values: Int) = ByteArray(values.size) { values[it].toByte() }
+
+    @Test
+    fun `the code the user types goes back ended by zero, asked for by the device's name`() {
+        val session = Answering(typed = "123456")
+        val custom = Custom(Laid(name = "FQ001124"), session)
+        val room = Memory(16)
+        assertEquals(0, custom.ioctl(Custom.GET_PINCODE, room, 16))
+        assertEquals("123456", room.getString(0))
+        assertEquals(listOf("FQ001124"), session.askedFor)
+    }
+
+    @Test
+    fun `nobody typing is giving up, not a fault`() {
+        val custom = Custom(Laid(), Answering(typed = null))
+        assertEquals(Libdivecomputer.CANCELLED, custom.ioctl(Custom.GET_PINCODE, Memory(16), 16))
+    }
+
+    @Test
+    fun `an access code kept is handed over, and none kept is unsupported`() {
+        val kept = Custom(Laid(), Answering(kept = bytes(9, 8, 7, 6)))
+        val room = Memory(8)
+        assertEquals(0, kept.ioctl(Custom.GET_ACCESSCODE, room, 8))
+        assertContentEquals(bytes(9, 8, 7, 6), room.getByteArray(0, 4))
+        val none = Custom(Laid(), Answering())
+        assertEquals(Libdivecomputer.UNSUPPORTED, none.ioctl(Custom.GET_ACCESSCODE, Memory(8), 8))
+    }
+
+    @Test
+    fun `an access code handed over is kept under the device's name`() {
+        val session = Answering()
+        val custom = Custom(Laid(name = "FQ001124"), session)
+        val given = Memory(4).also { it.write(0, bytes(1, 2, 3, 4), 0, 4) }
+        assertEquals(0, custom.ioctl(Custom.SET_ACCESSCODE, given, 4))
+        assertEquals("FQ001124", session.given?.first)
+        assertContentEquals(bytes(1, 2, 3, 4), session.given?.second)
     }
 }

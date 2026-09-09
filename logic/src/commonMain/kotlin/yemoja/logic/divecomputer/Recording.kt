@@ -137,13 +137,46 @@ interface DiveComputer {
     /**
      * Every dive it holds, oldest first, read as the sequence is walked.
      *
-     * [resume] answers the fingerprint of the last dive already held, or nothing where none is,
-     * given the device's serial once it has said one. The device is told where to stop and
-     * reports only what came after, so a second download transfers nothing it has given before.
-     * `DATA-90`. Asked rather than told because the serial is what says whose chain this is,
-     * and a device says it only once opened. `LOGIC-23`.
+     * [session] answers what the download asks while it runs: where to stop, and the codes a
+     * device that guards itself wants. Asked rather than told because each answer needs
+     * something the device says only once opened. `DATA-90`, `LOGIC-23`, `LOGIC-24`.
      */
-    fun recordings(resume: (serial: String?) -> String? = { null }): Sequence<Recording>
+    fun recordings(session: Session = Session.NONE): Sequence<Recording>
+}
+
+/**
+ * Session is what a download asks of the logbook while it runs.
+ *
+ * Where to stop needs the device's serial, which it says only once opened, and a code needs to
+ * be typed while the device is showing it. So a download is handed something to ask rather than
+ * the answers. Every answer has a default that means *nothing*, and a download given nothing
+ * transfers everything and types no code.
+ */
+interface Session {
+
+    /**
+     * The fingerprint of the last dive already held, or absent where none is.
+     *
+     * [serial] is the device's, once it has said it, or absent where it never does. The device is
+     * told where to stop and reports only what came after, so a second download transfers
+     * nothing it has given before. `DATA-90`. The serial is what says whose chain this is.
+     * `LOGIC-23`.
+     */
+    fun resume(serial: String?): String? = null
+
+    /** The access code kept for the device advertising as [name], or absent where none is. */
+    fun accessCode(name: String): ByteArray? = null
+
+    /** The code the device called [name] is showing, as the user types it, or absent. */
+    fun pin(name: String): String? = null
+
+    /** An access code the device called [name] handed over, to be kept for next time. */
+    fun keep(name: String, accessCode: ByteArray) {}
+
+    companion object {
+        /** A session that answers nothing. */
+        val NONE: Session = object : Session {}
+    }
 }
 
 /**

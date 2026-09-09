@@ -94,6 +94,9 @@ internal val GEAR: ItemDescription = ItemDescription(
         TextDescription("brand"),
         TextDescription("model"),
         TextDescription("serial"),
+        // For a dive computer that asks for a code before it talks: the key it hands back once
+        // the code is typed, kept so it is not asked again. Put there by a download. `LOGIC-24`.
+        TextDescription("access_code"),
         // Whether this describes a kind of item rather than one the user owns. Absent is
         // false: your own gear is your own.
         BooleanDescription("generic"),

@@ -118,7 +118,7 @@ them.
 
 ## What has no source at all
 
-Five things this model holds that a download may not supply, and each has somewhere else to
+Six things this model holds that a download may not supply, and each has somewhere else to
 come from:
 
 - **`profile.gmt_offset`** — where the device reports no zone, which some do not.
@@ -133,6 +133,10 @@ come from:
   by, so nothing points at a gear item. `volume` is written directly instead. `LOGIC-12`.
 - **`alarms`: `breath`, `deco`, `error`, `skincooling`** — four of our nine words that no
   event maps onto. `LOGIC-16` refuses to stretch a near-miss into them.
+- **A fix.** The library declares a location field and no parser in it fills one, for any
+  device. Where a vendor's app attaches a position to a dive from the phone it synced with, the
+  position lives in that app and never reaches the computer. `LOGIC-18`'s proposal has no source
+  through this library, and a site is the user's to name.
 
 ## Where the two models disagree in shape
 
@@ -192,7 +196,8 @@ which advertised names are which model, and nothing about scanning, connecting, 
 device's characteristics carry the bytes. Kable does the radio, on every target it will be built
 for. A scan listens for four seconds and matches what it heard by name; opening connects, picks
 the pair of characteristics by the rule `LOGIC-22` gives, subscribes before the first write, and
-hands the library a stream whose reads drain the notifications as they came. The stream answers
+hands the library a stream whose reads answer one notification apiece — over Bluetooth LE the
+library reads packets, not counts, and offers a buffer bigger than any of them. The stream answers
 the two requests the drivers that speak Bluetooth make — the advertised name, and a
 characteristic read by UUID — and calls a PIN or an access code unsupported until a device is
 met that wants one.
@@ -209,11 +214,13 @@ it by, and handing the last one back before the next download tells the device w
 recognises a dive exactly rather than by proposing one. Where to resume from is a question the
 logbook answers: the newest recording that computer made and that carries one.
 
-**Nothing here has met a dive computer.** What is tested without one is the sample walk — the
-offsets a reading is taken at, and the constants that decide which stop is a required one and
-which event is an alarm — driven with memory laid out by hand. Three of those constants were
-wrong when first written, and one of them mapped `decostop` onto a safety stop, which is exactly
-what `LOGIC-13` refuses.
+**One dive computer has been met.** A Shearwater Perdix 2 over Bluetooth LE on Windows gave up
+a hundred dives in twenty minutes, each with its samples, tank pressures, gradient factors,
+water and fingerprint. USB and serial have met nothing. What is tested without a device is the
+sample walk — the offsets a reading is taken at, and the constants that decide which stop is a
+required one and which event is an alarm — driven with memory laid out by hand. Three of those
+constants were wrong when first written, and one of them mapped `decostop` onto a safety stop,
+which is exactly what `LOGIC-13` refuses.
 
 Three more gaps, each of them a decision rather than typing:
 
@@ -227,33 +234,68 @@ Three more gaps, each of them a decision rather than typing:
 
 Decided and not built, or built and not proven. Each is here rather than in somebody's head.
 
-- **Nothing has met a dive computer.** Every test above the port runs on recordings written by
-  hand, and every test below it on memory laid out by hand. That is enough to catch a wrong
-  offset and not enough to catch a wrong reading of what a device means. Three constants were
-  wrong when first written and all three were found by re-reading the header, which is the class
-  of error still waiting: the next one will be found by a device or not at all.
-- **The Bluetooth stream has not carried a dive.** A scan has heard devices and the library has
-  matched one by name, so the radio and the filter work; nothing has been connected to. The
-  stream is tested over a wire laid by hand — reads filled and timed out, writes chunked, the
-  two requests answered — and the choice of characteristics is tested on lists written by hand.
-  Whether `LOGIC-22`'s rule picks right on a real device, and whether the drivers are content
-  with what the stream answers, is what the first device will say.
+- **Two computers, over one transport.** A Shearwater Perdix 2 and an Aqualung i330R, both over
+  Bluetooth LE. Every other model, and USB and serial altogether, are tested on recordings
+  written by hand above the port and memory laid out by hand below it, which catches a wrong
+  offset and not a wrong reading of what a device means. Three constants were wrong when first
+  written and all three were found by re-reading the header. Each device then found an error no
+  test had: a read that waited to fill its buffer where the library wanted one packet, a write
+  split at twenty bytes where the driver meant one packet of twenty-one, a whole family of
+  models answering to one another's names, and a density of zero written as though it were a
+  measurement. That is the class still waiting for every model not yet met.
+- **A tank and its mix arrive apart.** The Perdix reports a tank from its transmitter with
+  pressures and no mix, and the mix on its own, so a dive on one cylinder of EAN30 becomes two
+  sources: one with pressures and no gas, one with gas and no pressures. That is what `LOGIC-12`
+  says to do with a tank whose mix is unknown, and it is the wrong picture of that dive. Whether
+  one tank and one mix are joined when there is exactly one of each is a decision not yet put.
+- **A second reading has not used the access code.** The i330R was paired once, the code was
+  typed, and the sixteen bytes it handed back are kept. Nothing has yet handed them back to it,
+  so whether a kept code opens the device without asking is the one half of `LOGIC-24` still
+  unproven. The rest is: the driver asks for the code by an advertised name that spells the
+  serial, and *unsupported* is what makes it ask the user instead.
+- **A Shearwater takes twenty minutes where an Aqualung takes eight, and neither is this
+  side's doing.** Timing a Perdix read: a write costs 1.6 milliseconds and the whole minute
+  goes on waiting for the next packet, 684 of 731 waits landing between 100 and 140
+  milliseconds. Not one packet arrived within five milliseconds of the one before, so the
+  device sends exactly one twenty-byte packet per connection event and the connection interval
+  is around 120 — about 170 bytes a second. The i330R moves 71 packets a second over the same
+  radio on the same machine, so nothing here is a fixed ceiling.
+
+  Windows can be asked for a throughput-optimised connection interval, and neither Kable nor
+  the btleplug it is built on exposes that, so there is nothing to call. Other applications
+  being quicker is consistent with their asking. Whether it is worth reaching past Kable to the
+  platform for this is not decided; `TUI-8` owns the silence while it runs either way.
+- **A second computer's dive is merged beside the application, not through it.** `RECON-7`.
+- **A link that drops keeps what it got.** The second session lost the connection after fifteen
+  minutes and seventy-two dives, for no reason either side reported; the seventy-two were handed
+  over. What was not got cannot be fetched by resuming, because a device counts from its newest
+  dive and the fingerprint says where to stop, not where to start. The older dives take another
+  full download that lasts.
 - **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
   *and that the download says what it dropped*. What is dropped is decided field by field above;
   where the saying goes is `LOGIC-21`.
 - **The fix does not cross the port.** `LOGIC-18` settled that a download's coordinates become
   a proposal at review, and no review question exists, so the recording does not carry one: a
-  field every implementation must fill and nothing reads is a lie waiting to be believed.
+  field every implementation must fill and nothing reads is a lie waiting to be believed. Nor
+  does any parser in the library fill one, so when the question is built the field has no
+  source yet either.
+- **The serial has not been read off a device.** The JVM listens for the device-info event and
+  hands the serial over as a decimal number, and nothing has yet compared that number with what
+  a Perdix prints on its screen. The comparison reads a hexadecimal spelling as its number, so
+  either way round should match; whether it does is the next download's to say.
+- **A re-download overwrites a correction.** Applying lays the arriving dive over the held one
+  member by member, so buddies, site, rating and notes survive, a second computer's profile
+  lands beside the first, and the visibility survives the environment. `RECON-6`. A field the
+  computer reports *and* the user has corrected does not survive: a max depth fixed by hand is
+  written over without a word, and a profile arriving under the key already held has its
+  series replaced. That is the collision `data/json/requirements.md` describes and
+  [reconciliation.md](reconciliation.md) records as not built. And the gas sources land beside
+  the held ones under their own keys rather than onto them, since nothing says which is which,
+  so a re-download doubles them.
 - **A logbook resumes only through a serial its gear items carry.** A profile that names a gear
   item by hand is found through that item's serial, so the item must have one. Until it does,
   the resume lookup finds no chain for the device and the next download fetches everything
   again. `LOGIC-23`.
-- **A re-download overwrites a correction.** Applying writes field by field and leaves alone what
-  the recording does not hold, so buddies, site, rating and notes survive. A field the computer
-  reports *and* the user has corrected does not: a max depth fixed by hand is written over
-  without a word. That is the collision `data/json/requirements.md` describes and
-  [reconciliation.md](reconciliation.md) records as not built. The fingerprint makes it rare
-  rather than impossible, since a dive already held is not fetched again.
 
 ## Open questions
 

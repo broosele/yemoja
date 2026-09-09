@@ -42,7 +42,18 @@ import yemoja.logic.Universe
  * declares them. Nothing here names a type or a field, so a type added to the logic layer appears
  * without this changing.
  */
-class Screen(private val universe: Universe) {
+class Screen(
+    private val universe: Universe,
+    /**
+     * Put a question to the user and answer with what they typed, or absent where they gave up.
+     *
+     * The one thing this screen cannot do for itself: a dive computer that guards itself shows
+     * a code while a download runs, and the download waits for it to be typed. Only the terminal
+     * can read a line then, so the terminal supplies this. A screen given nothing answers nothing,
+     * and such a computer is not read. `LOGIC-24`.
+     */
+    private val prompt: (String) -> String? = { null },
+) {
 
     // Everything shown comes from the logbook the universe holds; everything changed goes back
     // through the universe itself. `ui/doc.md` holds every front end to reaching both this way.
@@ -374,7 +385,7 @@ class Screen(private val universe: Universe) {
      * port hands dives over as they are read, and nothing yet paints between them.
      */
     private fun download(computer: DiveComputer) {
-        when (val done = universe.downloadFrom(computer)) {
+        when (val done = universe.downloadFrom(computer, prompt)) {
             is Outcome.Refused -> message = done.reason
             is Outcome.Done -> {
                 attached = null

@@ -12,6 +12,7 @@ import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.data.Units
 import yemoja.data.json.DiskFileStore
@@ -22,6 +23,7 @@ import yemoja.data.json.LogbookWriter
 import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.Download
+import yemoja.logic.divecomputer.Session
 import yemoja.logic.uddf.Uddf
 import yemoja.logic.uddf.UddfFormatException
 
@@ -317,18 +319,80 @@ class Universe(
      * id says what such a dive would be called rather than which dive it is. What a re-download
      * does bring across is proposed against what overlaps it in time.
      */
-    fun downloadFrom(computer: DiveComputer): Outcome {
+    fun downloadFrom(computer: DiveComputer, ask: (String) -> String? = { null }): Outcome {
         val where = stagedIn(null)
             ?: return Outcome.Refused("this logbook has nowhere to stage a download")
-        val read = Download.read(
-            computer.recordings { serial -> Download.after(logbook, computer.name, serial) },
-            logbook,
-        )
+        val session = Pairing(computer.name, ask)
+        val read = Download.read(computer.recordings(session), logbook)
+        // Kept once the device has said its serial, which is what says whose it is. `LOGIC-24`.
+        val handed = session.kept
+        val serial = session.serial
+        if (handed != null && serial != null) keepAccessCode(serial, handed)
         if (read.allOf(Types.DIVE).isEmpty()) {
             return Outcome.Refused("${computer.name} holds no dives this logbook has not seen")
         }
         importFrom(read, where, Matching.NONE)
         return Outcome.Done()
+    }
+
+    /**
+     * What a download asks while it runs, answered from this logbook. `LOGIC-23`, `LOGIC-24`.
+     *
+     * [ask] puts a question to the user, which only a front end can, and answers nothing where
+     * none can: the download is then given up rather than read wrongly.
+     */
+    private inner class Pairing(
+        private val called: String,
+        private val ask: (String) -> String?,
+    ) : Session {
+
+        /** The serial, once the device has said it. */
+        var serial: String? = null
+
+        /** An access code the device handed over, waiting for the serial to say whose it is. */
+        var kept: ByteArray? = null
+
+        override fun resume(serial: String?): String? {
+            if (serial != null) this.serial = serial
+            return Download.after(logbook, called, serial)
+        }
+
+        override fun accessCode(name: String): ByteArray? {
+            val gear = computerAdvertising(name) ?: return null
+            return bytesOf((gear.single<String>("access_code") as? Result.Usable)?.value)
+        }
+
+        override fun pin(name: String): String? = ask("type the code $name is showing:")
+
+        override fun keep(name: String, accessCode: ByteArray) {
+            kept = accessCode
+        }
+    }
+
+    /** The gear item carrying [serial], or absent where none does. */
+    private fun computerWith(serial: String): ReferenceableItem? =
+        logbook.allOf(Types.GEAR).firstOrNull { gear ->
+            val held = (gear.single<String>("serial") as? Result.Usable)?.value
+            held != null && sameSerial(held, serial)
+        }
+
+    /**
+     * The gear item the device advertising as [name] is, or absent where none can be told.
+     *
+     * Asked before the device has said its serial, so by the name: the gear item whose serial
+     * the name, or the digits in it, spells. `LOGIC-24`.
+     */
+    private fun computerAdvertising(name: String): ReferenceableItem? {
+        computerWith(name)?.let { return it }
+        val digits = name.filter { it.isDigit() }
+        return if (digits.isEmpty()) null else computerWith(digits)
+    }
+
+    /** Put [accessCode] on the gear item carrying [serial], where one does. `LOGIC-24`. */
+    private fun keepAccessCode(serial: String, accessCode: ByteArray) {
+        val gear = computerWith(serial) ?: return
+        val written = Stored.Leaf(hexOf(accessCode))
+        change(Operation.DOWNLOAD, Change.Write(gear, "access_code", written))
     }
 
     /**

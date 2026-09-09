@@ -29,7 +29,7 @@ fun tui(folder: String): Int {
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    return show(Screen(universe))
+    return show(universe)
 }
 
 /**
@@ -38,7 +38,7 @@ fun tui(folder: String): Int {
  * The terminal is put back the way it was found whatever happens, including the alternate screen
  * and the cursor, which raw mode alone does not restore.
  */
-private fun show(screen: Screen): Int {
+private fun show(universe: Universe): Int {
     val terminal = Terminal()
     val raw = try {
         terminal.enterRawMode()
@@ -48,6 +48,8 @@ private fun show(screen: Screen): Int {
         System.err.println("the terminal interface needs a terminal: ${without.message}")
         return 1
     }
+    // Made once the terminal is raw, because the one question a download puts is read here.
+    val screen = Screen(universe) { question -> prompted(terminal, raw, question) }
     print(ENTER)
     try {
         raw.use {

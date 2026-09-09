@@ -69,17 +69,59 @@ internal fun advertisingUnder(
     val found = ArrayList<DiveComputer>()
     for (advertisement in heard.values) {
         val name = advertisement.name ?: continue
-        val model = models.firstOrNull {
-            library.dc_descriptor_filter(it, Transport.BLE, name) != 0
-        } ?: continue
-        val vendor = library.dc_descriptor_get_vendor(model)
-        val product = library.dc_descriptor_get_product(model)
-        val called = listOfNotNull(vendor, product).joinToString(" ")
-        found += Attached(library, context, model, "$called over Bluetooth") {
-            Connection.open(advertisement)?.let { Custom(it).opened(library, context) }
+        val accepted = models.filter { library.dc_descriptor_filter(it, Transport.BLE, name) != 0 }
+        if (accepted.isEmpty()) continue
+        val products = accepted.map { library.dc_descriptor_get_product(it).orEmpty() }
+        val codes = accepted.map { library.dc_descriptor_get_model(it) }
+        val at = preferred(name, products, codes)
+        val vendor = library.dc_descriptor_get_vendor(accepted[at])
+        val called = listOfNotNull(vendor, products[at]).joinToString(" ")
+        val model = accepted[at]
+        found += Attached(library, context, model, "$called over Bluetooth") { session ->
+            Connection.open(advertisement)?.let { Custom(it, session).opened(library, context) }
         }
     }
     return found
+}
+
+/**
+ * Which of the models that accepted [advertised] to call it, as an index into [products].
+ *
+ * A filter accepts a whole family — every Shearwater accepts every Shearwater name, every
+ * Oceanic every Oceanic one — and the first member of a family is not the one in the room. So
+ * the family's own way of naming itself decides, in two shapes and a fallback:
+ *
+ * By **name**, where the advertisement holds a product's, longest first: a Perdix 2 advertises as
+ * *Perdix 2*, which holds *Perdix* too.
+ *
+ * By **code**, where it is two letters and then digits: those letters are the model number's own
+ * two bytes, which is how the library tells one Oceanic from another and the only thing that
+ * does. `GD312445` is model `0x4744`, and nothing else.
+ *
+ * Otherwise the first, which is a guess and is why the name a scan gives is not what a profile
+ * records. `LOGIC-23`.
+ */
+internal fun preferred(advertised: String, products: List<String>, codes: List<Int>): Int {
+    codes.indexOfFirst { spells(advertised, it) }.takeIf { it >= 0 }?.let { return it }
+    var best = 0
+    var length = 0
+    for ((at, product) in products.withIndex()) {
+        if (product.length > length && advertised.contains(product, ignoreCase = true)) {
+            best = at
+            length = product.length
+        }
+    }
+    return best
+}
+
+/** Whether [advertised] is [code]'s two bytes as letters and then digits, and nothing else. */
+private fun spells(advertised: String, code: Int): Boolean {
+    val letters = charArrayOf(((code shr 8) and 0xff).toChar(), (code and 0xff).toChar())
+    if (!letters.all { it.isLetter() }) return false
+    val rest = advertised.drop(letters.size)
+    return advertised.length > letters.size &&
+        advertised.take(letters.size).equals(String(letters), ignoreCase = true) &&
+        rest.all { it.isDigit() }
 }
 
 /** One characteristic a connected device offers, with the two abilities that matter here. */
@@ -138,10 +180,14 @@ internal interface Wire {
     /** What the device advertised itself as. */
     val name: String
 
-    /** The most bytes one [send] may carry. */
-    val chunk: Int
-
-    /** One write of at most [chunk] bytes. */
+    /**
+     * One packet, written whole.
+     *
+     * **Never split.** A write is a packet to the device on the other end, and two writes are
+     * two packets: a driver that sends twenty-one bytes and gets twenty and then one is
+     * talking nonsense. Where the link cannot carry it, that is a failure to report rather
+     * than something to work around.
+     */
     fun send(bytes: ByteArray)
 
     /** The next notification, or absent when none arrived within [milliseconds]. */
@@ -166,7 +212,6 @@ internal class Connection private constructor(
     private val chosen: Chosen,
     private val writeType: WriteType,
     override val name: String,
-    override val chunk: Int,
 ) : Wire {
 
     private val arrived = LinkedBlockingQueue<ByteArray>()
@@ -216,9 +261,6 @@ internal class Connection private constructor(
 
     companion object {
 
-        /** What a write may carry when the device does not say. */
-        private const val SMALLEST_CHUNK: Int = 20
-
         /**
          * Connect to what [advertisement] came from, or absent where it would not connect, said
          * nothing in time, or offers nothing this can drive.
@@ -251,17 +293,11 @@ internal class Connection private constructor(
                         } else {
                             WriteType.WithResponse
                         }
-                        val chunk = try {
-                            peripheral.maximumWriteValueLengthForType(writeType)
-                        } catch (unknown: Exception) {
-                            SMALLEST_CHUNK
-                        }
                         val connection = Connection(
                             peripheral,
                             chosen,
                             writeType,
                             advertisement.name.orEmpty(),
-                            chunk.coerceAtLeast(1),
                         )
                         connection.listening().await()
                         connection
@@ -278,12 +314,14 @@ internal class Connection private constructor(
 /**
  * Custom is a libdivecomputer stream over a [Wire].
  *
- * The library reads with a timeout it sets, and a read either fills what was asked for or says
- * it timed out, with what did arrive; bytes past what was asked for wait for the next read. An
- * ioctl answers the advertised name and a characteristic read, which are what the drivers that
- * speak Bluetooth ask; a PIN or access code is unsupported until a device is met that wants one.
+ * The library reads with a timeout it sets, and a read answers one packet: what has arrived, up
+ * to the room offered, and a timeout only when nothing came. Bytes past the room wait for the
+ * next read. An ioctl answers the advertised name and a characteristic read, which are what the
+ * drivers that speak Bluetooth ask, and the three requests of a device that guards itself: the
+ * code it is showing, typed by the user, and an access code kept from last time and handed over
+ * for next time. Those three go to the [session], which is the logbook's to answer. `LOGIC-24`.
  */
-internal class Custom(private val wire: Wire) {
+internal class Custom(private val wire: Wire, private val session: Session = Session.NONE) {
 
     /** Bytes received and not yet handed over. */
     private val pending = ArrayList<Byte>()
@@ -362,32 +400,34 @@ internal class Custom(private val wire: Wire) {
         return pending.size >= wanted
     }
 
+    /**
+     * One packet, or what is left of the last one: whatever has arrived, up to [size] bytes.
+     *
+     * Over Bluetooth LE the library reads packets, not counts. A driver offers a buffer larger
+     * than any packet and takes what one read gives; a read that waited to fill the buffer
+     * would wait past the answer and call it a timeout, which is what this did first.
+     */
     internal fun read(data: Pointer?, size: Long, actual: Pointer?): Int {
-        val wanted = size.toInt()
-        val full = gathered(wanted, timeout)
-        val given = minOf(wanted, pending.size)
+        val room = size.toInt()
+        val came = gathered(1, timeout)
+        val given = minOf(room, pending.size)
         if (given > 0) {
             data?.write(0, pending.subList(0, given).toByteArray(), 0, given)
             pending.subList(0, given).clear()
         }
         actual?.setLong(0, given.toLong())
-        return if (full) SUCCESS else Libdivecomputer.TIMEOUT
+        return if (came) SUCCESS else Libdivecomputer.TIMEOUT
     }
 
     internal fun write(data: Pointer?, size: Long, actual: Pointer?): Int {
         val bytes = data?.getByteArray(0, size.toInt()) ?: ByteArray(0)
-        var sent = 0
         try {
-            while (sent < bytes.size) {
-                val end = minOf(bytes.size, sent + wire.chunk)
-                wire.send(bytes.copyOfRange(sent, end))
-                sent = end
-            }
+            if (bytes.isNotEmpty()) wire.send(bytes)
         } catch (failed: Exception) {
-            actual?.setLong(0, sent.toLong())
+            actual?.setLong(0, 0)
             return Libdivecomputer.IO
         }
-        actual?.setLong(0, sent.toLong())
+        actual?.setLong(0, bytes.size.toLong())
         return SUCCESS
     }
 
@@ -403,6 +443,38 @@ internal class Custom(private val wire: Wire) {
                 data.setByte(kept.toLong(), 0)
                 SUCCESS
             }
+        }
+        GET_PINCODE -> {
+            val room = size.toInt()
+            val typed = session.pin(wire.name)
+            when {
+                data == null || room <= 0 -> Libdivecomputer.UNSUPPORTED
+                // Nobody typed one: the download is given up, not failed.
+                typed == null -> Libdivecomputer.CANCELLED
+                else -> {
+                    val bytes = typed.toByteArray()
+                    val kept = minOf(bytes.size, room - 1)
+                    data.write(0, bytes, 0, kept)
+                    data.setByte(kept.toLong(), 0)
+                    SUCCESS
+                }
+            }
+        }
+        GET_ACCESSCODE -> {
+            val kept = session.accessCode(wire.name)
+            // None kept is unsupported, which is what makes the driver ask for the code instead.
+            if (data == null || kept == null) {
+                Libdivecomputer.UNSUPPORTED
+            } else {
+                data.write(0, kept, 0, minOf(kept.size, size.toInt()))
+                SUCCESS
+            }
+        }
+        SET_ACCESSCODE -> {
+            if (data != null && size > 0) {
+                session.keep(wire.name, data.getByteArray(0, size.toInt()))
+            }
+            SUCCESS
         }
         CHARACTERISTIC_READ -> {
             val room = size.toInt() - UUID_SIZE
@@ -435,6 +507,15 @@ internal class Custom(private val wire: Wire) {
 
         /** `DC_IOCTL_BLE_GET_NAME`: direction read, type `b`, number 0, variable size. */
         const val GET_NAME: Int = (1 shl 30) or ('b'.code shl 8) or 0
+
+        /** `DC_IOCTL_BLE_GET_PINCODE`: the code the device is showing, ended by a zero byte. */
+        const val GET_PINCODE: Int = (1 shl 30) or ('b'.code shl 8) or 1
+
+        /** `DC_IOCTL_BLE_GET_ACCESSCODE`: the bytes kept from last time, out. */
+        const val GET_ACCESSCODE: Int = (1 shl 30) or ('b'.code shl 8) or 2
+
+        /** `DC_IOCTL_BLE_SET_ACCESSCODE`: the bytes to keep for next time, in. */
+        const val SET_ACCESSCODE: Int = (2 shl 30) or ('b'.code shl 8) or 2
 
         /** `DC_IOCTL_BLE_CHARACTERISTIC_READ`: a UUID in, its value out after it. */
         const val CHARACTERISTIC_READ: Int = (1 shl 30) or ('b'.code shl 8) or 3

@@ -283,11 +283,11 @@ private class Pretend(
     var asked = false
 
     override fun recordings(
-        resume: (String?) -> String?,
+        session: yemoja.logic.divecomputer.Session,
     ): Sequence<yemoja.logic.divecomputer.Recording> {
         asked = true
         // A pretend device says no serial, so what is asked for is what the name finds.
-        askedAfter = resume(null)
+        askedAfter = session.resume(null)
         return held.asSequence()
     }
 }

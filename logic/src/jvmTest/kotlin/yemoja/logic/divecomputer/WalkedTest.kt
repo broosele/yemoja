@@ -118,6 +118,23 @@ class WalkedTest {
     }
 }
 
+/** Turning what a device hands out into text and back, which is what a fingerprint travels as. */
+class WaterTest {
+
+    @Test
+    fun `a density of zero is no density, and the water is still named`() {
+        val water = waterOf(1, 0.0)
+        assertEquals("salt", water.type)
+        assertNull(water.density, "a zero would override the figure the model works out")
+    }
+
+    @Test
+    fun `a density reported is kept, and the other type is fresh`() {
+        assertEquals(1020.0, waterOf(1, 1020.0).density)
+        assertEquals("fresh", waterOf(2, 1000.0).type)
+    }
+}
+
 class DevInfoTest {
 
     /** `{ model, firmware, serial }`, three unsigned ints. */

@@ -401,6 +401,36 @@ To settle when we discuss architecture and features:
    a user copies off the device's screen then matches what the device said, bar a hexadecimal
    serial that happens to hold only digits.
 
+- **LOGIC-24 — How a computer that guards itself is read.** *Settled:* **the code is asked
+   for while the device shows it, and what the device hands back is kept on the gear item.**
+   Some computers — the Aqualung i330R and its Apeks twin are the first the library knows —
+   show a code on their own screen when an application connects and talk only once it has been
+   typed. The library's driver asks the application for three things through the stream: an
+   access code kept from last time, the code being shown where there is none, and, once the
+   code has been accepted, an access code to keep. So the download is handed a *session* to
+   ask rather than answers to use: where to stop, which needs the serial; the kept access code,
+   which needs the device; the typed code, which needs a user at a keyboard; and somewhere to
+   put the new one.
+
+   The access code lives on the gear item beside the serial, because it is the same kind of
+   fact — this logbook's standing with this one device — and a file on one machine would leave
+   the next machine asking again. Written as hexadecimal, like the fingerprint, and not for
+   reading. A download writes it, once the device has said its serial and a gear item carries
+   that serial: before then there is nowhere to put it, and the code is asked once more next
+   time. So a new computer is set up in two downloads — one to learn its serial and put it on
+   the gear item, one to be given the access code — which is the cost of `LOGIC-23` naming a
+   computer by nothing but its serial.
+
+   The driver asks for the kept access code before the device has said its serial, so the
+   lookup then goes by the advertised name: the gear item whose serial the name's digits
+   spell. That is how a Pelagic computer advertises itself, as far as one scan has shown, and
+   it is unproven on the device that needs it.
+
+   A front end supplies the asking. A terminal reads a line; a screen without a keyboard, or a
+   test, supplies nothing, and such a computer is not read there rather than read wrongly. The
+   download is then given up rather than failed, which is the difference between a user who
+   pressed escape and a device that would not talk.
+
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants

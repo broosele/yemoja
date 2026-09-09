@@ -306,6 +306,22 @@ columns mapped by the user rather than guessed.
    incoming item and not the rest. Accepting or declining a whole item is built; below the
    item it becomes the collision interaction the storage requirements describe, and waits
    on that.
+- **RECON-7 — What lands when a second computer's dive meets one already logged.** Taking an
+  arriving dive onto a held one writes every field the arrival holds, and for a second computer
+  worn on the same dive that is wrong twice over. Its times and its maximum depth are written
+  over the first computer's, though neither is more right than the other; and the dive ends up
+  holding two profiles and naming no primary, which makes its date, its duration and its depth
+  read back *unusable* rather than wrong. `primaryProfile` refuses to guess, correctly.
+
+  So a second computer's recording should bring its profile and leave the rest, and should name
+  a primary where the dive did not have to before. Whether that is a rule the review applies by
+  itself — a recording from a computer the dive has no profile from is a profile and nothing
+  else — or a question put to the user, is the decision. It is the half of `RECON-2` that was
+  left open, met in a concrete case.
+
+  Found by doing it: a hundred and two i330R recordings laid onto dives a Perdix had already
+  recorded, beside the application rather than through it, for exactly this reason.
+
 - **RECON-4 — Whether importers are also exporters.** Interoperating with other applications
    is likely wanted in both directions, but export raises none of these questions and
    may not belong here at all.
