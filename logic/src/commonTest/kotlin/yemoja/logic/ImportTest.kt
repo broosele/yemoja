@@ -394,3 +394,41 @@ class ProposalTest {
         assertTrue(!into.importing!!.asked("a"))
     }
 }
+
+/** How a staged review's items match is written beside them, so taking it up cannot forget. */
+class RememberedMatchingTest {
+
+    private fun holding(held: String): Universe {
+        val store = MemoryFileStore(mapOf("region.json" to held))
+        return Universe(LogbookReader.read(store, Types.ALL), null, store)
+    }
+
+    @Test
+    fun `a review taken up again matches as it did`() {
+        // Forgetting would match a minted id as though it were carried, which is the overwriting
+        // Matching.NONE exists to stop.
+        val into = holding("""{"a": {"name": "Mine"}}""")
+        val staging = MemoryFileStore(emptyMap())
+        val from = MemoryFileStore(mapOf("region.json" to """{"a": {"name": "Theirs"}}"""))
+        Import.begin(LogbookReader.read(from, Types.ALL), staging, into, Matching.NONE)
+        assertTrue(staging.isFile(Import.ABOUT), "the matching is written beside the items")
+        assertEquals(Meeting.NOTHING, Import.open(staging, Types.ALL, into).meeting("a"))
+    }
+
+    @Test
+    fun `one begun as another logbook still matches by id when taken up`() {
+        val into = holding("""{"a": {"name": "Mine"}}""")
+        val staging = MemoryFileStore(emptyMap())
+        val from = MemoryFileStore(mapOf("region.json" to """{"a": {"name": "Theirs"}}"""))
+        Import.begin(LogbookReader.read(from, Types.ALL), staging, into)
+        assertEquals(Meeting.THE_SAME, Import.open(staging, Types.ALL, into).meeting("a"))
+    }
+
+    @Test
+    fun `a folder with no note is read as matching nothing`() {
+        // The safe reading of an unknown source is the one that duplicates rather than overwrites.
+        val into = holding("""{"a": {"name": "Mine"}}""")
+        val staging = MemoryFileStore(mapOf("region.json" to """{"a": {"name": "Theirs"}}"""))
+        assertEquals(Meeting.NOTHING, Import.open(staging, Types.ALL, into).meeting("a"))
+    }
+}

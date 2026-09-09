@@ -7,10 +7,12 @@ import yemoja.data.ItemSet
 import yemoja.data.ItemWriter
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.data.Stored
 import yemoja.data.Time
 import yemoja.data.Units
 import yemoja.data.inOrder
 import yemoja.data.json.FileStore
+import yemoja.data.json.Json
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
 
@@ -283,7 +285,12 @@ class Import private constructor(
                     LogbookWriter.write(staging, description, id, item)
                 }
             }
-            return open(staging, incoming.descriptions, into, matching)
+            // Written once, beside the items: how they match is a fact about where they came
+            // from, and a review taken up later has no other way to know it. Forgetting it would
+            // match a minted id as though it were carried, which is the overwriting this stops.
+            val said = Stored.Members(mapOf(MATCHING to Stored.Leaf(matching.name)))
+            staging.writeText(ABOUT, Json.write(said))
+            return open(staging, incoming.descriptions, into)
         }
 
         /**
@@ -293,15 +300,29 @@ class Import private constructor(
          * going into may have changed while the review was put down. What is left in the folder
          * is what has not been decided, an item taken in or turned down having left it.
          */
-        fun open(
-            staging: FileStore,
-            types: List<ItemDescription>,
-            into: Universe,
-            matching: Matching = Matching.BY_ID,
-        ): Import = Import(
-            Universe(LogbookReader.read(staging, types), null, staging),
-            into,
-            matching,
-        )
+        fun open(staging: FileStore, types: List<ItemDescription>, into: Universe): Import {
+            val staged = Universe(LogbookReader.read(staging, types), null, staging)
+            return Import(staged, into, matchingIn(staging))
+        }
+
+        /**
+         * How a staged review's items match, as [begin] wrote it down.
+         *
+         * **Absent means nothing matches.** A folder with no note is one whose source is not
+         * known, and the safe reading of that is the one that duplicates rather than the one
+         * that overwrites.
+         */
+        private fun matchingIn(staging: FileStore): Matching {
+            if (!staging.isFile(ABOUT)) return Matching.NONE
+            val read = Json.parse(staging.readText(ABOUT)) as? Stored.Members
+                ?: return Matching.NONE
+            val said = (read.members[MATCHING] as? Stored.Leaf)?.value as? String
+            return Matching.entries.firstOrNull { it.name == said } ?: Matching.NONE
+        }
+
+        /** The file beside a staged review that says what kind of source it came from. */
+        const val ABOUT: String = "import.json"
+
+        private const val MATCHING = "matching"
     }
 }
