@@ -30,31 +30,47 @@ import yemoja.data.Time
  *
  * Empty where the library is not loaded, which is the same answer as *nothing can be read here*.
  */
-class FoundDevices : Devices {
+class FoundDevices : Devices, AutoCloseable {
+
+    // One context and one set of descriptors for as long as this lives, made on first use.
+    // Every device found holds both, so they cannot go when a scan ends; freeing them per scan
+    // leaked them instead, since nothing knew when the last device had been read. They go with
+    // this, which a front end holds for as long as it holds the universe.
+    private var context: Pointer? = null
+
+    private var models: List<Pointer?> = emptyList()
 
     override fun found(): List<DiveComputer> {
         val library = Libdivecomputer.LOADED ?: return emptyList()
-        val context = PointerByReference()
-        if (library.dc_context_new(context) != Libdivecomputer.SUCCESS) return emptyList()
-        val models = models(library, context.value)
-        // The context and the descriptors outlive this: each device holds both, and freeing them
-        // here would pull the ground from under one that has not been read yet.
-        return usbhidUnder(library, context.value, models) +
-            serialUnder(library, context.value, models)
+        val context = context ?: opened(library) ?: return emptyList()
+        return usbhidUnder(library, context, models) + serialUnder(library, context, models)
     }
 
-    /** Every model the library knows, kept for as long as anything might be opened as one. */
-    private fun models(library: Libdivecomputer, context: Pointer?): List<Pointer?> {
+    /** The context and every model the library knows, or absent where it would not open. */
+    private fun opened(library: Libdivecomputer): Pointer? {
+        val made = PointerByReference()
+        if (library.dc_context_new(made) != Libdivecomputer.SUCCESS) return null
         val iterator = PointerByReference()
-        val opened = library.dc_descriptor_iterator_new(iterator, context)
-        if (opened != Libdivecomputer.SUCCESS) return emptyList()
         val found = ArrayList<Pointer?>()
-        val item = PointerByReference()
-        while (library.dc_iterator_next(iterator.value, item) == Libdivecomputer.SUCCESS) {
-            found += item.value
+        if (library.dc_descriptor_iterator_new(iterator, made.value) == Libdivecomputer.SUCCESS) {
+            val item = PointerByReference()
+            while (library.dc_iterator_next(iterator.value, item) == Libdivecomputer.SUCCESS) {
+                found += item.value
+            }
+            library.dc_iterator_free(iterator.value)
         }
-        library.dc_iterator_free(iterator.value)
-        return found
+        context = made.value
+        models = found
+        return made.value
+    }
+
+    /** Free what the library was holding. Devices found before this are not to be read after it. */
+    override fun close() {
+        val library = Libdivecomputer.LOADED ?: return
+        for (model in models) library.dc_descriptor_free(model)
+        models = emptyList()
+        context?.let { library.dc_context_free(it) }
+        context = null
     }
 
     /** What to call the model [descriptor] stands for. */
@@ -146,9 +162,6 @@ private class Attached(
     private val open: () -> Pointer?,
 ) : DiveComputer {
 
-    /** Not read: a serial needs the device opened, and nothing yet asks for one. `LOGIC-20`. */
-    override val serial: String? = null
-
     override fun recordings(after: String?): Sequence<Recording> {
         val stream = open() ?: return emptySequence()
         val device = PointerByReference()
@@ -225,7 +238,7 @@ private fun readingOf(
     val when_ = library.dc_parser_get_datetime(parser, clock) == Libdivecomputer.SUCCESS
     val salinity = fieldOf(library, parser, Field.SALINITY, CSalinity())
     val model = fieldOf(library, parser, Field.DECOMODEL, CDecoModel())
-    val fix = fieldOf(library, parser, Field.LOCATION, CLocation())
+    val (gases, sourceOfMix) = sourcesOf(mixesOf(library, parser), tanksOf(library, parser))
     return Recording(
         computer = name,
         fingerprint = fingerprint,
@@ -250,11 +263,10 @@ private fun readingOf(
                 gradientFactorHigh = it.high.takeIf { high -> high > 0 }?.let { h -> h / 100.0 },
             )
         },
-        fix = fix?.takeIf { it.latitude != 0.0 || it.longitude != 0.0 }?.let {
-            Recording.Fix(it.latitude, it.longitude, it.altitude.takeIf { high -> high != 0.0 })
-        },
-        gases = gasesOf(library, parser),
-        samples = samplesOf(library, parser),
+        gases = gases,
+        // A switch is reported as a mix and lands on a source; a mix no source carries is dropped,
+        // there being nothing to point at. `LOGIC-12`.
+        samples = samplesOf(library, parser).map { it.copy(gas = it.gas?.let(sourceOfMix::get)) },
     )
 }
 
@@ -287,26 +299,39 @@ private fun <T : com.sun.jna.Structure> fieldOf(
     return into
 }
 
-/**
- * The gas the dive was made on, as one source apiece.
- *
- * A tank and the mix it carried are one thing here, and a mix breathed without a tank is still a
- * source. `LOGIC-12`.
- */
-private fun gasesOf(library: Libdivecomputer, parser: Pointer?): List<Recording.GasSource> {
-    val mixes = (0..<(wholeOf(library, parser, Field.GASMIX_COUNT) ?: 0)).map {
+/** Every mix the dive was made on, in the order the device numbers them. */
+private fun mixesOf(library: Libdivecomputer, parser: Pointer?): List<CGasMix?> =
+    (0..<(wholeOf(library, parser, Field.GASMIX_COUNT) ?: 0)).map {
         fieldOf(library, parser, Field.GASMIX, CGasMix(), it)
     }
-    val tanks = (0..<(wholeOf(library, parser, Field.TANK_COUNT) ?: 0)).map {
+
+/** Every tank the dive carried, in the order the device numbers them. */
+private fun tanksOf(library: Libdivecomputer, parser: Pointer?): List<CTank?> =
+    (0..<(wholeOf(library, parser, Field.TANK_COUNT) ?: 0)).map {
         fieldOf(library, parser, Field.TANK, CTank(), it)
     }
-    if (tanks.isEmpty()) {
-        return mixes.mapNotNull { it?.let { mix -> Recording.GasSource(gasOf(mix)) } }
-    }
-    return tanks.map { tank ->
-        val mix = tank?.gasmix?.takeIf { it != CTank.UNKNOWN }?.let { mixes.getOrNull(it) }
+
+/**
+ * Two arrays as one collection, and which source each mix lands on.
+ *
+ * A tank and the mix it carried are one source here, tanks first and in their own order — which
+ * is what lets a tank pressure keep its index. A mix no tank carried is still a source, added
+ * after them. The map says which source a *mix* index lands on: the first tank carrying it, or
+ * the source added for it. A switch is reported as a mix, and where two tanks share one, only
+ * the first can be pointed at. `LOGIC-12`.
+ */
+internal fun sourcesOf(
+    mixes: List<CGasMix?>,
+    tanks: List<CTank?>,
+): Pair<List<Recording.GasSource>, Map<Int, Int>> {
+    val sources = ArrayList<Recording.GasSource>()
+    val landing = HashMap<Int, Int>()
+    for (tank in tanks) {
+        val mixAt = tank?.gasmix?.takeIf { it != CTank.UNKNOWN }
+        val mix = mixAt?.let { mixes.getOrNull(it) }
+        if (mixAt != null && mixAt !in landing) landing[mixAt] = sources.size
         val sidemount = tank?.usage == SIDEMOUNT || mix?.usage == SIDEMOUNT
-        Recording.GasSource(
+        sources += Recording.GasSource(
             gas = mix?.let { gasOf(it) },
             volume = tank?.volume?.takeIf { tank.type != CTank.NO_VOLUME },
             startPressure = tank?.beginpressure?.takeIf { it > 0 },
@@ -315,6 +340,12 @@ private fun gasesOf(library: Libdivecomputer, parser: Pointer?): List<Recording.
             configuration = if (sidemount) "sidemount" else null,
         )
     }
+    for ((at, mix) in mixes.withIndex()) {
+        if (mix == null || at in landing) continue
+        landing[at] = sources.size
+        sources += Recording.GasSource(gas = gasOf(mix))
+    }
+    return sources to landing
 }
 
 /** A mix as divers write one, which is what the model holds. */

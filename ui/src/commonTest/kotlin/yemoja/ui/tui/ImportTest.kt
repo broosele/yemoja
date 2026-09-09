@@ -279,7 +279,6 @@ private class Pretend(
     override val name: String,
     private val held: List<yemoja.logic.divecomputer.Recording> = emptyList(),
 ) : yemoja.logic.divecomputer.DiveComputer {
-    override val serial: String? = null
     var askedAfter: String? = null
     var asked = false
 

@@ -150,3 +150,54 @@ class HexTest {
         assertNull(bytesOf("zz"))
     }
 }
+
+/** Two arrays as one collection, and which source a switch reported as a mix lands on. */
+class SourcesTest {
+
+    private fun mix(oxygen: Double): CGasMix = CGasMix().also {
+        it.oxygen = oxygen
+        it.nitrogen = 1.0 - oxygen
+    }
+
+    private fun tank(carrying: Int): CTank = CTank().also {
+        it.gasmix = carrying
+        it.type = 1
+        it.volume = 12.0
+    }
+
+    @Test
+    fun `a switch lands on the first tank carrying that mix`() {
+        // Mix 1 is carried by tanks 0 and 2, and a switch to it can point at only one of them.
+        // `LOGIC-12`.
+        val (sources, landing) = sourcesOf(
+            listOf(mix(0.21), mix(0.32)),
+            listOf(tank(1), tank(0), tank(1)),
+        )
+        assertEquals(3, sources.size)
+        assertEquals(0, landing[1], "the first tank carrying EAN32, not the mix's own index")
+        assertEquals(1, landing[0], "air is on the second tank")
+    }
+
+    @Test
+    fun `a mix no tank carried is still a source, after the tanks`() {
+        val (sources, landing) = sourcesOf(listOf(mix(0.21), mix(0.50)), listOf(tank(0)))
+        assertEquals(2, sources.size)
+        assertEquals("EAN50", sources[1].gas)
+        assertEquals(1, landing[1])
+    }
+
+    @Test
+    fun `with no tanks the mixes are the sources in their own order`() {
+        val (sources, landing) = sourcesOf(listOf(mix(0.21), mix(0.32)), emptyList())
+        assertEquals(listOf("air", "EAN32"), sources.map { it.gas })
+        assertEquals(mapOf(0 to 0, 1 to 1), landing)
+    }
+
+    @Test
+    fun `a tank carrying an unknown mix is a source with no gas`() {
+        val (sources, landing) = sourcesOf(listOf(mix(0.21)), listOf(tank(CTank.UNKNOWN)))
+        assertEquals(2, sources.size, "the tank, and the mix nothing carried")
+        assertNull(sources[0].gas)
+        assertEquals(1, landing[0])
+    }
+}

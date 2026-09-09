@@ -17,7 +17,8 @@ import yemoja.data.Time
  * Bluetooth, which the logic layer should not have, so what crosses the boundary is this: a set
  * of readings about the dive as a whole and a walk of what was recorded through it. That is what
  * a dive computer *is*, rather than what one library calls it, so the mapping above it is written
- * once and the half below it is only *get the bytes off the device*. `LOGIC-2`.
+ * once and the half below it is only *get the bytes off the device* — bar two translations that
+ * must be made in the library's own words, which `LOGIC-2` names. `LOGIC-2`.
  *
  * **Values are in the model's default units** — metres, bar, degrees Celsius, litres, seconds —
  * and converting into them is the implementation's, so that no arithmetic is written three times.
@@ -30,8 +31,6 @@ import yemoja.data.Time
 data class Recording(
     /** The device by name, which is what a `profile` records itself as having come from. */
     val computer: String? = null,
-    /** The device's serial, which is the only thing that proposes a gear item. `LOGIC-20`. */
-    val serial: String? = null,
     /**
      * What the device knows this recording by, as hexadecimal.
      *
@@ -55,7 +54,6 @@ data class Recording(
     /** The water at the surface, which is not the air and does not pretend to be. `LOGIC-19`. */
     val surface: Double? = null,
     val model: DecoModel? = null,
-    val fix: Fix? = null,
     val gases: List<GasSource> = emptyList(),
     val samples: List<Sample> = emptyList(),
 ) {
@@ -70,9 +68,6 @@ data class Recording(
         val gradientFactorLow: Double? = null,
         val gradientFactorHigh: Double? = null,
     )
-
-    /** Where the device thought it was, a proposal at review rather than a field. `LOGIC-18`. */
-    data class Fix(val latitude: Double, val longitude: Double, val elevation: Double? = null)
 
     /**
      * One gas the dive was made on, and the cylinder it came out of.
@@ -118,16 +113,18 @@ data class Recording(
 /**
  * DiveComputer is one device, as much of one as this layer knows about.
  *
- * A download takes minutes, so what is read comes back one dive at a time and the caller may
- * stop: a sequence rather than a list is what makes cancelling possible without a word for it.
+ * A download takes minutes, so what is read comes back as a sequence: an implementation *may*
+ * hand dives over one at a time, and a caller *may* stop walking. Neither is promised. The JVM's
+ * reads everything before it answers, and nothing cancels yet — `TUI-8`.
+ *
+ * **What it does not carry is deliberate.** A fix and a serial are both decided — `LOGIC-18`,
+ * `LOGIC-20` — and neither has a review question to land in, so the port does not ask for them:
+ * a field every implementation must fill and nothing reads is a lie waiting to be believed.
  */
 interface DiveComputer {
 
     /** What to call it, which is what a downloaded profile records itself as having come from. */
     val name: String
-
-    /** Its serial, where the device reports one, which is what may propose a gear item. */
-    val serial: String?
 
     /**
      * Every dive it holds, oldest first, read as the sequence is walked.

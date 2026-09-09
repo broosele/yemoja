@@ -222,11 +222,12 @@ Decided and not built, or built and not proven. Each is here rather than in some
 - **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
   *and that the download says what it dropped*. What is dropped is decided field by field above;
   where the saying goes is `LOGIC-21`.
-- **A fix is carried and nothing asks about it.** `LOGIC-18` settled that a download's
-  coordinates become a proposal at review with three answers, and `DATA-90`'s review has no
-  question in it but *is this new*. A recording carries the position; nothing offers it.
-- **A serial is carried and nothing uses it.** `LOGIC-20` makes it the one thing that may propose
-  a gear item, and the JVM does not read it: it needs the device opened, and nothing asks.
+- **The fix and the serial do not cross the port yet.** `LOGIC-18` settled that a download's
+  coordinates become a proposal at review, and `LOGIC-20` makes a serial the one thing that may
+  propose a gear item. Neither review question exists, so the recording does not carry either:
+  a field every implementation must fill and nothing reads is a lie waiting to be believed.
+  When the questions are built, the recording grows the two fields and the JVM reads
+  `DC_FIELD_LOCATION` and the device's serial for them.
 - **A re-download overwrites a correction.** Applying writes field by field and leaves alone what
   the recording does not hold, so buddies, site, rating and notes survive. A field the computer
   reports *and* the user has corrected does not: a max depth fixed by hand is written over
