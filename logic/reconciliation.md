@@ -210,7 +210,10 @@ and the dive that names the person no longer finds them.
 **Fields the incoming item does not hold are left alone.** A source has opinions about
 some fields and none about others, and silence is not an instruction to erase — a dive
 computer knows nothing about buddies, and re-downloading a dive must not take them out.
-That is why applying writes field by field rather than replacing the item.
+That is why applying writes field by field rather than replacing the item, and why a field
+that is itself a collection — the profiles, the gas sources, the environment — is laid over
+the one held member by member rather than written in its place. A second computer's profile
+lands beside the first; the visibility a computer never knew survives it. `RECON-6`.
 
 **Something else** is rare and real: two logbooks can each mint `north_sea`, one for a
 region and one for a person. Nothing is written for one, since giving it another id would
@@ -325,3 +328,11 @@ columns mapped by the user rather than guessed.
 - **RECON-3 — Whether an unresolved item can be parked.** *Settled:* it can, and is
   parked whole rather than field by field. See `REQ-17` in
   [../data/json/requirements.md](../data/json/requirements.md).
+- **RECON-6 — How an arriving item lands on one already held.** *Settled:* **laid over it
+  member by member.** Applying writes field by field, and a field that is itself a collection
+  — the profiles, the gas sources, the environment — is laid over the held one member by
+  member rather than written in its place, all the way down: a profile arriving under a new
+  key lands beside the held ones, one arriving under a held key has its fields laid over that
+  profile's, and a series or a list is replaced whole, half of one not being a thing. What it
+  does not do is tell two gas sources apart, so a re-download puts the computer's beside the
+  user's rather than onto them; that is the collision above, still not built.

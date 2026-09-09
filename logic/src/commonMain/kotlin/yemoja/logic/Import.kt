@@ -225,7 +225,7 @@ class Import private constructor(
                 .filterKeys { description[it] != null }
             val chosen = onto?.let { into.logbook[it] }?.takeIf { it.description == description }
             if (chosen != null) {
-                for ((field, value) in held) changes += Change.Write(chosen, field, value)
+                changes += writesOnto(chosen, held)
                 continue
             }
             when (meeting(id)) {
@@ -234,13 +234,28 @@ class Import private constructor(
                 Meeting.NOTHING -> changes += Change.Add(description, held, freeIn(id, changes))
                 Meeting.THE_SAME -> {
                     val there = into.logbook[id] ?: continue
-                    for ((field, value) in held) changes += Change.Write(there, field, value)
+                    changes += writesOnto(there, held)
                 }
 
                 Meeting.SOMETHING_ELSE -> Unit
             }
         }
         return changes
+    }
+
+    /**
+     * Each field [held] holds written onto [there], laid over what [there] holds in it.
+     *
+     * A field is written whole, and some fields are whole collections: the profiles, the gas
+     * sources, the environment. Laying the arriving one over the held one member by member is
+     * what puts a second computer's profile beside the first rather than in its place, and
+     * keeps the visibility a computer knows nothing about. `RECON-6`.
+     */
+    private fun writesOnto(there: Item, held: Map<String, Stored>): List<Change> {
+        val already = ItemWriter.write(there, Units.DEFAULT).members
+        return held.map { (field, value) ->
+            Change.Write(there, field, laidOver(already[field], value))
+        }
     }
 
     /**
@@ -325,4 +340,20 @@ class Import private constructor(
 
         private const val MATCHING = "matching"
     }
+}
+
+/**
+ * [incoming] laid over [existing]: where both are sets of members they are merged member by
+ * member, the arriving one winning where both hold a member that is not itself a set; anywhere
+ * else the arriving value stands. `RECON-6`.
+ *
+ * A keyed collection is a set of members and so is each item in it, so a profile arriving under
+ * a new key lands beside the ones held, and one arriving under a held key has its fields laid
+ * over that profile's. A series or a list is replaced whole: half of one is not a thing.
+ */
+internal fun laidOver(existing: Stored?, incoming: Stored): Stored {
+    if (existing !is Stored.Members || incoming !is Stored.Members) return incoming
+    val out = LinkedHashMap(existing.members)
+    for ((key, value) in incoming.members) out[key] = laidOver(existing.members[key], value)
+    return Stored.Members(out)
 }
