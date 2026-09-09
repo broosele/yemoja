@@ -611,7 +611,9 @@ much as one still to make.
 - **TUI-8 — What a job that takes minutes looks like.** *Open.* Reading a dive computer is the
   first thing this interface does that does not finish between one keystroke and the next. It
   can take minutes on a full computer, and at present the screen simply stops: nothing says what
-  is happening, nothing says how far along it is, and nothing offers to give up.
+  is happening, nothing says how far along it is, and nothing offers to give up. Choosing *a dive
+  computer* on the import screen now stops for four seconds before the list appears, which is
+  the Bluetooth scan listening; that is the same silence, shorter.
 
   The pieces are there and none of them is wired. The port hands dives over one at a time, so
   progress is knowable. `dc_device_set_cancel` exists, so giving up is possible. What is missing

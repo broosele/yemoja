@@ -78,6 +78,14 @@ internal interface Libdivecomputer : Library {
 
     fun dc_iostream_close(iostream: Pointer?): Int
 
+    fun dc_custom_open(
+        iostream: PointerByReference,
+        context: Pointer?,
+        transport: Int,
+        callbacks: CustomCallbacks,
+        userdata: Pointer?,
+    ): Int
+
     fun dc_device_open(
         out: PointerByReference,
         context: Pointer?,
@@ -128,6 +136,31 @@ internal interface Libdivecomputer : Library {
         fun invoke(type: Int, value: Pointer, userdata: Pointer?)
     }
 
+    /** A stream callback taking one number: a timeout, a count of milliseconds, a direction. */
+    fun interface Numbered : Callback {
+        fun invoke(userdata: Pointer?, value: Int): Int
+    }
+
+    /** A stream callback taking nothing: flush, close. */
+    fun interface Plain : Callback {
+        fun invoke(userdata: Pointer?): Int
+    }
+
+    /** A stream callback answering through a pointer: how much is waiting. */
+    fun interface Pointed : Callback {
+        fun invoke(userdata: Pointer?, value: Pointer?): Int
+    }
+
+    /** A read or a write: [size] bytes at [data], and how many were moved written to [actual]. */
+    fun interface Transfer : Callback {
+        fun invoke(userdata: Pointer?, data: Pointer?, size: Long, actual: Pointer?): Int
+    }
+
+    /** An ioctl: a request number, and [size] bytes at [data] that it reads or fills. */
+    fun interface Request : Callback {
+        fun invoke(userdata: Pointer?, request: Int, data: Pointer?, size: Long): Int
+    }
+
     companion object {
 
         /**
@@ -163,7 +196,50 @@ internal interface Libdivecomputer : Library {
 
         /** What `dc_iterator_next` answers when there is nothing more. */
         const val DONE: Int = 1
+
+        /** `DC_STATUS_UNSUPPORTED`: a request this stream has no answer to. */
+        const val UNSUPPORTED: Int = -1
+
+        /** `DC_STATUS_IO`: the link failed. */
+        const val IO: Int = -6
+
+        /** `DC_STATUS_TIMEOUT`: the bytes asked for did not all arrive in time. */
+        const val TIMEOUT: Int = -7
     }
+}
+
+/**
+ * CustomCallbacks is `dc_custom_cbs_t`, a stream the application provides.
+ *
+ * The library owns serial and USB itself; anything else, Bluetooth LE among them, is opened by
+ * the application and handed over as these fifteen functions, of which a stream fills the ones it
+ * can and leaves the rest null. The order is the header's.
+ *
+ * **Held for as long as the stream is open.** A function pointer the library keeps is a Java
+ * object JNA keeps only while something else does. Whoever opens a stream on these keeps them.
+ */
+@Structure.FieldOrder(
+    "set_timeout", "set_break", "set_dtr", "set_rts", "get_lines", "get_available", "configure",
+    "poll", "read", "write", "ioctl", "flush", "purge", "sleep", "close",
+)
+internal class CustomCallbacks : Structure() {
+    @JvmField var set_timeout: Libdivecomputer.Numbered? = null
+    @JvmField var set_break: Libdivecomputer.Numbered? = null
+    @JvmField var set_dtr: Libdivecomputer.Numbered? = null
+    @JvmField var set_rts: Libdivecomputer.Numbered? = null
+    @JvmField var get_lines: Libdivecomputer.Pointed? = null
+    @JvmField var get_available: Libdivecomputer.Pointed? = null
+
+    /** Baud rate and the rest, which a serial line has and a Bluetooth link does not. */
+    @JvmField var configure: Callback? = null
+    @JvmField var poll: Libdivecomputer.Numbered? = null
+    @JvmField var read: Libdivecomputer.Transfer? = null
+    @JvmField var write: Libdivecomputer.Transfer? = null
+    @JvmField var ioctl: Libdivecomputer.Request? = null
+    @JvmField var flush: Libdivecomputer.Plain? = null
+    @JvmField var purge: Libdivecomputer.Numbered? = null
+    @JvmField var sleep: Libdivecomputer.Numbered? = null
+    @JvmField var close: Libdivecomputer.Plain? = null
 }
 
 /** One model the library knows how to read, which is what a descriptor is. */

@@ -43,7 +43,9 @@ class FoundDevices : Devices, AutoCloseable {
     override fun found(): List<DiveComputer> {
         val library = Libdivecomputer.LOADED ?: return emptyList()
         val context = context ?: opened(library) ?: return emptyList()
-        return usbhidUnder(library, context, models) + serialUnder(library, context, models)
+        return usbhidUnder(library, context, models) +
+            serialUnder(library, context, models) +
+            advertisingUnder(library, context, models)
     }
 
     /** The context and every model the library knows, or absent where it would not open. */
@@ -141,9 +143,10 @@ class FoundDevices : Devices, AutoCloseable {
 }
 
 /** `dc_transport_t`, which is a bit apiece. */
-private object Transport {
+internal object Transport {
     const val SERIAL = 1
     const val USBHID = 4
+    const val BLE = 32
 }
 
 /**
@@ -154,7 +157,7 @@ private object Transport {
  * because that is what lets an implementation be lazy; this one is not, and a download of a
  * full computer holds every dive in memory until it is staged.
  */
-private class Attached(
+internal class Attached(
     private val library: Libdivecomputer,
     private val context: Pointer?,
     private val descriptor: Pointer?,

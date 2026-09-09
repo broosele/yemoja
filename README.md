@@ -134,10 +134,12 @@ for reading UDDF, common Kotlin having no XML reader — Apache 2.0, and there r
 data layer, whose promise of no dependencies stands because a foreign format is not its business.
 The logic layer's JVM side takes **libdivecomputer** for reading dive computers — LGPL-2.1,
 linked as a shared library so the rest of the application stays its own, which *Licensing* below
-turns on — and **JNA** to call it, Apache 2.0 under its dual licence. `LOGIC-2` in
-[logic/doc.md](logic/doc.md) puts both below a port the layer declares, so Android and iOS answer
-the same port their own way. What is not settled is a Bluetooth LE library per platform; it will
-be recorded with the target that needs it, once chosen.
+turns on — and **JNA** to call it, Apache 2.0 under its dual licence. libdivecomputer leaves
+Bluetooth LE to the application, and that is **Kable**, Apache 2.0: Kotlin Multiplatform, so the
+same library serves the JVM, Android and iOS, and on the desktop it reaches Windows and Linux
+through the Rust library btleplug that it carries. `LOGIC-2` in [logic/doc.md](logic/doc.md)
+puts all three below a port the layer declares, so each target answers the same port its own
+way.
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.

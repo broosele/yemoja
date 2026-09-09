@@ -21,7 +21,11 @@ kotlin {
             // Calling libdivecomputer, which is C. Apache 2.0 under its dual licence. Here rather
             // than in common because only a JVM reaches a library this way: `LOGIC-2` puts each
             // target's own answer below the port.
-            implementation("net.java.dev.jna:jna:5.19.0")
+            implementation("net.java.dev.jna:jna:5.19.1")
+            // Reaching a dive computer over Bluetooth LE, which libdivecomputer leaves to the
+            // application. Apache 2.0. One library for every target it will be built for, but
+            // declared per target all the same, for the reason above.
+            implementation("com.juul.kable:kable-core:0.44.3")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

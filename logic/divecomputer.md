@@ -182,7 +182,19 @@ dives with their environment, their gas sources and their profile, and nothing e
 
 **The port's other side, for the JVM.** libdivecomputer is called through JNA and linked as a
 shared library, which is what the licence position in README turns on. Looking finds what is
-attached over USB HID and serial; opening one walks its dives and parses each into a recording.
+attached over USB HID and serial and what is advertising over Bluetooth LE; opening one walks its
+dives and parses each into a recording.
+
+**Bluetooth LE is the application's to do.** The library owns serial and USB and hands over
+nothing for Bluetooth LE but a stream of fifteen functions to fill and a name filter: it knows
+which advertised names are which model, and nothing about scanning, connecting, or which of a
+device's characteristics carry the bytes. Kable does the radio, on every target it will be built
+for. A scan listens for four seconds and matches what it heard by name; opening connects, picks
+the pair of characteristics by the rule `LOGIC-22` gives, subscribes before the first write, and
+hands the library a stream whose reads drain the notifications as they came. The stream answers
+the two requests the drivers that speak Bluetooth make — the advertised name, and a
+characteristic read by UUID — and calls a PIN or an access code unsupported until a device is
+met that wants one.
 
 **What is attached is enumerated once and matched in memory.** The obvious reading of the API is
 to ask each of the three hundred and fifty odd models whether it is there, and that is what this
@@ -219,6 +231,12 @@ Decided and not built, or built and not proven. Each is here rather than in some
   offset and not enough to catch a wrong reading of what a device means. Three constants were
   wrong when first written and all three were found by re-reading the header, which is the class
   of error still waiting: the next one will be found by a device or not at all.
+- **The Bluetooth stream has not carried a dive.** A scan has heard devices and the library has
+  matched one by name, so the radio and the filter work; nothing has been connected to. The
+  stream is tested over a wire laid by hand — reads filled and timed out, writes chunked, the
+  two requests answered — and the choice of characteristics is tested on lists written by hand.
+  Whether `LOGIC-22`'s rule picks right on a real device, and whether the drivers are content
+  with what the stream answers, is what the first device will say.
 - **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
   *and that the download says what it dropped*. What is dropped is decided field by field above;
   where the saying goes is `LOGIC-21`.
@@ -246,6 +264,8 @@ Decided and not built, or built and not proven. Each is here rather than in some
 
 What this document also waits on is elsewhere:
 
+- **`LOGIC-22`** — how the characteristics a device talks through are found, which is decided
+  and not yet proven on a device.
 - **`RECON-2`** — whether an import can be accepted in part, which `LOGIC-18` gives a new
   kind of candidate to.
 - **`TUI-8`** — what a job that takes minutes looks like, which is what a download is.

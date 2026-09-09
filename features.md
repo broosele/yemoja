@@ -54,9 +54,9 @@ them.
   by hand is a dive, and this brings a native library and per-platform Bluetooth with it.
   What a download carries and what it drops is decided, field by field, in
   [logic/divecomputer.md](logic/divecomputer.md), and reads on the JVM: a computer plugged in
-  is found, read from where the last download stopped, and reviewed like any other import.
-  Nothing has met one yet, and Bluetooth and the other four targets are untouched. What is
-  owed is listed in that document rather than here.
+  or advertising over Bluetooth LE is found, read from where the last download stopped, and
+  reviewed like any other import. Nothing has met one yet, and the other four targets are
+  untouched. What is owed is listed in that document rather than here.
 
 - **FEAT-6 — Dive planning with decompression.** Carries the safety obligation recorded
   in [logic/doc.md](logic/doc.md). Moved here from *Core*: logging what you did

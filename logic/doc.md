@@ -355,6 +355,26 @@ To settle when we discuss architecture and features:
    Whichever it is, it bears on `TUI-8`: a download that says nothing while it runs and nothing
    when it finishes is the same silence twice.
 
+- **LOGIC-22 — How the characteristics a Bluetooth LE device talks through are found.**
+   *Settled:* **by looking, not by a table.** libdivecomputer knows which advertised names are
+   which model and nothing about the connection behind them; the application hands it a stream
+   and has to know where the bytes go. The two ways of knowing are a table — this vendor, this
+   service, this characteristic — or a rule applied to what the device offers once connected.
+
+   The rule: take the vendor's own service, never one the SIG defined, that has a characteristic
+   which is written to and one which notifies — one characteristic doing both first, then two
+   within one service. That is the shape nearly every dive computer has, because nearly every
+   one is a serial line dressed as a GATT service.
+
+   A table would be better where the rule is wrong, and there is no honest way to write one. No
+   vendor publishes its UUIDs, and the one implementation that has collected them is GPL and off
+   limits (*Provenance*, in the working agreement). So the rule stands, and where a device
+   defeats it — two vendor services, or a service that wants a PIN before it talks — the answer
+   is an entry learnt from that device itself, read off it with a Bluetooth scanner, and recorded
+   here with the device it was learnt from. None exists yet.
+
+   Unproven on a device. What is tested is that the rule picks what it says it picks.
+
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants
