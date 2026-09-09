@@ -123,6 +123,24 @@ class Screen(private val universe: Universe) {
     /** Whether something is open on its own, rather than the list being shown. */
     val opened: Boolean get() = path.isNotEmpty()
 
+    /**
+     * Mode is which of the screen's ways of answering a key is live.
+     *
+     * Six pieces of state say what is open and they nest: a path being typed sits inside the
+     * import screen, a chooser inside an open field, a question over the list. Which one a key
+     * reaches is decided here and nowhere else, so that the keys, the body, the top line and the
+     * bar cannot disagree about it.
+     */
+    private enum class Mode { SOURCING, MERGING, TYPING, CHOOSING, BROWSING }
+
+    private fun mode(): Mode = when {
+        sourcing != null -> Mode.SOURCING
+        merging != null -> Mode.MERGING
+        editing != null -> Mode.TYPING
+        choosing != null -> Mode.CHOOSING
+        else -> Mode.BROWSING
+    }
+
     /** What is being typed, or absent where nothing is being typed. */
     val typing: String? get() = editing
 
@@ -235,12 +253,12 @@ class Screen(private val universe: Universe) {
      * press from the other. `TUI-7`.
      */
     fun press(key: Key): Boolean {
-        when {
-            sourcing != null -> sourceKey(key)
-            merging != null -> mergedKey(key)
-            editing != null -> typedKey(key)
-            choosing != null -> chosenKey(key)
-            else -> browsedKey(key)
+        when (mode()) {
+            Mode.SOURCING -> sourceKey(key)
+            Mode.MERGING -> mergedKey(key)
+            Mode.TYPING -> typedKey(key)
+            Mode.CHOOSING -> chosenKey(key)
+            Mode.BROWSING -> browsedKey(key)
         }
         if (key != Key.DELETE) confirming = false
         if (sourcing == null && key != Key.INSERT) message = null
@@ -1147,11 +1165,10 @@ class Screen(private val universe: Universe) {
             "a screen should be $LEAST_HEIGHT high at least, was $height"
         }
         val rows = height - CHROME
-        val body = when {
-            sourcing != null -> sourced(width, rows)
-            merging != null -> asked(width, rows)
-            opened -> opened(width, rows)
-            else -> listed(width, rows)
+        val body = when (mode()) {
+            Mode.SOURCING -> sourced(width, rows)
+            Mode.MERGING -> asked(width, rows)
+            else -> if (opened) opened(width, rows) else listed(width, rows)
         }
         val lines = ArrayList<Line>(height)
         lines.add(Line(fitted(listOf(Span(where())), width)))
@@ -1220,8 +1237,11 @@ class Screen(private val universe: Universe) {
 
     /** What is being looked at: the types, or how far into an item a reader has gone. */
     private fun where(): String {
-        if (sourcing != null) return if (attached == null) "import" else "import / a dive computer"
-        if (merging != null) return "${type.name} / what is this?"
+        when (mode()) {
+            Mode.SOURCING -> return if (attached == null) "import" else "import / a dive computer"
+            Mode.MERGING -> return "${type.name} / what is this?"
+            else -> Unit
+        }
         if (!opened) return tabs()
         val said = path.flatMap { (naming, key) -> listOfNotNull(naming.name, key) }
         return (listOf(type.name, item?.let { idOf(it) }) + said).joinToString(" / ")
@@ -1240,9 +1260,10 @@ class Screen(private val universe: Universe) {
      * without being told to; nobody presses `n`.
      */
     private fun actions(width: Int): String {
-        val said = if (merging != null) {
+        val mode = mode()
+        val said = if (mode == Mode.MERGING) {
             listOf("[enter] take it in", "[esc] cancel", "$FIELDS answer")
-        } else if (sourcing != null) {
+        } else if (mode == Mode.SOURCING) {
             if (attached != null) listOf("[enter] read it", "[esc] back", "$FIELDS computer")
             else if (editing == null) listOf("[enter] choose", "[esc] back", "$FIELDS source")
             else listOf("[enter] open", "[esc] back", "[backspace] rub out")
