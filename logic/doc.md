@@ -540,9 +540,17 @@ To settle when we discuss architecture and features:
 - **LOGIC-18 — What a download's coordinates become.** *Settled:* **a proposal at review, with
    three answers: an existing site, a new one, or nothing. The per-sample track is dropped.**
 
-   `DC_FIELD_LOCATION` gives a latitude, a longitude and an altitude. A dive has no position —
-   only a `dive_site` does, and a dive names one by reference. So this is the one row of the
-   mapping that is not a field going into a field.
+   A dive has no position — only a `dive_site` does, and a dive names one by reference. So this
+   is the one row of the mapping that is not a field going into a field.
+
+   **The source is the sample, not the field.** This was written the other way round, and both
+   halves were wrong. No parser in the library answers `DC_FIELD_LOCATION`, for any device, so
+   the field this entry was built on supplies nothing. `DC_SAMPLE_LOCATION` does, and it was
+   dismissed here as a track through the dive, which it is not: twenty dives read from a Perdix
+   2 gave one position on nineteen of them, always on the first sample, and on four of those a
+   second on the last. That is an entry fix and sometimes an exit fix, which is exactly the
+   thing this entry wanted. A dive's position is its **first** fix: every dive that reports one
+   reports that one, where only some report a second.
 
    **A fix is not a site.** A site is a place returned to: ten dives on one reef are one site
    with ten dives naming it, while ten downloads give ten positions differing by tens of metres,
@@ -560,12 +568,30 @@ To settle when we discuss architecture and features:
    list is noise — while a handful sorted by distance, each shown with its distance, lets the
    user judge what a threshold would have judged for them.
 
+   **Two arriving fixes propose one new site when they are within 500 metres.** That is a
+   different question from the one above, and it does need a number: a download of a week's
+   diving arrives with no site to offer, and something has to say whether Tuesday's dive and
+   Friday's dive are one new site or two. The figure comes from the only reading there has been
+   rather than from taste. Pairs the user confirmed as one place ran from 21 to 247 metres
+   apart; the closest two places they confirmed as different were 1,384 metres apart; and every
+   threshold from 400 metres to 1,300 metres gave the same answer, so the number sits in an
+   empty band rather than on a boundary.
+
+   **It compares dives, not fixes.** One dive is one site whatever its own two fixes say, and
+   they said up to 711 metres on that reading — further than the rule joins. A rule applied to
+   fixes would split a dive from itself.
+
+   Where sites are dense this will join two that a diver names apart, and that is the same
+   over-eagerness the name matching accepts: a proposal costs a keystroke to refuse, and this
+   one is refused by naming two sites instead of one at review.
+
    A fix never overwrites a site a dive already names. That case arises when reconciliation
    matches a downloaded dive to one already in the logbook, and there the dive's own answer
    stands.
 
-   `DC_SAMPLE_LOCATION` is dropped under `LOGIC-10`. It is a track through the dive rather than
-   a position, and nothing here holds one.
+   A fix past the first is dropped under `LOGIC-10`, an exit being a second position for a dive
+   that holds one. A device that really does report a track would be dropped down to its first
+   fix by the same rule; none has been met.
 
    **The altitude fills in a proposed site's `elevation`, and nothing where the device reports
    none.** It is the height of the water above sea level and what a fix at the surface measures,
@@ -582,7 +608,9 @@ To settle when we discuss architecture and features:
 
    The middle answer is ruled out by this question's own reasoning. *Use it only above the
    altitude where it starts to matter* is a threshold, and a threshold here is a number nobody
-   can pick well, which is why no radius was chosen for the sites either.
+   can pick well, which is why no radius is used to choose among sites that already exist. The
+   500 metres above is not that kind of number: it decides nothing a user cannot see and undo,
+   and it was measured rather than picked.
 
    **The stakes are lower than they look, and for a reason worth stating.** `DC_FIELD_ATMOSPHERIC`
    is already carried to `environment.atmospheric_pressure`. Ambient pressure is what

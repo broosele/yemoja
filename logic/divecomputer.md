@@ -133,10 +133,15 @@ come from:
   by, so nothing points at a gear item. `volume` is written directly instead. `LOGIC-12`.
 - **`alarms`: `breath`, `deco`, `error`, `skincooling`** — four of our nine words that no
   event maps onto. `LOGIC-16` refuses to stretch a near-miss into them.
-- **A fix.** The library declares a location field and no parser in it fills one, for any
-  device. Where a vendor's app attaches a position to a dive from the phone it synced with, the
-  position lives in that app and never reaches the computer. `LOGIC-18`'s proposal has no source
-  through this library, and a site is the user's to name.
+- **A fix**, for now. The library declares a location *field* and nothing in it fills one, for
+  any device. It also has a location *sample*, a position at an instant, and the Shearwater
+  driver fills that — which this walk drops, along with every other sample type it does not
+  name. So `LOGIC-18`'s proposal does have a source, and it has been looked at: reading twenty
+  Perdix dives gave a position on nineteen of them, always on the first sample, and on four of
+  the nineteen a second one on the last. That is an entry fix and sometimes an exit fix, which
+  is a better answer than the field would have been and settles what a dive's one position is
+  made of. Nothing reads it yet, so a site is still the user's to name. `LOGIC-18` is what turns
+  it into a proposal.
 
 ## Where the two models disagree in shape
 
@@ -274,11 +279,18 @@ Decided and not built, or built and not proven. Each is here rather than in some
 - **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
   *and that the download says what it dropped*. What is dropped is decided field by field above;
   where the saying goes is `LOGIC-21`.
-- **The fix does not cross the port.** `LOGIC-18` settled that a download's coordinates become
-  a proposal at review, and no review question exists, so the recording does not carry one: a
-  field every implementation must fill and nothing reads is a lie waiting to be believed. Nor
-  does any parser in the library fill one, so when the question is built the field has no
-  source yet either.
+- **The fix does not cross the port, though the device sends one.** `LOGIC-18` settled that a
+  download's coordinates become a proposal at review, and no review question exists, so the
+  recording does not carry one: a field every implementation must fill and nothing reads is a
+  lie waiting to be believed. What was written here before was that nothing in the library
+  supplies a position, and that was wrong: no parser answers the location *field*, but the
+  Shearwater driver fills a location *sample*, and a Perdix sends one on nearly every dive. The
+  walk drops it. When `LOGIC-18` is built the position is there to be taken.
+- **A sample type the walk does not name is dropped without being counted.** Twenty Perdix
+  dives went past carrying twenty-three positions and six and a half thousand
+  remaining-bottom-time readings, and nothing said so. `LOGIC-10` requires a download to report
+  what it dropped, and `LOGIC-21` asks where that report goes; until then the model is being
+  told less than the device offers and cannot tell how much.
 - **The serial has not been read off a device.** The JVM listens for the device-info event and
   hands the serial over as a decimal number, and nothing has yet compared that number with what
   a Perdix prints on its screen. The comparison reads a hexadecimal spelling as its number, so
