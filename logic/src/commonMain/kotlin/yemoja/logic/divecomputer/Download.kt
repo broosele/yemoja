@@ -11,6 +11,7 @@ import yemoja.data.Stored
 import yemoja.data.Units
 import yemoja.logic.DIVE
 import yemoja.logic.Types
+import yemoja.logic.sameSerial
 import yemoja.logic.freeName
 import yemoja.logic.unknownOf
 
@@ -42,16 +43,30 @@ object Download {
      * Ids are this model's own, minted from what each dive says. A device's own numbering means
      * nothing outside the device, and a downloaded set is matched by what it recorded rather than
      * by what it was called.
+     *
+     * [into] is the logbook these are going to, where there is one. A recording whose serial
+     * finds a gear item there is filed under that item's id, which is what a profile's key is
+     * for: it says which computer, and it is the same key each time that computer is read.
+     * `LOGIC-23`.
      */
-    fun read(recordings: Sequence<Recording>): ItemSet {
+    fun read(recordings: Sequence<Recording>, into: ItemSet? = null): ItemSet {
         val set = ItemSet(Types.ALL)
         for (recording in recordings) {
-            val item = ItemReader.read(DIVE, Stored.Members(diveOf(recording)), set, Units.DEFAULT)
+            val named = recording.serial?.let { into?.let { logbook -> computerIn(logbook, it) } }
+            val fields = diveOf(recording, named)
+            val item = ItemReader.read(DIVE, Stored.Members(fields), set, Units.DEFAULT)
             val proposed = item.description.proposedId?.invoke(item) ?: unknownOf(item)
             set.add(freeName(proposed) { set[it] != null }, item)
         }
         return set
     }
+
+    /** The id of the gear item in [logbook] carrying [serial], or absent where none does. */
+    private fun computerIn(logbook: ItemSet, serial: String): String? =
+        logbook.allOf(Types.GEAR).firstOrNull { gear ->
+            val held = (gear.single<String>("serial") as? Result.Usable)?.value
+            held != null && sameSerial(held, serial)
+        }?.let { logbook.idOf(it) }
 
     /**
      * The fingerprint to resume a download from, or absent where there is none to resume from.
@@ -60,17 +75,21 @@ object Download {
      * when the dive was, which is the order a device counts in too, so handing it back says
      * *stop when you reach this one*. `DATA-90`.
      *
-     * Matched on the slug of what recorded it, because a profile names its computer either way:
-     * a gear item by its id, which is already one, and a borrowed one by a plain name, which is
-     * not. Slugging both is what makes *Reef Computer* and `reef_computer` the same answer.
+     * Which recordings are this computer's is said by [serial], where the device gave one: a
+     * profile carrying it, or one whose computer is the gear item that does. `LOGIC-23`. Where
+     * the device gave none, by [computer]'s slug against the key the profile is filed under,
+     * which is the device's name as a download writes it, or against what the profile names,
+     * because a profile kept by hand names its computer either way: a gear item by its id,
+     * which is already a slug, and a borrowed one by a plain name, which is not. Slugging all
+     * of them is what makes *Reef Computer* and `reef_computer` the same answer.
      */
-    fun after(logbook: ItemSet, computer: String): String? {
+    fun after(logbook: ItemSet, computer: String, serial: String? = null): String? {
         var newest: Pair<String, String>? = null
         for (dive in logbook.allOf(DIVE)) {
             val profiles = dive.keyed<OwnedItem>("profiles") as? Result.Usable ?: continue
-            for (element in profiles.value.values) {
+            for ((key, element) in profiles.value) {
                 val profile = (element as? Element.Usable)?.value ?: continue
-                if (nameOf(profile) != yemoja.logic.slug(computer)) continue
+                if (!madeBy(logbook, key, profile, computer, serial)) continue
                 val held = (profile.single<String>("fingerprint") as? Result.Usable)?.value
                     ?: continue
                 val began = whenOf(dive) ?: continue
@@ -78,6 +97,26 @@ object Download {
             }
         }
         return newest?.second
+    }
+
+    /** Whether [profile], filed under [key], was recorded by [computer], with [serial]. */
+    private fun madeBy(
+        logbook: ItemSet,
+        key: String,
+        profile: Item,
+        computer: String,
+        serial: String?,
+    ): Boolean {
+        if (serial == null) {
+            val slug = yemoja.logic.slug(computer)
+            return key == slug || nameOf(profile) == slug
+        }
+        val own = (profile.single<String>("serial") as? Result.Usable)?.value
+        if (own != null && sameSerial(own, serial)) return true
+        val named = (profile.single<Reference>("dive_computer") as? Result.Usable)?.value
+        val id = (named as? Reference.Identified)?.id ?: return false
+        val held = (logbook[id]?.single<String>("serial") as? Result.Usable)?.value ?: return false
+        return sameSerial(held, serial)
     }
 
     /** What a profile says recorded it, as a slug, by id or by the plain name a one-off has. */
@@ -96,7 +135,7 @@ object Download {
     }
 
     /** What one recording says, as a dive's fields. */
-    private fun diveOf(held: Recording): Map<String, Stored> {
+    private fun diveOf(held: Recording, named: String?): Map<String, Stored> {
         val fields = LinkedHashMap<String, Stored>()
         held.began?.let { fields["start_date"] = Stored.Leaf(it) }
         held.at?.let { fields["start_time"] = Stored.Leaf(it) }
@@ -107,7 +146,7 @@ object Download {
         held.averageDepth?.let { fields["average_depth"] = Stored.Leaf(it) }
         environmentOf(held)?.let { fields["environment"] = it }
         gasesOf(held)?.let { fields["gas_sources"] = it }
-        profileOf(held)?.let { fields["profiles"] = it }
+        profileOf(held, named)?.let { fields["profiles"] = it }
         return fields
     }
 
@@ -147,9 +186,11 @@ object Download {
      * The computer names it, which is what a profile's key is for: a dive has more than one
      * profile precisely when more than one computer was worn. `JSON-18`.
      */
-    private fun profileOf(held: Recording): Stored.Members? {
+    private fun profileOf(held: Recording, named: String?): Stored.Members? {
         val fields = LinkedHashMap<String, Stored>()
-        held.computer?.let { fields["dive_computer"] = Stored.Leaf(it) }
+        // Which computer is not written: the serial is, and the computer is worked out from it.
+        // `LOGIC-23`.
+        held.serial?.let { fields["serial"] = Stored.Leaf(it) }
         held.fingerprint?.let { fields["fingerprint"] = Stored.Leaf(it) }
         held.began?.let { fields["start_date"] = Stored.Leaf(it) }
         held.at?.let { fields["start_time"] = Stored.Leaf(it) }
@@ -165,8 +206,11 @@ object Download {
         held.model?.gradientFactorHigh?.let { fields["gradient_factor_high"] = Stored.Leaf(it) }
         fields.putAll(seriesOf(held))
         if (fields.isEmpty()) return null
-        val key = held.computer?.let { yemoja.logic.slug(it) }?.ifEmpty { null } ?: "profile"
-        return Stored.Members(mapOf(key to Stored.Members(fields)))
+        // The gear item the serial named, which is the same key each time that computer is read.
+        // Where the logbook keeps no item for it, the device's own name, which at least says
+        // which one it was. `LOGIC-23`.
+        val called = named ?: held.computer?.let { yemoja.logic.slug(it) }?.ifEmpty { null }
+        return Stored.Members(mapOf((called ?: "profile") to Stored.Members(fields)))
     }
 
     /**

@@ -118,7 +118,26 @@ class WalkedTest {
     }
 }
 
-/** Turning what a device hands out into text and back, which is what a fingerprint travels as. */
+class DevInfoTest {
+
+    /** `{ model, firmware, serial }`, three unsigned ints. */
+    private fun devinfo(model: Int, firmware: Int, serial: Int) = Memory(12).also {
+        it.setInt(0, model)
+        it.setInt(4, firmware)
+        it.setInt(8, serial)
+    }
+
+    @Test
+    fun `the serial is the third word, read as a decimal number`() {
+        assertEquals("1787924901", serialOf(devinfo(7, 91, 0x6A9191A5)))
+    }
+
+    @Test
+    fun `an unsigned serial does not come back negative`() {
+        assertEquals("4294967295", serialOf(devinfo(0, 0, -1)))
+    }
+}
+
 class HexTest {
 
     @Test

@@ -152,8 +152,16 @@ private val DECO_MODELS = setOf("buhlmann", "vpm", "rgbm", "dciem")
 private val PROFILE = ItemDescription(
     "profile",
     listOf(
-        // A plain name works for a computer that is nobody's item.
-        ReferenceDescription("dive_computer", targetType = "gear", oneOffAllowed = true),
+        // Worked out from the serial: the gear item carrying it. Written where the user says
+        // otherwise, or names a computer they keep no item for. `LOGIC-23`.
+        ReferenceDescription(
+            "dive_computer",
+            targetType = "gear",
+            oneOffAllowed = true,
+            role = Role.Overrideable(::profilesComputer),
+        ),
+        // What the device says it is, which is what tells two of one model apart. `LOGIC-23`.
+        TextDescription("serial"),
         // What the device knows this recording by, kept so a later download can say where it
         // got to. `DATA-90`.
         TextDescription("fingerprint"),
@@ -282,6 +290,24 @@ private fun profilesDensity(profile: Item): Result<Any> {
     if (fixed != null) return Result.Usable(fixed, Result.Origin.DERIVED)
     if (water != SALT) return unusable("$water is not a water type this knows a density for")
     return Result.Usable(saltDensity(profile), Result.Origin.DERIVED)
+}
+
+/**
+ * The gear item carrying the serial this recording carries, or absent where none does.
+ *
+ * Absent rather than the device's name: a brand and a model are not which computer, and the
+ * profile's key already says what the recording was filed under. `LOGIC-23`.
+ */
+private fun profilesComputer(profile: Item): Result<Any> {
+    val serial = (profile.single<String>("serial") as? Result.Usable)?.value
+        ?: return Result.Absent
+    for (gear in profile.set.allOf(GEAR)) {
+        val held = (gear.single<String>("serial") as? Result.Usable)?.value ?: continue
+        if (!sameSerial(serial, held)) continue
+        val id = profile.set.idOf(gear) ?: continue
+        return Result.Usable(Reference.Identified(id), Result.Origin.DERIVED)
+    }
+    return Result.Absent
 }
 
 /** What the computer this recording came off takes salt water to weigh. */

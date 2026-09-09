@@ -95,6 +95,13 @@ internal interface Libdivecomputer : Library {
 
     fun dc_device_set_fingerprint(device: Pointer?, data: ByteArray, size: Int): Int
 
+    fun dc_device_set_events(
+        device: Pointer?,
+        events: Int,
+        callback: EventCallback,
+        userdata: Pointer?,
+    ): Int
+
     fun dc_device_foreach(device: Pointer?, callback: DiveCallback, userdata: Pointer?): Int
 
     fun dc_device_close(device: Pointer?): Int
@@ -134,6 +141,11 @@ internal interface Libdivecomputer : Library {
     /** `dc_sample_callback_t`: one reading, whose shape the type says. */
     fun interface SampleCallback : Callback {
         fun invoke(type: Int, value: Pointer, userdata: Pointer?)
+    }
+
+    /** `dc_event_callback_t`: something the device said about itself, shaped as the event says. */
+    fun interface EventCallback : Callback {
+        fun invoke(device: Pointer?, event: Int, data: Pointer?, userdata: Pointer?)
     }
 
     /** A stream callback taking one number: a timeout, a count of milliseconds, a direction. */
@@ -197,6 +209,9 @@ internal interface Libdivecomputer : Library {
         /** What `dc_iterator_next` answers when there is nothing more. */
         const val DONE: Int = 1
 
+        /** `DC_EVENT_DEVINFO`: the model, firmware and serial, said once before the dives. */
+        const val DEVINFO: Int = 1 shl 2
+
         /** `DC_STATUS_UNSUPPORTED`: a request this stream has no answer to. */
         const val UNSUPPORTED: Int = -1
 
@@ -205,6 +220,7 @@ internal interface Libdivecomputer : Library {
 
         /** `DC_STATUS_TIMEOUT`: the bytes asked for did not all arrive in time. */
         const val TIMEOUT: Int = -7
+
     }
 }
 

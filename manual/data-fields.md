@@ -283,8 +283,14 @@ that is the only record of it.
 }
 ```
 
-- `dive_computer` (reference) — the gear item that recorded it. A plain name works for
-  one you borrowed and keep no item for.
+- `dive_computer` (reference, worked out) — the gear item that recorded it. From `serial`:
+  the gear item carrying the same serial is the computer. Write it yourself to say otherwise,
+  or to name one you borrowed and keep no item for, which a plain name does.
+- `serial` (text) — the computer's serial number, as a download reads it off the device. It is
+  what tells two computers of one model apart, and what `dive_computer` is worked out from:
+  put the same serial on the gear item and every recording from that computer finds it.
+  Spelling does not matter — case, dashes and spaces are ignored, and a serial the maker prints
+  in hexadecimal matches the number the device reports.
 - `fingerprint` (text) — what the computer knows this recording by, written as hexadecimal.
   It is put there by a download and is not for reading: its whole use is that the next
   download can hand it back and be given only the dives made since. Nothing else depends on
@@ -469,7 +475,8 @@ A piece of equipment. A dive computer is gear like anything else you own.
 - `name` (text) — the item's id is worked out from it.
 - `brand` (text)
 - `model` (text)
-- `serial` (text) — the serial number, where it has one.
+- `serial` (text) — the serial number, where it has one. For a dive computer, put the serial
+  from its own information screen here: every recording it makes finds the item by it.
 - `generic` (true or false) — whether this describes a *kind* of item rather than one you
   own. Leave it out and it is `false`: your own gear is your own. See below.
 - `category` (text) — the broad group it belongs to. Anything you like; the usual ones

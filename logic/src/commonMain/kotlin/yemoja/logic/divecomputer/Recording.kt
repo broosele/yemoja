@@ -29,8 +29,16 @@ import yemoja.data.Time
  * Immutable, and a data class so that a reading can be varied without writing the rest out again.
  */
 data class Recording(
-    /** The device by name, which is what a `profile` records itself as having come from. */
+    /** The device by name, which is what a `profile` is filed under. */
     val computer: String? = null,
+    /**
+     * The device's serial, or absent where the device did not say.
+     *
+     * Written to the profile, which names its computer through it: the gear item carrying the
+     * same serial. As the library gives it, a decimal number; what a maker prints is matched
+     * either way. `LOGIC-23`.
+     */
+    val serial: String? = null,
     /**
      * What the device knows this recording by, as hexadecimal.
      *
@@ -117,23 +125,25 @@ data class Recording(
  * hand dives over one at a time, and a caller *may* stop walking. Neither is promised. The JVM's
  * reads everything before it answers, and nothing cancels yet — `TUI-8`.
  *
- * **What it does not carry is deliberate.** A fix and a serial are both decided — `LOGIC-18`,
- * `LOGIC-20` — and neither has a review question to land in, so the port does not ask for them:
- * a field every implementation must fill and nothing reads is a lie waiting to be believed.
+ * **A fix is not carried, deliberately.** `LOGIC-18` decided what one is for and no review
+ * question exists to land it in, so the port does not ask for it: a field every implementation
+ * must fill and nothing reads is a lie waiting to be believed.
  */
 interface DiveComputer {
 
-    /** What to call it, which is what a downloaded profile records itself as having come from. */
+    /** What to call it, which is what a downloaded profile is filed under. */
     val name: String
 
     /**
      * Every dive it holds, oldest first, read as the sequence is walked.
      *
-     * [after] is the fingerprint of the last dive already held, where one is known: the device
-     * is told where to stop and reports only what came after it, so a second download transfers
-     * nothing it has given before. `DATA-90`.
+     * [resume] answers the fingerprint of the last dive already held, or nothing where none is,
+     * given the device's serial once it has said one. The device is told where to stop and
+     * reports only what came after, so a second download transfers nothing it has given before.
+     * `DATA-90`. Asked rather than told because the serial is what says whose chain this is,
+     * and a device says it only once opened. `LOGIC-23`.
      */
-    fun recordings(after: String? = null): Sequence<Recording>
+    fun recordings(resume: (serial: String?) -> String? = { null }): Sequence<Recording>
 }
 
 /**

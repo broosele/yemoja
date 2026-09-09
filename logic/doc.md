@@ -373,7 +373,33 @@ To settle when we discuss architecture and features:
    is an entry learnt from that device itself, read off it with a Bluetooth scanner, and recorded
    here with the device it was learnt from. None exists yet.
 
-   Unproven on a device. What is tested is that the rule picks what it says it picks.
+   Proven on one. A Shearwater Perdix 2 offers two SIG services and one of its own with a single
+   characteristic that both writes and notifies, and the rule picks it. Every other vendor is
+   still the rule's guess, and what is tested is that it picks what it says it picks.
+
+- **LOGIC-23 — How a profile names its computer.** *Settled:* **by serial, worked out rather
+   than written.** A download writes the device's serial on the profile and nothing else about
+   which computer it was. `dive_computer` is derived from it, as the gear item carrying the same
+   serial, and a written value overrides that the way a dive's written start date overrides its
+   recording's: for a borrowed computer, or to say the derivation is wrong.
+
+   **The key follows the same rule.** A profile is filed under the gear item its serial named,
+   so reading one computer twice writes one profile rather than two, and a dive worn with two
+   computers keeps one profile apiece under names that say which. Where the logbook keeps no
+   item for it, the device's own name, which at least says which one it was.
+
+   Two things follow. A logbook whose profiles name a gear item by hand keeps working and
+   resumes, because the fingerprint to resume from is found through the serial either way — a
+   profile carrying it, or one naming the gear item that does. And a download from a computer
+   nobody keeps an item for shows no computer on its profile, only the serial and the key the
+   recording was filed under. That is the honest answer: a brand and a model are not which
+   computer, which is `LOGIC-20`'s reason for letting nothing but a serial name one.
+
+   The library has the serial as a number and a maker prints it as they please, so the download
+   writes the number in decimal and the comparison meets the maker halfway: case and punctuation
+   do not count, and a spelling with a hexadecimal letter in it is read as the number it is. What
+   a user copies off the device's screen then matches what the device said, bar a hexadecimal
+   serial that happens to hold only digits.
 
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
@@ -438,15 +464,14 @@ To settle when we discuss architecture and features:
    That is not a shortfall in the mapping — a computer does not know those things — and the
    review is where a user adds them.
 
-   **Filling a reference is not creating one.** `profile.dive_computer` is the case.
-   `dc_descriptor_get_vendor` and `dc_descriptor_get_product` name the device, and
-   `oneOffAllowed` makes that name a real answer rather than a failure — so the name is what a
-   download writes unless something better is certain.
+   **Filling a reference is not creating one.** `profile.dive_computer` is the case, and a
+   download no longer fills it either: it writes the serial and the reference is worked out
+   from that, which is `LOGIC-23`.
 
-   **Only a serial proposes a gear item.** `DC_EVENT_DEVINFO` carries one, once per download
+   **Only a serial names a gear item.** `DC_EVENT_DEVINFO` carries one, once per download
    rather than per dive, and it is the only thing that tells two identical computers apart. A
    brand and a model do not: a user diving their own Halo 2 and a club's are the same two
-   strings, and a proposal that is a coin flip is worse than none, on the same reasoning that
+   strings, and a guess that is a coin flip is worse than none, on the same reasoning that
    refuses to read a density of 1020 as `en13319`.
 
    **Proposing is not choosing.** Nothing here stops a user picking their own gear item at

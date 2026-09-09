@@ -320,7 +320,10 @@ class Universe(
     fun downloadFrom(computer: DiveComputer): Outcome {
         val where = stagedIn(null)
             ?: return Outcome.Refused("this logbook has nowhere to stage a download")
-        val read = Download.read(computer.recordings(Download.after(logbook, computer.name)))
+        val read = Download.read(
+            computer.recordings { serial -> Download.after(logbook, computer.name, serial) },
+            logbook,
+        )
         if (read.allOf(Types.DIVE).isEmpty()) {
             return Outcome.Refused("${computer.name} holds no dives this logbook has not seen")
         }

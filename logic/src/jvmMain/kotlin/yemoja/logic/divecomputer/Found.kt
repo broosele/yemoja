@@ -165,7 +165,7 @@ internal class Attached(
     private val open: () -> Pointer?,
 ) : DiveComputer {
 
-    override fun recordings(after: String?): Sequence<Recording> {
+    override fun recordings(resume: (String?) -> String?): Sequence<Recording> {
         val stream = open() ?: return emptySequence()
         val device = PointerByReference()
         val opened = library.dc_device_open(device, context, descriptor, stream)
@@ -174,11 +174,26 @@ internal class Attached(
             return emptySequence()
         }
         // Where the last download got to, so the device reports only what came after. `DATA-90`.
-        bytesOf(after)?.let { library.dc_device_set_fingerprint(device.value, it, it.size) }
+        // Told twice: now, knowing only the name, and again once the device has said its serial,
+        // which is what says whose chain this is. The device says it before the first dive, and
+        // a later telling replaces an earlier one. `LOGIC-23`.
+        fun stopAt(serial: String?) {
+            val known = bytesOf(resume(serial)) ?: return
+            library.dc_device_set_fingerprint(device.value, known, known.size)
+        }
+        stopAt(null)
+        var serial: String? = null
+        val events = Libdivecomputer.EventCallback { _, event, data, _ ->
+            if (event == Libdivecomputer.DEVINFO && data != null) {
+                serial = serialOf(data)
+                stopAt(serial)
+            }
+        }
+        library.dc_device_set_events(device.value, Libdivecomputer.DEVINFO, events, null)
         val held = ArrayList<Recording>()
         val callback = Libdivecomputer.DiveCallback { data, size, fingerprint, fsize, _ ->
             val known = hexOf(fingerprint, fsize)
-            recordingOf(library, device.value, data, size, name, known)?.let { held += it }
+            recordingOf(library, device.value, data, size, name, serial, known)?.let { held += it }
             // Non-zero carries on; a download that stopped at the first dive would be a download
             // of one dive.
             1
@@ -189,6 +204,21 @@ internal class Attached(
         return held.asSequence()
     }
 }
+
+/**
+ * The serial in a `dc_event_devinfo_t`, which is the third of three unsigned ints.
+ *
+ * As a decimal number, which is how the library has it; what the maker prints is matched
+ * either way above the port. `LOGIC-23`.
+ */
+internal fun serialOf(devinfo: Pointer): String =
+    (devinfo.getInt(SERIAL_OFFSET).toLong() and UNSIGNED).toString()
+
+/** Past `model` and `firmware`, four bytes apiece. */
+private const val SERIAL_OFFSET: Long = 8
+
+/** The mask that reads a C `unsigned int` back from a Java int. */
+private const val UNSIGNED: Long = 0xffffffffL
 
 /** What a device handed out as [size] bytes, as hexadecimal. */
 internal fun hexOf(held: Pointer?, size: Int): String? {
@@ -217,6 +247,7 @@ private fun recordingOf(
     data: Pointer?,
     size: Int,
     name: String,
+    serial: String?,
     fingerprint: String?,
 ): Recording? {
     val parser = PointerByReference()
@@ -224,7 +255,7 @@ private fun recordingOf(
         return null
     }
     try {
-        return readingOf(library, parser.value, name, fingerprint)
+        return readingOf(library, parser.value, name, serial, fingerprint)
     } finally {
         library.dc_parser_destroy(parser.value)
     }
@@ -235,6 +266,7 @@ private fun readingOf(
     library: Libdivecomputer,
     parser: Pointer?,
     name: String,
+    serial: String?,
     fingerprint: String?,
 ): Recording {
     val clock = CDateTime()
@@ -244,6 +276,7 @@ private fun readingOf(
     val (gases, sourceOfMix) = sourcesOf(mixesOf(library, parser), tanksOf(library, parser))
     return Recording(
         computer = name,
+        serial = serial,
         fingerprint = fingerprint,
         began = if (when_) Date(clock.year, clock.month, clock.day) else null,
         at = if (when_) Time(clock.hour, clock.minute, clock.second) else null,

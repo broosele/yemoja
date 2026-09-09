@@ -39,18 +39,19 @@ what the computer thought; it has no site until asked, no buddies, no rating, no
 tags, and nothing about the conditions but temperature and pressure. A computer does not know
 those things, and the review is where a user adds them.
 
-Filling a reference is not creating one. `profile.dive_computer` takes the device's name,
-and a gear item only where the serial identifies one exactly. A brand and a model are the same
-two strings on a user's computer and on a club's, so they propose nothing — though the user may
-always pick an item themselves, the dives being live before they are saved.
+Filling a reference is not creating one, and `profile.dive_computer` is not even filled: the
+serial is written, and the reference is worked out from it as the gear item carrying the same
+serial. `LOGIC-23`. A brand and a model are the same two strings on a user's computer and on a
+club's, so they name nothing — though the user may always pick an item themselves, the dives
+being live before they are saved.
 
 ## The dive as a whole
 
 | libdivecomputer | ours | |
 |---|---|---|
 | `datetime` | `profile.start_date`, `start_time` | as the computer's clock read |
-| the descriptor | `profile.dive_computer` | the device by name, no gear proposed |
-| `devinfo.serial` | — | the only thing that proposes a gear item |
+| the descriptor | the profile's key | the gear item the serial named, else the device's name |
+| `devinfo.serial` | `profile.serial` | what `dive_computer` is worked out from: `LOGIC-23` |
 | `devinfo.model`, `.firmware` | — | dropped: the product name is what a user reads |
 | `clock.devtime`, `.systime` | — | a second route to the offset, unverified |
 | `datetime.timezone` | `profile.gmt_offset` | where reported; else asked: `LOGIC-11` |
@@ -240,12 +241,13 @@ Decided and not built, or built and not proven. Each is here rather than in some
 - **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
   *and that the download says what it dropped*. What is dropped is decided field by field above;
   where the saying goes is `LOGIC-21`.
-- **The fix and the serial do not cross the port yet.** `LOGIC-18` settled that a download's
-  coordinates become a proposal at review, and `LOGIC-20` makes a serial the one thing that may
-  propose a gear item. Neither review question exists, so the recording does not carry either:
-  a field every implementation must fill and nothing reads is a lie waiting to be believed.
-  When the questions are built, the recording grows the two fields and the JVM reads
-  `DC_FIELD_LOCATION` and the device's serial for them.
+- **The fix does not cross the port.** `LOGIC-18` settled that a download's coordinates become
+  a proposal at review, and no review question exists, so the recording does not carry one: a
+  field every implementation must fill and nothing reads is a lie waiting to be believed.
+- **A logbook resumes only through a serial its gear items carry.** A profile that names a gear
+  item by hand is found through that item's serial, so the item must have one. Until it does,
+  the resume lookup finds no chain for the device and the next download fetches everything
+  again. `LOGIC-23`.
 - **A re-download overwrites a correction.** Applying writes field by field and leaves alone what
   the recording does not hold, so buddies, site, rating and notes survive. A field the computer
   reports *and* the user has corrected does not: a max depth fixed by hand is written over
