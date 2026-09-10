@@ -34,7 +34,7 @@ There are eight:
 - **Dive** — dives and dive trips.
 - **Gear** — equipment.
 - **Community** — people, operators and certifications.
-- **Location** — regions and dive sites.
+- **Location** — regions, dive sites and wrecks.
 - **Statistics** — everything counted and summarised.
 - **System** — settings, syncing and the rest of the machinery.
 - **Manuals** — the documentation, read inside the application.
