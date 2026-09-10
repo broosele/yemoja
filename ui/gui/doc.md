@@ -65,6 +65,47 @@ The two have different jobs and are written differently:
 That split is deliberate. A view that both reads well and edits everything does
 neither, and the compromise usually costs the reading.
 
+### What each selector is
+
+`GUI-14` settled that the shape of a selector is decided per tab rather than once for all of
+them. These are those decisions. Three of the six are not a list at all, which is why the
+question had to be asked per tab.
+
+- **Dive** — a table of four columns: the trip, the dive's own number, the date, and the site.
+  The trip column has one cell per trip, spanning the consecutive dives on it, and a dive on no
+  trip stands alone. Which column is clicked decides what is selected: the trip cell selects the
+  trip, anywhere else selects the dive.
+- **Gear** — a tree of categories and the kinds within them, and beside it the items in
+  whichever branch is chosen.
+- **Community** — a subtab per type: people, operators, certifications.
+- **Location** — a tree of regions, and beside it the dive sites in whichever region is chosen,
+  with the wrecks at those sites in the same list and marked apart from them.
+- **Manuals** — a list of chapters. `GUI-15`.
+- **System** — not decided.
+
+**Home has no selector.** It is not a collection, which is why the pattern above says *most*
+tabs rather than all of them.
+
+Four things follow that the shapes above do not answer, and each is a way for an item type to
+become unreachable rather than a matter of taste. All four are settled: `GUI-19` to `GUI-22`.
+
+### Selecting more than one
+
+A selector selects one item or several, and the item view answers both.
+
+**Several items are shown as their statistics.** Field by field, what a set of items has to say
+about that field: a range, an average, how many of them answered it. So the view is the same
+view — the same fields in the same order — reading a set instead of one, and a user who knows
+where a dive's maximum depth sits knows where twenty dives' deepest sits.
+
+**A trip is both.** Selecting one shows the trip's own fields and, beside them, the statistics of
+the dives on it. That is what a trip is: an item with data of its own, and a set of dives.
+
+This is the second place statistics appear, and the two answer different questions. Home says
+*how much diving have I done*, over everything, without being asked. A selection says *what
+about these*, and is asked by choosing them. Neither is a tab called Statistics, and that is why
+there is no longer one.
+
 ### What is shared
 
 One definition, used by both form factors. None of this may be decided per
@@ -254,11 +295,8 @@ can be run from the build, a window needing no console.
 
 Four things it does badly, each of them an open question above rather than a bug:
 
-- **A selector row is the item's title and nothing else.** A dive has no name, so three hundred
-  rows read `2026-08-28#2`. `GUI-10` is which fields a row shows, and this is the case that
-  makes it urgent rather than tidy.
-- **The second type in a tab is unreachable**, sitting below every item of the first. A tab
-  holding several types needs more than one list after another.
+- **A selector row outside the dive table is the item's title and nothing else.** `GUI-10` is
+  which fields a row shows, and the dive table answers it for dives alone.
 - **A reference reads as it is written**, `@shaab_el_erg_-_dolphin_house` rather than the name
   of the thing it points at, and a key reference likewise. That is the *an id is never shown*
   rule broken by the back door: nothing shows an id as an id, and a reference spells one out.
@@ -286,6 +324,17 @@ that cannot edit.
    depths so the dive stays the same dive — which is a different act from correcting a
    mistyped setting and must be distinguishable from it. Open: how the two are put to a
    user without the wording implying that one is the safe choice.
+- **GUI-23 — Which statistic each kind of field gets.** A set of items shown field by field
+   needs one answer per kind, and they are not the same answer: a depth has a range and an
+   average, a date has a range and no average, a site has neither and has *how many distinct*, a
+   boolean has *how many true*. Some have none worth showing. What is settled is that the shape
+   is the item view's own; what is open is the table of kind to statistic, and whether a field
+   with nothing worth saying is shown empty or left out.
+- **GUI-24 — What a merged trip cell does when the order changes.** The trip column spans
+   consecutive dives, which is only ever true while the table is in date order and no two trips
+   overlap in time. Sorted by site, or by depth, a trip's dives scatter and there is nothing to
+   span. Either the merging is a property of the date ordering and goes when the order changes,
+   or the table refuses to be sorted another way, or grouping survives sorting within a group.
 - **GUI-3 — How much visual identity to define up front** versus adopting the platform's
    defaults and refining later.
 - **GUI-4 — Dive profile rendering** is the most demanding piece of the interface and, per
@@ -326,6 +375,46 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-13 — The tab switcher on a phone.** *Settled:* it must be accessible, not
   permanently visible. Seven tabs do not fit across the foot of a phone, and requiring
   them to would force the same compromise on the desktop, where there is ample room.
+- **GUI-22 — Which parent a region tree uses.** *Settled:* **all of them.** A region has
+  `parents`, plural, so regions form a graph rather than a tree, and a region with two parents
+  appears under both. Nothing is hidden and no rule has to be invented for which path is the
+  real one, at the cost of a region being reachable by more than one route — which is what
+  being in two larger places means rather than a flaw in the display.
+
+  **This does not answer `GUI-7`**, and I said it would. A tree can show every path; a caption
+  reading *Zeelandbrug, Netherlands, Europe* has room for one and still needs a rule. The two
+  looked like one question and are not.
+
+  **The tree must survive a cycle**, which `LOGIC-8` says nothing prevents and which would
+  otherwise expand for ever. A branch that reaches a region already above it in the same path
+  stops there, and says so rather than ending silently: a region inside itself is a mistake
+  worth reporting, which is the answer `LOGIC-8` asks each walk to give for itself.
+- **GUI-21 — How gear is narrowed down.** *Settled:* **a tree, not subtabs.** Categories at
+  the top and the kinds within them below — `kind` is what an item is more finely than its
+  category, a wing within BCD, gloves within suit — with the items in the chosen branch listed
+  beside it.
+
+  A tree answers what subtabs could not. Both fields take any word, so the branches come from
+  the logbook rather than from a list here, and a tree grows a branch where a row of tabs would
+  have to grow a tab. Gear with no category sits at the top of the tree rather than in a bucket
+  called *other*, which is what it is: not filed yet.
+
+  It is also the shape `Location` uses, a tree beside a list, so the application has one way of
+  narrowing something down that is used twice rather than two ways used once each.
+- **GUI-20 — How a wreck is reached.** *Settled:* **in the site list, marked apart from the
+  sites.** A wreck is a ship rather than a place: it has no region and no position of its own,
+  and a site names the wrecks that lie at it. So the list under a region is the sites in that
+  region and the wrecks at those sites, which is one place to look for *what is there to dive*
+  and lets a wreck be opened without first opening the site it lies at.
+
+  Two things follow from a wreck having no place of its own. One at no site appears under no
+  region, and one named by two sites appears under both, which is right where the sites are two
+  moorings on one hull and misleading where they are not.
+- **GUI-19 — How a dive trip is reached.** *Settled:* **by the column that names it.** The
+  trip column holds one cell per trip, spanning the consecutive dives on it, and clicking that
+  cell selects the trip where clicking anywhere else in the row selects the dive. So a trip is
+  reached from any dive on it and needs no list of its own, and the column earns its width
+  twice: it says which trip a dive was on, and it is the way in.
 - **GUI-14 — Tabs holding more than one kind of item.** *Settled:* the shape of a
   selector is decided per tab, not once for all of them. Dive, community and location
   each answer it their own way.
