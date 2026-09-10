@@ -297,9 +297,9 @@ Four things it does badly, each of them an open question above rather than a bug
 
 - **A selector row outside the dive table is the item's title and nothing else.** `GUI-10` is
   which fields a row shows, and the dive table answers it for dives alone.
-- **A reference reads as it is written**, `@shaab_el_erg_-_dolphin_house` rather than the name
-  of the thing it points at, and a key reference likewise. That is the *an id is never shown*
-  rule broken by the back door: nothing shows an id as an id, and a reference spells one out.
+- **A key reference reads as it is written**, `*perdix_2` rather than the recording it names.
+  An ordinary reference now reads as the name of what it points at, which is the *an id is never
+  shown* rule holding where it was broken by the back door; a key reference still breaks it.
 - **A worked-out value is greyed and an unreadable one reddened**, which is a placeholder for
   `GUI-8` rather than an answer to it.
 

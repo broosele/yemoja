@@ -60,8 +60,34 @@ class ShownTest {
     }
 
     @Test
-    fun `a list says its entries, and a series says how many samples`() {
-        assertEquals("@anna, @bram", shownOf(dive, "buddies")!!.text)
+    fun `a reference says the name of what it points at, never the id`() {
+        assertEquals("Anna, Bram", shownOf(dive, "buddies")!!.text)
+        val perdix = set["perdix"]!!
+        assertEquals("Perdix 2", titleOf(perdix))
+    }
+
+    @Test
+    fun `a reference to nothing keeps what was written, the spelling being all there is`() {
+        val dangling = logbook("dive/2026-06-21#0.json" to """{"dive_site": "@gone"}""")
+        assertEquals("@gone", shownOf(dangling["2026-06-21#0"]!!, "dive_site")!!.text)
+    }
+
+    @Test
+    fun `a long list says as many as read comfortably, and how many did not fit`() {
+        val many = (1..9).joinToString(", ") { "\"@p$it\"" }
+        val people = (1..9).joinToString(", ") { "\"p$it\": {\"first_name\": \"P$it\"}" }
+        val big = logbook(
+            "person.json" to "{$people}",
+            "dive/2026-06-21#0.json" to """{"buddies": [$many]}""",
+        )
+        assertEquals(
+            "P1, P2, P3, P4, P5, P6, and 3 more",
+            shownOf(big["2026-06-21#0"]!!, "buddies")!!.text,
+        )
+    }
+
+    @Test
+    fun `a series says how many samples`() {
         val profile = set["2026-06-21#0"]!!
         assertEquals("1 entry", shownOf(profile, "profiles")!!.text)
     }

@@ -6,6 +6,7 @@ import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.OwnedItem
+import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Units
@@ -61,7 +62,7 @@ internal fun shownOf(field: FieldDescription, item: Item): Shown? =
         is Result.Unusable -> Shown(field.label, read.reason, wrong = true)
         is Result.Usable -> Shown(
             field.label,
-            said(field, read.value),
+            said(field, read.value, item),
             worked = read.origin == Result.Origin.DERIVED,
         )
     }
@@ -85,24 +86,47 @@ internal class Shown(
  * act. `GUI-16` leaves what an item view shows to the interface, and this is the interface's
  * answer for the shapes that do not fit.
  */
-private fun said(field: FieldDescription, value: Any): String = when {
+private fun said(field: FieldDescription, value: Any, within: Item): String = when {
     value is Series -> counted(value.size, "sample")
     field.cardinality == Cardinality.KEYED -> counted(keyedIn(value).size, "entry", "entries")
-    field.cardinality == Cardinality.LIST -> listed(value)
+    field.cardinality == Cardinality.LIST -> listed(value, within)
     value is OwnedItem -> counted(filledIn(value), "field")
-    else -> field.format(value, Units.DEFAULT)
+    else -> one(value, within) ?: field.format(value, Units.DEFAULT)
 }
+
+/**
+ * A reference as the name of what it points at, or absent where it is not one.
+ *
+ * **An id is never shown**, and a reference written out is an id shown by the back door: a dive's
+ * site read as `@shaab_el_erg_-_dolphin_house` tells a reader how the file is spelt rather than
+ * where they were. A reference to nothing keeps what was written, which is the only case where
+ * the spelling is the useful part.
+ */
+private fun one(value: Any, within: Item): String? {
+    if (value !is Reference.Identified) return null
+    return within.set[value.id]?.let { titleOf(it) }
+}
+
+/** As many entries as read comfortably, and how many did not fit. */
+private fun shortened(entries: List<String>): String {
+    if (entries.size <= MANY) return entries.joinToString(", ")
+    val kept = entries.take(MANY).joinToString(", ")
+    return "$kept, and ${entries.size - MANY} more"
+}
+
+/** How many of a list are worth spelling out before a count says more than the entries do. */
+private const val MANY = 6
 
 /** The entries of a list, or that somebody wrote a list with nothing in it. */
 @Suppress("UNCHECKED_CAST")
-private fun listed(value: Any): String {
+private fun listed(value: Any, within: Item): String {
     val entries = (value as List<Element<Any>>).map {
         when (it) {
-            is Element.Usable -> it.value.toString()
+            is Element.Usable -> one(it.value, within) ?: it.value.toString()
             is Element.Unusable -> "!"
         }
     }
-    return entries.ifEmpty { listOf(EMPTY) }.joinToString(", ")
+    return if (entries.isEmpty()) EMPTY else shortened(entries)
 }
 
 @Suppress("UNCHECKED_CAST")
