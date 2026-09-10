@@ -719,15 +719,28 @@ To settle when we discuss architecture and features:
    done to it. Thinning without recording would produce a recording that lies by omission about
    its own precision, which is worse than either alternative.
 
-   **Only the three series with a tolerance figure are thinned**, and the model says which by
-   holding exactly three: depth, temperature and pressure. That is not a coincidence to work
-   around but the answer — a straight line between two samples is a claim about a quantity that
-   varies continuously. `alarms` and `gas_switches` are events, where dropping one that lies
-   "between" two others would drop the event itself. `decostop` is stepped rather than
-   continuous, and smoothing a step is inventing a ceiling that was never held.
+   **Only a series with a tolerance figure is thinned**, and the model says which by holding
+   the figures. Three are positive — depth, temperature and pressure — and that is not a
+   coincidence to work around: a straight line between two samples is a claim about a quantity
+   that varies continuously. `alarms` and `gas_switches` have none at all, being events, where
+   dropping one that lies "between" two others would drop the event itself.
 
-   **A tolerance of zero keeps everything**, which is what a user who wants the recording
-   untouched sets. The three figures are a setting rather than a constant, and are **not chosen
+   **Three more are zero, and zero loses nothing.** A tolerance of zero drops only the points
+   that cost exactly nothing to drop: the middle of three equal readings, or of any run lying on
+   one straight line. `no_deco_time`, `cns` and `decostop` are values the computer works out
+   rather than measures, and a worked-out value repeats while the depth holds and runs straight
+   while the depth changes evenly, so a third of the points survive and the series reads back
+   identically. What was written here before — that zero keeps everything, and that a stepped
+   series must not be thinned — was two mistakes in one. Smoothing a step is what a *positive*
+   tolerance would do, and it is still refused for these three; at zero nothing is smoothed,
+   because both ends of every run are kept and the step between them stands. **A negative
+   tolerance is what a user sets who wants the recording untouched.**
+
+   That matters more than a third of the points suggests, because these series were the largest
+   thing in a recording: a Perdix dive that keeps 226 depths after thinning was carrying 375
+   no-decompression readings and 383 CNS readings, and now carries three and sixteen.
+
+   The three positive figures are a setting rather than a constant, and are **not chosen
    here**: they are stated in the default units — metres, degrees Celsius and bar — so that
    whoever picks them is not picking a number in the wrong scale.
 - **LOGIC-14 — What a download's salinity becomes.** *Settled:* **`water_type` as reported,

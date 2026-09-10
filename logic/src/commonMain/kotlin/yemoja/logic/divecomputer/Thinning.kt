@@ -19,9 +19,15 @@ package yemoja.logic.divecomputer
  * straight line between the two points that would otherwise stand for it. What survives therefore
  * differs from the original by no more than [tolerance] anywhere, which is exactly what the
  * `tolerances` written beside the series then claims.
+ *
+ * **A tolerance of zero is a real answer and loses nothing.** It drops the points that cost
+ * exactly nothing to drop: the middle of three equal readings, or of any run lying on one
+ * straight line. That is most of what a computer reports for a value it works out rather than
+ * measures — a no-decompression limit sits unchanged while the depth does — and dropping them
+ * changes nothing that can be read back. Only a negative tolerance means *do not thin*.
  */
 internal fun thinned(held: List<Pair<Int, Double>>, tolerance: Double): List<Pair<Int, Double>> {
-    if (held.size <= 2 || tolerance <= 0.0) return held
+    if (held.size <= 2 || tolerance < 0.0) return held
     val keeping = BooleanArray(held.size)
     keeping[0] = true
     keeping[held.size - 1] = true
@@ -88,4 +94,12 @@ internal val TOLERANCES: Map<String, Double> = mapOf(
     "depth" to 0.1,
     "temperature" to 0.2,
     "pressures" to 0.5,
+    // Nothing may be lost from a value the computer worked out rather than measured, because
+    // there is no measurement error to hide a rounding in. Zero still drops most of them: a
+    // no-decompression limit is recomputed from the depth, so it repeats while the depth holds
+    // and runs straight while the depth changes evenly. Four fifths of these points go and the
+    // series reads back identically.
+    "no_deco_time" to 0.0,
+    "cns" to 0.0,
+    "decostop" to 0.0,
 )

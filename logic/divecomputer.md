@@ -77,9 +77,9 @@ being live before they are saved.
 | `TEMPERATURE` | `profile.temperature` | thinned |
 | `PRESSURE` | `profile.pressures` | keyed by tank there, by gas source here |
 | `GASMIX` | `profile.gas_switches` | the first source on that mix: `LOGIC-12` |
-| `DECO` | `profile.decostop`, `no_deco_time` | two of four types: `LOGIC-13` |
+| `DECO` | `profile.decostop`, `no_deco_time` | two of four types: `LOGIC-13`; thinned at zero |
 | `EVENT` | `profile.alarms` | five of twenty-six: `LOGIC-16` |
-| `CNS` | `profile.cns` | a fraction there, a percentage here |
+| `CNS` | `profile.cns` | a fraction there, a percentage here; thinned at zero |
 | `RBT` | — | dropped, though its alarm is kept |
 | `HEARTBEAT` | — | dropped |
 | `BEARING` | — | dropped |
