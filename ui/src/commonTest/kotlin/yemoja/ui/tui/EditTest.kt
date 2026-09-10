@@ -327,8 +327,9 @@ class ChosenValueTest {
         toTab(screen, "gear")
         toField(screen, "generic")
         edit(screen)
-        assertEquals(listOf("[ ] true", "[ ] false", "[x] (nothing)"), rows(screen))
-        screen.press(Key.DOWN)
+        // Nothing is written, and `generic` works out false, so that is what the box marks.
+        assertEquals(listOf("[ ] true", "[x] false", "[ ] (nothing)"), rows(screen))
+        screen.press(Key.UP)
         assertEquals(listOf("[x] true", "[ ] false", "[ ] (nothing)"), rows(screen))
         screen.press(Key.OPEN)
         assertTrue("true" in text(store, "gear.json"), text(store, "gear.json"))

@@ -481,8 +481,9 @@ A piece of equipment. A dive computer is gear like anything else you own.
   the key it hands back once you have. A download puts it here, as hexadecimal, and hands it
   back next time so the code is not asked again. Not for reading; clear it and the computer
   asks once more.
-- `generic` (true or false) — whether this describes a *kind* of item rather than one you
-  own. Leave it out and it is `false`: your own gear is your own. See below.
+- `generic` (true or false, worked out) — whether this describes a *kind* of item rather than
+  one you own. Leave it out and it is `false`: your own gear is your own. Write it to say
+  otherwise. See below.
 - `category` (text) — the broad group it belongs to. Anything you like; the usual ones
   are `ABC`, `BCD`, `regulator`, `cylinder`, `suit`, `weights`, `instruments`,
   `lighting`, `photography` and `accessory`. `instruments` covers anything you read: a

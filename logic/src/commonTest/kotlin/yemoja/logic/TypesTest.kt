@@ -305,8 +305,11 @@ class GearTest {
     fun `generic says whether an item is a kind of thing rather than one you own`() {
         val supplied = gear("""{"generic": true}""")
         assertEquals(true, (supplied.single<Boolean>("generic") as Result.Usable).value)
-        // Leave it out and it is not answered here: absent is false, and that is the reader's.
-        assertEquals(Result.Absent, gear("{}").single<Boolean>("generic"))
+        // Leave it out and it works out false rather than nothing: your own gear is your own,
+        // and a default is a constant computation. `DATA-56`.
+        val own = gear("{}").single<Boolean>("generic") as Result.Usable
+        assertEquals(false, own.value)
+        assertEquals(Result.Origin.DERIVED, own.origin)
     }
 }
 

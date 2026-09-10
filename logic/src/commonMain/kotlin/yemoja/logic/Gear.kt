@@ -64,6 +64,9 @@ private val MAINTENANCE = ItemDescription(
     proposedId = ::maintenancesProposedKey,
 )
 
+/** What an item nobody called generic is: one of the user's own. */
+private val ownGear: Result<Any> = Result.Usable(false, Result.Origin.DERIVED)
+
 private fun maintenancesDaysLeft(work: Item): Result<Any> = remaining(work, "valid_until")
 
 private fun maintenancesExpired(work: Item): Result<Any> = passed(work, "valid_until")
@@ -97,9 +100,10 @@ internal val GEAR: ItemDescription = ItemDescription(
         // For a dive computer that asks for a code before it talks: the key it hands back once
         // the code is typed, kept so it is not asked again. Put there by a download. `LOGIC-24`.
         TextDescription("access_code"),
-        // Whether this describes a kind of item rather than one the user owns. Absent is
-        // false: your own gear is your own.
-        BooleanDescription("generic"),
+        // Whether this describes a kind of item rather than one the user owns. Your own gear is
+        // your own, so nothing written works out false. A default is a constant computation
+        // rather than a field of its own. `DATA-56`.
+        BooleanDescription("generic", role = Role.Overrideable { ownGear }),
         TextDescription("category", suggestedSet = GEAR_CATEGORIES),
         // What the item is, more finely than its category: a wing within BCD, gloves within
         // suit. No vocabulary is suggested, because the manual gives examples rather than a
