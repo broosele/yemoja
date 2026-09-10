@@ -34,12 +34,11 @@ internal class Tab(
  * logbook first, then what is counted from it, then the machinery.
  */
 internal val TABS: List<Tab> = listOf(
-    Tab("Home", owed = "a greeting, what needs attention, and a few figures worth seeing"),
+    Tab("Home", owed = "a greeting, what needs attention, and everything counted"),
     Tab("Dive", listOf(Types.DIVE, Types.DIVE_TRIP)),
     Tab("Gear", listOf(Types.GEAR)),
     Tab("Community", listOf(Types.PERSON, Types.OPERATOR, Types.CERTIFICATION)),
     Tab("Location", listOf(Types.REGION, Types.DIVE_SITE, Types.WRECK)),
-    Tab("Statistics", owed = "everything counted and summarised"),
     Tab("System", owed = "settings, syncing and the rest of the machinery"),
     Tab("Manuals", owed = "the documentation, read inside the application"),
 )

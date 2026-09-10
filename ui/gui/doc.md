@@ -23,21 +23,30 @@ The application is divided into **tabs**. One is visible at a time, and the mean
 choosing between them is always *accessible* — whatever else is happening, another tab
 is reachable without unwinding what you are doing.
 
-Accessible, not necessarily visible. Eight labels fit comfortably down the side of a
+Accessible, not necessarily visible. Seven labels fit comfortably down the side of a
 desktop window and will not fit across the foot of a phone, so the phone is free to keep
 the switcher one gesture away rather than permanently on screen.
 
-There are eight:
+There are seven:
 
-- **Home** — a greeting, anything needing attention, and a few figures worth seeing
-  without asking.
+- **Home** — a greeting, anything needing attention, and everything counted and
+  summarised.
 - **Dive** — dives and dive trips.
 - **Gear** — equipment.
 - **Community** — people, operators and certifications.
 - **Location** — regions, dive sites and wrecks.
-- **Statistics** — everything counted and summarised.
 - **System** — settings, syncing and the rest of the machinery.
 - **Manuals** — the documentation, read inside the application.
+
+**The application opens on Home**, which is first in the list and is what a user arrives at
+rather than what they last left. That holds while Home is still a placeholder: a first screen
+that says what it will hold is a truer start than a list of dives pretending to be the point.
+
+**Home holds the statistics** rather than a tab of their own. A few figures worth
+seeing without asking and every figure there is are the same subject read at two
+depths, and a tab a user visits to see one number beside a tab that greets them was
+two doors onto one room. What is owed by this is a Home that goes somewhere: the
+figures shown without asking have to lead to the rest rather than being all there is.
 
 ### Selector, item view, edit view
 
@@ -315,7 +324,7 @@ once and corrected. The numbers stay unused rather than being given to something
   "total time underwater: 210 hours (248/253 dives)". The reader sees the sample and
   anything excluded from it in one place, without every exclusion being itemised.
 - **GUI-13 — The tab switcher on a phone.** *Settled:* it must be accessible, not
-  permanently visible. Eight tabs do not fit across the foot of a phone, and requiring
+  permanently visible. Seven tabs do not fit across the foot of a phone, and requiring
   them to would force the same compromise on the desktop, where there is ample room.
 - **GUI-14 — Tabs holding more than one kind of item.** *Settled:* the shape of a
   selector is decided per tab, not once for all of them. Dive, community and location

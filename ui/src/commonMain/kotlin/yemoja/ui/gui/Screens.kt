@@ -47,7 +47,8 @@ internal class Chosen(val id: String, val title: String, val item: Referenceable
 /** The whole application: a tab down the side, and whatever that tab shows. */
 @Composable
 internal fun Application(universe: Universe) {
-    var tab by remember { mutableStateOf(TABS.first { it.types.isNotEmpty() }) }
+    // Home, which is where the application opens whatever it holds yet.
+    var tab by remember { mutableStateOf(TABS.first()) }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Row(modifier = Modifier.fillMaxSize()) {
             Rail(tab) { tab = it }
@@ -61,7 +62,7 @@ internal fun Application(universe: Universe) {
 /**
  * The tabs, down the side.
  *
- * Down rather than across, because eight labels fit comfortably beside a desktop window and do
+ * Down rather than across, because seven labels fit comfortably beside a desktop window and do
  * not fit across the foot of a phone. `GUI-13` settled that a phone keeps this a gesture away
  * instead, which is a placement rather than a different set of tabs.
  */

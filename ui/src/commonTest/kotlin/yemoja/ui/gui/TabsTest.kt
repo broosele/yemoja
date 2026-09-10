@@ -34,9 +34,9 @@ class TabsTest {
     @Test
     fun `the subjects are the ones the interface document settled`() {
         assertEquals(
-            listOf(
-                "Home", "Dive", "Gear", "Community", "Location", "Statistics", "System", "Manuals",
-            ),
+            // Statistics is Home's, not a tab: the figures shown without asking and all of
+            // them are the same subject at two depths.
+            listOf("Home", "Dive", "Gear", "Community", "Location", "System", "Manuals"),
             TABS.map { it.name },
         )
         assertEquals(
