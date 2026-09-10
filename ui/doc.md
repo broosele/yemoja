@@ -9,7 +9,7 @@ by side; they share nothing but the [logic layer](../logic/doc.md) underneath th
 |---|---|---|
 | [api](api/doc.md) | Programmatic access to the logic layer, for scripting and automation | Later |
 | [tui](tui/doc.md) | Raw terminal interface: tables with new/edit/delete | **Started** |
-| [gui](gui/doc.md) | The real application, for a broad audience | **Now** |
+| [gui](gui/doc.md) | The real application, for a broad audience | **Started** |
 
 The API and TUI are not throwaways. They keep the logic layer honest: anything that
 can only be done through the GUI has leaked presentation into business logic.

@@ -229,6 +229,36 @@ Keyboard shortcuts, text selection, context menus and window management all work
 cost more effort than their mobile equivalents, which is the friction a data-dense
 application feels most.
 
+## What is built
+
+**A window that reads a logbook, and nothing more.** The tabs down the side, a selector listing
+what a tab holds by type, and an item view showing the fields of the one chosen. Owned items are
+counted rather than spelt out, which is the progressive disclosure above meeting its first real
+item. Three tabs hold no items yet and say what they will hold rather than showing an empty box.
+
+**Nothing changes anything.** There is no edit view, no action and no key that writes. That is
+the scope rather than an oversight: a first version proves the toolkit, the layout and the door
+into the logic layer, and each of those is easier to judge when nothing can go wrong.
+
+It opens as `yemoja gui <logbook folder>`, beside the terminal front end, and unlike that one it
+can be run from the build, a window needing no console.
+
+Four things it does badly, each of them an open question above rather than a bug:
+
+- **A selector row is the item's title and nothing else.** A dive has no name, so three hundred
+  rows read `2026-08-28#2`. `GUI-10` is which fields a row shows, and this is the case that
+  makes it urgent rather than tidy.
+- **The second type in a tab is unreachable**, sitting below every item of the first. A tab
+  holding several types needs more than one list after another.
+- **A reference reads as it is written**, `@shaab_el_erg_-_dolphin_house` rather than the name
+  of the thing it points at, and a key reference likewise. That is the *an id is never shown*
+  rule broken by the back door: nothing shows an id as an id, and a reference spells one out.
+- **A worked-out value is greyed and an unreadable one reddened**, which is a placeholder for
+  `GUI-8` rather than an answer to it.
+
+`GUI-5` stays open. What the smallest *usable* version contains is not answered by a version
+that cannot edit.
+
 ## Open questions
 
 - **GUI-17 — Where the sync indicator lives.** Syncing is explicit, and the application

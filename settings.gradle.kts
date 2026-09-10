@@ -2,12 +2,15 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        // Compose is published partly as androidx, which Google host and nobody mirrors.
+        google()
     }
 }
 
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        google()
     }
 }
 

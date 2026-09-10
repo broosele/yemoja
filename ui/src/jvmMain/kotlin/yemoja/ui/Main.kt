@@ -1,5 +1,6 @@
 package yemoja.ui
 
+import yemoja.ui.gui.gui
 import yemoja.ui.tui.tui
 import kotlin.system.exitProcess
 
@@ -16,6 +17,9 @@ import kotlin.system.exitProcess
 internal val COMMANDS: Map<String, Command> = mapOf(
     "tui" to Command(listOf("logbook folder"), "show a logbook in the terminal") {
         tui(it.single())
+    },
+    "gui" to Command(listOf("logbook folder"), "show a logbook in a window") {
+        gui(it.single())
     },
 )
 
