@@ -154,6 +154,15 @@ class ArrangedTest {
     }
 
     @Test
+    fun `a series is not laid out, the graph being where it is read`() {
+        val profile = (Types.DIVE["profiles"] as yemoja.data.OwnedItemDescription).description
+        val names = arrangedOf(profile).plain.map { it.name }
+        assertEquals(false, "depth" in names)
+        assertEquals(false, "pressures" in names)
+        assertEquals(true, "duration" in names)
+    }
+
+    @Test
     fun `a tab is called by the entry's name, else by what it points at, else by its key`() {
         val set = LogbookReader.read(
             MemoryFileStore(

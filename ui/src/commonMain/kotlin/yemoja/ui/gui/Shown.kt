@@ -72,14 +72,22 @@ private val ALREADY_SHOWN: Map<String, Set<String>> = mapOf("region" to setOf("c
  */
 internal class Arranged(val plain: List<FieldDescription>, val insets: List<OwnedItemDescription>)
 
-/** The fields of [type] as an item view lays them out. */
+/**
+ * The fields of [type] as an item view lays them out.
+ *
+ * A series is not laid out at all: the graph is where it is read, and a count of its samples
+ * beside the graph says nothing a reader wants.
+ */
 internal fun arrangedOf(type: ItemDescription): Arranged {
-    val shown = fieldsShownOf(type)
+    val shown = fieldsShownOf(type).filter { it.cardinality !in SERIES }
     return Arranged(
         plain = shown.filter { it !is OwnedItemDescription },
         insets = shown.filterIsInstance<OwnedItemDescription>(),
     )
 }
+
+/** The two shapes a series comes in. */
+private val SERIES = setOf(Cardinality.SERIES, Cardinality.KEYED_SERIES)
 
 /**
  * What a tab in a keyed inset is called: the entry's name where it has one, else what the first

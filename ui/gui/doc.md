@@ -527,7 +527,7 @@ once and corrected. The numbers stay unused rather than being given to something
   open; a tab is called
   by the entry's name where it has one, else by what the first reference on it points at — a
   recording by the computer that made it, a course by its certification — and by its key only
-  where nothing on it says anything. A series is still a count: the graphs are where it is read.
+  where nothing on it says anything. A series is not laid out at all: the graph is where it is read.
 
   **What a number reads as.** A file keeps three decimals of a metre so nothing measured is
   lost; a reader wants one. A depth, a temperature, a mass and a volume read to one decimal,
