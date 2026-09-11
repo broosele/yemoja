@@ -77,7 +77,8 @@ question had to be asked per tab.
   trip, anywhere else selects the dive.
 - **Gear** — a tree of categories and the kinds within them, and beside it the items in
   whichever branch is chosen.
-- **Community** — a subtab per type: people, operators, certifications.
+- **Community** — a subtab per type: people, operators, certifications. The user, whoever the
+  logbook names as its own, is marked among the people and is what the tab opens on.
 - **Location** — a tree of regions, and beside it the dive sites in whichever region is chosen
   or in any region inside it, with the wrecks at those sites in the same list and marked apart
   from them. A region and a site are chosen at once, and the item view shows a map of the
@@ -412,6 +413,14 @@ once and corrected. The numbers stay unused rather than being given to something
   the cities named narrow the same way, from capitals on the world to every place the source
   knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
   before it arrives shows its sites on an empty frame until it does.
+- **GUI-27 — What a tab keeps when it is left.** *Settled:* **everything.** The item chosen,
+  the region, the box, which branches are unfolded, which subtab, where each list is scrolled
+  to: a tab returned to is where it was left, because switching tabs to look something up and
+  coming back to find the dive gone is the kind of small loss that makes an application feel
+  like it is working against you. What each tab keeps lives above the screens, which come and
+  go with the tab, and is one object per tab for as long as the application runs. The one
+  thing not kept is a transient: where a section click is scrolling to, which is over by the
+  time anyone could leave.
 - **GUI-26 — What Location shows of an atlas.** *Settled:* **what the dives touch, unless
   asked otherwise.** The atlas holds the world, and a logbook touches a few corners of it; a
   tree of every region to reach three of them is a tree of noise. With *Hide unused* on, which

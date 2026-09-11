@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -63,17 +63,29 @@ private class Wanted(val chapter: Chapter, val block: Int)
  * themselves; a link to a chapter or a section of one is followed here.
  */
 @Composable
-internal fun Manuals(chapters: List<Chapter>, onOpen: (String) -> Unit) {
-    var shown by remember { mutableStateOf(chapters.firstOrNull()) }
+internal fun Manuals(chapters: List<Chapter>, onOpen: (String) -> Unit, kept: Kept) {
+    // The first chapter, unfolded, the first time; afterwards wherever the reader left it.
+    remember(kept) {
+        if (!kept.opened) {
+            kept.opened = true
+            kept.chapter = chapters.firstOrNull()
+            kept.unfolded = setOfNotNull(chapters.firstOrNull()?.file)
+        }
+        kept
+    }
+    val shown = kept.chapter
+    val unfolded = kept.unfolded
     var wanted by remember { mutableStateOf<Wanted?>(null) }
-    var unfolded by remember { mutableStateOf(setOfNotNull(chapters.firstOrNull()?.file)) }
     val goTo = { chapter: Chapter, block: Int ->
-        shown = chapter
+        kept.chapter = chapter
         wanted = Wanted(chapter, block)
-        unfolded = unfolded + chapter.file
+        kept.unfolded = unfolded + chapter.file
     }
     Row(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP)) {
+        LazyColumn(
+            state = kept.tree,
+            modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP),
+        ) {
             for (chapter in chapters) {
                 item(key = chapter.file) {
                     BranchLine(
@@ -82,7 +94,7 @@ internal fun Manuals(chapters: List<Chapter>, onOpen: (String) -> Unit) {
                         open = if (chapter.sections.isEmpty()) null else chapter.file in unfolded,
                         chosen = chapter === shown,
                         onToggle = {
-                            unfolded = if (chapter.file in unfolded) {
+                            kept.unfolded = if (chapter.file in unfolded) {
                                 unfolded - chapter.file
                             } else {
                                 unfolded + chapter.file
@@ -102,7 +114,7 @@ internal fun Manuals(chapters: List<Chapter>, onOpen: (String) -> Unit) {
         if (chapter == null) {
             Middle("no manual is bundled")
         } else {
-            ChapterView(chapter, wanted, onArrived = { wanted = null }) { target ->
+            ChapterView(chapter, wanted, kept.page, onArrived = { wanted = null }) { target ->
                 followed(chapters, target)?.let { (to, block) -> goTo(to, block) } ?: onOpen(target)
             }
         }
@@ -129,10 +141,10 @@ private fun followed(chapters: List<Chapter>, target: String): Pair<Chapter, Int
 private fun ChapterView(
     chapter: Chapter,
     wanted: Wanted?,
+    scroll: ScrollState,
     onArrived: () -> Unit,
     onFollow: (String) -> Unit,
 ) {
-    val scroll = rememberScrollState()
     val tops = remember(chapter) { mutableStateMapOf<Int, Int>() }
     LaunchedEffect(chapter, wanted) {
         if (wanted == null || wanted.chapter !== chapter) return@LaunchedEffect

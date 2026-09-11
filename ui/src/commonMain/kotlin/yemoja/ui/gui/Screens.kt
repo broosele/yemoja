@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,12 +17,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material3.Checkbox
@@ -30,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -50,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
@@ -59,7 +64,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
+import yemoja.data.ReferenceableItem
+import yemoja.logic.Types
 import yemoja.logic.Universe
 
 /*
@@ -88,11 +96,51 @@ internal class Platform(
     val open: (String) -> Unit,
 )
 
+/**
+ * Kept is what a tab holds on to between visits: what is chosen, and how its selector stands.
+ *
+ * A tab left and returned to is where it was left. One of these per tab lives as long as the
+ * application does, above the screens that come and go with the tab, and a field a tab has no
+ * use for stays at its start. `GUI-27`.
+ */
+internal class Kept {
+    /** Whether the tab has been opened before, which decides what it opens on the first time. */
+    var opened: Boolean by mutableStateOf(false)
+
+    /** The item chosen, shown on the right. */
+    var chosen: Chosen? by mutableStateOf(null)
+
+    /** Location's region. */
+    var place: Chosen? by mutableStateOf(null)
+
+    /** Location's box. On, so a logbook opens on where its dives were. `GUI-26`. */
+    var hideUnused: Boolean by mutableStateOf(true)
+
+    /** The branches of a tree unfolded, by path; absent until the tree has decided how it opens. */
+    var open: Set<String>? by mutableStateOf(null)
+
+    /** Gear's branches folded. */
+    var closed: Set<String> by mutableStateOf(emptySet())
+
+    /** Which of its types Community shows. */
+    var subtab: Int by mutableStateOf(0)
+
+    /** The chapter Manuals shows, and the chapters unfolded in its tree. */
+    var chapter: Chapter? by mutableStateOf(null)
+    var unfolded: Set<String> by mutableStateOf(emptySet())
+
+    /** Where the selector's tree and list are scrolled to, and the page on the right. */
+    val tree: LazyListState = LazyListState()
+    val list: LazyListState = LazyListState()
+    val page: ScrollState = ScrollState(0)
+}
+
 /** The whole application: a tab across the top, and whatever that tab shows. */
 @Composable
 internal fun Application(universe: Universe, platform: Platform) {
     // Home, which is where the application opens whatever it holds yet.
     var tab by remember { mutableStateOf(TABS.first()) }
+    val kept = remember { TABS.associateWith { Kept() } }
     // Absent until read, and a map drawn before then shows its sites on an empty frame.
     val atlas by produceState<Atlas?>(null, platform) {
         value = withContext(Dispatchers.Default) { platform.atlas() }
@@ -103,8 +151,8 @@ internal fun Application(universe: Universe, platform: Platform) {
             Box(modifier = Modifier.weight(1f)) {
                 when (tab.shape) {
                     Shape.NONE -> Owed(tab)
-                    Shape.MANUAL -> Manuals(platform.manual, platform.open)
-                    else -> Subject(universe.logbook, tab, atlas)
+                    Shape.MANUAL -> Manuals(platform.manual, platform.open, kept.getValue(tab))
+                    else -> Subject(universe.logbook, universe.user, tab, atlas, kept.getValue(tab))
                 }
             }
         }
@@ -153,13 +201,22 @@ private fun Owed(tab: Tab) {
  * Location chooses two things, a region and something at it, and shows both. `GUI-25`.
  */
 @Composable
-private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
-    var chosen by remember(tab) { mutableStateOf<Chosen?>(null) }
-    // On, so a logbook opens on where its dives were rather than on the whole atlas. `GUI-26`.
-    var hideUnused by remember(tab) { mutableStateOf(true) }
-    val tree = remember(set, hideUnused) { shownTreeOf(set, hideUnused) }
-    // The widest root, which is the world, so the map opens showing everything.
-    var place by remember(tab) { mutableStateOf(widestRootIn(tree)) }
+private fun Subject(set: ItemSet, user: ReferenceableItem?, tab: Tab, atlas: Atlas?, kept: Kept) {
+    val tree = remember(set, kept.hideUnused) { shownTreeOf(set, kept.hideUnused) }
+    // What a tab opens on the first time: Location on the widest root, which is the world, and
+    // Community on the user, whose logbook this is.
+    remember(kept) {
+        if (!kept.opened) {
+            kept.opened = true
+            when (tab.shape) {
+                Shape.PLACES -> kept.place = widestRootIn(tree)
+                Shape.TYPES -> kept.chosen = user?.let { chosenOf(set, it) }
+                else -> Unit
+            }
+        }
+        kept
+    }
+    val chosen = kept.chosen
     val wide = when (tab.shape) {
         Shape.DIVES -> TABLE
         Shape.PLACES -> TREE + SITES
@@ -168,23 +225,20 @@ private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.width(wide)) {
             when (tab.shape) {
-                Shape.DIVES -> Dives(set, chosen) { chosen = it }
-                Shape.GEAR -> Gear(set, chosen) { chosen = it }
-                Shape.TYPES -> Types(set, tab, chosen) { chosen = it }
+                Shape.DIVES -> Dives(set, chosen, kept.list) { kept.chosen = it }
+                Shape.GEAR -> Gear(set, chosen, kept) { kept.chosen = it }
+                Shape.TYPES -> Types(set, tab, user, chosen, kept) { kept.chosen = it }
                 Shape.PLACES -> Places(
                     set = set,
                     tree = tree,
-                    hideUnused = hideUnused,
-                    onHide = { hideUnused = it },
-                    place = place,
-                    chosen = chosen,
+                    kept = kept,
                     onPlace = { region ->
-                        place = region
+                        kept.place = region
                         // What was chosen stays chosen while the new region still lists it.
-                        val (sites, wrecks) = atPlaceIn(set, region.id, hideUnused)
-                        if ((sites + wrecks).none { it.id == chosen?.id }) chosen = null
+                        val (sites, wrecks) = atPlaceIn(set, region.id, kept.hideUnused)
+                        if ((sites + wrecks).none { it.id == chosen?.id }) kept.chosen = null
                     },
-                    onChoose = { chosen = it },
+                    onChoose = { kept.chosen = it },
                 )
                 Shape.MANUAL, Shape.NONE -> Unit
             }
@@ -192,13 +246,17 @@ private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
         VerticalDivider()
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             if (tab.shape == Shape.PLACES) {
-                PlaceView(set, atlas, hideUnused, place, chosen)
+                PlaceView(set, atlas, kept.hideUnused, kept.place, chosen)
             } else {
                 chosen?.let { ItemView(it) } ?: Middle("choose something on the left")
             }
         }
     }
 }
+
+/** An item as a selector would offer it, or absent where the set does not hold it. */
+private fun chosenOf(set: ItemSet, item: ReferenceableItem): Chosen? =
+    set.idOf(item)?.let { Chosen(it, titleOf(item), item) }
 
 // --- The dive table.
 
@@ -211,7 +269,12 @@ private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
  * the next.
  */
 @Composable
-private fun Dives(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
+private fun Dives(
+    set: ItemSet,
+    chosen: Chosen?,
+    scrolled: LazyListState,
+    onChoose: (Chosen) -> Unit,
+) {
     val rows = remember(set) { diveRowsOf(set) }
     Column(modifier = Modifier.fillMaxHeight().padding(horizontal = GAP)) {
         Row(
@@ -224,7 +287,7 @@ private fun Dives(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
             Heading("Site", SITE)
         }
         HorizontalDivider()
-        LazyColumn(modifier = Modifier.fillMaxHeight()) {
+        LazyColumn(state = scrolled, modifier = Modifier.fillMaxHeight()) {
             itemsIndexed(rows, key = { _, row -> row.dive.id }) { index, row ->
                 if (index > 0 && row.run > 0) HorizontalDivider()
                 Row(modifier = Modifier.fillMaxWidth().height(LINE)) {
@@ -311,11 +374,11 @@ private fun Cell(text: String, width: Dp, chosen: Boolean, align: TextAlign = Te
  * branch, which for a few dozen items is a cost with nothing bought.
  */
 @Composable
-private fun Gear(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
+private fun Gear(set: ItemSet, chosen: Chosen?, kept: Kept, onChoose: (Chosen) -> Unit) {
     val (branches, loose) = remember(set) { gearTreeOf(set) }
-    var closed by remember(set) { mutableStateOf(emptySet<String>()) }
-    val toggle = { key: String -> closed = if (key in closed) closed - key else closed + key }
-    LazyColumn(modifier = Modifier.fillMaxHeight().padding(GAP)) {
+    val closed = kept.closed
+    val toggle = { key: String -> kept.closed = if (key in closed) closed - key else closed + key }
+    LazyColumn(state = kept.list, modifier = Modifier.fillMaxHeight().padding(GAP)) {
         // Filed under nothing sits at the top rather than in a bucket called other. `GUI-21`.
         items(loose, key = { "loose:" + it.id }) { Entry(it, chosen, 0, onChoose) }
         // A category is keyed apart from the gear in it, in case one is named like an id.
@@ -350,16 +413,54 @@ private fun Gear(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
     }
 }
 
-/** A subtab per type, which for now is a heading per type. */
+/**
+ * A subtab per type, and the list of the one chosen; the user is marked among the people.
+ *
+ * The user is whoever the logbook names as its own, which is the one person a reader is sure to
+ * be looking for and the one the tab opens on.
+ */
 @Composable
-private fun Types(set: ItemSet, tab: Tab, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
-    LazyColumn(modifier = Modifier.fillMaxHeight().padding(GAP)) {
-        for (type in tab.types) {
-            item(key = "head:" + type.name) { Label(labelOf(type), 0) }
-            items(entriesOf(set, type), key = { it.id }) { Entry(it, chosen, 1, onChoose) }
+private fun Types(
+    set: ItemSet,
+    tab: Tab,
+    user: ReferenceableItem?,
+    chosen: Chosen?,
+    kept: Kept,
+    onChoose: (Chosen) -> Unit,
+) {
+    val userId = remember(set, user) { user?.let { set.idOf(it) } }
+    Column(modifier = Modifier.fillMaxHeight()) {
+        SecondaryTabRow(selectedTabIndex = kept.subtab) {
+            for ((index, type) in tab.types.withIndex()) {
+                androidx.compose.material3.Tab(
+                    selected = index == kept.subtab,
+                    onClick = { kept.subtab = index },
+                    text = { Text(pluralOf(type)) },
+                )
+            }
+        }
+        val type = tab.types[kept.subtab]
+        LazyColumn(state = kept.list, modifier = Modifier.fillMaxHeight().padding(GAP)) {
+            items(entriesOf(set, type), key = { it.id }) {
+                Entry(it, chosen, 0, onChoose, mark = if (it.id == userId) YOU else null)
+            }
         }
     }
 }
+
+/** A type as a subtab names it: many of them. */
+private fun pluralOf(type: ItemDescription): String = when (type) {
+    Types.PERSON -> "People"
+    Types.OPERATOR -> "Operators"
+    Types.CERTIFICATION -> "Certifications"
+    else -> labelOf(type) + "s"
+}
+
+/** Mark is a glyph beside a line, and what it says. */
+internal class Mark(val glyph: ImageVector, val says: String)
+
+/** The user, whose logbook this is. */
+private val YOU = Mark(Icons.Filled.AccountCircle, "you")
 
 /**
  * A tree of regions, and what is at the chosen one.
@@ -375,31 +476,31 @@ private fun Types(set: ItemSet, tab: Tab, chosen: Chosen?, onChoose: (Chosen) ->
 private fun Places(
     set: ItemSet,
     tree: List<Branch>,
-    hideUnused: Boolean,
-    onHide: (Boolean) -> Unit,
-    place: Chosen?,
-    chosen: Chosen?,
+    kept: Kept,
     onPlace: (Chosen) -> Unit,
     onChoose: (Chosen) -> Unit,
 ) {
-    var open by remember(set) { mutableStateOf(tree.map { "/" + it.key }.toSet()) }
+    val open = kept.open ?: tree.map { "/" + it.key }.toSet()
+    val place = kept.place
+    val chosen = kept.chosen
+    val hideUnused = kept.hideUnused
     Row(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.width(TREE).fillMaxHeight().padding(GAP)) {
             Row(
-                modifier = Modifier.fillMaxWidth().clickable { onHide(!hideUnused) },
+                modifier = Modifier.fillMaxWidth().clickable { kept.hideUnused = !hideUnused },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Checkbox(checked = hideUnused, onCheckedChange = onHide)
+                Checkbox(checked = hideUnused, onCheckedChange = { kept.hideUnused = it })
                 Text("Hide unused", style = MaterialTheme.typography.bodyMedium)
             }
-            LazyColumn(modifier = Modifier.fillMaxHeight()) {
+            LazyColumn(state = kept.tree, modifier = Modifier.fillMaxHeight()) {
                 branchesIn(
                     branches = tree,
                     path = "",
                     depth = 0,
                     chosen = place,
                     open = open,
-                    onToggle = { key -> open = if (key in open) open - key else open + key },
+                    onToggle = { key -> kept.open = if (key in open) open - key else open + key },
                     onChoose = onPlace,
                 )
             }
@@ -408,7 +509,7 @@ private fun Places(
         val what = remember(set, place, hideUnused) {
             place?.let { atPlaceIn(set, it.id, hideUnused) }
         }
-        LazyColumn(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
+        LazyColumn(state = kept.list, modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             if (what == null) return@LazyColumn
             item(key = "sites") { Label("Sites", 0) }
             if (what.first.isEmpty()) item(key = "nosite") { Aside("none here") }
@@ -512,23 +613,47 @@ private fun Label(text: String, depth: Int) {
 
 /** One item a selector offers. */
 @Composable
-private fun Entry(entry: Chosen, chosen: Chosen?, depth: Int, onChoose: (Chosen) -> Unit) {
-    Line(entry.title, depth, chosen = entry.id == chosen?.id) { onChoose(entry) }
+private fun Entry(
+    entry: Chosen,
+    chosen: Chosen?,
+    depth: Int,
+    onChoose: (Chosen) -> Unit,
+    mark: Mark? = null,
+) {
+    Line(entry.title, depth, chosen = entry.id == chosen?.id, mark = mark) { onChoose(entry) }
 }
 
-/** One line of a list, tinted where it is the one chosen. */
+/** One line of a list, tinted where it is the one chosen, and marked where there is a mark. */
 @Composable
-internal fun Line(text: String, depth: Int, chosen: Boolean, onClick: () -> Unit) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = onTint(chosen),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+internal fun Line(
+    text: String,
+    depth: Int,
+    chosen: Boolean,
+    mark: Mark? = null,
+    onClick: () -> Unit,
+) {
+    Row(
         modifier = Modifier.fillMaxWidth().padding(start = INDENT * depth).clip(SHAPE)
             .background(tint(chosen)).clickable(onClick = onClick)
             .padding(horizontal = GAP, vertical = HALF),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (mark != null) {
+            Icon(
+                imageVector = mark.glyph,
+                contentDescription = mark.says,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(GLYPH).padding(end = HALF),
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = onTint(chosen),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 // --- The item view.
@@ -788,6 +913,7 @@ private val MAP = 420.dp
 private val DOT = 3.dp
 private val MARKED = 5.dp
 private val TOWN = 1.5.dp
+private val GLYPH = 20.dp
 private val THIN = 1.dp
 
 /** How much of the water colour a river carries, so it reads as a line and not a canal. */
