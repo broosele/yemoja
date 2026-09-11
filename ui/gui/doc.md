@@ -397,13 +397,14 @@ once and corrected. The numbers stay unused rather than being given to something
   waves on the palette's navy — Yemọja is the mother whose children are fish — drawn as a
   vector, and given to the window at whatever size the platform asks for. What is left of the
   question is whether the application ever wants type or glyphs of its own, which nothing yet
-  asks for. - **GUI-25 — What a region shows.** *Settled:* **a map, then the region, then what
-  was chosen at it.** Choosing a region and choosing a site are two acts and stay two
-  selections: the site is read against where it is, so the item view holds both, one below the
-  other, and the map above them is the region's frame with a dot per site and the chosen one
-  marked and named. A region lists the sites anywhere inside it, since a reader who opens Europe
-  is asking what there is to dive there. The dots are drawn in the text colour and the mark in
-  the error colour, which are black and red in daylight and stay visible in the dark.
+  asks for.
+- **GUI-25 — What a region shows.** *Settled:* **a map, then the region, then what was chosen at
+  it.** Choosing a region and choosing a site are two acts and stay two selections: the site is
+  read against where it is, so the item view holds both, one below the other, and the map above
+  them is the region's frame with a dot per site and the chosen one marked and named. A region
+  lists the sites anywhere inside it, since a reader who opens Europe is asking what there is to
+  dive there. The dots are drawn in the text colour and the mark in the error colour, which are
+  black and red in daylight and stay visible in the dark.
 
   **The map is drawn from Natural Earth**, bundled as a library at three scales: land, lakes,
   borders, rivers and cities. A frame is drawn from the coarsest scale that still looks like a
