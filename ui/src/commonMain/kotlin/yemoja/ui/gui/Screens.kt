@@ -27,6 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowRight
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarHalf
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -955,16 +958,40 @@ private fun Field(shown: Shown, onFollow: (String) -> Unit) {
                 }
             }
         }
-        Text(
-            text = said,
-            style = MaterialTheme.typography.bodyMedium,
-            color = when {
-                shown.wrong -> MaterialTheme.colorScheme.error
-                shown.worked -> MaterialTheme.colorScheme.outline
-                else -> MaterialTheme.colorScheme.onSurface
-            },
-            modifier = Modifier.weight(1f),
-        )
+        val rating = shown.rating
+        if (rating != null) {
+            Stars(rating)
+        } else {
+            Text(
+                text = said,
+                style = MaterialTheme.typography.bodyMedium,
+                color = when {
+                    shown.wrong -> MaterialTheme.colorScheme.error
+                    shown.worked -> MaterialTheme.colorScheme.outline
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/** A rating as five stars, filled, half filled or empty, and nothing else. */
+@Composable
+private fun Stars(rating: Int) {
+    Row(modifier = Modifier.padding(vertical = 2.dp)) {
+        for (star in starsOf(rating)) {
+            Icon(
+                imageVector = when (star) {
+                    Star.FULL -> Icons.Filled.Star
+                    Star.HALF -> Icons.Filled.StarHalf
+                    Star.EMPTY -> Icons.Filled.StarOutline
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(GLYPH),
+            )
+        }
     }
 }
 

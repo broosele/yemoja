@@ -76,8 +76,36 @@ internal fun shownOf(field: FieldDescription, item: Item): Shown? =
             field.label,
             said(field, read.value, item),
             worked = read.origin == Result.Origin.DERIVED,
+            rating = ratingOf(field, read.value),
         )
     }
+
+/** A rating out of ten, where [field] is one and [value] reads as a whole number. */
+private fun ratingOf(field: FieldDescription, value: Any): Int? =
+    if (field.name == RATING) (value as? Number)?.toInt() else null
+
+/** The one field that is a rating, on a dive, a site and an operator alike, out of ten. */
+private const val RATING = "rating"
+
+/** Star is one of five, and how much of it is filled. */
+internal enum class Star { FULL, HALF, EMPTY }
+
+/**
+ * A rating out of ten as five stars, two points to a star, so an odd rating ends in a half.
+ *
+ * Below the range a rating is written in reads as no stars, and above it as all five, rather
+ * than as a fault. `GUI-16`.
+ */
+internal fun starsOf(rating: Int): List<Star> = (1..STARS).map { star ->
+    when {
+        rating >= 2 * star -> Star.FULL
+        rating == 2 * star - 1 -> Star.HALF
+        else -> Star.EMPTY
+    }
+}
+
+/** How many stars a rating is shown as. */
+internal const val STARS = 5
 
 /**
  * One field as a reader is told it: a label, and what it says in parts, of which the ones that
@@ -90,6 +118,8 @@ internal class Shown(
     val wrong: Boolean = false,
     /** Whether nobody wrote it and the model worked it out. An override counts as written. */
     val worked: Boolean = false,
+    /** Out of ten, where the field is a rating; shown as stars in place of what it says. */
+    val rating: Int? = null,
 ) {
     /** What it says, read straight through. */
     val text: String get() = parts.joinToString("") { it.text }

@@ -495,5 +495,7 @@ once and corrected. The numbers stay unused rather than being given to something
   that.
 - **GUI-16 — What the item view shows for a given item.** *Settled:* the interface
   decides, per item type. The data layer says which fields exist; it has no say in
-  which of them are shown, or how. The first use of that: a region's `children` are not
-  shown, since the tree beside the item is exactly that list.
+  which of them are shown, or how. The first uses of that: a region's `children` are not
+  shown, since the tree beside the item is exactly that list; and a rating out of ten reads
+  as five stars, two points to a star and an odd rating ending in a half, and the number
+  is not shown.
