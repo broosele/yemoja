@@ -185,15 +185,19 @@ private fun parentsOf(region: Item): List<String> = pointedAtAll(region, "parent
 private fun childrenOf(region: Item): List<String> = pointedAtAll(region, "children")
 
 /**
- * What is at a place: the dive sites in [region], and the wrecks lying at those sites.
+ * What is at a place: the dive sites in [region] or anywhere inside it, and the wrecks lying at
+ * those sites.
  *
- * One list, because a wreck has no place of its own — it has no region and no position, and a
- * site names the wrecks at it. `GUI-20`. So a wreck at no site is under no region, and one named
- * by two sites is under both.
+ * Inside it, because a site in Zeeland is in the Netherlands and in Europe, and a reader who
+ * opens Europe is asking what there is to dive there. One list for sites and wrecks, because a
+ * wreck has no place of its own — it has no region and no position, and a site names the wrecks
+ * at it. `GUI-20`. So a wreck at no site is under no region, and one named by two sites is under
+ * both.
  */
 internal fun atPlaceIn(set: ItemSet, region: String): Pair<List<Chosen>, List<Chosen>> {
+    val within = withinOf(set, region)
     val sites = entriesOf(set, Types.DIVE_SITE)
-        .filter { region in pointedAtAll(it.item, "regions") }
+        .filter { pointedAtAll(it.item, "regions").any { named -> named in within } }
     val wrecks = LinkedHashMap<String, Chosen>()
     for (site in sites) {
         for (id in pointedAtAll(site.item, "wrecks")) {
@@ -202,6 +206,103 @@ internal fun atPlaceIn(set: ItemSet, region: String): Pair<List<Chosen>, List<Ch
     }
     return sites to wrecks.values.toList()
 }
+
+/** [region] and every region inside it, however deep. A cycle is walked once. `LOGIC-8`. */
+internal fun withinOf(set: ItemSet, region: String): Set<String> {
+    val within = LinkedHashSet<String>()
+    val pending = ArrayDeque(listOf(region))
+    while (pending.isNotEmpty()) {
+        val next = pending.removeFirst()
+        if (!within.add(next)) continue
+        set[next]?.let { pending += childrenOf(it) }
+    }
+    return within
+}
+
+// --- The map. `GUI-25`.
+
+/** A dive site as a dot on a map: where it is, and what to call it. */
+internal class Dot(val id: String, val title: String, val latitude: Double, val longitude: Double)
+
+/** The sites among [sites] that say where they are. A site without a position is not on a map. */
+internal fun dotsOf(sites: List<Chosen>): List<Dot> = sites.mapNotNull { site ->
+    val latitude = numberOf(site.item, "latitude") ?: return@mapNotNull null
+    val longitude = numberOf(site.item, "longitude") ?: return@mapNotNull null
+    Dot(site.id, site.title, latitude, longitude)
+}
+
+/**
+ * Frame is the box a map shows: four edges in degrees.
+ *
+ * [east] is reached travelling east from [west], so a frame across the date line has an east
+ * below its west, and a longitude is placed by how far east of [west] it lies.
+ */
+internal class Frame(val west: Double, val east: Double, val south: Double, val north: Double) {
+
+    /** How far east of the west edge, in degrees, wrapping once. */
+    fun eastOf(longitude: Double): Double = ((longitude - west) % 360.0 + 360.0) % 360.0
+
+    val width: Double get() = eastOf(east).let { if (it == 0.0) 360.0 else it }
+
+    val height: Double get() = north - south
+
+    /**
+     * Where a point lands on a canvas of [wide] by [high], as a fraction of each from the top
+     * left.
+     *
+     * The frame is fitted inside the canvas and centred, a degree of longitude drawn narrower
+     * than one of latitude by the cosine of the middle latitude, which is what keeps a square
+     * bay square.
+     */
+    fun place(
+        latitude: Double,
+        longitude: Double,
+        wide: Double,
+        high: Double,
+    ): Pair<Double, Double> {
+        val squeeze = kotlin.math.cos(Math.toRadians((south + north) / 2))
+        val scale = minOf(wide / (width * squeeze), high / height)
+        val drawnWide = width * squeeze * scale
+        val drawnHigh = height * scale
+        val x = (wide - drawnWide) / 2 + eastOf(longitude) * squeeze * scale
+        val y = (high - drawnHigh) / 2 + (north - latitude) * scale
+        return x to y
+    }
+}
+
+/**
+ * The frame a region's map shows: the region's own box where it has one, and otherwise a box
+ * drawn round its dots with room to spare, or nothing where there is neither.
+ */
+internal fun frameOf(region: Item, dots: List<Dot>): Frame? {
+    val west = numberOf(region, "west")
+    val east = numberOf(region, "east")
+    val south = numberOf(region, "south")
+    val north = numberOf(region, "north")
+    if (west != null && east != null && south != null && north != null) {
+        return Frame(west, east, south, north)
+    }
+    if (dots.isEmpty()) return null
+    val latitudes = dots.map { it.latitude }
+    val longitudes = dots.map { it.longitude }
+    val tall = maxOf(latitudes.max() - latitudes.min(), LEAST_SPAN)
+    val wide = maxOf(longitudes.max() - longitudes.min(), LEAST_SPAN)
+    return Frame(
+        west = longitudes.min() - wide * ROOM,
+        east = longitudes.max() + wide * ROOM,
+        south = latitudes.min() - tall * ROOM,
+        north = latitudes.max() + tall * ROOM,
+    )
+}
+
+/** Degrees a drawn-round frame is never narrower than, so one site is not a map of one pixel. */
+private const val LEAST_SPAN = 0.05
+
+/** How much of the span is left round the dots on each side. */
+private const val ROOM = 0.15
+
+private fun numberOf(item: Item, field: String): Double? =
+    ((item.read(field) as? Result.Usable)?.value as? Number)?.toDouble()
 
 // --- Reading a field, which every shape above does and none of them does differently.
 

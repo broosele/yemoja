@@ -163,9 +163,101 @@ class RegionTreeTest {
     }
 
     @Test
-    fun `a region with no site has nothing at it`() {
-        val (sites, wrecks) = atPlaceIn(set, "world")
-        assertEquals(emptyList(), sites.map { it.title }, "a site names its regions plainly")
+    fun `a region holds what is anywhere inside it`() {
+        // A site in Egypt is in Africa, and in the world.
+        assertEquals(
+            listOf("Blue Hole", "Elphinstone"),
+            atPlaceIn(set, "africa").first.map { it.title },
+        )
+        assertEquals(3, atPlaceIn(set, "world").first.size)
+        assertEquals(setOf("world", "europe", "africa", "egypt", "red_sea"), withinOf(set, "world"))
+    }
+
+    @Test
+    fun `a region with nothing inside it has nothing at it`() {
+        val (sites, wrecks) = atPlaceIn(set, "red_sea")
+        assertEquals(emptyList(), sites.map { it.title })
         assertEquals(emptyList(), wrecks.map { it.title })
+    }
+
+    @Test
+    fun `a cycle in the regions is walked once`() {
+        val looped = logbook(
+            "region.json" to """{
+                "a": {"name": "A", "parents": ["@b"]},
+                "b": {"name": "B", "parents": ["@a"]}
+            }""",
+        )
+        assertEquals(setOf("a", "b"), withinOf(looped, "a"))
+    }
+}
+
+class MapTest {
+
+    private val set = logbook(
+        "region.json" to """{
+            "boxed": {"name": "Boxed", "west": 30, "east": 36, "south": 22, "north": 30},
+            "pacific": {"name": "Pacific", "west": 120, "east": -70, "south": -60, "north": 60},
+            "bare": {"name": "Bare"}
+        }""",
+        "dive_site.json" to """{
+            "a": {"name": "A", "regions": ["@bare"], "latitude": 51.0, "longitude": 4.0},
+            "b": {"name": "B", "regions": ["@bare"], "latitude": 52.0, "longitude": 3.0},
+            "c": {"name": "C", "regions": ["@bare"]}
+        }""",
+    )
+
+    @Test
+    fun `a site without a position is not a dot`() {
+        val dots = dotsOf(atPlaceIn(set, "bare").first)
+        assertEquals(listOf("A", "B"), dots.map { it.title })
+    }
+
+    @Test
+    fun `a region with a box is framed by it`() {
+        val frame = frameOf(set["boxed"]!!, emptyList())!!
+        assertEquals(6.0, frame.width)
+        assertEquals(8.0, frame.height)
+    }
+
+    @Test
+    fun `a region without a box is framed round its dots, with room to spare`() {
+        val frame = frameOf(set["bare"]!!, dotsOf(atPlaceIn(set, "bare").first))!!
+        assertTrue(frame.west < 3.0 && frame.east > 4.0, "${frame.west}..${frame.east}")
+        assertTrue(frame.south < 51.0 && frame.north > 52.0, "${frame.south}..${frame.north}")
+    }
+
+    @Test
+    fun `one site is still a frame, not a point`() {
+        val one = listOf(Dot("a", "A", 51.0, 4.0))
+        val frame = frameOf(set["bare"]!!, one)!!
+        assertTrue(frame.width > 0.0 && frame.height > 0.0)
+    }
+
+    @Test
+    fun `nothing to frame is no frame`() {
+        assertNull(frameOf(set["bare"]!!, emptyList()))
+    }
+
+    @Test
+    fun `the frame's corners land on the canvas edges, and a point inside lands inside`() {
+        val frame = frameOf(set["boxed"]!!, emptyList())!!
+        val (x0, y0) = frame.place(30.0, 30.0, 200.0, 200.0)
+        val (x1, y1) = frame.place(22.0, 36.0, 200.0, 200.0)
+        // The frame is taller than it is wide once longitude is squeezed, so it fills the
+        // height and is centred across the width.
+        assertEquals(0.0, y0)
+        assertEquals(200.0, y1)
+        assertTrue(x0 > 0.0 && x1 < 200.0 && x0 < x1, "$x0..$x1")
+        val (x, y) = frame.place(26.0, 33.0, 200.0, 200.0)
+        assertTrue(x > x0 && x < x1 && y > y0 && y < y1)
+    }
+
+    @Test
+    fun `a frame across the date line places a site beyond it east of the west edge`() {
+        val frame = frameOf(set["pacific"]!!, emptyList())!!
+        assertEquals(170.0, frame.width)
+        // Hawaii, at -155, is 85 degrees east of 120.
+        assertEquals(85.0, frame.eastOf(-155.0))
     }
 }

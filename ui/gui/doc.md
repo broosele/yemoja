@@ -78,8 +78,10 @@ question had to be asked per tab.
 - **Gear** — a tree of categories and the kinds within them, and beside it the items in
   whichever branch is chosen.
 - **Community** — a subtab per type: people, operators, certifications.
-- **Location** — a tree of regions, and beside it the dive sites in whichever region is chosen,
-  with the wrecks at those sites in the same list and marked apart from them.
+- **Location** — a tree of regions, and beside it the dive sites in whichever region is chosen
+  or in any region inside it, with the wrecks at those sites in the same list and marked apart
+  from them. A region and a site are chosen at once, and the item view shows a map of the
+  region above the two of them. `GUI-25`.
 - **Manuals** — a tree of two levels: the chapters, and the sections of each. A chapter is
   shown whole, and choosing a section scrolls to its place in it. `GUI-15`.
 - **System** — not decided.
@@ -392,6 +394,18 @@ once and corrected. The numbers stay unused rather than being given to something
   colour with the text on it is tested for contrast, because a hand-filled scheme can pair a
   dark on a dark and nothing else would say so. What is left of the question is whether the
   application ever wants type or glyphs of its own, which nothing yet asks for.
+- **GUI-25 — What a region shows.** *Settled:* **a map, then the region, then what was chosen
+  at it.** Choosing a region and choosing a site are two acts and stay two selections: the site
+  is read against where it is, so the item view holds both, one below the other, and the map
+  above them is the region's frame with a dot per site and the chosen one marked and named. A
+  region lists the sites anywhere inside it, since a reader who opens Europe is asking what
+  there is to dive there. The dots are drawn in the text colour and the mark in the error
+  colour, which are black and red in daylight and stay visible in the dark.
+
+  **The map has no coastline.** The atlas gives a region a box and no shape, so a map is where
+  the sites lie in relation to each other and to the edges. Drawing land needs geometry the
+  atlas does not hold; Natural Earth's is public domain and would fit in `libraries/` if the
+  map is ever asked to show more.
 - **GUI-22 — Which parent a region tree uses.** *Settled:* **all of them.** A region has
   `parents`, plural, so regions form a graph rather than a tree, and a region with two parents
   appears under both. Nothing is hidden and no rule has to be invented for which path is the

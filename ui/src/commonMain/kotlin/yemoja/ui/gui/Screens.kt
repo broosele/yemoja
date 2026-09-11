@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +40,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -121,23 +125,48 @@ private fun Owed(tab: Tab) {
     Middle("${tab.name}: ${tab.owed}")
 }
 
-/** A subject: what it holds on the left, and the one chosen on the right. */
+/**
+ * A subject: what it holds on the left, and the one chosen on the right.
+ *
+ * Location chooses two things, a region and something at it, and shows both. `GUI-25`.
+ */
 @Composable
 private fun Subject(set: ItemSet, tab: Tab) {
     var chosen by remember(tab) { mutableStateOf<Chosen?>(null) }
+    var place by remember(tab) { mutableStateOf<Chosen?>(null) }
+    val wide = when (tab.shape) {
+        Shape.DIVES -> TABLE
+        Shape.PLACES -> TREE + SITES
+        else -> SELECTOR
+    }
     Row(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.width(if (tab.shape == Shape.DIVES) TABLE else SELECTOR)) {
+        Box(modifier = Modifier.width(wide)) {
             when (tab.shape) {
                 Shape.DIVES -> Dives(set, chosen) { chosen = it }
                 Shape.GEAR -> Gear(set, chosen) { chosen = it }
                 Shape.TYPES -> Types(set, tab, chosen) { chosen = it }
-                Shape.PLACES -> Places(set, chosen) { chosen = it }
+                Shape.PLACES -> Places(
+                    set = set,
+                    place = place,
+                    chosen = chosen,
+                    onPlace = { region ->
+                        place = region
+                        // What was chosen stays chosen while the new region still lists it.
+                        val (sites, wrecks) = atPlaceIn(set, region.id)
+                        if ((sites + wrecks).none { it.id == chosen?.id }) chosen = null
+                    },
+                    onChoose = { chosen = it },
+                )
                 Shape.MANUAL, Shape.NONE -> Unit
             }
         }
         VerticalDivider()
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
-            chosen?.let { ItemView(it) } ?: Middle("choose something on the left")
+            if (tab.shape == Shape.PLACES) {
+                PlaceView(set, place, chosen)
+            } else {
+                chosen?.let { ItemView(it) } ?: Middle("choose something on the left")
+            }
         }
     }
 }
@@ -314,8 +343,13 @@ private fun Types(set: ItemSet, tab: Tab, chosen: Chosen?, onChoose: (Chosen) ->
  * region under every parent that names it runs to fifteen hundred lines fully open.
  */
 @Composable
-private fun Places(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
-    var place by remember(set) { mutableStateOf<Chosen?>(null) }
+private fun Places(
+    set: ItemSet,
+    place: Chosen?,
+    chosen: Chosen?,
+    onPlace: (Chosen) -> Unit,
+    onChoose: (Chosen) -> Unit,
+) {
     val tree = remember(set) { regionTreeOf(set) }
     var open by remember(set) { mutableStateOf(tree.map { "/" + it.key }.toSet()) }
     Row(modifier = Modifier.fillMaxSize()) {
@@ -327,14 +361,11 @@ private fun Places(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
                 chosen = place,
                 open = open,
                 onToggle = { key -> open = if (key in open) open - key else open + key },
-            ) { region ->
-                place = region
-                onChoose(region)
-            }
+                onChoose = onPlace,
+            )
         }
         VerticalDivider()
-        val here = place
-        val what = remember(set, here) { here?.let { atPlaceIn(set, it.id) } }
+        val what = remember(set, place) { place?.let { atPlaceIn(set, it.id) } }
         LazyColumn(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             if (what == null) return@LazyColumn
             item(key = "sites") { Label("Sites", 0) }
@@ -458,15 +489,89 @@ internal fun Line(text: String, depth: Int, chosen: Boolean, onClick: () -> Unit
 /** One item, arranged for reading. It never changes anything. */
 @Composable
 private fun ItemView(chosen: Chosen) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        ItemCard(chosen)
+    }
+}
+
+/**
+ * A place: the map of the region chosen, then the region, then whatever was chosen at it.
+ *
+ * Both at once and one below the other, because a site is read against where it is. `GUI-25`.
+ */
+@Composable
+private fun PlaceView(set: ItemSet, place: Chosen?, chosen: Chosen?) {
+    if (place == null && chosen == null) {
+        Middle("choose a region on the left")
+        return
+    }
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        if (place != null) {
+            val dots = remember(set, place) { dotsOf(atPlaceIn(set, place.id).first) }
+            val frame = remember(set, place) { frameOf(place.item, dots) }
+            if (frame != null) RegionMap(frame, dots, chosen?.id)
+            ItemCard(place)
+        }
+        if (chosen != null) ItemCard(chosen)
+    }
+}
+
+/**
+ * A region's sites as dots in its frame, the chosen one marked and named.
+ *
+ * No coastline: the atlas holds a box for a region and no shape, so the map is where the sites
+ * lie in relation to each other and to the region's edges, which is what a diver looking for
+ * the next site along wants from it.
+ */
+@Composable
+private fun RegionMap(frame: Frame, dots: List<Dot>, marked: String?) {
+    val ink = MaterialTheme.colorScheme.onSurface
+    val mark = MaterialTheme.colorScheme.error
+    val sea = MaterialTheme.colorScheme.surfaceContainerLowest
+    val label = MaterialTheme.typography.labelMedium.copy(color = ink)
+    val measurer = rememberTextMeasurer()
+    Canvas(
+        modifier = Modifier.fillMaxWidth().height(MAP).clip(MaterialTheme.shapes.medium)
+            .background(sea),
+    ) {
+        val inset = GAP.toPx()
+        val wide = size.width - 2 * inset
+        val high = size.height - 2 * inset
+        fun at(dot: Dot): Offset {
+            val (x, y) = frame.place(dot.latitude, dot.longitude, wide.toDouble(), high.toDouble())
+            return Offset(inset + x.toFloat(), inset + y.toFloat())
+        }
+        for (dot in dots) {
+            if (dot.id != marked) drawCircle(ink, DOT.toPx(), at(dot))
+        }
+        // Last, so it is never under another dot.
+        dots.firstOrNull { it.id == marked }?.let { dot ->
+            val centre = at(dot)
+            drawCircle(mark, MARKED.toPx(), centre)
+            val laid = measurer.measure(dot.title, label)
+            drawText(
+                textLayoutResult = laid,
+                topLeft = Offset(
+                    x = centre.x + MARKED.toPx() + HALF.toPx(),
+                    y = centre.y - laid.size.height / 2f,
+                ),
+            )
+        }
+    }
+}
+
+/** One item on a card, sized to what it says. */
+@Composable
+private fun ItemCard(chosen: Chosen) {
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(GAP * 2),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(GAP * 2)) {
             // The name and nothing beside it. An id is never shown.
             Text(
                 text = chosen.title,
@@ -554,6 +659,10 @@ private val NUMBER = 52.dp
 private val DATE = 100.dp
 private val SITE = 240.dp
 private val LABEL = 170.dp
+private val SITES = 300.dp
+private val MAP = 280.dp
+private val DOT = 3.dp
+private val MARKED = 5.dp
 internal val LINE = 28.dp
 internal val INDENT = 16.dp
 internal val GAP = 12.dp
