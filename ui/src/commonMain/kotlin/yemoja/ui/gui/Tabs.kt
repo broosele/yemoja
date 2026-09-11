@@ -22,7 +22,7 @@ import yemoja.logic.Types
 /**
  * Shape is what a tab's selector is, which `GUI-14` settled is decided per tab.
  *
- * Three of the five are not a list, which is why the question had to be asked per tab rather
+ * Four of the six are not a list, which is why the question had to be asked per tab rather
  * than answered once for all of them.
  */
 internal enum class Shape {
@@ -39,6 +39,9 @@ internal enum class Shape {
     /** A tree of regions, and what is at the chosen one. `GUI-20`, `GUI-22`. */
     PLACES,
 
+    /** A tree of chapters and their sections, and the chosen chapter shown whole. `GUI-15`. */
+    MANUAL,
+
     /** None, the tab holding no collection. */
     NONE,
 }
@@ -47,8 +50,8 @@ internal enum class Shape {
  * Tab is one subject the application is divided into.
  *
  * **A subject is not an item type.** A dive and the trip it was made on are one subject; a
- * region, a site and a wreck are one place. Three tabs hold no items at all and are here so that
- * the list is the whole of what the application offers rather than the part that happens to be
+ * region, a site and a wreck are one place. Two tabs hold nothing yet and are here so that the
+ * list is the whole of what the application offers rather than the part that happens to be
  * built.
  */
 internal class Tab(
@@ -89,8 +92,5 @@ internal val TABS: List<Tab> = listOf(
         "System", Icons.Filled.Settings,
         owed = "settings, syncing and the rest of the machinery",
     ),
-    Tab(
-        "Manuals", Icons.Filled.MenuBook,
-        owed = "the documentation, read inside the application",
-    ),
+    Tab("Manuals", Icons.Filled.MenuBook, shape = Shape.MANUAL),
 )

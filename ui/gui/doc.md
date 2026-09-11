@@ -80,7 +80,8 @@ question had to be asked per tab.
 - **Community** — a subtab per type: people, operators, certifications.
 - **Location** — a tree of regions, and beside it the dive sites in whichever region is chosen,
   with the wrecks at those sites in the same list and marked apart from them.
-- **Manuals** — a list of chapters. `GUI-15`.
+- **Manuals** — a tree of two levels: the chapters, and the sections of each. A chapter is
+  shown whole, and choosing a section scrolls to its place in it. `GUI-15`.
 - **System** — not decided.
 
 **Home has no selector.** It is not a collection, which is why the pattern above says *most*
@@ -284,7 +285,8 @@ application feels most.
 **A window that reads a logbook, and nothing more.** The tabs across the top, a selector listing
 what a tab holds by type, and an item view showing the fields of the one chosen. Owned items are
 counted rather than spelt out, which is the progressive disclosure above meeting its first real
-item. Three tabs hold no items yet and say what they will hold rather than showing an empty box.
+item. The manual is read in its tab, a chapter at a time. Two tabs hold nothing yet and say what
+they will hold rather than showing an empty box.
 
 **Nothing changes anything.** There is no edit view, no action and no key that writes. That is
 the scope rather than an oversight: a first version proves the toolkit, the layout and the door
@@ -434,7 +436,15 @@ once and corrected. The numbers stay unused rather than being given to something
   selector is decided per tab, not once for all of them. Dive, community and location
   each answer it their own way.
 - **GUI-15 — Whether the manuals tab is the same pattern.** *Settled:* it is. The
-  selector lists chapters and the item view shows the text of one.
+  selector is a tree of chapters and the sections in them, and the item view shows a chapter
+  whole, scrolled to the section chosen. Whole rather than a section at a time, because a
+  chapter is written to be read through and a section is a place in it, not a page.
+
+  The chapters are bundled with the application and read from it, in the subset of markdown
+  the manual's own conventions allow and no more. That subset is small enough to read here
+  rather than through a library, and reading it here is what lets a link to another chapter be
+  followed inside the tab: the manual is closed under its own links, and a test holds it to
+  that.
 - **GUI-16 — What the item view shows for a given item.** *Settled:* the interface
   decides, per item type. The data layer says which fields exist; it has no say in
   which of them are shown, or how.

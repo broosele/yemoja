@@ -43,6 +43,16 @@ kotlin {
     }
 }
 
+// The manual, bundled so the Manuals tab can read it. Every chapter, and not the file about
+// writing them, which is internal.
+tasks.named<Copy>("jvmProcessResources") {
+    from(rootProject.file("manual")) {
+        include("*.md")
+        exclude("doc.md")
+        into("manual")
+    }
+}
+
 // A window needs no terminal, so unlike the other front end this one can be run from here.
 tasks.register<JavaExec>("gui") {
     description = "Opens a logbook in a window: ./gradlew :ui:gui --args=<logbook folder>."

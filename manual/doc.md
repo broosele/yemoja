@@ -1,8 +1,8 @@
 # User manual — conventions
 
 This file is **internal** and is not part of the manual. Every *other* file in this
-folder is a **chapter**: user documentation, bundled with the application and rendered
-in its information tab.
+folder is a **chapter**: user documentation, bundled with the application and shown in
+its Manuals tab.
 
 ## Audience and purpose
 
@@ -34,7 +34,7 @@ One thing must **not** be stated twice:
 
 ## Markdown that renders
 
-The information tab supports a deliberately small subset, chosen so that pages read
+The Manuals tab supports a deliberately small subset, chosen so that pages read
 well on a narrow phone screen:
 
 - Headings and paragraphs
@@ -42,6 +42,7 @@ well on a narrow phone screen:
 - Numbered lists
 - Fenced code blocks, for showing what a file looks like
 - Tables, kept narrow — see below
+- Inside a line: bold, italics, code, and a link to another chapter or a section of one
 
 Not supported, and not to be used:
 

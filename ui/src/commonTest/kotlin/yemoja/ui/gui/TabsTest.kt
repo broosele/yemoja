@@ -20,15 +20,15 @@ class TabsTest {
     }
 
     @Test
-    fun `a tab holding no type says what it will hold`() {
-        for (tab in TABS.filter { it.types.isEmpty() }) {
+    fun `a tab with nothing behind it says what it will hold`() {
+        for (tab in TABS.filter { it.shape == Shape.NONE }) {
             assertTrue(!tab.owed.isNullOrBlank(), "${tab.name} says nothing about being empty")
         }
     }
 
     @Test
-    fun `a tab holding a type has nothing to excuse`() {
-        for (tab in TABS.filter { it.types.isNotEmpty() }) assertEquals(null, tab.owed)
+    fun `a tab with something behind it has nothing to excuse`() {
+        for (tab in TABS.filter { it.shape != Shape.NONE }) assertEquals(null, tab.owed)
     }
 
     @Test

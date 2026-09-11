@@ -61,16 +61,25 @@ import yemoja.logic.Universe
  * are settled there; this draws them.
  */
 
-/** The whole application: a tab across the top, and whatever that tab shows. */
+/**
+ * The whole application: a tab across the top, and whatever that tab shows.
+ *
+ * [manual] is the chapters as the platform loaded them, and [onOpen] is given a link that leads
+ * out of them, which only the platform can follow.
+ */
 @Composable
-internal fun Application(universe: Universe) {
+internal fun Application(universe: Universe, manual: List<Chapter>, onOpen: (String) -> Unit) {
     // Home, which is where the application opens whatever it holds yet.
     var tab by remember { mutableStateOf(TABS.first()) }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
             Tabs(tab) { tab = it }
             Box(modifier = Modifier.weight(1f)) {
-                if (tab.shape == Shape.NONE) Owed(tab) else Subject(universe.logbook, tab)
+                when (tab.shape) {
+                    Shape.NONE -> Owed(tab)
+                    Shape.MANUAL -> Manuals(manual, onOpen)
+                    else -> Subject(universe.logbook, tab)
+                }
             }
         }
     }
@@ -123,7 +132,7 @@ private fun Subject(set: ItemSet, tab: Tab) {
                 Shape.GEAR -> Gear(set, chosen) { chosen = it }
                 Shape.TYPES -> Types(set, tab, chosen) { chosen = it }
                 Shape.PLACES -> Places(set, chosen) { chosen = it }
-                Shape.NONE -> Unit
+                Shape.MANUAL, Shape.NONE -> Unit
             }
         }
         VerticalDivider()
@@ -374,7 +383,7 @@ private fun LazyListScope.branchesIn(
 
 /** One line of a tree: an arrow where there is something to close, and the name. */
 @Composable
-private fun BranchLine(
+internal fun BranchLine(
     label: String,
     depth: Int,
     open: Boolean?,
@@ -426,15 +435,20 @@ private fun Label(text: String, depth: Int) {
 /** One item a selector offers. */
 @Composable
 private fun Entry(entry: Chosen, chosen: Chosen?, depth: Int, onChoose: (Chosen) -> Unit) {
-    val here = entry.id == chosen?.id
+    Line(entry.title, depth, chosen = entry.id == chosen?.id) { onChoose(entry) }
+}
+
+/** One line of a list, tinted where it is the one chosen. */
+@Composable
+internal fun Line(text: String, depth: Int, chosen: Boolean, onClick: () -> Unit) {
     Text(
-        text = entry.title,
+        text = text,
         style = MaterialTheme.typography.bodyMedium,
-        color = onTint(here),
+        color = onTint(chosen),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.fillMaxWidth().padding(start = INDENT * depth).clip(SHAPE)
-            .background(tint(here)).clickable { onChoose(entry) }
+            .background(tint(chosen)).clickable(onClick = onClick)
             .padding(horizontal = GAP, vertical = HALF),
     )
 }
@@ -508,7 +522,7 @@ private fun Aside(text: String) {
 }
 
 @Composable
-private fun Middle(text: String) {
+internal fun Middle(text: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
             text = text,
@@ -531,8 +545,8 @@ private fun onTint(chosen: Boolean): Color =
         MaterialTheme.colorScheme.onSurface
     }
 
-private val SHAPE = RoundedCornerShape(6.dp)
-private val SELECTOR = 280.dp
+internal val SHAPE = RoundedCornerShape(6.dp)
+internal val SELECTOR = 280.dp
 private val TABLE = 600.dp
 private val TREE = 220.dp
 private val TRIP = 170.dp
@@ -540,7 +554,7 @@ private val NUMBER = 52.dp
 private val DATE = 100.dp
 private val SITE = 240.dp
 private val LABEL = 170.dp
-private val LINE = 28.dp
-private val INDENT = 16.dp
-private val GAP = 12.dp
-private val HALF = 4.dp
+internal val LINE = 28.dp
+internal val INDENT = 16.dp
+internal val GAP = 12.dp
+internal val HALF = 4.dp
