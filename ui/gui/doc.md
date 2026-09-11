@@ -315,10 +315,11 @@ Three things it does badly, each of them an open question above rather than a bu
 
 - **A selector row outside the dive table is the item's title and nothing else.** `GUI-10` is
   which fields a row shows, and the dive table answers it for dives alone.
-- **A key reference reads as it is written**, `*perdix_2` rather than the recording it names,
-  and leads nowhere. An ordinary reference reads as the name of what it points at and is a link
-  to it, which is the *an id is never shown* rule holding where it was broken by the back door;
-  a key reference still breaks it.
+- **A key reference reads as its key, read** — *Perdix 2* for `*perdix_2`, *Tank 1* for
+  `*tank_1` — and leads nowhere. An ordinary reference reads as the name of what it points at
+  and is a link to it, which is the *an id is never shown* rule holding where it was broken by
+  the back door; a key is neither a name nor an id, and reading it the way a label is read is
+  as far from the spelling as it honestly gets.
 - **A worked-out value is greyed and an unreadable one reddened**, which is a placeholder for
   `GUI-8` rather than an answer to it.
 

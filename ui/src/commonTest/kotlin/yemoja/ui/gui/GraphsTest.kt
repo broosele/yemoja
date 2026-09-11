@@ -75,7 +75,7 @@ class GraphsTest {
     fun `the right axis offers what the recording holds, a cylinder named as its gas source is`() {
         val overlays = overlaysOf(dive, profile("a"))
         assertEquals(
-            listOf("Temperature", "Twelve pressure", "g2 pressure", "No-deco time", "CNS"),
+            listOf("Temperature", "Twelve pressure", "G2 pressure", "No-deco time", "CNS"),
             overlays.map { it.title },
         )
         assertEquals(listOf("°C", "bar", "bar", "min", "%"), overlays.map { it.unit })

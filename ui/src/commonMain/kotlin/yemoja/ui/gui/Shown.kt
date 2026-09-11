@@ -6,6 +6,7 @@ import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
+import yemoja.data.KeyReference
 import yemoja.data.NumberDescription
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
@@ -99,8 +100,19 @@ internal fun entryLabelOf(key: String, entry: Item): String {
         val target = read?.let { entry.set[it.id] } ?: continue
         return titleOf(target)
     }
-    return key
+    return prettyOf(key)
 }
+
+/**
+ * A key as a screen shows it: the underscores as spaces and the first letter up, so `tank_1`
+ * reads *Tank 1*.
+ *
+ * A key is what a file spells an entry by, and the one thing an interface has to show that is
+ * neither a name nor an id; reading it the way a field's label is read is as far from the
+ * spelling as it can honestly get. `GUI-28`.
+ */
+internal fun prettyOf(key: String): String =
+    key.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
 /**
  * What one field says, or absent where it says nothing.
@@ -191,6 +203,7 @@ private fun said(field: FieldDescription, value: Any, within: Item): List<Part> 
     }
     field.cardinality == Cardinality.LIST -> listed(value, within)
     value is OwnedItem -> plain(counted(filledIn(value), "field"))
+    value is KeyReference -> plain(prettyOf(value.key))
     else -> one(value, within)?.let { listOf(it) } ?: plain(displayOf(field, value))
 }
 

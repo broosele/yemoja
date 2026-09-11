@@ -115,6 +115,31 @@ class DisplayTest {
     }
 }
 
+class KeyTest {
+
+    @Test
+    fun `a key reads with its underscores as spaces and its first letter up`() {
+        assertEquals("Tank 1", prettyOf("tank_1"))
+        assertEquals("Perdix 2", prettyOf("perdix_2"))
+        assertEquals("P2", prettyOf("p2"))
+    }
+
+    @Test
+    fun `a key reference reads as the key, read`() {
+        val set = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive/2026-06-21#0.json" to
+                        """{"primary_profile": "*perdix_2", "profiles": {"perdix_2": {}}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val dive = set["2026-06-21#0"]!!
+        assertEquals("Perdix 2", shownOf(dive.description["primary_profile"]!!, dive)!!.text)
+    }
+}
+
 class ArrangedTest {
 
     @Test
@@ -149,6 +174,6 @@ class ArrangedTest {
         val p1 = (profiles.getValue("p1") as Element.Usable).value as OwnedItem
         val p2 = (profiles.getValue("p2") as Element.Usable).value as OwnedItem
         assertEquals("Perdix 2", entryLabelOf("p1", p1), "the computer that made it")
-        assertEquals("p2", entryLabelOf("p2", p2), "nothing on it says a thing")
+        assertEquals("P2", entryLabelOf("p2", p2), "nothing on it says a thing, so the key, read")
     }
 }
