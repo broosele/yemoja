@@ -84,6 +84,20 @@ internal fun yearsOf(rows: List<DiveRow>): List<Year> {
 /** The year a dive with no date is filed under. */
 internal const val UNDATED = "undated"
 
+/**
+ * Which rows carry a trip's name, so it sits in the middle of its run: the row at the middle of
+ * each run, and whether the name is to be nudged up half a line because the run has an even
+ * number of rows and its middle is a boundary.
+ */
+internal fun labelledOf(rows: List<DiveRow>): Map<Int, Boolean> {
+    val labelled = LinkedHashMap<Int, Boolean>()
+    for ((index, row) in rows.withIndex()) {
+        if (row.run == 0 || row.trip == null) continue
+        labelled[index + row.run / 2] = row.run % 2 == 0
+    }
+    return labelled
+}
+
 /** The same rows, each run of one trip counted on the row that opens it. */
 private fun runsIn(rows: List<DiveRow>): List<DiveRow> {
     val out = ArrayList<DiveRow>(rows.size)

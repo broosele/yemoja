@@ -65,6 +65,12 @@ class DiveTableTest {
     }
 
     @Test
+    fun `a trip's name sits on the middle row of its run, nudged up where the run is even`() {
+        // 05 Zeeland alone, 04 none, 03 and 02 Red Sea, 01 Zeeland alone.
+        assertEquals(mapOf(0 to false, 3 to true, 4 to false), labelledOf(rows))
+    }
+
+    @Test
     fun `a dive on no trip stands alone, however many surround it`() {
         assertNull(rows[1].trip)
         assertEquals(1, rows[1].run, "nothing is not the same as nothing")

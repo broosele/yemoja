@@ -73,7 +73,8 @@ question had to be asked per tab.
 
 - **Dive** — a table of four columns: the trip, the dive's own number, the date, and the site,
   divided by year, every year but the last folded. The trip column has one cell per trip,
-  spanning the consecutive dives on it within a year, and a dive on no trip stands alone. Which
+  spanning the consecutive dives on it within a year with the trip's name in the middle of
+  the cell, and a dive on no trip stands alone. Which
   column is clicked decides what is selected: the trip cell selects the trip, anywhere else
   selects the dive; with control held a click adds a dive to the selection or takes it out, with
   shift held it selects every dive between the one last chosen and it, and a click on a year's

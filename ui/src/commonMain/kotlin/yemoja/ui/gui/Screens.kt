@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -412,10 +413,11 @@ private fun Dives(set: ItemSet, kept: Kept) {
                     )
                 }
                 if (!unfolded) continue
+                val labelled = labelledOf(year.rows)
                 itemsIndexed(year.rows, key = { _, row -> row.dive.id }) { index, row ->
                     if (index > 0 && row.run > 0) HorizontalDivider()
                     Row(modifier = Modifier.fillMaxWidth().height(LINE)) {
-                        TripCell(row, chosen, chooseTrip)
+                        TripCell(row, labelled[index], chosen, chooseTrip)
                         val here = row.dive.id in many ||
                             (many.isEmpty() && row.dive.id == chosen?.id)
                         Row(
@@ -506,9 +508,16 @@ private suspend fun indexOf(list: LazyListState, key: String): Int? {
 /** How many lines a search for a key steps over at a time, fewer than a screen holds. */
 private const val STRIDE = 20
 
-/** The trip cell, tinted down the run and clickable wherever the run is. */
+/**
+ * The trip cell, tinted down the run and clickable wherever the run is, the trip's name in the
+ * middle of the run.
+ *
+ * [nudged] is whether this row carries the name, and if so whether half a line up, which is
+ * where the middle of an even run falls; a row is drawn after the one above it, so the name
+ * lies over that row's cell rather than under it.
+ */
 @Composable
-private fun TripCell(row: DiveRow, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
+private fun TripCell(row: DiveRow, nudged: Boolean?, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
     val trip = row.trip
     val here = trip != null && trip.id == chosen?.id
     Box(
@@ -521,17 +530,19 @@ private fun TripCell(row: DiveRow, chosen: Chosen?, onChoose: (Chosen) -> Unit) 
                 },
             )
             .let { if (trip == null) it else it.clickable { onChoose(trip) } },
-        contentAlignment = Alignment.CenterStart,
+        contentAlignment = Alignment.Center,
     ) {
-        if (row.run > 0 && trip != null) {
+        if (nudged != null && trip != null) {
             Text(
                 text = trip.title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (here) FontWeight.Bold else FontWeight.Normal,
                 color = onTint(here),
+                textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = HALF),
+                modifier = Modifier.padding(horizontal = HALF)
+                    .offset(y = if (nudged) -LINE / 2 else 0.dp),
             )
         }
     }
