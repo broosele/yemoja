@@ -39,7 +39,7 @@ fun gui(folder: String): Int {
         Window(
             onCloseRequest = ::exitApplication,
             title = "Yemoja — $folder",
-            state = rememberWindowState(size = DpSize(1100.dp, 760.dp)),
+            state = rememberWindowState(size = DpSize(1650.dp, 1140.dp)),
         ) {
             // Light or dark as the system is set, in the application's own colours. `GUI-3`.
             val scheme = if (isSystemInDarkTheme()) MARINE_DARK else MARINE_LIGHT
