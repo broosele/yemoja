@@ -2,6 +2,10 @@ package yemoja.ui.gui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.loadSvgPainter
+import androidx.compose.ui.res.useResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -40,9 +44,13 @@ fun gui(folder: String): Int {
         open = ::browse,
     )
     application {
+        // The icon is drawn from its vector at whatever size the platform asks for.
+        val density = LocalDensity.current
+        val icon = remember { useResource("yemoja.svg") { loadSvgPainter(it, density) } }
         Window(
             onCloseRequest = ::exitApplication,
             title = "Yemoja — $folder",
+            icon = icon,
             state = rememberWindowState(size = DpSize(1650.dp, 1140.dp)),
         ) {
             // Light or dark as the system is set, in the application's own colours. `GUI-3`.

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Yemoja, mother whose children are fish: one of them, above her sea. -->
+  <defs>
+    <clipPath id="tile">
+      <rect width="256" height="256" rx="56"/>
+    </clipPath>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="#2A5A87"/>
+  <g clip-path="url(#tile)">
+    <path d="M -20 160 c 40 -28 80 -28 120 0 s 80 28 120 0 s 80 -28 120 0 V 280 H -20 Z" fill="#D3E4F7"/>
+    <path d="M -20 188 c 40 -28 80 -28 120 0 s 80 28 120 0 s 80 -28 120 0 V 280 H -20 Z" fill="#8FB4D9"/>
+    <path d="M -20 216 c 40 -28 80 -28 120 0 s 80 28 120 0 s 80 -28 120 0 V 280 H -20 Z" fill="#5C93C4"/>
+  </g>
+  <path d="M 52 104 C 82 70, 142 66, 178 104 C 142 142, 82 138, 52 104 Z" fill="#FFFFFF"/>
+  <path d="M 170 104 L 206 78 L 198 104 L 206 130 Z" fill="#FFFFFF"/>
+  <circle cx="78" cy="98" r="5" fill="#2A5A87"/>
+</svg>

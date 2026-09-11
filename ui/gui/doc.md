@@ -386,15 +386,17 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-13 — The tab switcher on a phone.** *Settled:* it must be accessible, not
   permanently visible. Seven tabs do not fit across the foot of a phone, and requiring
   them to would force the same compromise on the desktop, where there is ample room.
-- **GUI-3 — How much visual identity to define up front.** *Settled in part:* **the colours,
-  and nothing else yet.** The platform's scheme is violet and a logbook of the sea is not, so the
+- **GUI-3 — How much visual identity to define up front.** *Settled in part:* **the colours
+  and the icon, and nothing else yet.** The platform's scheme is violet and a logbook of the sea is not, so the
   same roles are filled from a marine hue, navy where the default is purple and a cool grey
   where it is a warm one, as quiet as the default was. Type, shapes, glyphs and every component
   stay the platform's. Two constraints hold it in place: every colour on a screen is a *role*
   from the scheme rather than a value, so the palette lives in one file; and every pairing of a
   colour with the text on it is tested for contrast, because a hand-filled scheme can pair a
-  dark on a dark and nothing else would say so. What is left of the question is whether the
-  application ever wants type or glyphs of its own, which nothing yet asks for.
+  dark on a dark and nothing else would say so. The icon is a white fish above three waves on
+  the palette's navy — Yemọja is the mother whose children are fish — drawn as a vector, and
+  given to the window at whatever size the platform asks for. What is left of the question is
+  whether the application ever wants type or glyphs of its own, which nothing yet asks for.
 - **GUI-25 — What a region shows.** *Settled:* **a map, then the region, then what was chosen
   at it.** Choosing a region and choosing a site are two acts and stay two selections: the site
   is read against where it is, so the item view holds both, one below the other, and the map

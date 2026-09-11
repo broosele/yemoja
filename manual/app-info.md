@@ -20,7 +20,7 @@ Claude, an assistant made by Anthropic, is used throughout the work: to plan the
 and to be argued with about it, to review and give feedback, to write the documentation —
 this manual and the notes behind it — to compile the reference data that comes with
 Yemoja, to build the test data and the scripts that check it, to read published
-standards, and to help with debugging and testing.
+standards, to draw the icon, and to help with debugging and testing.
 
 The atlas of regions was written for Yemoja, following the conventions of Natural
 Earth — a public domain map dataset that asks for no credit and gets this one anyway.
