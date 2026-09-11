@@ -1,5 +1,9 @@
 package yemoja.ui.gui
 
+import yemoja.data.Element
+import yemoja.data.OwnedItem
+import yemoja.data.Result
+import yemoja.data.Series
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
@@ -8,69 +12,93 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /*
- * What a dive's recordings become on a graph. See ../../../../../../gui/doc.md — `GUI-4`.
+ * What a recording becomes on a graph. See ../../../../../../gui/doc.md — `GUI-4`.
  */
 class GraphsTest {
 
-    private fun dive(json: String) =
-        LogbookReader.read(MemoryFileStore(mapOf("dive/2026-06-21#0.json" to json)), Types.ALL)
-            .let { it["2026-06-21#0"]!! }
-
-    private val two = dive(
-        """{"primary_profile": "*b", "profiles": {
-            "a": {"depth": [[0, 0], [60, 10.0], [120, 0]]},
-            "b": {"depth": [[0, 0], [30, 12.0], [90, 6.0], [120, 0]],
-                  "temperature": [[0, 20.0], [120, 18.0]],
-                  "decostop": [[60, 3.0], [90, 0]],
-                  "no_deco_time": [[0, 3600], [60, 600]],
-                  "cns": [[0, 1], [120, 4]],
-                  "pressures": {"g1": [[0, 200.0], [120, 120.0]], "g2": [[0, 100.0]]}}
-        }}""",
+    private val set = LogbookReader.read(
+        MemoryFileStore(
+            mapOf(
+                "gear.json" to """{"twelve": {"name": "Twelve"}}""",
+                "dive/2026-06-21#0.json" to """{
+                    "gas_sources": {"g1": {"cylinder": "@twelve"}, "g2": {}},
+                    "profiles": {
+                        "a": {"depth": [[0, 0], [30, 12.0], [90, 6.0], [120, 0]],
+                              "temperature": [[0, 20.0], [120, 18.0]],
+                              "decostop": [[60, 3.0], [90, 0]],
+                              "no_deco_time": [[0, 3600], [60, 600]],
+                              "cns": [[0, 1], [120, 4]],
+                              "pressures": {"g1": [[0, 200.0], [120, 120.0]], "g2": [[0, 100.0]]}},
+                        "b": {"temperature": [[0, 20.0]]}
+                    }
+                }""",
+            ),
+        ),
+        Types.ALL,
     )
 
-    @Test
-    fun `depth comes first, the primary recording to be read and the other laid over it`() {
-        val depth = graphsOf(two).first()
-        assertEquals("Depth", depth.title)
-        assertTrue(depth.down)
-        assertEquals(listOf("Depth", "Deco stop", "a"), depth.lines.map { it.label })
-        assertEquals(listOf(true, false, false), depth.lines.map { it.main })
-        assertEquals(12.0, depth.lines[0].points.maxOf { it.value }, "the primary is b")
-        assertTrue(depth.lines[1].stepped, "a deco stop steps")
+    private val dive = set["2026-06-21#0"]!!
+
+    @Suppress("UNCHECKED_CAST")
+    private fun profile(key: String): OwnedItem {
+        val read = (dive.read("profiles") as Result.Usable<*>).value as Map<String, Element<Any>>
+        return (read.getValue(key) as Element.Usable).value as OwnedItem
     }
 
     @Test
-    fun `seconds become minutes, and no-deco time is in minutes too`() {
-        val graphs = graphsOf(two)
-        assertEquals(listOf(0.0, 0.5, 1.5, 2.0), graphs[0].lines[0].points.map { it.minute })
-        val noDeco = graphs.first { it.title == "No-deco time" }
-        assertEquals(listOf(60.0, 10.0), noDeco.lines.single().points.map { it.value })
-        assertEquals("min", noDeco.unit)
+    fun `the depth side is the depth, to be read, and the deco stops stepped across it`() {
+        val lines = depthLinesOf(profile("a"))
+        assertEquals(listOf("Depth", "Deco stop"), lines.map { it.label })
+        assertEquals(listOf(true, false), lines.map { it.main })
+        assertTrue(lines[1].stepped)
+        assertEquals(listOf(0.0, 0.5, 1.5, 2.0), lines[0].points.map { it.minute })
     }
 
     @Test
-    fun `every other series the primary holds is a small graph of its own`() {
+    fun `a recording with no depth has no depth side`() {
+        assertEquals(emptyList(), depthLinesOf(profile("b")))
+    }
+
+    @Test
+    fun `an entry of a type with no depth at all has no depth side either, and no fault`() {
+        // Every keyed entry is asked, a gas source among them, and a type without the field
+        // refuses to be read for it.
+        val read = (dive.read("gas_sources") as Result.Usable<*>).value
+        @Suppress("UNCHECKED_CAST")
+        val sources = read as Map<String, Element<Any>>
+        val source = (sources.getValue("g1") as Element.Usable).value as OwnedItem
+        assertEquals(emptyList(), depthLinesOf(source))
+        assertEquals(emptyList(), overlaysOf(dive, source))
+    }
+
+    @Test
+    fun `the right axis offers what the recording holds, a cylinder named as its gas source is`() {
+        val overlays = overlaysOf(dive, profile("a"))
         assertEquals(
-            listOf("Depth", "Temperature", "Pressure", "No-deco time", "CNS"),
-            graphsOf(two).map { it.title },
+            listOf("Temperature", "Twelve pressure", "g2 pressure", "No-deco time", "CNS"),
+            overlays.map { it.title },
         )
-        val pressure = graphsOf(two).first { it.title == "Pressure" }
-        assertEquals(listOf("g1", "g2"), pressure.lines.map { it.label })
+        assertEquals(listOf("°C", "bar", "bar", "min", "%"), overlays.map { it.unit })
     }
 
     @Test
-    fun `a dive with no recording, or none with a depth, has no graph`() {
-        assertEquals(emptyList(), graphsOf(dive("""{"dive_number": 1}""")))
-        val noDepth = dive("""{"profiles": {"a": {"temperature": [[0, 20.0]]}}}""")
-        assertEquals(emptyList(), graphsOf(noDepth))
+    fun `no-deco time is in minutes`() {
+        val noDeco = overlaysOf(dive, profile("a")).first { it.title == "No-deco time" }
+        assertEquals(listOf(60.0, 10.0), noDeco.line.points.map { it.value })
     }
 
     @Test
-    fun `naming no primary, the first recording is read`() {
-        val one = dive(
-            """{"profiles": {"x": {"depth": [[0, 0], [60, 5.0]]}, "y": {"depth": [[0, 0]]}}}""",
+    fun `no-deco time is capped where a computer says no limit, and its surface zeros dropped`() {
+        fun series(vararg samples: Pair<Int, Int>) = Series(
+            samples.map { it.first }.toIntArray(),
+            samples.map { Element.Usable(it.second as Any) },
         )
-        assertEquals(5.0, graphsOf(one).first().lines[0].points.maxOf { it.value })
+        // A Perdix: zero before it has calculated, then 99 minutes as its own cap.
+        val perdix = noDecoOf(series(10 to 0, 20 to 5940, 3810 to 5940))
+        assertEquals(listOf(99.0, 99.0), perdix.map { it.value })
+        // An i330R: 598 minutes as its marker for no limit, then a real ninety.
+        val i330r = noDecoOf(series(2 to 35880, 112 to 5400))
+        assertEquals(listOf(99.0, 90.0), i330r.map { it.value })
     }
 
     @Test

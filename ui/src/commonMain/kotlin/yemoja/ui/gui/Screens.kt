@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LeadingIconTab
@@ -40,6 +42,7 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -1092,7 +1095,6 @@ private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
                 modifier = Modifier.padding(bottom = GAP),
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
-            if (chosen.item.description == Types.DIVE) Graphs(chosen.item)
             Fields(chosen.item, onFollow)
         }
     }
@@ -1162,7 +1164,10 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
             }
         }
         Spacer(modifier = Modifier.height(GAP))
-        Fields(entries[at].second, onFollow)
+        // A recording is drawn before it is read: the graph is what it is for.
+        val entry = entries[at].second
+        if (depthLinesOf(entry).isNotEmpty()) ProfileGraph(item, entry)
+        Fields(entry, onFollow)
     }
 }
 
@@ -1253,32 +1258,56 @@ private fun Stars(rating: Int) {
     }
 }
 
-// --- The graphs of a dive. `GUI-4`.
+// --- The graph of a recording. `GUI-4`.
 
-/** A dive's recordings drawn: depth to be read, and the rest small under it. */
+/**
+ * A recording drawn: depth up the left, and up the right one other thing it wrote, chosen from
+ * a box of what it wrote.
+ */
 @Composable
-private fun Graphs(dive: Item) {
-    val graphs = remember(dive) { graphsOf(dive) }
-    for (graph in graphs) {
-        Chart(graph, if (graph.down) DEPTH_GRAPH else SMALL_GRAPH)
+private fun ProfileGraph(dive: Item, profile: Item) {
+    val depth = remember(profile) { depthLinesOf(profile) }
+    val overlays = remember(dive, profile) { overlaysOf(dive, profile) }
+    var picked by remember(profile) { mutableStateOf(0) }
+    var picking by remember { mutableStateOf(false) }
+    val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
+    if (overlays.isNotEmpty()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Box {
+                TextButton(onClick = { picking = true }) {
+                    Text("Right axis: ${overlay?.title ?: "none"}")
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+                }
+                DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
+                    for ((index, choice) in overlays.withIndex()) {
+                        DropdownMenuItem(
+                            text = { Text(choice.title) },
+                            onClick = {
+                                picked = index
+                                picking = false
+                            },
+                        )
+                    }
+                }
+            }
+        }
     }
-    if (graphs.isNotEmpty()) HorizontalDivider(modifier = Modifier.padding(vertical = GAP))
+    Chart(depth, overlay)
+    Spacer(modifier = Modifier.height(GAP))
 }
 
 /**
- * One graph: its lines against a grid, marks along both axes, and its title and unit.
+ * The graph: the depth lines against a grid, the overlay's line in its own colour with its own
+ * marks up the right, and the minutes along the bottom.
  *
- * The main line is drawn to be read, filled underneath where the axis runs down so a dive
- * reads as water; the rest are thin. Paths are built once per size and graph.
+ * The main line is drawn to be read and filled underneath so a dive reads as water; the rest
+ * are thin. Paths are built once per size and lines.
  */
 @Composable
-private fun Chart(graph: Graph, height: Dp) {
+private fun Chart(depth: List<Line>, overlay: Overlay?) {
     val ink = MaterialTheme.colorScheme.primary
-    val others = listOf(
-        MaterialTheme.colorScheme.tertiary,
-        MaterialTheme.colorScheme.secondary,
-        MaterialTheme.colorScheme.error,
-    )
+    val stop = MaterialTheme.colorScheme.error
+    val other = MaterialTheme.colorScheme.tertiary
     val water = MaterialTheme.colorScheme.primaryContainer
     val grid = MaterialTheme.colorScheme.outlineVariant
     val quiet = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1286,48 +1315,54 @@ private fun Chart(graph: Graph, height: Dp) {
     val title = MaterialTheme.typography.labelMedium.copy(color = quiet)
     val measurer = rememberTextMeasurer()
     Spacer(
-        modifier = Modifier.fillMaxWidth().height(height).padding(bottom = HALF).drawWithCache {
+        modifier = Modifier.fillMaxWidth().height(DEPTH_GRAPH).padding(bottom = HALF)
+            .drawWithCache {
             val left = AXIS.toPx()
+            val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
             val bottom = size.height - FOOT.toPx()
             val top = HEAD.toPx()
-            val right = size.width - HALF.toPx()
-            val points = graph.lines.flatMap { it.points }
-            val lastMinute = maxOf(points.maxOfOrNull { it.minute } ?: 0.0, 1.0)
-            val mainPoints = graph.lines.firstOrNull { it.main }?.points ?: points
-            var low = if (graph.down) 0.0 else mainPoints.minOf { it.value }
-            val most = mainPoints.maxOf { it.value }
-            var high = if (graph.down) most * 1.05 else most
-            if (high <= low) {
-                low -= 1.0
-                high += 1.0
-            }
+            val all = depth.flatMap { it.points } + overlay?.line?.points.orEmpty()
+            val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, 1.0)
+            val deepest = depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0
+            val depthHigh = maxOf(deepest * 1.05, 1.0)
             fun x(minute: Double): Float = (left + (right - left) * (minute / lastMinute)).toFloat()
-            fun y(value: Double): Float {
-                val fraction = (value - low) / (high - low)
-                val span = (bottom - top) * fraction
-                return (if (graph.down) top + span else bottom - span).toFloat()
+            fun yDepth(value: Double): Float =
+                (top + (bottom - top) * (value / depthHigh)).toFloat()
+            val overPoints = overlay?.line?.points.orEmpty()
+            var overLow = overPoints.minOfOrNull { it.value } ?: 0.0
+            var overHigh = overPoints.maxOfOrNull { it.value } ?: 1.0
+            if (overHigh <= overLow) {
+                overLow -= 1.0
+                overHigh += 1.0
             }
-            val paths = graph.lines.map { line -> pathOf(line, ::x, ::y) }
-            val fill = graph.lines.firstOrNull { it.main }?.let { line ->
-                if (!graph.down || line.points.isEmpty()) return@let null
+            fun yOver(value: Double): Float {
+                val fraction = (value - overLow) / (overHigh - overLow)
+                return (bottom - (bottom - top) * fraction).toFloat()
+            }
+            val depthPaths = depth.map { pathOf(it, ::x, ::yDepth) }
+            val overPath = overlay?.let { pathOf(it.line, ::x, ::yOver) }
+            val main = depth.firstOrNull { it.main }?.takeIf { it.points.isNotEmpty() }
+            val fill = main?.let { line ->
                 Path().apply {
-                    addPath(pathOf(line, ::x, ::y))
-                    lineTo(x(line.points.last().minute), y(0.0))
-                    lineTo(x(line.points.first().minute), y(0.0))
+                    addPath(pathOf(line, ::x, ::yDepth))
+                    lineTo(x(line.points.last().minute), yDepth(0.0))
+                    lineTo(x(line.points.first().minute), yDepth(0.0))
                     close()
                 }
             }
             val minutes = ticksOf(0.0, lastMinute, 6)
-            val values = ticksOf(low, high, if (graph.down) 5 else 3)
+            val depths = ticksOf(0.0, depthHigh, 5)
+            val overs = if (overlay == null) emptyList() else ticksOf(overLow, overHigh, 4)
             val thin = Stroke(THIN.toPx())
             val thick = Stroke(LINE_WIDTH.toPx())
             onDrawBehind {
-                for (tick in values) {
-                    drawLine(grid, Offset(left, y(tick)), Offset(right, y(tick)), THIN.toPx())
+                for (tick in depths) {
+                    val at = yDepth(tick)
+                    drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
                     val laid = measurer.measure(shortOf(tick), label)
                     val corner = Offset(
                         x = left - laid.size.width - HALF.toPx(),
-                        y = y(tick) - laid.size.height / 2f,
+                        y = yDepth(tick) - laid.size.height / 2f,
                     )
                     drawText(laid, topLeft = corner)
                 }
@@ -1339,27 +1374,23 @@ private fun Chart(graph: Graph, height: Dp) {
                 // The unit along the bottom, once, at the end where the marks run out.
                 val unit = measurer.measure("min", label)
                 drawText(unit, topLeft = Offset(right - unit.size.width, bottom + 2f))
-                fill?.let { drawPath(it, water) }
-                var next = 0
-                for ((index, line) in graph.lines.withIndex()) {
-                    val colour = if (line.main) ink else others[next++ % others.size]
-                    drawPath(paths[index], colour, style = if (line.main) thick else thin)
+                for (tick in overs) {
+                    val laid = measurer.measure(shortOf(tick), label.copy(color = other))
+                    val corner = Offset(right + HALF.toPx(), yOver(tick) - laid.size.height / 2f)
+                    drawText(laid, topLeft = corner)
                 }
-                val heading = measurer.measure("${graph.title} (${graph.unit})", title)
+                fill?.let { drawPath(it, water) }
+                for ((index, line) in depth.withIndex()) {
+                    val colour = if (line.main) ink else stop
+                    drawPath(depthPaths[index], colour, style = if (line.main) thick else thin)
+                }
+                overPath?.let { drawPath(it, other, style = thin) }
+                val heading = measurer.measure("Depth (m)", title)
                 drawText(heading, topLeft = Offset(left + HALF.toPx(), 0f))
-                // Where there is more than one line, each is named at its end.
-                if (graph.lines.size > 1) {
-                    next = 0
-                    for (line in graph.lines) {
-                        val last = line.points.lastOrNull() ?: continue
-                        val colour = if (line.main) ink else others[next++ % others.size]
-                        val laid = measurer.measure(line.label, label.copy(color = colour))
-                        val corner = Offset(
-                            x = x(last.minute) - laid.size.width,
-                            y = y(last.value) - laid.size.height,
-                        )
-                        drawText(laid, topLeft = corner)
-                    }
+                if (overlay != null) {
+                    val suffix = if (overlay.unit.isEmpty()) "" else " (${overlay.unit})"
+                    val laid = measurer.measure(overlay.title + suffix, title.copy(color = other))
+                    drawText(laid, topLeft = Offset(right - laid.size.width - HALF.toPx(), 0f))
                 }
             }
         },
@@ -1443,7 +1474,6 @@ private val MARKED = 5.dp
 private val TOWN = 1.5.dp
 private val GLYPH = 20.dp
 private val DEPTH_GRAPH = 260.dp
-private val SMALL_GRAPH = 110.dp
 private val AXIS = 40.dp
 private val FOOT = 16.dp
 private val HEAD = 18.dp

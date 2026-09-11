@@ -420,15 +420,18 @@ once and corrected. The numbers stay unused rather than being given to something
   shown for several dives chosen in the table, and under a trip's own fields for the dives on
   it, which is what a trip is. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
-- **GUI-4 — Dive profile rendering.** *Settled in part:* **a first drawing, on the item view.**
-  Depth over time is the graph: the primary recording drawn thick and filled underneath, so a
-  dive reads as water, and any other recording of the same dive laid over it thinly, with the
-  deco stops stepped across it. Everything else the primary recording holds — temperature,
-  cylinder pressures, no-deco time, CNS — is a small graph of its own under it, on the same
-  axis of minutes. Marks fall on values a reader would choose, steps of one, two or five, and
-  the unit sits in the title. What is worked out is worked out without a screen and tested;
-  the drawing is paths built once per size. Open: what a phone shows of this, and whether the
-  small graphs share one axis or each get their own.
+- **GUI-4 — Dive profile rendering.** *Settled in part:* **one graph per recording, under
+  its tab.** Depth over time up the left, the recording drawn thick and filled underneath so a
+  dive reads as water, its deco stops stepped across it; and up the right one other thing the
+  computer wrote, chosen from a box of what it wrote — the temperature, a cylinder's pressure
+  named as its gas source is, the no-deco time, the CNS. The no-deco time is plotted capped
+  at 99 minutes and without the zeros a computer reads before it has calculated: computers
+  mark *no limit* with a number, 99 minutes on one and 598 on another, and plotted as written
+  the marker is the whole axis. Each recording of a dive has its own
+  graph and shows only its own data, which is what a tab is for. Marks fall on values a reader
+  would choose, steps of one, two or five, and the unit sits in each axis's title. What is
+  worked out is worked out without a screen and tested; the drawing is paths built once per
+  size. Open: what a phone shows of this.
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
   another item, the name is clickable and opens that item where it lives: the tab holding its
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and

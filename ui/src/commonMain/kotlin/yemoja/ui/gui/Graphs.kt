@@ -2,7 +2,6 @@ package yemoja.ui.gui
 
 import yemoja.data.Element
 import yemoja.data.Item
-import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.Series
@@ -12,16 +11,16 @@ import kotlin.math.log10
 import kotlin.math.pow
 
 /*
- * A dive's recordings as graphs: what is drawn, worked out here and holding no screen in it.
+ * A recording as a graph: what is drawn, worked out here and holding no screen in it.
  *
- * Depth over time is the graph, the primary recording drawn to be read and any other recording
- * of the same dive laid over it thinly; the rest of what a computer wrote, temperature, cylinder
- * pressures, no-deco time and CNS, is a small graph each under it, on the same axis of minutes.
+ * One graph per recording, under its tab: depth over time up the left, and up the right one
+ * other thing the computer wrote, chosen from what it wrote — temperature, a cylinder's pressure,
+ * no-deco time, CNS.
  *
  * See ../../../../../../gui/doc.md — `GUI-4`.
  */
 
-/** Point is one sample placed on a graph: a minute along, and a value in the graph's unit. */
+/** Point is one sample placed on a graph: a minute along, and a value in the line's unit. */
 internal class Point(val minute: Double, val value: Double)
 
 /**
@@ -35,57 +34,63 @@ internal class Line(
     val stepped: Boolean = false,
 )
 
-/**
- * Graph is one chart of a recording: a title, the unit up its side, the lines on it, and whether
- * its axis runs downward, as depth's does.
- */
-internal class Graph(
-    val title: String,
-    val unit: String,
-    val lines: List<Line>,
-    val down: Boolean = false,
-)
+/** Overlay is one thing the right axis can show: its title, its unit, and its line. */
+internal class Overlay(val title: String, val unit: String, val line: Line)
 
 /**
- * The graphs of [dive]: depth first, and then whatever else its primary recording holds.
- *
- * The primary recording is the one the dive names, or the first where it names none. Empty
- * where the dive has no recording, or none with a depth series.
+ * The depth side of a recording's graph: the depth itself, and the deco stops stepped across
+ * it where there are any. Empty where the recording holds no depth.
  */
-internal fun graphsOf(dive: Item): List<Graph> {
-    val profiles = profilesOf(dive)
-    if (profiles.isEmpty()) return emptyList()
-    val primaryKey = primaryKeyOf(dive)?.takeIf { it in profiles } ?: profiles.keys.first()
-    val primary = profiles.getValue(primaryKey)
-    val depth = seriesOf(primary, "depth") ?: return emptyList()
-    val graphs = ArrayList<Graph>()
-
-    val depthLines = ArrayList<Line>()
-    depthLines += Line("Depth", pointsOf(depth))
-    seriesOf(primary, "decostop")?.let {
-        depthLines += Line("Deco stop", pointsOf(it), main = false, stepped = true)
+internal fun depthLinesOf(profile: Item): List<Line> {
+    val depth = seriesOf(profile, "depth") ?: return emptyList()
+    val lines = ArrayList<Line>()
+    lines += Line("Depth", pointsOf(depth))
+    seriesOf(profile, "decostop")?.let {
+        lines += Line("Deco stop", pointsOf(it), main = false, stepped = true)
     }
-    for ((key, other) in profiles) {
-        if (key == primaryKey) continue
-        seriesOf(other, "depth")?.let { depthLines += Line(key, pointsOf(it), main = false) }
-    }
-    graphs += Graph("Depth", "m", depthLines, down = true)
-
-    seriesOf(primary, "temperature")?.let {
-        graphs += Graph("Temperature", "°C", listOf(Line("Temperature", pointsOf(it))))
-    }
-    val pressures = keyedSeriesOf(primary, "pressures")
-    if (pressures.isNotEmpty()) {
-        val lines = pressures.map { (key, series) -> Line(key, pointsOf(series)) }
-        graphs += Graph("Pressure", "bar", lines)
-    }
-    seriesOf(primary, "no_deco_time")?.let {
-        val line = Line("No-deco time", pointsOf(it, scale = 1.0 / 60.0))
-        graphs += Graph("No-deco time", "min", listOf(line))
-    }
-    seriesOf(primary, "cns")?.let { graphs += Graph("CNS", "%", listOf(Line("CNS", pointsOf(it)))) }
-    return graphs
+    return lines
 }
+
+/**
+ * What the right axis of [profile]'s graph can show, in the order offered: the temperature, a
+ * pressure per cylinder, the no-deco time, the CNS and the OTU, whichever the recording holds.
+ *
+ * A cylinder is named as its gas source on [dive] is: by the cylinder it was, where the source
+ * names one, and by its key otherwise.
+ */
+internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
+    val overlays = ArrayList<Overlay>()
+    seriesOf(profile, "temperature")?.let {
+        overlays += Overlay("Temperature", "°C", Line("Temperature", pointsOf(it)))
+    }
+    val sources = keyedOf(dive, "gas_sources")
+    for ((key, series) in keyedSeriesOf(profile, "pressures")) {
+        val tank = sources[key]?.let { entryLabelOf(key, it) } ?: key
+        overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)))
+    }
+    seriesOf(profile, "no_deco_time")?.let {
+        overlays += Overlay("No-deco time", "min", Line("No-deco time", noDecoOf(it)))
+    }
+    seriesOf(profile, "cns")?.let { overlays += Overlay("CNS", "%", Line("CNS", pointsOf(it))) }
+    seriesOf(profile, "otu")?.let { overlays += Overlay("OTU", "", Line("OTU", pointsOf(it))) }
+    return overlays
+}
+
+/**
+ * A no-deco series as a plot reads it: in minutes, capped, and without the zeros a computer
+ * reads before it has calculated anything.
+ *
+ * A computer marks *no limit* with a number: one writes 99 minutes, another 598. Plotted as
+ * written, the marker is the whole axis and the real values lie squashed under it, so anything
+ * above the cap reads as the cap, which is what the diver's screen showed. The zeros before the
+ * first positive value are the same case as for `deco`: not yet calculated, not zero.
+ */
+internal fun noDecoOf(series: Series): List<Point> =
+    pointsOf(series, 1.0 / 60.0).dropWhile { it.value <= 0.0 }
+        .map { Point(it.minute, minOf(it.value, NO_DECO_CAP)) }
+
+/** Minutes of no-deco time beyond which a plot says no more, which is where computers stop. */
+internal const val NO_DECO_CAP = 99.0
 
 /**
  * Where to put the marks along an axis from [low] to [high], about [wanted] of them, at values
@@ -105,22 +110,26 @@ internal fun ticksOf(low: Double, high: Double, wanted: Int): List<Double> {
     return ticks
 }
 
+// Each reader asks the description first: `read` refuses a field the type does not have, and
+// what is asked for a graph is asked of any keyed entry, a gas source among them.
+
 @Suppress("UNCHECKED_CAST")
-private fun profilesOf(dive: Item): Map<String, OwnedItem> {
-    val read = (dive.read("profiles") as? Result.Usable)?.value as? Map<String, Element<Any>>
+private fun keyedOf(item: Item, field: String): Map<String, OwnedItem> {
+    if (item.description[field] == null) return emptyMap()
+    val read = (item.read(field) as? Result.Usable)?.value as? Map<String, Element<Any>>
     return read.orEmpty().mapNotNull { (key, element) ->
         ((element as? Element.Usable)?.value as? OwnedItem)?.let { key to it }
     }.toMap()
 }
 
-private fun primaryKeyOf(dive: Item): String? =
-    ((dive.read("primary_profile") as? Result.Usable)?.value as? KeyReference)?.key
-
-private fun seriesOf(profile: Item, field: String): Series? =
-    (profile.read(field) as? Result.Usable)?.value as? Series
+private fun seriesOf(profile: Item, field: String): Series? {
+    if (profile.description[field] == null) return null
+    return (profile.read(field) as? Result.Usable)?.value as? Series
+}
 
 @Suppress("UNCHECKED_CAST")
 private fun keyedSeriesOf(profile: Item, field: String): Map<String, Series> {
+    if (profile.description[field] == null) return emptyMap()
     val read = (profile.read(field) as? Result.Usable)?.value as? Map<String, Element<Any>>
     return read.orEmpty().mapNotNull { (key, element) ->
         ((element as? Element.Usable)?.value as? Series)?.let { key to it }
