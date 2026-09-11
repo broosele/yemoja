@@ -42,9 +42,9 @@ class StatsTest {
     private fun about(label: String): Shown = stats.first { it.label == label }
 
     @Test
-    fun `a number is its range and its average`() {
-        assertEquals("1 – 3, average 2", about("Dive number").text)
-        assertEquals("10 – 30, average 20", about("Max depth").text)
+    fun `a number is its range and its average, and a number that only names is its range`() {
+        assertEquals("1 – 3", about("Dive number").text, "an average dive number is no number")
+        assertEquals("10 – 30 m, average 20 m", about("Max depth").text)
     }
 
     @Test

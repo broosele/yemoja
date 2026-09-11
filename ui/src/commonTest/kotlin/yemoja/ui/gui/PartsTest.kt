@@ -79,6 +79,42 @@ class PartsTest {
     }
 }
 
+class DisplayTest {
+
+    private val depth = Types.DIVE["max_depth"]!!
+    private val duration = Types.DIVE["duration"]!!
+
+    @Test
+    fun `a time reads as minutes and seconds, however long`() {
+        assertEquals("61:16", clockOf(3676.0))
+        assertEquals("121:05", clockOf(7265.0))
+        assertEquals("0:05", clockOf(5.0))
+        assertEquals("-60:00", clockOf(-3600.0))
+        assertEquals("61:16", displayOf(duration, 3676.0))
+    }
+
+    @Test
+    fun `a depth reads to one decimal, no trailing zero, and its unit after it`() {
+        assertEquals("12.3 m", displayOf(depth, 12.345))
+        assertEquals("12 m", displayOf(depth, 12.0))
+        assertEquals("12.4 m", displayOf(depth, 12.35))
+        assertEquals("12.3", numberOf(depth, 12.345), "the number alone, for a range")
+    }
+
+    @Test
+    fun `an angle keeps the file's own precision, a coordinate being nothing to round`() {
+        val latitude = Types.DIVE_SITE["latitude"]!!
+        assertEquals("51.643556 °", displayOf(latitude, 51.643556))
+    }
+
+    @Test
+    fun `a time carries no unit, being a clock, and a whole number none either`() {
+        assertEquals("", unitOf(duration))
+        assertEquals("", unitOf(Types.DIVE["dive_number"]!!))
+        assertEquals("m", unitOf(depth))
+    }
+}
+
 class ArrangedTest {
 
     @Test

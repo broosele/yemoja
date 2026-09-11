@@ -1,16 +1,20 @@
 package yemoja.ui.gui
 
 import yemoja.data.Cardinality
+import yemoja.data.Dimension
 import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
+import yemoja.data.NumberDescription
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Units
+import kotlin.math.abs
+import kotlin.math.roundToLong
 
 /*
  * What an item and its fields read as on a screen.
@@ -187,8 +191,71 @@ private fun said(field: FieldDescription, value: Any, within: Item): List<Part> 
     }
     field.cardinality == Cardinality.LIST -> listed(value, within)
     value is OwnedItem -> plain(counted(filledIn(value), "field"))
-    else -> one(value, within)?.let { listOf(it) } ?: plain(field.format(value, Units.DEFAULT))
+    else -> one(value, within)?.let { listOf(it) } ?: plain(displayOf(field, value))
 }
+
+/**
+ * A number as a screen shows it: a time as minutes and seconds, and the rest to as many decimals
+ * as a reader wants, which is fewer than a file keeps.
+ *
+ * A file keeps three decimals of a metre so nothing measured is lost; a reader wants one. A time
+ * is seconds in the model and `61:16` on a screen, minutes and seconds however long, since a
+ * dive is quoted in minutes. A dimension not listed, an angle among them, reads as the file
+ * writes it. `GUI-16`.
+ */
+internal fun displayOf(field: FieldDescription, value: Any): String {
+    val number = numberOf(field, value)
+    val unit = unitOf(field)
+    return if (unit.isEmpty()) number else "$number $unit"
+}
+
+/** As [displayOf], without the unit, for where the unit is said once for several numbers. */
+internal fun numberOf(field: FieldDescription, value: Any): String {
+    if (field !is NumberDescription) return field.format(value, Units.DEFAULT)
+    val number = (value as? Number)?.toDouble() ?: return field.format(value, Units.DEFAULT)
+    if (field.dimension == Dimension.TIME) return clockOf(number)
+    val decimals = DECIMALS[field.dimension] ?: return field.format(value, Units.DEFAULT)
+    return rounded(number, decimals)
+}
+
+/** The unit a screen writes after a number of [field], or nothing where it has none to write. */
+internal fun unitOf(field: FieldDescription): String =
+    if (field is NumberDescription) SYMBOLS[field.dimension].orEmpty() else ""
+
+/** What each dimension is written in on a screen; a time is written as a clock instead. */
+private val SYMBOLS: Map<Dimension, String> = mapOf(
+    Dimension.LENGTH to "m",
+    Dimension.TEMPERATURE to "°C",
+    Dimension.MASS to "kg",
+    Dimension.VOLUME to "l",
+    Dimension.PRESSURE to "bar",
+    Dimension.DENSITY to "kg/m³",
+    Dimension.ANGLE to "°",
+)
+
+/** Seconds as minutes and seconds, `61:16`, a sign in front where they are negative. */
+internal fun clockOf(seconds: Double): String {
+    val whole = seconds.roundToLong()
+    val sign = if (whole < 0) "-" else ""
+    val total = abs(whole)
+    return sign + (total / 60) + ":" + (total % 60).toString().padStart(2, '0')
+}
+
+/** [number] to at most [decimals] places, trailing zeros dropped. */
+private fun rounded(number: Double, decimals: Int): String {
+    val text = "%.${decimals}f".format(number)
+    return if ('.' in text) text.trimEnd('0').trimEnd('.') else text
+}
+
+/** How many decimals a screen shows of each dimension, where fewer than the file's are wanted. */
+private val DECIMALS: Map<Dimension, Int> = mapOf(
+    Dimension.LENGTH to 1,
+    Dimension.TEMPERATURE to 1,
+    Dimension.MASS to 1,
+    Dimension.VOLUME to 1,
+    Dimension.PRESSURE to 0,
+    Dimension.DENSITY to 0,
+)
 
 private fun plain(text: String): List<Part> = listOf(Part(text))
 

@@ -410,8 +410,9 @@ once and corrected. The numbers stay unused rather than being given to something
   knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
   before it arrives shows its sites on an empty frame until it does.
 - **GUI-23 — Which statistic each kind of field gets.** *Settled:* **one per kind, and a
-  field nobody answered is left out.** A number is its range and its average; a date or a
-  time its range; a yes-or-no how many yeses of how many; and anything named — a site, a
+  field nobody answered is left out.** A number is its range and its average, unless it names
+  rather than measures, as a dive's number does, when the range is all; a date or a time its
+  range; a yes-or-no how many yeses of how many; and anything named — a site, a
   buddy, a word from a list — how many different ones and the first few of them, each leading
   to its item. Where not every item answered, how many did is added. The shape is the item
   view's own: the same fields in the same order, two columns, titled by how many items. It is
@@ -520,3 +521,10 @@ once and corrected. The numbers stay unused rather than being given to something
   the first reference on it points at — a recording by the computer that made it, a course by
   its certification — and by its key only where nothing on it says anything. A series is still
   a count: the graphs are where it is read.
+
+  **What a number reads as.** A file keeps three decimals of a metre so nothing measured is
+  lost; a reader wants one. A depth, a temperature, a mass and a volume read to one decimal,
+  a pressure and a density to none, and an angle as the file writes it, a coordinate being
+  nothing to round. A time is seconds in the model and reads as minutes and seconds, `61:16`,
+  however long, since a dive is quoted in minutes. Every other number carries its unit after
+  it, once after a range and once after an average.

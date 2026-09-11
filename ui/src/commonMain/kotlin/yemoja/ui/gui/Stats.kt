@@ -28,9 +28,10 @@ import kotlin.math.roundToInt
 /**
  * Field by field, what [items] say together; a field none of them answers is left out.
  *
- * A number has a range and an average, a date or a time a range, a yes-or-no a count of the
- * yeses, and anything named — a site, a buddy, a word from a list — how many different ones
- * and which, the first few. The count of items answering is added where not all of them did.
+ * A number has a range and an average, unless it names rather than measures, as a dive's number
+ * does, when the range is all; a date or a time a range; a yes-or-no a count of the yeses; and
+ * anything named — a site, a buddy, a word from a list — how many different ones and which, the
+ * first few. The count of items answering is added where not all of them did.
  */
 internal fun statisticsOf(items: List<Item>): List<Shown> {
     val type = items.firstOrNull()?.description ?: return emptyList()
@@ -78,13 +79,15 @@ private fun numbers(field: FieldDescription, values: List<Any>): List<Part> {
     // what it is given and would write 2.0 for a dive number.
     fun written(number: Double): String {
         val whole = field is WholeNumberDescription && number == number.toLong().toDouble()
-        return field.format(if (whole) number.toLong() else number, Units.DEFAULT)
+        return numberOf(field, if (whole) number.toLong() else number)
     }
+    // The unit once after the range and once after the average, not after every number.
+    val unit = unitOf(field).let { if (it.isEmpty()) "" else " $it" }
     val least = written(numbers.min())
     val most = written(numbers.max())
-    val mean = written(numbers.average())
-    if (numbers.size == 1) return listOf(Part(least))
-    return listOf(Part("$least – $most, average $mean"))
+    if (numbers.size == 1) return listOf(Part(least + unit))
+    if (field.name in RANGE_ONLY) return listOf(Part("$least – $most$unit"))
+    return listOf(Part("$least – $most$unit, average ${written(numbers.average())}$unit"))
 }
 
 /** Earliest to latest. */
@@ -130,6 +133,9 @@ private const val FEW = 3
 
 /** The one field that is a rating, whose average reads as stars too. */
 private const val RATING = "rating"
+
+/** Numbers that name rather than measure, whose average would mean nothing: a dive's number. */
+private val RANGE_ONLY: Set<String> = setOf("dive_number")
 
 @Suppress("UNCHECKED_CAST")
 private fun listedIn(value: Any): List<Any> =
