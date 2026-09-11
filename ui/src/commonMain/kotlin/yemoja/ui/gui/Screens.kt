@@ -197,7 +197,7 @@ private fun Places(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
     val tree = remember(set) { regionTreeOf(set) }
     Row(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.width(TREE).fillMaxHeight().padding(GAP)) {
-            branchesIn(tree, 0) { region ->
+            branchesIn(tree, "", 0) { region ->
                 place = region
                 onChoose(region)
             }
@@ -215,14 +215,21 @@ private fun Places(set: ItemSet, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
     }
 }
 
-/** Every branch of a tree, flattened with its depth, since a lazy list holds no nesting. */
+/**
+ * Every branch of a tree, flattened with its depth, since a lazy list holds no nesting.
+ *
+ * A line is keyed by its whole path from the root, because a region under two parents is in
+ * the list twice and a list refuses two lines with one key.
+ */
 private fun LazyListScope.branchesIn(
     branches: List<Branch>,
+    path: String,
     depth: Int,
     onChoose: (Chosen) -> Unit,
 ) {
     for (branch in branches) {
-        item(key = "$depth:" + branch.key) {
+        val key = path + "/" + branch.key
+        item(key = key) {
             Text(
                 text = branch.label,
                 style = MaterialTheme.typography.bodyMedium,
@@ -232,7 +239,7 @@ private fun LazyListScope.branchesIn(
                     .padding(start = GAP * depth, top = HALF, bottom = HALF),
             )
         }
-        branchesIn(branch.children, depth + 1, onChoose)
+        branchesIn(branch.children, key, depth + 1, onChoose)
     }
 }
 
