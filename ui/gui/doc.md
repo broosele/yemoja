@@ -293,9 +293,9 @@ into the logic layer, and each of those is easier to judge when nothing can go w
 It opens as `yemoja gui <logbook folder>`, beside the terminal front end, and unlike that one it
 can be run from the build, a window needing no console.
 
-**The look is the platform's own.** Material as it comes, light or dark as the system is set,
-and nothing of ours in it: `GUI-3` is open, and adopting the default first is the branch it
-offers. Within that, the tabs are a row
+**The look is the platform's, in the application's colours.** Material as it comes, light or
+dark as the system is set, with one thing of ours in it: the colours are a marine palette rather
+than the default violet, and nothing else is ours yet. `GUI-3`. Within that, the tabs are a row
 across the top, each with the platform's glyph for its subject beside its name, the dive table
 is headed and its trip cell is drawn as one cell down the run it spans, whatever is chosen is
 tinted rather than emboldened, a tree unfolds branch by branch, and the item view sits on a card
@@ -343,8 +343,6 @@ that cannot edit.
    overlap in time. Sorted by site, or by depth, a trip's dives scatter and there is nothing to
    span. Either the merging is a property of the date ordering and goes when the order changes,
    or the table refuses to be sorted another way, or grouping survives sorting within a group.
-- **GUI-3 — How much visual identity to define up front** versus adopting the platform's
-   defaults and refining later.
 - **GUI-4 — Dive profile rendering** is the most demanding piece of the interface and, per
    the exception above, the least shareable. Worth designing early.
 - **GUI-5 — What the first usable version contains** — the smallest set of screens that
@@ -383,6 +381,15 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-13 — The tab switcher on a phone.** *Settled:* it must be accessible, not
   permanently visible. Seven tabs do not fit across the foot of a phone, and requiring
   them to would force the same compromise on the desktop, where there is ample room.
+- **GUI-3 — How much visual identity to define up front.** *Settled in part:* **the colours,
+  and nothing else yet.** The platform's scheme is violet and a logbook of the sea is not, so the
+  same roles are filled from a marine hue, navy where the default is purple and a cool grey
+  where it is a warm one, as quiet as the default was. Type, shapes, glyphs and every component
+  stay the platform's. Two constraints hold it in place: every colour on a screen is a *role*
+  from the scheme rather than a value, so the palette lives in one file; and every pairing of a
+  colour with the text on it is tested for contrast, because a hand-filled scheme can pair a
+  dark on a dark and nothing else would say so. What is left of the question is whether the
+  application ever wants type or glyphs of its own, which nothing yet asks for.
 - **GUI-22 — Which parent a region tree uses.** *Settled:* **all of them.** A region has
   `parents`, plural, so regions form a graph rather than a tree, and a region with two parents
   appears under both. Nothing is hidden and no rule has to be invented for which path is the

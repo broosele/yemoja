@@ -53,8 +53,9 @@ import yemoja.logic.Universe
  *
  * Reading only. Nothing here changes anything, which is the first version's whole scope.
  *
- * The look is the platform's own, Material with nothing of ours in it, until `GUI-3` decides how
- * much identity to define. Adopting the default first is the branch that question offers.
+ * The look is the platform's, Material in the application's own colours and nothing else of
+ * ours. `GUI-3`. Every colour here is a role from the scheme, never a value, so Palette.kt is
+ * the one place the colours are.
  *
  * See ../../../../../../gui/doc.md — the tabs, the three views and the shape of each selector
  * are settled there; this draws them.
