@@ -212,7 +212,7 @@ class DownloadedGasTest {
     @Test
     fun `a tank and the mix it carried are one gas source`() {
         // Two arrays there, one collection here: a gas and its cylinder are one thing. `LOGIC-12`.
-        assertEquals(listOf("gas", "gas#1"), keyed(gassed, "gas_sources"))
+        assertEquals(listOf("tank_1", "tank_2"), keyed(gassed, "gas_sources"))
     }
 
     @Test
@@ -226,7 +226,7 @@ class DownloadedGasTest {
     @Test
     fun `pressures are keyed by the gas source rather than by a tank`() {
         val held = (profile(gassed).keyedSeries<Double>("pressures") as Result.Usable).value
-        assertEquals(listOf("gas"), held.keys.toList())
+        assertEquals(listOf("tank_1"), held.keys.toList())
     }
 
     @Test
@@ -234,7 +234,7 @@ class DownloadedGasTest {
         val switches = (profile(gassed).series<KeyReference>("gas_switches") as Result.Usable).value
         assertEquals(2, switches.size)
         val second = (switches.valueAt(1) as Element.Usable).value as KeyReference
-        assertEquals("gas#1", second.key)
+        assertEquals("tank_2", second.key)
     }
 
     @Test

@@ -285,8 +285,13 @@ object Download {
         held.map { Stored.Elements(listOf(Stored.Leaf(it.first), Stored.Leaf(it.second))) },
     )
 
-    /** What a gas source at [at] is called, which is what a pressure and a switch name. */
-    private fun keyAt(at: Int): String = if (at == 0) "gas" else "gas#$at"
+    /**
+     * What a gas source at [at] is called, which is what a pressure and a switch name.
+     *
+     * Tanks numbered from one, since a computer knows them by position and nothing else; a
+     * source a user adds is keyed by what it was for instead, which a download cannot know.
+     */
+    private fun keyAt(at: Int): String = "tank_${at + 1}"
 
     /** Each series read from one value of a sample, and how to get that value out of one. */
     private val READINGS: List<Pair<String, (Recording.Sample) -> Double?>> = listOf(
