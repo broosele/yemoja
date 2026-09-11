@@ -6,6 +6,7 @@ import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.OwnedItem
+import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.data.Series
@@ -59,6 +60,43 @@ internal fun fieldsShownOf(type: ItemDescription): List<FieldDescription> =
 
 /** By type name, the fields the screen around an item view shows already. */
 private val ALREADY_SHOWN: Map<String, Set<String>> = mapOf("region" to setOf("children"))
+
+/**
+ * Arranged is how an item view lays a type out: the plain fields, which flow into columns, and
+ * then the owned items, each an inset of its own, in the type's order. `GUI-16`.
+ */
+internal class Arranged(val plain: List<FieldDescription>, val insets: List<OwnedItemDescription>)
+
+/** The fields of [type] as an item view lays them out. */
+internal fun arrangedOf(type: ItemDescription): Arranged {
+    val shown = fieldsShownOf(type)
+    return Arranged(
+        plain = shown.filter { it !is OwnedItemDescription },
+        insets = shown.filterIsInstance<OwnedItemDescription>(),
+    )
+}
+
+/**
+ * What a tab in a keyed inset is called: the entry's name where it has one, else what the first
+ * reference on it points at, else its key.
+ *
+ * A recording has no name and its key is a spelling, but it names the computer that made it,
+ * which is what a reader calls it; a course likewise names its certification. The key is what
+ * is left when nothing on the entry says anything, which is the recorded gap for key references.
+ */
+internal fun entryLabelOf(key: String, entry: Item): String {
+    if (entry.description["name"] != null) {
+        val title = titleOf(entry)
+        if (title != UNNAMED) return title
+    }
+    for (field in entry.description.fields) {
+        if (field.cardinality != Cardinality.SINGLE) continue
+        val read = (entry.read(field.name) as? Result.Usable)?.value as? Reference.Identified
+        val target = read?.let { entry.set[it.id] } ?: continue
+        return titleOf(target)
+    }
+    return key
+}
 
 /**
  * What one field says, or absent where it says nothing.

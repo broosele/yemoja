@@ -1,5 +1,8 @@
 package yemoja.ui.gui
 
+import yemoja.data.Element
+import yemoja.data.OwnedItem
+import yemoja.data.Result
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
@@ -73,5 +76,43 @@ class PartsTest {
         assertEquals(listOf(h, e, e, e, e), starsOf(1))
         assertEquals(listOf(f, f, f, f, f), starsOf(12), "above the range is all of them")
         assertEquals(listOf(e, e, e, e, e), starsOf(0), "below it is none")
+    }
+}
+
+class ArrangedTest {
+
+    @Test
+    fun `an item view flows the plain fields and sets each owned item in an inset, in order`() {
+        val dive = arrangedOf(Types.DIVE)
+        assertEquals(
+            listOf("details", "environment", "gear", "profiles", "gas_sources"),
+            dive.insets.map { it.name },
+        )
+        assertEquals(false, dive.plain.any { it.name in dive.insets.map { i -> i.name } })
+        assertEquals(Types.DIVE.fields.size, dive.plain.size + dive.insets.size)
+    }
+
+    @Test
+    fun `a tab is called by the entry's name, else by what it points at, else by its key`() {
+        val set = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "gear.json" to """{"perdix": {"name": "Perdix 2"}}""",
+                    "dive/2026-06-21#0.json" to """{"profiles": {
+                        "p1": {"dive_computer": "@perdix", "depth": [[0, 0]]},
+                        "p2": {"depth": [[0, 0]]}
+                    }}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val dive = set["2026-06-21#0"]!!
+        val read = (dive.read("profiles") as Result.Usable<*>).value
+        @Suppress("UNCHECKED_CAST")
+        val profiles = read as Map<String, Element<Any>>
+        val p1 = (profiles.getValue("p1") as Element.Usable).value as OwnedItem
+        val p2 = (profiles.getValue("p2") as Element.Usable).value as OwnedItem
+        assertEquals("Perdix 2", entryLabelOf("p1", p1), "the computer that made it")
+        assertEquals("p2", entryLabelOf("p2", p2), "nothing on it says a thing")
     }
 }

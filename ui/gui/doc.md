@@ -286,11 +286,12 @@ application feels most.
 
 ## What is built
 
-**A window that reads a logbook, and nothing more.** The tabs across the top, a selector listing
-what a tab holds by type, and an item view showing the fields of the one chosen. Owned items are
-counted rather than spelt out, which is the progressive disclosure above meeting its first real
-item. The manual is read in its tab, a chapter at a time. Two tabs hold nothing yet and say what
-they will hold rather than showing an empty box.
+**A window that reads a logbook, and nothing more.** The tabs across the top, a selector
+listing what a tab holds by type, and an item view showing the fields of the one chosen. On a
+desktop the plain fields flow into two columns, an owned item is set into a box of its own and
+shown in full, and a keyed one is such a box with a tab per entry. The manual is read in its
+tab, a chapter at a time. Two tabs hold nothing yet and say what they will hold rather than
+showing an empty box.
 
 **Nothing changes anything.** There is no edit view, no action and no key that writes. That is
 the scope rather than an oversight: a first version proves the toolkit, the layout and the door
@@ -506,3 +507,10 @@ once and corrected. The numbers stay unused rather than being given to something
   shown, since the tree beside the item is exactly that list; and a rating out of ten reads
   as five stars, two points to a star and an odd rating ending in a half, and the number
   is not shown.
+  **How a desktop lays an item out.** The plain fields flow into two columns, in the type's
+  order. An owned item is set into a box of its own, titled, and shown in full the same way,
+  boxes nesting where an owned item owns one. A keyed owned item is such a box with a tab per
+  entry, the first open; a tab is called by the entry's name where it has one, else by what
+  the first reference on it points at — a recording by the computer that made it, a course by
+  its certification — and by its key only where nothing on it says anything. A series is still
+  a count: the graphs are where it is read.

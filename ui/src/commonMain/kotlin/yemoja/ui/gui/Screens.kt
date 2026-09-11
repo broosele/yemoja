@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -73,10 +74,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import yemoja.data.Cardinality
+import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
+import yemoja.data.OwnedItem
+import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceableItem
+import yemoja.data.Result
 import yemoja.logic.Types
 import yemoja.logic.Universe
 
@@ -925,13 +931,102 @@ private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
             if (chosen.item.description == Types.DIVE) Graphs(chosen.item)
-            val shown = fieldsShownOf(chosen.item.description)
-                .mapNotNull { shownOf(it, chosen.item) }
-            if (shown.isEmpty()) Aside("this one says nothing yet")
-            for (field in shown) Field(field, onFollow)
+            Fields(chosen.item, onFollow)
         }
     }
 }
+
+/**
+ * An item's fields as a desktop lays them out: the plain ones in two columns, then each owned
+ * item in an inset of its own, shown in full, and a keyed one as an inset with a tab per entry.
+ *
+ * Insets nest, since an owned item may own one: a recording's tolerances sit inside it. `GUI-16`.
+ */
+@Composable
+private fun Fields(item: Item, onFollow: (String) -> Unit) {
+    val arranged = remember(item.description) { arrangedOf(item.description) }
+    val shown = arranged.plain.mapNotNull { shownOf(it, item) }
+    val insets = arranged.insets.filter { item.read(it.name) is Result.Usable }
+    if (shown.isEmpty() && insets.isEmpty()) {
+        Aside("this one says nothing yet")
+        return
+    }
+    for (pair in shown.chunked(COLUMNS)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+        ) {
+            for (field in pair) Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
+            repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
+        }
+    }
+    for (inset in insets) {
+        when (inset.cardinality) {
+            Cardinality.KEYED -> KeyedInset(inset, item, onFollow)
+            else -> {
+                val owned = (item.read(inset.name) as? Result.Usable)?.value as? OwnedItem
+                if (owned != null) Inset(inset.label) { Fields(owned, onFollow) }
+            }
+        }
+    }
+}
+
+/** A keyed owned item as an inset with a tab per entry, the first open. */
+@Composable
+private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (String) -> Unit) {
+    @Suppress("UNCHECKED_CAST")
+    val entries = ((item.read(inset.name) as? Result.Usable)?.value as? Map<String, Element<Any>>)
+        .orEmpty().mapNotNull { (key, element) ->
+            ((element as? Element.Usable)?.value as? OwnedItem)?.let { key to it }
+        }
+    if (entries.isEmpty()) return
+    var open by remember(item, inset.name) { mutableStateOf(0) }
+    val at = open.coerceIn(0, entries.size - 1)
+    Inset(inset.label) {
+        SecondaryTabRow(selectedTabIndex = at) {
+            for ((index, entry) in entries.withIndex()) {
+                androidx.compose.material3.Tab(
+                    selected = index == at,
+                    onClick = { open = index },
+                    text = {
+                        Text(
+                            text = entryLabelOf(entry.first, entry.second),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(GAP))
+        Fields(entries[at].second, onFollow)
+    }
+}
+
+/** A box set into an item view, titled, holding an owned item in full. */
+@Composable
+private fun Inset(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(top = GAP),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(GAP)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = HALF),
+            )
+            content()
+        }
+    }
+}
+
+/** How many columns the plain fields of an item flow into on a desktop. */
+private const val COLUMNS = 2
+
 
 /** One field: what it is called, and what it says. */
 @Composable
@@ -1179,7 +1274,7 @@ private val TRIP = 170.dp
 private val NUMBER = 52.dp
 private val DATE = 100.dp
 private val SITE = 240.dp
-private val LABEL = 170.dp
+private val LABEL = 130.dp
 private val SITES = 300.dp
 private val MAP = 420.dp
 private val DOT = 3.dp
