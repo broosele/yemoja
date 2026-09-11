@@ -1,4 +1,4 @@
-# UDDF: what survives
+# UDDF
 
 UDDF is the one open file format for dive logs — a published standard, not one
 manufacturer's export. Yemoja reads and writes **version 3.2.3**.

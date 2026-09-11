@@ -22,9 +22,6 @@ this manual and the notes behind it — to compile the reference data that comes
 Yemoja, to build the test data and the scripts that check it, to read published
 standards, and to help with debugging and testing.
 
-It does not write the code Yemoja is made of. That is written by hand, and the decision
-to keep it that way is deliberate rather than incidental.
-
 The atlas of regions was written for Yemoja, following the conventions of Natural
 Earth — a public domain map dataset that asks for no credit and gets this one anyway.
 
