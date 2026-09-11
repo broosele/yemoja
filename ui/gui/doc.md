@@ -350,8 +350,6 @@ that cannot edit.
    overlap in time. Sorted by site, or by depth, a trip's dives scatter and there is nothing to
    span. Either the merging is a property of the date ordering and goes when the order changes,
    or the table refuses to be sorted another way, or grouping survives sorting within a group.
-- **GUI-4 — Dive profile rendering** is the most demanding piece of the interface and, per
-   the exception above, the least shareable. Worth designing early.
 - **GUI-5 — What the first usable version contains** — the smallest set of screens that
    makes the app worth opening.
 - **GUI-6 — Whether shape is enough on its own**, or whether a field also needs a
@@ -414,6 +412,15 @@ once and corrected. The numbers stay unused rather than being given to something
   the cities named narrow the same way, from capitals on the world to every place the source
   knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
   before it arrives shows its sites on an empty frame until it does.
+- **GUI-4 — Dive profile rendering.** *Settled in part:* **a first drawing, on the item view.**
+  Depth over time is the graph: the primary recording drawn thick and filled underneath, so a
+  dive reads as water, and any other recording of the same dive laid over it thinly, with the
+  deco stops stepped across it. Everything else the primary recording holds — temperature,
+  cylinder pressures, no-deco time, CNS — is a small graph of its own under it, on the same
+  axis of minutes. Marks fall on values a reader would choose, steps of one, two or five, and
+  the unit sits in the title. What is worked out is worked out without a screen and tested;
+  the drawing is paths built once per size. Open: what a phone shows of this, and whether the
+  small graphs share one axis or each get their own.
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
   another item, the name is clickable and opens that item where it lives: the tab holding its
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and

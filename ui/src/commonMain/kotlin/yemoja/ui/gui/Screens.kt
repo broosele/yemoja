@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
 import yemoja.data.ReferenceableItem
@@ -923,6 +924,7 @@ private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
                 modifier = Modifier.padding(bottom = GAP),
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
+            if (chosen.item.description == Types.DIVE) Graphs(chosen.item)
             val shown = fieldsShownOf(chosen.item.description)
                 .mapNotNull { shownOf(it, chosen.item) }
             if (shown.isEmpty()) Aside("this one says nothing yet")
@@ -995,6 +997,142 @@ private fun Stars(rating: Int) {
     }
 }
 
+// --- The graphs of a dive. `GUI-4`.
+
+/** A dive's recordings drawn: depth to be read, and the rest small under it. */
+@Composable
+private fun Graphs(dive: Item) {
+    val graphs = remember(dive) { graphsOf(dive) }
+    for (graph in graphs) {
+        Chart(graph, if (graph.down) DEPTH_GRAPH else SMALL_GRAPH)
+    }
+    if (graphs.isNotEmpty()) HorizontalDivider(modifier = Modifier.padding(vertical = GAP))
+}
+
+/**
+ * One graph: its lines against a grid, marks along both axes, and its title and unit.
+ *
+ * The main line is drawn to be read, filled underneath where the axis runs down so a dive
+ * reads as water; the rest are thin. Paths are built once per size and graph.
+ */
+@Composable
+private fun Chart(graph: Graph, height: Dp) {
+    val ink = MaterialTheme.colorScheme.primary
+    val others = listOf(
+        MaterialTheme.colorScheme.tertiary,
+        MaterialTheme.colorScheme.secondary,
+        MaterialTheme.colorScheme.error,
+    )
+    val water = MaterialTheme.colorScheme.primaryContainer
+    val grid = MaterialTheme.colorScheme.outlineVariant
+    val quiet = MaterialTheme.colorScheme.onSurfaceVariant
+    val label = MaterialTheme.typography.labelSmall.copy(color = quiet)
+    val title = MaterialTheme.typography.labelMedium.copy(color = quiet)
+    val measurer = rememberTextMeasurer()
+    Spacer(
+        modifier = Modifier.fillMaxWidth().height(height).padding(bottom = HALF).drawWithCache {
+            val left = AXIS.toPx()
+            val bottom = size.height - FOOT.toPx()
+            val top = HEAD.toPx()
+            val right = size.width - HALF.toPx()
+            val points = graph.lines.flatMap { it.points }
+            val lastMinute = maxOf(points.maxOfOrNull { it.minute } ?: 0.0, 1.0)
+            val mainPoints = graph.lines.firstOrNull { it.main }?.points ?: points
+            var low = if (graph.down) 0.0 else mainPoints.minOf { it.value }
+            val most = mainPoints.maxOf { it.value }
+            var high = if (graph.down) most * 1.05 else most
+            if (high <= low) {
+                low -= 1.0
+                high += 1.0
+            }
+            fun x(minute: Double): Float = (left + (right - left) * (minute / lastMinute)).toFloat()
+            fun y(value: Double): Float {
+                val fraction = (value - low) / (high - low)
+                val span = (bottom - top) * fraction
+                return (if (graph.down) top + span else bottom - span).toFloat()
+            }
+            val paths = graph.lines.map { line -> pathOf(line, ::x, ::y) }
+            val fill = graph.lines.firstOrNull { it.main }?.let { line ->
+                if (!graph.down || line.points.isEmpty()) return@let null
+                Path().apply {
+                    addPath(pathOf(line, ::x, ::y))
+                    lineTo(x(line.points.last().minute), y(0.0))
+                    lineTo(x(line.points.first().minute), y(0.0))
+                    close()
+                }
+            }
+            val minutes = ticksOf(0.0, lastMinute, 6)
+            val values = ticksOf(low, high, if (graph.down) 5 else 3)
+            val thin = Stroke(THIN.toPx())
+            val thick = Stroke(LINE_WIDTH.toPx())
+            onDrawBehind {
+                for (tick in values) {
+                    drawLine(grid, Offset(left, y(tick)), Offset(right, y(tick)), THIN.toPx())
+                    val laid = measurer.measure(shortOf(tick), label)
+                    val corner = Offset(
+                        x = left - laid.size.width - HALF.toPx(),
+                        y = y(tick) - laid.size.height / 2f,
+                    )
+                    drawText(laid, topLeft = corner)
+                }
+                for (tick in minutes) {
+                    drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
+                    val laid = measurer.measure(shortOf(tick), label)
+                    drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
+                }
+                // The unit along the bottom, once, at the end where the marks run out.
+                val unit = measurer.measure("min", label)
+                drawText(unit, topLeft = Offset(right - unit.size.width, bottom + 2f))
+                fill?.let { drawPath(it, water) }
+                var next = 0
+                for ((index, line) in graph.lines.withIndex()) {
+                    val colour = if (line.main) ink else others[next++ % others.size]
+                    drawPath(paths[index], colour, style = if (line.main) thick else thin)
+                }
+                val heading = measurer.measure("${graph.title} (${graph.unit})", title)
+                drawText(heading, topLeft = Offset(left + HALF.toPx(), 0f))
+                // Where there is more than one line, each is named at its end.
+                if (graph.lines.size > 1) {
+                    next = 0
+                    for (line in graph.lines) {
+                        val last = line.points.lastOrNull() ?: continue
+                        val colour = if (line.main) ink else others[next++ % others.size]
+                        val laid = measurer.measure(line.label, label.copy(color = colour))
+                        val corner = Offset(
+                            x = x(last.minute) - laid.size.width,
+                            y = y(last.value) - laid.size.height,
+                        )
+                        drawText(laid, topLeft = corner)
+                    }
+                }
+            }
+        },
+    )
+}
+
+/** A line as a path, stepping where it steps and sloping where it slopes. */
+private fun pathOf(line: Line, x: (Double) -> Float, y: (Double) -> Float): Path {
+    val path = Path()
+    var previous: Point? = null
+    for (point in line.points) {
+        val before = previous
+        when {
+            before == null -> path.moveTo(x(point.minute), y(point.value))
+            line.stepped -> {
+                path.lineTo(x(point.minute), y(before.value))
+                path.lineTo(x(point.minute), y(point.value))
+            }
+            else -> path.lineTo(x(point.minute), y(point.value))
+        }
+        previous = point
+    }
+    return path
+}
+
+/** A tick's value as a mark reads it: whole where it is whole, else to one decimal. */
+private fun shortOf(value: Double): String =
+    if (value == value.toLong().toDouble()) value.toLong().toString() else "%.1f".format(value)
+
 // --- What every screen shares.
 
 /** A quiet remark where there is nothing else to show. */
@@ -1048,6 +1186,12 @@ private val DOT = 3.dp
 private val MARKED = 5.dp
 private val TOWN = 1.5.dp
 private val GLYPH = 20.dp
+private val DEPTH_GRAPH = 260.dp
+private val SMALL_GRAPH = 110.dp
+private val AXIS = 40.dp
+private val FOOT = 16.dp
+private val HEAD = 18.dp
+private val LINE_WIDTH = 2.dp
 private val THIN = 1.dp
 
 /** How much of the water colour a river carries, so it reads as a line and not a canal. */
