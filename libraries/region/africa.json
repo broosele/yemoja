@@ -72,8 +72,7 @@
     "name": "Algeria",
     "category": "country",
     "parents": [
-      "@africa",
-      "@mediterranean_sea"
+      "@africa"
     ],
     "west": -8.7,
     "east": 12,
@@ -85,8 +84,7 @@
     "name": "Angola",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": 11.7,
     "east": 24.1,
@@ -98,8 +96,7 @@
     "name": "Benin",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": 0.8,
     "east": 3.9,
@@ -147,8 +144,7 @@
     "name": "Cameroon",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": 8.5,
     "east": 16.2,
@@ -210,8 +206,7 @@
     "name": "Democratic Republic of the Congo",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": 12.2,
     "east": 31.3,
@@ -223,8 +218,7 @@
     "name": "Republic of the Congo",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": 11.2,
     "east": 18.6,
@@ -236,8 +230,7 @@
     "name": "Cote d'Ivoire",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": -8.6,
     "east": -2.5,
@@ -249,9 +242,7 @@
     "name": "Djibouti",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_aden",
-      "@red_sea"
+      "@africa"
     ],
     "west": 41.7,
     "east": 43.5,
@@ -263,11 +254,7 @@
     "name": "Egypt",
     "category": "country",
     "parents": [
-      "@africa",
-      "@red_sea",
-      "@mediterranean_sea",
-      "@gulf_of_suez",
-      "@gulf_of_aqaba"
+      "@africa"
     ],
     "west": 24.7,
     "east": 36.9,
@@ -279,8 +266,7 @@
     "name": "Equatorial Guinea",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": 5.6,
     "east": 11.3,
@@ -292,8 +278,7 @@
     "name": "Eritrea",
     "category": "country",
     "parents": [
-      "@africa",
-      "@red_sea"
+      "@africa"
     ],
     "west": 36.4,
     "east": 43.2,
@@ -329,8 +314,7 @@
     "name": "Gabon",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": 8.7,
     "east": 14.5,
@@ -342,8 +326,7 @@
     "name": "Gambia",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -16.8,
     "east": -13.8,
@@ -355,8 +338,7 @@
     "name": "Ghana",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": -3.3,
     "east": 1.2,
@@ -368,8 +350,7 @@
     "name": "Guinea",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -15.1,
     "east": -7.6,
@@ -381,8 +362,7 @@
     "name": "Guinea-Bissau",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -16.7,
     "east": -13.6,
@@ -394,8 +374,7 @@
     "name": "Kenya",
     "category": "country",
     "parents": [
-      "@africa",
-      "@indian_ocean"
+      "@africa"
     ],
     "west": 33.9,
     "east": 41.9,
@@ -419,8 +398,7 @@
     "name": "Liberia",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -11.5,
     "east": -7.4,
@@ -432,9 +410,7 @@
     "name": "Libya",
     "category": "country",
     "parents": [
-      "@africa",
-      "@mediterranean_sea",
-      "@gulf_of_sidra"
+      "@africa"
     ],
     "west": 9.4,
     "east": 25.2,
@@ -484,8 +460,7 @@
     "name": "Mauritania",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -17.1,
     "east": -4.8,
@@ -510,10 +485,7 @@
     "name": "Morocco",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean",
-      "@mediterranean_sea",
-      "@strait_of_gibraltar"
+      "@africa"
     ],
     "west": -13.2,
     "east": -1,
@@ -525,8 +497,7 @@
     "name": "Mozambique",
     "category": "country",
     "parents": [
-      "@africa",
-      "@mozambique_channel"
+      "@africa"
     ],
     "west": 30.2,
     "east": 40.8,
@@ -538,8 +509,7 @@
     "name": "Namibia",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": 11.7,
     "east": 25.3,
@@ -563,8 +533,7 @@
     "name": "Nigeria",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": 2.7,
     "east": 14.7,
@@ -601,8 +570,7 @@
     "name": "Senegal",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -17.6,
     "east": -11.4,
@@ -627,8 +595,7 @@
     "name": "Sierra Leone",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -13.3,
     "east": -10.3,
@@ -640,9 +607,7 @@
     "name": "Somalia",
     "category": "country",
     "parents": [
-      "@africa",
-      "@indian_ocean",
-      "@gulf_of_aden"
+      "@africa"
     ],
     "west": 40.9,
     "east": 51.5,
@@ -654,9 +619,7 @@
     "name": "South Africa",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean",
-      "@indian_ocean"
+      "@africa"
     ],
     "west": 16.5,
     "east": 32.9,
@@ -680,8 +643,7 @@
     "name": "Sudan",
     "category": "country",
     "parents": [
-      "@africa",
-      "@red_sea"
+      "@africa"
     ],
     "west": 21.8,
     "east": 38.6,
@@ -693,8 +655,7 @@
     "name": "Tanzania",
     "category": "country",
     "parents": [
-      "@africa",
-      "@indian_ocean"
+      "@africa"
     ],
     "west": 29.3,
     "east": 40.4,
@@ -706,8 +667,7 @@
     "name": "Togo",
     "category": "country",
     "parents": [
-      "@africa",
-      "@gulf_of_guinea"
+      "@africa"
     ],
     "west": -0.2,
     "east": 1.8,
@@ -719,8 +679,7 @@
     "name": "Tunisia",
     "category": "country",
     "parents": [
-      "@africa",
-      "@mediterranean_sea"
+      "@africa"
     ],
     "west": 7.5,
     "east": 11.6,
@@ -744,8 +703,7 @@
     "name": "Western Sahara",
     "category": "country",
     "parents": [
-      "@africa",
-      "@atlantic_ocean"
+      "@africa"
     ],
     "west": -17.1,
     "east": -8.7,
@@ -821,7 +779,8 @@
     "category": "country",
     "parents": [
       "@africa",
-      "@indian_ocean"
+      "@indian_ocean",
+      "@france"
     ],
     "west": 55.2,
     "east": 55.9,
@@ -834,7 +793,8 @@
     "category": "country",
     "parents": [
       "@africa",
-      "@mozambique_channel"
+      "@mozambique_channel",
+      "@france"
     ],
     "west": 45,
     "east": 45.3,
@@ -847,7 +807,8 @@
     "category": "country",
     "parents": [
       "@africa",
-      "@atlantic_ocean"
+      "@atlantic_ocean",
+      "@united_kingdom"
     ],
     "west": -5.8,
     "east": -5.6,

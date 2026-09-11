@@ -123,6 +123,13 @@ rename or remove one. The reason is in [data/libraries.md](../data/libraries.md)
   data follows the conventions of [Natural Earth](https://www.naturalearthdata.com/),
   which is itself in the public domain and could have been used directly; nothing was
   taken from it.
+
+  **What a region's parents are.** A country is in its continent, and not in the seas it
+  has a coast on: France is in Europe, not in the Atlantic or the Mediterranean. An island
+  is in its sea as well, and an island that belongs to a country elsewhere is in that
+  country too, so Martinique is in the Caribbean Sea and in France. A sea is in its ocean
+  and in the continents it washes, and an area — an archipelago, a reef, a coast — is in
+  whatever it is part of, sea and country alike.
 - **The map** — [Natural Earth](https://www.naturalearthdata.com/), which is in the public
   domain; its `land`, `lakes`, `admin_0_boundary_lines_land`, `rivers_lake_centerlines` and
   `populated_places` themes at 1:110m, 1:50m and 1:10m, taken in September 2026 from the

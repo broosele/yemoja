@@ -344,8 +344,7 @@
     "name": "Bangladesh",
     "category": "country",
     "parents": [
-      "@asia",
-      "@bay_of_bengal"
+      "@asia"
     ],
     "west": 88,
     "east": 92.7,
@@ -370,7 +369,6 @@
     "category": "country",
     "parents": [
       "@asia",
-      "@south_china_sea",
       "@coral_triangle"
     ],
     "west": 114,
@@ -383,8 +381,7 @@
     "name": "Cambodia",
     "category": "country",
     "parents": [
-      "@asia",
-      "@gulf_of_thailand"
+      "@asia"
     ],
     "west": 102,
     "east": 107.6,
@@ -396,10 +393,7 @@
     "name": "China",
     "category": "country",
     "parents": [
-      "@asia",
-      "@yellow_sea",
-      "@east_china_sea",
-      "@south_china_sea"
+      "@asia"
     ],
     "west": 73.5,
     "east": 134.8,
@@ -411,8 +405,7 @@
     "name": "Georgia",
     "category": "country",
     "parents": [
-      "@asia",
-      "@black_sea"
+      "@asia"
     ],
     "west": 40,
     "east": 46.7,
@@ -424,11 +417,7 @@
     "name": "India",
     "category": "country",
     "parents": [
-      "@asia",
-      "@indian_ocean",
-      "@bay_of_bengal",
-      "@laccadive_sea",
-      "@arabian_sea"
+      "@asia"
     ],
     "west": 68.2,
     "east": 97.4,
@@ -456,9 +445,7 @@
     "name": "Iran",
     "category": "country",
     "parents": [
-      "@asia",
-      "@persian_gulf",
-      "@gulf_of_oman"
+      "@asia"
     ],
     "west": 44,
     "east": 63.3,
@@ -470,8 +457,7 @@
     "name": "Iraq",
     "category": "country",
     "parents": [
-      "@asia",
-      "@persian_gulf"
+      "@asia"
     ],
     "west": 38.8,
     "east": 48.6,
@@ -483,9 +469,7 @@
     "name": "Israel",
     "category": "country",
     "parents": [
-      "@asia",
-      "@mediterranean_sea",
-      "@gulf_of_aqaba"
+      "@asia"
     ],
     "west": 34.3,
     "east": 35.7,
@@ -512,8 +496,7 @@
     "name": "Jordan",
     "category": "country",
     "parents": [
-      "@asia",
-      "@gulf_of_aqaba"
+      "@asia"
     ],
     "west": 34.9,
     "east": 39.3,
@@ -537,8 +520,7 @@
     "name": "Kuwait",
     "category": "country",
     "parents": [
-      "@asia",
-      "@persian_gulf"
+      "@asia"
     ],
     "west": 46.5,
     "east": 48.4,
@@ -574,8 +556,7 @@
     "name": "Lebanon",
     "category": "country",
     "parents": [
-      "@asia",
-      "@mediterranean_sea"
+      "@asia"
     ],
     "west": 35.1,
     "east": 36.6,
@@ -588,9 +569,7 @@
     "category": "country",
     "parents": [
       "@asia",
-      "@coral_triangle",
-      "@south_china_sea",
-      "@strait_of_malacca"
+      "@coral_triangle"
     ],
     "west": 99,
     "east": 119.3,
@@ -628,9 +607,7 @@
     "name": "Myanmar",
     "category": "country",
     "parents": [
-      "@asia",
-      "@andaman_sea",
-      "@bay_of_bengal"
+      "@asia"
     ],
     "west": 92,
     "east": 101.2,
@@ -654,9 +631,7 @@
     "name": "North Korea",
     "category": "country",
     "parents": [
-      "@asia",
-      "@sea_of_japan",
-      "@yellow_sea"
+      "@asia"
     ],
     "west": 124.2,
     "east": 130.7,
@@ -668,9 +643,7 @@
     "name": "Oman",
     "category": "country",
     "parents": [
-      "@asia",
-      "@gulf_of_oman",
-      "@arabian_sea"
+      "@asia"
     ],
     "west": 52,
     "east": 59.9,
@@ -682,8 +655,7 @@
     "name": "Pakistan",
     "category": "country",
     "parents": [
-      "@asia",
-      "@arabian_sea"
+      "@asia"
     ],
     "west": 60.9,
     "east": 77.8,
@@ -695,8 +667,7 @@
     "name": "Palestine",
     "category": "country",
     "parents": [
-      "@asia",
-      "@mediterranean_sea"
+      "@asia"
     ],
     "west": 34.2,
     "east": 35.6,
@@ -723,8 +694,7 @@
     "name": "Qatar",
     "category": "country",
     "parents": [
-      "@asia",
-      "@persian_gulf"
+      "@asia"
     ],
     "west": 50.7,
     "east": 51.7,
@@ -736,9 +706,7 @@
     "name": "Saudi Arabia",
     "category": "country",
     "parents": [
-      "@asia",
-      "@red_sea",
-      "@persian_gulf"
+      "@asia"
     ],
     "west": 34.5,
     "east": 55.7,
@@ -764,9 +732,7 @@
     "name": "South Korea",
     "category": "country",
     "parents": [
-      "@asia",
-      "@sea_of_japan",
-      "@yellow_sea"
+      "@asia"
     ],
     "west": 126,
     "east": 129.6,
@@ -792,8 +758,7 @@
     "name": "Syria",
     "category": "country",
     "parents": [
-      "@asia",
-      "@mediterranean_sea"
+      "@asia"
     ],
     "west": 35.7,
     "east": 42.4,
@@ -831,9 +796,7 @@
     "name": "Thailand",
     "category": "country",
     "parents": [
-      "@asia",
-      "@andaman_sea",
-      "@gulf_of_thailand"
+      "@asia"
     ],
     "west": 97.3,
     "east": 105.6,
@@ -871,9 +834,7 @@
     "name": "United Arab Emirates",
     "category": "country",
     "parents": [
-      "@asia",
-      "@persian_gulf",
-      "@gulf_of_oman"
+      "@asia"
     ],
     "west": 51,
     "east": 56.4,
@@ -897,9 +858,7 @@
     "name": "Vietnam",
     "category": "country",
     "parents": [
-      "@asia",
-      "@south_china_sea",
-      "@gulf_of_thailand"
+      "@asia"
     ],
     "west": 102,
     "east": 109.5,
@@ -911,10 +870,7 @@
     "name": "Yemen",
     "category": "country",
     "parents": [
-      "@asia",
-      "@red_sea",
-      "@gulf_of_aden",
-      "@arabian_sea"
+      "@asia"
     ],
     "west": 42.5,
     "east": 54.5,

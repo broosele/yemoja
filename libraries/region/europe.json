@@ -489,9 +489,7 @@
     "name": "Albania",
     "category": "country",
     "parents": [
-      "@europe",
-      "@adriatic_sea",
-      "@ionian_sea"
+      "@europe"
     ],
     "west": 19.3,
     "east": 21.1,
@@ -539,8 +537,7 @@
     "name": "Belgium",
     "category": "country",
     "parents": [
-      "@europe",
-      "@north_sea"
+      "@europe"
     ],
     "west": 2.5,
     "east": 6.4,
@@ -552,8 +549,7 @@
     "name": "Bosnia and Herzegovina",
     "category": "country",
     "parents": [
-      "@europe",
-      "@adriatic_sea"
+      "@europe"
     ],
     "west": 15.7,
     "east": 19.6,
@@ -565,8 +561,7 @@
     "name": "Bulgaria",
     "category": "country",
     "parents": [
-      "@europe",
-      "@black_sea"
+      "@europe"
     ],
     "west": 22.4,
     "east": 28.6,
@@ -578,8 +573,7 @@
     "name": "Croatia",
     "category": "country",
     "parents": [
-      "@europe",
-      "@adriatic_sea"
+      "@europe"
     ],
     "west": 13.5,
     "east": 19.4,
@@ -616,9 +610,7 @@
     "name": "Denmark",
     "category": "country",
     "parents": [
-      "@europe",
-      "@north_sea",
-      "@baltic_sea"
+      "@europe"
     ],
     "west": 8,
     "east": 15.2,
@@ -630,8 +622,7 @@
     "name": "Estonia",
     "category": "country",
     "parents": [
-      "@europe",
-      "@baltic_sea"
+      "@europe"
     ],
     "west": 21.8,
     "east": 28.2,
@@ -643,8 +634,7 @@
     "name": "Finland",
     "category": "country",
     "parents": [
-      "@europe",
-      "@baltic_sea"
+      "@europe"
     ],
     "west": 20.6,
     "east": 31.6,
@@ -656,10 +646,7 @@
     "name": "France",
     "category": "country",
     "parents": [
-      "@europe",
-      "@atlantic_ocean",
-      "@mediterranean_sea",
-      "@english_channel"
+      "@europe"
     ],
     "west": -5,
     "east": 9.6,
@@ -671,9 +658,7 @@
     "name": "Germany",
     "category": "country",
     "parents": [
-      "@europe",
-      "@north_sea",
-      "@baltic_sea"
+      "@europe"
     ],
     "west": 5.9,
     "east": 15.1,
@@ -685,9 +670,7 @@
     "name": "Greece",
     "category": "country",
     "parents": [
-      "@europe",
-      "@aegean_sea",
-      "@ionian_sea"
+      "@europe"
     ],
     "west": 19.4,
     "east": 28.3,
@@ -738,10 +721,7 @@
     "name": "Italy",
     "category": "country",
     "parents": [
-      "@europe",
-      "@mediterranean_sea",
-      "@adriatic_sea",
-      "@tyrrhenian_sea"
+      "@europe"
     ],
     "west": 6.6,
     "east": 18.5,
@@ -753,8 +733,7 @@
     "name": "Latvia",
     "category": "country",
     "parents": [
-      "@europe",
-      "@baltic_sea"
+      "@europe"
     ],
     "west": 21,
     "east": 28.2,
@@ -778,8 +757,7 @@
     "name": "Lithuania",
     "category": "country",
     "parents": [
-      "@europe",
-      "@baltic_sea"
+      "@europe"
     ],
     "west": 20.9,
     "east": 26.9,
@@ -828,8 +806,7 @@
     "name": "Monaco",
     "category": "country",
     "parents": [
-      "@europe",
-      "@ligurian_sea"
+      "@europe"
     ],
     "west": 7.4,
     "east": 7.4,
@@ -841,8 +818,7 @@
     "name": "Montenegro",
     "category": "country",
     "parents": [
-      "@europe",
-      "@adriatic_sea"
+      "@europe"
     ],
     "west": 18.4,
     "east": 20.4,
@@ -854,9 +830,7 @@
     "name": "Netherlands",
     "category": "country",
     "parents": [
-      "@europe",
-      "@north_sea",
-      "@wadden_sea"
+      "@europe"
     ],
     "west": 3.3,
     "east": 7.2,
@@ -880,10 +854,7 @@
     "name": "Norway",
     "category": "country",
     "parents": [
-      "@europe",
-      "@norwegian_sea",
-      "@north_sea",
-      "@barents_sea"
+      "@europe"
     ],
     "west": 4.6,
     "east": 31.1,
@@ -895,8 +866,7 @@
     "name": "Poland",
     "category": "country",
     "parents": [
-      "@europe",
-      "@baltic_sea"
+      "@europe"
     ],
     "west": 14.1,
     "east": 24.1,
@@ -908,8 +878,7 @@
     "name": "Portugal",
     "category": "country",
     "parents": [
-      "@europe",
-      "@atlantic_ocean"
+      "@europe"
     ],
     "west": -9.5,
     "east": -6.2,
@@ -921,8 +890,7 @@
     "name": "Romania",
     "category": "country",
     "parents": [
-      "@europe",
-      "@black_sea"
+      "@europe"
     ],
     "west": 20.3,
     "east": 29.7,
@@ -935,12 +903,7 @@
     "category": "country",
     "parents": [
       "@europe",
-      "@asia",
-      "@barents_sea",
-      "@baltic_sea",
-      "@black_sea",
-      "@arctic_ocean",
-      "@pacific_ocean"
+      "@asia"
     ],
     "west": 19.6,
     "east": 180,
@@ -988,8 +951,7 @@
     "name": "Slovenia",
     "category": "country",
     "parents": [
-      "@europe",
-      "@adriatic_sea"
+      "@europe"
     ],
     "west": 13.4,
     "east": 16.6,
@@ -1001,10 +963,7 @@
     "name": "Spain",
     "category": "country",
     "parents": [
-      "@europe",
-      "@atlantic_ocean",
-      "@mediterranean_sea",
-      "@balearic_sea"
+      "@europe"
     ],
     "west": -9.3,
     "east": 3.3,
@@ -1016,9 +975,7 @@
     "name": "Sweden",
     "category": "country",
     "parents": [
-      "@europe",
-      "@baltic_sea",
-      "@kattegat"
+      "@europe"
     ],
     "west": 11.1,
     "east": 24.2,
@@ -1042,9 +999,7 @@
     "name": "Ukraine",
     "category": "country",
     "parents": [
-      "@europe",
-      "@black_sea",
-      "@sea_of_azov"
+      "@europe"
     ],
     "west": 22.1,
     "east": 40.2,
@@ -1072,11 +1027,7 @@
     "name": "England",
     "category": "country",
     "parents": [
-      "@united_kingdom",
-      "@north_sea",
-      "@english_channel",
-      "@celtic_sea",
-      "@irish_sea"
+      "@united_kingdom"
     ],
     "west": -6.4,
     "east": 1.8,
@@ -1088,10 +1039,7 @@
     "name": "Scotland",
     "category": "country",
     "parents": [
-      "@united_kingdom",
-      "@north_sea",
-      "@atlantic_ocean",
-      "@irish_sea"
+      "@united_kingdom"
     ],
     "west": -7.7,
     "east": -0.7,
@@ -1103,9 +1051,7 @@
     "name": "Wales",
     "category": "country",
     "parents": [
-      "@united_kingdom",
-      "@irish_sea",
-      "@celtic_sea"
+      "@united_kingdom"
     ],
     "west": -5.3,
     "east": -2.6,
@@ -1117,9 +1063,7 @@
     "name": "Northern Ireland",
     "category": "country",
     "parents": [
-      "@united_kingdom",
-      "@irish_sea",
-      "@atlantic_ocean"
+      "@united_kingdom"
     ],
     "west": -8.2,
     "east": -5.4,

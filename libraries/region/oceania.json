@@ -110,10 +110,7 @@
     "name": "Australia",
     "category": "country",
     "parents": [
-      "@oceania",
-      "@coral_sea",
-      "@tasman_sea",
-      "@indian_ocean"
+      "@oceania"
     ],
     "west": 112.9,
     "east": 153.6,
@@ -199,7 +196,8 @@
     "parents": [
       "@oceania",
       "@melanesia",
-      "@coral_sea"
+      "@coral_sea",
+      "@france"
     ],
     "west": 163.5,
     "east": 168.2,
@@ -327,7 +325,8 @@
     "parents": [
       "@oceania",
       "@polynesia",
-      "@pacific_ocean"
+      "@pacific_ocean",
+      "@france"
     ],
     "west": -152,
     "east": -134.5,
@@ -341,7 +340,8 @@
     "parents": [
       "@oceania",
       "@polynesia",
-      "@pacific_ocean"
+      "@pacific_ocean",
+      "@new_zealand"
     ],
     "west": -166,
     "east": -157.3,
@@ -355,7 +355,8 @@
     "parents": [
       "@oceania",
       "@polynesia",
-      "@pacific_ocean"
+      "@pacific_ocean",
+      "@new_zealand"
     ],
     "west": -170,
     "east": -169.8,
@@ -369,7 +370,8 @@
     "parents": [
       "@oceania",
       "@micronesia",
-      "@philippine_sea"
+      "@philippine_sea",
+      "@united_states"
     ],
     "west": 144.6,
     "east": 145.1,
@@ -383,7 +385,8 @@
     "parents": [
       "@oceania",
       "@micronesia",
-      "@philippine_sea"
+      "@philippine_sea",
+      "@united_states"
     ],
     "west": 145.1,
     "east": 146.1,
@@ -397,7 +400,8 @@
     "parents": [
       "@oceania",
       "@polynesia",
-      "@pacific_ocean"
+      "@pacific_ocean",
+      "@france"
     ],
     "west": -178.2,
     "east": -176.1,
@@ -411,7 +415,8 @@
     "parents": [
       "@oceania",
       "@polynesia",
-      "@pacific_ocean"
+      "@pacific_ocean",
+      "@new_zealand"
     ],
     "west": -172.5,
     "east": -171.1,
@@ -425,7 +430,8 @@
     "parents": [
       "@oceania",
       "@polynesia",
-      "@pacific_ocean"
+      "@pacific_ocean",
+      "@united_states"
     ],
     "west": -171.1,
     "east": -168.1,

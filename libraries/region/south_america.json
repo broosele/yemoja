@@ -19,8 +19,7 @@
     "name": "Argentina",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@atlantic_ocean"
+      "@south_america"
     ],
     "west": -73.6,
     "east": -53.6,
@@ -44,8 +43,7 @@
     "name": "Brazil",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@atlantic_ocean"
+      "@south_america"
     ],
     "west": -74,
     "east": -34.8,
@@ -57,9 +55,7 @@
     "name": "Chile",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@pacific_ocean",
-      "@southern_ocean"
+      "@south_america"
     ],
     "west": -75.7,
     "east": -66.4,
@@ -71,9 +67,7 @@
     "name": "Colombia",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@caribbean_sea",
-      "@pacific_ocean"
+      "@south_america"
     ],
     "west": -79.1,
     "east": -66.9,
@@ -85,8 +79,7 @@
     "name": "Ecuador",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@pacific_ocean"
+      "@south_america"
     ],
     "west": -81.1,
     "east": -75.2,
@@ -111,8 +104,7 @@
     "name": "Guyana",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@atlantic_ocean"
+      "@south_america"
     ],
     "west": -61.4,
     "east": -56.5,
@@ -136,8 +128,7 @@
     "name": "Peru",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@pacific_ocean"
+      "@south_america"
     ],
     "west": -81.4,
     "east": -68.7,
@@ -149,8 +140,7 @@
     "name": "Suriname",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@atlantic_ocean"
+      "@south_america"
     ],
     "west": -58.1,
     "east": -54,
@@ -162,8 +152,7 @@
     "name": "Uruguay",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@atlantic_ocean"
+      "@south_america"
     ],
     "west": -58.5,
     "east": -53.1,
@@ -175,8 +164,7 @@
     "name": "Venezuela",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@caribbean_sea"
+      "@south_america"
     ],
     "west": -73.4,
     "east": -59.8,
@@ -188,8 +176,7 @@
     "name": "French Guiana",
     "category": "country",
     "parents": [
-      "@south_america",
-      "@atlantic_ocean"
+      "@south_america"
     ],
     "west": -54.6,
     "east": -51.6,
