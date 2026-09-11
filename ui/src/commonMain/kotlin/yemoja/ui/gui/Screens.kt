@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.StarOutline
@@ -38,6 +39,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
@@ -46,7 +48,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -92,6 +97,9 @@ import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.logic.Change
+import yemoja.logic.Operation
+import yemoja.logic.Outcome
 import yemoja.logic.Types
 import yemoja.logic.Universe
 
@@ -163,12 +171,31 @@ internal class Kept {
     val page: ScrollState = ScrollState(0)
 }
 
+/**
+ * Changer is the one door from the screens to the model's changes, and a count that ticks on
+ * each so that whatever shows an item redraws it. `GUI-29`.
+ */
+internal class Changer(private val universe: Universe) {
+    /** How many changes have landed, read by whatever must redraw when one does. */
+    var edition: Int by mutableStateOf(0)
+
+    fun change(changes: List<Change>): Outcome {
+        val outcome = universe.change(Operation.EDIT, *changes.toTypedArray())
+        if (outcome is Outcome.Done) edition++
+        return outcome
+    }
+}
+
+/** The changer, for whatever is deep enough in a screen to save something. */
+internal val LocalChanger = staticCompositionLocalOf<Changer> { error("no changer is provided") }
+
 /** The whole application: a tab across the top, and whatever that tab shows. */
 @Composable
 internal fun Application(universe: Universe, platform: Platform) {
     // Home, which is where the application opens whatever it holds yet.
     var tab by remember { mutableStateOf(TABS.first()) }
     val kept = remember { TABS.associateWith { Kept() } }
+    val changer = remember(universe) { Changer(universe) }
     // Absent until read, and a map drawn before then shows its sites on an empty frame.
     val atlas by produceState<Atlas?>(null, platform) {
         value = withContext(Dispatchers.Default) { platform.atlas() }
@@ -199,21 +226,23 @@ internal fun Application(universe: Universe, platform: Platform) {
             tab = to
         }
     }
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Tabs(tab) { tab = it }
-            Box(modifier = Modifier.weight(1f)) {
-                when (tab.shape) {
-                    Shape.NONE -> Owed(tab)
-                    Shape.MANUAL -> Manuals(platform.manual, platform.open, kept.getValue(tab))
-                    else -> Subject(
-                        set = universe.logbook,
-                        user = universe.user,
-                        tab = tab,
-                        atlas = atlas,
-                        kept = kept.getValue(tab),
-                        onFollow = follow,
-                    )
+    CompositionLocalProvider(LocalChanger provides changer) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Tabs(tab) { tab = it }
+                Box(modifier = Modifier.weight(1f)) {
+                    when (tab.shape) {
+                        Shape.NONE -> Owed(tab)
+                        Shape.MANUAL -> Manuals(platform.manual, platform.open, kept.getValue(tab))
+                        else -> Subject(
+                            set = universe.logbook,
+                            user = universe.user,
+                            tab = tab,
+                            atlas = atlas,
+                            kept = kept.getValue(tab),
+                            onFollow = follow,
+                        )
+                    }
                 }
             }
         }
@@ -270,7 +299,8 @@ private fun Subject(
     kept: Kept,
     onFollow: (String) -> Unit,
 ) {
-    val tree = remember(set, kept.hideUnused) { shownTreeOf(set, kept.hideUnused) }
+    val edition = LocalChanger.current.edition
+    val tree = remember(set, kept.hideUnused, edition) { shownTreeOf(set, kept.hideUnused) }
     // What a tab opens on the first time: Location on the widest root, which is the world, and
     // Community on the user, whose logbook this is.
     remember(kept) {
@@ -345,7 +375,8 @@ private fun chosenOf(set: ItemSet, item: ReferenceableItem): Chosen? =
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun Dives(set: ItemSet, kept: Kept) {
-    val years = remember(set) { yearsOf(diveRowsOf(set)) }
+    val edition = LocalChanger.current.edition
+    val years = remember(set, edition) { yearsOf(diveRowsOf(set)) }
     // The last year unfolded and the rest folded, until the reader says otherwise.
     val open = kept.open ?: setOfNotNull(years.firstOrNull()?.label)
     val chosen = kept.chosen
@@ -583,7 +614,7 @@ private fun Cell(text: String, width: Dp, chosen: Boolean, align: TextAlign = Te
  */
 @Composable
 private fun Gear(set: ItemSet, chosen: Chosen?, kept: Kept, onChoose: (Chosen) -> Unit) {
-    val (branches, loose) = remember(set) { gearTreeOf(set) }
+    val (branches, loose) = remember(set, LocalChanger.current.edition) { gearTreeOf(set) }
     val closed = kept.closed
     val toggle = { key: String -> kept.closed = if (key in closed) closed - key else closed + key }
     LazyColumn(state = kept.list, modifier = Modifier.fillMaxHeight().padding(GAP)) {
@@ -723,7 +754,7 @@ private fun Places(
             }
         }
         VerticalDivider()
-        val what = remember(set, place, hideUnused) {
+        val what = remember(set, place, hideUnused, LocalChanger.current.edition) {
             place?.let { atPlaceIn(set, it.id, hideUnused) }
         }
         LazyColumn(state = kept.list, modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
@@ -1090,23 +1121,45 @@ private fun pathOf(
     return path
 }
 
-/** One item on a card, sized to what it says. */
+/**
+ * One item on a card, sized to what it says, with a pencil that turns the card over into the
+ * edit form. `GUI-29`.
+ */
 @Composable
 private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
+    val edition = LocalChanger.current.edition
+    var editing by remember(chosen) { mutableStateOf(false) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(GAP * 2)) {
-            // The name and nothing beside it. An id is never shown.
-            Text(
-                text = chosen.title,
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = GAP),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // The name and nothing beside it. An id is never shown.
+                Text(
+                    text = titleOf(chosen.item),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                if (!editing) {
+                    IconButton(onClick = { editing = true }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "edit")
+                    }
+                }
+            }
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
-            Fields(chosen.item, onFollow)
+            // Read again after every change: the item is the same object, changed in place.
+            key(edition) {
+                if (editing) {
+                    EditForm(chosen.item) { editing = false }
+                } else {
+                    Fields(chosen.item, onFollow)
+                }
+            }
         }
     }
 }
@@ -1181,7 +1234,7 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
  * title instead.
  */
 @Composable
-private fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
+internal fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(HALF * 2)) {
         for ((index, label) in labels.withIndex()) {
             val here = index == chosen
@@ -1211,7 +1264,7 @@ private fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit
  * the title's line after it, the tabs of a keyed one.
  */
 @Composable
-private fun Inset(
+internal fun Inset(
     title: String,
     beside: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -1240,7 +1293,7 @@ private fun Inset(
 }
 
 /** How many columns the plain fields of an item flow into on a desktop. */
-private const val COLUMNS = 2
+internal const val COLUMNS = 2
 
 /** One field: what it is called, and what it says. */
 @Composable
@@ -1534,7 +1587,7 @@ private val MAP = 420.dp
 private val DOT = 3.dp
 private val MARKED = 5.dp
 private val TOWN = 1.5.dp
-private val GLYPH = 20.dp
+internal val GLYPH = 20.dp
 private val DEPTH_GRAPH = 260.dp
 private val AXIS = 40.dp
 private val FOOT = 16.dp

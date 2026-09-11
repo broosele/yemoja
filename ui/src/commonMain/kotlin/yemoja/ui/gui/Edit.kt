@@ -1,0 +1,179 @@
+package yemoja.ui.gui
+
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateMap
+import yemoja.data.BooleanDescription
+import yemoja.data.Cardinality
+import yemoja.data.DateDescription
+import yemoja.data.Dimension
+import yemoja.data.Element
+import yemoja.data.FieldDescription
+import yemoja.data.GasDescription
+import yemoja.data.Item
+import yemoja.data.KeyReference
+import yemoja.data.KeyReferenceDescription
+import yemoja.data.MultilineTextDescription
+import yemoja.data.NumberDescription
+import yemoja.data.Reference
+import yemoja.data.ReferenceDescription
+import yemoja.data.Result
+import yemoja.data.Role
+import yemoja.data.Stored
+import yemoja.data.TextDescription
+import yemoja.data.TimeDescription
+import yemoja.data.Units
+import yemoja.data.WholeNumberDescription
+import yemoja.logic.Change
+
+/*
+ * What an edit form holds and hands to the model: the draft of every field changed, and the
+ * text each kind of field is edited as. Nothing here draws; the form in Form.kt does.
+ *
+ * Every value travels as the text a file would hold it as, which is what the model reads and
+ * what the terminal front end already writes, so the two front ends cannot disagree about what
+ * `12.3` or `@anna` means. A yes-or-no travels as itself, and a list as its entries.
+ *
+ * See ../../../../../../gui/doc.md — `GUI-29`.
+ */
+
+/** Slot is one field of one item in a form, the item by identity: an owned item has no id. */
+internal class Slot(val item: Item, val field: String) {
+    override fun equals(other: Any?): Boolean =
+        other is Slot && other.item === item && other.field == field
+
+    override fun hashCode(): Int = System.identityHashCode(item) * 31 + field.hashCode()
+}
+
+/**
+ * Drafted is one field as changed in a form: what the form shows for it, and what the model is
+ * given for it, which differ where the form's text is not the file's — a clock for a time.
+ */
+internal class Drafted(val shown: Any?, val given: Any?)
+
+/**
+ * Draft is what an edit form holds before it is saved: for each field changed, on the item or
+ * on anything it owns, what it was changed to, an absent being a field cleared.
+ *
+ * Not immutable: the form writes into it as the user types, and reads from it to draw.
+ */
+internal class Draft {
+    private val held: SnapshotStateMap<Slot, Drafted> = mutableStateMapOf()
+
+    /** Whether [field] of [item] has been changed in this form. */
+    fun changed(item: Item, field: String): Boolean = Slot(item, field) in held
+
+    /** What the form shows for [field] of [item], where it has been changed; absent otherwise. */
+    fun shownOf(item: Item, field: String): Any? = held[Slot(item, field)]?.shown
+
+    /** Changes [field] of [item] to [given], the form showing [shown] for it. */
+    fun put(item: Item, field: String, shown: Any?, given: Any? = shown) {
+        held[Slot(item, field)] = Drafted(shown, given)
+    }
+
+    /** Forgets the change to [field] of [item], leaving what was stored. */
+    fun drop(item: Item, field: String) {
+        held.remove(Slot(item, field))
+    }
+
+    val isEmpty: Boolean get() = held.isEmpty()
+
+    /** Every change as the model takes it, one per field changed; the model judges them whole. */
+    fun writes(): List<Change> = held.entries.map { (slot, drafted) ->
+        Change.Write(slot.item, slot.field, storedOf(drafted.given))
+    }
+
+    /**
+     * What the model would refuse [field] of [item] for as drafted, which is found before
+     * anything is saved; absent where the field is not drafted or the model takes it.
+     */
+    fun refusalOf(item: Item, field: String): String? {
+        val drafted = held[Slot(item, field)] ?: return null
+        val made = item.prepared(field, storedOf(drafted.given), Units.DEFAULT)
+        return (made as? Result.Unusable)?.reason
+    }
+}
+
+/** A drafted value as the model takes it: nothing for a clearing, a list as its entries. */
+internal fun storedOf(value: Any?): Stored? = when (value) {
+    null -> null
+    is List<*> -> Stored.Elements(value.map { Stored.Leaf(it ?: "") })
+    else -> Stored.Leaf(value)
+}
+
+/** Kind is how a field is edited, decided from its description. */
+internal enum class Kind {
+    TEXT, LONG_TEXT, CHOICE, NUMBER, CLOCK, WHOLE, RATING, DATE, TIME, YES_NO, REFERENCE, KEY, GAS,
+    /** Not as a field: a series is read on the graph. */
+    NONE,
+}
+
+/** How [field] is edited. */
+internal fun kindOf(field: FieldDescription): Kind = when {
+    field.cardinality == Cardinality.SERIES -> Kind.NONE
+    field.cardinality == Cardinality.KEYED_SERIES -> Kind.NONE
+    field is MultilineTextDescription -> Kind.LONG_TEXT
+    field is TextDescription -> if (field.fixedSet != null) Kind.CHOICE else Kind.TEXT
+    field is NumberDescription -> if (field.dimension == Dimension.TIME) Kind.CLOCK else Kind.NUMBER
+    field is WholeNumberDescription -> if (field.name == "rating") Kind.RATING else Kind.WHOLE
+    field is DateDescription -> Kind.DATE
+    field is TimeDescription -> Kind.TIME
+    field is BooleanDescription -> Kind.YES_NO
+    field is ReferenceDescription -> Kind.REFERENCE
+    field is KeyReferenceDescription -> Kind.KEY
+    field is GasDescription -> Kind.GAS
+    else -> Kind.NONE
+}
+
+/** Whether [field] can be written at all: not one the model works out with no say for a user. */
+internal fun editable(field: FieldDescription): Boolean = field.role !is Role.Derived
+
+/** Whether [field] is one the model works out unless told otherwise. */
+internal fun overrideable(field: FieldDescription): Boolean = field.role is Role.Overrideable
+
+/**
+ * A stored value as the text a field is edited as: a time as a clock, a reference as it is
+ * written, and the rest as the file holds it.
+ */
+internal fun textOf(field: FieldDescription, value: Any?): String = when (value) {
+    null -> ""
+    is Reference.Identified -> "@" + value.id
+    is Reference.OneOff -> value.name
+    is KeyReference -> "*" + value.key
+    is Number -> {
+        if (kindOf(field) == Kind.CLOCK) clockOf(value.toDouble()) else numberOf(field, value)
+    }
+    else -> field.format(value, Units.DEFAULT)
+}
+
+/** What a field of [kind] is given from the text typed for it, which for a clock is seconds. */
+internal fun givenOf(kind: Kind, text: String): Any? {
+    val trimmed = text.trim()
+    if (trimmed.isEmpty()) return null
+    return if (kind == Kind.CLOCK) secondsOf(trimmed)?.toString() ?: trimmed else trimmed
+}
+
+/** Seconds from `m:ss`, or from a bare number of minutes; absent where it is neither. */
+internal fun secondsOf(clock: String): Long? {
+    val sign = if (clock.startsWith("-")) -1 else 1
+    val parts = clock.removePrefix("-").split(':')
+    return when (parts.size) {
+        1 -> parts[0].toDoubleOrNull()?.let { (it * 60).toLong() * sign }
+        2 -> {
+            val minutes = parts[0].toLongOrNull() ?: return null
+            val seconds = parts[1].toLongOrNull() ?: return null
+            if (seconds !in 0..59) return null
+            (minutes * 60 + seconds) * sign
+        }
+        else -> null
+    }
+}
+
+/** The entries of a stored list as the texts they are edited as. */
+@Suppress("UNCHECKED_CAST")
+internal fun entriesOf(field: FieldDescription, value: Any?): List<String> =
+    (value as? List<Element<Any>>).orEmpty().map {
+        when (it) {
+            is Element.Usable -> textOf(field, it.value)
+            is Element.Unusable -> (it.raw as? Stored.Leaf)?.value?.toString().orEmpty()
+        }
+    }

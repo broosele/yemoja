@@ -297,9 +297,9 @@ shown in full, and a keyed one is such a box with a tab per entry. The manual is
 tab, a chapter at a time. Two tabs hold nothing yet and say what they will hold rather than
 showing an empty box.
 
-**Nothing changes anything.** There is no edit view, no action and no key that writes. That is
-the scope rather than an oversight: a first version proves the toolkit, the layout and the door
-into the logic layer, and each of those is easier to judge when nothing can go wrong.
+**An item's fields can be edited.** A pencil on the item card turns it over into the edit form,
+which `GUI-29` describes; nothing else writes yet. No item is added or deleted from here, no
+owned item or keyed entry is added, and there is no journal to undo with.
 
 It opens as `yemoja gui <logbook folder>`, beside the terminal front end, and unlike that one it
 can be run from the build, a window needing no console.
@@ -434,6 +434,31 @@ once and corrected. The numbers stay unused rather than being given to something
   would choose, steps of one, two or five, and the unit sits in each axis's title. What is
   worked out is worked out without a screen and tested; the drawing is paths built once per
   size. Open: what a phone shows of this.
+- **GUI-29 — How a field is edited.** *Settled:* **the item view turned over.** A pencil on
+  the card turns it into the edit form: the same fields in the same places, two columns and
+  the insets and their tabs, with *Save* and *Cancel* on the title line, so a reader who knows
+  where a field sits when reading knows where it sits when editing. Cancel puts the card back
+  as it was; Save hands every field changed to the model as one change, and a refusal comes
+  back to the field it was about.
+
+  **One widget per kind of field**, chosen from its description: a text field, taller for
+  multiline text; a number field with its unit after it, a time as `m:ss`; a date as text; a
+  yes-or-no as a three-state box, the third being *not said*; a fixed set as a drop-down; a
+  rating as five stars to click; a reference as a search over the type it points at, the item
+  taken written as its id and anything typed and not taken standing as a plain name where the
+  field allows one; a key reference as a drop-down over the collection's keys; a list as one
+  such widget per entry, with add and take out. A series is not edited: the graph is its place.
+
+  **What is worked out is shown, not edited.** A derived field is read-only and greyed. One the
+  model works out unless told otherwise shows what it worked out with a *correct* beside it;
+  corrected, it is edited like any other, and *revert* clears the correction so the worked-out
+  value returns. **Validation stays in the model**: every drafted value is judged by the field's
+  own description as it is typed and the reason for a refusal sits under the field in red.
+
+  **Every value travels as the text a file holds it as**, which is what the model reads and what
+  the terminal front end already writes, so the two front ends cannot disagree about what
+  `12.3` or `@anna` means. Open: adding and deleting items, adding an owned item or a keyed
+  entry, and the phone's form.
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
   another item, the name is clickable and opens that item where it lives: the tab holding its
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and
