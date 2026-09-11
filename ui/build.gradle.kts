@@ -24,6 +24,9 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            // The platform's glyphs, the whole set rather than the fifty in the core one, which
+            // has nothing for diving, a map or a book. Apache-2.0, the same publisher.
+            implementation(compose.materialIconsExtended)
         }
         jvmMain.dependencies {
             // The desktop window and the event loop that owns it, which only a JVM has.

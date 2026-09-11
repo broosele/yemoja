@@ -1,6 +1,9 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -36,9 +39,11 @@ fun gui(folder: String): Int {
             title = "Yemoja — $folder",
             state = rememberWindowState(size = DpSize(1100.dp, 760.dp)),
         ) {
-            // The platform's own light and dark, until `GUI-3` decides how much identity to
-            // define. Adopting the default first is the branch that question offers.
-            MaterialTheme { Application(universe) }
+            // The platform's own light or dark, whichever the system is set to, until `GUI-3`
+            // decides how much identity to define. Adopting the default first is the branch
+            // that question offers.
+            val scheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+            MaterialTheme(colorScheme = scheme) { Application(universe) }
         }
     }
     return 0

@@ -23,7 +23,7 @@ The application is divided into **tabs**. One is visible at a time, and the mean
 choosing between them is always *accessible* — whatever else is happening, another tab
 is reachable without unwinding what you are doing.
 
-Accessible, not necessarily visible. Seven labels fit comfortably down the side of a
+Accessible, not necessarily visible. Seven labels fit comfortably across the top of a
 desktop window and will not fit across the foot of a phone, so the phone is free to keep
 the switcher one gesture away rather than permanently on screen.
 
@@ -281,7 +281,7 @@ application feels most.
 
 ## What is built
 
-**A window that reads a logbook, and nothing more.** The tabs down the side, a selector listing
+**A window that reads a logbook, and nothing more.** The tabs across the top, a selector listing
 what a tab holds by type, and an item view showing the fields of the one chosen. Owned items are
 counted rather than spelt out, which is the progressive disclosure above meeting its first real
 item. Three tabs hold no items yet and say what they will hold rather than showing an empty box.
@@ -293,7 +293,15 @@ into the logic layer, and each of those is easier to judge when nothing can go w
 It opens as `yemoja gui <logbook folder>`, beside the terminal front end, and unlike that one it
 can be run from the build, a window needing no console.
 
-Four things it does badly, each of them an open question above rather than a bug:
+**The look is the platform's own.** Material as it comes, light or dark as the system is set,
+and nothing of ours in it: `GUI-3` is open, and adopting the default first is the branch it
+offers. Within that, the tabs are a row
+across the top, each with the platform's glyph for its subject beside its name, the dive table
+is headed and its trip cell is drawn as one cell down the run it spans, whatever is chosen is
+tinted rather than emboldened, a tree unfolds branch by branch, and the item view sits on a card
+with its labels ranged against its values.
+
+Three things it does badly, each of them an open question above rather than a bug:
 
 - **A selector row outside the dive table is the item's title and nothing else.** `GUI-10` is
   which fields a row shows, and the dive table answers it for dives alone.

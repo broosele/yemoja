@@ -1,5 +1,14 @@
 package yemoja.ui.gui
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.PropaneTank
+import androidx.compose.material.icons.filled.ScubaDiving
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.graphics.vector.ImageVector
 import yemoja.data.ItemDescription
 import yemoja.logic.Types
 
@@ -45,6 +54,8 @@ internal enum class Shape {
 internal class Tab(
     /** What the tab is called, which is what a user reads. */
     val name: String,
+    /** Its glyph, beside the name. The platform's, until `GUI-3` gives it one of ours. */
+    val icon: ImageVector,
     /** The types it holds, in the order they are offered. Empty where it holds none yet. */
     val types: List<ItemDescription> = emptyList(),
     /** What its selector is. */
@@ -60,11 +71,26 @@ internal class Tab(
  * logbook first, then what is counted from it, then the machinery.
  */
 internal val TABS: List<Tab> = listOf(
-    Tab("Home", owed = "a greeting, what needs attention, and everything counted"),
-    Tab("Dive", listOf(Types.DIVE, Types.DIVE_TRIP), Shape.DIVES),
-    Tab("Gear", listOf(Types.GEAR), Shape.GEAR),
-    Tab("Community", listOf(Types.PERSON, Types.OPERATOR, Types.CERTIFICATION), Shape.TYPES),
-    Tab("Location", listOf(Types.REGION, Types.DIVE_SITE, Types.WRECK), Shape.PLACES),
-    Tab("System", owed = "settings, syncing and the rest of the machinery"),
-    Tab("Manuals", owed = "the documentation, read inside the application"),
+    Tab(
+        "Home", Icons.Filled.Home,
+        owed = "a greeting, what needs attention, and everything counted",
+    ),
+    Tab("Dive", Icons.Filled.ScubaDiving, listOf(Types.DIVE, Types.DIVE_TRIP), Shape.DIVES),
+    Tab("Gear", Icons.Filled.PropaneTank, listOf(Types.GEAR), Shape.GEAR),
+    Tab(
+        "Community", Icons.Filled.Groups,
+        listOf(Types.PERSON, Types.OPERATOR, Types.CERTIFICATION), Shape.TYPES,
+    ),
+    Tab(
+        "Location", Icons.Filled.Map,
+        listOf(Types.REGION, Types.DIVE_SITE, Types.WRECK), Shape.PLACES,
+    ),
+    Tab(
+        "System", Icons.Filled.Settings,
+        owed = "settings, syncing and the rest of the machinery",
+    ),
+    Tab(
+        "Manuals", Icons.Filled.MenuBook,
+        owed = "the documentation, read inside the application",
+    ),
 )
