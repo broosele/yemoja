@@ -265,6 +265,28 @@ private fun prunedOf(branch: Branch, direct: Map<String, Int>): List<Branch> {
     }
 }
 
+/**
+ * The region a site is best looked at on: the most specific of the ones it names, which is the
+ * one with the smallest frame. A wreck is looked at on the first site it lies at.
+ *
+ * A site in Egypt and in the Red Sea has no one region, and a map of either would hold it; the
+ * smaller is the closer look, and a region with no frame at all comes last. Absent where the
+ * item names no region. `GUI-28`.
+ */
+internal fun homeOf(set: ItemSet, item: Item): String? {
+    val regions = when (item.description) {
+        Types.DIVE_SITE -> pointedAtAll(item, "regions")
+        Types.WRECK -> pointedAtAll(item, "dive_sites").firstOrNull()
+            ?.let { set[it] }?.let { pointedAtAll(it, "regions") }.orEmpty()
+        else -> emptyList()
+    }
+    return regions.minByOrNull { id ->
+        val region = set[id] ?: return@minByOrNull Double.MAX_VALUE
+        val frame = frameOf(region, dotsOf(atPlaceIn(set, id).first))
+        frame?.let { it.width * it.height } ?: Double.MAX_VALUE
+    }
+}
+
 // --- The map. `GUI-25`.
 
 /** A dive site as a dot on a map: where it is, and what to call it. */

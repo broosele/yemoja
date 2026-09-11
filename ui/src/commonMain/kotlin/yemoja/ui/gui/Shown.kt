@@ -47,6 +47,18 @@ internal fun titleOf(item: Item): String {
 /** An item with nothing to be called, which nothing in a logbook made here should be. */
 private const val UNNAMED = "(unnamed)"
 
+/**
+ * The fields of [type] an item view shows, which is all of them but the ones the screen around
+ * it already shows. `GUI-16`.
+ *
+ * A region's children are its branch of the tree beside it, and a list of them under the map
+ * says the same thing again in worse form.
+ */
+internal fun fieldsShownOf(type: ItemDescription): List<FieldDescription> =
+    type.fields.filter { it.name !in ALREADY_SHOWN[type.name].orEmpty() }
+
+/** By type name, the fields the screen around an item view shows already. */
+private val ALREADY_SHOWN: Map<String, Set<String>> = mapOf("region" to setOf("children"))
 
 /**
  * What one field says, or absent where it says nothing.
@@ -59,7 +71,7 @@ private const val UNNAMED = "(unnamed)"
 internal fun shownOf(field: FieldDescription, item: Item): Shown? =
     when (val read = item.read(field.name)) {
         Result.Absent -> null
-        is Result.Unusable -> Shown(field.label, read.reason, wrong = true)
+        is Result.Unusable -> Shown(field.label, listOf(Part(read.reason)), wrong = true)
         is Result.Usable -> Shown(
             field.label,
             said(field, read.value, item),
@@ -67,18 +79,32 @@ internal fun shownOf(field: FieldDescription, item: Item): Shown? =
         )
     }
 
-/** One field as a reader is told it. */
+/**
+ * One field as a reader is told it: a label, and what it says in parts, of which the ones that
+ * name another item lead to it.
+ */
 internal class Shown(
     val label: String,
-    val text: String,
+    val parts: List<Part>,
     /** Whether the value would not read, and so what is shown is the reason rather than it. */
     val wrong: Boolean = false,
     /** Whether nobody wrote it and the model worked it out. An override counts as written. */
     val worked: Boolean = false,
-)
+) {
+    /** What it says, read straight through. */
+    val text: String get() = parts.joinToString("") { it.text }
+}
 
 /**
- * One value as text: a count for a series and for a collection, the entries for a list, and
+ * Part is a run of what a field says, and where it leads.
+ *
+ * A reference reads as the name of what it points at and leads there; everything else reads as
+ * text and leads nowhere. `GUI-28`.
+ */
+internal class Part(val text: String, val leadsTo: String? = null)
+
+/**
+ * One value as parts: a count for a series and for a collection, the entries for a list, and
  * otherwise what a file would write.
  *
  * A series and a keyed collection are counted rather than spelt out because neither belongs in a
@@ -86,32 +112,42 @@ internal class Shown(
  * act. `GUI-16` leaves what an item view shows to the interface, and this is the interface's
  * answer for the shapes that do not fit.
  */
-private fun said(field: FieldDescription, value: Any, within: Item): String = when {
-    value is Series -> counted(value.size, "sample")
-    field.cardinality == Cardinality.KEYED -> counted(keyedIn(value).size, "entry", "entries")
+private fun said(field: FieldDescription, value: Any, within: Item): List<Part> = when {
+    value is Series -> plain(counted(value.size, "sample"))
+    field.cardinality == Cardinality.KEYED -> {
+        plain(counted(keyedIn(value).size, "entry", "entries"))
+    }
     field.cardinality == Cardinality.LIST -> listed(value, within)
-    value is OwnedItem -> counted(filledIn(value), "field")
-    else -> one(value, within) ?: field.format(value, Units.DEFAULT)
+    value is OwnedItem -> plain(counted(filledIn(value), "field"))
+    else -> one(value, within)?.let { listOf(it) } ?: plain(field.format(value, Units.DEFAULT))
 }
 
+private fun plain(text: String): List<Part> = listOf(Part(text))
+
 /**
- * A reference as the name of what it points at, or absent where it is not one.
+ * A reference as the name of what it points at, leading there, or absent where it is not one.
  *
  * **An id is never shown**, and a reference written out is an id shown by the back door: a dive's
  * site read as `@shaab_el_erg_-_dolphin_house` tells a reader how the file is spelt rather than
- * where they were. A reference to nothing keeps what was written, which is the only case where
- * the spelling is the useful part.
+ * where they were. A reference to nothing keeps what was written and leads nowhere, which is the
+ * only case where the spelling is the useful part.
  */
-private fun one(value: Any, within: Item): String? {
+private fun one(value: Any, within: Item): Part? {
     if (value !is Reference.Identified) return null
-    return within.set[value.id]?.let { titleOf(it) }
+    val item = within.set[value.id] ?: return null
+    return Part(titleOf(item), leadsTo = value.id)
 }
 
 /** As many entries as read comfortably, and how many did not fit. */
-private fun shortened(entries: List<String>): String {
-    if (entries.size <= MANY) return entries.joinToString(", ")
-    val kept = entries.take(MANY).joinToString(", ")
-    return "$kept, and ${entries.size - MANY} more"
+private fun shortened(entries: List<Part>): List<Part> {
+    val kept = if (entries.size <= MANY) entries else entries.take(MANY)
+    val parts = ArrayList<Part>()
+    for ((index, entry) in kept.withIndex()) {
+        if (index > 0) parts += Part(", ")
+        parts += entry
+    }
+    if (entries.size > MANY) parts += Part(", and ${entries.size - MANY} more")
+    return parts
 }
 
 /** How many of a list are worth spelling out before a count says more than the entries do. */
@@ -119,14 +155,14 @@ private const val MANY = 6
 
 /** The entries of a list, or that somebody wrote a list with nothing in it. */
 @Suppress("UNCHECKED_CAST")
-private fun listed(value: Any, within: Item): String {
+private fun listed(value: Any, within: Item): List<Part> {
     val entries = (value as List<Element<Any>>).map {
         when (it) {
-            is Element.Usable -> one(it.value, within) ?: it.value.toString()
-            is Element.Unusable -> "!"
+            is Element.Usable -> one(it.value, within) ?: Part(it.value.toString())
+            is Element.Unusable -> Part("!")
         }
     }
-    return if (entries.isEmpty()) EMPTY else shortened(entries)
+    return if (entries.isEmpty()) plain(EMPTY) else shortened(entries)
 }
 
 @Suppress("UNCHECKED_CAST")

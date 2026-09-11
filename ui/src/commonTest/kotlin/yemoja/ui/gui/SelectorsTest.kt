@@ -272,6 +272,44 @@ class HideUnusedTest {
     }
 }
 
+class HomeTest {
+
+    private val set = logbook(
+        "region.json" to """{
+            "red_sea": {"name": "Red Sea", "west": 32, "east": 43, "south": 12, "north": 30},
+            "egypt": {"name": "Egypt", "west": 25, "east": 37, "south": 22, "north": 32},
+            "nowhere": {"name": "Nowhere"}
+        }""",
+        "dive_site.json" to """{
+            "blue_hole": {"name": "Blue Hole", "regions": ["@red_sea", "@egypt"]},
+            "lost": {"name": "Lost", "regions": ["@nowhere"]},
+            "wrecked": {"name": "Wrecked", "regions": ["@red_sea"], "wrecks": ["@thistlegorm"]}
+        }""",
+        "wreck.json" to """{"thistlegorm": {"name": "Thistlegorm"}}""",
+    )
+
+    @Test
+    fun `a site is at home in the most specific region it names, by the smallest frame`() {
+        assertEquals("egypt", homeOf(set, set["blue_hole"]!!))
+    }
+
+    @Test
+    fun `a wreck is at home where its first site is`() {
+        assertEquals("red_sea", homeOf(set, set["thistlegorm"]!!))
+    }
+
+    @Test
+    fun `a site whose only region has no frame still goes there`() {
+        assertEquals("nowhere", homeOf(set, set["lost"]!!))
+    }
+
+    @Test
+    fun `a site naming no region has no home to go to`() {
+        val homeless = logbook("dive_site.json" to """{"x": {"name": "X"}}""")
+        assertNull(homeOf(homeless, homeless["x"]!!))
+    }
+}
+
 class MapTest {
 
     private val set = logbook(

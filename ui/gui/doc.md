@@ -311,9 +311,10 @@ Three things it does badly, each of them an open question above rather than a bu
 
 - **A selector row outside the dive table is the item's title and nothing else.** `GUI-10` is
   which fields a row shows, and the dive table answers it for dives alone.
-- **A key reference reads as it is written**, `*perdix_2` rather than the recording it names.
-  An ordinary reference now reads as the name of what it points at, which is the *an id is never
-  shown* rule holding where it was broken by the back door; a key reference still breaks it.
+- **A key reference reads as it is written**, `*perdix_2` rather than the recording it names,
+  and leads nowhere. An ordinary reference reads as the name of what it points at and is a link
+  to it, which is the *an id is never shown* rule holding where it was broken by the back door;
+  a key reference still breaks it.
 - **A worked-out value is greyed and an unreadable one reddened**, which is a placeholder for
   `GUI-8` rather than an answer to it.
 
@@ -413,6 +414,17 @@ once and corrected. The numbers stay unused rather than being given to something
   the cities named narrow the same way, from capitals on the world to every place the source
   knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
   before it arrives shows its sites on an empty frame until it does.
+- **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
+  another item, the name is clickable and opens that item where it lives: the tab holding its
+  type, on the right subtab, with the item chosen — or, for a region, with the map on it — and
+  the list scrolled to it where the tab has a list. A site sets the region as well, since the
+  map would otherwise show wherever Location was left: a site names several regions and none
+  of them is *the* one, so the map goes to the most specific, which is the one with the
+  smallest frame — Egypt rather than the Red Sea, Zeeland rather than the Netherlands. A wreck
+  goes through the first site it lies at. That holds in every item view, so a site's
+  dives lead to the dives and each dive's site leads back; the back-links the model works out
+  are what make the second direction exist. The dive table's site column is not a link, since
+  `GUI-19` gave a click there to the dive.
 - **GUI-27 — What a tab keeps when it is left.** *Settled:* **everything.** The item chosen,
   the region, the box, which branches are unfolded, which subtab, where each list is scrolled
   to: a tab returned to is where it was left, because switching tabs to look something up and
@@ -483,4 +495,5 @@ once and corrected. The numbers stay unused rather than being given to something
   that.
 - **GUI-16 — What the item view shows for a given item.** *Settled:* the interface
   decides, per item type. The data layer says which fields exist; it has no say in
-  which of them are shown, or how.
+  which of them are shown, or how. The first use of that: a region's `children` are not
+  shown, since the tree beside the item is exactly that list.

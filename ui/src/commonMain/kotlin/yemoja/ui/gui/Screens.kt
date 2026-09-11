@@ -38,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -55,8 +56,13 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -145,6 +151,32 @@ internal fun Application(universe: Universe, platform: Platform) {
     val atlas by produceState<Atlas?>(null, platform) {
         value = withContext(Dispatchers.Default) { platform.atlas() }
     }
+    // A reference followed: the tab holding the item's type, opened on it. `GUI-28`.
+    val follow = { id: String ->
+        val item = universe.logbook[id]
+        val to = item?.let { found -> TABS.firstOrNull { found.description in it.types } }
+        if (item != null && to != null) {
+            val there = kept.getValue(to)
+            val chosen = Chosen(id, titleOf(item), item)
+            there.opened = true
+            when {
+                item.description == Types.REGION -> there.place = chosen
+                to.shape == Shape.PLACES -> {
+                    there.chosen = chosen
+                    // The map follows the site: a site in Egypt is looked at on Egypt.
+                    homeOf(universe.logbook, item)?.let { home ->
+                        universe.logbook[home]?.let { there.place = Chosen(home, titleOf(it), it) }
+                    }
+                }
+                to.shape == Shape.TYPES -> {
+                    there.chosen = chosen
+                    there.subtab = to.types.indexOf(item.description)
+                }
+                else -> there.chosen = chosen
+            }
+            tab = to
+        }
+    }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
             Tabs(tab) { tab = it }
@@ -152,7 +184,14 @@ internal fun Application(universe: Universe, platform: Platform) {
                 when (tab.shape) {
                     Shape.NONE -> Owed(tab)
                     Shape.MANUAL -> Manuals(platform.manual, platform.open, kept.getValue(tab))
-                    else -> Subject(universe.logbook, universe.user, tab, atlas, kept.getValue(tab))
+                    else -> Subject(
+                        set = universe.logbook,
+                        user = universe.user,
+                        tab = tab,
+                        atlas = atlas,
+                        kept = kept.getValue(tab),
+                        onFollow = follow,
+                    )
                 }
             }
         }
@@ -201,7 +240,14 @@ private fun Owed(tab: Tab) {
  * Location chooses two things, a region and something at it, and shows both. `GUI-25`.
  */
 @Composable
-private fun Subject(set: ItemSet, user: ReferenceableItem?, tab: Tab, atlas: Atlas?, kept: Kept) {
+private fun Subject(
+    set: ItemSet,
+    user: ReferenceableItem?,
+    tab: Tab,
+    atlas: Atlas?,
+    kept: Kept,
+    onFollow: (String) -> Unit,
+) {
     val tree = remember(set, kept.hideUnused) { shownTreeOf(set, kept.hideUnused) }
     // What a tab opens on the first time: Location on the widest root, which is the world, and
     // Community on the user, whose logbook this is.
@@ -220,6 +266,7 @@ private fun Subject(set: ItemSet, user: ReferenceableItem?, tab: Tab, atlas: Atl
     val wide = when (tab.shape) {
         Shape.DIVES -> TABLE
         Shape.PLACES -> TREE + SITES
+        Shape.TYPES -> SUBTABS
         else -> SELECTOR
     }
     Row(modifier = Modifier.fillMaxSize()) {
@@ -246,9 +293,9 @@ private fun Subject(set: ItemSet, user: ReferenceableItem?, tab: Tab, atlas: Atl
         VerticalDivider()
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             if (tab.shape == Shape.PLACES) {
-                PlaceView(set, atlas, kept.hideUnused, kept.place, chosen)
+                PlaceView(set, atlas, kept.hideUnused, kept.place, chosen, onFollow)
             } else {
-                chosen?.let { ItemView(it) } ?: Middle("choose something on the left")
+                chosen?.let { ItemView(it, onFollow) } ?: Middle("choose something on the left")
             }
         }
     }
@@ -276,6 +323,7 @@ private fun Dives(
     onChoose: (Chosen) -> Unit,
 ) {
     val rows = remember(set) { diveRowsOf(set) }
+    Shown(scrolled, chosen?.id)
     Column(modifier = Modifier.fillMaxHeight().padding(horizontal = GAP)) {
         Row(
             modifier = Modifier.fillMaxWidth().height(LINE),
@@ -307,6 +355,40 @@ private fun Dives(
         }
     }
 }
+
+/**
+ * Brings the line keyed [key] into view, where the list holds one and it is not in view already.
+ *
+ * For what was chosen from elsewhere, by following a reference: a click on a line never needs
+ * this, the line being where the click was, and is left alone.
+ */
+@Composable
+private fun Shown(list: LazyListState, key: String?) {
+    LaunchedEffect(list, key) {
+        if (key == null) return@LaunchedEffect
+        val seen = list.layoutInfo.visibleItemsInfo
+        if (seen.any { it.key == key }) return@LaunchedEffect
+        // The keys in order are not known to the state, so the list is asked by scrolling to
+        // where the key was last laid out; a key never laid out is found by walking.
+        val at = indexOf(list, key) ?: return@LaunchedEffect
+        list.animateScrollToItem(at)
+    }
+}
+
+/** Where [key] is in a list, found by looking through it. Absent where it is not there. */
+private suspend fun indexOf(list: LazyListState, key: String): Int? {
+    val total = list.layoutInfo.totalItemsCount
+    if (total == 0) return null
+    for (at in 0..<total step STRIDE) {
+        list.scrollToItem(at)
+        val found = list.layoutInfo.visibleItemsInfo.firstOrNull { it.key == key }
+        if (found != null) return found.index
+    }
+    return null
+}
+
+/** How many lines a search for a key steps over at a time, fewer than a screen holds. */
+private const val STRIDE = 20
 
 /** The trip cell, tinted down the run and clickable wherever the run is. */
 @Composable
@@ -435,11 +517,20 @@ private fun Types(
                 androidx.compose.material3.Tab(
                     selected = index == kept.subtab,
                     onClick = { kept.subtab = index },
-                    text = { Text(pluralOf(type)) },
+                    // Smaller than a tab's own type, since three names share a narrow column.
+                    text = {
+                        Text(
+                            text = pluralOf(type),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
                 )
             }
         }
         val type = tab.types[kept.subtab]
+        Shown(kept.list, chosen?.id)
         LazyColumn(state = kept.list, modifier = Modifier.fillMaxHeight().padding(GAP)) {
             items(entriesOf(set, type), key = { it.id }) {
                 Entry(it, chosen, 0, onChoose, mark = if (it.id == userId) YOU else null)
@@ -660,9 +751,9 @@ internal fun Line(
 
 /** One item, arranged for reading. It never changes anything. */
 @Composable
-private fun ItemView(chosen: Chosen) {
+private fun ItemView(chosen: Chosen, onFollow: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ItemCard(chosen)
+        ItemCard(chosen, onFollow)
     }
 }
 
@@ -678,6 +769,7 @@ private fun PlaceView(
     hideUnused: Boolean,
     place: Chosen?,
     chosen: Chosen?,
+    onFollow: (String) -> Unit,
 ) {
     if (place == null && chosen == null) {
         Middle("choose a region on the left")
@@ -693,9 +785,9 @@ private fun PlaceView(
             }
             val frame = remember(set, place) { frameOf(place.item, dots) }
             if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)
-            ItemCard(place)
+            ItemCard(place, onFollow)
         }
-        if (chosen != null) ItemCard(chosen)
+        if (chosen != null) ItemCard(chosen, onFollow)
     }
 }
 
@@ -814,7 +906,7 @@ private fun pathOf(
 
 /** One item on a card, sized to what it says. */
 @Composable
-private fun ItemCard(chosen: Chosen) {
+private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -828,16 +920,17 @@ private fun ItemCard(chosen: Chosen) {
                 modifier = Modifier.padding(bottom = GAP),
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
-            val shown = chosen.item.description.fields.mapNotNull { shownOf(it, chosen.item) }
+            val shown = fieldsShownOf(chosen.item.description)
+                .mapNotNull { shownOf(it, chosen.item) }
             if (shown.isEmpty()) Aside("this one says nothing yet")
-            for (field in shown) Field(field)
+            for (field in shown) Field(field, onFollow)
         }
     }
 }
 
 /** One field: what it is called, and what it says. */
 @Composable
-private fun Field(shown: Shown) {
+private fun Field(shown: Shown, onFollow: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
         horizontalArrangement = Arrangement.spacedBy(GAP),
@@ -849,8 +942,21 @@ private fun Field(shown: Shown) {
             textAlign = TextAlign.End,
             modifier = Modifier.width(LABEL),
         )
+        // A part that leads somewhere is a link, in the link colour; the rest reads as it is.
+        val link = TextLinkStyles(SpanStyle(color = MaterialTheme.colorScheme.primary))
+        val said = buildAnnotatedString {
+            for (part in shown.parts) {
+                val to = part.leadsTo
+                if (to == null) {
+                    append(part.text)
+                } else {
+                    val clickable = LinkAnnotation.Clickable(to, link) { onFollow(to) }
+                    withLink(clickable) { append(part.text) }
+                }
+            }
+        }
         Text(
-            text = shown.text,
+            text = said,
             style = MaterialTheme.typography.bodyMedium,
             color = when {
                 shown.wrong -> MaterialTheme.colorScheme.error
@@ -901,6 +1007,7 @@ private fun onTint(chosen: Boolean): Color =
 
 internal val SHAPE = RoundedCornerShape(6.dp)
 internal val SELECTOR = 280.dp
+private val SUBTABS = 340.dp
 private val TABLE = 600.dp
 private val TREE = 220.dp
 private val TRIP = 170.dp
