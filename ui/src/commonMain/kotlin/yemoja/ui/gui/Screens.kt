@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -1175,7 +1176,9 @@ private fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit
     ) {
         for ((index, label) in labels.withIndex()) {
             val here = index == chosen
-            Column(modifier = Modifier.clickable { onChoose(index) }) {
+            // As wide as its name: the underline would otherwise take the row and push the
+            // next tab off the edge.
+            Column(modifier = Modifier.width(IntrinsicSize.Max).clickable { onChoose(index) }) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelMedium,
