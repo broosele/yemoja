@@ -75,8 +75,9 @@ question had to be asked per tab.
   divided by year, every year but the last folded. The trip column has one cell per trip,
   spanning the consecutive dives on it within a year, and a dive on no trip stands alone. Which
   column is clicked decides what is selected: the trip cell selects the trip, anywhere else
-  selects the dive; with control held a click adds a dive to the selection or takes it out, and
-  a click on a year's divider selects the year's dives together. The tab opens on the last dive.
+  selects the dive; with control held a click adds a dive to the selection or takes it out, with
+  shift held it selects every dive between the one last chosen and it, and a click on a year's
+  divider selects the year's dives together. The tab opens on the last dive.
 - **Gear** — a tree of categories and the kinds within them, and beside it the items in
   whichever branch is chosen.
 - **Community** — a subtab per type: people, operators, certifications. The user, whoever the

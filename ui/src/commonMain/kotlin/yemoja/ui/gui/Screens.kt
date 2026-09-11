@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -346,15 +347,30 @@ private fun Dives(set: ItemSet, kept: Kept) {
     val chosen = kept.chosen
     val many = kept.chosenMany
     val window = LocalWindowInfo.current
-    // A plain click chooses one dive; with control held it adds or removes one. `GUI-23`.
+    // A plain click chooses one dive; with control held it adds or removes one; with shift
+    // held it chooses every dive between the one last chosen and this one, the last chosen
+    // staying where it is so the next shift-click reaches from the same place. `GUI-23`.
     val choose = { dive: Chosen ->
-        if (window.keyboardModifiers.isCtrlPressed) {
-            val was = if (many.isEmpty() && chosen != null) setOf(chosen.id) else many
-            kept.chosenMany = if (dive.id in was) was - dive.id else was + dive.id
-            kept.chosen = dive
-        } else {
-            kept.chosenMany = emptySet()
-            kept.chosen = dive
+        val keys = window.keyboardModifiers
+        val anchor = chosen?.id
+        when {
+            keys.isShiftPressed && anchor != null -> {
+                val order = years.flatMap { year -> year.rows.map { it.dive.id } }
+                val from = order.indexOf(anchor)
+                val to = order.indexOf(dive.id)
+                if (from >= 0 && to >= 0) {
+                    kept.chosenMany = order.subList(minOf(from, to), maxOf(from, to) + 1).toSet()
+                }
+            }
+            keys.isCtrlPressed -> {
+                val was = if (many.isEmpty() && chosen != null) setOf(chosen.id) else many
+                kept.chosenMany = if (dive.id in was) was - dive.id else was + dive.id
+                kept.chosen = dive
+            }
+            else -> {
+                kept.chosenMany = emptySet()
+                kept.chosen = dive
+            }
         }
     }
     val chooseTrip = { trip: Chosen ->
