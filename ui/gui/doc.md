@@ -402,10 +402,12 @@ once and corrected. The numbers stay unused rather than being given to something
   there is to dive there. The dots are drawn in the text colour and the mark in the error
   colour, which are black and red in daylight and stay visible in the dark.
 
-  **The map has no coastline.** The atlas gives a region a box and no shape, so a map is where
-  the sites lie in relation to each other and to the edges. Drawing land needs geometry the
-  atlas does not hold; Natural Earth's is public domain and would fit in `libraries/` if the
-  map is ever asked to show more.
+  **The map is drawn from Natural Earth**, bundled as a library at three scales: land, lakes,
+  borders, rivers and cities. A frame is drawn from the coarsest scale that still looks like a
+  map at its width, so the world is a few thousand points and a bay is its real coastline, and
+  the cities named narrow the same way, from capitals on the world to every place the source
+  knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
+  before it arrives shows its sites on an empty frame until it does.
 - **GUI-22 — Which parent a region tree uses.** *Settled:* **all of them.** A region has
   `parents`, plural, so regions form a graph rather than a tree, and a region with two parents
   appears under both. Nothing is hidden and no rule has to be invented for which path is the

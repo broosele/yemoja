@@ -254,6 +254,39 @@ class MapTest {
     }
 
     @Test
+    fun `what a canvas shows is the frame and whatever the fit leaves room for`() {
+        val frame = frameOf(set["boxed"]!!, emptyList())!!
+        // Twice as wide as the frame needs: the shown frame is wider, and no taller.
+        val shown = frame.shown(400.0, 200.0)
+        assertTrue(shown.width > frame.width, "${shown.width}")
+        assertEquals(frame.height, shown.height, 1e-9)
+        assertTrue(shown.west < 30.0 && shown.east > 36.0, "${shown.west}..${shown.east}")
+        // The world on a tall canvas is still the world, and no taller than the poles.
+        val world = Frame(-180.0, 180.0, -90.0, 90.0).shown(200.0, 400.0)
+        assertEquals(360.0, world.width)
+        assertEquals(-90.0, world.south)
+        assertEquals(90.0, world.north)
+    }
+
+    @Test
+    fun `a point just west of the frame is drawn just off the left, not a world away`() {
+        val mediterranean = Frame(west = -6.0, east = 36.0, south = 30.0, north = 46.0)
+        val (inside, _) = mediterranean.place(40.0, -5.0, 420.0, 160.0)
+        val (portugal, _) = mediterranean.place(40.0, -9.0, 420.0, 160.0)
+        assertTrue(portugal < inside, "$portugal should be left of $inside")
+        assertTrue(portugal > -100.0, "$portugal should be just off the left")
+    }
+
+    @Test
+    fun `an outline straddling the west edge starts west of it and is drawn whole`() {
+        val mediterranean = Frame(west = -6.0, east = 36.0, south = 30.0, north = 46.0)
+        // Iberia, from -9 to 3: it starts three degrees west of the edge.
+        assertEquals(-3.0, mediterranean.startOf(-9.0, 3.0), 1e-9)
+        // Something well inside starts where it is.
+        assertEquals(16.0, mediterranean.startOf(10.0, 20.0), 1e-9)
+    }
+
+    @Test
     fun `a frame across the date line places a site beyond it east of the west edge`() {
         val frame = frameOf(set["pacific"]!!, emptyList())!!
         assertEquals(170.0, frame.width)

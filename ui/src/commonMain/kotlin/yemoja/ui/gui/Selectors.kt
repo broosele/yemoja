@@ -247,16 +247,24 @@ internal class Frame(val west: Double, val east: Double, val south: Double, val 
     val height: Double get() = north - south
 
     /**
-     * Where a point lands on a canvas of [wide] by [high], as a fraction of each from the top
-     * left.
+     * Where a point lands on a canvas of [wide] by [high], in pixels from the top left.
      *
      * The frame is fitted inside the canvas and centred, a degree of longitude drawn narrower
      * than one of latitude by the cosine of the middle latitude, which is what keeps a square
-     * bay square.
+     * bay square. A point is drawn on whichever side of the frame is nearer, so what lies just
+     * west of the west edge is just off the left, not a world away on the right.
      */
     fun place(
         latitude: Double,
         longitude: Double,
+        wide: Double,
+        high: Double,
+    ): Pair<Double, Double> = placeEast(latitude, nearest(eastOf(longitude)), wide, high)
+
+    /** As [place], for a point [eastDegrees] east of the west edge, which may be negative. */
+    fun placeEast(
+        latitude: Double,
+        eastDegrees: Double,
         wide: Double,
         high: Double,
     ): Pair<Double, Double> {
@@ -264,10 +272,52 @@ internal class Frame(val west: Double, val east: Double, val south: Double, val 
         val scale = minOf(wide / (width * squeeze), high / height)
         val drawnWide = width * squeeze * scale
         val drawnHigh = height * scale
-        val x = (wide - drawnWide) / 2 + eastOf(longitude) * squeeze * scale
+        val x = (wide - drawnWide) / 2 + eastDegrees * squeeze * scale
         val y = (high - drawnHigh) / 2 + (north - latitude) * scale
         return x to y
     }
+
+    /**
+     * How far east of the west edge an outline from [west] to [east] starts, unwrapped so the
+     * outline is drawn whole and on the side of the frame nearer its middle.
+     *
+     * Per outline rather than per point, because a coast that straddles the west edge has
+     * points on both sides of it, and wrapping them one by one would draw the edges between
+     * them right across the map.
+     */
+    fun startOf(west: Double, east: Double): Double {
+        val start = eastOf(west)
+        return if (start + (east - west) / 2 - width / 2 > 180.0) start - 360.0 else start
+    }
+
+    /** An offset east of the west edge, brought within half a turn of the frame's middle. */
+    private fun nearest(eastDegrees: Double): Double =
+        if (eastDegrees - width / 2 > 180.0) eastDegrees - 360.0 else eastDegrees
+
+    /**
+     * The frame a canvas of [wide] by [high] actually shows: this one, and whatever the fit
+     * leaves room for beside or above it. Never wider than the world or taller than the poles.
+     */
+    fun shown(wide: Double, high: Double): Frame {
+        val squeeze = kotlin.math.cos(Math.toRadians((south + north) / 2))
+        val scale = minOf(wide / (width * squeeze), high / height)
+        val lonSpan = minOf(360.0, wide / (squeeze * scale))
+        val latSpan = high / scale
+        val midLat = (south + north) / 2
+        val whole = lonSpan >= 360.0
+        return Frame(
+            west = if (whole) -180.0 else wrapped(west + width / 2 - lonSpan / 2),
+            east = if (whole) 180.0 else wrapped(west + width / 2 + lonSpan / 2),
+            south = maxOf(-90.0, midLat - latSpan / 2),
+            north = minOf(90.0, midLat + latSpan / 2),
+        )
+    }
+}
+
+/** A longitude brought back into -180 to 180. */
+private fun wrapped(longitude: Double): Double {
+    val turned = (longitude + 180.0) % 360.0
+    return (turned + 360.0) % 360.0 - 180.0
 }
 
 /**

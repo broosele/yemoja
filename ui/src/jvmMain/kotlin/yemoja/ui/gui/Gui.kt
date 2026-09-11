@@ -22,8 +22,8 @@ import java.net.URI
  * Show the logbook in [folder] until the window is closed, and answer with what to exit with.
  *
  * **What this supplies is the platform**: a window, a way to look for a dive computer, the manual
- * read from the jar, and a browser for a link that leads out of it. Everything shown is decided
- * by the screens, which know nothing about any of this.
+ * and the map read from the jar, and a browser for a link that leads out. Everything shown is
+ * decided by the screens, which know nothing about any of this.
  */
 fun gui(folder: String): Int {
     val universe = try {
@@ -34,7 +34,11 @@ fun gui(folder: String): Int {
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    val manual = CHAPTERS.map { file -> chapterOf(file, bundled(file)) }
+    val platform = Platform(
+        manual = CHAPTERS.map { file -> chapterOf(file, bundled("manual/$file")) },
+        atlas = { Atlas.read { scale, layer -> bundled("libraries/map/$scale/$layer.txt") } },
+        open = ::browse,
+    )
     application {
         Window(
             onCloseRequest = ::exitApplication,
@@ -44,17 +48,17 @@ fun gui(folder: String): Int {
             // Light or dark as the system is set, in the application's own colours. `GUI-3`.
             val scheme = if (isSystemInDarkTheme()) MARINE_DARK else MARINE_LIGHT
             MaterialTheme(colorScheme = scheme) {
-                Application(universe, manual, onOpen = ::browse)
+                Application(universe, platform)
             }
         }
     }
     return 0
 }
 
-/** A chapter's text, as the build bundled it. A chapter missing from the jar is a broken build. */
-private fun bundled(file: String): String {
-    val stream = Bundled::class.java.getResourceAsStream("/manual/$file")
-        ?: error("manual/$file is not bundled, and the build should have done that")
+/** A file's text, as the build bundled it. One missing from the jar is a broken build. */
+private fun bundled(path: String): String {
+    val stream = Bundled::class.java.getResourceAsStream("/$path")
+        ?: error("$path is not bundled, and the build should have done that")
     return stream.bufferedReader().use { it.readText() }
 }
 

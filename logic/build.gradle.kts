@@ -48,6 +48,6 @@ tasks.named<ProcessResources>("jvmProcessResources") {
     from(rootProject.file("libraries")) {
         // The name FileStore.LIBRARIES resolves under. A build script cannot see it.
         into("libraries")
-        include("**/*.json", "LICENSE")
+        include("**/*.json", "map/**/*.txt", "LICENSE")
     }
 }

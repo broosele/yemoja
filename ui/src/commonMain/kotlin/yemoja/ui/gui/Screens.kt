@@ -1,12 +1,12 @@
 package yemoja.ui.gui
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,13 +35,20 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +56,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import yemoja.data.ItemSet
 import yemoja.logic.Universe
 
@@ -66,23 +75,35 @@ import yemoja.logic.Universe
  */
 
 /**
- * The whole application: a tab across the top, and whatever that tab shows.
- *
- * [manual] is the chapters as the platform loaded them, and [onOpen] is given a link that leads
- * out of them, which only the platform can follow.
+ * Platform is what the screens are given by whatever hosts them, and know nothing of the source
+ * of.
  */
+internal class Platform(
+    /** The manual's chapters, in reading order. */
+    val manual: List<Chapter>,
+    /** The map, read when asked and off the interface's thread: it is fifteen megabytes. */
+    val atlas: () -> Atlas,
+    /** Follows a link that leads out of the application. */
+    val open: (String) -> Unit,
+)
+
+/** The whole application: a tab across the top, and whatever that tab shows. */
 @Composable
-internal fun Application(universe: Universe, manual: List<Chapter>, onOpen: (String) -> Unit) {
+internal fun Application(universe: Universe, platform: Platform) {
     // Home, which is where the application opens whatever it holds yet.
     var tab by remember { mutableStateOf(TABS.first()) }
+    // Absent until read, and a map drawn before then shows its sites on an empty frame.
+    val atlas by produceState<Atlas?>(null, platform) {
+        value = withContext(Dispatchers.Default) { platform.atlas() }
+    }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
             Tabs(tab) { tab = it }
             Box(modifier = Modifier.weight(1f)) {
                 when (tab.shape) {
                     Shape.NONE -> Owed(tab)
-                    Shape.MANUAL -> Manuals(manual, onOpen)
-                    else -> Subject(universe.logbook, tab)
+                    Shape.MANUAL -> Manuals(platform.manual, platform.open)
+                    else -> Subject(universe.logbook, tab, atlas)
                 }
             }
         }
@@ -131,9 +152,10 @@ private fun Owed(tab: Tab) {
  * Location chooses two things, a region and something at it, and shows both. `GUI-25`.
  */
 @Composable
-private fun Subject(set: ItemSet, tab: Tab) {
+private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
     var chosen by remember(tab) { mutableStateOf<Chosen?>(null) }
-    var place by remember(tab) { mutableStateOf<Chosen?>(null) }
+    // The widest root, which is the world, so the map opens showing everything.
+    var place by remember(tab) { mutableStateOf(widestRootIn(set)) }
     val wide = when (tab.shape) {
         Shape.DIVES -> TABLE
         Shape.PLACES -> TREE + SITES
@@ -163,7 +185,7 @@ private fun Subject(set: ItemSet, tab: Tab) {
         VerticalDivider()
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             if (tab.shape == Shape.PLACES) {
-                PlaceView(set, place, chosen)
+                PlaceView(set, atlas, place, chosen)
             } else {
                 chosen?.let { ItemView(it) } ?: Middle("choose something on the left")
             }
@@ -378,6 +400,11 @@ private fun Places(
     }
 }
 
+/** The root region with the widest frame, which is the world wherever the atlas is present. */
+private fun widestRootIn(set: ItemSet): Chosen? =
+    regionTreeOf(set).mapNotNull { it.held.firstOrNull() }
+        .maxByOrNull { frameOf(it.item, emptyList())?.width ?: 0.0 }
+
 /**
  * Every open branch of a tree, flattened with its depth, since a lazy list holds no nesting.
  *
@@ -500,7 +527,7 @@ private fun ItemView(chosen: Chosen) {
  * Both at once and one below the other, because a site is read against where it is. `GUI-25`.
  */
 @Composable
-private fun PlaceView(set: ItemSet, place: Chosen?, chosen: Chosen?) {
+private fun PlaceView(set: ItemSet, atlas: Atlas?, place: Chosen?, chosen: Chosen?) {
     if (place == null && chosen == null) {
         Middle("choose a region on the left")
         return
@@ -512,7 +539,7 @@ private fun PlaceView(set: ItemSet, place: Chosen?, chosen: Chosen?) {
         if (place != null) {
             val dots = remember(set, place) { dotsOf(atPlaceIn(set, place.id).first) }
             val frame = remember(set, place) { frameOf(place.item, dots) }
-            if (frame != null) RegionMap(frame, dots, chosen?.id)
+            if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)
             ItemCard(place)
         }
         if (chosen != null) ItemCard(chosen)
@@ -520,47 +547,116 @@ private fun PlaceView(set: ItemSet, place: Chosen?, chosen: Chosen?) {
 }
 
 /**
- * A region's sites as dots in its frame, the chosen one marked and named.
+ * A region's frame drawn from the atlas, its sites as dots on it, and the chosen one marked and
+ * named.
  *
- * No coastline: the atlas holds a box for a region and no shape, so the map is where the sites
- * lie in relation to each other and to the region's edges, which is what a diver looking for
- * the next site along wants from it.
+ * Land over sea, lakes back in sea, then rivers, borders and the cities the scale names, then
+ * the sites, and the marked one last so nothing lies over it. What the frame's fit leaves room
+ * for beside it is drawn too, since a map cut off at a box's edge looks like a mistake. The
+ * paths are built once per size and frame and only drawn after that, which is what keeps a
+ * coastline of a hundred thousand points from being rebuilt on every frame.
  */
 @Composable
-private fun RegionMap(frame: Frame, dots: List<Dot>, marked: String?) {
+private fun RegionMap(layer: Layer?, frame: Frame, dots: List<Dot>, marked: String?) {
+    val sea = MaterialTheme.colorScheme.primaryContainer
+    val land = MaterialTheme.colorScheme.surface
+    val border = MaterialTheme.colorScheme.outlineVariant
+    val river = MaterialTheme.colorScheme.primary.copy(alpha = RIVER)
+    val town = MaterialTheme.colorScheme.onSurfaceVariant
     val ink = MaterialTheme.colorScheme.onSurface
     val mark = MaterialTheme.colorScheme.error
-    val sea = MaterialTheme.colorScheme.surfaceContainerLowest
-    val label = MaterialTheme.typography.labelMedium.copy(color = ink)
+    val townLabel = MaterialTheme.typography.labelSmall.copy(color = town)
+    val siteLabel = MaterialTheme.typography.labelMedium.copy(color = ink)
     val measurer = rememberTextMeasurer()
-    Canvas(
+    Spacer(
         modifier = Modifier.fillMaxWidth().height(MAP).clip(MaterialTheme.shapes.medium)
-            .background(sea),
-    ) {
-        val inset = GAP.toPx()
-        val wide = size.width - 2 * inset
-        val high = size.height - 2 * inset
-        fun at(dot: Dot): Offset {
-            val (x, y) = frame.place(dot.latitude, dot.longitude, wide.toDouble(), high.toDouble())
-            return Offset(inset + x.toFloat(), inset + y.toFloat())
+            .drawWithCache {
+                val wide = size.width.toDouble()
+                val high = size.height.toDouble()
+                fun at(latitude: Double, longitude: Double): Offset {
+                    val (x, y) = frame.place(latitude, longitude, wide, high)
+                    return Offset(x.toFloat(), y.toFloat())
+                }
+                val shown = frame.shown(wide, high)
+                fun paths(shapes: List<Outline>?, closed: Boolean): List<Path> =
+                    shapes.orEmpty()
+                        .filter { shown.overlaps(it.west, it.east, it.south, it.north) }
+                        .map { pathOf(it, closed, frame, wide, high) }
+                val lands = paths(layer?.land, closed = true)
+                val lakes = paths(layer?.lakes, closed = true)
+                val rivers = paths(layer?.rivers, closed = false)
+                val borders = paths(layer?.borders, closed = false)
+                val rank = ranksNamedIn(frame)
+                val towns = layer?.cities.orEmpty().filter {
+                    it.rank <= rank &&
+                        shown.overlaps(it.longitude, it.longitude, it.latitude, it.latitude)
+                }
+                val thin = Stroke(THIN.toPx())
+                onDrawBehind {
+                    drawRect(sea)
+                    for (path in lands) drawPath(path, land)
+                    for (path in lakes) drawPath(path, sea)
+                    for (path in rivers) drawPath(path, river, style = thin)
+                    for (path in borders) drawPath(path, border, style = thin)
+                    // A name that would lie over one already drawn is left off. The cities
+                    // come most important first, so what is dropped is the lesser one.
+                    val taken = ArrayList<Rect>()
+                    for (city in towns) {
+                        val centre = at(city.latitude, city.longitude)
+                        drawCircle(town, TOWN.toPx(), centre)
+                        val laid = measurer.measure(city.name, townLabel)
+                        val corner = beside(centre, TOWN.toPx(), laid.size.height)
+                        val box = Rect(corner, laid.size.toSize())
+                        if (taken.any { it.overlaps(box) }) continue
+                        taken += box
+                        drawText(laid, topLeft = corner)
+                    }
+                    for (dot in dots) {
+                        if (dot.id == marked) continue
+                        drawCircle(ink, DOT.toPx(), at(dot.latitude, dot.longitude))
+                    }
+                    dots.firstOrNull { it.id == marked }?.let { dot ->
+                        val centre = at(dot.latitude, dot.longitude)
+                        drawCircle(mark, MARKED.toPx(), centre)
+                        val laid = measurer.measure(dot.title, siteLabel)
+                        drawText(laid, topLeft = beside(centre, MARKED.toPx(), laid.size.height))
+                    }
+                }
+            },
+    )
+}
+
+/** Where a label sits: to the right of a dot of [radius] at [centre], centred on it. */
+private fun beside(centre: Offset, radius: Float, height: Int): Offset =
+    Offset(centre.x + radius + 3f, centre.y - height / 2f)
+
+/**
+ * An outline as one path on the canvas, closed where it is a coastline or a lake.
+ *
+ * Every ring goes into the one path and the fill is even-odd, which is what makes a ring
+ * inside another a hole rather than land twice over. The outline is placed whole, from where
+ * its west edge starts, so it never wraps in the middle.
+ */
+private fun pathOf(
+    shape: Outline,
+    closed: Boolean,
+    frame: Frame,
+    wide: Double,
+    high: Double,
+): Path {
+    val path = Path()
+    if (closed) path.fillType = PathFillType.EvenOdd
+    val start = frame.startOf(shape.west, shape.east)
+    for (ring in shape.rings) {
+        for (index in 0..<ring.size / 2) {
+            val east = start + (ring[2 * index] - shape.west)
+            val (x, y) = frame.placeEast(ring[2 * index + 1], east, wide, high)
+            if (index == 0) path.moveTo(x.toFloat(), y.toFloat())
+            else path.lineTo(x.toFloat(), y.toFloat())
         }
-        for (dot in dots) {
-            if (dot.id != marked) drawCircle(ink, DOT.toPx(), at(dot))
-        }
-        // Last, so it is never under another dot.
-        dots.firstOrNull { it.id == marked }?.let { dot ->
-            val centre = at(dot)
-            drawCircle(mark, MARKED.toPx(), centre)
-            val laid = measurer.measure(dot.title, label)
-            drawText(
-                textLayoutResult = laid,
-                topLeft = Offset(
-                    x = centre.x + MARKED.toPx() + HALF.toPx(),
-                    y = centre.y - laid.size.height / 2f,
-                ),
-            )
-        }
+        if (closed) path.close()
     }
+    return path
 }
 
 /** One item on a card, sized to what it says. */
@@ -660,9 +756,14 @@ private val DATE = 100.dp
 private val SITE = 240.dp
 private val LABEL = 170.dp
 private val SITES = 300.dp
-private val MAP = 280.dp
+private val MAP = 420.dp
 private val DOT = 3.dp
 private val MARKED = 5.dp
+private val TOWN = 1.5.dp
+private val THIN = 1.dp
+
+/** How much of the water colour a river carries, so it reads as a line and not a canal. */
+private const val RIVER = 0.6f
 internal val LINE = 28.dp
 internal val INDENT = 16.dp
 internal val GAP = 12.dp

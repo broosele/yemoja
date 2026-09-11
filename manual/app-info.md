@@ -24,6 +24,7 @@ standards, and to help with debugging and testing.
 
 The atlas of regions was written for Yemoja, following the conventions of Natural
 Earth — a public domain map dataset that asks for no credit and gets this one anyway.
+The map itself — coastlines, lakes, borders, rivers and cities — is Natural Earth's data.
 
 The decompression constants are the published Bühlmann ZHL-16C figures. With thanks
 to Erik C. Baker, whose writing on gradient factors made them comprehensible to a

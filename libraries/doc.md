@@ -70,6 +70,28 @@ uses it, which names its libraries by type:
 So one file holds one type, and a library of regions and a library of the dive sites in
 them are two files.
 
+**The map is the one library that is not a logbook file.** `map/` holds geometry rather
+than items: coastlines, lakes, borders, rivers and cities, at three scales, for drawing a
+region. Nothing in a logbook names it and nothing resolves into it; the application reads
+it whole. Its layout is three folders, `110m/`, `50m/` and `10m/`, the source's scales from
+coarsest to finest, each holding the same five files:
+
+```
+land.txt      coastlines, as closed shapes
+lakes.txt     lakes, as closed shapes
+borders.txt   land borders between countries, as open shapes
+rivers.txt    rivers and lake centre lines, as open shapes
+cities.txt    populated places
+```
+
+A shape is one line. It is one or more rings separated by ` / `, the first the outside
+and any after it a hole in it — the Caspian in Eurasia, an island in a lake; a border or
+a river has one ring, open. A ring is longitude and latitude alternating, separated by
+spaces, rounded to one decimal at `110m`, two at `50m` and three at `10m`, which is
+finer than the source draws at that scale. No shape crosses the date line; the source
+splits them there. A city is one line of five tab-separated cells: name, latitude,
+longitude, the source's rank from 0 for the most important, and population.
+
 
 One consequence: a library and a logbook share an id namespace, because resolution
 looks in the logbook first and then here. An id chosen carelessly will be shadowed
@@ -101,6 +123,12 @@ rename or remove one. The reason is in [data/libraries.md](../data/libraries.md)
   data follows the conventions of [Natural Earth](https://www.naturalearthdata.com/),
   which is itself in the public domain and could have been used directly; nothing was
   taken from it.
+- **The map** — [Natural Earth](https://www.naturalearthdata.com/), which is in the public
+  domain; its `land`, `lakes`, `admin_0_boundary_lines_land`, `rivers_lake_centerlines` and
+  `populated_places` themes at 1:110m, 1:50m and 1:10m, taken in September 2026 from the
+  GeoJSON in its maintainers' repository. Only geometry, names, ranks and populations were
+  kept; every other attribute was dropped, and coordinates were rounded as the layout above
+  says.
 - **Certifications** — the qualifications agencies publish, recorded as fact. See the
   note on names below.
 - **Generic gear** — written for this project.
@@ -120,8 +148,8 @@ it: this is reference data, not a review.
 
 ## Status
 
-Populated: world regions split by continent, PADI and CMAS certifications, and a
-catalogue of generic gear.
+Populated: world regions split by continent, PADI and CMAS certifications, a catalogue
+of generic gear, and the map at three scales.
 
 No count is given here on purpose — it went stale the first time anything was added.
 `tool/checkdata.py` reports the current figure and verifies that every reference
