@@ -154,7 +154,8 @@ All five can be corrected where the working out is wrong.
   so that stops were required on the way up. Taken from the primary profile: a `decostop` above
   zero at any point means yes, and failing that a `no_deco_time` that never reached zero means
   no. Most computers write stops only when there are stops, which is why the second reading
-  matters.
+  matters. A zero before the first positive value is ignored: some computers read zero at the
+  surface before they have calculated anything, and a dive cannot begin in deco.
 
   Where the recording has neither, or there is no profile at all, nothing is worked out
   and the field is empty for you to answer. Yemoja will not decide this one for you — your

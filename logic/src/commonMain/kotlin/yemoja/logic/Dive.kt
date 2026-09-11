@@ -600,7 +600,9 @@ private fun divesAverageDepth(dive: Item): Result<Any> = fromProfile(dive) { pro
  *
  * A `decostop` above zero at any point means yes. Failing that, a `no_deco_time` that never
  * reached zero means no. Most computers write stops only where there are stops, which is why
- * the second reading matters.
+ * the second reading matters. A zero counts only once a positive value has come before it: a
+ * computer's first reading precedes its first calculation and reads zero at the surface, and a
+ * dive cannot begin in deco.
  *
  * **Absent where the recording has neither**, and left for the user to answer. The manual is
  * deliberate that Yemoja does not decide this one: the computer decided it at the time, with
@@ -616,7 +618,7 @@ private fun divesDeco(dive: Item): Result<Any> = fromProfile(dive) { profile ->
     when {
         held.isNotEmpty() -> Result.Usable(false, Result.Origin.DERIVED)
         left.isEmpty() -> Result.Absent
-        left.all { it > 0.0 } -> Result.Usable(false, Result.Origin.DERIVED)
+        left.dropWhile { it <= 0.0 }.all { it > 0.0 } -> Result.Usable(false, Result.Origin.DERIVED)
         else -> Result.Usable(true, Result.Origin.DERIVED)
     }
 }

@@ -290,6 +290,17 @@ class DecoTest {
     }
 
     @Test
+    fun `a zero before the first positive value is the computer not having calculated yet`() {
+        // A Perdix reads zero at the surface at ten seconds and ninety-nine minutes at twenty,
+        // and a dive cannot begin in deco.
+        assertEquals(false, (deco(""""no_deco_time": [[10, 0], [20, 5940], [600, 5940]]""") as
+            Result.Usable).value)
+        // Reaching zero later is still deco, whatever the first sample said.
+        assertEquals(true, (deco(""""no_deco_time": [[10, 0], [20, 5940], [600, 0]]""") as
+            Result.Usable).value)
+    }
+
+    @Test
     fun `neither recorded is left for the user, not answered`() {
         // The computer decided this at the time, with settings nothing here can reproduce.
         assertEquals(Result.Absent, deco(""""temperature": [[0, 21]]"""))
