@@ -1147,27 +1147,53 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
     var open by remember(item, inset.name) { mutableStateOf(0) }
     val at = open.coerceIn(0, entries.size - 1)
     Inset(inset.label) {
-        SecondaryTabRow(selectedTabIndex = at) {
-            for ((index, entry) in entries.withIndex()) {
-                androidx.compose.material3.Tab(
-                    selected = index == at,
-                    onClick = { open = index },
-                    text = {
-                        Text(
-                            text = entryLabelOf(entry.first, entry.second),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    },
-                )
-            }
-        }
+        SmallTabs(
+            labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
+            chosen = at,
+            onChoose = { open = it },
+        )
         Spacer(modifier = Modifier.height(GAP))
         // A recording is drawn before it is read: the graph is what it is for.
         val entry = entries[at].second
         if (depthLinesOf(entry).isNotEmpty()) ProfileGraph(item, entry)
         Fields(entry, onFollow)
+    }
+}
+
+/**
+ * A row of small tabs, each as wide as its name and set apart from the next, the chosen one
+ * underlined.
+ *
+ * The platform's tab row spreads its tabs across the width and makes each a touch target, which
+ * in a box inside an item is too much furniture for three names.
+ */
+@Composable
+private fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+    ) {
+        for ((index, label) in labels.withIndex()) {
+            val here = index == chosen
+            Column(modifier = Modifier.clickable { onChoose(index) }) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (here) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.padding(horizontal = HALF, vertical = HALF),
+                )
+                HorizontalDivider(
+                    thickness = UNDERLINE,
+                    color = if (here) MaterialTheme.colorScheme.primary else Color.Transparent,
+                )
+            }
+        }
     }
 }
 
@@ -1478,6 +1504,7 @@ private val AXIS = 40.dp
 private val FOOT = 16.dp
 private val HEAD = 18.dp
 private val LINE_WIDTH = 2.dp
+private val UNDERLINE = 2.dp
 private val THIN = 1.dp
 
 /** How much of the water colour a river carries, so it reads as a line and not a canal. */

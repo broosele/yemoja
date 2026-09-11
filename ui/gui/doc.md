@@ -521,10 +521,10 @@ once and corrected. The numbers stay unused rather than being given to something
   **How a desktop lays an item out.** The plain fields flow into two columns, in the type's
   order. An owned item is set into a box of its own, titled, and shown in full the same way,
   boxes nesting where an owned item owns one. A keyed owned item is such a box with a tab per
-  entry, the first open; a tab is called by the entry's name where it has one, else by what
-  the first reference on it points at — a recording by the computer that made it, a course by
-  its certification — and by its key only where nothing on it says anything. A series is still
-  a count: the graphs are where it is read.
+  entry, the tabs small, each as wide as its name and set apart, the first open; a tab is called
+  by the entry's name where it has one, else by what the first reference on it points at — a
+  recording by the computer that made it, a course by its certification — and by its key only
+  where nothing on it says anything. A series is still a count: the graphs are where it is read.
 
   **What a number reads as.** A file keeps three decimals of a metre so nothing measured is
   lost; a reader wants one. A depth, a temperature, a mass and a volume read to one decimal,
