@@ -81,7 +81,8 @@ question had to be asked per tab.
 - **Location** — a tree of regions, and beside it the dive sites in whichever region is chosen
   or in any region inside it, with the wrecks at those sites in the same list and marked apart
   from them. A region and a site are chosen at once, and the item view shows a map of the
-  region above the two of them. `GUI-25`.
+  region above the two of them. `GUI-25`. A box, *Hide unused*, on by default, takes out what
+  no dive touches. `GUI-26`.
 - **Manuals** — a tree of two levels: the chapters, and the sections of each. A chapter is
   shown whole, and choosing a section scrolls to its place in it. `GUI-15`.
 - **System** — not decided.
@@ -408,6 +409,13 @@ once and corrected. The numbers stay unused rather than being given to something
   the cities named narrow the same way, from capitals on the world to every place the source
   knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
   before it arrives shows its sites on an empty frame until it does.
+- **GUI-26 — What Location shows of an atlas.** *Settled:* **what the dives touch, unless
+  asked otherwise.** The atlas holds the world, and a logbook touches a few corners of it; a
+  tree of every region to reach three of them is a tree of noise. With *Hide unused* on, which
+  it is by default, a site no dive names is left out, a region with no such site at it or
+  inside it is left out, and a region left with one child and no site of its own is cut out
+  so the child takes its place — Europe with only the Netherlands left in it is not a level
+  worth a click. Off, the whole atlas is there, which is where a new site is filed.
 - **GUI-22 — Which parent a region tree uses.** *Settled:* **all of them.** A region has
   `parents`, plural, so regions form a graph rather than a tree, and a region with two parents
   appears under both. Nothing is hidden and no rule has to be invented for which path is the

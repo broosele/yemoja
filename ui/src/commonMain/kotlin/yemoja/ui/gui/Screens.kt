@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowRight
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LeadingIconTab
@@ -154,8 +155,11 @@ private fun Owed(tab: Tab) {
 @Composable
 private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
     var chosen by remember(tab) { mutableStateOf<Chosen?>(null) }
+    // On, so a logbook opens on where its dives were rather than on the whole atlas. `GUI-26`.
+    var hideUnused by remember(tab) { mutableStateOf(true) }
+    val tree = remember(set, hideUnused) { shownTreeOf(set, hideUnused) }
     // The widest root, which is the world, so the map opens showing everything.
-    var place by remember(tab) { mutableStateOf(widestRootIn(set)) }
+    var place by remember(tab) { mutableStateOf(widestRootIn(tree)) }
     val wide = when (tab.shape) {
         Shape.DIVES -> TABLE
         Shape.PLACES -> TREE + SITES
@@ -169,12 +173,15 @@ private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
                 Shape.TYPES -> Types(set, tab, chosen) { chosen = it }
                 Shape.PLACES -> Places(
                     set = set,
+                    tree = tree,
+                    hideUnused = hideUnused,
+                    onHide = { hideUnused = it },
                     place = place,
                     chosen = chosen,
                     onPlace = { region ->
                         place = region
                         // What was chosen stays chosen while the new region still lists it.
-                        val (sites, wrecks) = atPlaceIn(set, region.id)
+                        val (sites, wrecks) = atPlaceIn(set, region.id, hideUnused)
                         if ((sites + wrecks).none { it.id == chosen?.id }) chosen = null
                     },
                     onChoose = { chosen = it },
@@ -185,7 +192,7 @@ private fun Subject(set: ItemSet, tab: Tab, atlas: Atlas?) {
         VerticalDivider()
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             if (tab.shape == Shape.PLACES) {
-                PlaceView(set, atlas, place, chosen)
+                PlaceView(set, atlas, hideUnused, place, chosen)
             } else {
                 chosen?.let { ItemView(it) } ?: Middle("choose something on the left")
             }
@@ -367,27 +374,40 @@ private fun Types(set: ItemSet, tab: Tab, chosen: Chosen?, onChoose: (Chosen) ->
 @Composable
 private fun Places(
     set: ItemSet,
+    tree: List<Branch>,
+    hideUnused: Boolean,
+    onHide: (Boolean) -> Unit,
     place: Chosen?,
     chosen: Chosen?,
     onPlace: (Chosen) -> Unit,
     onChoose: (Chosen) -> Unit,
 ) {
-    val tree = remember(set) { regionTreeOf(set) }
     var open by remember(set) { mutableStateOf(tree.map { "/" + it.key }.toSet()) }
     Row(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(modifier = Modifier.width(TREE).fillMaxHeight().padding(GAP)) {
-            branchesIn(
-                branches = tree,
-                path = "",
-                depth = 0,
-                chosen = place,
-                open = open,
-                onToggle = { key -> open = if (key in open) open - key else open + key },
-                onChoose = onPlace,
-            )
+        Column(modifier = Modifier.width(TREE).fillMaxHeight().padding(GAP)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { onHide(!hideUnused) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = hideUnused, onCheckedChange = onHide)
+                Text("Hide unused", style = MaterialTheme.typography.bodyMedium)
+            }
+            LazyColumn(modifier = Modifier.fillMaxHeight()) {
+                branchesIn(
+                    branches = tree,
+                    path = "",
+                    depth = 0,
+                    chosen = place,
+                    open = open,
+                    onToggle = { key -> open = if (key in open) open - key else open + key },
+                    onChoose = onPlace,
+                )
+            }
         }
         VerticalDivider()
-        val what = remember(set, place) { place?.let { atPlaceIn(set, it.id) } }
+        val what = remember(set, place, hideUnused) {
+            place?.let { atPlaceIn(set, it.id, hideUnused) }
+        }
         LazyColumn(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             if (what == null) return@LazyColumn
             item(key = "sites") { Label("Sites", 0) }
@@ -401,8 +421,8 @@ private fun Places(
 }
 
 /** The root region with the widest frame, which is the world wherever the atlas is present. */
-private fun widestRootIn(set: ItemSet): Chosen? =
-    regionTreeOf(set).mapNotNull { it.held.firstOrNull() }
+private fun widestRootIn(tree: List<Branch>): Chosen? =
+    tree.mapNotNull { it.held.firstOrNull() }
         .maxByOrNull { frameOf(it.item, emptyList())?.width ?: 0.0 }
 
 /**
@@ -527,7 +547,13 @@ private fun ItemView(chosen: Chosen) {
  * Both at once and one below the other, because a site is read against where it is. `GUI-25`.
  */
 @Composable
-private fun PlaceView(set: ItemSet, atlas: Atlas?, place: Chosen?, chosen: Chosen?) {
+private fun PlaceView(
+    set: ItemSet,
+    atlas: Atlas?,
+    hideUnused: Boolean,
+    place: Chosen?,
+    chosen: Chosen?,
+) {
     if (place == null && chosen == null) {
         Middle("choose a region on the left")
         return
@@ -537,7 +563,9 @@ private fun PlaceView(set: ItemSet, atlas: Atlas?, place: Chosen?, chosen: Chose
         verticalArrangement = Arrangement.spacedBy(GAP),
     ) {
         if (place != null) {
-            val dots = remember(set, place) { dotsOf(atPlaceIn(set, place.id).first) }
+            val dots = remember(set, place, hideUnused) {
+                dotsOf(atPlaceIn(set, place.id, hideUnused).first)
+            }
             val frame = remember(set, place) { frameOf(place.item, dots) }
             if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)
             ItemCard(place)

@@ -192,6 +192,86 @@ class RegionTreeTest {
     }
 }
 
+class HideUnusedTest {
+
+    private val set = logbook(
+        "region.json" to """{
+            "world": {"name": "World"},
+            "europe": {"name": "Europe", "parents": ["@world"]},
+            "netherlands": {"name": "Netherlands", "parents": ["@europe"]},
+            "zeeland": {"name": "Zeeland", "parents": ["@netherlands"]},
+            "spain": {"name": "Spain", "parents": ["@europe"]},
+            "africa": {"name": "Africa", "parents": ["@world"]},
+            "egypt": {"name": "Egypt", "parents": ["@africa"]},
+            "red_sea": {"name": "Red Sea", "parents": ["@africa", "@asia"]},
+            "asia": {"name": "Asia", "parents": ["@world"]},
+            "antarctica": {"name": "Antarctica", "parents": ["@world"]}
+        }""",
+        "dive_site.json" to """{
+            "zeelandbrug": {"name": "Zeelandbrug", "regions": ["@zeeland"]},
+            "medes": {"name": "Medes", "regions": ["@spain"]},
+            "blue_hole": {"name": "Blue Hole", "regions": ["@egypt"]},
+            "thistlegorm": {"name": "Thistlegorm", "regions": ["@red_sea"]}
+        }""",
+        "dive/2026-06-01#0.json" to dive(1, site = "zeelandbrug"),
+        "dive/2026-06-02#0.json" to dive(2, site = "blue_hole"),
+        "dive/2026-06-03#0.json" to dive(3, site = "thistlegorm"),
+    )
+
+    @Test
+    fun `a site is used where a dive names it`() {
+        assertEquals(setOf("zeelandbrug", "blue_hole", "thistlegorm"), usedSitesIn(set))
+    }
+
+    @Test
+    fun `off, the tree is the whole atlas`() {
+        val world = shownTreeOf(set, hideUnused = false).single()
+        assertEquals(
+            setOf("Africa", "Antarctica", "Asia", "Europe"),
+            world.children.map { it.label }.toSet(),
+        )
+    }
+
+    @Test
+    fun `on, what no dive touches is left out and a branch that only leads on is cut out`() {
+        val world = shownTreeOf(set, hideUnused = true).single()
+        // Antarctica has nothing. Europe holds only Zeeland, through the Netherlands, so both
+        // are cut out. Africa holds Egypt and the Red Sea, so it stays. Asia holds only the
+        // Red Sea, so it is cut out, and the Red Sea it leads to is already under Africa.
+        assertEquals(setOf("Africa", "Red Sea", "Zeeland"), world.children.map { it.label }.toSet())
+        val africa = world.children.first { it.label == "Africa" }
+        assertEquals(setOf("Egypt", "Red Sea"), africa.children.map { it.label }.toSet())
+    }
+
+    @Test
+    fun `a region with one child and a site of its own is not cut out`() {
+        val own = logbook(
+            "region.json" to """{
+                "netherlands": {"name": "Netherlands"},
+                "zeeland": {"name": "Zeeland", "parents": ["@netherlands"]}
+            }""",
+            "dive_site.json" to """{
+                "zeelandbrug": {"name": "Zeelandbrug", "regions": ["@zeeland"]},
+                "vinkeveen": {"name": "Vinkeveen", "regions": ["@netherlands"]}
+            }""",
+            "dive/2026-06-01#0.json" to dive(1, site = "zeelandbrug"),
+            "dive/2026-06-02#0.json" to dive(2, site = "vinkeveen"),
+        )
+        val roots = shownTreeOf(own, hideUnused = true)
+        assertEquals(listOf("Netherlands"), roots.map { it.label })
+        assertEquals(listOf("Zeeland"), roots.single().children.map { it.label })
+    }
+
+    @Test
+    fun `on, a region lists only the sites dives name`() {
+        assertEquals(
+            listOf("Blue Hole", "Thistlegorm", "Zeelandbrug"),
+            atPlaceIn(set, "world", hideUnused = true).first.map { it.title },
+        )
+        assertEquals(4, atPlaceIn(set, "world").first.size, "off, every site")
+    }
+}
+
 class MapTest {
 
     private val set = logbook(

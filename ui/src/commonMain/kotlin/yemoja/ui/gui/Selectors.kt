@@ -194,9 +194,15 @@ private fun childrenOf(region: Item): List<String> = pointedAtAll(region, "child
  * at it. `GUI-20`. So a wreck at no site is under no region, and one named by two sites is under
  * both.
  */
-internal fun atPlaceIn(set: ItemSet, region: String): Pair<List<Chosen>, List<Chosen>> {
+internal fun atPlaceIn(
+    set: ItemSet,
+    region: String,
+    hideUnused: Boolean = false,
+): Pair<List<Chosen>, List<Chosen>> {
     val within = withinOf(set, region)
+    val used = if (hideUnused) usedSitesIn(set) else null
     val sites = entriesOf(set, Types.DIVE_SITE)
+        .filter { used == null || it.id in used }
         .filter { pointedAtAll(it.item, "regions").any { named -> named in within } }
     val wrecks = LinkedHashMap<String, Chosen>()
     for (site in sites) {
@@ -217,6 +223,46 @@ internal fun withinOf(set: ItemSet, region: String): Set<String> {
         set[next]?.let { pending += childrenOf(it) }
     }
     return within
+}
+
+// --- What is used. `GUI-26`.
+
+/** The dive sites any dive names. */
+internal fun usedSitesIn(set: ItemSet): Set<String> =
+    entriesOf(set, Types.DIVE).mapNotNullTo(HashSet()) { pointedAt(it.item, "dive_site") }
+
+/**
+ * The region tree with what is unused taken out, or whole where [hideUnused] is off.
+ *
+ * Unused is a site no dive names, and a region with no such site at it or anywhere inside it.
+ * A region left with one child and no site of its own is cut out and the child takes its
+ * place, since a branch that only leads on is a click for nothing. A child reached twice that
+ * way, through two parents both cut out, is kept once.
+ */
+internal fun shownTreeOf(set: ItemSet, hideUnused: Boolean): List<Branch> {
+    val tree = regionTreeOf(set)
+    if (!hideUnused) return tree
+    val used = usedSitesIn(set)
+    // How many used sites name each region directly, which is what keeps a region its own line.
+    val direct = HashMap<String, Int>()
+    for (site in entriesOf(set, Types.DIVE_SITE)) {
+        if (site.id !in used) continue
+        for (region in pointedAtAll(site.item, "regions")) {
+            direct[region] = (direct[region] ?: 0) + 1
+        }
+    }
+    return tree.flatMap { prunedOf(it, direct) }.distinctBy { it.key }
+}
+
+/** A branch pruned: nothing, itself trimmed, or the one child that stands in for it. */
+private fun prunedOf(branch: Branch, direct: Map<String, Int>): List<Branch> {
+    val children = branch.children.flatMap { prunedOf(it, direct) }.distinctBy { it.key }
+    val own = branch.held.sumOf { direct[it.id] ?: 0 }
+    return when {
+        children.isEmpty() && own == 0 -> emptyList()
+        children.size == 1 && own == 0 -> children
+        else -> listOf(Branch(branch.key, branch.label, children, branch.held))
+    }
 }
 
 // --- The map. `GUI-25`.
