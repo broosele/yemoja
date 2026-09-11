@@ -62,6 +62,28 @@ internal fun diveRowsOf(set: ItemSet): List<DiveRow> {
     return runsIn(rows)
 }
 
+/** Year is one year's rows of the dive table, in the order the table keeps them. */
+internal class Year(val label: String, val rows: List<DiveRow>)
+
+/**
+ * The dive table by year, newest year first, each year's trip runs counted within it.
+ *
+ * A trip that ran over New Year is two runs, one in each year, since a year is a division of
+ * the table and a cell does not cross one. A dive with no date is under a year of its own,
+ * named for having none.
+ */
+internal fun yearsOf(rows: List<DiveRow>): List<Year> {
+    val years = LinkedHashMap<String, MutableList<DiveRow>>()
+    for (row in rows) {
+        val year = row.date.take(4).ifBlank { UNDATED }
+        years.getOrPut(year) { ArrayList() } += row
+    }
+    return years.map { (year, its) -> Year(year, runsIn(its)) }
+}
+
+/** The year a dive with no date is filed under. */
+internal const val UNDATED = "undated"
+
 /** The same rows, each run of one trip counted on the row that opens it. */
 private fun runsIn(rows: List<DiveRow>): List<DiveRow> {
     val out = ArrayList<DiveRow>(rows.size)

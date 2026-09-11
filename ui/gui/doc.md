@@ -71,10 +71,12 @@ neither, and the compromise usually costs the reading.
 them. These are those decisions. Three of the six are not a list at all, which is why the
 question had to be asked per tab.
 
-- **Dive** — a table of four columns: the trip, the dive's own number, the date, and the site.
-  The trip column has one cell per trip, spanning the consecutive dives on it, and a dive on no
-  trip stands alone. Which column is clicked decides what is selected: the trip cell selects the
-  trip, anywhere else selects the dive.
+- **Dive** — a table of four columns: the trip, the dive's own number, the date, and the site,
+  divided by year, every year but the last folded. The trip column has one cell per trip,
+  spanning the consecutive dives on it within a year, and a dive on no trip stands alone. Which
+  column is clicked decides what is selected: the trip cell selects the trip, anywhere else
+  selects the dive; with control held a click adds a dive to the selection or takes it out, and
+  a click on a year's divider selects the year's dives together. The tab opens on the last dive.
 - **Gear** — a tree of categories and the kinds within them, and beside it the items in
   whichever branch is chosen.
 - **Community** — a subtab per type: people, operators, certifications. The user, whoever the
@@ -340,12 +342,6 @@ that cannot edit.
    depths so the dive stays the same dive — which is a different act from correcting a
    mistyped setting and must be distinguishable from it. Open: how the two are put to a
    user without the wording implying that one is the safe choice.
-- **GUI-23 — Which statistic each kind of field gets.** A set of items shown field by field
-   needs one answer per kind, and they are not the same answer: a depth has a range and an
-   average, a date has a range and no average, a site has neither and has *how many distinct*, a
-   boolean has *how many true*. Some have none worth showing. What is settled is that the shape
-   is the item view's own; what is open is the table of kind to statistic, and whether a field
-   with nothing worth saying is shown empty or left out.
 - **GUI-24 — What a merged trip cell does when the order changes.** The trip column spans
    consecutive dives, which is only ever true while the table is in date order and no two trips
    overlap in time. Sorted by site, or by depth, a trip's dives scatter and there is nothing to
@@ -413,6 +409,15 @@ once and corrected. The numbers stay unused rather than being given to something
   the cities named narrow the same way, from capitals on the world to every place the source
   knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
   before it arrives shows its sites on an empty frame until it does.
+- **GUI-23 — Which statistic each kind of field gets.** *Settled:* **one per kind, and a
+  field nobody answered is left out.** A number is its range and its average; a date or a
+  time its range; a yes-or-no how many yeses of how many; and anything named — a site, a
+  buddy, a word from a list — how many different ones and the first few of them, each leading
+  to its item. Where not every item answered, how many did is added. The shape is the item
+  view's own: the same fields in the same order, two columns, titled by how many items. It is
+  shown for several dives chosen in the table, and under a trip's own fields for the dives on
+  it, which is what a trip is. A field a set has nothing to say about is left out rather than
+  shown empty, since a set of twenty dives has no remarks and saying so is noise.
 - **GUI-4 — Dive profile rendering.** *Settled in part:* **a first drawing, on the item view.**
   Depth over time is the graph: the primary recording drawn thick and filled underneath, so a
   dive reads as water, and any other recording of the same dive laid over it thinly, with the
@@ -507,6 +512,7 @@ once and corrected. The numbers stay unused rather than being given to something
   shown, since the tree beside the item is exactly that list; and a rating out of ten reads
   as five stars, two points to a star and an odd rating ending in a half, and the number
   is not shown.
+
   **How a desktop lays an item out.** The plain fields flow into two columns, in the type's
   order. An owned item is set into a box of its own, titled, and shown in full the same way,
   boxes nesting where an owned item owns one. A keyed owned item is such a box with a tab per

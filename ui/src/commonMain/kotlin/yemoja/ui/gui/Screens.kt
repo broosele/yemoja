@@ -49,7 +49,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -60,6 +62,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -81,6 +84,7 @@ import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
+import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.logic.Types
@@ -125,6 +129,9 @@ internal class Kept {
 
     /** The item chosen, shown on the right. */
     var chosen: Chosen? by mutableStateOf(null)
+
+    /** Every dive chosen, where several are: their statistics are shown instead. `GUI-23`. */
+    var chosenMany: Set<String> by mutableStateOf(emptySet())
 
     /** Location's region. */
     var place: Chosen? by mutableStateOf(null)
@@ -267,6 +274,8 @@ private fun Subject(
             when (tab.shape) {
                 Shape.PLACES -> kept.place = widestRootIn(tree)
                 Shape.TYPES -> kept.chosen = user?.let { chosenOf(set, it) }
+                // The last dive, which is the first in a table kept newest first.
+                Shape.DIVES -> kept.chosen = entriesOf(set, Types.DIVE).firstOrNull()
                 else -> Unit
             }
         }
@@ -282,7 +291,7 @@ private fun Subject(
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.width(wide)) {
             when (tab.shape) {
-                Shape.DIVES -> Dives(set, chosen, kept.list) { kept.chosen = it }
+                Shape.DIVES -> Dives(set, kept)
                 Shape.GEAR -> Gear(set, chosen, kept) { kept.chosen = it }
                 Shape.TYPES -> Types(set, tab, user, chosen, kept) { kept.chosen = it }
                 Shape.PLACES -> Places(
@@ -302,10 +311,13 @@ private fun Subject(
         }
         VerticalDivider()
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
-            if (tab.shape == Shape.PLACES) {
-                PlaceView(set, atlas, kept.hideUnused, kept.place, chosen, onFollow)
-            } else {
-                chosen?.let { ItemView(it, onFollow) } ?: Middle("choose something on the left")
+            when {
+                tab.shape == Shape.PLACES -> {
+                    PlaceView(set, atlas, kept.hideUnused, kept.place, chosen, onFollow)
+                }
+                kept.chosenMany.size > 1 -> ManyView(set, kept.chosenMany, onFollow)
+                chosen != null -> ItemView(chosen, onFollow)
+                else -> Middle("choose something on the left")
             }
         }
     }
@@ -325,15 +337,31 @@ private fun chosenOf(set: ItemSet, item: ReferenceableItem): Chosen? =
  * sits on the first row, and a rule separates one run from the next rather than one row from
  * the next.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun Dives(
-    set: ItemSet,
-    chosen: Chosen?,
-    scrolled: LazyListState,
-    onChoose: (Chosen) -> Unit,
-) {
-    val rows = remember(set) { diveRowsOf(set) }
-    Shown(scrolled, chosen?.id)
+private fun Dives(set: ItemSet, kept: Kept) {
+    val years = remember(set) { yearsOf(diveRowsOf(set)) }
+    // The last year unfolded and the rest folded, until the reader says otherwise.
+    val open = kept.open ?: setOfNotNull(years.firstOrNull()?.label)
+    val chosen = kept.chosen
+    val many = kept.chosenMany
+    val window = LocalWindowInfo.current
+    // A plain click chooses one dive; with control held it adds or removes one. `GUI-23`.
+    val choose = { dive: Chosen ->
+        if (window.keyboardModifiers.isCtrlPressed) {
+            val was = if (many.isEmpty() && chosen != null) setOf(chosen.id) else many
+            kept.chosenMany = if (dive.id in was) was - dive.id else was + dive.id
+            kept.chosen = dive
+        } else {
+            kept.chosenMany = emptySet()
+            kept.chosen = dive
+        }
+    }
+    val chooseTrip = { trip: Chosen ->
+        kept.chosenMany = emptySet()
+        kept.chosen = trip
+    }
+    Shown(kept.list, chosen?.id)
     Column(modifier = Modifier.fillMaxHeight().padding(horizontal = GAP)) {
         Row(
             modifier = Modifier.fillMaxWidth().height(LINE),
@@ -345,24 +373,82 @@ private fun Dives(
             Heading("Site", SITE)
         }
         HorizontalDivider()
-        LazyColumn(state = scrolled, modifier = Modifier.fillMaxHeight()) {
-            itemsIndexed(rows, key = { _, row -> row.dive.id }) { index, row ->
-                if (index > 0 && row.run > 0) HorizontalDivider()
-                Row(modifier = Modifier.fillMaxWidth().height(LINE)) {
-                    TripCell(row, chosen, onChoose)
-                    val here = row.dive.id == chosen?.id
-                    Row(
-                        modifier = Modifier.fillMaxHeight().clip(SHAPE).background(tint(here))
-                            .clickable { onChoose(row.dive) },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Cell(row.number, NUMBER, here, TextAlign.End)
-                        Cell(row.date, DATE, here)
-                        Cell(row.site, SITE, here)
+        LazyColumn(state = kept.list, modifier = Modifier.fillMaxHeight()) {
+            for (year in years) {
+                val unfolded = year.label in open
+                item(key = "year:" + year.label) {
+                    YearRow(
+                        year = year,
+                        open = unfolded,
+                        chosen = many.isNotEmpty() && year.rows.all { it.dive.id in many },
+                        onToggle = {
+                            kept.open = if (unfolded) open - year.label else open + year.label
+                        },
+                        // The year's dives together, which is what a year is for. `GUI-23`.
+                        onChoose = {
+                            kept.chosenMany = year.rows.map { it.dive.id }.toSet()
+                            kept.chosen = year.rows.firstOrNull()?.dive
+                        },
+                    )
+                }
+                if (!unfolded) continue
+                itemsIndexed(year.rows, key = { _, row -> row.dive.id }) { index, row ->
+                    if (index > 0 && row.run > 0) HorizontalDivider()
+                    Row(modifier = Modifier.fillMaxWidth().height(LINE)) {
+                        TripCell(row, chosen, chooseTrip)
+                        val here = row.dive.id in many ||
+                            (many.isEmpty() && row.dive.id == chosen?.id)
+                        Row(
+                            modifier = Modifier.fillMaxHeight().clip(SHAPE).background(tint(here))
+                                .clickable { choose(row.dive) },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Cell(row.number, NUMBER, here, TextAlign.End)
+                            Cell(row.date, DATE, here)
+                            Cell(row.site, SITE, here)
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/** A year's divider in the table: an arrow that folds it, and the year, which chooses it whole. */
+@Composable
+private fun YearRow(
+    year: Year,
+    open: Boolean,
+    chosen: Boolean,
+    onToggle: () -> Unit,
+    onChoose: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(LINE)
+            .background(if (chosen) tint(true) else MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable(onClick = onChoose),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.size(LINE).clickable(onClick = onToggle),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (open) Icons.Filled.ArrowDropDown else Icons.Filled.ArrowRight,
+                contentDescription = if (open) "fold" else "unfold",
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        }
+        Text(
+            text = year.label,
+            style = MaterialTheme.typography.labelLarge,
+            color = onTint(chosen),
+        )
+        Text(
+            text = "  ·  ${year.rows.size} dives",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.outline,
+        )
     }
 }
 
@@ -762,8 +848,68 @@ internal fun Line(
 /** One item, arranged for reading. It never changes anything. */
 @Composable
 private fun ItemView(chosen: Chosen, onFollow: (String) -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(GAP),
+    ) {
         ItemCard(chosen, onFollow)
+        // A trip is both an item and a set of dives, and shows as both. `GUI-23`.
+        if (chosen.item.description == Types.DIVE_TRIP) {
+            val dives = remember(chosen) { divesOf(chosen.item) }
+            if (dives.isNotEmpty()) StatsCard("${dives.size} dives on it", dives, onFollow)
+        }
+    }
+}
+
+/** The dives a trip's own list names, as items. */
+private fun divesOf(trip: Item): List<Item> =
+    ((trip.read("dives") as? Result.Usable)?.value as? List<*>).orEmpty()
+        .mapNotNull { ((it as? Element.Usable<*>)?.value as? Reference.Identified)?.id }
+        .mapNotNull { trip.set[it] }
+
+/**
+ * Several dives chosen: what they say together, field by field. `GUI-23`.
+ *
+ * Titled by how many, since a set has no name; the fields are the dive's own in the dive's
+ * order, so a reader who knows where one dive's depth sits knows where all of theirs sits.
+ */
+@Composable
+private fun ManyView(set: ItemSet, ids: Set<String>, onFollow: (String) -> Unit) {
+    val dives = remember(set, ids) { ids.mapNotNull { set[it] } }
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        StatsCard("${dives.size} dives", dives, onFollow)
+    }
+}
+
+/** What [items] say together, on a card titled [title]. */
+@Composable
+private fun StatsCard(title: String, items: List<Item>, onFollow: (String) -> Unit) {
+    val stats = remember(items) { statisticsOf(items) }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(GAP * 2)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = GAP),
+            )
+            HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
+            if (stats.isEmpty()) Aside("these say nothing yet")
+            for (pair in stats.chunked(COLUMNS)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+                ) {
+                    for (field in pair) {
+                        Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
+                    }
+                    repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
+                }
+            }
+        }
     }
 }
 
@@ -1026,7 +1172,6 @@ private fun Inset(title: String, content: @Composable ColumnScope.() -> Unit) {
 
 /** How many columns the plain fields of an item flow into on a desktop. */
 private const val COLUMNS = 2
-
 
 /** One field: what it is called, and what it says. */
 @Composable

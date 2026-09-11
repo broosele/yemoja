@@ -71,6 +71,39 @@ class DiveTableTest {
     }
 }
 
+class YearsTest {
+
+    private val set = logbook(
+        "dive_trip.json" to """{"newyear": {"name": "New Year"}}""",
+        "dive/2025-12-31#0.json" to dive(31, "newyear").replace("2026-06-31", "2025-12-31"),
+        "dive/2026-01-01#0.json" to dive(1, "newyear").replace("2026-06-01", "2026-01-01"),
+        "dive/2026-06-02#0.json" to dive(2),
+    )
+
+    private val years = yearsOf(diveRowsOf(set))
+
+    @Test
+    fun `the table is divided by year, newest first`() {
+        assertEquals(listOf("2026", "2025"), years.map { it.label })
+        assertEquals(listOf(2, 1), years.map { it.rows.size })
+    }
+
+    @Test
+    fun `a trip over New Year is a run in each year, since a cell does not cross a divider`() {
+        val january = years[0].rows.last()
+        val december = years[1].rows.single()
+        assertEquals("New Year", january.trip?.title)
+        assertEquals(1, january.run)
+        assertEquals(1, december.run)
+    }
+
+    @Test
+    fun `a dive with no date is filed under a year of its own`() {
+        val undated = logbook("dive/x#0.json" to """{"dive_number": 9}""")
+        assertEquals(listOf(UNDATED), yearsOf(diveRowsOf(undated)).map { it.label })
+    }
+}
+
 class GearTreeTest {
 
     private val set = logbook(
