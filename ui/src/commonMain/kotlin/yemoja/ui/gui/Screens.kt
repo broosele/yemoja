@@ -44,7 +44,6 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -1320,12 +1319,30 @@ private fun ProfileGraph(dive: Item, profile: Item) {
     var picked by remember(profile) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }
     val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
-    if (overlays.isNotEmpty()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            Box {
-                TextButton(onClick = { picking = true }) {
-                    Text("Right axis: ${overlay?.title ?: "none"}")
-                    Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Chart(depth, overlay)
+        // The right axis's title is the box that chooses it: the label says what the red line
+        // is, and clicking it says what else it could be.
+        if (overlay != null) {
+            val red = MaterialTheme.colorScheme.error
+            Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                Row(
+                    modifier = Modifier.clip(SHAPE).clickable { picking = true }
+                        .padding(start = HALF, end = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val suffix = if (overlay.unit.isEmpty()) "" else " (${overlay.unit})"
+                    Text(
+                        text = overlay.title + suffix,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = red,
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = "choose the right axis",
+                        tint = red,
+                        modifier = Modifier.size(GLYPH),
+                    )
                 }
                 DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
                     for ((index, choice) in overlays.withIndex()) {
@@ -1341,13 +1358,13 @@ private fun ProfileGraph(dive: Item, profile: Item) {
             }
         }
     }
-    Chart(depth, overlay)
     Spacer(modifier = Modifier.height(GAP))
 }
 
 /**
  * The graph: the depth lines against a grid, the overlay's line in its own colour with its own
- * marks up the right, and the minutes along the bottom.
+ * marks up the right, and the minutes along the bottom. The overlay's title is not drawn here:
+ * it is the box that chooses the overlay, laid over the top right corner.
  *
  * The main line is drawn to be read and filled underneath so a dive reads as water; the rest
  * are thin. Paths are built once per size and lines.
@@ -1437,11 +1454,6 @@ private fun Chart(depth: List<Line>, overlay: Overlay?) {
                 overPath?.let { drawPath(it, other, style = thin) }
                 val heading = measurer.measure("Depth (m)", title)
                 drawText(heading, topLeft = Offset(left + HALF.toPx(), 0f))
-                if (overlay != null) {
-                    val suffix = if (overlay.unit.isEmpty()) "" else " (${overlay.unit})"
-                    val laid = measurer.measure(overlay.title + suffix, title.copy(color = other))
-                    drawText(laid, topLeft = Offset(right - laid.size.width - HALF.toPx(), 0f))
-                }
             }
         },
     )
@@ -1526,7 +1538,7 @@ private val GLYPH = 20.dp
 private val DEPTH_GRAPH = 260.dp
 private val AXIS = 40.dp
 private val FOOT = 16.dp
-private val HEAD = 18.dp
+private val HEAD = 28.dp
 private val LINE_WIDTH = 2.dp
 private val THIN = 1.dp
 
