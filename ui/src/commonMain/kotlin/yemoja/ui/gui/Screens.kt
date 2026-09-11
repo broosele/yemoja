@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -1147,13 +1147,15 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
     if (entries.isEmpty()) return
     var open by remember(item, inset.name) { mutableStateOf(0) }
     val at = open.coerceIn(0, entries.size - 1)
-    Inset(inset.label) {
+    val tabs: @Composable RowScope.() -> Unit = {
         SmallTabs(
             labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
             chosen = at,
             onChoose = { open = it },
         )
-        Spacer(modifier = Modifier.height(GAP))
+    }
+    Inset(inset.label, beside = tabs) {
+        Spacer(modifier = Modifier.height(HALF))
         // A recording is drawn before it is read: the graph is what it is for.
         val entry = entries[at].second
         if (depthLinesOf(entry).isNotEmpty()) ProfileGraph(item, entry)
@@ -1162,59 +1164,66 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
 }
 
 /**
- * A row of small tabs, each as wide as its name and set apart from the next, the chosen one
- * underlined.
+ * A row of small tabs, each a button as wide as its name, the chosen one tinted.
  *
  * The platform's tab row spreads its tabs across the width and makes each a touch target, which
- * in a box inside an item is too much furniture for three names.
+ * in a box inside an item is too much furniture for three names; these sit beside the box's
+ * title instead.
  */
 @Composable
 private fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(GAP * 2),
-    ) {
+    Row(horizontalArrangement = Arrangement.spacedBy(HALF * 2)) {
         for ((index, label) in labels.withIndex()) {
             val here = index == chosen
-            // As wide as its name: the underline would otherwise take the row and push the
-            // next tab off the edge.
-            Column(modifier = Modifier.width(IntrinsicSize.Max).clickable { onChoose(index) }) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (here) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.padding(horizontal = HALF, vertical = HALF),
-                )
-                HorizontalDivider(
-                    thickness = UNDERLINE,
-                    color = if (here) MaterialTheme.colorScheme.primary else Color.Transparent,
-                )
-            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = onTint(here),
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.clip(SHAPE)
+                    .background(
+                        if (here) {
+                            MaterialTheme.colorScheme.secondaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        },
+                    )
+                    .clickable { onChoose(index) }
+                    .padding(horizontal = GAP, vertical = HALF),
+            )
         }
     }
 }
 
-/** A box set into an item view, titled, holding an owned item in full. */
+/**
+ * A box set into an item view, titled, holding an owned item in full; [beside] is what sits on
+ * the title's line after it, the tabs of a keyed one.
+ */
 @Composable
-private fun Inset(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun Inset(
+    title: String,
+    beside: (@Composable RowScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(top = GAP),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(GAP)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = HALF),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = HALF),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(GAP),
+            ) {
+                Text(
+                    text = if (beside == null) title else "$title:",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                beside?.invoke(this)
+            }
             content()
         }
     }
@@ -1335,8 +1344,9 @@ private fun ProfileGraph(dive: Item, profile: Item) {
 @Composable
 private fun Chart(depth: List<Line>, overlay: Overlay?) {
     val ink = MaterialTheme.colorScheme.primary
-    val stop = MaterialTheme.colorScheme.error
-    val other = MaterialTheme.colorScheme.tertiary
+    val stop = MaterialTheme.colorScheme.tertiary
+    // The right axis in red, the one colour that reads as another line at a glance.
+    val other = MaterialTheme.colorScheme.error
     val water = MaterialTheme.colorScheme.primaryContainer
     val grid = MaterialTheme.colorScheme.outlineVariant
     val quiet = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1507,7 +1517,6 @@ private val AXIS = 40.dp
 private val FOOT = 16.dp
 private val HEAD = 18.dp
 private val LINE_WIDTH = 2.dp
-private val UNDERLINE = 2.dp
 private val THIN = 1.dp
 
 /** How much of the water colour a river carries, so it reads as a line and not a canal. */
