@@ -1,9 +1,12 @@
 package yemoja.logic
 
 import yemoja.data.Cardinality
+import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.Ordering
 import yemoja.data.ReferenceDescription
+import yemoja.data.Result
+import yemoja.data.Role
 import yemoja.data.TextDescription
 import yemoja.data.WholeNumberDescription
 
@@ -37,8 +40,30 @@ internal val OPERATOR: ItemDescription = ItemDescription(
         TextDescription("website"),
         TextDescription("category", suggestedSet = OPERATOR_CATEGORIES),
         WholeNumberDescription("rating", range = 1..10),
+        // Every dive and every trip naming this operator, the dive doing so on its details.
+        // Never written: each of them says who it was with.
+        ReferenceDescription(
+            "dives",
+            targetType = "dive",
+            cardinality = Cardinality.LIST,
+            role = Role.Derived(::operatorsDives),
+        ),
+        ReferenceDescription(
+            "dive_trips",
+            targetType = "dive_trip",
+            cardinality = Cardinality.LIST,
+            role = Role.Derived(::operatorsTrips),
+        ),
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
     proposedId = ::namedById,
 )
+
+/** The dives whose details name [operator]. */
+private fun operatorsDives(operator: Item): Result<Any> =
+    pointingAt(operator, Types.DIVE, "operator", inside = "details")
+
+/** The trips naming [operator]. */
+private fun operatorsTrips(operator: Item): Result<Any> =
+    pointingAt(operator, Types.DIVE_TRIP, "operator")

@@ -110,6 +110,14 @@ internal val PERSON: ItemDescription = ItemDescription(
         OwnedItemDescription("medical", MEDICAL),
         OwnedItemDescription("insurance", INSURANCE),
         OwnedItemDescription("courses", COURSE, cardinality = Cardinality.KEYED),
+        // Every dive naming this person among its buddies. Never written: each dive says who
+        // was there.
+        ReferenceDescription(
+            "dives",
+            targetType = "dive",
+            cardinality = Cardinality.LIST,
+            role = Role.Derived(::personsDives),
+        ),
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
@@ -131,3 +139,6 @@ private fun assembledName(person: Item): Result<Any> {
 }
 
 private val NAME_PARTS = listOf("first_name", "middle_names", "last_name")
+
+/** The dives naming [person] as a buddy. */
+private fun personsDives(person: Item): Result<Any> = pointingAt(person, Types.DIVE, "buddies")

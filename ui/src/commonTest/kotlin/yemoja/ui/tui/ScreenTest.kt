@@ -256,6 +256,7 @@ class DetailTest {
                 "East",
                 "South",
                 "North 61",
+                "Dive sites (empty)",
                 "Remarks",
             ),
             detail(screen),
@@ -372,8 +373,9 @@ class PaintingTest {
         val screen = screen(set)
         toTab(screen, "region")
         // Tall enough for every field of a region, remarks being the last of them.
-        val remarks = screen.paint(80, 16).map { it.text }.first { "Remarks" in it }
-        assertTrue("Remarks   First." + ESCAPE + "Second." in remarks, remarks)
+        val remarks = screen.paint(80, 17).map { it.text }.first { "Remarks" in it }
+        // Five spaces: the label column is as wide as the widest label, which is Dive sites.
+        assertTrue("Remarks     First." + ESCAPE + "Second." in remarks, remarks)
     }
 
     @Test

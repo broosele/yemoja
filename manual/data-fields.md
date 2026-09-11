@@ -511,6 +511,9 @@ A piece of equipment. A dive computer is gear like anything else you own.
 - `buoyancy` (owned item) — what the item does in the water.
 - `maintenances` (keyed owned items) — what has been done to it and when, described
   under *Maintenance* below.
+- `dives` (list of references, worked out) — the dives it was taken on, which follows from
+  the `items` of each dive's gear. For a generic item this is every dive that listed the
+  kind, which is not the same thing, as the note below says.
 - `remarks` (multiline text) — anything about the item: how it fits, what it came
   with, where you bought it.
 
@@ -644,6 +647,8 @@ Yemoja, so you normally only record one it does not already know.
   simply where it starts and where it ends, not a mistake and not something Yemoja will
   correct. Latitude does not wrap, so `north` is always above `south`.
 
+- `dive_sites` (list of references, worked out) — the sites naming this region in their
+  `regions`. Only those: a site in a region inside this one is that region's.
 - `remarks` (multiline text) — what you know about the region that the box and the
   category do not say.
 
@@ -685,6 +690,8 @@ A place you dive.
 - `elevation` (number) — the height of the water above sea level. It matters for more
   than the map: diving at altitude changes how a dive is worked out.
 - `longitude`, `latitude` (number) — where it is, in degrees.
+- `dives` (list of references, worked out) — the dives made here. You never list them: each
+  dive names its site, and this follows from that.
 - `remarks` (multiline text) — how to dive the place: entries, hazards, where to
   park, what the tide does.
 
@@ -713,6 +720,8 @@ site may hold several while one large wreck may be dived from more than one.
   tell, leave this empty and put what the book said in `remarks`. A figure you had to
   guess the units of is worse than no figure.
 
+- `dive_sites` (list of references, worked out) — the sites she can be dived from, which
+  follows from each site's `wrecks`.
 - `remarks` (multiline text) — her history, and whatever a book said that no field
   here can hold.
 
@@ -745,6 +754,9 @@ emergency contacts, and yourself. They need not be divers.
 - `insurance` (owned item) — cover this person holds.
 - `courses` (keyed owned items) — the qualifications this person has earned, described
   under *Course* below.
+- `dives` (list of references, worked out) — the dives this person was a buddy on, which
+  follows from each dive's `buddies`. Your own dives are not here: you are not your own
+  buddy.
 - `remarks` (multiline text) — whatever you want to keep about them that has no
   field of its own.
 
@@ -810,6 +822,10 @@ centre, a club, a resort, a boat.
   are `dive center`, `hotel`, `dive resort`, `boat operator`, `dive club` and
   `liveaboard operator`.
 - `rating` (whole number) — what you make of them, as a whole number from 1 to 10.
+- `dives` (list of references, worked out) — the dives made with them, which follows from
+  the `operator` on each dive's details.
+- `dive_trips` (list of references, worked out) — the trips they ran, which follows from
+  each trip's `operator`.
 - `remarks` (multiline text) — what they were like to dive with.
 
 ### Certification

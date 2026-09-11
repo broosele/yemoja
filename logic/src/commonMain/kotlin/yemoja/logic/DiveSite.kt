@@ -2,10 +2,13 @@ package yemoja.logic
 
 import yemoja.data.Cardinality
 import yemoja.data.Dimension
+import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.NumberDescription
 import yemoja.data.Ordering
 import yemoja.data.ReferenceDescription
+import yemoja.data.Result
+import yemoja.data.Role
 import yemoja.data.TextDescription
 import yemoja.data.WholeNumberDescription
 
@@ -45,8 +48,18 @@ internal val DIVE_SITE: ItemDescription = ItemDescription(
         NumberDescription("elevation", Dimension.LENGTH),
         NumberDescription("longitude", Dimension.ANGLE, range = LONGITUDE),
         NumberDescription("latitude", Dimension.ANGLE, range = LATITUDE),
+        // Every dive naming this site. Never written: each dive says where it was.
+        ReferenceDescription(
+            "dives",
+            targetType = "dive",
+            cardinality = Cardinality.LIST,
+            role = Role.Derived(::sitesDives),
+        ),
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
     proposedId = ::namedById,
 )
+
+/** The dives naming [site]. */
+private fun sitesDives(site: Item): Result<Any> = pointingAt(site, Types.DIVE, "dive_site")

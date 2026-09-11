@@ -47,6 +47,14 @@ internal val REGION: ItemDescription = ItemDescription(
         NumberDescription("east", Dimension.ANGLE, range = LONGITUDE),
         NumberDescription("south", Dimension.ANGLE, range = LATITUDE),
         NumberDescription("north", Dimension.ANGLE, range = LATITUDE),
+        // Every site naming this region, and only those: a site deeper inside is that
+        // region's. Never written: each site says where it lies.
+        ReferenceDescription(
+            "dive_sites",
+            targetType = "dive_site",
+            cardinality = Cardinality.LIST,
+            role = Role.Derived(::regionsSites),
+        ),
         REMARKS,
     ),
     orderedBy = listOf(Ordering("name")),
@@ -62,3 +70,6 @@ internal val REGION: ItemDescription = ItemDescription(
  */
 private fun regionsChildren(region: Item): Result<Any> =
     pointingAt(region, Types.REGION, "parents")
+
+/** The sites naming [region] among their regions. */
+private fun regionsSites(region: Item): Result<Any> = pointingAt(region, Types.DIVE_SITE, "regions")
