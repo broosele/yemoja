@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.icons.filled.Edit
@@ -1129,6 +1131,7 @@ private fun pathOf(
 private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
     val edition = LocalChanger.current.edition
     var editing by remember(chosen) { mutableStateOf(false) }
+    val draft = remember(chosen) { Draft() }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -1155,7 +1158,7 @@ private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
             // Read again after every change: the item is the same object, changed in place.
             key(edition) {
                 if (editing) {
-                    EditForm(chosen.item) { editing = false }
+                    EditForm(chosen.item, draft) { editing = false }
                 } else {
                     Fields(chosen.item, onFollow)
                 }
@@ -1234,16 +1237,22 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
  * title instead.
  */
 @Composable
-internal fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(HALF * 2)) {
+internal fun SmallTabs(
+    labels: List<String>,
+    chosen: Int,
+    onChoose: (Int) -> Unit,
+    /** Takes the tab at an index out, where the tabs can be; shown on the chosen one. */
+    onRemove: ((Int) -> Unit)? = null,
+    /** Adds a tab, where they can be; shown after the last. */
+    onAdd: (() -> Unit)? = null,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(HALF * 2),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         for ((index, label) in labels.withIndex()) {
             val here = index == chosen
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = onTint(here),
-                maxLines = 1,
-                softWrap = false,
+            Row(
                 modifier = Modifier.clip(SHAPE)
                     .background(
                         if (here) {
@@ -1254,6 +1263,33 @@ internal fun SmallTabs(labels: List<String>, chosen: Int, onChoose: (Int) -> Uni
                     )
                     .clickable { onChoose(index) }
                     .padding(horizontal = GAP, vertical = HALF),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = onTint(here),
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                if (here && onRemove != null) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "take out",
+                        tint = onTint(true),
+                        modifier = Modifier.padding(start = HALF).size(GLYPH - HALF)
+                            .clickable { onRemove(index) },
+                    )
+                }
+            }
+        }
+        if (onAdd != null) {
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = "add",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clip(SHAPE).clickable(onClick = onAdd).padding(HALF)
+                    .size(GLYPH),
             )
         }
     }
@@ -1539,7 +1575,7 @@ private fun shortOf(value: Double): String =
 
 /** A quiet remark where there is nothing else to show. */
 @Composable
-private fun Aside(text: String) {
+internal fun Aside(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,

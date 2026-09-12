@@ -1,5 +1,7 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -25,7 +28,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
@@ -37,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import yemoja.data.Cardinality
@@ -48,6 +51,7 @@ import yemoja.data.OwnedItem
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.TextDescription
+import yemoja.logic.Change
 import yemoja.logic.Outcome
 import yemoja.logic.Types
 
@@ -61,11 +65,15 @@ import yemoja.logic.Types
  * See ../../../../../../gui/doc.md — `GUI-29`.
  */
 
-/** An item's fields, to be filled in, with Save and Cancel on the title line. */
+/**
+ * An item's fields, to be filled in, with Save and Cancel on the title line.
+ *
+ * [draft] is the form's, kept by whoever shows the form, so that a change landing while the
+ * form is open — an entry taken out of a collection — redraws the form without emptying it.
+ */
 @Composable
-internal fun EditForm(item: Item, onDone: () -> Unit) {
+internal fun EditForm(item: Item, draft: Draft, onDone: () -> Unit) {
     val changer = LocalChanger.current
-    val draft = remember(item) { Draft() }
     var refused by remember(item) { mutableStateOf<String?>(null) }
     Row(
         modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
@@ -126,27 +134,47 @@ private fun EditFields(item: Item, draft: Draft) {
     }
 }
 
-/** A keyed owned item's entries, a tab each, the chosen one's fields as editors. */
+/**
+ * A keyed owned item's entries, a tab each, the chosen one's fields as editors, with a way to
+ * take the open entry out and to add one.
+ *
+ * Taking out and adding land at once rather than waiting for Save: either is the collection
+ * rewritten whole, which makes every entry a new object, and a draft on one of them would be a
+ * draft on nothing. The drafts on the collection's entries are dropped for the same reason.
+ * Neither asks: an entry is put back by typing it, as the terminal front end has it.
+ */
 @Composable
 private fun KeyedEditor(label: String, name: String, item: Item, draft: Draft) {
-    @Suppress("UNCHECKED_CAST")
-    val entries = ((item.read(name) as? Result.Usable)?.value as? Map<String, Element<Any>>)
-        .orEmpty().mapNotNull { (key, element) ->
-            ((element as? Element.Usable)?.value as? OwnedItem)?.let { key to it }
-        }
-    if (entries.isEmpty()) return
+    val changer = LocalChanger.current
+    val entries = keyedEntriesOf(item, name)
     var open by remember(item, name) { mutableStateOf(0) }
-    val at = open.coerceIn(0, entries.size - 1)
+    val at = open.coerceIn(0, maxOf(entries.size - 1, 0))
     val tabs: @Composable RowScope.() -> Unit = {
         SmallTabs(
             labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
             chosen = at,
             onChoose = { open = it },
+            onRemove = { index ->
+                entries.forEach { (_, entry) -> draft.dropAll(entry) }
+                val without = withoutEntry(item, name, entries[index].first)
+                changer.change(listOf(Change.Write(item, name, without)))
+                open = maxOf(index - 1, 0)
+            },
+            onAdd = {
+                entries.forEach { (_, entry) -> draft.dropAll(entry) }
+                val (_, written) = withEntry(item, name)
+                changer.change(listOf(Change.Write(item, name, written)))
+                open = entries.size
+            },
         )
     }
     Inset(label, beside = tabs) {
-        Spacer(modifier = Modifier.height(HALF))
-        EditFields(entries[at].second, draft)
+        if (entries.isEmpty()) {
+            Aside("none yet")
+        } else {
+            Spacer(modifier = Modifier.height(HALF))
+            EditFields(entries[at].second, draft)
+        }
     }
 }
 
@@ -241,6 +269,11 @@ private fun SingleEditor(
             shown = shown,
             onChoose = { onChange(it, givenOf(kind, it)) },
         )
+        Kind.SUGGESTED -> Suggested(
+            options = (field as TextDescription).suggestedSet.orEmpty().toList(),
+            shown = shown,
+            onChange = { onChange(it, givenOf(kind, it)) },
+        )
         Kind.KEY -> Choice(
             options = keysOf(item, (field as KeyReferenceDescription).collection).map { "*$it" },
             shown = shown,
@@ -249,20 +282,105 @@ private fun SingleEditor(
         Kind.YES_NO -> YesNo(shown) { onChange(it?.toString().orEmpty(), it) }
         Kind.RATING -> RatingEditor(shown.toIntOrNull()) { onChange(it.toString(), it.toString()) }
         Kind.REFERENCE -> ReferenceEditor(field as ReferenceDescription, item, shown, onChange)
-        Kind.LONG_TEXT -> OutlinedTextField(
+        Kind.LONG_TEXT -> Compact(
             value = shown,
-            onValueChange = { onChange(it, givenOf(kind, it)) },
-            minLines = 3,
-            modifier = Modifier.fillMaxWidth(),
+            onChange = { onChange(it, givenOf(kind, it)) },
+            lines = 3,
         )
-        else -> OutlinedTextField(
+        else -> Compact(
             value = shown,
-            onValueChange = { onChange(it, givenOf(kind, it)) },
-            singleLine = true,
-            suffix = unitOf(field).takeIf { it.isNotEmpty() }?.let { { Text(it) } },
-            placeholder = if (kind == Kind.CLOCK) ({ Text("m:ss") }) else null,
-            modifier = Modifier.fillMaxWidth(),
+            onChange = { onChange(it, givenOf(kind, it)) },
+            after = unitOf(field),
+            hint = if (kind == Kind.CLOCK) "m:ss" else "",
         )
+    }
+}
+
+/**
+ * A text field the height of its text, which the platform's own is not: a form of twenty
+ * fields in boxes fifty-six pixels tall is a form nobody scrolls to the end of.
+ *
+ * [after] is written after the text, a unit; [hint] is shown in its place while it is empty;
+ * [lines] is how many the field is tall for at least, more than one making it multiline.
+ */
+@Composable
+private fun Compact(
+    value: String,
+    onChange: (String) -> Unit,
+    after: String = "",
+    hint: String = "",
+    lines: Int = 1,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val ink = MaterialTheme.colorScheme.onSurface
+    val style = MaterialTheme.typography.bodyMedium.copy(color = ink)
+    BasicTextField(
+        value = value,
+        onValueChange = onChange,
+        textStyle = style,
+        singleLine = lines == 1,
+        minLines = lines,
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        modifier = Modifier.fillMaxWidth(),
+        decorationBox = { inner ->
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(SHAPE)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, SHAPE)
+                    .padding(horizontal = GAP, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    if (value.isEmpty() && hint.isNotEmpty()) {
+                        Text(hint, style = style, color = MaterialTheme.colorScheme.outline)
+                    }
+                    inner()
+                }
+                if (after.isNotEmpty()) {
+                    Text(
+                        text = after,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(start = HALF),
+                    )
+                }
+                trailing?.invoke()
+            }
+        },
+    )
+}
+
+/**
+ * A suggested set: a text field, with the suggestions offered from an arrow beside it and not
+ * enforced, since a value outside the set is an ordinary value.
+ */
+@Composable
+private fun Suggested(options: List<String>, shown: String, onChange: (String) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    Box {
+        Compact(
+            value = shown,
+            onChange = onChange,
+            trailing = {
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = "suggestions",
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(GLYPH).clickable { picking = true },
+                )
+            },
+        )
+        DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
+            for (option in options) {
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onChange(option)
+                        picking = false
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -398,9 +516,10 @@ private fun RatingEditor(rating: Int?, onChange: (Int) -> Unit) {
 }
 
 /**
- * A reference as a search: type, and the items of the type it points at whose names match are
- * offered; one taken is written as its id. What is typed and not taken stands as a plain name
- * where the field allows one, and is refused where it does not.
+ * A reference as a drop-down and a search: the arrow offers the items of the type it points
+ * at, typing narrows them to the ones whose names hold what was typed, and one taken is written
+ * as its id. What is typed and not taken stands as a plain name where the field allows one, and
+ * is refused where it does not.
  */
 @Composable
 private fun ReferenceEditor(
@@ -419,21 +538,27 @@ private fun ReferenceEditor(
     }
     var query by remember(item, field.name) { mutableStateOf(display) }
     var open by remember { mutableStateOf(false) }
-    val matches = if (query.isBlank()) {
-        emptyList()
-    } else {
-        named.filter { it.title.contains(query, ignoreCase = true) }.take(MATCHES)
-    }
+    // Every item of the type from the arrow, and the ones whose names hold what was typed
+    // while typing; either way the first few dozen, a list of three hundred dives being no
+    // list to choose from.
+    val matches = named.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
+        .take(MATCHES)
     Box {
-        OutlinedTextField(
+        Compact(
             value = query,
-            onValueChange = {
+            onChange = {
                 query = it
                 open = true
                 onChange(it, givenOf(Kind.TEXT, it))
             },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            trailing = {
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = "choose",
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(GLYPH).clickable { open = true },
+                )
+            },
         )
         DropdownMenu(expanded = open && matches.isNotEmpty(), onDismissRequest = { open = false }) {
             for (match in matches) {
@@ -456,5 +581,5 @@ private fun keysOf(item: Item, collection: String): List<String> {
     return held?.keys?.map { it.toString() }.orEmpty()
 }
 
-/** How many matching items a reference search offers at once. */
-private const val MATCHES = 8
+/** How many items a reference's drop-down offers at once; typing narrows them. */
+private const val MATCHES = 24

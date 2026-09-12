@@ -10,10 +10,14 @@ import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.GasDescription
 import yemoja.data.Item
+import yemoja.data.ItemReader
+import yemoja.data.ItemWriter
 import yemoja.data.KeyReference
 import yemoja.data.KeyReferenceDescription
 import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
+import yemoja.data.OwnedItem
+import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
@@ -24,6 +28,7 @@ import yemoja.data.TimeDescription
 import yemoja.data.Units
 import yemoja.data.WholeNumberDescription
 import yemoja.logic.Change
+import yemoja.logic.freeName
 
 /*
  * What an edit form holds and hands to the model: the draft of every field changed, and the
@@ -75,6 +80,11 @@ internal class Draft {
         held.remove(Slot(item, field))
     }
 
+    /** Forgets every change to [item], for an entry that is no longer the one in the logbook. */
+    fun dropAll(item: Item) {
+        held.keys.filter { it.item === item }.forEach { held.remove(it) }
+    }
+
     val isEmpty: Boolean get() = held.isEmpty()
 
     /** Every change as the model takes it, one per field changed; the model judges them whole. */
@@ -96,13 +106,52 @@ internal class Draft {
 /** A drafted value as the model takes it: nothing for a clearing, a list as its entries. */
 internal fun storedOf(value: Any?): Stored? = when (value) {
     null -> null
+    is Stored -> value
     is List<*> -> Stored.Elements(value.map { Stored.Leaf(it ?: "") })
     else -> Stored.Leaf(value)
 }
 
+/**
+ * The keyed collection [name] of [item] as it would be written without the entry under [key]:
+ * every other entry as its stored form, which is how a collection is changed at all.
+ */
+internal fun withoutEntry(item: Item, name: String, key: String): Stored.Members {
+    val kept = LinkedHashMap<String, Stored>()
+    for ((held, entry) in keyedEntriesOf(item, name)) {
+        if (held != key) kept[held] = ItemWriter.write(entry, Units.DEFAULT)
+    }
+    return Stored.Members(kept)
+}
+
+/**
+ * The keyed collection [name] of [item] with an empty entry added, and the key it was added
+ * under: the key its type proposes for an entry holding nothing, the first free one taken, which
+ * is the rule an id follows one level up.
+ */
+internal fun withEntry(item: Item, name: String): Pair<String, Stored.Members> {
+    val within = (item.description[name] as OwnedItemDescription).description
+    val written = LinkedHashMap<String, Stored>()
+    for ((key, entry) in keyedEntriesOf(item, name)) {
+        written[key] = ItemWriter.write(entry, Units.DEFAULT)
+    }
+    val empty = ItemReader.read(within, Stored.Members(emptyMap()), item.set, Units.DEFAULT)
+    val key = freeName(within.proposedId?.invoke(empty) ?: within.name) { it in written }
+    written[key] = Stored.Members(emptyMap())
+    return key to Stored.Members(written)
+}
+
+/** The entries of the keyed collection [name] of [item], in the order held. */
+@Suppress("UNCHECKED_CAST")
+internal fun keyedEntriesOf(item: Item, name: String): List<Pair<String, OwnedItem>> =
+    ((item.read(name) as? Result.Usable)?.value as? Map<String, Element<Any>>).orEmpty()
+        .mapNotNull { (key, element) ->
+            ((element as? Element.Usable)?.value as? OwnedItem)?.let { key to it }
+        }
+
 /** Kind is how a field is edited, decided from its description. */
 internal enum class Kind {
-    TEXT, LONG_TEXT, CHOICE, NUMBER, CLOCK, WHOLE, RATING, DATE, TIME, YES_NO, REFERENCE, KEY, GAS,
+    TEXT, LONG_TEXT, CHOICE, SUGGESTED, NUMBER, CLOCK, WHOLE, RATING, DATE, TIME, YES_NO, REFERENCE,
+    KEY, GAS,
     /** Not as a field: a series is read on the graph. */
     NONE,
 }
@@ -112,7 +161,11 @@ internal fun kindOf(field: FieldDescription): Kind = when {
     field.cardinality == Cardinality.SERIES -> Kind.NONE
     field.cardinality == Cardinality.KEYED_SERIES -> Kind.NONE
     field is MultilineTextDescription -> Kind.LONG_TEXT
-    field is TextDescription -> if (field.fixedSet != null) Kind.CHOICE else Kind.TEXT
+    field is TextDescription -> when {
+        field.fixedSet != null -> Kind.CHOICE
+        field.suggestedSet != null -> Kind.SUGGESTED
+        else -> Kind.TEXT
+    }
     field is NumberDescription -> if (field.dimension == Dimension.TIME) Kind.CLOCK else Kind.NUMBER
     field is WholeNumberDescription -> if (field.name == "rating") Kind.RATING else Kind.WHOLE
     field is DateDescription -> Kind.DATE

@@ -42,6 +42,7 @@ class EditTest {
         assertEquals(Kind.REFERENCE, kindOf(field("dive_site")))
         assertEquals(Kind.KEY, kindOf(field("primary_profile")))
         assertEquals(Kind.CHOICE, kindOf(Types.DIVE_SITE["water_type"]!!))
+        assertEquals(Kind.SUGGESTED, kindOf(field("entry")), "offered, not enforced")
         assertEquals(Kind.LONG_TEXT, kindOf(field("remarks")))
         assertEquals(Kind.NONE, kindOf(profile()["depth"]!!), "a series is read on the graph")
     }
@@ -117,5 +118,36 @@ class EditTest {
         assertTrue(draft.changed(p, "remarks"))
         assertTrue(!draft.changed(dive, "remarks"))
         assertEquals(p, (draft.writes().single() as Change.Write).item)
+    }
+
+    @Test
+    fun `a collection is changed whole, without the entry taken out or with one added`() {
+        val two = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive/2026-06-22#0.json" to
+                        """{"gas_sources": {"tank_1": {"gas_type": "EAN32"}, "tank_2": {}}}""",
+                ),
+            ),
+            Types.ALL,
+        )["2026-06-22#0"]!!
+        val without = withoutEntry(two, "gas_sources", "tank_2")
+        assertEquals(listOf("tank_1"), without.members.keys.toList())
+        val kept = without.members.getValue("tank_1") as Stored.Members
+        assertEquals("EAN32", (kept.members.getValue("gas_type") as Stored.Leaf).value)
+        val (key, with) = withEntry(two, "gas_sources")
+        assertEquals("gas", key, "what a gas source holding nothing is called")
+        assertEquals(listOf("tank_1", "tank_2", "gas"), with.members.keys.toList())
+    }
+
+    @Test
+    fun `every draft on an entry is dropped when the entry is no longer the one held`() {
+        val draft = Draft()
+        val (_, tank) = keyedEntriesOf(dive, "profiles").single()
+        draft.put(tank, "remarks", "cold")
+        draft.put(dive, "rating", "8")
+        draft.dropAll(tank)
+        assertTrue(!draft.changed(tank, "remarks"))
+        assertTrue(draft.changed(dive, "rating"))
     }
 }

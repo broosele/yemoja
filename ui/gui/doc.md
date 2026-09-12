@@ -298,8 +298,9 @@ tab, a chapter at a time. Two tabs hold nothing yet and say what they will hold 
 showing an empty box.
 
 **An item's fields can be edited.** A pencil on the item card turns it over into the edit form,
-which `GUI-29` describes; nothing else writes yet. No item is added or deleted from here, no
-owned item or keyed entry is added, and there is no journal to undo with.
+which `GUI-29` describes, and an entry of a keyed collection can be taken out or added there;
+nothing else writes yet. No item is added or deleted from here, no owned item is added, and
+there is no journal to undo with.
 
 It opens as `yemoja gui <logbook folder>`, beside the terminal front end, and unlike that one it
 can be run from the build, a window needing no console.
@@ -443,11 +444,13 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **One widget per kind of field**, chosen from its description: a text field, taller for
   multiline text; a number field with its unit after it, a time as `m:ss`; a date as text; a
-  yes-or-no as a three-state box, the third being *not said*; a fixed set as a drop-down; a
-  rating as five stars to click; a reference as a search over the type it points at, the item
-  taken written as its id and anything typed and not taken standing as a plain name where the
-  field allows one; a key reference as a drop-down over the collection's keys; a list as one
-  such widget per entry, with add and take out. A series is not edited: the graph is its place.
+  yes-or-no as a three-state box, the third being *not said*; a fixed set as a drop-down, and a
+  suggested set as a text field with the suggestions offered from an arrow beside it and not
+  enforced; a rating as five stars to click; a reference as a drop-down over the type it points
+  at that typing narrows, the item taken written as its id and anything typed and not taken
+  standing as a plain name where the field allows one; a key reference as a drop-down over the
+  collection's keys; a list as one such widget per entry, with add and take out. A series is not
+  edited: the graph is its place.
 
   **What is worked out is shown, not edited.** A derived field is read-only and greyed. One the
   model works out unless told otherwise shows what it worked out with a *correct* beside it;
@@ -456,9 +459,15 @@ once and corrected. The numbers stay unused rather than being given to something
   own description as it is typed and the reason for a refusal sits under the field in red.
 
   **Every value travels as the text a file holds it as**, which is what the model reads and what
-  the terminal front end already writes, so the two front ends cannot disagree about what
-  `12.3` or `@anna` means. Open: adding and deleting items, adding an owned item or a keyed
-  entry, and the phone's form.
+  the terminal front end already writes, so the two front ends cannot disagree about what `12.3`
+  or `@anna` means. **An entry of a keyed collection is taken out or added at once**, from an ×
+  on its tab and a + after the tabs, rather than on Save: either is the collection rewritten
+  whole, which makes every entry a new object, so a draft on one would be a draft on nothing.
+  Neither asks, as the terminal front end has it: an entry is put back by typing it. A new entry
+  is keyed as its type proposes for one holding nothing, the first free taken. Open: adding and
+  deleting items, adding an owned item, and the phone's form. The text fields are the height of
+  their text rather than the platform's fifty-six pixels: a form of twenty fields in tall boxes
+  is one nobody scrolls to the end of.
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
   another item, the name is clickable and opens that item where it lives: the tab holding its
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and
