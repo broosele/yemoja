@@ -158,8 +158,10 @@ private fun KeyedEditor(label: String, name: String, item: Item, draft: Draft) {
  * model would refuse it for.
  *
  * A field the model works out and nobody may write is shown as read. One it works out unless
- * told otherwise shows what it worked out with a *correct* beside it; corrected, it is edited
- * like any other, with a *revert* that clears the correction so the worked-out value returns.
+ * told otherwise shows what it worked out with an *override* beside it; overridden, it is
+ * edited like any other, with a *revert* that clears the override so the worked-out value
+ * returns. *Override* rather than *correct*: a button reading *correct* beside a number reads
+ * as saying the number is.
  */
 @Composable
 private fun Editor(field: FieldDescription, item: Item, draft: Draft) {
@@ -182,7 +184,7 @@ private fun Editor(field: FieldDescription, item: Item, draft: Draft) {
                 Read(field, item)
                 Spacer(modifier = Modifier.width(GAP))
                 TextButton(onClick = { draft.put(item, field.name, textOf(field, stored.value)) }) {
-                    Text("correct")
+                    Text("override")
                 }
             }
             return@Column

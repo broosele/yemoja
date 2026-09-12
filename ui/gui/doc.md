@@ -455,10 +455,11 @@ once and corrected. The numbers stay unused rather than being given to something
   edited: the graph is its place.
 
   **What is worked out is shown, not edited.** A derived field is read-only and greyed. One the
-  model works out unless told otherwise shows what it worked out with a *correct* beside it;
-  corrected, it is edited like any other, and *revert* clears the correction so the worked-out
-  value returns. **Validation stays in the model**: every drafted value is judged by the field's
-  own description as it is typed and the reason for a refusal sits under the field in red.
+  model works out unless told otherwise shows what it worked out with an *override* beside it —
+  not *correct*, which beside a number reads as saying the number is; overridden, it is edited
+  like any other, and *revert* clears the override so the worked-out value returns. **Validation
+  stays in the model**: every drafted value is judged by the field's own description as it is
+  typed and the reason for a refusal sits under the field in red.
 
   **Every value travels as the text a file holds it as**, which is what the model reads and what
   the terminal front end already writes, so the two front ends cannot disagree about what `12.3`
