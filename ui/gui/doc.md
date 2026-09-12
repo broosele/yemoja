@@ -413,15 +413,17 @@ once and corrected. The numbers stay unused rather than being given to something
   the cities named narrow the same way, from capitals on the world to every place the source
   knows in a bay. The geometry is read once, off the interface's thread, and a region drawn
   before it arrives shows its sites on an empty frame until it does.
-- **GUI-23 — Which statistic each kind of field gets.** *Settled:* **one per kind, and a
-  field nobody answered is left out.** A number is its range and its average, unless it names
-  rather than measures, as a dive's number does, when the range is all; a date or a time its
-  range; a yes-or-no how many yeses of how many; and anything named — a site, a
-  buddy, a word from a list — how many different ones and the first few of them, each leading
-  to its item. Where not every item answered, how many did is added. The shape is the item
-  view's own: the same fields in the same order, two columns, titled by how many items. It is
-  shown for several dives chosen in the table, and under a trip's own fields for the dives on
-  it, which is what a trip is. A field a set has nothing to say about is left out rather than
+- **GUI-23 — Which statistic each kind of field gets.** *Settled:* **one per kind, and a field
+  nobody answered is left out.** A number is its range and its average, written with the sign ⌀
+  rather than the word, unless it names rather than measures, as a dive's number does, when the
+  range is all; a date or a time its range; a yes-or-no how many yeses of how many; and anything
+  named — a site, a buddy, a word from a list — every different one and how many that is, each
+  of them, each leading to its item. Where not every item answered, how many did is added. The
+  shape is the item view's own: the same fields in the same order, two columns, titled by how
+  many items and headed by the items themselves, each a link, which is why their names are no
+  statistic of their own. It is shown for several dives chosen in the table, and under a trip's
+  own fields for the dives on it, which is what a trip is — the same box either way, however
+  the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
 - **GUI-4 — Dive profile rendering.** *Settled in part:* **one graph per recording, under
   its tab.** Depth over time up the left, the recording drawn thick and filled underneath so a
@@ -554,7 +556,8 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-16 — What the item view shows for a given item.** *Settled:* the interface
   decides, per item type. The data layer says which fields exist; it has no say in
   which of them are shown, or how. The first uses of that: a region's `children` are not
-  shown, since the tree beside the item is exactly that list; and a rating out of ten reads
+  shown, since the tree beside the item is exactly that list, and a trip's `dives` are not,
+  since the box of their statistics under it is; and a rating out of ten reads
   as five stars, two points to a star and an odd rating ending in a half, and the number
   is not shown.
 

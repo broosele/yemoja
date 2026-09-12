@@ -73,7 +73,7 @@ class ShownTest {
     }
 
     @Test
-    fun `a long list says as many as read comfortably, and how many did not fit`() {
+    fun `a long list says every entry, each being a link that a count would fold away`() {
         val many = (1..9).joinToString(", ") { "\"@p$it\"" }
         val people = (1..9).joinToString(", ") { "\"p$it\": {\"first_name\": \"P$it\"}" }
         val big = logbook(
@@ -81,7 +81,7 @@ class ShownTest {
             "dive/2026-06-21#0.json" to """{"buddies": [$many]}""",
         )
         assertEquals(
-            "P1, P2, P3, P4, P5, P6, and 3 more",
+            "P1, P2, P3, P4, P5, P6, P7, P8, P9",
             shownOf(big["2026-06-21#0"]!!, "buddies")!!.text,
         )
     }

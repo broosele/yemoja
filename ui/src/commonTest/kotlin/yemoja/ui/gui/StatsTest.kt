@@ -44,7 +44,8 @@ class StatsTest {
     @Test
     fun `a number is its range and its average, and a number that only names is its range`() {
         assertEquals("1 – 3", about("Dive number").text, "an average dive number is no number")
-        assertEquals("10 – 30 m, average 20 m", about("Max depth").text)
+        // The average sign, not the word.
+        assertEquals("10 – 30 m, ⌀ 20 m", about("Max depth").text)
     }
 
     @Test
@@ -64,6 +65,18 @@ class StatsTest {
         assertEquals(listOf("elph", null, "blue", null), site.parts.map { it.leadsTo })
         assertEquals("Anna, Bram (2 different) (2 of 3)", about("Buddies").text)
         assertEquals("boat, shore (2 different) (2 of 3)", about("Entry").text)
+    }
+
+    @Test
+    fun `the items themselves head a set's view, each a link, so the names are no statistic`() {
+        assertNull(statisticsOf(dives).firstOrNull { it.label == "Name" })
+        val listed = listedOf(dives)!!
+        assertEquals("Dives", listed.label)
+        assertEquals(
+            listOf("2026-06-03#0", null, "2026-06-02#0", null, "2026-06-01#0"),
+            listed.parts.map { it.leadsTo },
+        )
+        assertNull(listedOf(emptyList()))
     }
 
     @Test

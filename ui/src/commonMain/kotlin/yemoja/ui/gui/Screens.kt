@@ -917,9 +917,10 @@ private fun ItemView(chosen: Chosen, onFollow: (String) -> Unit) {
         // A trip is both an item and a set of dives, and shows as both. `GUI-23`.
         if (chosen.item.description == Types.DIVE_TRIP) {
             val dives = remember(chosen) { divesOf(chosen.item) }
+            // The same box as for dives chosen in the table, however they were chosen.
             if (dives.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(GAP))
-                StatsCard("${dives.size} dives on it", dives, onFollow)
+                StatsCard("${dives.size} dives", dives, onFollow)
             }
         }
     }
@@ -948,7 +949,7 @@ private fun ManyView(set: ItemSet, ids: Set<String>, onFollow: (String) -> Unit)
 /** What [items] say together, on a card titled [title]. */
 @Composable
 private fun StatsCard(title: String, items: List<Item>, onFollow: (String) -> Unit) {
-    val stats = remember(items) { statisticsOf(items) }
+    val stats = remember(items) { listOfNotNull(listedOf(items)) + statisticsOf(items) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,

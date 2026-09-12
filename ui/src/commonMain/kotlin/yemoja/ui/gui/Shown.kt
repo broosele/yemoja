@@ -63,8 +63,14 @@ private const val UNNAMED = "(unnamed)"
 internal fun fieldsShownOf(type: ItemDescription): List<FieldDescription> =
     type.fields.filter { it.name !in ALREADY_SHOWN[type.name].orEmpty() }
 
-/** By type name, the fields the screen around an item view shows already. */
-private val ALREADY_SHOWN: Map<String, Set<String>> = mapOf("region" to setOf("children"))
+/**
+ * By type name, the fields the screen around an item view shows already: a region's children
+ * are the tree beside it, and a trip's dives are the box of their statistics under it.
+ */
+private val ALREADY_SHOWN: Map<String, Set<String>> = mapOf(
+    "region" to setOf("children"),
+    "dive_trip" to setOf("dives"),
+)
 
 /**
  * Arranged is how an item view lays a type out: the plain fields, which flow into columns, and
@@ -294,20 +300,20 @@ private fun one(value: Any, within: Item): Part? {
     return Part(titleOf(item), leadsTo = value.id)
 }
 
-/** As many entries as read comfortably, and how many did not fit. */
-private fun shortened(entries: List<Part>): List<Part> {
-    val kept = if (entries.size <= MANY) entries else entries.take(MANY)
+/**
+ * The entries of a list, every one, with a comma between.
+ *
+ * All of them rather than the first few and a count: an entry is a link, and a link folded
+ * into *and twelve more* leads nowhere. A long list wraps, which is what a field does.
+ */
+internal fun joined(entries: List<Part>): List<Part> {
     val parts = ArrayList<Part>()
-    for ((index, entry) in kept.withIndex()) {
+    for ((index, entry) in entries.withIndex()) {
         if (index > 0) parts += Part(", ")
         parts += entry
     }
-    if (entries.size > MANY) parts += Part(", and ${entries.size - MANY} more")
     return parts
 }
-
-/** How many of a list are worth spelling out before a count says more than the entries do. */
-private const val MANY = 6
 
 /** The entries of a list, or that somebody wrote a list with nothing in it. */
 @Suppress("UNCHECKED_CAST")
@@ -318,7 +324,7 @@ private fun listed(value: Any, within: Item): List<Part> {
             is Element.Unusable -> Part("!")
         }
     }
-    return if (entries.isEmpty()) plain(EMPTY) else shortened(entries)
+    return if (entries.isEmpty()) plain(EMPTY) else joined(entries)
 }
 
 @Suppress("UNCHECKED_CAST")

@@ -49,10 +49,11 @@ class PartsTest {
     }
 
     @Test
-    fun `a region's children are left to the tree, and everything else is shown`() {
+    fun `a region's children are left to the tree, a trip's dives to their statistics`() {
         val names = fieldsShownOf(Types.REGION).map { it.name }
         assertEquals(Types.REGION.fields.size - 1, names.size)
         assertEquals(false, "children" in names)
+        assertEquals(false, "dives" in fieldsShownOf(Types.DIVE_TRIP).map { it.name })
         assertEquals(Types.DIVE.fields.size, fieldsShownOf(Types.DIVE).size)
     }
 

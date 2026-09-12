@@ -31,11 +31,14 @@ import kotlin.math.roundToInt
  * A number has a range and an average, unless it names rather than measures, as a dive's number
  * does, when the range is all; a date or a time a range; a yes-or-no a count of the yeses; and
  * anything named — a site, a buddy, a word from a list — how many different ones and which, the
- * first few. The count of items answering is added where not all of them did.
+ * first few. The count of items answering is added where not all of them did. The name is not
+ * a statistic: the list of the items, each a link, says it once already.
  */
 internal fun statisticsOf(items: List<Item>): List<Shown> {
     val type = items.firstOrNull()?.description ?: return emptyList()
-    return arrangedOf(type).plain.mapNotNull { field -> statisticOf(field, items) }
+    return arrangedOf(type).plain
+        .filter { it.name != TITLE }
+        .mapNotNull { field -> statisticOf(field, items) }
 }
 
 private fun statisticOf(field: FieldDescription, items: List<Item>): Shown? {
@@ -87,7 +90,7 @@ private fun numbers(field: FieldDescription, values: List<Any>): List<Part> {
     val most = written(numbers.max())
     if (numbers.size == 1) return listOf(Part(least + unit))
     if (field.name in RANGE_ONLY) return listOf(Part("$least – $most$unit"))
-    return listOf(Part("$least – $most$unit, average ${written(numbers.average())}$unit"))
+    return listOf(Part("$least – $most$unit, $AVERAGE ${written(numbers.average())}$unit"))
 }
 
 /** Earliest to latest. */
@@ -101,7 +104,7 @@ private fun range(field: FieldDescription, values: List<Any>): List<Part> {
 }
 
 /**
- * How many different ones, and the first few of them, a reference leading to its item.
+ * Every different one, a reference leading to its item, and how many that is.
  *
  * Counted by what was written, so a name written two ways is two; the model has no say on
  * whether they are one person.
@@ -118,21 +121,29 @@ private fun named(field: FieldDescription, values: List<Any>, items: List<Item>)
         distinct.putIfAbsent(part.text, part)
     }
     if (distinct.isEmpty()) return emptyList()
-    val parts = ArrayList<Part>()
-    for ((index, part) in distinct.values.take(FEW).withIndex()) {
-        if (index > 0) parts += Part(", ")
-        parts += part
-    }
-    if (distinct.size > FEW) parts += Part(", and ${distinct.size - FEW} more")
-    if (distinct.size > 1) parts += Part(" (${distinct.size} different)")
-    return parts
+    val parts = joined(distinct.values.toList())
+    return if (distinct.size > 1) parts + Part(" (${distinct.size} different)") else parts
 }
 
-/** How many of the different ones are named before the rest are counted. */
-private const val FEW = 3
+/** The items themselves, each a link, under the label of their type, which heads a set's view. */
+internal fun listedOf(items: List<Item>): Shown? {
+    val type = items.firstOrNull()?.description ?: return null
+    val set = items.first().set
+    val parts = items.mapNotNull { item ->
+        set.idOf(item as? yemoja.data.ReferenceableItem ?: return@mapNotNull null)
+            ?.let { Part(titleOf(item), leadsTo = it) }
+    }
+    return Shown(labelOf(type) + "s", joined(parts))
+}
+
+/** The field an item is called by, listed with the items rather than counted. */
+private const val TITLE = "name"
 
 /** The one field that is a rating, whose average reads as stars too. */
 private const val RATING = "rating"
+
+/** The sign an average is written with, in place of the word. */
+private const val AVERAGE = "⌀"
 
 /** Numbers that name rather than measure, whose average would mean nothing: a dive's number. */
 private val RANGE_ONLY: Set<String> = setOf("dive_number")
