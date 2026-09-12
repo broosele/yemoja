@@ -2134,6 +2134,14 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-115 — Which fields are not for reading.** *Settled:* **the type says so, in two sets.**
+  `ItemDescription` carries `housekeeping`, the fields kept for the machinery rather than for
+  reading — a download's bookmark, a pairing key, which recording a dive is worked from — and
+  `sources`, the fields that are solely a source for others that say it better, a recording's
+  own start beside the dive's. A front end shows neither in a view and both when editing,
+  without knowing what they name. The manual already said of each that it is not for reading;
+  the type saying it is what lets every front end agree. Both sets name only the type's own
+  fields, which is checked when the type is made.
 - **DATA-51 — Whether typed accessors exist, and for which fields.** *Settled:* three
   ways in, and not one of them is per field.
 

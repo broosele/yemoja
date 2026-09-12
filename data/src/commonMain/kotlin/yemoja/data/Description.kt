@@ -682,10 +682,32 @@ class ItemDescription(
     fields: List<FieldDescription>,
     orderedBy: List<Ordering> = emptyList(),
     val proposedId: ((Item) -> String)? = null,
+    housekeeping: Set<String> = emptySet(),
+    sources: Set<String> = emptySet(),
 ) {
 
     // Copied. A List is read-only, not immutable.
     val fields: List<FieldDescription> = fields.toList()
+
+    /**
+     * The fields kept for the machinery rather than for reading: a download's bookmark, a
+     * pairing key. Shown when editing and otherwise not. `DATA-115`.
+     */
+    val housekeeping: Set<String> = housekeeping.toSet()
+
+    /**
+     * The fields that are solely a source for others, which say what they say better: a
+     * recording's own start, which the dive works its own from. Shown when editing and otherwise
+     * not. `DATA-115`.
+     */
+    val sources: Set<String> = sources.toSet()
+
+    init {
+        val named = fields.map { it.name }.toSet()
+        for (field in housekeeping + sources) {
+            require(field in named) { "$name marks $field, which is no field of its own" }
+        }
+    }
 
     /**
      * How to sort items of this type, most significant first, or empty to leave them as read.

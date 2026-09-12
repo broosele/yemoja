@@ -1262,6 +1262,7 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
         SmallTabs(
             labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
             chosen = at,
+            marked = pointedEntryOf(item, inset.name),
             onChoose = { open = it },
         )
     }
@@ -1286,6 +1287,8 @@ internal fun SmallTabs(
     labels: List<String>,
     chosen: Int,
     onChoose: (Int) -> Unit,
+    /** The tab that stands out among the rest, a dive's primary recording; marked with a star. */
+    marked: Int? = null,
     /** Takes the tab at an index out, where the tabs can be; shown on the chosen one. */
     onRemove: ((Int) -> Unit)? = null,
     /** Adds a tab, where they can be; shown after the last. */
@@ -1310,6 +1313,14 @@ internal fun SmallTabs(
                     .padding(horizontal = GAP, vertical = HALF),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (index == marked) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "the primary one",
+                        tint = onTint(here),
+                        modifier = Modifier.padding(end = HALF).size(GLYPH - HALF),
+                    )
+                }
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelMedium,

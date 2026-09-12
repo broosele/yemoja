@@ -131,6 +131,8 @@ internal val GEAR: ItemDescription = ItemDescription(
     ),
     orderedBy = listOf(Ordering("name")),
     proposedId = ::namedById,
+    // The pairing key a download hands back. Kept, and not read.
+    housekeeping = setOf("access_code"),
 )
 
 /** The dives whose gear names [gear] among its items. */

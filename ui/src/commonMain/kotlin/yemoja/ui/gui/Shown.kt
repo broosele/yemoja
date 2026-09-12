@@ -7,6 +7,7 @@ import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.KeyReference
+import yemoja.data.KeyReferenceDescription
 import yemoja.data.NumberDescription
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
@@ -54,14 +55,21 @@ internal fun titleOf(item: Item): String {
 private const val UNNAMED = "(unnamed)"
 
 /**
- * The fields of [type] an item view shows, which is all of them but the ones the screen around
- * it already shows. `GUI-16`.
+ * The fields of [type] an item view shows: all of them but the ones the screen around it
+ * already shows, and, unless [editing], but the ones the type keeps for the machinery or solely
+ * as a source for others. `GUI-16`, `DATA-115`.
  *
  * A region's children are its branch of the tree beside it, and a list of them under the map
  * says the same thing again in worse form.
  */
-internal fun fieldsShownOf(type: ItemDescription): List<FieldDescription> =
-    type.fields.filter { it.name !in ALREADY_SHOWN[type.name].orEmpty() }
+internal fun fieldsShownOf(
+    type: ItemDescription,
+    editing: Boolean = false,
+): List<FieldDescription> =
+    type.fields.filter {
+        it.name !in ALREADY_SHOWN[type.name].orEmpty() &&
+            (editing || (it.name !in type.housekeeping && it.name !in type.sources))
+    }
 
 /**
  * By type name, the fields the screen around an item view shows already: a region's children
@@ -79,13 +87,13 @@ private val ALREADY_SHOWN: Map<String, Set<String>> = mapOf(
 internal class Arranged(val plain: List<FieldDescription>, val insets: List<OwnedItemDescription>)
 
 /**
- * The fields of [type] as an item view lays them out.
+ * The fields of [type] as an item view lays them out, or as the edit form does.
  *
  * A series is not laid out at all: the graph is where it is read, and a count of its samples
  * beside the graph says nothing a reader wants.
  */
-internal fun arrangedOf(type: ItemDescription): Arranged {
-    val shown = fieldsShownOf(type).filter { it.cardinality !in SERIES }
+internal fun arrangedOf(type: ItemDescription, editing: Boolean = false): Arranged {
+    val shown = fieldsShownOf(type, editing).filter { it.cardinality !in SERIES }
     return Arranged(
         plain = shown.filter { it !is OwnedItemDescription },
         insets = shown.filterIsInstance<OwnedItemDescription>(),
@@ -94,6 +102,22 @@ internal fun arrangedOf(type: ItemDescription): Arranged {
 
 /** The two shapes a series comes in. */
 private val SERIES = setOf(Cardinality.SERIES, Cardinality.KEYED_SERIES)
+
+/**
+ * The entry of the keyed collection [name] that [item] points at by a key reference, as its
+ * index among the entries, or absent where nothing points: a dive's primary recording, marked
+ * on its tab.
+ */
+internal fun pointedEntryOf(item: Item, name: String): Int? {
+    val pointer = item.description.fields
+        .filterIsInstance<KeyReferenceDescription>().firstOrNull { it.collection == name }
+        ?: return null
+    val key = ((item.read(pointer.name) as? Result.Usable)?.value as? KeyReference)?.key
+        ?: return null
+    val keys = ((item.read(name) as? Result.Usable)?.value as? Map<*, *>)?.keys?.toList()
+        ?: return null
+    return keys.indexOf(key).takeIf { it >= 0 }
+}
 
 /**
  * What a tab in a keyed inset is called: the entry's name where it has one, else what the first

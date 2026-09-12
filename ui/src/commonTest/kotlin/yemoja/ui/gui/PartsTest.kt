@@ -54,7 +54,8 @@ class PartsTest {
         assertEquals(Types.REGION.fields.size - 1, names.size)
         assertEquals(false, "children" in names)
         assertEquals(false, "dives" in fieldsShownOf(Types.DIVE_TRIP).map { it.name })
-        assertEquals(Types.DIVE.fields.size, fieldsShownOf(Types.DIVE).size)
+        val kept = Types.DIVE.housekeeping.size
+        assertEquals(Types.DIVE.fields.size - kept, fieldsShownOf(Types.DIVE).size)
     }
 
     @Test
@@ -141,6 +142,49 @@ class KeyTest {
     }
 }
 
+class HousekeepingTest {
+
+    private val profile = (Types.DIVE["profiles"] as yemoja.data.OwnedItemDescription).description
+
+    @Test
+    fun `what is kept for the machinery, or solely feeds other fields, is not shown`() {
+        val names = fieldsShownOf(profile).map { it.name }
+        for (hidden in listOf("fingerprint", "serial", "gmt_offset", "tolerances", "start_date")) {
+            assertEquals(false, hidden in names, hidden)
+        }
+        assertEquals(true, "duration" in names)
+        assertEquals(false, "primary_profile" in fieldsShownOf(Types.DIVE).map { it.name })
+        assertEquals(false, "access_code" in fieldsShownOf(Types.GEAR).map { it.name })
+        assertEquals(true, "dive_number" in fieldsShownOf(Types.DIVE).map { it.name })
+    }
+
+    @Test
+    fun `but it is shown when editing`() {
+        val names = fieldsShownOf(profile, editing = true).map { it.name }
+        assertEquals(true, "fingerprint" in names)
+        assertEquals(true, "start_date" in names)
+        val dive = fieldsShownOf(Types.DIVE, editing = true).map { it.name }
+        assertEquals(true, "primary_profile" in dive)
+    }
+
+    @Test
+    fun `the entry an item points at by key is the one to mark`() {
+        val set = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive/2026-06-21#0.json" to """{"primary_profile": "*b",
+                        "profiles": {"a": {}, "b": {}, "c": {}}}""",
+                    "dive/2026-06-22#0.json" to """{"profiles": {"a": {}}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        assertEquals(1, pointedEntryOf(set["2026-06-21#0"]!!, "profiles"))
+        assertNull(pointedEntryOf(set["2026-06-22#0"]!!, "profiles"), "nothing points")
+        assertNull(pointedEntryOf(set["2026-06-21#0"]!!, "gas_sources"), "no pointer to it")
+    }
+}
+
 class ArrangedTest {
 
     @Test
@@ -151,7 +195,8 @@ class ArrangedTest {
             dive.insets.map { it.name },
         )
         assertEquals(false, dive.plain.any { it.name in dive.insets.map { i -> i.name } })
-        assertEquals(Types.DIVE.fields.size, dive.plain.size + dive.insets.size)
+        val kept = Types.DIVE.housekeeping.size
+        assertEquals(Types.DIVE.fields.size - kept, dive.plain.size + dive.insets.size)
     }
 
     @Test

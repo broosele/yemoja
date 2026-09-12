@@ -245,6 +245,11 @@ private val PROFILE = ItemDescription(
         REMARKS,
     ),
     proposedId = ::profilesProposedKey,
+    // The bookmark and the key a download reads back, the offset every worked-out time has had
+    // applied, and how much a download thinned: kept, and not read. The recording's own start
+    // is what the dive works its start from, and the dive's is the one read.
+    housekeeping = setOf("fingerprint", "serial", "gmt_offset", "tolerances"),
+    sources = setOf("start_date", "start_time"),
 )
 
 /** When the last sample was taken, as a moment in GMT, or absent where there is none. */
@@ -487,6 +492,8 @@ internal val DIVE: ItemDescription = ItemDescription(
         Ordering("start_time", Direction.DESCENDING),
     ),
     proposedId = ::divesProposedId,
+    // Which recording is worked from is a choice about the machinery, not a fact about the dive.
+    housekeeping = setOf("primary_profile"),
 )
 
 /**

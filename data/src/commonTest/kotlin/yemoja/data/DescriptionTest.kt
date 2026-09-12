@@ -2,6 +2,7 @@ package yemoja.data
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -412,5 +413,23 @@ class ResultTest {
         val refused = Validity.Invalid("rating should be within 1..10")
         assertEquals(refused, Validity.Invalid("rating should be within 1..10"))
         assertTrue(Validity.Invalid("one") != Validity.Invalid("another"))
+    }
+}
+
+class HousekeepingTest {
+
+    @Test
+    fun `a type may mark fields as housekeeping or as sources, and only its own fields`() {
+        val type = ItemDescription(
+            "thing",
+            listOf(TextDescription("name"), TextDescription("key"), TextDescription("raw")),
+            housekeeping = setOf("key"),
+            sources = setOf("raw"),
+        )
+        assertEquals(setOf("key"), type.housekeeping)
+        assertEquals(setOf("raw"), type.sources)
+        assertFailsWith<IllegalArgumentException> {
+            ItemDescription("thing", listOf(TextDescription("name")), housekeeping = setOf("nope"))
+        }
     }
 }

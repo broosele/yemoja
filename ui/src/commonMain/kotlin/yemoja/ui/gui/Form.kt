@@ -87,7 +87,7 @@ internal fun EditActions(draft: Draft, onCancel: () -> Unit, onSave: () -> Unit)
  */
 @Composable
 internal fun EditFields(item: Item, draft: Draft) {
-    val arranged = remember(item.description) { arrangedOf(item.description) }
+    val arranged = remember(item.description) { arrangedOf(item.description, editing = true) }
     for (pair in arranged.plain.chunked(COLUMNS)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -127,6 +127,7 @@ private fun KeyedEditor(label: String, name: String, item: Item, draft: Draft) {
         SmallTabs(
             labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
             chosen = at,
+            marked = pointedEntryOf(item, name),
             onChoose = { open = it },
             onRemove = { index ->
                 entries.forEach { (_, entry) -> draft.dropAll(entry) }

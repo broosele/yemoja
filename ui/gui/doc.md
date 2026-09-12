@@ -353,10 +353,6 @@ that cannot edit.
    or the table refuses to be sorted another way, or grouping survives sorting within a group.
 - **GUI-5 — What the first usable version contains** — the smallest set of screens that
    makes the app worth opening.
-- **GUI-6 — Whether shape is enough on its own**, or whether a field also needs a
-   layout hint for its size. A free-text `remarks` is bulky but not unimportant; a
-   rating is tiny but not trivial. How much room a field needs is independent of how
-   prominent it is.
 - **GUI-10 — Which of an item's own fields appear in a selector row**, and whether
    that is fixed per type or chosen by the user.
 - **GUI-11 — Whether a "show everything" preference overrides collapsing**, for people
@@ -557,7 +553,8 @@ once and corrected. The numbers stay unused rather than being given to something
   decides, per item type. The data layer says which fields exist; it has no say in
   which of them are shown, or how. The first uses of that: a region's `children` are not
   shown, since the tree beside the item is exactly that list, and a trip's `dives` are not,
-  since the box of their statistics under it is; and a rating out of ten reads
+  since the box of their statistics under it is; a dive's primary recording is marked with a
+  star on its tab rather than named in a field; and a rating out of ten reads
   as five stars, two points to a star and an odd rating ending in a half, and the number
   is not shown.
 
