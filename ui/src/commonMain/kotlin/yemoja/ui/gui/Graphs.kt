@@ -140,6 +140,29 @@ internal fun noDecoOf(series: Series): List<Point> =
 internal const val NO_DECO_CAP = 99.0
 
 /**
+ * The room an axis leaves beyond the values it covers, as a fraction of what they span.
+ *
+ * A reading that hardly changes would otherwise be drawn along the plot's edge, where it reads
+ * as a border rather than as a line: a dive in water of six degrees throughout draws its
+ * temperature as a second axis under the graph.
+ */
+internal const val AXIS_ROOM = 0.05
+
+/**
+ * The range an axis covers for [values]: the least to the greatest with [AXIS_ROOM] at each
+ * end. A reading that never changed is given a range around it, there being nothing to scale
+ * by, and no reading at all the range nought to one.
+ */
+internal fun rangeOf(values: List<Double>): ClosedFloatingPointRange<Double> {
+    if (values.isEmpty()) return 0.0..1.0
+    val low = values.min()
+    val high = values.max()
+    if (high <= low) return (low - 1.0)..(high + 1.0)
+    val room = (high - low) * AXIS_ROOM
+    return (low - room)..(high + room)
+}
+
+/**
  * Where to put the marks along an axis from [low] to [high], about [wanted] of them, at values
  * a reader would choose: steps of one, two or five times a power of ten.
  */

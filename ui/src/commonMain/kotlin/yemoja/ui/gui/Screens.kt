@@ -1547,17 +1547,14 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
             val all = depth.flatMap { it.points } + overlay?.line?.points.orEmpty()
             val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, 1.0)
             val deepest = depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0
-            val depthHigh = maxOf(deepest * 1.05, 1.0)
+            val depthHigh = maxOf(deepest * (1.0 + AXIS_ROOM), 1.0)
             fun x(minute: Double): Float = (left + (right - left) * (minute / lastMinute)).toFloat()
             fun yDepth(value: Double): Float =
                 (top + (bottom - top) * (value / depthHigh)).toFloat()
             val overPoints = overlay?.line?.points.orEmpty()
-            var overLow = overPoints.minOfOrNull { it.value } ?: 0.0
-            var overHigh = overPoints.maxOfOrNull { it.value } ?: 1.0
-            if (overHigh <= overLow) {
-                overLow -= 1.0
-                overHigh += 1.0
-            }
+            val over = rangeOf(overPoints.map { it.value })
+            val overLow = over.start
+            val overHigh = over.endInclusive
             fun yOver(value: Double): Float {
                 val fraction = (value - overLow) / (overHigh - overLow)
                 return (bottom - (bottom - top) * fraction).toFloat()

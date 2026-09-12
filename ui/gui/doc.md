@@ -432,9 +432,20 @@ once and corrected. The numbers stay unused rather than being given to something
   the source switched to and every alarm a triangle named as the computer gave it, so the
   events of a dive sit where they happened. Each recording of a dive has its own
   graph and shows only its own data, which is what a tab is for. Marks fall on values a reader
-  would choose, steps of one, two or five, and the unit sits in each axis's title. What is
+  would choose, steps of one, two or five, and the unit sits in each axis's title. An axis
+  leaves room beyond the readings it covers, since a reading that hardly changes drawn on the
+  plot's edge reads as a border rather than as a line: a dive in water of six degrees
+  throughout would otherwise draw its temperature as a second axis under the graph. What is
   worked out is worked out without a screen and tested; the drawing is paths built once per
   size. Open: what a phone shows of this.
+- **GUI-6 — Whether shape is enough on its own.** *Settled in part:* **a field may be marked
+  as not for reading, and the model marks it.** A type says which of its fields are kept for
+  the machinery — a download's bookmark, a pairing key, which recording is worked from — and
+  which are solely a source for others that say it better, a recording's own start beside the
+  dive's; `DATA-115`. An item view leaves both out and the edit form shows them, since they
+  are written and kept, not read. The manual already said of each that it is not for reading,
+  which is why the mark is the model's rather than a table here. Still open: whether a field
+  needs a hint for how much room it takes.
 - **GUI-29 — How a field is edited.** *Settled:* **the item view turned over.** A pencil on
   the card turns it into the edit form: the same fields in the same places, two columns and
   the insets and their tabs, with *Save* and *Cancel* on the title line, so a reader who knows

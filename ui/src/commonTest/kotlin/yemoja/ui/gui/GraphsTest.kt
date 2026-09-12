@@ -132,3 +132,27 @@ class GraphsTest {
         assertEquals(listOf(7.0), ticksOf(7.0, 7.0, 4), "nothing to span is one mark")
     }
 }
+
+class AxisRangeTest {
+
+    @Test
+    fun `an axis leaves room at each end, so no line lies on the plot's edge`() {
+        val range = rangeOf(listOf(6.0, 7.0))
+        assertEquals(5.95, range.start, 1e-9)
+        assertEquals(7.05, range.endInclusive, 1e-9)
+        assertEquals(true, 6.0 > range.start && 7.0 < range.endInclusive)
+    }
+
+    @Test
+    fun `a reading that never changed is given a range around it`() {
+        val range = rangeOf(listOf(6.0, 6.0, 6.0))
+        assertEquals(5.0, range.start, 1e-9)
+        assertEquals(7.0, range.endInclusive, 1e-9)
+    }
+
+    @Test
+    fun `no reading at all is nought to one`() {
+        assertEquals(0.0, rangeOf(emptyList()).start, 1e-9)
+        assertEquals(1.0, rangeOf(emptyList()).endInclusive, 1e-9)
+    }
+}
