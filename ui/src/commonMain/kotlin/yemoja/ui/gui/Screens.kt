@@ -1603,9 +1603,13 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
                         }
                         val style = if (event.marking == Marking.SWITCH) switched else alarmed
                         val laid = measurer.measure(event.label, style)
+                        // Kept inside the plot: a switch at the start would otherwise put its
+                        // word over the depth axis, and one at the surface over the title.
+                        val above = centre.y - MARKED.toPx() * 2 - laid.size.height
                         val corner = Offset(
-                            x = centre.x - laid.size.width / 2f,
-                            y = centre.y - MARKED.toPx() * 2 - laid.size.height,
+                            x = (centre.x - laid.size.width / 2f)
+                                .coerceIn(left, right - laid.size.width),
+                            y = if (above >= top) above else centre.y + MARKED.toPx() * 2,
                         )
                         drawText(laid, topLeft = corner)
                     }
