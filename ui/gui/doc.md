@@ -438,7 +438,9 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-29 — How a field is edited.** *Settled:* **the item view turned over.** A pencil on
   the card turns it into the edit form: the same fields in the same places, two columns and
   the insets and their tabs, with *Save* and *Cancel* on the title line, so a reader who knows
-  where a field sits when reading knows where it sits when editing. Cancel puts the card back
+  where a field sits when reading knows where it sits when editing. The title line, with its
+  pencil or its Save and Cancel, stays put while the fields scroll under it, so what is being
+  looked at and the way out of it are never scrolled away. Cancel puts the card back
   as it was; Save hands every field changed to the model as one change, and a refusal comes
   back to the field it was about.
 

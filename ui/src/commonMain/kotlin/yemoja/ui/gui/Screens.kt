@@ -911,15 +911,16 @@ internal fun Line(
 /** One item, arranged for reading. It never changes anything. */
 @Composable
 private fun ItemView(chosen: Chosen, onFollow: (String) -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(GAP),
-    ) {
-        ItemCard(chosen, onFollow)
+    // The card scrolls its own fields under a title line that stays put; what follows the
+    // card scrolls with the fields.
+    ItemCard(chosen, onFollow, scrolls = true) {
         // A trip is both an item and a set of dives, and shows as both. `GUI-23`.
         if (chosen.item.description == Types.DIVE_TRIP) {
             val dives = remember(chosen) { divesOf(chosen.item) }
-            if (dives.isNotEmpty()) StatsCard("${dives.size} dives on it", dives, onFollow)
+            if (dives.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(GAP))
+                StatsCard("${dives.size} dives on it", dives, onFollow)
+            }
         }
     }
 }
@@ -1124,16 +1125,27 @@ private fun pathOf(
 }
 
 /**
- * One item on a card, sized to what it says, with a pencil that turns the card over into the
- * edit form. `GUI-29`.
+ * One item on a card, with a pencil on its title line that turns the card over into the edit
+ * form, where the title line carries Cancel and Save instead. `GUI-29`.
+ *
+ * Where the card [scrolls], it fills what it is given and its fields scroll under the title
+ * line, which stays put; otherwise it is as tall as what it says, for a card stacked among
+ * others. [after] follows the fields, scrolling with them.
  */
 @Composable
-private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
-    val edition = LocalChanger.current.edition
+private fun ItemCard(
+    chosen: Chosen,
+    onFollow: (String) -> Unit,
+    scrolls: Boolean = false,
+    after: @Composable ColumnScope.() -> Unit = {},
+) {
+    val changer = LocalChanger.current
+    val edition = changer.edition
     var editing by remember(chosen) { mutableStateOf(false) }
+    var refused by remember(chosen) { mutableStateOf<String?>(null) }
     val draft = remember(chosen) { Draft() }
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = if (scrolls) Modifier.fillMaxSize() else Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
@@ -1148,20 +1160,52 @@ private fun ItemCard(chosen: Chosen, onFollow: (String) -> Unit) {
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.weight(1f),
                 )
-                if (!editing) {
+                if (editing) {
+                    EditActions(
+                        draft = draft,
+                        onCancel = {
+                            editing = false
+                            refused = null
+                        },
+                        onSave = {
+                            when (val outcome = changer.change(draft.writes())) {
+                                is Outcome.Done -> {
+                                    editing = false
+                                    refused = null
+                                }
+                                is Outcome.Refused -> refused = outcome.reason
+                            }
+                        },
+                    )
+                } else {
                     IconButton(onClick = { editing = true }) {
                         Icon(Icons.Filled.Edit, contentDescription = "edit")
                     }
                 }
             }
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
-            // Read again after every change: the item is the same object, changed in place.
-            key(edition) {
-                if (editing) {
-                    EditForm(chosen.item, draft) { editing = false }
-                } else {
-                    Fields(chosen.item, onFollow)
+            val body: @Composable ColumnScope.() -> Unit = {
+                refused?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = GAP),
+                    )
                 }
+                // Read again after every change: the item is the same object, changed in place.
+                key(edition) {
+                    if (editing) EditFields(chosen.item, draft) else Fields(chosen.item, onFollow)
+                }
+                after()
+            }
+            if (scrolls) {
+                Column(
+                    modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    content = body,
+                )
+            } else {
+                body()
             }
         }
     }

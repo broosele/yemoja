@@ -52,7 +52,6 @@ import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.TextDescription
 import yemoja.logic.Change
-import yemoja.logic.Outcome
 import yemoja.logic.Types
 
 /*
@@ -66,53 +65,28 @@ import yemoja.logic.Types
  */
 
 /**
- * An item's fields, to be filled in, with Save and Cancel on the title line.
+ * Cancel and Save, for the title line of a card being edited, which stays put while the fields
+ * scroll under it. Save is offered only once something has been changed.
+ */
+@Composable
+internal fun EditActions(draft: Draft, onCancel: () -> Unit, onSave: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        TextButton(onClick = onCancel) { Text("Cancel") }
+        Button(onClick = onSave, enabled = !draft.isEmpty) { Text("Save") }
+    }
+}
+
+/**
+ * The fields of [item] as editors, laid out as the item view lays them out.
  *
  * [draft] is the form's, kept by whoever shows the form, so that a change landing while the
  * form is open — an entry taken out of a collection — redraws the form without emptying it.
  */
 @Composable
-internal fun EditForm(item: Item, draft: Draft, onDone: () -> Unit) {
-    val changer = LocalChanger.current
-    var refused by remember(item) { mutableStateOf<String?>(null) }
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(GAP),
-    ) {
-        Text(
-            text = "Editing",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        TextButton(onClick = onDone) { Text("Cancel") }
-        Button(
-            onClick = {
-                when (val outcome = changer.change(draft.writes())) {
-                    is Outcome.Done -> onDone()
-                    is Outcome.Refused -> refused = outcome.reason
-                }
-            },
-            enabled = !draft.isEmpty,
-        ) {
-            Text("Save")
-        }
-    }
-    refused?.let {
-        Text(
-            text = it,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(bottom = GAP),
-        )
-    }
-    EditFields(item, draft)
-}
-
-/** The fields of [item] as editors, laid out as the item view lays them out. */
-@Composable
-private fun EditFields(item: Item, draft: Draft) {
+internal fun EditFields(item: Item, draft: Draft) {
     val arranged = remember(item.description) { arrangedOf(item.description) }
     for (pair in arranged.plain.chunked(COLUMNS)) {
         Row(
