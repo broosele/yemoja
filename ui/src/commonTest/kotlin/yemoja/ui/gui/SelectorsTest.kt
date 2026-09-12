@@ -95,6 +95,14 @@ class YearsTest {
     }
 
     @Test
+    fun `a dive is found under its year, and nothing else is under any`() {
+        assertEquals("2025", yearHolding(years, years[1].rows.single().dive.id))
+        assertEquals("2026", yearHolding(years, years[0].rows.first().dive.id))
+        assertNull(yearHolding(years, "not_a_dive"))
+        assertNull(yearHolding(years, null))
+    }
+
+    @Test
     fun `a trip over New Year is a run in each year, since a cell does not cross a divider`() {
         val january = years[0].rows.last()
         val december = years[1].rows.single()

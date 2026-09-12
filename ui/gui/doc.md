@@ -474,7 +474,8 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
   another item, the name is clickable and opens that item where it lives: the tab holding its
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and
-  the list scrolled to it where the tab has a list. A site sets the region as well, since the
+  the list scrolled to it where the tab has a list, the year holding a dive unfolded first,
+  since a line in a folded year is not there to scroll to. A site sets the region as well, since the
   map would otherwise show wherever Location was left: a site names several regions and none
   of them is *the* one, so the map goes to the most specific, which is the one with the
   smallest frame — Egypt rather than the Red Sea, Zeeland rather than the Netherlands. A wreck

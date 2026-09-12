@@ -84,6 +84,10 @@ internal fun yearsOf(rows: List<DiveRow>): List<Year> {
 /** The year a dive with no date is filed under. */
 internal const val UNDATED = "undated"
 
+/** The label of the year among [years] holding the dive [id], or absent where none does. */
+internal fun yearHolding(years: List<Year>, id: String?): String? =
+    id?.let { years.firstOrNull { year -> year.rows.any { it.dive.id == id } }?.label }
+
 /**
  * Which rows carry a trip's name, so it sits in the middle of its run: the row at the middle of
  * each run, and whether the name is to be nudged up half a line because the run has an even

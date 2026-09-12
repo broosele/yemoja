@@ -414,7 +414,14 @@ private fun Dives(set: ItemSet, kept: Kept) {
         kept.chosenMany = emptySet()
         kept.chosen = trip
     }
-    Shown(kept.list, chosen?.id)
+    // A dive chosen from elsewhere, by following a reference, may sit in a folded year, where
+    // there is no line to bring into view. The year unfolds first, and the line is brought into
+    // view once it exists. `GUI-28`.
+    val holding = yearHolding(years, chosen?.id)
+    LaunchedEffect(chosen?.id) {
+        if (holding != null && holding !in open) kept.open = open + holding
+    }
+    Shown(kept.list, chosen?.id?.takeIf { holding == null || holding in open })
     Column(modifier = Modifier.fillMaxHeight().padding(horizontal = GAP)) {
         Row(
             modifier = Modifier.fillMaxWidth().height(LINE),
