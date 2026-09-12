@@ -24,6 +24,8 @@ class GraphsTest {
                     "gas_sources": {"g1": {"cylinder": "@twelve"}, "g2": {}},
                     "profiles": {
                         "a": {"depth": [[0, 0], [30, 12.0], [90, 6.0], [120, 0]],
+                              "gas_switches": [[0, "*g1"], [60, "*g2"]],
+                              "alarms": [[45, "ascent"]],
                               "temperature": [[0, 20.0], [120, 18.0]],
                               "decostop": [[60, 3.0], [90, 0]],
                               "no_deco_time": [[0, 3600], [60, 600]],
@@ -99,6 +101,26 @@ class GraphsTest {
         // An i330R: 598 minutes as its marker for no limit, then a real ninety.
         val i330r = noDecoOf(series(2 to 35880, 112 to 5400))
         assertEquals(listOf(99.0, 90.0), i330r.map { it.value })
+    }
+
+    @Test
+    fun `the events are the gas switches, named as their sources are, and the alarms, in order`() {
+        val marks = eventsOf(dive, profile("a"))
+        assertEquals(listOf("Twelve", "ascent", "G2"), marks.map { it.label })
+        assertEquals(listOf(0.0, 0.75, 1.0), marks.map { it.minute })
+        assertEquals(
+            listOf(Marking.SWITCH, Marking.ALARM, Marking.SWITCH),
+            marks.map { it.marking },
+        )
+    }
+
+    @Test
+    fun `the depth at a moment lies between the samples either side of it`() {
+        val line = depthLinesOf(profile("a")).first()
+        assertEquals(12.0, depthAt(line, 0.5))
+        assertEquals(9.0, depthAt(line, 1.0), "halfway from twelve at half a minute to six at 1.5")
+        assertEquals(0.0, depthAt(line, 5.0), "beyond the end is the end")
+        assertEquals(null, depthAt(Line("none", emptyList()), 1.0))
     }
 
     @Test

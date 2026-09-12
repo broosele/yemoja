@@ -1449,11 +1449,12 @@ private fun Stars(rating: Int) {
 private fun ProfileGraph(dive: Item, profile: Item) {
     val depth = remember(profile) { depthLinesOf(profile) }
     val overlays = remember(dive, profile) { overlaysOf(dive, profile) }
+    val events = remember(dive, profile) { eventsOf(dive, profile) }
     var picked by remember(profile) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }
     val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
     Box(modifier = Modifier.fillMaxWidth()) {
-        Chart(depth, overlay)
+        Chart(depth, overlay, events)
         // The right axis's title is the box that chooses it: the label says what the red line
         // is, and clicking it says what else it could be.
         if (overlay != null) {
@@ -1496,14 +1497,15 @@ private fun ProfileGraph(dive: Item, profile: Item) {
 
 /**
  * The graph: the depth lines against a grid, the overlay's line in its own colour with its own
- * marks up the right, and the minutes along the bottom. The overlay's title is not drawn here:
- * it is the box that chooses the overlay, laid over the top right corner.
+ * marks up the right, the minutes along the bottom, and on the depth line the gas switches and
+ * the alarms, each named. The overlay's title is not drawn here: it is the box that chooses the
+ * overlay, laid over the top right corner.
  *
  * The main line is drawn to be read and filled underneath so a dive reads as water; the rest
  * are thin. Paths are built once per size and lines.
  */
 @Composable
-private fun Chart(depth: List<Line>, overlay: Overlay?) {
+private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
     val ink = MaterialTheme.colorScheme.primary
     val stop = MaterialTheme.colorScheme.tertiary
     // The right axis in red, the one colour that reads as another line at a glance.
@@ -1513,6 +1515,8 @@ private fun Chart(depth: List<Line>, overlay: Overlay?) {
     val quiet = MaterialTheme.colorScheme.onSurfaceVariant
     val label = MaterialTheme.typography.labelSmall.copy(color = quiet)
     val title = MaterialTheme.typography.labelMedium.copy(color = quiet)
+    val switched = MaterialTheme.typography.labelSmall.copy(color = stop)
+    val alarmed = MaterialTheme.typography.labelSmall.copy(color = other)
     val measurer = rememberTextMeasurer()
     Spacer(
         modifier = Modifier.fillMaxWidth().height(DEPTH_GRAPH).padding(bottom = HALF)
@@ -1585,11 +1589,40 @@ private fun Chart(depth: List<Line>, overlay: Overlay?) {
                     drawPath(depthPaths[index], colour, style = if (line.main) thick else thin)
                 }
                 overPath?.let { drawPath(it, other, style = thin) }
+                // A switch is a dot on the line and an alarm a triangle, each with its word
+                // above, in the colour of the deco stops and of the right axis respectively.
+                main?.let { line ->
+                    for (event in events) {
+                        val at = depthAt(line, event.minute) ?: continue
+                        val centre = Offset(x(event.minute), yDepth(at))
+                        val colour = if (event.marking == Marking.SWITCH) stop else other
+                        if (event.marking == Marking.SWITCH) {
+                            drawCircle(colour, MARKED.toPx(), centre)
+                        } else {
+                            drawPath(triangleAt(centre, MARKED.toPx() * 1.4f), colour)
+                        }
+                        val style = if (event.marking == Marking.SWITCH) switched else alarmed
+                        val laid = measurer.measure(event.label, style)
+                        val corner = Offset(
+                            x = centre.x - laid.size.width / 2f,
+                            y = centre.y - MARKED.toPx() * 2 - laid.size.height,
+                        )
+                        drawText(laid, topLeft = corner)
+                    }
+                }
                 val heading = measurer.measure("Depth (m)", title)
                 drawText(heading, topLeft = Offset(left + HALF.toPx(), 0f))
             }
         },
     )
+}
+
+/** A triangle pointing up, [size] across, centred on [centre], which is what an alarm is. */
+private fun triangleAt(centre: Offset, size: Float): Path = Path().apply {
+    moveTo(centre.x, centre.y - size)
+    lineTo(centre.x + size, centre.y + size * 0.7f)
+    lineTo(centre.x - size, centre.y + size * 0.7f)
+    close()
 }
 
 /** A line as a path, stepping where it steps and sloping where it slopes. */

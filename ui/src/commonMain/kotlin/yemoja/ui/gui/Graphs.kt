@@ -2,6 +2,7 @@ package yemoja.ui.gui
 
 import yemoja.data.Element
 import yemoja.data.Item
+import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.Series
@@ -36,6 +37,52 @@ internal class Line(
 
 /** Overlay is one thing the right axis can show: its title, its unit, and its line. */
 internal class Overlay(val title: String, val unit: String, val line: Line)
+
+/** What a mark on the depth line is: a gas switched to, or an alarm the computer gave. */
+internal enum class Marking { SWITCH, ALARM }
+
+/** Event is one moment on the depth line worth a word: when, what, and which of the two. */
+internal class Event(val minute: Double, val label: String, val marking: Marking)
+
+/**
+ * The events on [profile]'s depth line: every gas switch, named as the source switched to is,
+ * and every alarm, named as the computer gave it, in the order they came.
+ */
+internal fun eventsOf(dive: Item, profile: Item): List<Event> {
+    val marks = ArrayList<Event>()
+    val sources = keyedOf(dive, "gas_sources")
+    seriesOf(profile, "gas_switches")?.let { switches ->
+        for (at in 0..<switches.size) {
+            val key = ((switches.valueAt(at) as? Element.Usable)?.value as? KeyReference)?.key
+                ?: continue
+            val named = sources[key]?.let { entryLabelOf(key, it) } ?: prettyOf(key)
+            marks += Event(switches.secondAt(at) / 60.0, named, Marking.SWITCH)
+        }
+    }
+    seriesOf(profile, "alarms")?.let { alarms ->
+        for (at in 0..<alarms.size) {
+            val said = (alarms.valueAt(at) as? Element.Usable)?.value?.toString() ?: continue
+            marks += Event(alarms.secondAt(at) / 60.0, said, Marking.ALARM)
+        }
+    }
+    return marks.sortedBy { it.minute }
+}
+
+/**
+ * The depth at [minute] along [line], between the samples either side of it; the nearest end
+ * beyond the first or the last, and nothing on a line with no points.
+ */
+internal fun depthAt(line: Line, minute: Double): Double? {
+    val points = line.points
+    if (points.isEmpty()) return null
+    if (minute <= points.first().minute) return points.first().value
+    if (minute >= points.last().minute) return points.last().value
+    val after = points.indexOfFirst { it.minute >= minute }
+    val a = points[after - 1]
+    val b = points[after]
+    if (b.minute == a.minute) return b.value
+    return a.value + (b.value - a.value) * (minute - a.minute) / (b.minute - a.minute)
+}
 
 /**
  * The depth side of a recording's graph: the depth itself, and the deco stops stepped across
