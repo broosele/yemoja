@@ -423,7 +423,8 @@ once and corrected. The numbers stay unused rather than being given to something
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
 - **GUI-4 — Dive profile rendering.** *Settled in part:* **one graph per recording, under
   its tab.** Depth over time up the left, the recording drawn thick and filled underneath so a
-  dive reads as water, its deco stops stepped across it; and up the right one other thing the
+  dive reads as water, its deco stops stepped across it and the water over them shaded red,
+  that being where the diver may not ascend to; and up the right one other thing the
   computer wrote, chosen from a box of what it wrote — the temperature, a cylinder's pressure
   named as its gas source is, the no-deco time, the CNS. The no-deco time is plotted capped
   at 99 minutes and without the zeros a computer reads before it has calculated: computers

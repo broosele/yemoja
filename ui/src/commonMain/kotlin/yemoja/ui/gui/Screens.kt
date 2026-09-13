@@ -1530,6 +1530,8 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
     // The right axis in red, the one colour that reads as another line at a glance.
     val other = MaterialTheme.colorScheme.error
     val water = MaterialTheme.colorScheme.primaryContainer
+    // Over a deco stop, the water a diver may not ascend into. Red, being a warning.
+    val forbidden = MaterialTheme.colorScheme.errorContainer
     val grid = MaterialTheme.colorScheme.outlineVariant
     val quiet = MaterialTheme.colorScheme.onSurfaceVariant
     val label = MaterialTheme.typography.labelSmall.copy(color = quiet)
@@ -1562,14 +1564,19 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
             val depthPaths = depth.map { pathOf(it, ::x, ::yDepth) }
             val overPath = overlay?.let { pathOf(it.line, ::x, ::yOver) }
             val main = depth.firstOrNull { it.main }?.takeIf { it.points.isNotEmpty() }
-            val fill = main?.let { line ->
-                Path().apply {
+            // The water between a line and the surface: over the dive, what it was under, and
+            // over a deco stop, what the diver may not ascend into.
+            fun areaOf(line: Line): Path? {
+                if (line.points.isEmpty()) return null
+                return Path().apply {
                     addPath(pathOf(line, ::x, ::yDepth))
                     lineTo(x(line.points.last().minute), yDepth(0.0))
                     lineTo(x(line.points.first().minute), yDepth(0.0))
                     close()
                 }
             }
+            val fill = main?.let { areaOf(it) }
+            val ceilings = depth.filter { !it.main }.mapNotNull { areaOf(it) }
             val minutes = ticksOf(0.0, lastMinute, 6)
             val depths = ticksOf(0.0, depthHigh, 5)
             val overs = if (overlay == null) emptyList() else ticksOf(overLow, overHigh, 4)
@@ -1600,6 +1607,7 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
                     drawText(laid, topLeft = corner)
                 }
                 fill?.let { drawPath(it, water) }
+                for (ceiling in ceilings) drawPath(ceiling, forbidden)
                 for ((index, line) in depth.withIndex()) {
                     val colour = if (line.main) ink else stop
                     drawPath(depthPaths[index], colour, style = if (line.main) thick else thin)
