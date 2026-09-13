@@ -86,7 +86,7 @@ class GraphsTest {
     @Test
     fun `no-deco time is in minutes`() {
         val noDeco = overlaysOf(dive, profile("a")).first { it.title == "No-deco time" }
-        assertEquals(listOf(60.0, 10.0), noDeco.line.points.map { it.value })
+        assertEquals(listOf(60.0, 10.0), noDeco.lines.single().points.map { it.value })
     }
 
     @Test
@@ -154,5 +154,60 @@ class AxisRangeTest {
     fun `no reading at all is nought to one`() {
         assertEquals(0.0, rangeOf(emptyList()).start, 1e-9)
         assertEquals(1.0, rangeOf(emptyList()).endInclusive, 1e-9)
+    }
+}
+
+class NoDecoStretchTest {
+
+    private fun points(vararg pairs: Pair<Double, Double>): List<Point> =
+        pairs.map { (minute, value) -> Point(minute, value) }
+
+    @Test
+    fun `a stop between two readings breaks the line, the reading not existing there`() {
+        val reading = points(0.0 to 60.0, 10.0 to 0.0, 50.0 to 99.0, 60.0 to 99.0)
+        val stops = points(11.0 to 6.0, 40.0 to 6.0)
+        val stretches = stretchesOf(reading, stops)
+        assertEquals(2, stretches.size)
+        assertEquals(listOf(60.0, 0.0), stretches[0].map { it.value })
+        assertEquals(listOf(99.0, 99.0), stretches[1].map { it.value })
+    }
+
+    @Test
+    fun `a dive with no stop is one stretch, and one with no reading is none`() {
+        val reading = points(0.0 to 60.0, 10.0 to 20.0)
+        assertEquals(listOf(reading), stretchesOf(reading, emptyList()))
+        assertEquals(emptyList(), stretchesOf(emptyList(), points(5.0 to 6.0)))
+    }
+
+    @Test
+    fun `a stop of nought is no stop, and one outside the readings breaks nothing`() {
+        val reading = points(0.0 to 60.0, 10.0 to 20.0)
+        assertEquals(1, stretchesOf(reading, points(5.0 to 0.0)).size)
+        assertEquals(1, stretchesOf(reading, points(20.0 to 6.0)).size)
+    }
+
+    @Test
+    fun `a recording in deco offers its no-deco time in the stretches it was written`() {
+        val set = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive/2026-06-21#0.json" to """{"profiles": {"a": {
+                        "depth": [[0, 0], [600, 40.0], [3600, 0]],
+                        "decostop": [[700, 6.0], [3000, 6.0]],
+                        "no_deco_time": [[0, 3600], [600, 0], [3100, 5940], [3600, 5940]]
+                    }}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val dive = set["2026-06-21#0"]!!
+        val read = (dive.read("profiles") as Result.Usable<*>).value
+        @Suppress("UNCHECKED_CAST")
+        val profiles = read as Map<String, Element<Any>>
+        val one = (profiles.getValue("a") as Element.Usable).value as OwnedItem
+        val noDeco = overlaysOf(dive, one).first { it.title == "No-deco time" }
+        assertEquals(2, noDeco.lines.size, "the stop stands between the two stretches")
+        assertEquals(listOf(60.0, 0.0), noDeco.lines[0].points.map { it.value })
+        assertEquals(listOf(99.0, 99.0), noDeco.lines[1].points.map { it.value })
     }
 }

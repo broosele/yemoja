@@ -429,7 +429,10 @@ once and corrected. The numbers stay unused rather than being given to something
   named as its gas source is, the no-deco time, the CNS. The no-deco time is plotted capped
   at 99 minutes and without the zeros a computer reads before it has calculated: computers
   mark *no limit* with a number, 99 minutes on one and 598 on another, and plotted as written
-  the marker is the whole axis. On the depth line itself, every gas switch is a dot named for
+  the marker is the whole axis. It is broken where a stop stood: a computer shows either how
+  much longer a diver may stay or how deep they may not come above, never both, and writes
+  nothing for the other, so a line drawn across that stretch climbs from nothing back to the
+  limit and is a reading nobody took. On the depth line itself, every gas switch is a dot named for
   the source switched to and every alarm a triangle named as the computer gave it, so the
   events of a dive sit where they happened. Each recording of a dive has its own
   graph and shows only its own data, which is what a tab is for. Marks fall on values a reader

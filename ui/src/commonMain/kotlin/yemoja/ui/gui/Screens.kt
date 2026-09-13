@@ -1546,14 +1546,15 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
             val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
             val bottom = size.height - FOOT.toPx()
             val top = HEAD.toPx()
-            val all = depth.flatMap { it.points } + overlay?.line?.points.orEmpty()
+            val all = depth.flatMap { it.points } +
+                overlay?.lines?.flatMap { it.points }.orEmpty()
             val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, 1.0)
             val deepest = depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0
             val depthHigh = maxOf(deepest * (1.0 + AXIS_ROOM), 1.0)
             fun x(minute: Double): Float = (left + (right - left) * (minute / lastMinute)).toFloat()
             fun yDepth(value: Double): Float =
                 (top + (bottom - top) * (value / depthHigh)).toFloat()
-            val overPoints = overlay?.line?.points.orEmpty()
+            val overPoints = overlay?.lines?.flatMap { it.points }.orEmpty()
             val over = rangeOf(overPoints.map { it.value })
             val overLow = over.start
             val overHigh = over.endInclusive
@@ -1562,7 +1563,7 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
                 return (bottom - (bottom - top) * fraction).toFloat()
             }
             val depthPaths = depth.map { pathOf(it, ::x, ::yDepth) }
-            val overPath = overlay?.let { pathOf(it.line, ::x, ::yOver) }
+            val overPaths = overlay?.lines?.map { pathOf(it, ::x, ::yOver) }.orEmpty()
             val main = depth.firstOrNull { it.main }?.takeIf { it.points.isNotEmpty() }
             // The water between a line and the surface: over the dive, what it was under, and
             // over a deco stop, what the diver may not ascend into.
@@ -1612,7 +1613,7 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
                     val colour = if (line.main) ink else stop
                     drawPath(depthPaths[index], colour, style = if (line.main) thick else thin)
                 }
-                overPath?.let { drawPath(it, other, style = thin) }
+                for (path in overPaths) drawPath(path, other, style = thin)
                 // A switch is a dot on the line and an alarm a triangle, each with its word
                 // above, in the colour of the deco stops and of the right axis respectively.
                 main?.let { line ->

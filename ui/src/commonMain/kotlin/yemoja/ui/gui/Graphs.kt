@@ -35,8 +35,16 @@ internal class Line(
     val stepped: Boolean = false,
 )
 
-/** Overlay is one thing the right axis can show: its title, its unit, and its line. */
-internal class Overlay(val title: String, val unit: String, val line: Line)
+/**
+ * Overlay is one thing the right axis can show: its title, its unit, and its line.
+ *
+ * Several lines rather than one, because a reading may stop existing part way through a dive
+ * and start again, and a line drawn across that stretch is a reading nobody took. `GUI-4`.
+ */
+internal class Overlay(val title: String, val unit: String, val lines: List<Line>) {
+
+    constructor(title: String, unit: String, line: Line) : this(title, unit, listOf(line))
+}
 
 /** What a mark on the depth line is: a gas switched to, or an alarm the computer gave. */
 internal enum class Marking { SWITCH, ALARM }
@@ -116,7 +124,13 @@ internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
         overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)))
     }
     seriesOf(profile, "no_deco_time")?.let {
-        overlays += Overlay("No-deco time", "min", Line("No-deco time", noDecoOf(it)))
+        val stops = seriesOf(profile, "decostop")?.let { series -> pointsOf(series) }.orEmpty()
+        val stretches = stretchesOf(noDecoOf(it), stops)
+        overlays += Overlay(
+            "No-deco time",
+            "min",
+            stretches.map { stretch -> Line("No-deco time", stretch) },
+        )
     }
     seriesOf(profile, "cns")?.let { overlays += Overlay("CNS", "%", Line("CNS", pointsOf(it))) }
     seriesOf(profile, "otu")?.let { overlays += Overlay("OTU", "", Line("OTU", pointsOf(it))) }
@@ -135,6 +149,33 @@ internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
 internal fun noDecoOf(series: Series): List<Point> =
     pointsOf(series, 1.0 / 60.0).dropWhile { it.value <= 0.0 }
         .map { Point(it.minute, minOf(it.value, NO_DECO_CAP)) }
+
+/**
+ * The stretches of [points] in which the reading existed, cut wherever a stop stood.
+ *
+ * A computer shows either how much longer a diver may stay or how deep they may not come
+ * above, never both: the two are one reading seen two ways, and a computer holding a diver to
+ * a stop writes no no-deco time at all. Read straight across, that gap becomes a line climbing
+ * from nothing back to the limit, which is a reading nobody took. `GUI-4`.
+ *
+ * A stop of nought is no stop: some computers write one before they have calculated anything.
+ */
+internal fun stretchesOf(points: List<Point>, stops: List<Point>): List<List<Point>> {
+    if (points.isEmpty()) return emptyList()
+    val standing = stops.filter { it.value > 0.0 }.map { it.minute }
+    val stretches = ArrayList<List<Point>>()
+    var run = ArrayList<Point>()
+    for (point in points) {
+        val before = run.lastOrNull()
+        if (before != null && standing.any { it > before.minute && it < point.minute }) {
+            stretches += run
+            run = ArrayList()
+        }
+        run += point
+    }
+    stretches += run
+    return stretches
+}
 
 /** Minutes of no-deco time beyond which a plot says no more, which is where computers stop. */
 internal const val NO_DECO_CAP = 99.0
