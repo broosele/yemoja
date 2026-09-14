@@ -242,6 +242,37 @@ class DownloadedGasTest {
     }
 
     @Test
+    fun `the gas a dive began on is written down, a collection having no order to lean on`() {
+        // A Shearwater reports it on the first sample of every dive. `LOGIC-31`.
+        val dive = recorded {
+            it.copy(
+                gases = listOf(Recording.GasSource("air"), Recording.GasSource("EAN50")),
+                samples = listOf(Recording.Sample(0, gas = 0), Recording.Sample(600, gas = 0)),
+            )
+        }
+        val switches = (profile(dive).series<KeyReference>("gas_switches") as Result.Usable).value
+        assertEquals(1, switches.size, "the one that says what it went in on")
+        assertEquals(0, switches.secondAt(0))
+    }
+
+    @Test
+    fun `a reading naming the gas already breathed is a repeat and is dropped`() {
+        // Which is what a dive cut in two brings along at the second stretch's start.
+        val dive = recorded {
+            it.copy(
+                gases = listOf(Recording.GasSource("air")),
+                samples = listOf(
+                    Recording.Sample(0, gas = 0),
+                    Recording.Sample(298, gas = 0),
+                    Recording.Sample(600, gas = 0),
+                ),
+            )
+        }
+        val switches = (profile(dive).series<KeyReference>("gas_switches") as Result.Usable).value
+        assertEquals(listOf(0), (0..<switches.size).map { switches.secondAt(it) })
+    }
+
+    @Test
     fun `usage is not read, no computer recording what a cylinder was for`() {
         val sources = (gassed.keyed<OwnedItem>("gas_sources") as Result.Usable).value
         val first = (sources.values.first() as Element.Usable).value

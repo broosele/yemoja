@@ -1,6 +1,7 @@
 package yemoja.logic.uddf
 
 import yemoja.data.Element
+import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.Series
@@ -171,6 +172,50 @@ class ReadProfileTest {
             .series<Double>("depth") as Result.Usable).value
         assertEquals(3, depth.size, "the surfacing is the last of it")
         assertEquals(180, depth.secondAt(2))
+    }
+
+    @Test
+    fun `a switchmix names the gas source the cylinder it links became`() {
+        // The first is what the dive began on, which is where that fact lives. `LOGIC-31`.
+        val document = """
+<uddf xmlns="http://www.streit.cc/uddf/3.2/" version="3.2.0">
+  <gasdefinitions>
+    <mix id="air"><o2>0.21</o2></mix>
+    <mix id="ean50"><o2>0.50</o2></mix>
+  </gasdefinitions>
+  <profiledata>
+    <repetitiongroup id="g1">
+      <dive id="d1">
+        <informationbeforedive><datetime>2024-06-15T10:05:00</datetime></informationbeforedive>
+        <samples>
+          <waypoint><divetime>0</divetime><depth>0.0</depth>
+            <switchmix ref="air"/></waypoint>
+          <waypoint><divetime>60</divetime><depth>18.0</depth>
+            <switchmix ref="air"/></waypoint>
+          <waypoint><divetime>1200</divetime><depth>6.0</depth>
+            <switchmix ref="ean50"/></waypoint>
+          <waypoint><divetime>1800</divetime><depth>0.4</depth></waypoint>
+        </samples>
+        <tankdata>
+          <link ref="air"/><tankpressurebegin>20000000</tankpressurebegin>
+        </tankdata>
+        <tankdata>
+          <link ref="ean50"/><tankpressurebegin>20000000</tankpressurebegin>
+        </tankdata>
+      </dive>
+    </repetitiongroup>
+  </profiledata>
+</uddf>
+"""
+        val dive = Uddf.read(document).allOf(Types.DIVE).single()
+        assertEquals(listOf("gas", "gas#1"), (dive.keyed<OwnedItem>("gas_sources") as Result.Usable)
+            .value.keys.toList())
+        val profiles = (dive.keyed<OwnedItem>("profiles") as Result.Usable).value
+        val profile = (profiles.values.first() as Element.Usable).value
+        val switches = (profile.series<KeyReference>("gas_switches") as Result.Usable).value
+        assertEquals(2, switches.size, "the one at a minute repeats the air and is dropped")
+        assertEquals(listOf(0, 1200), (0..<switches.size).map { switches.secondAt(it) })
+        assertEquals("gas#1", ((switches.valueAt(1) as Element.Usable).value as KeyReference).key)
     }
 
     @Test

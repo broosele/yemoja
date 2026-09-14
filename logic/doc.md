@@ -475,6 +475,39 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-31 — What a download writes about the gas a dive began on.** *Settled:* **the
+   switch the computer reports on the first sample, kept whatever it names. What is dropped is a
+   reading naming the gas already being breathed.**
+
+   A Shearwater reports the gas on the first sample of every dive. It looks redundant — the
+   dive plainly began on something, and the gas list holds it — and the first attempt at this
+   dropped it as a switch that changed nothing, reading the first gas source as the one begun
+   on.
+
+   **That was wrong, and the data layer had already settled why.** A collection has no inherent
+   order; where an order matters it is worked out from the contents, and
+   [../data/doc.md](../data/doc.md) names this very case: gas sources are ordered *by when they
+   were first breathed, which comes from the profile rather than from the entry*. Nothing may
+   lean on the order entries happen to sit in. So the gas list cannot say which came first, the
+   profile has to, and the switch on the first sample is the only thing that does. Dropping it
+   threw away the one record of it and left the fact resting on a position the model promises
+   nothing about.
+
+   It also mattered beyond the reading. A key is minted from what a source was for or from the
+   slot a computer counted it in; a user adding a stage to a dive gets an entry wherever it
+   lands, and under the dropped rule that could silently change which gas the dive began on.
+
+   **A repeat is still dropped.** A reading naming the gas already in use says nothing: it is
+   not a change, and the gas in use is known because the reading before it said so. That is what
+   a dive cut in two brings along — `LOGIC-25` glues the stretches, and the second stretch
+   opens by reporting the gas again. One dive in the logbook this was measured against carries
+   exactly that, a switch onto `tank_1` five minutes in with `tank_1` already being breathed.
+
+   **A computer reporting no switch at all leaves the series out**, and then which gas the dive
+   began on is not recorded. `LOGIC-29` still takes the first slot as used for the purpose of
+   deciding which slots to write down, which is a different question: it asks whether a cylinder
+   was dived, not which one was breathed first, and it is an assumption stated as one.
+
 - **LOGIC-30 — What a reading does about the surface a recording ends with.** *Settled:* **it
    is cut off at the surfacing, in both readers.**
 

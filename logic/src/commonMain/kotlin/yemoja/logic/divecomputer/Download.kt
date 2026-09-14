@@ -355,10 +355,22 @@ object Download {
      *
      * Written as a key reference, which begins with `*` where a reference to an item begins with
      * `@`: it points into a collection on the item rather than at an item. `JSON-19`.
+     *
+     * **The first is kept whatever it says, and a repeat of it is not.** A Shearwater reports
+     * the gas on the first sample of every dive, which is what says the dive began on that one:
+     * a collection has no inherent order and nothing may lean on the one its entries sit in, so
+     * the gas list cannot say it and this is where it lives. What is dropped is a later reading
+     * naming the gas already being breathed, which is a repeat rather than a change and is what
+     * a dive cut in two brings along at the second stretch's start. `LOGIC-31`.
      */
     private fun gasSwitchesOf(held: Recording): Stored.Elements? {
-        val points = held.samples.mapNotNull { sample ->
-            sample.gas?.let { sample.at to "*" + keyAt(it) }
+        val points = ArrayList<Pair<Int, String>>()
+        var breathing: Int? = null
+        for (sample in held.samples) {
+            val gas = sample.gas ?: continue
+            if (gas == breathing) continue
+            breathing = gas
+            points += sample.at to "*" + keyAt(gas)
         }
         if (points.isEmpty()) return null
         return Stored.Elements(

@@ -387,8 +387,14 @@ that is the only record of it.
   percentage. A different measure of a different risk, on its own scale.
 - `alarms` (series) — what the computer warned about, and when. Each is one of `ascent`,
   `breath`, `deco`, `error`, `link`, `microbubbles`, `rbt`, `skincooling` or `surface`.
-- `gas_switches` (series) — when you changed gas, each naming the `gas_sources` entry you
-  moved to: `[[1260, "*g2"]]`.
+- `gas_switches` (series) — which gas you were on and when, each naming the `gas_sources`
+  entry: `[[1260, "*g2"]]`. **The first entry is the gas you went in on**, and the rest are the
+  changes. Most Shearwaters report it on the first sample of the dive and that is what is
+  written; a computer that reports nothing at all leaves the series out, and then which gas you
+  started on is not recorded and is worth writing in.
+
+  A reading naming the gas you were already on is dropped, being a repeat rather than a change.
+  A dive your computer cut in two brings one along at the second stretch's start.
 - `pressures` (keyed series) — gauge pressure left in each cylinder, throughout: one series
   under each `gas_sources` key it measured, so a dive on twins with a stage has three,
   and two computers watching one cylinder keep their readings apart.
@@ -433,7 +439,8 @@ discarded from what it reported.
 #### Gas source
 
 One entry for each cylinder you breathed from on the dive, so a dive on several gases
-keeps them apart.
+keeps them apart. They are not in any order of their own: which you went in on is in the
+profile's `gas_switches`, not in where the entry happens to sit.
 
 - `gas_type` (gas) — what was in it: `AIR`, `EAN32`, `TMX18/35`.
 - `start_pressure` (number) — what the gauge read as you went in.
