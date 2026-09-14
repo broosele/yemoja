@@ -232,7 +232,19 @@ internal enum class Deed(val label: String) {
  * A date reads as a year and a fraction of one, so that the marks along the axis fall on years
  * and the axis needs no calendar of its own.
  */
-internal class Variable(val label: String, val unit: String, val of: (Item) -> Double?)
+internal class Variable(
+    val label: String,
+    val unit: String,
+    val of: (Item) -> Double?,
+    /**
+     * The day this reads, where what it reads is a date. Absent on everything else.
+     *
+     * A fraction of a year is what an axis counts in, and it is no use to a calendar: months
+     * are not the same length, so a bar cut at a twelfth of a year begins two days into March.
+     * `GUI-32`.
+     */
+    val dayOf: ((Item) -> Long?)? = null,
+)
 
 /**
  * Everything about a dive that can go on an axis, in the order a dive holds them.
@@ -248,17 +260,35 @@ internal fun variablesOf(): List<Variable> {
         if (field is OwnedItemDescription) {
             for (inner in fieldsShownOf(field.description)) {
                 if (inner.cardinality != Cardinality.SINGLE) continue
-                readerOf(inner)?.let { read ->
-                    out += Variable(inner.label, unitAlong(inner)) { dive ->
-                        ownedIn(dive, field.name)?.let(read)
-                    }
-                }
+                variableOf(inner) { dive -> ownedIn(dive, field.name) }?.let { out += it }
             }
         } else {
-            readerOf(field)?.let { out += Variable(field.label, unitAlong(field), it) }
+            variableOf(field) { it }?.let { out += it }
         }
     }
     return out
+}
+
+/**
+ * [field] as an axis, or absent where it is not one; [reach] is what holds it, given a dive.
+ *
+ * A dive's own field is reached from the dive itself and an owned item's through the item,
+ * which is the only difference between the two and is why they are read the same way here.
+ */
+private fun variableOf(field: FieldDescription, reach: (Item) -> Item?): Variable? {
+    val read = readerOf(field) ?: return null
+    val day = if (field is DateDescription) dayReaderOf(field) else null
+    return Variable(
+        field.label,
+        unitAlong(field),
+        { dive -> reach(dive)?.let(read) },
+        day?.let { one -> { dive: Item -> reach(dive)?.let(one) } },
+    )
+}
+
+/** The day [field] reads, which is what a calendar cuts its bars on. `GUI-32`. */
+private fun dayReaderOf(field: DateDescription): (Item) -> Long? = { held ->
+    ((held.read(field.name) as? Result.Usable)?.value as? Date)?.epochDay
 }
 
 /**
@@ -291,7 +321,7 @@ private fun unitAlong(field: FieldDescription): String =
 private const val SECONDS_IN_MINUTE = 60.0
 
 /** A date as a year and a fraction of one, which is what an axis of dates counts in. */
-private fun yearOf(date: Date): Double = date.epochDay / DAYS_IN_YEAR + 1970.0
+internal fun yearOf(date: Date): Double = date.epochDay / DAYS_IN_YEAR + 1970.0
 
 /** The Gregorian year, averaged over its cycle, which is what a fraction of one divides by. */
 private const val DAYS_IN_YEAR = 365.2425

@@ -69,6 +69,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.graphics.Color
@@ -187,6 +188,15 @@ internal class Kept {
      */
     var across: Int? by mutableStateOf(null)
     var up: Int? by mutableStateOf(null)
+
+    /**
+     * Home's plot: how the dives are gathered, and how wide one bar is. `GUI-32`.
+     *
+     * Absent until the reader chooses. The width is cleared when the bottom axis changes, a
+     * width chosen for a calendar meaning nothing on an axis of metres.
+     */
+    var gathering: Int? by mutableStateOf(null)
+    var step: Int? by mutableStateOf(null)
 
     /** The branches of a tree unfolded, by path; absent until the tree has decided how it opens. */
     var open: Set<String>? by mutableStateOf(null)
@@ -653,24 +663,72 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
     val upAt = (kept.up ?: opening.second).coerceIn(variables.indices)
     val across = variables[alongAt]
     val up = variables[upAt]
-    val spots = remember(set, edition, across, up) { plottedOf(set, across, up) }
+    val gathering = Gathering.entries[
+        (kept.gathering ?: Gathering.COUNT.ordinal).coerceIn(Gathering.entries.indices),
+    ]
+    val steps = remember(set, edition, across) {
+        stepsOf(across, set.allOf(Types.DIVE).mapNotNull(across.of))
+    }
+    val fitted = remember(set, edition, across, up, gathering, steps) {
+        if (gathering.bars) fittedOf(set, across, up, gathering, steps) else 0
+    }
+    val stepAt = (kept.step ?: fitted).coerceIn(steps.indices)
     Row(
         modifier = Modifier.fillMaxWidth().padding(bottom = HALF),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        Picked(variables, upAt) { kept.up = it }
+        Picked(Gathering.entries.map { it.label }, gathering.ordinal) { kept.gathering = it }
+        if (gathering.reads) Picked(variables.map { it.label }, upAt) { kept.up = it }
         Aside("against")
-        Picked(variables, alongAt) { kept.across = it }
+        Picked(variables.map { it.label }, alongAt) {
+            kept.across = it
+            kept.step = null
+        }
+        if (gathering.bars) {
+            Aside("by")
+            Picked(steps.map { it.label }, stepAt) { kept.step = it }
+        }
     }
-    if (spots.isEmpty()) Aside("no dive answers both") else Scatter(spots, across, up)
+    when (gathering) {
+        Gathering.EACH -> {
+            val spots = remember(set, edition, across, up) { plottedOf(set, across, up) }
+            if (spots.isEmpty()) Aside("no dive answers both")
+            else Scatter(spots, titledOf(across), titledOf(up), joined = false)
+        }
+
+        Gathering.RUNNING -> {
+            val spots = remember(set, edition, across, up) { runningOf(set, across, up) }
+            if (spots.isEmpty()) Aside("no dive answers both")
+            else Scatter(spots, titledOf(across), titledOf(up), joined = true)
+        }
+
+        else -> {
+            val bars = remember(set, edition, across, up, gathering, steps, stepAt) {
+                barsOf(set, across, up, gathering, steps[stepAt])
+            }
+            if (bars.isEmpty()) Aside("no dive answers both")
+            else Bars(bars, titledOf(across), sideOf(gathering, up))
+        }
+    }
 }
 
-/** One variable chosen from all of them, its name being the box that chooses it. */
+/**
+ * What the side of a bar chart is titled.
+ *
+ * Counting dives reads *Dives*, there being no variable up the side to name. Everything else
+ * names the variable and nothing more: the gathering is already said in the row above, and
+ * *Largest max depth* is a worse sentence than the two halves apart.
+ */
+private fun sideOf(gathering: Gathering, up: Variable): String =
+    if (gathering.reads) titledOf(up) else "Dives"
+
+/** One thing chosen from a list, its name being the box that chooses it. */
 @Composable
-private fun Picked(variables: List<Variable>, chosen: Int, onChoose: (Int) -> Unit) {
+private fun Picked(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
     var picking by remember { mutableStateOf(false) }
-    val at = chosen.coerceIn(variables.indices)
+    if (labels.isEmpty()) return
+    val at = chosen.coerceIn(labels.indices)
     Box {
         Row(
             modifier = Modifier.clip(SHAPE).clickable { picking = true }
@@ -678,7 +736,7 @@ private fun Picked(variables: List<Variable>, chosen: Int, onChoose: (Int) -> Un
                 .padding(start = GAP, end = HALF, top = HALF, bottom = HALF),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(text = variables[at].label, style = MaterialTheme.typography.labelLarge)
+            Text(text = labels[at], style = MaterialTheme.typography.labelLarge)
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = "choose what is plotted",
@@ -686,9 +744,9 @@ private fun Picked(variables: List<Variable>, chosen: Int, onChoose: (Int) -> Un
             )
         }
         DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
-            for ((index, variable) in variables.withIndex()) {
+            for ((index, label) in labels.withIndex()) {
                 DropdownMenuItem(
-                    text = { Text(variable.label) },
+                    text = { Text(label) },
                     onClick = {
                         onChoose(index)
                         picking = false
@@ -701,10 +759,10 @@ private fun Picked(variables: List<Variable>, chosen: Int, onChoose: (Int) -> Un
 
 /**
  * The dives as dots against a grid, each axis marked at values a reader would choose and
- * titled by what it carries.
+ * titled by what it carries. [joined] draws the line through them that a running total is.
  */
 @Composable
-private fun Scatter(spots: List<Spot>, across: Variable, up: Variable) {
+private fun Scatter(spots: List<Spot>, across: String, up: String, joined: Boolean) {
     val ink = MaterialTheme.colorScheme.primary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val quiet = MaterialTheme.colorScheme.onSurfaceVariant
@@ -746,10 +804,95 @@ private fun Scatter(spots: List<Spot>, across: Variable, up: Variable) {
                     val laid = measurer.measure(shortOf(tick), label)
                     drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
                 }
-                for (spot in spots) drawCircle(ink, DOT.toPx(), Offset(x(spot.across), y(spot.up)))
-                val upward = measurer.measure(titledOf(up), title)
+                if (joined) {
+                    val path = Path()
+                    for ((at, spot) in spots.withIndex()) {
+                        val point = Offset(x(spot.across), y(spot.up))
+                        if (at == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+                    }
+                    drawPath(path, ink, style = Stroke(width = LINE_WIDTH.toPx()))
+                } else {
+                    for (spot in spots) {
+                        drawCircle(ink, DOT.toPx(), Offset(x(spot.across), y(spot.up)))
+                    }
+                }
+                val upward = measurer.measure(up, title)
                 drawText(upward, topLeft = Offset(left + HALF.toPx(), 0f))
-                val onward = measurer.measure(titledOf(across), title)
+                val onward = measurer.measure(across, title)
+                drawText(onward, topLeft = Offset(right - onward.size.width, 0f))
+            }
+        },
+    )
+}
+
+/**
+ * The gathered dives as bars standing on nought, each covering the stretch of axis it gathers.
+ *
+ * The side always begins at nought, whatever the bars reach: a bar read against an axis that
+ * starts elsewhere says the wrong thing about how big it is, which is the whole of what a bar
+ * is for.
+ */
+@Composable
+private fun Bars(bars: List<Bar>, across: String, up: String) {
+    val ink = MaterialTheme.colorScheme.primary
+    val grid = MaterialTheme.colorScheme.outlineVariant
+    val quiet = MaterialTheme.colorScheme.onSurfaceVariant
+    val label = MaterialTheme.typography.labelSmall.copy(color = quiet)
+    val title = MaterialTheme.typography.labelMedium.copy(color = quiet)
+    val measurer = rememberTextMeasurer()
+    Spacer(
+        modifier = Modifier.fillMaxWidth().height(PLOT).padding(bottom = HALF)
+            .drawWithCache {
+            val left = AXIS.toPx()
+            val right = size.width - HALF.toPx()
+            val bottom = size.height - FOOT.toPx()
+            val top = HEAD.toPx()
+            val from = bars.minOf { it.from }
+            val to = bars.maxOf { it.to }
+            val high = maxOf(bars.maxOf { it.value }, 0.0)
+            val low = minOf(bars.minOf { it.value }, 0.0)
+            val ups = if (high > low) low..high else low..(low + 1.0)
+            fun x(value: Double): Float {
+                val part = if (to > from) (value - from) / (to - from) else 0.5
+                return (left + (right - left) * part).toFloat()
+            }
+            fun y(value: Double): Float {
+                val part = (value - ups.start) / (ups.endInclusive - ups.start)
+                return (bottom - (bottom - top) * part).toFloat()
+            }
+            val along = ticksOf(from, to, 6)
+            val side = ticksOf(ups.start, ups.endInclusive, 5)
+            onDrawBehind {
+                for (tick in side) {
+                    val at = y(tick)
+                    drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
+                    val laid = measurer.measure(shortOf(tick), label)
+                    val corner = Offset(
+                        x = left - laid.size.width - HALF.toPx(),
+                        y = at - laid.size.height / 2f,
+                    )
+                    drawText(laid, topLeft = corner)
+                }
+                for (tick in along) {
+                    drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
+                    val laid = measurer.measure(shortOf(tick), label)
+                    drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
+                }
+                val ground = y(0.0)
+                for (bar in bars) {
+                    val begins = x(bar.from)
+                    val ends = x(bar.to)
+                    val wide = maxOf(ends - begins - THIN.toPx(), 1f)
+                    val reaches = y(bar.value)
+                    drawRect(
+                        color = ink,
+                        topLeft = Offset(begins, minOf(ground, reaches)),
+                        size = Size(wide, maxOf(kotlin.math.abs(reaches - ground), THIN.toPx())),
+                    )
+                }
+                val upward = measurer.measure(up, title)
+                drawText(upward, topLeft = Offset(left + HALF.toPx(), 0f))
+                val onward = measurer.measure(across, title)
                 drawText(onward, topLeft = Offset(right - onward.size.width, 0f))
             }
         },
@@ -2143,7 +2286,7 @@ private fun pathOf(line: Line, x: (Double) -> Float, y: (Double) -> Float): Path
 }
 
 /** A tick's value as a mark reads it: whole where it is whole, else to one decimal. */
-private fun shortOf(value: Double): String =
+internal fun shortOf(value: Double): String =
     if (value == value.toLong().toDouble()) value.toLong().toString() else "%.1f".format(value)
 
 // --- What every screen shares.

@@ -554,9 +554,9 @@ once and corrected. The numbers stay unused rather than being given to something
   **The statistics are one plot rather than a page of figures.** A dive answers for a dozen
   numbers and a date, and every pair of them is a question somebody might have; a screen that
   chose for the reader would answer one of them and hide the rest. So both axes are chosen,
-  each from every number a dive answers for, its own and those of the items it owns. It opens
-  on how deep against when, that being the shape of a diver's own diving and the one plot
-  worth drawing unasked.
+  each from every number a dive answers for, its own and those of the items it owns, and how
+  deep against when is the pair they hold, that being the shape of a diver's own diving. What
+  is drawn with them is a third choice, `GUI-32`.
 
   A time reads in minutes, an axis marked every 600 being unreadable, and a date reads as a
   year and a fraction of one, so the marks fall on years and the axis needs no calendar. A
