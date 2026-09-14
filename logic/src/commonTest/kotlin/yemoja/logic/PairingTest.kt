@@ -44,7 +44,7 @@ private class Guarded(private val serial: String, private val handsBack: ByteArr
         val dive = Recording(
             computer = name,
             serial = serial,
-            fingerprint = "0a0b",
+            fingerprints = listOf("0a0b"),
             began = Date(2026, 8, 1),
             at = Time(9, 0, 0),
         )

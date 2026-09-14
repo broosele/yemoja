@@ -51,7 +51,9 @@ object Download {
      */
     fun read(recordings: Sequence<Recording>, into: ItemSet? = null): ItemSet {
         val set = ItemSet(Types.ALL)
-        for (recording in recordings) {
+        // The stretches of a dive a computer cut up are one recording before they are a dive,
+        // so everything below this sees a whole dive. `LOGIC-25`.
+        for (recording in joined(recordings)) {
             val named = recording.serial?.let { into?.let { logbook -> computerIn(logbook, it) } }
             val fields = diveOf(recording, named)
             val item = ItemReader.read(DIVE, Stored.Members(fields), set, Units.DEFAULT)
@@ -90,13 +92,23 @@ object Download {
             for ((key, element) in profiles.value) {
                 val profile = (element as? Element.Usable)?.value ?: continue
                 if (!madeBy(logbook, key, profile, computer, serial)) continue
-                val held = (profile.single<String>("fingerprint") as? Result.Usable)?.value
-                    ?: continue
+                val held = lastTokenOf(profile) ?: continue
                 val began = whenOf(dive) ?: continue
                 if (newest == null || began > newest.first) newest = began to held
             }
         }
         return newest?.second
+    }
+
+    /**
+     * The last token [profile] carries, which is the one a device reaches last.
+     *
+     * A recording holds one per stretch it was cut into, in the order they were recorded, so
+     * the last is the one that says *stop when you reach this*. `LOGIC-25`.
+     */
+    private fun lastTokenOf(profile: Item): String? {
+        val held = (profile.list<String>("fingerprint") as? Result.Usable)?.value ?: return null
+        return held.mapNotNull { (it as? Element.Usable)?.value }.lastOrNull()
     }
 
     /** Whether [profile], filed under [key], was recorded by [computer], with [serial]. */
@@ -191,7 +203,9 @@ object Download {
         // Which computer is not written: the serial is, and the computer is worked out from it.
         // `LOGIC-23`.
         held.serial?.let { fields["serial"] = Stored.Leaf(it) }
-        held.fingerprint?.let { fields["fingerprint"] = Stored.Leaf(it) }
+        if (held.fingerprints.isNotEmpty()) {
+            fields["fingerprint"] = Stored.Elements(held.fingerprints.map { Stored.Leaf(it) })
+        }
         held.began?.let { fields["start_date"] = Stored.Leaf(it) }
         held.at?.let { fields["start_time"] = Stored.Leaf(it) }
         held.offset?.let { fields["gmt_offset"] = Stored.Leaf(it) }

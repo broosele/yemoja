@@ -163,8 +163,8 @@ private val PROFILE = ItemDescription(
         // What the device says it is, which is what tells two of one model apart. `LOGIC-23`.
         TextDescription("serial"),
         // What the device knows this recording by, kept so a later download can say where it
-        // got to. `DATA-90`.
-        TextDescription("fingerprint"),
+        // got to. `DATA-90`. One per stretch where a computer cut the dive up: `LOGIC-25`.
+        TextDescription("fingerprint", cardinality = Cardinality.LIST),
         DateDescription("start_date"),
         TimeDescription("start_time"),
         // A length of time like any other, and scoped like one. `DATA-10`.

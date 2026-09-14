@@ -298,7 +298,7 @@ class ReadDeviceTest {
     private fun dived(day: Int, fingerprint: String? = null) =
         yemoja.logic.divecomputer.Recording(
             computer = "Reef Computer",
-            fingerprint = fingerprint,
+            fingerprints = listOfNotNull(fingerprint),
             began = yemoja.data.Date(2026, 6, day),
             at = yemoja.data.Time(10, 5, 0),
         )

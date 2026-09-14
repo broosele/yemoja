@@ -40,13 +40,17 @@ data class Recording(
      */
     val serial: String? = null,
     /**
-     * What the device knows this recording by, as hexadecimal.
+     * What the device knows this recording by, as hexadecimal. One per stretch, in order.
      *
      * Handed back to the device before a later download, which then reports only what came
      * after it. `DATA-90` keeps it on the profile, being a fact about the recording rather than
      * a bookmark of the application's.
+     *
+     * A device reports one. More than one says the recording is a dive the device cut into
+     * stretches and this application put back together, and the last is the one a later
+     * download hands back. `LOGIC-25`.
      */
-    val fingerprint: String? = null,
+    val fingerprints: List<String> = emptyList(),
     val began: Date? = null,
     val at: Time? = null,
     /** Seconds east of UTC, or absent where the device reports no zone. `LOGIC-11`. */

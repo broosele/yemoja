@@ -217,7 +217,9 @@ given no descriptor at all, so one enumeration per transport and a few thousand 
 it by, and handing the last one back before the next download tells the device where to stop.
 `DATA-90` keeps it on the profile, so it travels with a synced logbook, survives a restore, and
 recognises a dive exactly rather than by proposing one. Where to resume from is a question the
-logbook answers: the newest recording that computer made and that carries one.
+logbook answers: the newest recording that computer made and that carries one, and the last
+token on it. A recording carries one token per stretch, a device that cut a dive in two being
+put back together before any of it is a dive: `LOGIC-25`.
 
 **One dive computer has been met.** A Shearwater Perdix 2 over Bluetooth LE on Windows gave up
 a hundred dives in twenty minutes, each with its samples, tank pressures, gradient factors,

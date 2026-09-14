@@ -282,7 +282,7 @@ private fun readingOf(
     return Recording(
         computer = name,
         serial = serial,
-        fingerprint = fingerprint,
+        fingerprints = listOfNotNull(fingerprint),
         began = if (when_) Date(clock.year, clock.month, clock.day) else null,
         at = if (when_) Time(clock.hour, clock.minute, clock.second) else null,
         offset = clock.timezone.takeIf { when_ && it != CDateTime.NONE },

@@ -278,15 +278,16 @@ class FingerprintTest {
 
     private fun one(computer: String, day: Int, held: String?) = Recording(
         computer = computer,
-        fingerprint = held,
+        fingerprints = listOfNotNull(held),
         began = Date(2026, 6, day),
         at = Time(10, 5, 0),
     )
 
     @Test
     fun `it lands on the profile, beside what recorded it`() {
-        val dive = recorded { it.copy(computer = "Reef", fingerprint = "a1b2") }
-        assertEquals("a1b2", (profile(dive).single<String>("fingerprint") as Result.Usable).value)
+        val dive = recorded { it.copy(computer = "Reef", fingerprints = listOf("a1b2")) }
+        val held = (profile(dive).list<String>("fingerprint") as Result.Usable).value
+        assertEquals(listOf("a1b2"), held.map { (it as Element.Usable).value })
     }
 
     @Test

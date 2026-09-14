@@ -22,7 +22,7 @@ import kotlin.test.assertNull
 private fun one(serial: String?, day: Int, held: String?, computer: String = "Reef") = Recording(
     computer = computer,
     serial = serial,
-    fingerprint = held,
+    fingerprints = listOfNotNull(held),
     began = Date(2026, 6, day),
     at = Time(10, 5, 0),
 )

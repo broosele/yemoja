@@ -1167,8 +1167,16 @@ To settle when we discuss architecture:
   is the list with one name in it. It is a forgiveness for someone editing by hand, in the
   spirit of the ones the JSON reader already offers, and `DATA-76` writes it back as a list on
   the next save, so nothing stays in the odd shape. No file in the fixtures or the libraries
-  uses it — thirteen list fields and every one of them written as a list — so it costs nothing
-  today and exists for the hand a user has not yet made.
+  uses it — thirteen list fields and every one of them written as a list — so it cost nothing
+  when it was written and existed for the hand a user had not yet made.
+
+  **It has since become load-bearing, which it was not meant to be.** `LOGIC-25` in
+  [../logic/doc.md](../logic/doc.md) turned `fingerprint` from one value into a list, and every
+  profile written before that holds a bare one. They read without complaint, and each is
+  written back as a list the next time its dive is saved. So this is also what lets a field
+  change from one value to a list without rewriting a logbook, which is a better reason to keep
+  it than the one it was written for. It helps in that direction only: a field going the other
+  way has no such path, for the same reason a list where one value belongs is unusable.
 
   It goes one way only. A list where a single value belongs is unusable, since there is no
   answer to which of two values was meant, and a keyed collection has no equivalent
@@ -2095,7 +2103,9 @@ Kept with their identifiers so earlier discussion still resolves.
   how deep it went is a proposal somebody has to agree to.
 
   Where to resume from is then a question the logbook answers: the newest dive whose profile
-  carries one for that computer.
+  carries one for that computer, and the last token on it. A profile carries more than one
+  where a computer cut a dive into stretches that were put back together: `LOGIC-25` in
+  [../logic/doc.md](../logic/doc.md).
 
   **The cost is opaque text in a format argued to be legible by hand.** It is accepted because
   it is per recording rather than one global blob, because it sits beside `dive_computer` where

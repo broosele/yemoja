@@ -292,11 +292,17 @@ that is the only record of it.
   put the same serial on the gear item and every recording from that computer finds it.
   Spelling does not matter — case, dashes and spaces are ignored, and a serial the maker prints
   in hexadecimal matches the number the device reports.
-- `fingerprint` (text) — what the computer knows this recording by, written as hexadecimal.
-  It is put there by a download and is not for reading: its whole use is that the next
-  download can hand it back and be given only the dives made since. Nothing else depends on
-  it, so a recording that lost it is a recording, and clearing it means the next download
-  fetches everything again.
+- `fingerprint` (list of text) — what the computer knows this recording by, written as
+  hexadecimal. It is put there by a download and is not for reading: its whole use is that
+  the next download can hand it back and be given only the dives made since. Nothing else
+  depends on it, so a recording that lost it is a recording, and clearing it means the next
+  download fetches everything again.
+
+  More than one means your computer ended the dive part way through and started again, which
+  they do when you spend a few minutes on the surface. Yemoja put the two stretches back
+  together as one dive and kept a token for each. It always writes the list, `["a1b2"]` even
+  for one; a lone token written plainly, as an older logbook has it, is read as a list of one
+  and needs no changing.
 - `start_date` (date) — the day the recording began, as the computer had it.
 - `start_time` (time) — the moment it began, as the computer had it.
 

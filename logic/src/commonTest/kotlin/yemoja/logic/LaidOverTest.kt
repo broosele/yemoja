@@ -88,7 +88,7 @@ class LaidOverTest {
         val profiles = (into.logbook["d#0"]!!.keyed<OwnedItem>("profiles") as Result.Usable).value
         val profile = (profiles["perdix"] as Element.Usable).value
         assertEquals("salt", text(profile, "water_type"), "kept")
-        assertEquals("a1", text(profile, "fingerprint"), "arrived")
+        assertEquals(listOf("a1"), tokens(profile), "arrived")
         assertEquals(3500.0, number(profile, "duration"), "replaced")
     }
 }
@@ -101,3 +101,8 @@ private fun number(item: Item, field: String): Double? =
 
 private fun text(item: Item, field: String): String? =
     (item.single<String>(field) as? Result.Usable)?.value
+
+/** The tokens a profile carries, one per stretch a computer cut the dive into. `LOGIC-25`. */
+private fun tokens(item: Item): List<String> =
+    ((item.list<String>("fingerprint") as? Result.Usable)?.value).orEmpty()
+        .mapNotNull { (it as? Element.Usable)?.value }

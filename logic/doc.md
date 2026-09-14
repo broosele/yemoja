@@ -475,6 +475,58 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-25 — What a download does about a dive a computer cut in two.** *Settled:* **it
+   joins the stretches into one recording, where less than ten minutes of surface separates
+   them.**
+
+   A computer ends a dive when a diver reaches the surface and stays there. A diver who
+   surfaces for a minute to sort a mask, to find the boat, or to cross a shallow sill comes
+   home with two recordings of one dive, and a logbook that takes them at face value has two
+   dives, two numbers, and every figure describing half of what happened.
+
+   **The stretches are joined before any of it is a dive.** The join is on `Recording`, so
+   everything above it sees a whole dive and no derivation, no graph and no statistic needs to
+   know that a join happened. The alternative — one dive holding a recording per stretch —
+   was declined: the model's several recordings are parallel views of one dive, a second
+   computer's opinion, and two stretches are not that. It would also put two tabs reading
+   *Perdix 2* and *Perdix 2 again* over two half graphs, where the point of the format is
+   being legible.
+
+   **Ten minutes, and the evidence under it is thin.** `LOGIC-11`'s 500 metres sits in an
+   empty band because there were real pairs either side of it to measure. There are none here.
+   The logbook the question has been asked of holds no dive a computer cut up at all, across
+   more than four hundred recordings from two devices, so the rule has nothing to be fitted to.
+
+   What that logbook does hold is a counter-example, and it is close. The shortest surface
+   interval in it that is certainly two dives is eleven minutes; the pair differ in their gas,
+   in how it was carried and in what each was for. Every other interval is fifty-one minutes or
+   longer. So ten minutes has a minute of margin above it and nothing at all below it, which is
+   the opposite of an empty band: the figure is safe against what has been seen and untested
+   against what it exists for. The first logbook holding a real split settles it properly, and
+   a shorter figure is the safer guess until then.
+
+   **What the pair says about the dive as a whole is taken from the pair**: the deeper of the
+   two depths, the colder of the two temperatures, and a length running from the first
+   stretch's start to the second's end, surface and all. The average depth is weighted by how
+   long each stretch lasted, the surface between them being no depth anybody recorded. The
+   second stretch's samples move along by the time between the two starts, its gases are
+   matched against the first's and appended where they are new, and every index naming one
+   moves with them.
+
+   **The surface between them stays a hole.** `DATA-58` in [../data/doc.md](../data/doc.md)
+   has a gap saying nothing, read as a straight line throughout, and for depth that reads
+   exactly right: both ends are at the surface, so the line between them is the surface. For
+   what the computer worked out it is an approximation, which is the same licence every other
+   thinned stretch already has.
+
+   **A recording keeps one token per stretch**, in the order they were recorded, which is why
+   `fingerprint` holds a list. A later download hands back the last, being the one the device
+   reaches last, and every stretch stays recognisable to a download that starts again from
+   nothing. `DATA-90` put the token on the profile; this only makes it plural. A lone token
+   in a logbook written before this reads as a list of one, so nothing has to be rewritten.
+
+   The order a device reports in is its own, so a stretch is measured against the one beside
+   it whichever way round the two arrive, and a dive cut into three joins by the same rule.
 - **LOGIC-20 — What a download is allowed to create.** *Settled:* **dives, and a dive site
    where the user asks for one. Nothing else.**
 
