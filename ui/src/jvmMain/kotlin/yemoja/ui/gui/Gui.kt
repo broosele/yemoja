@@ -2,7 +2,10 @@ package yemoja.ui.gui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadSvgPainter
 import androidx.compose.ui.res.useResource
@@ -17,6 +20,8 @@ import yemoja.logic.divecomputer.FoundDevices
 import java.awt.Desktop
 import java.net.URI
 import java.time.LocalDate
+import javax.swing.JFileChooser
+import javax.swing.JOptionPane
 
 /*
  * The window the screens are shown in, which is the one part per platform.
@@ -44,30 +49,82 @@ fun gui(folder: String? = null): Int {
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    val platform = Platform(
-        manual = CHAPTERS.map { file -> chapterOf(file, bundled("manual/$file")) },
-        atlas = { Atlas.read { scale, layer -> bundled("libraries/map/$scale/$layer.txt") } },
-        open = ::browse,
-        today = ::today,
-    )
     application {
+        // Which logbook is open can change while the window is: a new one is made into it.
+        var at by remember { mutableStateOf(folder) }
+        var held by remember { mutableStateOf(universe) }
+        val platform = remember {
+            Platform(
+                manual = CHAPTERS.map { file -> chapterOf(file, bundled("manual/$file")) },
+                atlas = {
+                    Atlas.read { scale, layer -> bundled("libraries/map/$scale/$layer.txt") }
+                },
+                open = ::browse,
+                today = ::today,
+                deeds = mapOf(
+                    Deed.NEW to {
+                        chosen("Make a new logbook in", "Make")?.let { where ->
+                            made(where)?.let {
+                                at = where
+                                held = it
+                            }
+                        }
+                    },
+                ),
+            )
+        }
         // The icon is drawn from its vector at whatever size the platform asks for.
         val density = LocalDensity.current
         val icon = remember { useResource("yemoja.svg") { loadSvgPainter(it, density) } }
         Window(
             onCloseRequest = ::exitApplication,
-            title = if (folder == null) "Yemoja" else "Yemoja — $folder",
+            title = if (at == null) "Yemoja" else "Yemoja — $at",
             icon = icon,
             state = rememberWindowState(size = DpSize(1650.dp, 1140.dp)),
         ) {
             // Light or dark as the system is set, in the application's own colours. `GUI-3`.
             val scheme = if (isSystemInDarkTheme()) MARINE_DARK else MARINE_LIGHT
             MaterialTheme(colorScheme = scheme) {
-                Application(universe, platform)
+                Application(held, platform)
             }
         }
     }
     return 0
+}
+
+/**
+ * A folder the user picks, or absent where they change their mind.
+ *
+ * Folders only, and one that is not there yet may be typed: making a logbook makes its folder,
+ * so a reader should not have to make it first in another application.
+ */
+private fun chosen(asking: String, approving: String): String? {
+    val chooser = JFileChooser().apply {
+        dialogTitle = asking
+        fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        isAcceptAllFileFilterUsed = false
+        approveButtonText = approving
+    }
+    if (chooser.showDialog(null, approving) != JFileChooser.APPROVE_OPTION) return null
+    return chooser.selectedFile?.absolutePath
+}
+
+/**
+ * A new logbook at [where], or absent where it could not be made and the reader has been told.
+ *
+ * Told in a box rather than on the screen behind it: it is the answer to something they just
+ * asked for, and the window under it has not changed.
+ */
+private fun made(where: String): Universe? = try {
+    Universe.create(where, FoundDevices())
+} catch (refused: RuntimeException) {
+    JOptionPane.showMessageDialog(
+        null,
+        "$where could not be made into a logbook: ${refused.message}",
+        "Yemoja",
+        JOptionPane.ERROR_MESSAGE,
+    )
+    null
 }
 
 /** What day it is here, which the greeting remarks on. */

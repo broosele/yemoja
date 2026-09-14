@@ -475,6 +475,33 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-26 — What a new logbook is made of.** *Settled:* **a folder with a manifest in it,
+   declaring every library the application ships and naming no owner.**
+
+   A logbook is a folder, and what makes one a logbook is the manifest at its top; everything
+   else a logbook holds it gains by being used. So making one writes that file and nothing
+   else, and the folder comes into being by the writing of it.
+
+   **It declares every shipped library** so that a new logbook knows the world's regions and
+   the agencies' certifications from the first minute, without anybody finding out that a file
+   has to be edited to get a map. The list is an order of preference rather than a permission,
+   as [../data/libraries.md](../data/libraries.md) has it, so declaring all of them costs a
+   reader nothing and one who wants fewer prunes the list.
+
+   Nothing here lists what ships. A folder under the library root named after an item type
+   holds libraries of that type and each file in it is one, which is the whole of the
+   convention and is enough to enumerate them. A library file sitting loose rather than in
+   such a folder cannot say what type it holds, so it is not declared; `generic_gear.json` is
+   the one there is, and a logbook that wants it names it by hand. Making the shipped set
+   describe itself would settle that, and is not done here.
+
+   **It names no owner.** Which of a logbook's people is the user is something to say once
+   there are people, and a new logbook has none. The greeting says as much, `GUI-30` in
+   [../ui/gui/doc.md](../ui/gui/doc.md).
+
+   **A folder that already holds a manifest is refused** rather than written over: that is a
+   logbook, and opening one is a different act from making one. Whatever else is in the folder
+   is left where it is, a logbook being a folder somebody may keep other things in.
 - **LOGIC-25 — What a download does about a dive a computer cut in two.** *Settled:* **it
    joins the stretches into one recording, where less than ten minutes of surface separates
    them.**

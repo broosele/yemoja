@@ -17,6 +17,7 @@ import yemoja.data.TextDescription
 import yemoja.data.Units
 import yemoja.data.json.DiskFileStore
 import yemoja.data.json.FileStore
+import yemoja.data.json.Json
 import yemoja.data.json.LogbookFormatException
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
@@ -504,5 +505,61 @@ class Universe(
             val owner = if (user?.description == Types.PERSON) user else null
             return Universe(items, owner, store, path, devices)
         }
+
+        /**
+         * A new logbook in the folder at [path], made and then opened.
+         *
+         * The folder is made where it is not there, writing the manifest making it. A folder
+         * that already holds one is refused: that is a logbook, and opening one is a different
+         * thing from making one. Whatever else is in the folder is left alone, a logbook being
+         * a folder somebody may keep other things in.
+         *
+         * **It declares every library the application ships**, so that a new logbook knows the
+         * world's regions and the agencies' certifications without anybody editing a file. A
+         * user wanting fewer prunes the list, which is what the list is for. `LOGIC-26`.
+         *
+         * It names no owner. Which of a logbook's people is the user is a thing to say once
+         * there are people, and a new logbook has none.
+         */
+        fun create(path: String, devices: Devices? = null): Universe {
+            val store = DiskFileStore(path)
+            require(!store.isFile(LogbookReader.MANIFEST)) {
+                "$path already holds a logbook, and making one would write over it"
+            }
+            val declared = shippedIn(store).mapValues { (_, held) ->
+                Stored.Elements(held.map { Stored.Leaf(it) })
+            }
+            val manifest = Stored.Members(mapOf(LIBRARIES to Stored.Members(declared)))
+            store.writeText(LogbookReader.MANIFEST, Json.write(manifest) + "\n")
+            return open(path, devices)
+        }
+
+        /**
+         * Every library the application ships, by the type it holds.
+         *
+         * A folder under the library root named after a type holds libraries of that type, and
+         * each file in it is one. That is the whole of the convention, so nothing here lists
+         * what ships; a library file sitting loose rather than in such a folder cannot say what
+         * type it holds and is not declared. `LOGIC-26`.
+         */
+        private fun shippedIn(store: FileStore): Map<String, List<String>> {
+            val shipped = LinkedHashMap<String, List<String>>()
+            for (type in Types.ALL) {
+                val folder = "${FileStore.LIBRARIES}/${type.name}"
+                if (!store.isFolder(folder)) continue
+                val held = store.namesIn(folder)
+                    .filter { it.endsWith(SUFFIX) }
+                    .sorted()
+                    .map { "${type.name}/${it.removeSuffix(SUFFIX)}" }
+                if (held.isNotEmpty()) shipped[type.name] = held
+            }
+            return shipped
+        }
     }
 }
+
+/** The key a manifest groups its libraries under. */
+private const val LIBRARIES = "libraries"
+
+/** What a library file is called. */
+private const val SUFFIX = ".json"

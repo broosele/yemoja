@@ -440,8 +440,15 @@ once and corrected. The numbers stay unused rather than being given to something
   that is named and will not read is still an error, that being what was asked for. Only the
   tabs that are not about what a logbook holds are offered then, which is Home and Manuals; a
   tab is about a logbook exactly when it lists item types, so the model answers that rather
-  than a list kept beside it. The buttons that would open one are greyed, so the window is at
-  present a door with nothing behind it — which is the point of building the door first.
+  than a list kept beside it.
+
+  **Making a logbook is the first of the four that works.** It asks for a folder, makes one
+  there and opens the window on it, so the welcome leads somewhere. What a new logbook is made
+  of is the logic layer's, `LOGIC-26` in [../../logic/doc.md](../../logic/doc.md); what this
+  layer adds is the asking, and the window swapping the logbook it shows for the one just
+  made. A folder that will not be made into a logbook is said in a box over the window rather
+  than on the screen behind it: it answers something the reader just asked for, and the window
+  under it has not changed. The other three deeds are still greyed.
 
   Told what, where there is a logbook and a reader: how many dives, how many places they were
   made, and how long they ran altogether. The places are the ones dived rather than the ones
