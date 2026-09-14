@@ -23,24 +23,24 @@ The application is divided into **tabs**. One is visible at a time, and the mean
 choosing between them is always *accessible* — whatever else is happening, another tab
 is reachable without unwinding what you are doing.
 
-Accessible, not necessarily visible. Seven labels fit comfortably across the top of a
+Accessible, not necessarily visible. Six labels fit comfortably across the top of a
 desktop window and will not fit across the foot of a phone, so the phone is free to keep
 the switcher one gesture away rather than permanently on screen.
 
-There are seven:
+There are six:
 
-- **Home** — a greeting, anything needing attention, and everything counted and
-  summarised.
+- **Home** — a greeting, what the application can be asked to do to a logbook as a whole,
+  and everything counted. `GUI-30`.
 - **Dive** — dives and dive trips.
 - **Gear** — equipment.
 - **Community** — people, operators and certifications.
 - **Location** — regions, dive sites and wrecks.
-- **System** — settings, syncing and the rest of the machinery.
 - **Manuals** — the documentation, read inside the application.
 
 **The application opens on Home**, which is first in the list and is what a user arrives at
-rather than what they last left. That holds while Home is still a placeholder: a first screen
-that says what it will hold is a truer start than a list of dives pretending to be the point.
+rather than what they last left. A first screen that says how much diving is in here and
+offers to open another logbook is a truer start than a list of dives pretending to be the
+point.
 
 **Home holds the statistics** rather than a tab of their own. A few figures worth
 seeing without asking and every figure there is are the same subject read at two
@@ -90,8 +90,6 @@ question had to be asked per tab.
   no dive touches. `GUI-26`.
 - **Manuals** — a tree of two levels: the chapters, and the sections of each. A chapter is
   shown whole, and choosing a section scrolls to its place in it. `GUI-15`.
-- **System** — not decided.
-
 **Home has no selector.** It is not a collection, which is why the pattern above says *most*
 tabs rather than all of them.
 
@@ -421,6 +419,35 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-30 — What the home screen is.** *Settled:* **a greeting, what can be done to a
+  logbook as a whole, and one plot the reader chooses both axes of.**
+
+  Three things, in that order, because they answer what a reader has not asked yet. The
+  greeting is one sentence: how many dives, how many places they were made, and how long they
+  ran altogether. The places are the ones dived rather than the ones known, a site nobody has
+  been to saying nothing about the diving that was done. A length runs to hundreds of hours
+  and is written in hours and minutes rather than in the clock a dive's own times use, `306:12`
+  being a number nobody reads as a length.
+
+  **What the application does to a logbook as a whole is not a subject**, so it is not a tab.
+  Opening another logbook, making one, importing one and downloading from a computer are four
+  things done *to* a logbook rather than things in one, and they belong where a reader is
+  before they have chosen anything. That is what removed the System tab: it held nothing, and
+  what it was owed turned out to belong here. The four are named whether or not a platform can
+  do any of them yet, greyed where it cannot, for the same reason the tab list is the whole of
+  what the application offers rather than the part that happens to be built.
+
+  **The statistics are one plot rather than a page of figures.** A dive answers for a dozen
+  numbers and a date, and every pair of them is a question somebody might have; a screen that
+  chose for the reader would answer one of them and hide the rest. So both axes are chosen,
+  each from every number a dive answers for, its own and those of the items it owns. It opens
+  on how deep against when, that being the shape of a diver's own diving and the one plot
+  worth drawing unasked.
+
+  A time reads in minutes, an axis marked every 600 being unreadable, and a date reads as a
+  year and a fraction of one, so the marks fall on years and the axis needs no calendar. A
+  dive missing either reading is left out rather than drawn at nought, which would be read as
+  a reading. Clicking a dot does not yet lead to its dive, and should.
 - **GUI-4 — Dive profile rendering.** *Settled in part:* **one graph per recording, under
   its tab.** Depth over time up the left, the recording drawn thick and filled underneath so a
   dive reads as water, its deco stops stepped across it and the water over them shaded red,

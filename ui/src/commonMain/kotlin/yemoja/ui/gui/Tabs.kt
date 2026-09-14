@@ -7,7 +7,6 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PropaneTank
 import androidx.compose.material.icons.filled.ScubaDiving
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import yemoja.data.ItemDescription
 import yemoja.logic.Types
@@ -42,17 +41,17 @@ internal enum class Shape {
     /** A tree of chapters and their sections, and the chosen chapter shown whole. `GUI-15`. */
     MANUAL,
 
-    /** None, the tab holding no collection. */
-    NONE,
+    /** The greeting, what the application can be asked to do, and a plot. `GUI-30`. */
+    HOME,
 }
 
 /**
  * Tab is one subject the application is divided into.
  *
  * **A subject is not an item type.** A dive and the trip it was made on are one subject; a
- * region, a site and a wreck are one place. Two tabs hold nothing yet and are here so that the
- * list is the whole of what the application offers rather than the part that happens to be
- * built.
+ * region, a site and a wreck are one place. What the application does to a logbook as a whole
+ * is not a subject at all and is not a tab: it sits under the greeting on Home, where a reader
+ * meets it before they have chosen anything. `GUI-30`.
  */
 internal class Tab(
     /** What the tab is called, which is what a user reads. */
@@ -62,9 +61,7 @@ internal class Tab(
     /** The types it holds, in the order they are offered. Empty where it holds none yet. */
     val types: List<ItemDescription> = emptyList(),
     /** What its selector is. */
-    val shape: Shape = Shape.NONE,
-    /** Why it is empty, where it is. Shown in place of a selector. */
-    val owed: String? = null,
+    val shape: Shape,
 )
 
 /**
@@ -74,10 +71,7 @@ internal class Tab(
  * logbook first, then what is counted from it, then the machinery.
  */
 internal val TABS: List<Tab> = listOf(
-    Tab(
-        "Home", Icons.Filled.Home,
-        owed = "a greeting, what needs attention, and everything counted",
-    ),
+    Tab("Home", Icons.Filled.Home, shape = Shape.HOME),
     Tab("Dive", Icons.Filled.ScubaDiving, listOf(Types.DIVE, Types.DIVE_TRIP), Shape.DIVES),
     Tab("Gear", Icons.Filled.PropaneTank, listOf(Types.GEAR), Shape.GEAR),
     Tab(
@@ -87,10 +81,6 @@ internal val TABS: List<Tab> = listOf(
     Tab(
         "Location", Icons.Filled.Map,
         listOf(Types.REGION, Types.DIVE_SITE, Types.WRECK), Shape.PLACES,
-    ),
-    Tab(
-        "System", Icons.Filled.Settings,
-        owed = "settings, syncing and the rest of the machinery",
     ),
     Tab("Manuals", Icons.Filled.MenuBook, shape = Shape.MANUAL),
 )

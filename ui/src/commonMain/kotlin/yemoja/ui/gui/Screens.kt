@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -129,6 +130,13 @@ internal class Platform(
     val atlas: () -> Atlas,
     /** Follows a link that leads out of the application. */
     val open: (String) -> Unit,
+    /**
+     * What this platform can do to a logbook as a whole, by deed.
+     *
+     * A deed the platform cannot do yet is absent, and the home screen offers it greyed: the
+     * list of deeds is what the application is for, not what is built. `GUI-30`.
+     */
+    val deeds: Map<Deed, () -> Unit> = emptyMap(),
 )
 
 /**
@@ -153,6 +161,14 @@ internal class Kept {
 
     /** Location's box. On, so a logbook opens on where its dives were. `GUI-26`. */
     var hideUnused: Boolean by mutableStateOf(true)
+
+    /**
+     * Home's plot: which variable runs along the bottom, and which up the side. `GUI-30`.
+     *
+     * Absent until the reader chooses, the plot opening on a pair of its own.
+     */
+    var across: Int? by mutableStateOf(null)
+    var up: Int? by mutableStateOf(null)
 
     /** The branches of a tree unfolded, by path; absent until the tree has decided how it opens. */
     var open: Set<String>? by mutableStateOf(null)
@@ -234,7 +250,7 @@ internal fun Application(universe: Universe, platform: Platform) {
                 Tabs(tab) { tab = it }
                 Box(modifier = Modifier.weight(1f)) {
                     when (tab.shape) {
-                        Shape.NONE -> Owed(tab)
+                        Shape.HOME -> Home(universe, platform, kept.getValue(tab))
                         Shape.MANUAL -> Manuals(platform.manual, platform.open, kept.getValue(tab))
                         else -> Subject(
                             set = universe.logbook,
@@ -281,11 +297,178 @@ private fun Tabs(chosen: Tab, onChoose: (Tab) -> Unit) {
     }
 }
 
-/** A tab with nothing behind it yet, saying what it will hold rather than nothing at all. */
+// --- Home: the greeting, what can be done to a logbook, and a plot of it. `GUI-30`.
+
+/**
+ * Home: what the logbook comes to in a line, what the application can be asked to do, and any
+ * two things a dive answers for, plotted against each other.
+ *
+ * Nothing is chosen here and nothing is listed. It is the screen a reader meets before they
+ * have asked for anything, so it answers the two questions they have not asked yet: how much
+ * diving is in here, and what would you like to do.
+ */
 @Composable
-private fun Owed(tab: Tab) {
-    Middle("${tab.name}: ${tab.owed}")
+private fun Home(universe: Universe, platform: Platform, kept: Kept) {
+    val set = universe.logbook
+    val edition = LocalChanger.current.edition
+    val greeting = remember(set, edition) { greetingOf(set) }
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = GAP * 2),
+    ) {
+        Text(
+            text = hailOf(universe.user, greeting),
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(vertical = GAP * 2),
+        )
+        Inset("System") { Deeds(platform.deeds) }
+        Inset("Statistics") { Plot(set, kept, edition) }
+        Spacer(modifier = Modifier.height(GAP * 2))
+    }
 }
+
+/**
+ * Every deed the application knows, as a button apiece, the ones this platform cannot do yet
+ * greyed rather than left out. `GUI-30`.
+ */
+@Composable
+private fun Deeds(deeds: Map<Deed, () -> Unit>) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        for (deed in Deed.entries) {
+            val act = deeds[deed]
+            Button(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+        }
+    }
+    if (Deed.entries.any { it !in deeds }) Aside("what is greyed is not built yet")
+}
+
+/**
+ * Any two things a dive answers for, one against the other, a dot per dive.
+ *
+ * Which two is the whole of the interaction: the names of the axes are the boxes that choose
+ * them, as the profile graph's right axis already is. `GUI-30`.
+ */
+@Composable
+private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
+    val variables = remember { variablesOf() }
+    if (variables.size < 2) {
+        Aside("a dive says too little to plot")
+        return
+    }
+    val opening = remember(variables) { openingOf(variables) }
+    val alongAt = (kept.across ?: opening.first).coerceIn(variables.indices)
+    val upAt = (kept.up ?: opening.second).coerceIn(variables.indices)
+    val across = variables[alongAt]
+    val up = variables[upAt]
+    val spots = remember(set, edition, across, up) { plottedOf(set, across, up) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = HALF),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(HALF),
+    ) {
+        Picked(variables, upAt) { kept.up = it }
+        Aside("against")
+        Picked(variables, alongAt) { kept.across = it }
+    }
+    if (spots.isEmpty()) Aside("no dive answers both") else Scatter(spots, across, up)
+}
+
+/** One variable chosen from all of them, its name being the box that chooses it. */
+@Composable
+private fun Picked(variables: List<Variable>, chosen: Int, onChoose: (Int) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    val at = chosen.coerceIn(variables.indices)
+    Box {
+        Row(
+            modifier = Modifier.clip(SHAPE).clickable { picking = true }
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(start = GAP, end = HALF, top = HALF, bottom = HALF),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = variables[at].label, style = MaterialTheme.typography.labelLarge)
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = "choose what is plotted",
+                modifier = Modifier.size(GLYPH),
+            )
+        }
+        DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
+            for ((index, variable) in variables.withIndex()) {
+                DropdownMenuItem(
+                    text = { Text(variable.label) },
+                    onClick = {
+                        onChoose(index)
+                        picking = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The dives as dots against a grid, each axis marked at values a reader would choose and
+ * titled by what it carries.
+ */
+@Composable
+private fun Scatter(spots: List<Spot>, across: Variable, up: Variable) {
+    val ink = MaterialTheme.colorScheme.primary
+    val grid = MaterialTheme.colorScheme.outlineVariant
+    val quiet = MaterialTheme.colorScheme.onSurfaceVariant
+    val label = MaterialTheme.typography.labelSmall.copy(color = quiet)
+    val title = MaterialTheme.typography.labelMedium.copy(color = quiet)
+    val measurer = rememberTextMeasurer()
+    Spacer(
+        modifier = Modifier.fillMaxWidth().height(PLOT).padding(bottom = HALF)
+            .drawWithCache {
+            val left = AXIS.toPx()
+            val right = size.width - HALF.toPx()
+            val bottom = size.height - FOOT.toPx()
+            val top = HEAD.toPx()
+            val alongs = rangeOf(spots.map { it.across })
+            val ups = rangeOf(spots.map { it.up })
+            fun x(value: Double): Float {
+                val part = (value - alongs.start) / (alongs.endInclusive - alongs.start)
+                return (left + (right - left) * part).toFloat()
+            }
+            fun y(value: Double): Float {
+                val part = (value - ups.start) / (ups.endInclusive - ups.start)
+                return (bottom - (bottom - top) * part).toFloat()
+            }
+            val along = ticksOf(alongs.start, alongs.endInclusive, 6)
+            val side = ticksOf(ups.start, ups.endInclusive, 5)
+            onDrawBehind {
+                for (tick in side) {
+                    val at = y(tick)
+                    drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
+                    val laid = measurer.measure(shortOf(tick), label)
+                    val corner = Offset(
+                        x = left - laid.size.width - HALF.toPx(),
+                        y = at - laid.size.height / 2f,
+                    )
+                    drawText(laid, topLeft = corner)
+                }
+                for (tick in along) {
+                    drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
+                    val laid = measurer.measure(shortOf(tick), label)
+                    drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
+                }
+                for (spot in spots) drawCircle(ink, DOT.toPx(), Offset(x(spot.across), y(spot.up)))
+                val upward = measurer.measure(titledOf(up), title)
+                drawText(upward, topLeft = Offset(left + HALF.toPx(), 0f))
+                val onward = measurer.measure(titledOf(across), title)
+                drawText(onward, topLeft = Offset(right - onward.size.width, 0f))
+            }
+        },
+    )
+}
+
+/** An axis's title: what it carries, and its unit where it has one. */
+private fun titledOf(variable: Variable): String =
+    if (variable.unit.isEmpty()) variable.label else variable.label + " (" + variable.unit + ")"
 
 /**
  * A subject: what it holds on the left, and the one chosen on the right.
@@ -343,7 +526,7 @@ private fun Subject(
                     },
                     onChoose = { kept.chosen = it },
                 )
-                Shape.MANUAL, Shape.NONE -> Unit
+                Shape.MANUAL, Shape.HOME -> Unit
             }
         }
         VerticalDivider()
@@ -1731,6 +1914,7 @@ private val MARKED = 5.dp
 private val TOWN = 1.5.dp
 internal val GLYPH = 20.dp
 private val DEPTH_GRAPH = 260.dp
+private val PLOT = 340.dp
 private val AXIS = 40.dp
 private val FOOT = 16.dp
 private val HEAD = 28.dp

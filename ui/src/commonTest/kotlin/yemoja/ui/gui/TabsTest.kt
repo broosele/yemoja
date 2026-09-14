@@ -20,23 +20,18 @@ class TabsTest {
     }
 
     @Test
-    fun `a tab with nothing behind it says what it will hold`() {
-        for (tab in TABS.filter { it.shape == Shape.NONE }) {
-            assertTrue(!tab.owed.isNullOrBlank(), "${tab.name} says nothing about being empty")
-        }
-    }
-
-    @Test
-    fun `a tab with something behind it has nothing to excuse`() {
-        for (tab in TABS.filter { it.shape != Shape.NONE }) assertEquals(null, tab.owed)
+    fun `every tab has a screen behind it, none being a placeholder any more`() {
+        assertEquals(TABS.size, TABS.map { it.shape }.distinct().size, "one screen apiece")
+        assertTrue(TABS.all { it.name.isNotBlank() })
     }
 
     @Test
     fun `the subjects are the ones the interface document settled`() {
         assertEquals(
             // Statistics is Home's, not a tab: the figures shown without asking and all of
-            // them are the same subject at two depths.
-            listOf("Home", "Dive", "Gear", "Community", "Location", "System", "Manuals"),
+            // them are the same subject at two depths. What the application does to a logbook
+            // as a whole is Home's too, which is why there is no System. `GUI-30`.
+            listOf("Home", "Dive", "Gear", "Community", "Location", "Manuals"),
             TABS.map { it.name },
         )
         assertEquals(
