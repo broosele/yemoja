@@ -431,17 +431,6 @@ To settle when we discuss architecture and features:
    download is then given up rather than failed, which is the difference between a user who
    pressed escape and a device that would not talk.
 
-- **LOGIC-28 — What the application says when it cannot read a dive computer.** Two situations
-   read the same from above: nothing is within reach, and the library that reads them is not on
-   this machine. `found()` answers with an empty list either way, so a front end says *no dive
-   computer is within reach* when the truth is that none could ever be found here. The remedies
-   are nothing alike — switch the computer on, against install something — so one message for
-   both is a message that misleads half the time.
-
-   What is wanted is for the port to answer the second question. `Devices` says what is within
-   reach and could as easily say whether reading is possible at all, which every implementation
-   knows and none is asked. It is a line of interface and a line of implementation; what is not
-   settled is whether a port that names no library should be asked a question this shaped.
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants
@@ -486,6 +475,45 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones
+   something used, unless there is only one.**
+
+   A computer reports every slot it has. A Perdix asked for three on a dive made on one
+   cylinder: the two switched off look exactly like the one that was on, because nothing in the
+   library says which is which. A gas carries its mix and a usage that is about rebreathers, and
+   a tank its volume and its pressures; neither has a word for *enabled*. A slot that is off and
+   a stage carried and never breathed are the same handful of fields.
+
+   So what is written is what was used: a slot a pressure was read from, or one the diver
+   switched to. Volume would have told them apart and does not, since a computer is not normally
+   told how big a cylinder is.
+
+   **A dive begins on a gas, and that gas was used.** A Perdix reports a switch on the first
+   sample, which says which one and is counted like any other. An i330R reports no switch at
+   all, so nothing says which, and the first slot is taken to be the one it began on: a gas list
+   begins with the gas dived. Without that, every recording from a computer that says nothing
+   about gas would arrive with none, which is 49 of the 353 in the logbook this was measured
+   against.
+
+   **Where there is only one slot it is kept whatever it says**, there being nothing to choose
+   between.
+- **LOGIC-28 — What the application says when it cannot read a dive computer.** *Settled:*
+   **the port says whether reading is possible at all, and the two cases are said apart.**
+
+   Nothing within reach and no library to look with read the same from above: `found()` answers
+   with an empty list either way. So a front end said *no dive computer is within reach* to a
+   reader whose computers were on the desk and whose library was missing, which is a message
+   that misleads exactly half the time and sends its reader to look at the wrong thing.
+
+   `Devices` now says whether a dive computer can be read here at all, which every
+   implementation knows and none was asked. It is true unless something says otherwise, because
+   anything that can list dive computers can read them; only an implementation leaning on a
+   library that may be absent says no. That keeps the port naming no library, which is
+   `LOGIC-2`'s whole point: *can this read one* is a question about the port rather than about
+   what is behind it.
+
+   A front end then has two things to say. One names a computer to switch on; the other names
+   a library to install. Neither guesses.
 - **LOGIC-27 — Where libdivecomputer is when the application ships.** *Settled:* **beside the
    application, in a folder of its own, found by looking rather than by being told.**
 
@@ -576,9 +604,13 @@ To settle when we discuss architecture and features:
    two depths, the colder of the two temperatures, and a length running from the first
    stretch's start to the second's end, surface and all. The average depth is weighted by how
    long each stretch lasted, the surface between them being no depth anybody recorded. The
-   second stretch's samples move along by the time between the two starts, its gases are
-   matched against the first's and appended where they are new, and every index naming one
-   moves with them.
+   second stretch's samples move along by the time between the two starts.
+
+   **The gas sources are laid over each other by position**, the two stretches being one dive on
+   one computer whose list of cylinders is the same list both times, and the cylinder keeping
+   what it began the dive at and what it came up with. Matching them by what they say instead
+   made one cylinder into two, each stretch reporting its own pressures for it, which is what a
+   real download did; matching by gas would make twins into one.
 
    **The surface between them stays a hole.** `DATA-58` in [../data/doc.md](../data/doc.md)
    has a gap saying nothing, read as a straight line throughout, and for depth that reads

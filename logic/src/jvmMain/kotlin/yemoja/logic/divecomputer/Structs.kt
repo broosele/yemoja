@@ -134,4 +134,11 @@ internal object Sampled {
     fun eventType(value: Pointer): Int = value.getInt(0)
 
     fun eventFlags(value: Pointer): Int = value.getInt(8)
+
+    /** `{ double latitude; double longitude; double altitude; }`, which is [CLocation]. */
+    fun locationLatitude(value: Pointer): Double = value.getDouble(0)
+
+    fun locationLongitude(value: Pointer): Double = value.getDouble(8)
+
+    fun locationAltitude(value: Pointer): Double = value.getDouble(16)
 }

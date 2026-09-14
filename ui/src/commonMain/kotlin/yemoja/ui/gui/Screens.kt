@@ -108,6 +108,7 @@ import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.Change
+import yemoja.logic.Import
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
 import yemoja.logic.Types
@@ -443,7 +444,7 @@ private suspend fun look(
     when (found.size) {
         0 -> {
             reading.stage = Stage.DONE
-            reading.said = "No dive computer is within reach, or none can be opened."
+            reading.said = emptyOf(universe.readable)
         }
 
         1 -> read(universe, platform, reading, changer, found.single())
@@ -499,28 +500,122 @@ private fun Reader(
         }
         reading.said?.let { Aside(it) }
         if (reading.stage == Stage.DONE && reading.arrived > 0) {
-            Row(
-                modifier = Modifier.padding(top = HALF),
-                horizontalArrangement = Arrangement.spacedBy(GAP),
-            ) {
-                Button(
-                    onClick = {
-                        val import = universe.importing ?: return@Button
-                        val taken = takenIn(import)
-                        if (taken.refusal == null) universe.stopImporting()
-                        reading.arrived = arrivedIn(universe.importing)
-                        reading.said = taken.refusal
-                            ?: "${taken.many} taken into the logbook."
-                        changer.changed()
-                    },
-                ) { Text("Take them all in") }
-                TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Leave them") }
-            }
+            Arrived(universe, reading, changer)
         } else if (reading.stage == Stage.DONE) {
             TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Close") }
         }
     }
 }
+
+/**
+ * What a download brought, a dive to a line, each with what it appears to be.
+ *
+ * Nothing is taken in until it is asked for. A dive that overlaps one already held is two
+ * recordings of one dive — nobody is on two dives at once — and the row says so and offers to
+ * put them together; a dive that overlaps nothing is offered as one of its own, under the
+ * number it would take. `GUI-31`.
+ */
+@Composable
+private fun Arrived(universe: Universe, reading: Reading, changer: Changer) {
+    val import = universe.importing ?: return
+    val arriving = remember(import, changer.edition) {
+        arrivingIn(import, universe.logbook, nextNumberIn(universe.logbook))
+    }
+    val after = { taken: Taken ->
+        reading.arrived = arrivedIn(universe.importing)
+        if (reading.arrived == 0) universe.stopImporting()
+        reading.said = taken.refusal ?: "${taken.many} taken into the logbook."
+        changer.changed()
+    }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
+        for (dive in arriving) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(GAP),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Aside(dive.said)
+                    if (dive.glued > 1) Aside("glued from ${dive.glued} recordings")
+                    dive.ontoSaid?.let { Aside("the same dive as $it, already logged") }
+                    Where(import, dive, changer)
+                }
+                if (dive.onto != null) {
+                    Button(onClick = { after(oneIn(import, dive, dive.onto)) }) {
+                        Text("Put together")
+                    }
+                }
+                TextButton(onClick = { after(oneIn(import, dive, null)) }) {
+                    Text("As dive ${dive.number}")
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.padding(top = HALF),
+            horizontalArrangement = Arrangement.spacedBy(GAP),
+        ) {
+            Button(onClick = { after(takenIn(import, universe.logbook)) }) {
+                Text("All as proposed")
+            }
+            TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Leave them") }
+        }
+    }
+}
+
+/**
+ * Where an arriving dive was made, asked of the reader and answered by them.
+ *
+ * The device said where it was and that is all it said. A fix is not a site: a site has a name,
+ * a water type and its regions, and none of that is in a pair of coordinates. So the nearest
+ * sites already held are offered in order with their distances, a new one can be named, and
+ * neither is forced. `LOGIC-18`, `GUI-31`.
+ */
+@Composable
+private fun Where(import: Import, dive: Arriving, changer: Changer) {
+    val fix = dive.fix ?: return
+    var naming by remember(dive.id) { mutableStateOf("") }
+    Row(
+        modifier = Modifier.padding(top = HALF),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(HALF),
+    ) {
+        Aside("at $fix:")
+        for (near in dive.nearby) {
+            TextButton(
+                onClick = {
+                    answered(import, dive, near.id)
+                    changer.changed()
+                },
+            ) { Text("${near.name}, ${apartOf(near.metres)}") }
+        }
+        TextButton(
+            onClick = {
+                answered(import, dive, null)
+                changer.changed()
+            },
+        ) { Text("nowhere") }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(HALF),
+    ) {
+        Compact(value = naming, onChange = { naming = it }, hint = "a new site, named")
+        TextButton(
+            enabled = naming.isNotBlank(),
+            onClick = {
+                namedAs(import, dive, naming.trim())
+                changer.changed()
+            },
+        ) { Text("Name it") }
+    }
+}
+
+/** One dive taken in, as what was pressed says, and what came of it. */
+private fun oneIn(import: Import, dive: Arriving, onto: String?): Taken =
+    when (val done = takeIn(import, dive, onto)) {
+        is Outcome.Refused -> Taken(0, done.reason)
+        is Outcome.Done -> Taken(1, null)
+    }
 
 /**
  * Every deed the application knows, as a button apiece, the ones this platform cannot do yet
@@ -1635,11 +1730,7 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
 /** A keyed owned item as an inset with a tab per entry, the first open. */
 @Composable
 private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (String) -> Unit) {
-    @Suppress("UNCHECKED_CAST")
-    val entries = ((item.read(inset.name) as? Result.Usable)?.value as? Map<String, Element<Any>>)
-        .orEmpty().mapNotNull { (key, element) ->
-            ((element as? Element.Usable)?.value as? OwnedItem)?.let { key to it }
-        }
+    val entries = shownEntriesOf(item, inset.name)
     if (entries.isEmpty()) return
     var open by remember(item, inset.name) { mutableStateOf(0) }
     val at = open.coerceIn(0, entries.size - 1)

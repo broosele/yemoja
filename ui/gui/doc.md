@@ -435,16 +435,45 @@ once and corrected. The numbers stay unused rather than being given to something
   the reading happening off the drawing thread, which is what the terminal front end says it
   owes and does not yet have.
 
-  **What arrives is taken in together or left where it is.** A download matches nothing by id,
-  `LOGIC-20`, so nothing here claims to know which arriving dive is one already held. Deciding
-  that dive by dive is a review and is not built; what is built is the blunt answer for the
-  common case, a computer read for the first time or read again after a resume holding dives the
-  logbook has not seen. *Leave them* keeps them staged, where the terminal front end can review
-  them properly and where a review here would find them. Taking them in stops at the first
-  refusal and says so, leaving the rest: what is in the folder is what has not been decided,
-  `RECON-1`.
+  **What arrives is read before it is taken in**, a dive to a line: when it began, how long it
+  ran, how deep it went, and what recorded it. Nothing lands until it is asked for.
 
-  Open: a review of one's own, dive by dive, with what each might already be.
+  **A dive that overlaps one already held is that dive**, seen by another computer. Nobody is on
+  two dives at once, so two recordings that overlap in time are two recordings of one dive,
+  which is `Import`'s own rule and wanted only somewhere to be asked. The row says which dive it
+  appears to be and offers to put them together; the dive then carries both recordings, keyed by
+  the computer that made each. Put together is offered, never taken: over-eagerness costs a
+  keystroke and the other button is always there.
+
+  **A dive of its own is offered under the number it would take**, one past the highest the
+  logbook holds. Nothing else knows what a diver counts and the one certain thing is that this
+  dive follows the last, so it is a proposal like the rest of a downloaded dive. It is also
+  given the recording it arrived with as the one it is worked from, there being only one to
+  choose; a second computer's comes later and does not displace it. Merged onto a dive already
+  held it keeps that dive's number and its primary, and is given neither.
+
+  **A dive glued from more than one recording says so**, since a computer that ended a dive part
+  way through is a thing a reader should know happened rather than discover. `LOGIC-25` does the
+  gluing before any of it is a dive; this only reports it.
+
+  *All as proposed* does every row as its own button would, for a reader who has read the list
+  and agrees. *Leave them* keeps them staged, where they are found again and where the terminal
+  front end can review them. Taking in stops at the first refusal and leaves the rest: what is in
+  the folder is what has not been decided, `RECON-1`.
+
+  **Where a dive was made is asked, not guessed.** A device says where it was and nothing more,
+  and a fix is not a site: a site has a name, a water type and its regions, none of which is in
+  a pair of coordinates. So the row shows the position and offers the sites already held that
+  are nearest it, each with its distance, in order. No radius is chosen, because one would be a
+  number nobody can pick well and a handful in order lets the reader judge what a threshold
+  would have judged for them. Beside them, a box to name a new site, and *nowhere* for a dive
+  whose place is not worth an item. `LOGIC-18`.
+
+  A fix nobody claims is dropped rather than kept: it was a question, not an item. One that is
+  named becomes a site and lands with the dive that asked about it, and two fixes within five
+  hundred metres are one question rather than two, so a week on one reef proposes one site.
+
+  Open: undoing a gluing, which would mean keeping the stretches apart until asked.
 - **GUI-30 — What the home screen is.** *Settled:* **a greeting, what can be done to a
   logbook as a whole, and one plot the reader chooses both axes of.**
 
@@ -684,9 +713,10 @@ once and corrected. The numbers stay unused rather than being given to something
   which of them are shown, or how. The first uses of that: a region's `children` are not
   shown, since the tree beside the item is exactly that list, and a trip's `dives` are not,
   since the box of their statistics under it is; a dive's primary recording is marked with a
-  star on its tab rather than named in a field; and a rating out of ten reads
-  as five stars, two points to a star and an odd rating ending in a half, and the number
-  is not shown.
+  star on its tab and put first among them, being the one every figure on the dive comes from,
+  while what is stored keeps the order it was written in — putting one first on a screen must
+  not rewrite a file; and a rating out of ten reads as five stars, two points to a star and an
+  odd rating ending in a half, and the number is not shown.
 
   **A word from a vocabulary is a word rather than a name.** A file writes one in lower case
   with an underscore where a reader puts a space, and a screen reads back what it says, so

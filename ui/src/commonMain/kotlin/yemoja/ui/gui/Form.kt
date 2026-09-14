@@ -120,7 +120,7 @@ internal fun EditFields(item: Item, draft: Draft) {
 @Composable
 private fun KeyedEditor(label: String, name: String, item: Item, draft: Draft) {
     val changer = LocalChanger.current
-    val entries = keyedEntriesOf(item, name)
+    val entries = shownEntriesOf(item, name)
     var open by remember(item, name) { mutableStateOf(0) }
     val at = open.coerceIn(0, maxOf(entries.size - 1, 0))
     val tabs: @Composable RowScope.() -> Unit = {
@@ -281,7 +281,7 @@ private fun SingleEditor(
  * [lines] is how many the field is tall for at least, more than one making it multiline.
  */
 @Composable
-private fun Compact(
+internal fun Compact(
     value: String,
     onChange: (String) -> Unit,
     after: String = "",

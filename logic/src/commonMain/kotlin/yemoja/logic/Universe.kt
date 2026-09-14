@@ -310,6 +310,15 @@ class Universe(
     fun attached(): List<DiveComputer> = devices?.found().orEmpty()
 
     /**
+     * Whether a dive computer can be read here at all, whatever is within reach.
+     *
+     * False where nothing was given to look with, and false where what does the reading is not
+     * on this machine. Both mean the same to a reader: not here, not ever, until something is
+     * installed. `LOGIC-28`.
+     */
+    val readable: Boolean get() = devices?.readable == true
+
+    /**
      * Stage what [computer] holds that this logbook has not seen.
      *
      * **It resumes.** The newest recording that computer made carries the token the device knows

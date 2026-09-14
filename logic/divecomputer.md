@@ -221,20 +221,35 @@ logbook answers: the newest recording that computer made and that carries one, a
 token on it. A recording carries one token per stretch, a device that cut a dive in two being
 put back together before any of it is a dive: `LOGIC-25`.
 
-**One dive computer has been met.** A Shearwater Perdix 2 over Bluetooth LE on Windows gave up
-a hundred dives in twenty minutes, each with its samples, tank pressures, gradient factors,
-water and fingerprint. USB and serial have met nothing. What is tested without a device is the
-sample walk — the offsets a reading is taken at, and the constants that decide which stop is a
-required one and which event is an alarm — driven with memory laid out by hand. Three of those
+**Two dive computers have been met**, both over Bluetooth LE on Windows. A Shearwater Perdix 2
+gave up a hundred dives in twenty minutes, each with its samples, tank pressures, gradient
+factors, water and fingerprint. An Aqualung i330R does the same behind the code it shows on its
+own screen, `LOGIC-24`. USB and serial have met nothing.
+
+**A sample's time is not always a clock, and the i330R's is not.** One dive was read from both
+at once. The diver spent about three minutes on the surface part way through, and the two
+recordings say different things about it. The Perdix ended its dive there and began another,
+which is `LOGIC-25`'s whole case, and the gap between its two recordings is those three minutes
+to the second. The i330R recorded straight through with no gap in its samples at all, and its
+sample times skip the three minutes: it has the diver touching a metre and descending again two
+seconds later, and its length for the dive is three minutes shorter.
+
+So its samples are counted in time underwater rather than in time. Two things follow. Its
+profile drifts against a wall clock, by the whole of every surface pause, which is why the two
+recordings of that dive line up at the start and are three minutes apart by the end. And
+matching one computer's dives against another's by when they happened has that much slack in
+it, which `RECON`'s merging will have to carry rather than assume away.
+
+What is tested without a device is the sample walk — the offsets a reading is taken at, and
+the constants that decide which stop is a required one and which event is an alarm — driven
+with memory laid out by hand. Three of those
 constants were wrong when first written, and one of them mapped `decostop` onto a safety stop,
 which is exactly what `LOGIC-13` refuses.
 
-Three more gaps, each of them a decision rather than typing:
+Two more gaps, each of them a decision rather than typing:
 
 - **The drop report.** `LOGIC-10` requires a download to say what it dropped, and nothing
   collects it. What is dropped is decided; where the list goes is not.
-- **The site proposal.** `LOGIC-18` makes a fix a question at review with three answers, and a
-  recording carries one that nothing yet asks about.
 - **`LOGIC-15`'s tolerances.** The thinning is built and the figures it uses are provisional.
 
 ## What is owed
@@ -281,13 +296,12 @@ Decided and not built, or built and not proven. Each is here rather than in some
 - **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
   *and that the download says what it dropped*. What is dropped is decided field by field above;
   where the saying goes is `LOGIC-21`.
-- **The fix does not cross the port, though the device sends one.** `LOGIC-18` settled that a
-  download's coordinates become a proposal at review, and no review question exists, so the
-  recording does not carry one: a field every implementation must fill and nothing reads is a
-  lie waiting to be believed. What was written here before was that nothing in the library
-  supplies a position, and that was wrong: no parser answers the location *field*, but the
-  Shearwater driver fills a location *sample*, and a Perdix sends one on nearly every dive. The
-  walk drops it. When `LOGIC-18` is built the position is there to be taken.
+- **The fix crosses the port, as the dive's first one.** No parser answers the location
+  *field*, but the Shearwater driver fills a location *sample*, and a Perdix sends one on nearly
+  every dive: always on the first sample, and sometimes a second on the last. So the walk keeps
+  the first and drops the rest, which is `LOGIC-18`'s reading of what those samples are. It is
+  carried to be asked about rather than written: a dive has no position, and what the review
+  does with it is a question with three answers.
 - **A sample type the walk does not name is dropped without being counted.** Twenty Perdix
   dives went past carrying twenty-three positions and six and a half thousand
   remaining-bottom-time readings, and nothing said so. `LOGIC-10` requires a download to report

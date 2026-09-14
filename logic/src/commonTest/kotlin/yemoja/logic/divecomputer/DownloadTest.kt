@@ -5,12 +5,14 @@ import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
+import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Time
 import yemoja.logic.Types
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -319,5 +321,187 @@ class FingerprintTest {
     fun `nothing to resume from is nothing`() {
         assertNull(Download.after(of(one("Reef", 20, null)), "reef"))
         assertNull(Download.after(of(one("Reef", 20, "aa")), "nobody"))
+    }
+}
+
+/**
+ * Where a device said a dive was, carried into the review as a site to be answered.
+ * See ../../../../../../../doc.md — `LOGIC-18`.
+ */
+class PositionTest {
+
+    private fun at(latitude: Double, longitude: Double, minute: Int) = Recording(
+        computer = "Reef",
+        began = Date(2026, 6, 21),
+        at = Time(10, minute, 0),
+        duration = 600.0,
+        position = Recording.Position(latitude, longitude),
+    )
+
+    private fun read(vararg dived: Recording) = Download.read(dived.asSequence())
+
+    private fun siteOf(set: yemoja.data.ItemSet, dive: Item): Item? {
+        val named = (dive.single<Reference>("dive_site") as? Result.Usable)?.value
+        return (named as? Reference.Identified)?.let { set[it.id] }
+    }
+
+    private fun number(item: Item, field: String): Double? =
+        (item.single<Double>(field) as? Result.Usable)?.value
+
+    @Test
+    fun `a dive that reported where it was names a site holding that position`() {
+        val set = read(at(51.6435, 3.7069, 0))
+        val dive = set.allOf(Types.DIVE).single()
+        val site = assertNotNull(siteOf(set, dive), "the dive should name one")
+        assertEquals(51.6435, number(site, "latitude"))
+        assertEquals(3.7069, number(site, "longitude"))
+        assertNull(
+            (site.single<String>("name") as? Result.Usable)?.value,
+            "a fix is not a site, and naming it is the reader's answer",
+        )
+    }
+
+    @Test
+    fun `two dives at one place propose one site, and two places propose two`() {
+        val together = read(at(51.6435, 3.7069, 0), at(51.6445, 3.7069, 30))
+        assertEquals(1, together.allOf(Types.DIVE_SITE).size, "a hundred metres apart is one place")
+        val apart = read(at(51.6435, 3.7069, 0), at(51.7435, 3.7069, 30))
+        assertEquals(2, apart.allOf(Types.DIVE_SITE).size, "eleven kilometres apart is two")
+    }
+
+    @Test
+    fun `a dive that reported nothing names nothing, and makes no site`() {
+        val set = read(Recording(computer = "Reef", began = Date(2026, 6, 21), at = Time(10, 0, 0)))
+        assertEquals(0, set.allOf(Types.DIVE_SITE).size)
+        assertEquals(Result.Absent, set.allOf(Types.DIVE).single().read("dive_site"))
+    }
+
+    @Test
+    fun `a height above the sea becomes the site's elevation`() {
+        val high = Recording(
+            computer = "Reef",
+            began = Date(2026, 6, 21),
+            at = Time(10, 0, 0),
+            position = Recording.Position(46.5, 6.6, 372.0),
+        )
+        val site = siteOf(read(high), read(high).allOf(Types.DIVE).single())
+        assertEquals(372.0, number(assertNotNull(site), "elevation"))
+    }
+}
+
+/**
+ * Which dive of a day is which, when a device counts backwards.
+ * See ../../../../../../../doc.md — `LOGIC-20`.
+ */
+class OrderTest {
+
+    private fun at(hour: Int) = Recording(
+        computer = "Reef",
+        began = Date(2026, 9, 13),
+        at = Time(hour, 0, 0),
+        duration = 2400.0,
+    )
+
+    @Test
+    fun `the index on an id counts up through the day, whatever order the device reports in`() {
+        // A Shearwater hands over its newest dive first, which is the wrong way round for this.
+        val set = Download.read(sequenceOf(at(14), at(10), at(12)))
+        val order = set.allOf(Types.DIVE).mapNotNull { set.idOf(it) }.sorted()
+        assertEquals(listOf("2026-09-13#0", "2026-09-13#1", "2026-09-13#2"), order)
+        assertEquals(Time(10, 0, 0), began(set, "2026-09-13#0"), "the first of the day is #0")
+        assertEquals(Time(12, 0, 0), began(set, "2026-09-13#1"))
+        assertEquals(Time(14, 0, 0), began(set, "2026-09-13#2"), "and the last is the highest")
+    }
+
+    @Test
+    fun `a recording that does not say when it was comes last and is still named`() {
+        val set = Download.read(sequenceOf(at(14), Recording(computer = "Reef")))
+        assertEquals(2, set.allOf(Types.DIVE).size)
+        assertEquals(Time(14, 0, 0), began(set, "2026-09-13#0"))
+    }
+
+    private fun began(set: yemoja.data.ItemSet, id: String): Time? =
+        (set[id]?.single<Time>("start_time") as? Result.Usable)?.value
+}
+
+/**
+ * Which of a computer's gas slots are written down.
+ * See ../../../../../../../doc.md — `LOGIC-12`.
+ */
+class UsedGasTest {
+
+    private fun slots(vararg gas: String) = gas.map { Recording.GasSource(gas = it) }
+
+    private fun dived(
+        gases: List<Recording.GasSource>,
+        samples: List<Recording.Sample> = emptyList(),
+    ) = Recording(
+        computer = "Reef",
+        began = Date(2026, 6, 21),
+        at = Time(10, 0, 0),
+        duration = 1200.0,
+        gases = gases,
+        samples = samples,
+    )
+
+    @Test
+    fun `a slot nothing read and nobody switched to is not written down`() {
+        val held = usedIn(
+            dived(
+                slots("air", "air", "EAN19"),
+                listOf(Recording.Sample(at = 0, gas = 2, pressures = mapOf(2 to 190.0))),
+            ),
+        )
+        assertEquals(listOf("EAN19"), held.gases.map { it.gas }, "the two switched off go")
+        assertEquals(0, held.samples.single().gas, "and what named the third names the first")
+        assertEquals(mapOf(0 to 190.0), held.samples.single().pressures)
+    }
+
+    @Test
+    fun `a slot with a pressure stays, though nobody switched to it`() {
+        val held = usedIn(
+            dived(
+                slots("air", "EAN32"),
+                listOf(Recording.Sample(at = 0, gas = 0, pressures = mapOf(1 to 190.0))),
+            ),
+        )
+        assertEquals(listOf("air", "EAN32"), held.gases.map { it.gas }, "both were used, one way")
+    }
+
+    @Test
+    fun `the only slot there is stays, there being nothing to choose between`() {
+        val held = usedIn(dived(slots("EAN32")))
+        assertEquals(listOf("EAN32"), held.gases.map { it.gas })
+    }
+
+    @Test
+    fun `a computer that reports no switch at all keeps the gas it began on`() {
+        // An i330R says nothing about gas: no switch, no pressure, just the slots it holds.
+        val held = usedIn(dived(slots("air", "EAN32"), samples = listOf(Recording.Sample(at = 0))))
+        assertEquals(listOf("air"), held.gases.map { it.gas }, "the first is the one it began on")
+    }
+
+    @Test
+    fun `a switch at the first sample says which it began on, and the rest still go`() {
+        val held = usedIn(
+            dived(slots("air", "EAN32", "EAN50"), listOf(Recording.Sample(at = 0, gas = 1))),
+        )
+        assertEquals(listOf("EAN32"), held.gases.map { it.gas }, "not the first, the one named")
+        assertEquals(0, held.samples.single().gas)
+    }
+
+    @Test
+    fun `a download writes what is left, keyed from one`() {
+        val set = Download.read(
+            sequenceOf(
+                dived(
+                    slots("air", "air", "EAN19"),
+                    listOf(Recording.Sample(at = 0, gas = 2, pressures = mapOf(2 to 190.0))),
+                ),
+            ),
+        )
+        val dive = set.allOf(Types.DIVE).single()
+        val sources = (dive.keyed<yemoja.data.OwnedItem>("gas_sources") as Result.Usable).value
+        assertEquals(listOf("tank_1"), sources.keys.toList(), "the one that was used, keyed first")
     }
 }

@@ -87,26 +87,23 @@ private fun endOf(held: Recording): Moment? {
  *
  * The second stretch's samples are moved along by the time between the two starts, since a
  * sample's time is seconds from the start of its recording and the start is now the first
- * stretch's. Its gases are matched against the first's and appended where they are new, and
- * every index naming one moves with them. A sample that would not follow the one before it is
- * dropped, a series running forwards.
+ * stretch's. A sample that would not follow the one before it is dropped, a series running
+ * forwards.
+ *
+ * **The gas sources are laid over each other by position**, because the two stretches are one
+ * dive on one computer and its list of cylinders is the same list both times. Matching them by
+ * what they say instead would make one cylinder into two, each stretch reporting its own begin
+ * and end pressure for it; matching by gas would make two air cylinders into one.
  */
 private fun onto(first: Recording, next: Recording): Recording {
     val from = beganAt(first)
     val to = beganAt(next)
     val apart = if (from != null && to != null) from.secondsUntil(to) else 0L
-    val gases = first.gases.toMutableList()
-    val moved = next.gases.map { gas ->
-        gases.indexOf(gas).takeIf { it >= 0 } ?: gases.size.also { gases += gas }
+    val gases = (0..<maxOf(first.gases.size, next.gases.size)).map { at ->
+        laidOver(first.gases.getOrNull(at), next.gases.getOrNull(at))
     }
     val last = first.samples.lastOrNull()?.at ?: Int.MIN_VALUE
-    val after = next.samples.map { sample ->
-        sample.copy(
-            at = sample.at + apart.toInt(),
-            gas = sample.gas?.let { moved.getOrNull(it) ?: it },
-            pressures = sample.pressures.mapKeys { moved.getOrNull(it.key) ?: it.key },
-        )
-    }
+    val after = next.samples.map { sample -> sample.copy(at = sample.at + apart.toInt()) }
     return first.copy(
         fingerprints = first.fingerprints + next.fingerprints,
         duration = lastedOf(first, next, apart),
@@ -136,6 +133,25 @@ private fun meanOf(first: Recording, next: Recording): Double? {
     val a = spanOf(first) ?: 1.0
     val b = spanOf(next) ?: 1.0
     return if (a + b > 0.0) (one * a + two * b) / (a + b) else (one + two) / 2.0
+}
+
+/**
+ * One cylinder as the two stretches saw it: what it began at, what it ended at, and the rest
+ * from whichever stretch said anything.
+ */
+private fun laidOver(
+    one: Recording.GasSource?,
+    other: Recording.GasSource?,
+): Recording.GasSource {
+    if (one == null) return other!!
+    if (other == null) return one
+    return one.copy(
+        gas = one.gas ?: other.gas,
+        volume = one.volume ?: other.volume,
+        startPressure = one.startPressure ?: other.startPressure,
+        endPressure = other.endPressure ?: one.endPressure,
+        configuration = one.configuration ?: other.configuration,
+    )
 }
 
 private fun deeperOf(one: Double?, two: Double?): Double? =

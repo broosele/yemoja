@@ -4,6 +4,7 @@ import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
+import yemoja.data.Moment
 import yemoja.data.OwnedItem
 import yemoja.data.Reference
 import yemoja.data.Result
@@ -14,6 +15,9 @@ import yemoja.logic.Types
 import yemoja.logic.sameSerial
 import yemoja.logic.freeName
 import yemoja.logic.unknownOf
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sqrt
 
 /*
  * What a download makes of what a device hands over.
@@ -51,16 +55,67 @@ object Download {
      */
     fun read(recordings: Sequence<Recording>, into: ItemSet? = null): ItemSet {
         val set = ItemSet(Types.ALL)
+        val places = ArrayList<Placed>()
         // The stretches of a dive a computer cut up are one recording before they are a dive,
         // so everything below this sees a whole dive. `LOGIC-25`.
-        for (recording in joined(recordings)) {
+        //
+        // Oldest first, whatever order the device counts in. Two dives on one day are told
+        // apart by the index on their id, and an index that runs backwards through the day is
+        // one a reader has to know not to trust.
+        for (held in joined(recordings).sortedWith(BY_WHEN)) {
+            val recording = usedIn(held)
             val named = recording.serial?.let { into?.let { logbook -> computerIn(logbook, it) } }
-            val fields = diveOf(recording, named)
+            // Where the device said it was, as a site to be asked about. `LOGIC-18`.
+            val where = recording.position?.let { placedIn(places, it, set) }
+            val fields = diveOf(recording, named, where)
             val item = ItemReader.read(DIVE, Stored.Members(fields), set, Units.DEFAULT)
             val proposed = item.description.proposedId?.invoke(item) ?: unknownOf(item)
             set.add(freeName(proposed) { set[it] != null }, item)
         }
         return set
+    }
+
+    /** A fix put with the site it belongs to, so that two dives at one place propose one site. */
+    private class Placed(val at: Recording.Position, val id: String)
+
+    /**
+     * The id of the proposed site [fix] belongs to, made where it belongs to none yet.
+     *
+     * **Two fixes within [TOGETHER] are one place.** A week's diving arrives with no site to
+     * offer and something has to say whether Tuesday's dive and Friday's are one new site or
+     * two; a download of ten dives on one reef should propose one site rather than ten.
+     * `LOGIC-18`.
+     *
+     * The site carries the position and nothing else, not even a name. A fix is not a site: a
+     * site has a name, a water type and its regions, and none of that is in a pair of
+     * coordinates. Naming it is the reader's answer at review, and until then it is a question
+     * wearing the shape of an item. `LOGIC-20`.
+     */
+    private fun placedIn(places: MutableList<Placed>, fix: Recording.Position, set: ItemSet):
+        String {
+        places.firstOrNull { metresBetween(it.at, fix) <= TOGETHER }?.let { return it.id }
+        val fields = LinkedHashMap<String, Stored>()
+        fields["latitude"] = Stored.Leaf(fix.latitude)
+        fields["longitude"] = Stored.Leaf(fix.longitude)
+        fix.altitude?.let { fields["elevation"] = Stored.Leaf(it) }
+        val site = ItemReader.read(Types.DIVE_SITE, Stored.Members(fields), set, Units.DEFAULT)
+        val id = freeName(unknownOf(site)) { set[it] != null }
+        set.add(id, site)
+        places += Placed(fix, id)
+        return id
+    }
+
+    /**
+     * How far apart two fixes are, in metres, close enough for a question about hundreds of them.
+     *
+     * Flat rather than spherical: over a kilometre the earth's curve is worth centimetres, and
+     * what this decides is whether two dives were at one place.
+     */
+    private fun metresBetween(one: Recording.Position, other: Recording.Position): Double {
+        val north = (other.latitude - one.latitude) * METRES_PER_DEGREE
+        val shrunk = cos(one.latitude * PI / 180.0)
+        val east = (other.longitude - one.longitude) * METRES_PER_DEGREE * shrunk
+        return sqrt(north * north + east * east)
     }
 
     /** The id of the gear item in [logbook] carrying [serial], or absent where none does. */
@@ -146,11 +201,32 @@ object Download {
         return "$date $at"
     }
 
-    /** What one recording says, as a dive's fields. */
-    private fun diveOf(held: Recording, named: String?): Map<String, Stored> {
+    /**
+     * Recordings oldest first, and whatever says nothing about when it was after them.
+     *
+     * A device reports in an order of its own — a Shearwater counts from its newest — and what
+     * an id's index should follow is the day, not the device.
+     */
+    private val BY_WHEN: Comparator<Recording> = compareBy(nullsLast()) { held ->
+        held.began?.let { date -> held.at?.let { Moment(date, it).epochSecond } }
+    }
+
+    /** How near two fixes must be to be one place, in metres. `LOGIC-18`. */
+    private const val TOGETHER = 500.0
+
+    /** A degree of latitude, in metres, which is near enough the same everywhere. */
+    private const val METRES_PER_DEGREE = 111_320.0
+
+    /** What one recording says, as a dive's fields; [where] is the site it proposes, if any. */
+    private fun diveOf(
+        held: Recording,
+        named: String?,
+        where: String? = null,
+    ): Map<String, Stored> {
         val fields = LinkedHashMap<String, Stored>()
         held.began?.let { fields["start_date"] = Stored.Leaf(it) }
         held.at?.let { fields["start_time"] = Stored.Leaf(it) }
+        where?.let { fields["dive_site"] = Stored.Leaf("@$it") }
         // Written as overrides: a computer usually reports a better figure than its own recording,
         // which is sampled only every few seconds. `LOGIC-19`.
         held.duration?.let { fields["duration"] = Stored.Leaf(it) }
@@ -314,5 +390,47 @@ object Download {
         "decostop" to { it.decostop },
         "no_deco_time" to { it.noDecoTime },
         "cns" to { it.cns },
+    )
+}
+
+/**
+ * [held] with the gas sources nothing used taken out, and every index that named one moved.
+ *
+ * A computer reports every gas slot it has, including the ones switched off: three of them
+ * where one cylinder was dived. Nothing in the library says which are switched on — a gas
+ * carries its mix and a usage that is about rebreathers, and a tank its volume and pressures,
+ * and a slot that is off looks exactly like a stage carried and not breathed. So what is kept
+ * is what was used: a slot a pressure was read from, or one the diver switched to.
+ *
+ * **A dive begins on a gas, and that gas was used.** Where a computer reports a switch at the
+ * first sample — a Perdix does — that switch says which, and it is counted like any other.
+ * Where a computer reports no switch at all — an i330R does not — nothing says which, and the
+ * first slot is taken to be the one it began on, a gas list beginning with the gas dived.
+ *
+ * **Where there is only one, it is kept whatever it says**, there being nothing to choose
+ * between. `LOGIC-12`, `LOGIC-29`.
+ */
+internal fun usedIn(held: Recording): Recording {
+    if (held.gases.size <= 1) return held
+    val used = LinkedHashSet<Int>()
+    // The gas it began on, where nothing switched and so nothing said which.
+    if (held.samples.none { it.gas != null }) used += 0
+    for (sample in held.samples) {
+        sample.gas?.let { used += it }
+        used += sample.pressures.keys
+    }
+    if (used.size == held.gases.size) return held
+    val kept = held.gases.indices.filter { it in used }
+    val moved = kept.withIndex().associate { (at, was) -> was to at }
+    return held.copy(
+        gases = kept.map { held.gases[it] },
+        samples = held.samples.map { sample ->
+            sample.copy(
+                gas = sample.gas?.let { moved[it] },
+                pressures = sample.pressures.mapNotNull { (at, read) ->
+                    moved[at]?.let { it to read }
+                }.toMap(),
+            )
+        },
     )
 }

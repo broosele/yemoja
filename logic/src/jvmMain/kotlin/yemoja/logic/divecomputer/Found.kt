@@ -40,6 +40,10 @@ class FoundDevices : Devices, AutoCloseable {
 
     private var models: List<Pointer?> = emptyList()
 
+    // Absent is an answer rather than a fault, and this is how that answer is told apart from
+    // finding nothing. `LOGIC-28`.
+    override val readable: Boolean get() = Libdivecomputer.LOADED != null
+
     override fun found(): List<DiveComputer> {
         val library = Libdivecomputer.LOADED ?: return emptyList()
         val context = context ?: opened(library) ?: return emptyList()
@@ -279,6 +283,7 @@ private fun readingOf(
     val salinity = fieldOf(library, parser, Field.SALINITY, CSalinity())
     val model = fieldOf(library, parser, Field.DECOMODEL, CDecoModel())
     val (gases, sourceOfMix) = sourcesOf(mixesOf(library, parser), tanksOf(library, parser))
+    val walked = walkedOf(library, parser)
     return Recording(
         computer = name,
         serial = serial,
@@ -305,7 +310,8 @@ private fun readingOf(
         gases = gases,
         // A switch is reported as a mix and lands on a source; a mix no source carries is dropped,
         // there being nothing to point at. `LOGIC-12`.
-        samples = samplesOf(library, parser).map { it.copy(gas = it.gas?.let(sourceOfMix::get)) },
+        samples = walked.done().map { it.copy(gas = it.gas?.let(sourceOfMix::get)) },
+        position = walked.position,
     )
 }
 
@@ -397,10 +403,10 @@ private fun gasOf(mix: CGasMix): String {
 }
 
 /** Every reading through the dive, in the order the device recorded them. */
-private fun samplesOf(library: Libdivecomputer, parser: Pointer?): List<Recording.Sample> {
+private fun walkedOf(library: Libdivecomputer, parser: Pointer?): Walked {
     val walked = Walked()
     library.dc_parser_samples_foreach(parser, walked, null)
-    return walked.done()
+    return walked
 }
 
 /**
@@ -428,6 +434,17 @@ internal class Walked : Libdivecomputer.SampleCallback {
     private var alarms = ArrayList<String>()
     private var opened = false
 
+    /**
+     * The first fix the walk met, which is the dive's position.
+     *
+     * The first rather than every one: a Perdix reports one on nearly every dive, always on the
+     * first sample, and sometimes a second on the last. That is an entry fix and sometimes an
+     * exit fix rather than a track, and every dive that reports one reports the first.
+     * `LOGIC-18`.
+     */
+    var position: Recording.Position? = null
+        private set
+
     override fun invoke(type: Int, value: Pointer, userdata: Pointer?) {
         if (type == SampleType.TIME) {
             close()
@@ -449,6 +466,15 @@ internal class Walked : Libdivecomputer.SampleCallback {
                 DECO_DECOSTOP -> decostop = Sampled.decoDepth(value)
                 // A safety stop is not a required one, and a deep stop is not either. `LOGIC-13`.
                 else -> Unit
+            }
+
+            SampleType.LOCATION -> if (position == null) {
+                position = Recording.Position(
+                    latitude = Sampled.locationLatitude(value),
+                    longitude = Sampled.locationLongitude(value),
+                    // A device that does not know its height says nothing rather than sea level.
+                    altitude = Sampled.locationAltitude(value).takeIf { it != 0.0 },
+                )
             }
 
             SampleType.EVENT -> {
@@ -519,6 +545,7 @@ private object SampleType {
     const val CNS = 11
     const val DECO = 12
     const val GASMIX = 13
+    const val LOCATION = 14
 }
 
 /** `dc_decomodel_type_t`, in the header's order. */

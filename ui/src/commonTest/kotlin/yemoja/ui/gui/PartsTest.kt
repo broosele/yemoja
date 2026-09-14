@@ -187,7 +187,7 @@ class HousekeepingTest {
     }
 
     @Test
-    fun `the entry an item points at by key is the one to mark`() {
+    fun `the entry an item points at by key comes first and is the one marked`() {
         val set = LogbookReader.read(
             MemoryFileStore(
                 mapOf(
@@ -198,9 +198,24 @@ class HousekeepingTest {
             ),
             Types.ALL,
         )
-        assertEquals(1, pointedEntryOf(set["2026-06-21#0"]!!, "profiles"))
+        val dive = set["2026-06-21#0"]!!
+        assertEquals(
+            listOf("b", "a", "c"),
+            shownEntriesOf(dive, "profiles").map { it.first },
+            "the one pointed at first, the rest as they are held",
+        )
+        assertEquals(0, pointedEntryOf(dive, "profiles"), "which is where the mark goes")
+        assertEquals(
+            listOf("a"),
+            shownEntriesOf(set["2026-06-22#0"]!!, "profiles").map { it.first },
+        )
         assertNull(pointedEntryOf(set["2026-06-22#0"]!!, "profiles"), "nothing points")
-        assertNull(pointedEntryOf(set["2026-06-21#0"]!!, "gas_sources"), "no pointer to it")
+        assertNull(pointedEntryOf(dive, "gas_sources"), "no pointer to it")
+        assertEquals(
+            listOf("a", "b", "c"),
+            keyedEntriesOf(dive, "profiles").map { it.first },
+            "and what is stored is not reordered",
+        )
     }
 }
 

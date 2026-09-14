@@ -105,19 +105,38 @@ internal fun arrangedOf(type: ItemDescription, editing: Boolean = false): Arrang
 private val SERIES = setOf(Cardinality.SERIES, Cardinality.KEYED_SERIES)
 
 /**
+ * The entries of the keyed collection [name] of [item], the one it points at by key first.
+ *
+ * A dive's primary recording is the one every figure on it comes from, so it is the tab a
+ * reader meets first; the rest keep the order they are held in. **The collection itself is not
+ * reordered.** What is stored is the order the source held them in, and this is a reading of
+ * it: putting one first on a screen must not rewrite a file. `GUI-16`.
+ */
+internal fun shownEntriesOf(item: Item, name: String): List<Pair<String, OwnedItem>> {
+    val entries = keyedEntriesOf(item, name)
+    val key = pointedKeyOf(item, name) ?: return entries
+    val first = entries.firstOrNull { it.first == key } ?: return entries
+    return listOf(first) + entries.filterNot { it.first == key }
+}
+
+/**
  * The entry of the keyed collection [name] that [item] points at by a key reference, as its
- * index among the entries, or absent where nothing points: a dive's primary recording, marked
- * on its tab.
+ * index among the entries as [shownEntriesOf] gives them, or absent where nothing points.
+ *
+ * Nought wherever there is one, the pointed-at entry being first, and this rather than the
+ * constant so that the marking and the ordering cannot come apart.
  */
 internal fun pointedEntryOf(item: Item, name: String): Int? {
+    val key = pointedKeyOf(item, name) ?: return null
+    return shownEntriesOf(item, name).indexOfFirst { it.first == key }.takeIf { it >= 0 }
+}
+
+/** Which entry of [name] the item points at by key reference, where it has one to point with. */
+private fun pointedKeyOf(item: Item, name: String): String? {
     val pointer = item.description.fields
         .filterIsInstance<KeyReferenceDescription>().firstOrNull { it.collection == name }
         ?: return null
-    val key = ((item.read(pointer.name) as? Result.Usable)?.value as? KeyReference)?.key
-        ?: return null
-    val keys = ((item.read(name) as? Result.Usable)?.value as? Map<*, *>)?.keys?.toList()
-        ?: return null
-    return keys.indexOf(key).takeIf { it >= 0 }
+    return ((item.read(pointer.name) as? Result.Usable)?.value as? KeyReference)?.key
 }
 
 /**

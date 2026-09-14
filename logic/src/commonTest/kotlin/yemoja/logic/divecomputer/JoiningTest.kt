@@ -91,22 +91,44 @@ class JoiningTest {
     }
 
     @Test
-    fun `a gas the second stretch adds is appended, and what named one moves with it`() {
-        val air = Recording.GasSource(gas = "air")
-        val rich = Recording.GasSource(gas = "EAN32")
-        val first = stretch(0, "a1", 1200.0, gases = listOf(air), samples = samples(0, 1200))
+    fun `one cylinder read twice is one cylinder, from its first reading to its last`() {
+        // The same list of cylinders both times, each stretch reading its own pressures off it.
+        val before = Recording.GasSource(gas = "air", startPressure = 200.0, endPressure = 192.0)
+        val after = Recording.GasSource(gas = "air", startPressure = 192.0, endPressure = 85.0)
+        val first = stretch(0, "a1", 1200.0, gases = listOf(before), samples = samples(0, 1200))
+        val next = stretch(23, "b2", 600.0, gases = listOf(after), samples = samples(0, 600))
+        val one = joined(sequenceOf(first, next)).toList().single().gases.single()
+        assertEquals("air", one.gas)
+        assertEquals(200.0, one.startPressure, "what it began the dive at")
+        assertEquals(85.0, one.endPressure, "and what it came up with")
+    }
+
+    @Test
+    fun `two cylinders of one gas stay two, and what named one still names it`() {
+        val twin = listOf(Recording.GasSource(gas = "air"), Recording.GasSource(gas = "air"))
+        val first = stretch(0, "a1", 1200.0, gases = twin, samples = samples(0, 1200))
         val next = stretch(
             23,
             "b2",
             600.0,
-            gases = listOf(rich, air),
-            samples = listOf(Recording.Sample(at = 0, gas = 0, pressures = mapOf(1 to 150.0))),
+            gases = twin,
+            samples = listOf(Recording.Sample(at = 0, gas = 1, pressures = mapOf(1 to 150.0))),
         )
         val one = joined(sequenceOf(first, next)).toList().single()
-        assertEquals(listOf("air", "EAN32"), one.gases.map { it.gas })
+        assertEquals(2, one.gases.size, "matching by gas would have made them one")
         val moved = one.samples.last()
-        assertEquals(1, moved.gas, "the rich mix is the second source now")
-        assertEquals(mapOf(0 to 150.0), moved.pressures, "and the air is the first")
+        assertEquals(1, moved.gas, "the second cylinder is still the second")
+        assertEquals(mapOf(1 to 150.0), moved.pressures)
+    }
+
+    @Test
+    fun `a gas only the second stretch has is added after the first's`() {
+        val air = Recording.GasSource(gas = "air")
+        val rich = Recording.GasSource(gas = "EAN32")
+        val first = stretch(0, "a1", 1200.0, gases = listOf(air), samples = samples(0, 1200))
+        val next = stretch(23, "b2", 600.0, gases = listOf(air, rich), samples = samples(0, 600))
+        val one = joined(sequenceOf(first, next)).toList().single()
+        assertEquals(listOf("air", "EAN32"), one.gases.map { it.gas })
     }
 
     @Test

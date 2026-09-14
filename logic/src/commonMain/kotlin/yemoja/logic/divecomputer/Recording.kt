@@ -68,7 +68,25 @@ data class Recording(
     val model: DecoModel? = null,
     val gases: List<GasSource> = emptyList(),
     val samples: List<Sample> = emptyList(),
+    /**
+     * Where the dive was made, as the device reported it, or absent where it reported none.
+     *
+     * The first fix of the dive and no track: a device that reports one reports it on the first
+     * sample, and a second at the end where it reports two. It is not a dive's field and never
+     * becomes one — a dive has no position, only a site does — so this is carried to be asked
+     * about rather than to be written. `LOGIC-18`.
+     */
+    val position: Position? = null,
 ) {
+
+    /** Position is where a device says a dive was, in degrees, and how high the water was. */
+    data class Position(
+        val latitude: Double,
+        val longitude: Double,
+        /** Metres above sea level, which is a site's `elevation`. Absent where unreported. */
+        val altitude: Double? = null,
+    )
+
 
     /** The salinity a computer was set to: a type, and the density it turned pressure by. */
     data class Water(val type: String? = null, val density: Double? = null)
@@ -192,4 +210,16 @@ interface Devices {
 
     /** Every dive computer this machine can reach now. */
     fun found(): List<DiveComputer>
+
+    /**
+     * Whether a dive computer can be read here at all, whatever is within reach.
+     *
+     * False where what does the reading is not on this machine. That is a different thing from
+     * finding nothing, and wants a different word said to the user: one is a computer to switch
+     * on and the other is a library to install. `LOGIC-28`.
+     *
+     * True unless something says otherwise, because anything that can list dive computers can
+     * read them. Only an implementation leaning on a library that may be absent cannot.
+     */
+    val readable: Boolean get() = true
 }
