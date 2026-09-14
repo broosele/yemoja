@@ -130,6 +130,8 @@ internal class Platform(
     val atlas: () -> Atlas,
     /** Follows a link that leads out of the application. */
     val open: (String) -> Unit,
+    /** What day it is, which only a platform knows. Asked each time, a window outliving one. */
+    val today: () -> yemoja.data.Date,
     /**
      * What this platform can do to a logbook as a whole, by deed.
      *
@@ -316,10 +318,16 @@ private fun Home(universe: Universe, platform: Platform, kept: Kept) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(horizontal = GAP * 2),
     ) {
+        val southern = remember(set, edition) { southernOf(set) }
         Text(
-            text = hailOf(universe.user, greeting),
+            text = hailOf(universe.user, greeting, platform.today(), southern),
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(vertical = GAP * 2),
+            modifier = Modifier.padding(top = GAP * 2),
+        )
+        Text(
+            text = tellingOf(universe.user, greeting),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(top = HALF, bottom = GAP * 2),
         )
         Inset("System") { Deeds(platform.deeds) }
         Inset("Statistics") { Plot(set, kept, edition) }

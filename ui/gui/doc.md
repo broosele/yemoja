@@ -422,12 +422,43 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-30 — What the home screen is.** *Settled:* **a greeting, what can be done to a
   logbook as a whole, and one plot the reader chooses both axes of.**
 
-  Three things, in that order, because they answer what a reader has not asked yet. The
-  greeting is one sentence: how many dives, how many places they were made, and how long they
-  ran altogether. The places are the ones dived rather than the ones known, a site nobody has
-  been to saying nothing about the diving that was done. A length runs to hundreds of hours
-  and is written in hours and minutes rather than in the clock a dive's own times use, `306:12`
-  being a number nobody reads as a length.
+  Three things, in that order, because they answer what a reader has not asked yet.
+
+  **The greeting is two lines.** Who is being greeted, large; and beneath it, in the size the
+  rest of the application reads at, what there is to say to them. Splitting it is what lets the
+  second line change without the first one growing: the name is the constant and the sentence
+  under it is not.
+
+  Who is greeted has three answers. Whoever the logbook names as its own, by name. A reader
+  whose logbook names nobody, as *diver*, and told that naming one of its people as themselves
+  is what fixes that. And a reader with no logbook open at all, welcomed, and pointed at the
+  two buttons that get them one. The last cannot happen until those buttons work, and is
+  written now because the greeting is what a new reader meets first and should not be written
+  twice.
+
+  Told what, where there is a logbook and a reader: how many dives, how many places they were
+  made, and how long they ran altogether. The places are the ones dived rather than the ones
+  known, a site nobody has been to saying nothing about the diving that was done. A length
+  runs to hundreds of hours and is written in hours and minutes rather than in the clock a
+  dive's own times use, `306:12` being a number nobody reads as a length.
+
+  **The day is remarked on where it is worth remarking on**, woven into the first line rather
+  than set beside it: *Hello Anna Devries, and happy World Oceans Day.* The reader's own
+  birthday first, then the new year, then a day the sea has been given, then the turn of a
+  season. Most days are plain and the line is just hello, which is what keeps the rest worth
+  reading. Two of the sea's days are the United Nations'; the others are observances divers
+  keep among themselves, and the one date among them that is a plain fact is Jacques
+  Cousteau's.
+
+  Seasons are the meteorological ones, beginning on the first of a month, rather than the
+  astronomical ones, whose equinox wanders over three days and would need an almanac. Which
+  way round they run is the mean latitude of the logbook's sites, so that a northern diver's
+  week in the tropics does not move their winter, and a logbook whose sites say nothing is
+  taken to be northern.
+
+  **What day it is comes from the platform**, beside the manual and the map. Nothing below the
+  screens has a clock, and the alternative was a dependency for a date the window already
+  knows.
 
   **What the application does to a logbook as a whole is not a subject**, so it is not a tab.
   Opening another logbook, making one, importing one and downloading from a computer are four

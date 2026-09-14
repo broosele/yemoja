@@ -11,10 +11,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import yemoja.data.Date
 import yemoja.logic.Universe
 import yemoja.logic.divecomputer.FoundDevices
 import java.awt.Desktop
 import java.net.URI
+import java.time.LocalDate
 
 /*
  * The window the screens are shown in, which is the one part per platform.
@@ -42,6 +44,7 @@ fun gui(folder: String): Int {
         manual = CHAPTERS.map { file -> chapterOf(file, bundled("manual/$file")) },
         atlas = { Atlas.read { scale, layer -> bundled("libraries/map/$scale/$layer.txt") } },
         open = ::browse,
+        today = ::today,
     )
     application {
         // The icon is drawn from its vector at whatever size the platform asks for.
@@ -62,6 +65,9 @@ fun gui(folder: String): Int {
     }
     return 0
 }
+
+/** What day it is here, which the greeting remarks on. */
+private fun today(): Date = LocalDate.now().let { Date(it.year, it.monthValue, it.dayOfMonth) }
 
 /** A file's text, as the build bundled it. One missing from the jar is a broken build. */
 private fun bundled(path: String): String {

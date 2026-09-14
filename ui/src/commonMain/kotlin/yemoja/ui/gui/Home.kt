@@ -1,6 +1,7 @@
 package yemoja.ui.gui
 
 import yemoja.data.Cardinality
+import yemoja.data.Date
 import yemoja.data.DateDescription
 import yemoja.data.Dimension
 import yemoja.data.FieldDescription
@@ -42,13 +43,118 @@ internal fun greetingOf(set: ItemSet): Greeting {
     return Greeting(dives.size, places.size, underwater)
 }
 
-/** The first line, addressed to whoever the logbook belongs to. */
-internal fun hailOf(user: ReferenceableItem?, greeting: Greeting): String {
-    val name = user?.let { titleOf(it) }
-    val opening = if (name == null) "You have" else "Hello $name, you have"
-    return "$opening ${counted(greeting.dives, "logged dive")} on " +
+/**
+ * The first line: who is being greeted, and whatever the day is worth remarking on.
+ *
+ * Three of whom. Whoever the logbook names as its own, by name; a reader whose logbook names
+ * nobody, as a diver; and a reader with no logbook open at all, welcomed. The last is not
+ * reachable until the home screen's buttons are built, and is written because the greeting is
+ * the first thing a new reader meets and should not be written twice. `GUI-30`.
+ */
+internal fun hailOf(
+    user: ReferenceableItem?,
+    greeting: Greeting?,
+    today: Date,
+    southern: Boolean,
+): String {
+    val opening = when {
+        greeting == null -> "Hello"
+        user == null -> "Hello diver"
+        else -> "Hello ${titleOf(user)}"
+    }
+    val said = occasionOf(today, user?.let(::birthdayOf), southern)
+        ?: if (greeting == null) "welcome" else null
+    return if (said == null) "$opening." else "$opening, and $said."
+}
+
+/**
+ * The second line: what the logbook amounts to, or what to do about there not being one.
+ *
+ * A logbook that names nobody as its reader is told how to, rather than counted at: the count
+ * is there every other day, and the one thing worth saying is the thing that is missing.
+ */
+internal fun tellingOf(user: ReferenceableItem?, greeting: Greeting?): String = when {
+    greeting == null -> "You can make a new logbook, or open one you already have."
+    user == null ->
+        "Name one of this logbook's people as yourself, and it will greet you by name."
+
+    else -> "You have ${counted(greeting.dives, "logged dive")} on " +
         "${counted(greeting.places, "different location")} for a total of " +
         "${spanOf(greeting.underwater)} underwater."
+}
+
+/** When [user] was born, where the logbook says. */
+private fun birthdayOf(user: ReferenceableItem): Date? =
+    (user.read("birthday") as? Result.Usable)?.value as? Date
+
+/**
+ * What today is worth remarking on, as a phrase that follows *and*, or absent on a plain day.
+ *
+ * The reader's own birthday first, then the new year, then a day the sea has been given, then
+ * the turn of a season. Most days are plain and the greeting says nothing but hello, which is
+ * what keeps the rest worth reading.
+ */
+internal fun occasionOf(today: Date, born: Date?, southern: Boolean): String? {
+    if (born != null && born.month == today.month && born.day == today.day) {
+        return "happy birthday"
+    }
+    if (today.month == 1 && today.day == 1) return "a happy new year"
+    OBSERVED[today.month to today.day]?.let { return it }
+    return seasonOf(today, southern)
+}
+
+/**
+ * The days of the sea, by month and day.
+ *
+ * Two are the United Nations', the rest are observances divers keep among themselves and are
+ * of varying standing; the one date here that is a plain fact is Jacques Cousteau's, born on
+ * the eleventh of June in 1910.
+ */
+private val OBSERVED: Map<Pair<Int, Int>, String> = mapOf(
+    (3 to 22) to "happy World Water Day",
+    (4 to 22) to "happy Earth Day",
+    (6 to 8) to "happy World Oceans Day",
+    (6 to 11) to "a thought for Jacques Cousteau, born on this day in 1910",
+    (6 to 16) to "happy World Sea Turtle Day",
+    (7 to 14) to "happy Shark Awareness Day",
+    (9 to 17) to "happy World Manta Day",
+    (10 to 8) to "happy World Octopus Day",
+    (11 to 3) to "happy World Jellyfish Day",
+)
+
+/**
+ * The first day of a season, which is a season later in the south.
+ *
+ * The meteorological seasons rather than the astronomical ones: they begin on the first of a
+ * month every year, where an equinox wanders over three days and would need an almanac.
+ */
+private fun seasonOf(today: Date, southern: Boolean): String? {
+    if (today.day != 1) return null
+    val month = if (!southern) today.month else (today.month + 5) % 12 + 1
+    val season = SEASONS[month] ?: return null
+    return "happy first day of $season"
+}
+
+/** The month each season begins in, north of the equator. */
+private val SEASONS: Map<Int, String> =
+    mapOf(3 to "spring", 6 to "summer", 9 to "autumn", 12 to "winter")
+
+/**
+ * Whether this logbook's diving is south of the equator, which is what turns the seasons round.
+ *
+ * By the mean of what its sites say, so that a northern diver's week in the tropics does not
+ * move their winter. A logbook whose sites say nothing is taken to be northern, there being
+ * nothing better to go on and most divers being there.
+ */
+internal fun southernOf(set: ItemSet): Boolean {
+    var sum = 0.0
+    var known = 0
+    for (site in set.allOf(Types.DIVE_SITE)) {
+        val latitude = (site.read("latitude") as? Result.Usable)?.value as? Double ?: continue
+        sum += latitude
+        known++
+    }
+    return known > 0 && sum / known < 0.0
 }
 
 /** [many] of [word], the word made plural where it needs to be. */
@@ -134,7 +240,7 @@ private fun readerOf(field: FieldDescription): ((Item) -> Double?)? = when (fiel
     }
 
     is DateDescription -> { held ->
-        ((held.read(field.name) as? Result.Usable)?.value as? yemoja.data.Date)?.let(::yearOf)
+        ((held.read(field.name) as? Result.Usable)?.value as? Date)?.let(::yearOf)
     }
 
     else -> null
@@ -151,7 +257,7 @@ private fun unitAlong(field: FieldDescription): String =
 private const val SECONDS_IN_MINUTE = 60.0
 
 /** A date as a year and a fraction of one, which is what an axis of dates counts in. */
-private fun yearOf(date: yemoja.data.Date): Double = date.epochDay / DAYS_IN_YEAR + 1970.0
+private fun yearOf(date: Date): Double = date.epochDay / DAYS_IN_YEAR + 1970.0
 
 /** The Gregorian year, averaged over its cycle, which is what a fraction of one divides by. */
 private const val DAYS_IN_YEAR = 365.2425

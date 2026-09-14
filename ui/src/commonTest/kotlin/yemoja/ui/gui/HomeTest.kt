@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import yemoja.data.Date
 import yemoja.data.ReferenceableItem
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
@@ -43,14 +44,36 @@ class GreetingTest {
         assertEquals(7800.0, greeting.underwater)
     }
 
+    private val plain = Date(2026, 5, 5)
+
     @Test
-    fun `the greeting reads as a sentence, and without a user it still does`() {
+    fun `a reader the logbook knows is greeted by name, and told what is in it`() {
+        val greeting = greetingOf(DIVED)
+        assertEquals("Hello Anna Devries.", hailOf(user, greeting, plain, false))
         assertEquals(
-            "Hello Anna Devries, you have 3 logged dives on 2 different locations" +
+            "You have 3 logged dives on 2 different locations" +
                 " for a total of 2 hours and 10 minutes underwater.",
-            hailOf(user, greetingOf(DIVED)),
+            tellingOf(user, greeting),
         )
-        assertTrue(hailOf(null, greetingOf(DIVED)).startsWith("You have 3 logged dives"))
+    }
+
+    @Test
+    fun `a logbook that names nobody greets a diver and says how to fix that`() {
+        val greeting = greetingOf(DIVED)
+        assertEquals("Hello diver.", hailOf(null, greeting, plain, false))
+        assertEquals(
+            "Name one of this logbook's people as yourself, and it will greet you by name.",
+            tellingOf(null, greeting),
+        )
+    }
+
+    @Test
+    fun `with no logbook open at all there is a welcome and two ways out of it`() {
+        assertEquals("Hello, and welcome.", hailOf(null, null, plain, false))
+        assertEquals(
+            "You can make a new logbook, or open one you already have.",
+            tellingOf(null, null),
+        )
     }
 
     @Test
@@ -59,6 +82,69 @@ class GreetingTest {
         assertEquals("2 hours", spanOf(7200.0))
         assertEquals("1 hour and 1 minute", spanOf(3660.0))
         assertEquals("0 minutes", spanOf(0.0), "a logbook with nothing in it says so")
+    }
+
+    @Test
+    fun `a day worth remarking on is remarked on, and most days are not`() {
+        val born = Date(1904, 6, 16)
+        assertNull(occasionOf(plain, born, false), "a plain day says nothing")
+        assertEquals("happy birthday", occasionOf(Date(2026, 6, 16), born, false))
+        assertEquals("a happy new year", occasionOf(Date(2026, 1, 1), born, false))
+        assertEquals("happy World Oceans Day", occasionOf(Date(2026, 6, 8), null, false))
+        assertEquals(
+            "a thought for Jacques Cousteau, born on this day in 1910",
+            occasionOf(Date(2026, 6, 11), null, false),
+        )
+        assertEquals(
+            "happy World Sea Turtle Day",
+            occasionOf(Date(2026, 6, 16), null, false),
+            "a birthday would have won, and there is none",
+        )
+    }
+
+    @Test
+    fun `a season turns on the first of a month, and turns the other way in the south`() {
+        assertEquals("happy first day of spring", occasionOf(Date(2026, 3, 1), null, false))
+        assertEquals("happy first day of autumn", occasionOf(Date(2026, 3, 1), null, true))
+        assertEquals("happy first day of winter", occasionOf(Date(2026, 12, 1), null, false))
+        assertEquals("happy first day of summer", occasionOf(Date(2026, 12, 1), null, true))
+        assertNull(occasionOf(Date(2026, 3, 2), null, false), "only the first")
+        assertNull(occasionOf(Date(2026, 5, 1), null, false), "no season begins in May")
+    }
+
+    @Test
+    fun `the day is woven into the greeting rather than said beside it`() {
+        val greeting = greetingOf(DIVED)
+        assertEquals(
+            "Hello Anna Devries, and happy World Oceans Day.",
+            hailOf(user, greeting, Date(2026, 6, 8), false),
+        )
+        assertEquals(
+            "Hello diver, and a happy new year.",
+            hailOf(null, greeting, Date(2026, 1, 1), false),
+        )
+        assertEquals(
+            "Hello, and happy Earth Day.",
+            hailOf(null, null, Date(2026, 4, 22), false),
+            "a welcome gives way to the day",
+        )
+    }
+
+    @Test
+    fun `which half of the world a logbook dives in is the mean of what its sites say`() {
+        assertTrue(!southernOf(DIVED), "sites that say nothing are taken to be northern")
+        val south = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive_site.json" to """{"poor": {"name": "Poor Knights", "latitude": -35.5,
+                        "longitude": 174.7}, "north": {"name": "Zeeland", "latitude": 51.6,
+                        "longitude": 3.8}, "fiord": {"name": "Fiordland", "latitude": -45.4,
+                        "longitude": 167.0}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        assertTrue(southernOf(south), "two of three sites south, and further south than the north")
     }
 
     @Test
