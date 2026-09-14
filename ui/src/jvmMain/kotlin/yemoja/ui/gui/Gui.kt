@@ -22,6 +22,7 @@ import java.net.URI
 import java.time.LocalDate
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
+import javax.swing.SwingUtilities
 
 /*
  * The window the screens are shown in, which is the one part per platform.
@@ -61,6 +62,7 @@ fun gui(folder: String? = null): Int {
                 },
                 open = ::browse,
                 today = ::today,
+                ask = ::asked,
                 deeds = mapOf(
                     Deed.NEW to {
                         chosen("Make a new logbook in", "Make")?.let { where ->
@@ -138,6 +140,22 @@ private fun opened(where: String): Universe? = try {
     warn("$where could not be read: ${refused.message}")
     null
 }
+
+/**
+ * A question put to the reader, waited on, and answered.
+ *
+ * On the toolkit's own thread whatever thread it was asked from, a download running on one of
+ * its own; and waited for there, since what asked cannot go on without the answer.
+ */
+private fun asked(question: String): String? {
+    var answer: String? = null
+    val put = Runnable { answer = JOptionPane.showInputDialog(null, question, "Yemoja", QUESTION) }
+    if (SwingUtilities.isEventDispatchThread()) put.run() else SwingUtilities.invokeAndWait(put)
+    return answer?.ifBlank { null }
+}
+
+/** What a question looks like, which is a question rather than a warning. */
+private const val QUESTION = JOptionPane.QUESTION_MESSAGE
 
 /**
  * What went wrong, in a box over the window.

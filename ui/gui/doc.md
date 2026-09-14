@@ -420,6 +420,31 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-31 — How a dive computer is read from the window.** *Settled:* **the screens drive it
+  and the platform only asks; every dive that comes across is taken in together or left staged.**
+
+  Everything a download needs is on the universe — what is within reach, and the reading of one
+  — so the flow is this layer's rather than a platform's. What a platform adds is one thing:
+  putting a question and *waiting* for the answer. A device that guards itself asks for a code
+  part way through, from whatever thread the download runs on, and the answer has to come back
+  to that thread before the next byte is read. `LOGIC-24`.
+
+  **Where it has got to is a thing in its own right.** A download is the one act here that takes
+  minutes, so it has stages — looking, choosing between what was found, reading, done — and the
+  section under the greeting says which. The window stays alive throughout, both the looking and
+  the reading happening off the drawing thread, which is what the terminal front end says it
+  owes and does not yet have.
+
+  **What arrives is taken in together or left where it is.** A download matches nothing by id,
+  `LOGIC-20`, so nothing here claims to know which arriving dive is one already held. Deciding
+  that dive by dive is a review and is not built; what is built is the blunt answer for the
+  common case, a computer read for the first time or read again after a resume holding dives the
+  logbook has not seen. *Leave them* keeps them staged, where the terminal front end can review
+  them properly and where a review here would find them. Taking them in stops at the first
+  refusal and says so, leaving the rest: what is in the folder is what has not been decided,
+  `RECON-1`.
+
+  Open: a review of one's own, dive by dive, with what each might already be.
 - **GUI-30 — What the home screen is.** *Settled:* **a greeting, what can be done to a
   logbook as a whole, and one plot the reader chooses both axes of.**
 
@@ -448,7 +473,8 @@ once and corrected. The numbers stay unused rather than being given to something
   is the asking, and the window swapping the logbook it shows. A folder that will not read, or
   will not be made into a logbook, is said in a box over the window rather than on the screen
   behind it: it answers something the reader just asked for, and the window under it has not
-  changed. Importing and downloading are still greyed.
+  changed. Reading a dive computer works too, and is `GUI-31`; importing a logbook is the one
+  of the four still greyed.
 
   **A folder holding no manifest opens**, as a logbook that declares nothing, which is what the
   command line does with the same folder and what the model calls one. Refusing it would be

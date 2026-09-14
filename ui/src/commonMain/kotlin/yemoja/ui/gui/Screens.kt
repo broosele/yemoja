@@ -48,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -59,6 +60,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -91,6 +93,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import yemoja.data.Cardinality
 import yemoja.data.Element
@@ -102,6 +106,7 @@ import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.Change
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
@@ -134,6 +139,14 @@ internal class Platform(
     val open: (String) -> Unit,
     /** What day it is, which only a platform knows. Asked each time, a window outliving one. */
     val today: () -> yemoja.data.Date,
+    /**
+     * Puts [question] to the reader and waits for the answer, or nothing where they give none.
+     *
+     * Waits, which is what makes it the platform's: a device that guards itself asks for a code
+     * part way through a download, from whatever thread the download is running on, and the
+     * answer has to come back to that thread before the next byte is read. `LOGIC-24`.
+     */
+    val ask: (question: String) -> String? = { null },
     /**
      * What this platform can do to a logbook as a whole, by deed.
      *
@@ -200,6 +213,11 @@ internal class Kept {
 internal class Changer(private val universe: Universe?) {
     /** How many changes have landed, read by whatever must redraw when one does. */
     var edition: Int by mutableStateOf(0)
+
+    /** Say that the logbook changed by some other hand, so that what reads it reads again. */
+    fun changed() {
+        edition++
+    }
 
     fun change(changes: List<Change>): Outcome {
         // A window opened on no logbook has nothing to write to, and nothing in it asks. `GUI-30`.
@@ -327,8 +345,11 @@ private fun Tabs(tabs: List<Tab>, chosen: Tab, onChoose: (Tab) -> Unit) {
 @Composable
 private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
     val set = universe?.logbook
-    val edition = LocalChanger.current.edition
+    val changer = LocalChanger.current
+    val edition = changer.edition
     val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
+    val reading = remember(universe) { Reading() }
+    val scope = rememberCoroutineScope()
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(horizontal = GAP * 2),
@@ -345,7 +366,17 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = HALF, bottom = GAP * 2),
         )
-        Inset("System") { Deeds(platform.deeds) }
+        // Reading a computer is this layer's own: everything it needs is on the universe, and
+        // what a platform adds is only the asking. `GUI-31`.
+        val deeds = platform.deeds + buildMap {
+            if (universe != null) {
+                put(Deed.DOWNLOAD) { scope.launch { look(universe, platform, reading, changer) } }
+            }
+        }
+        Inset("System") {
+            Deeds(deeds)
+            Reader(universe, platform, reading, changer, scope)
+        }
         // Nothing to count where there is no logbook, and nothing to say about that.
         if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
         Spacer(modifier = Modifier.height(GAP * 2))
@@ -381,6 +412,113 @@ private fun greeted(hail: Hail, open: (String) -> Unit): AnnotatedString {
             withLink(LinkAnnotation.Clickable(page, link) { open(page) }) { append(occasion.said) }
         }
         append(".")
+    }
+}
+
+/**
+ * Reading is where a download has got to, and what it is waiting on.
+ *
+ * Its own object rather than a handful of states, because a download outlives every redraw and
+ * the screen is only ever a reading of it. `GUI-31`.
+ */
+private class Reading {
+    var stage: Stage by mutableStateOf(Stage.IDLE)
+    var found: List<DiveComputer> by mutableStateOf(emptyList())
+    var reading: String? by mutableStateOf(null)
+    var said: String? by mutableStateOf(null)
+    var arrived: Int by mutableStateOf(0)
+}
+
+/** Look for what is within reach, and read it where exactly one thing is. */
+private suspend fun look(
+    universe: Universe,
+    platform: Platform,
+    reading: Reading,
+    changer: Changer,
+) {
+    reading.stage = Stage.LOOKING
+    reading.said = null
+    val found = withContext(Dispatchers.Default) { universe.attached() }
+    reading.found = found
+    when (found.size) {
+        0 -> {
+            reading.stage = Stage.DONE
+            reading.said = "No dive computer is within reach, or none can be opened."
+        }
+
+        1 -> read(universe, platform, reading, changer, found.single())
+        else -> reading.stage = Stage.CHOOSING
+    }
+}
+
+/** Read [computer], which takes minutes, and say what came of it. */
+private suspend fun read(
+    universe: Universe,
+    platform: Platform,
+    reading: Reading,
+    changer: Changer,
+    computer: DiveComputer,
+) {
+    reading.stage = Stage.READING
+    reading.reading = computer.name
+    val outcome = withContext(Dispatchers.Default) {
+        universe.downloadFrom(computer) { platform.ask(it) }
+    }
+    reading.arrived = arrivedIn(universe.importing)
+    reading.said = outcomeOf(outcome, reading.arrived)
+    reading.stage = Stage.DONE
+    changer.changed()
+}
+
+/**
+ * A download, from the button being pressed to the dives being taken in.
+ *
+ * Nothing at all until one is started, so the section is a row of buttons on an ordinary day.
+ */
+@Composable
+private fun Reader(
+    universe: Universe?,
+    platform: Platform,
+    reading: Reading,
+    changer: Changer,
+    scope: CoroutineScope,
+) {
+    if (universe == null || reading.stage == Stage.IDLE) return
+    Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
+        sayingOf(reading.stage, reading.reading)?.let { Aside(it) }
+        if (reading.stage == Stage.CHOOSING) {
+            Row(horizontalArrangement = Arrangement.spacedBy(GAP)) {
+                for (computer in reading.found) {
+                    Button(
+                        onClick = {
+                            scope.launch { read(universe, platform, reading, changer, computer) }
+                        },
+                    ) { Text(namedOf(computer)) }
+                }
+            }
+        }
+        reading.said?.let { Aside(it) }
+        if (reading.stage == Stage.DONE && reading.arrived > 0) {
+            Row(
+                modifier = Modifier.padding(top = HALF),
+                horizontalArrangement = Arrangement.spacedBy(GAP),
+            ) {
+                Button(
+                    onClick = {
+                        val import = universe.importing ?: return@Button
+                        val taken = takenIn(import)
+                        if (taken.refusal == null) universe.stopImporting()
+                        reading.arrived = arrivedIn(universe.importing)
+                        reading.said = taken.refusal
+                            ?: "${taken.many} taken into the logbook."
+                        changer.changed()
+                    },
+                ) { Text("Take them all in") }
+                TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Leave them") }
+            }
+        } else if (reading.stage == Stage.DONE) {
+            TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Close") }
+        }
     }
 }
 
