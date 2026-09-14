@@ -431,6 +431,17 @@ To settle when we discuss architecture and features:
    download is then given up rather than failed, which is the difference between a user who
    pressed escape and a device that would not talk.
 
+- **LOGIC-28 — What the application says when it cannot read a dive computer.** Two situations
+   read the same from above: nothing is within reach, and the library that reads them is not on
+   this machine. `found()` answers with an empty list either way, so a front end says *no dive
+   computer is within reach* when the truth is that none could ever be found here. The remedies
+   are nothing alike — switch the computer on, against install something — so one message for
+   both is a message that misleads half the time.
+
+   What is wanted is for the port to answer the second question. `Devices` says what is within
+   reach and could as easily say whether reading is possible at all, which every implementation
+   knows and none is asked. It is a line of interface and a line of implementation; what is not
+   settled is whether a port that names no library should be asked a question this shaped.
 - **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants

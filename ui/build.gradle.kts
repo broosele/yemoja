@@ -66,6 +66,10 @@ tasks.register<JavaExec>("gui") {
     // Whatever follows --args, so the folder is named where every other command names one.
     (providers.gradleProperty("args").orNull ?: "").split(" ").filter { it.isNotBlank() }
         .let { args = listOf("gui") + it }
+    // Where libdivecomputer is, as the tests are told. Without it nothing loads and the window
+    // says no dive computer is within reach, which is true of the machine and not of the desk.
+    (System.getenv("LIBDIVECOMPUTER") ?: findProperty("libdivecomputer")?.toString())
+        ?.let { systemProperty("jna.library.path", it) }
 }
 
 // Start scripts, so this is run as `yemoja <command>` rather than through Gradle. They are the
