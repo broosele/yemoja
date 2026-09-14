@@ -106,4 +106,15 @@ tasks.register<Sync>("installDist") {
             into("native")
         }
     }
+    // Said out loud, because this task writes the whole folder afresh: building without the
+    // library takes it back out of an installation that had it, and the window then says it
+    // cannot read a dive computer. True, and baffling if nobody mentioned it.
+    doFirst {
+        if (libdivecomputer == null) {
+            logger.quiet(
+                "No libdivecomputer given: this installation will not read a dive computer. " +
+                    "Set LIBDIVECOMPUTER, or pass -Plibdivecomputer=<folder>.",
+            )
+        }
+    }
 }
