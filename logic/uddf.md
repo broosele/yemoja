@@ -136,6 +136,10 @@ because every series is read as piecewise linear, so exporting means emitting wa
 at the union of the timestamps and reading depth off the line for those that lack one.
 What that costs, and why it is acceptable, is weighed under *Where the two disagree*.
 
+The waypoints after the surfacing are dropped as the file is read, a file being as free as a
+device to keep recording once the diving stopped. A depth that will not read as a number stops
+the cut where it stands, so nothing is lost to a file this cannot parse. `LOGIC-30`.
+
 | Ours | UDDF waypoint child |
 |---|---|
 | `depth` | `depth` |

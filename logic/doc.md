@@ -475,6 +475,54 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-30 — What a reading does about the surface a recording ends with.** *Settled:* **it
+   is cut off at the surfacing, in both readers.**
+
+   A computer does not end a dive the moment a diver reaches the surface. It waits, in case the
+   diver goes back down, and how long it waits is a setting. The logbook this was measured
+   against holds both halves of that: one computer wrote about eight minutes of floating onto
+   the end of every dive until the setting was changed, and about two onto every dive after.
+   Those minutes are in the profile, so a graph of an hour's dive spends a seventh of its width
+   on a flat line at nothing, and what is read off the recording — when it ended, how long it
+   ran — describes the wait rather than the dive.
+
+   **A recording ends at the surfacing**: the last sample below a metre, and the one after it,
+   which is kept so that the depth series still runs to the surface rather than stopping on the
+   way up. Everything past that goes. Whole samples go, which takes every series with them: a
+   pressure read on the boat and an alarm that sounded afterwards are as much the tail as the
+   depth is.
+
+   **A metre, and the evidence is good** — unlike `LOGIC-25`'s ten minutes, which had nothing to
+   be fitted to. That logbook holds 428 profiles carrying a depth series, 178 of which also
+   carry the device's own figure for how long the dive was. The surfacing found this way and
+   that figure agree within a minute in every one of them, within thirty seconds in all but one,
+   and exactly at the median. They are worked out from different things — one from the depths,
+   one from whatever the computer was counting — so agreeing that closely is the rule landing
+   where the computer says the dive ended. Half a metre picks nearly the same sample; a metre
+   and a half starts eating the ascent.
+
+   **Nothing is cut unless it is known to be at the surface.** A depth nobody recorded, or one a
+   file writes in a way that will not read as a number, is not evidence of floating and stops
+   the cut where it stands. A recording that never went below a metre is left whole, nothing in
+   it saying where a dive ended.
+
+   **What the device said about the dive as a whole is untouched.** Its duration, its greatest
+   depth and its average are the device's own figures and `LOGIC-19` already prefers them to the
+   recording; the measurement above is what says they need no correcting, the device's duration
+   ending at the surfacing already.
+
+   **The cut comes before the stretches are joined**, so that what `LOGIC-25` measures between
+   two of them is the surface a diver spent rather than the wait a computer was set to. Until
+   this, a computer set to wait eight minutes could have a pair glued whose real surface was
+   eighteen.
+
+   **Only the tail is cut.** A dive that surfaced in the middle keeps that, it being diving
+   either side; and there is nothing to cut off the front, a computer beginning a recording when
+   the diver goes down.
+
+   Both readers do it, a file being as free as a device to keep recording once the diving
+   stopped: a download, and a UDDF document.
+
 - **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones
    something used, unless there is only one.**
 
@@ -599,6 +647,11 @@ To settle when we discuss architecture and features:
    the opposite of an empty band: the figure is safe against what has been seen and untested
    against what it exists for. The first logbook holding a real split settles it properly, and
    a shorter figure is the safer guess until then.
+
+   **The surface between them is the surface, since the tails are cut first.** A computer waits
+   before it ends a dive, so what lies between two stretches as they arrive is the wait and the
+   surface together; `LOGIC-30` takes the wait out before any pair is measured, and what this
+   rule sees is what the diver actually spent up there.
 
    **What the pair says about the dive as a whole is taken from the pair**: the deeper of the
    two depths, the colder of the two temperatures, and a length running from the first

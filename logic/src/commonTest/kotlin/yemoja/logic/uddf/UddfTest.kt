@@ -156,6 +156,24 @@ class ReadProfileTest {
     }
 
     @Test
+    fun `the waypoints after the surfacing are dropped`() {
+        // A file is as free as a device to keep recording once the diving stopped. `LOGIC-30`.
+        val floating = """
+            <waypoint><divetime>0</divetime><depth>0.0</depth></waypoint>
+            <waypoint><divetime>90</divetime><depth>14.9</depth></waypoint>
+            <waypoint><divetime>180</divetime><depth>0.4</depth></waypoint>
+            <waypoint><divetime>240</divetime><depth>0.0</depth></waypoint>
+            <waypoint><divetime>300</divetime><depth>0.0</depth></waypoint>
+        """
+        val dive = oneDive(dived(samples = floating))
+        val profiles = (dive.keyed<OwnedItem>("profiles") as Result.Usable).value
+        val depth = ((profiles.values.first() as Element.Usable).value
+            .series<Double>("depth") as Result.Usable).value
+        assertEquals(3, depth.size, "the surfacing is the last of it")
+        assertEquals(180, depth.secondAt(2))
+    }
+
+    @Test
     fun `a dive with no samples has no profile`() {
         assertEquals(Result.Absent, oneDive(dived()).read("profiles"))
     }

@@ -8,6 +8,7 @@ import yemoja.data.Units
 import yemoja.logic.Types
 import yemoja.logic.freeName
 import yemoja.logic.unknownOf
+import yemoja.logic.untilSurfaced
 
 /*
  * A UDDF document read into this model's items.
@@ -219,10 +220,17 @@ object Uddf {
      * instant; this model keeps a series per quantity, each with its own times. So a waypoint
      * contributes a point to each series it has a value for and nothing to the others, which is
      * what makes the shapes convertible without padding.
+     *
+     * The waypoints after the surfacing are dropped, a file being as free as a device to keep
+     * recording once the diving stopped. A depth that will not read as a number is not evidence
+     * of floating and stops the cut where it stands, so a file this cannot parse keeps
+     * everything and says what it says through the field that refuses it. `LOGIC-30`.
      */
     private fun profileOf(dive: Tag): Stored.Members? {
-        val waypoints = dive.one(SAMPLES)?.all("waypoint").orEmpty()
-        if (waypoints.isEmpty()) return null
+        val all = dive.one(SAMPLES)?.all("waypoint").orEmpty()
+        if (all.isEmpty()) return null
+        // What the computer recorded while floating after the dive is not the dive. `LOGIC-30`.
+        val waypoints = all.take(untilSurfaced(all.map { it.text("depth")?.toDoubleOrNull() }))
         val fields = LinkedHashMap<String, Stored>()
         for ((ours, theirs) in SERIES) {
             seriesOf(waypoints, theirs)?.let { fields[ours] = it }

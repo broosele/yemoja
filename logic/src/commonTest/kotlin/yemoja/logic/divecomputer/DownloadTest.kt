@@ -159,7 +159,9 @@ class ThinnedTest {
     fun `the first and the last are always kept`() {
         val depth = series(profile(straight(100)), "depth")
         assertEquals(0, depth.secondAt(0))
-        assertEquals(198, depth.secondAt(depth.size - 1))
+        // The last of what the recording keeps, the ascent's final sample being above the
+        // surface and cut off before any of this. `LOGIC-30`.
+        assertEquals(196, depth.secondAt(depth.size - 1))
     }
 
     @Test

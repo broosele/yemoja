@@ -360,7 +360,16 @@ that is the only record of it.
 - `desaturation_time` (number) — how long it reckoned you would take to offgas.
 - `tolerances` (owned item) — how much detail was dropped when the recording was taken
   in, where that is known. Described below.
-- `depth` (series) — how deep, throughout.
+- `depth` (series) — how deep, throughout. It runs to the moment you surfaced and stops there.
+
+  A computer does not end a dive the moment you reach the surface — it waits a while in case you
+  go back down, and how long it waits is a setting. Whatever it recorded during that wait is not
+  diving, so a download or an import cuts it off: the last sample below a metre, the one after it
+  so that the line still reaches the surface, and nothing more. What the computer itself said
+  about the dive is left alone, since it had already stopped counting when you surfaced.
+
+  Surfacing part way through a dive keeps everything, that being diving either side of it. And a
+  recording that never went below a metre is left whole: nothing in it says where the dive ended.
 - `temperature` (series) — how cold, throughout. Often sampled far less often than
   depth, which is why it is a series of its own rather than a column beside it.
 - `decostop` (series) — the stop it was holding you to, throughout. A stop is a rounded

@@ -15,6 +15,7 @@ import yemoja.logic.Types
 import yemoja.logic.sameSerial
 import yemoja.logic.freeName
 import yemoja.logic.unknownOf
+import yemoja.logic.untilSurfaced
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sqrt
@@ -56,13 +57,17 @@ object Download {
     fun read(recordings: Sequence<Recording>, into: ItemSet? = null): ItemSet {
         val set = ItemSet(Types.ALL)
         val places = ArrayList<Placed>()
+        // Each stretch loses what it recorded while floating before any two are compared, so
+        // that what separates them is the surface a diver spent rather than the wait a computer
+        // was set to. `LOGIC-30`.
+        //
         // The stretches of a dive a computer cut up are one recording before they are a dive,
         // so everything below this sees a whole dive. `LOGIC-25`.
         //
         // Oldest first, whatever order the device counts in. Two dives on one day are told
         // apart by the index on their id, and an index that runs backwards through the day is
         // one a reader has to know not to trust.
-        for (held in joined(recordings).sortedWith(BY_WHEN)) {
+        for (held in joined(recordings.map { ended(it) }).sortedWith(BY_WHEN)) {
             val recording = usedIn(held)
             val named = recording.serial?.let { into?.let { logbook -> computerIn(logbook, it) } }
             // Where the device said it was, as a site to be asked about. `LOGIC-18`.
@@ -433,4 +438,21 @@ internal fun usedIn(held: Recording): Recording {
             )
         },
     )
+}
+
+/**
+ * [held] with what it recorded after the dive ended cut off.
+ *
+ * A computer keeps recording for a while after a diver surfaces, so a profile arrives with a
+ * flat tail at the surface on the end of it. It is cut here, where the recording is still a
+ * recording, so that nothing above has to know it was ever there. `LOGIC-30`.
+ *
+ * Whole samples go, which takes every series with them: a pressure read on the boat and an
+ * alarm that sounded after the dive are as much the tail as the depth is. What the device said
+ * about the dive as a whole is untouched, its own figures being the dive already.
+ */
+internal fun ended(held: Recording): Recording {
+    val kept = untilSurfaced(held.samples.map { it.depth })
+    if (kept == held.samples.size) return held
+    return held.copy(samples = held.samples.take(kept))
 }

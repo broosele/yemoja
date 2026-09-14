@@ -226,6 +226,13 @@ gave up a hundred dives in twenty minutes, each with its samples, tank pressures
 factors, water and fingerprint. An Aqualung i330R does the same behind the code it shows on its
 own screen, `LOGIC-24`. USB and serial have met nothing.
 
+**A computer keeps recording after the diver surfaces.** The Perdix waits before it ends a dive,
+and how long it waits is a setting: about eight minutes on every dive made before that setting
+was changed and about two on every dive after, all of it a flat line at the surface on the end of
+the profile. The i330R does not wait — its last sample is its own end of dive, to the second.
+`LOGIC-30` cuts the tail off as the recording is read, at the surfacing, which is where both
+computers' own figures for the dive end anyway.
+
 **A sample's time is not always a clock, and the i330R's is not.** One dive was read from both
 at once. The diver spent about three minutes on the surface part way through, and the two
 recordings say different things about it. The Perdix ended its dive there and began another,
