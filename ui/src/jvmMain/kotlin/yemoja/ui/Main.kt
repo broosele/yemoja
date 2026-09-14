@@ -18,8 +18,8 @@ internal val COMMANDS: Map<String, Command> = mapOf(
     "tui" to Command(listOf("logbook folder"), "show a logbook in the terminal") {
         tui(it.single())
     },
-    "gui" to Command(listOf("logbook folder"), "show a logbook in a window") {
-        gui(it.single())
+    "gui" to Command(listOf("logbook folder"), "show a logbook in a window", least = 0) {
+        gui(it.firstOrNull())
     },
 )
 
@@ -32,11 +32,15 @@ internal val COMMANDS: Map<String, Command> = mapOf(
 internal class Command(
     val arguments: List<String>,
     val summary: String,
+    /** How few will do. Those past it are optional, and written in brackets. */
+    val least: Int = arguments.size,
     val run: (List<String>) -> Int,
 ) {
 
     /** What to write after the command's name. */
-    val written: String get() = arguments.joinToString(" ") { "<$it>" }
+    val written: String get() = arguments
+        .mapIndexed { at, name -> if (at < least) "<$name>" else "[<$name>]" }
+        .joinToString(" ")
 }
 
 /** Run the command named first, and exit with whatever it answers. */
@@ -49,7 +53,7 @@ fun main(args: Array<String>) {
         exitProcess(2)
     }
     val rest = args.drop(1)
-    if (rest.size != command.arguments.size) {
+    if (rest.size !in command.least..command.arguments.size) {
         System.err.println("yemoja ${args[0]} ${command.written}")
         exitProcess(2)
     }

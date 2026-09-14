@@ -48,18 +48,23 @@ release and how to build and run from source, once there is something to run.
 own Gradle, and Gradle fetches the Kotlin compiler, so `./gradlew build` from the root is
 the whole of it. Running the tests is in [testing.md](testing.md).
 
-**One thing runs**: the terminal front end, over a logbook folder.
+**Two front ends run**: the terminal one, over a logbook folder, and the window, which may be
+given one or opened without.
 
 ```
-./gradlew :ui:installDist          writes ui/build/install/yemoja/bin
-yemoja tui <logbook folder>        with that bin directory on the path
+./gradlew :ui:installDist             writes ui/build/install/yemoja/bin
+yemoja tui <logbook folder>           with that bin directory on the path
+yemoja gui [<logbook folder>]         the window, the folder being optional
+
+./gradlew :ui:gui -Pargs=<folder>     the window straight from the build
 ```
 
-`yemoja` on its own says which commands there are; there is one so far. It must be started
+`yemoja` on its own says which commands there are. The terminal front end must be started
 from a real terminal, so a pipe or a redirect gets a message rather than a screen — which is
-also why it cannot be run through Gradle, since Gradle gives a child process no terminal. It
-reads and shows; nothing in this project writes a logbook yet. See
-[ui/tui/doc.md](ui/tui/doc.md).
+also why it cannot be run through Gradle, since Gradle gives a child process no terminal. The
+window has no such need and can be. Both read and show, and the window can edit an item's
+fields; nothing else writes a logbook yet. See [ui/tui/doc.md](ui/tui/doc.md) and
+[ui/gui/doc.md](ui/gui/doc.md).
 
 Only the JVM target is built. The native targets need a C++ toolchain and Developer Mode,
 and Android needs its SDK; each joins when the platform it serves is worked on.

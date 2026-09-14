@@ -300,8 +300,9 @@ which `GUI-29` describes, and an entry of a keyed collection can be taken out or
 nothing else writes yet. No item is added or deleted from here, no owned item is added, and
 there is no journal to undo with.
 
-It opens as `yemoja gui <logbook folder>`, beside the terminal front end, and unlike that one it
-can be run from the build, a window needing no console.
+It opens as `yemoja gui [<logbook folder>]`, beside the terminal front end, and unlike that one
+it can be run from the build, a window needing no console. The folder is optional: with none it
+opens on the welcome and offers Home and Manuals. `GUI-30`.
 
 **The look is the platform's, in the application's colours.** Material as it comes, light or
 dark as the system is set, with one thing of ours in it: the colours are a marine palette rather
@@ -432,9 +433,15 @@ once and corrected. The numbers stay unused rather than being given to something
   Who is greeted has three answers. Whoever the logbook names as its own, by name. A reader
   whose logbook names nobody, as *diver*, and told that naming one of its people as themselves
   is what fixes that. And a reader with no logbook open at all, welcomed, and pointed at the
-  two buttons that get them one. The last cannot happen until those buttons work, and is
-  written now because the greeting is what a new reader meets first and should not be written
-  twice.
+  two buttons that would get them one.
+
+  **The window opens without a logbook**, which is what makes the third reachable: the folder
+  the command takes is optional, and named with none the window opens on the welcome. A folder
+  that is named and will not read is still an error, that being what was asked for. Only the
+  tabs that are not about what a logbook holds are offered then, which is Home and Manuals; a
+  tab is about a logbook exactly when it lists item types, so the model answers that rather
+  than a list kept beside it. The buttons that would open one are greyed, so the window is at
+  present a door with nothing behind it — which is the point of building the door first.
 
   Told what, where there is a logbook and a reader: how many dives, how many places they were
   made, and how long they ran altogether. The places are the ones dived rather than the ones

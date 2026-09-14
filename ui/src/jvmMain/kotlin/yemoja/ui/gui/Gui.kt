@@ -27,12 +27,16 @@ import java.time.LocalDate
 /**
  * Show the logbook in [folder] until the window is closed, and answer with what to exit with.
  *
+ * **A folder is optional.** Named with none, the window opens on nothing and greets whoever
+ * opened it, which is where a reader with no logbook starts. A folder that is named and will
+ * not read is an error all the same: it is what was asked for. `GUI-30`.
+ *
  * **What this supplies is the platform**: a window, a way to look for a dive computer, the manual
  * and the map read from the jar, and a browser for a link that leads out. Everything shown is
  * decided by the screens, which know nothing about any of this.
  */
-fun gui(folder: String): Int {
-    val universe = try {
+fun gui(folder: String? = null): Int {
+    val universe = if (folder == null) null else try {
         Universe.open(folder, FoundDevices())
     } catch (refused: RuntimeException) {
         // A folder that is not a logbook, or a file in it that will not read. There is no window
@@ -52,7 +56,7 @@ fun gui(folder: String): Int {
         val icon = remember { useResource("yemoja.svg") { loadSvgPainter(it, density) } }
         Window(
             onCloseRequest = ::exitApplication,
-            title = "Yemoja — $folder",
+            title = if (folder == null) "Yemoja" else "Yemoja — $folder",
             icon = icon,
             state = rememberWindowState(size = DpSize(1650.dp, 1140.dp)),
         ) {

@@ -26,6 +26,17 @@ class TabsTest {
     }
 
     @Test
+    fun `a tab about what a logbook holds is not offered without one`() {
+        val without = TABS.filter { !it.needsLogbook }
+        assertEquals(listOf("Home", "Manuals"), without.map { it.name })
+        assertEquals(
+            listOf("Dive", "Gear", "Community", "Location"),
+            TABS.filter { it.needsLogbook }.map { it.name },
+        )
+        assertEquals("Home", without.first().name, "a window with no logbook still opens on Home")
+    }
+
+    @Test
     fun `the subjects are the ones the interface document settled`() {
         assertEquals(
             // Statistics is Home's, not a tab: the figures shown without asking and all of

@@ -17,6 +17,7 @@ class MainTest {
                 Regex("<[^>]+>").findAll(command.written).count(),
                 name,
             )
+            assertTrue(command.least <= command.arguments.size, "$name wants more than it names")
         }
     }
 
@@ -24,7 +25,16 @@ class MainTest {
     fun `the terminal interface takes a logbook and nothing else`() {
         val tui = COMMANDS.getValue("tui")
         assertEquals(listOf("logbook folder"), tui.arguments)
+        assertEquals(1, tui.least, "a terminal with no logbook has nothing to show")
         assertEquals("<logbook folder>", tui.written)
+    }
+
+    @Test
+    fun `the window may be given a logbook and will open without one`() {
+        val gui = COMMANDS.getValue("gui")
+        assertEquals(listOf("logbook folder"), gui.arguments)
+        assertEquals(0, gui.least)
+        assertEquals("[<logbook folder>]", gui.written, "written as what it may be given")
     }
 
     @Test

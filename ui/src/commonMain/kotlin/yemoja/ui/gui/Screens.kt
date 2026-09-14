@@ -197,12 +197,14 @@ internal class Kept {
  * Changer is the one door from the screens to the model's changes, and a count that ticks on
  * each so that whatever shows an item redraws it. `GUI-29`.
  */
-internal class Changer(private val universe: Universe) {
+internal class Changer(private val universe: Universe?) {
     /** How many changes have landed, read by whatever must redraw when one does. */
     var edition: Int by mutableStateOf(0)
 
     fun change(changes: List<Change>): Outcome {
-        val outcome = universe.change(Operation.EDIT, *changes.toTypedArray())
+        // A window opened on no logbook has nothing to write to, and nothing in it asks. `GUI-30`.
+        val open = universe ?: return Outcome.Refused("no logbook is open")
+        val outcome = open.change(Operation.EDIT, *changes.toTypedArray())
         if (outcome is Outcome.Done) edition++
         return outcome
     }
@@ -211,11 +213,17 @@ internal class Changer(private val universe: Universe) {
 /** The changer, for whatever is deep enough in a screen to save something. */
 internal val LocalChanger = staticCompositionLocalOf<Changer> { error("no changer is provided") }
 
-/** The whole application: a tab across the top, and whatever that tab shows. */
+/**
+ * The whole application: a tab across the top, and whatever that tab shows.
+ *
+ * [universe] is absent where the window was opened on no logbook, and then only the tabs that
+ * are not about what a logbook holds are offered. `GUI-30`.
+ */
 @Composable
-internal fun Application(universe: Universe, platform: Platform) {
+internal fun Application(universe: Universe?, platform: Platform) {
+    val tabs = remember(universe) { TABS.filter { universe != null || !it.needsLogbook } }
     // Home, which is where the application opens whatever it holds yet.
-    var tab by remember { mutableStateOf(TABS.first()) }
+    var tab by remember { mutableStateOf(tabs.first()) }
     val kept = remember { TABS.associateWith { Kept() } }
     val changer = remember(universe) { Changer(universe) }
     // Absent until read, and a map drawn before then shows its sites on an empty frame.
@@ -224,7 +232,7 @@ internal fun Application(universe: Universe, platform: Platform) {
     }
     // A reference followed: the tab holding the item's type, opened on it. `GUI-28`.
     val follow = { id: String ->
-        val item = universe.logbook[id]
+        val item = universe?.logbook?.get(id)
         val to = item?.let { found -> TABS.firstOrNull { found.description in it.types } }
         if (item != null && to != null) {
             val there = kept.getValue(to)
@@ -251,11 +259,14 @@ internal fun Application(universe: Universe, platform: Platform) {
     CompositionLocalProvider(LocalChanger provides changer) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Tabs(tab) { tab = it }
+                Tabs(tabs, tab) { tab = it }
                 Box(modifier = Modifier.weight(1f)) {
-                    when (tab.shape) {
-                        Shape.HOME -> Home(universe, platform, kept.getValue(tab))
-                        Shape.MANUAL -> Manuals(platform.manual, platform.open, kept.getValue(tab))
+                    when {
+                        tab.shape == Shape.HOME -> Home(universe, platform, kept.getValue(tab))
+                        tab.shape == Shape.MANUAL ->
+                            Manuals(platform.manual, platform.open, kept.getValue(tab))
+
+                        universe == null -> Unit
                         else -> Subject(
                             set = universe.logbook,
                             user = universe.user,
@@ -279,16 +290,16 @@ internal fun Application(universe: Universe, platform: Platform) {
  * than a different set of tabs.
  */
 @Composable
-private fun Tabs(chosen: Tab, onChoose: (Tab) -> Unit) {
+private fun Tabs(tabs: List<Tab>, chosen: Tab, onChoose: (Tab) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Tabs as wide as their names, so the row's own rule would stop where they do. The
         // rule is drawn below instead, across the whole window.
         ScrollableTabRow(
-            selectedTabIndex = TABS.indexOf(chosen),
+            selectedTabIndex = tabs.indexOf(chosen),
             edgePadding = GAP,
             divider = {},
         ) {
-            for (tab in TABS) {
+            for (tab in tabs) {
                 LeadingIconTab(
                     selected = tab === chosen,
                     onClick = { onChoose(tab) },
@@ -312,28 +323,29 @@ private fun Tabs(chosen: Tab, onChoose: (Tab) -> Unit) {
  * diving is in here, and what would you like to do.
  */
 @Composable
-private fun Home(universe: Universe, platform: Platform, kept: Kept) {
-    val set = universe.logbook
+private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
+    val set = universe?.logbook
     val edition = LocalChanger.current.edition
-    val greeting = remember(set, edition) { greetingOf(set) }
+    val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(horizontal = GAP * 2),
     ) {
-        val southern = remember(set, edition) { southernOf(set) }
-        val hail = hailOf(universe.user, greeting, platform.today(), southern)
+        val southern = remember(set, edition) { set != null && southernOf(set) }
+        val hail = hailOf(universe?.user, greeting, platform.today(), southern)
         Text(
             text = greeted(hail, platform.open),
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(top = GAP * 2),
         )
         Text(
-            text = tellingOf(universe.user, greeting),
+            text = tellingOf(universe?.user, greeting),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = HALF, bottom = GAP * 2),
         )
         Inset("System") { Deeds(platform.deeds) }
-        Inset("Statistics") { Plot(set, kept, edition) }
+        // Nothing to count where there is no logbook, and nothing to say about that.
+        if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
         Spacer(modifier = Modifier.height(GAP * 2))
     }
 }

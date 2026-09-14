@@ -62,7 +62,17 @@ internal class Tab(
     val types: List<ItemDescription> = emptyList(),
     /** What its selector is. */
     val shape: Shape,
-)
+) {
+
+    /**
+     * Whether the tab is about what a logbook holds, and so has nothing to offer without one.
+     *
+     * By whether it lists item types, which is the same question asked of the model rather than
+     * of a list kept here: a tab that lists types needs items. Home and Manuals list none, and
+     * are what a window with no logbook open still shows. `GUI-30`.
+     */
+    val needsLogbook: Boolean get() = types.isNotEmpty()
+}
 
 /**
  * Every tab, in the order they are offered.
