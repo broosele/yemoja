@@ -14,6 +14,7 @@ import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.data.Series
+import yemoja.data.TextDescription
 import yemoja.data.Units
 import kotlin.math.abs
 import kotlin.math.roundToLong
@@ -262,11 +263,26 @@ internal fun displayOf(field: FieldDescription, value: Any): String {
 
 /** As [displayOf], without the unit, for where the unit is said once for several numbers. */
 internal fun numberOf(field: FieldDescription, value: Any): String {
-    if (field !is NumberDescription) return field.format(value, Units.DEFAULT)
+    if (field !is NumberDescription) return wordOf(field, value)
     val number = (value as? Number)?.toDouble() ?: return field.format(value, Units.DEFAULT)
     if (field.dimension == Dimension.TIME) return clockOf(number)
     val decimals = DECIMALS[field.dimension] ?: return field.format(value, Units.DEFAULT)
     return rounded(number, decimals)
+}
+
+/**
+ * A value that is not a number, as a screen reads it.
+ *
+ * **A word from a vocabulary is a word rather than a name.** A file writes one the way a file
+ * writes anything, in lower case and with an underscore where a reader puts a space, and a
+ * screen reads it back as what it says: `back_mounted` is *Back mounted*. Only a field with a
+ * set of words to draw on has words in it, so free text is left exactly as it was typed, and a
+ * gas is `EAN32` rather than `Ean32` because a mix is drawn from no set. `GUI-16`.
+ */
+private fun wordOf(field: FieldDescription, value: Any): String {
+    val written = field.format(value, Units.DEFAULT)
+    val drawn = field is TextDescription && (field.fixedSet != null || field.suggestedSet != null)
+    return if (drawn) prettyOf(written) else written
 }
 
 /** The unit a screen writes after a number of [field], or nothing where it has none to write. */

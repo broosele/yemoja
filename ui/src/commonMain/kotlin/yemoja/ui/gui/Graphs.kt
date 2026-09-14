@@ -70,7 +70,7 @@ internal fun eventsOf(dive: Item, profile: Item): List<Event> {
     seriesOf(profile, "alarms")?.let { alarms ->
         for (at in 0..<alarms.size) {
             val said = (alarms.valueAt(at) as? Element.Usable)?.value?.toString() ?: continue
-            marks += Event(alarms.secondAt(at) / 60.0, said, Marking.ALARM)
+            marks += Event(alarms.secondAt(at) / 60.0, prettyOf(said), Marking.ALARM)
         }
     }
     return marks.sortedBy { it.minute }

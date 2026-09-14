@@ -688,6 +688,11 @@ once and corrected. The numbers stay unused rather than being given to something
   as five stars, two points to a star and an odd rating ending in a half, and the number
   is not shown.
 
+  **A word from a vocabulary is a word rather than a name.** A file writes one in lower case
+  with an underscore where a reader puts a space, and a screen reads back what it says, so
+  `back_mounted` is *Back mounted*. Only a field with a set of words to draw on has words in
+  it, so free text is left exactly as it was typed and a gas is `EAN32` rather than `Ean32`.
+
   **How a desktop lays an item out.** The plain fields flow into two columns, in the type's
   order. An owned item is set into a box of its own, titled, and shown in full the same way,
   boxes nesting where an owned item owns one. A keyed owned item is such a box with a tab per

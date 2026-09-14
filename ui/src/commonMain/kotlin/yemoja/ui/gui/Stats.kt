@@ -116,7 +116,7 @@ private fun named(field: FieldDescription, values: List<Any>, items: List<Item>)
         val part = when (value) {
             is Reference.Identified -> set[value.id]?.let { Part(titleOf(it), leadsTo = value.id) }
                 ?: Part(value.toString())
-            else -> Part(field.format(value, Units.DEFAULT))
+            else -> Part(numberOf(field, value))
         }
         distinct.putIfAbsent(part.text, part)
     }

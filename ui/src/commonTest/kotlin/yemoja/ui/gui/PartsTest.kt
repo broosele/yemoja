@@ -117,6 +117,25 @@ class DisplayTest {
     }
 }
 
+class WordTest {
+
+    @Test
+    fun `a word from a vocabulary reads as a word, and free text as it was typed`() {
+        val configuration = (Types.DIVE["gas_sources"] as yemoja.data.OwnedItemDescription)
+            .description["configuration"]!!
+        assertEquals("Back mounted", displayOf(configuration, "back_mounted"))
+        assertEquals("Side mounted", displayOf(configuration, "side_mounted"))
+        assertEquals("Sidemount", displayOf(configuration, "sidemount"), "the model's own word")
+        val usage = (Types.DIVE["gas_sources"] as yemoja.data.OwnedItemDescription)
+            .description["usage"]!!
+        assertEquals("Deco", displayOf(usage, "deco"))
+        val gas = (Types.DIVE["gas_sources"] as yemoja.data.OwnedItemDescription)
+            .description["gas_type"]!!
+        assertEquals("EAN32", displayOf(gas, "EAN32"), "a mix is drawn from no set")
+        assertEquals("cold and dark", displayOf(Types.DIVE["remarks"]!!, "cold and dark"))
+    }
+}
+
 class KeyTest {
 
     @Test

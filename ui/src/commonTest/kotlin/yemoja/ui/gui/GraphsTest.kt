@@ -106,7 +106,7 @@ class GraphsTest {
     @Test
     fun `the events are the gas switches, named as their sources are, and the alarms, in order`() {
         val marks = eventsOf(dive, profile("a"))
-        assertEquals(listOf("Twelve", "ascent", "G2"), marks.map { it.label })
+        assertEquals(listOf("Twelve", "Ascent", "G2"), marks.map { it.label })
         assertEquals(listOf(0.0, 0.75, 1.0), marks.map { it.minute })
         assertEquals(
             listOf(Marking.SWITCH, Marking.ALARM, Marking.SWITCH),
