@@ -81,6 +81,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.font.FontWeight
@@ -319,8 +321,9 @@ private fun Home(universe: Universe, platform: Platform, kept: Kept) {
             .padding(horizontal = GAP * 2),
     ) {
         val southern = remember(set, edition) { southernOf(set) }
+        val hail = hailOf(universe.user, greeting, platform.today(), southern)
         Text(
-            text = hailOf(universe.user, greeting, platform.today(), southern),
+            text = greeted(hail, platform.open),
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(top = GAP * 2),
         )
@@ -332,6 +335,38 @@ private fun Home(universe: Universe, platform: Platform, kept: Kept) {
         Inset("System") { Deeds(platform.deeds) }
         Inset("Statistics") { Plot(set, kept, edition) }
         Spacer(modifier = Modifier.height(GAP * 2))
+    }
+}
+
+/**
+ * The first line, the day's remark leading out to a page about the day.
+ *
+ * A remark is the one part of a greeting worth following, and following it leaves the
+ * application, so it is styled as the manual styles a link out and handed to the same opener.
+ */
+@Composable
+private fun greeted(hail: Hail, open: (String) -> Unit): AnnotatedString {
+    val link = TextLinkStyles(
+        SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+        ),
+    )
+    return buildAnnotatedString {
+        append(hail.opening)
+        val occasion = hail.occasion
+        if (occasion == null) {
+            append(".")
+            return@buildAnnotatedString
+        }
+        append(", and ")
+        val page = occasion.page
+        if (page == null) {
+            append(occasion.said)
+        } else {
+            withLink(LinkAnnotation.Clickable(page, link) { open(page) }) { append(occasion.said) }
+        }
+        append(".")
     }
 }
 

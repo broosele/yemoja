@@ -450,6 +450,11 @@ once and corrected. The numbers stay unused rather than being given to something
   keep among themselves, and the one date among them that is a plain fact is Jacques
   Cousteau's.
 
+  **A remark leads out to a page about the day**, styled and opened the way the manual's own
+  outward links are. A day with an article of its own leads to it and a day without leads to
+  what it is about, a shark's day to the sharks. Two remarks lead nowhere: a reader's birthday
+  is theirs rather than an article, and a welcome is not a day at all.
+
   Seasons are the meteorological ones, beginning on the first of a month, rather than the
   astronomical ones, whose equinox wanders over three days and would need an almanac. Which
   way round they run is the mean latitude of the logbook's sites, so that a northern diver's

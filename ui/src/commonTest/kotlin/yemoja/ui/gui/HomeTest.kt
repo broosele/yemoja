@@ -49,7 +49,7 @@ class GreetingTest {
     @Test
     fun `a reader the logbook knows is greeted by name, and told what is in it`() {
         val greeting = greetingOf(DIVED)
-        assertEquals("Hello Anna Devries.", hailOf(user, greeting, plain, false))
+        assertEquals("Hello Anna Devries.", hailOf(user, greeting, plain, false).sentence)
         assertEquals(
             "You have 3 logged dives on 2 different locations" +
                 " for a total of 2 hours and 10 minutes underwater.",
@@ -60,7 +60,7 @@ class GreetingTest {
     @Test
     fun `a logbook that names nobody greets a diver and says how to fix that`() {
         val greeting = greetingOf(DIVED)
-        assertEquals("Hello diver.", hailOf(null, greeting, plain, false))
+        assertEquals("Hello diver.", hailOf(null, greeting, plain, false).sentence)
         assertEquals(
             "Name one of this logbook's people as yourself, and it will greet you by name.",
             tellingOf(null, greeting),
@@ -69,7 +69,7 @@ class GreetingTest {
 
     @Test
     fun `with no logbook open at all there is a welcome and two ways out of it`() {
-        assertEquals("Hello, and welcome.", hailOf(null, null, plain, false))
+        assertEquals("Hello, and welcome.", hailOf(null, null, plain, false).sentence)
         assertEquals(
             "You can make a new logbook, or open one you already have.",
             tellingOf(null, null),
@@ -88,26 +88,26 @@ class GreetingTest {
     fun `a day worth remarking on is remarked on, and most days are not`() {
         val born = Date(1904, 6, 16)
         assertNull(occasionOf(plain, born, false), "a plain day says nothing")
-        assertEquals("happy birthday", occasionOf(Date(2026, 6, 16), born, false))
-        assertEquals("a happy new year", occasionOf(Date(2026, 1, 1), born, false))
-        assertEquals("happy World Oceans Day", occasionOf(Date(2026, 6, 8), null, false))
+        assertEquals("happy birthday", occasionOf(Date(2026, 6, 16), born, false)?.said)
+        assertEquals("a happy new year", occasionOf(Date(2026, 1, 1), born, false)?.said)
+        assertEquals("happy World Oceans Day", occasionOf(Date(2026, 6, 8), null, false)?.said)
         assertEquals(
             "a thought for Jacques Cousteau, born on this day in 1910",
-            occasionOf(Date(2026, 6, 11), null, false),
+            occasionOf(Date(2026, 6, 11), null, false)?.said,
         )
         assertEquals(
             "happy World Sea Turtle Day",
-            occasionOf(Date(2026, 6, 16), null, false),
+            occasionOf(Date(2026, 6, 16), null, false)?.said,
             "a birthday would have won, and there is none",
         )
     }
 
     @Test
     fun `a season turns on the first of a month, and turns the other way in the south`() {
-        assertEquals("happy first day of spring", occasionOf(Date(2026, 3, 1), null, false))
-        assertEquals("happy first day of autumn", occasionOf(Date(2026, 3, 1), null, true))
-        assertEquals("happy first day of winter", occasionOf(Date(2026, 12, 1), null, false))
-        assertEquals("happy first day of summer", occasionOf(Date(2026, 12, 1), null, true))
+        assertEquals("happy first day of spring", occasionOf(Date(2026, 3, 1), null, false)?.said)
+        assertEquals("happy first day of autumn", occasionOf(Date(2026, 3, 1), null, true)?.said)
+        assertEquals("happy first day of winter", occasionOf(Date(2026, 12, 1), null, false)?.said)
+        assertEquals("happy first day of summer", occasionOf(Date(2026, 12, 1), null, true)?.said)
         assertNull(occasionOf(Date(2026, 3, 2), null, false), "only the first")
         assertNull(occasionOf(Date(2026, 5, 1), null, false), "no season begins in May")
     }
@@ -117,17 +117,48 @@ class GreetingTest {
         val greeting = greetingOf(DIVED)
         assertEquals(
             "Hello Anna Devries, and happy World Oceans Day.",
-            hailOf(user, greeting, Date(2026, 6, 8), false),
+            hailOf(user, greeting, Date(2026, 6, 8), false).sentence,
         )
         assertEquals(
             "Hello diver, and a happy new year.",
-            hailOf(null, greeting, Date(2026, 1, 1), false),
+            hailOf(null, greeting, Date(2026, 1, 1), false).sentence,
         )
         assertEquals(
             "Hello, and happy Earth Day.",
-            hailOf(null, null, Date(2026, 4, 22), false),
+            hailOf(null, null, Date(2026, 4, 22), false).sentence,
             "a welcome gives way to the day",
         )
+    }
+
+    @Test
+    fun `a day worth remarking on leads to a page about it, and a birthday leads nowhere`() {
+        assertEquals(
+            "https://en.wikipedia.org/wiki/Shark",
+            occasionOf(Date(2026, 7, 14), null, false)?.page,
+            "a day with no article of its own leads to what it is about",
+        )
+        assertEquals(
+            "https://en.wikipedia.org/wiki/World_Oceans_Day",
+            occasionOf(Date(2026, 6, 8), null, false)?.page,
+        )
+        assertEquals(
+            "https://en.wikipedia.org/wiki/Spring_(season)",
+            occasionOf(Date(2026, 3, 1), null, false)?.page,
+        )
+        val born = Date(1990, 2, 17)
+        assertNull(occasionOf(Date(2026, 2, 17), born, false)?.page, "a birthday is the reader's")
+        assertNull(hailOf(null, null, Date(2026, 5, 5), false).occasion?.page, "so is a welcome")
+    }
+
+    @Test
+    fun `every page a day leads to is an article on the English Wikipedia`() {
+        val days = (1..12).flatMap { month -> (1..28).map { day -> Date(2026, month, day) } }
+        val pages = days.mapNotNull { occasionOf(it, null, false)?.page }.distinct()
+        assertEquals(14, pages.size, "nine days of the sea, four seasons, and the new year")
+        for (page in pages) {
+            assertTrue(page.startsWith("https://en.wikipedia.org/wiki/"), page)
+            assertTrue(page.length > "https://en.wikipedia.org/wiki/".length, page)
+        }
     }
 
     @Test
