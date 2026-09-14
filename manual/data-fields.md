@@ -360,7 +360,8 @@ that is the only record of it.
 - `decostop` (series) — the stop it was holding you to, throughout. A stop is a rounded
   depth rather than a continuous ceiling — three metres, six, nine — and a computer may
   skip the shallowest depending on how it is set.
-- `no_deco_time` (series) — how much longer it said you could stay. A computer writes this
+- `no_deco_time` (series) — how much longer it said you could stay, the no-decompression
+  limit, which a graph titles `NDL` as divers write it. A computer writes this
   or a `decostop`, never both: once it is holding you to a stop there is no such time, and the
   series simply stops until the stop clears. A graph leaves that stretch blank rather than
   drawing a line through it.

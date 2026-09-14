@@ -77,7 +77,7 @@ class GraphsTest {
     fun `the right axis offers what the recording holds, a cylinder named as its gas source is`() {
         val overlays = overlaysOf(dive, profile("a"))
         assertEquals(
-            listOf("Temperature", "Twelve pressure", "G2 pressure", "No-deco time", "CNS"),
+            listOf("Temperature", "Twelve pressure", "G2 pressure", "NDL", "CNS"),
             overlays.map { it.title },
         )
         assertEquals(listOf("°C", "bar", "bar", "min", "%"), overlays.map { it.unit })
@@ -85,7 +85,7 @@ class GraphsTest {
 
     @Test
     fun `no-deco time is in minutes`() {
-        val noDeco = overlaysOf(dive, profile("a")).first { it.title == "No-deco time" }
+        val noDeco = overlaysOf(dive, profile("a")).first { it.title == "NDL" }
         assertEquals(listOf(60.0, 10.0), noDeco.lines.single().points.map { it.value })
     }
 
@@ -205,7 +205,7 @@ class NoDecoStretchTest {
         @Suppress("UNCHECKED_CAST")
         val profiles = read as Map<String, Element<Any>>
         val one = (profiles.getValue("a") as Element.Usable).value as OwnedItem
-        val noDeco = overlaysOf(dive, one).first { it.title == "No-deco time" }
+        val noDeco = overlaysOf(dive, one).first { it.title == "NDL" }
         assertEquals(2, noDeco.lines.size, "the stop stands between the two stretches")
         assertEquals(listOf(60.0, 0.0), noDeco.lines[0].points.map { it.value })
         assertEquals(listOf(99.0, 99.0), noDeco.lines[1].points.map { it.value })

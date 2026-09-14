@@ -126,11 +126,8 @@ internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
     seriesOf(profile, "no_deco_time")?.let {
         val stops = seriesOf(profile, "decostop")?.let { series -> pointsOf(series) }.orEmpty()
         val stretches = stretchesOf(noDecoOf(it), stops)
-        overlays += Overlay(
-            "No-deco time",
-            "min",
-            stretches.map { stretch -> Line("No-deco time", stretch) },
-        )
+        // NDL as a diver writes it, beside the CNS and the OTU, which are written the same way.
+        overlays += Overlay("NDL", "min", stretches.map { stretch -> Line("NDL", stretch) })
     }
     seriesOf(profile, "cns")?.let { overlays += Overlay("CNS", "%", Line("CNS", pointsOf(it))) }
     seriesOf(profile, "otu")?.let { overlays += Overlay("OTU", "", Line("OTU", pointsOf(it))) }

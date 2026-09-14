@@ -426,7 +426,8 @@ once and corrected. The numbers stay unused rather than being given to something
   dive reads as water, its deco stops stepped across it and the water over them shaded red,
   that being where the diver may not ascend to; and up the right one other thing the
   computer wrote, chosen from a box of what it wrote — the temperature, a cylinder's pressure
-  named as its gas source is, the no-deco time, the CNS. The no-deco time is plotted capped
+  named as its gas source is, the no-decompression limit, the CNS. The limit is titled *NDL*,
+  as a diver writes it and as the CNS and the OTU beside it already are. It is plotted capped
   at 99 minutes and without the zeros a computer reads before it has calculated: computers
   mark *no limit* with a number, 99 minutes on one and 598 on another, and plotted as written
   the marker is the whole axis. It is broken where a stop stood: a computer shows either how
