@@ -442,13 +442,22 @@ once and corrected. The numbers stay unused rather than being given to something
   tab is about a logbook exactly when it lists item types, so the model answers that rather
   than a list kept beside it.
 
-  **Making a logbook is the first of the four that works.** It asks for a folder, makes one
-  there and opens the window on it, so the welcome leads somewhere. What a new logbook is made
-  of is the logic layer's, `LOGIC-26` in [../../logic/doc.md](../../logic/doc.md); what this
-  layer adds is the asking, and the window swapping the logbook it shows for the one just
-  made. A folder that will not be made into a logbook is said in a box over the window rather
-  than on the screen behind it: it answers something the reader just asked for, and the window
-  under it has not changed. The other three deeds are still greyed.
+  **Making a logbook and opening one both work.** Each asks for a folder and puts the window
+  on what comes back, so the welcome leads somewhere. What a new logbook is made of is the
+  logic layer's, `LOGIC-26` in [../../logic/doc.md](../../logic/doc.md); what this layer adds
+  is the asking, and the window swapping the logbook it shows. A folder that will not read, or
+  will not be made into a logbook, is said in a box over the window rather than on the screen
+  behind it: it answers something the reader just asked for, and the window under it has not
+  changed. Importing and downloading are still greyed.
+
+  **A folder holding no manifest opens**, as a logbook that declares nothing, which is what the
+  command line does with the same folder and what the model calls one. Refusing it would be
+  this layer disagreeing with the layer under it about what a logbook is, and a greeting saying
+  *no logged dives* is a truer answer than a box saying no.
+
+  **What a tab was left on belongs to the logbook that was open.** `GUI-27` keeps a tab's place
+  when it is left and returned to; another logbook does not hold the item it was left on, so
+  the whole of that memory is made afresh when the logbook changes.
 
   Told what, where there is a logbook and a reader: how many dives, how many places they were
   made, and how long they ran altogether. The places are the ones dived rather than the ones

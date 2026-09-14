@@ -70,6 +70,14 @@ fun gui(folder: String? = null): Int {
                             }
                         }
                     },
+                    Deed.OPEN to {
+                        chosen("Open a logbook", "Open")?.let { where ->
+                            opened(where)?.let {
+                                at = where
+                                held = it
+                            }
+                        }
+                    },
                 ),
             )
         }
@@ -109,22 +117,36 @@ private fun chosen(asking: String, approving: String): String? {
     return chooser.selectedFile?.absolutePath
 }
 
-/**
- * A new logbook at [where], or absent where it could not be made and the reader has been told.
- *
- * Told in a box rather than on the screen behind it: it is the answer to something they just
- * asked for, and the window under it has not changed.
- */
+/** A new logbook at [where], or absent where it could not be made and the reader was told. */
 private fun made(where: String): Universe? = try {
     Universe.create(where, FoundDevices())
 } catch (refused: RuntimeException) {
-    JOptionPane.showMessageDialog(
-        null,
-        "$where could not be made into a logbook: ${refused.message}",
-        "Yemoja",
-        JOptionPane.ERROR_MESSAGE,
-    )
+    warn("$where could not be made into a logbook: ${refused.message}")
     null
+}
+
+/**
+ * The logbook at [where], or absent where it would not read and the reader was told.
+ *
+ * A folder holding no manifest is a logbook that declares nothing rather than a mistake, which
+ * is what `yemoja gui` does with the same folder. It opens, and its greeting says it holds no
+ * dives, which is a truer answer than refusing a folder the reader picked.
+ */
+private fun opened(where: String): Universe? = try {
+    Universe.open(where, FoundDevices())
+} catch (refused: RuntimeException) {
+    warn("$where could not be read: ${refused.message}")
+    null
+}
+
+/**
+ * What went wrong, in a box over the window.
+ *
+ * A box rather than the screen behind it: it answers something the reader just asked for, and
+ * the window under it has not changed.
+ */
+private fun warn(message: String) {
+    JOptionPane.showMessageDialog(null, message, "Yemoja", JOptionPane.ERROR_MESSAGE)
 }
 
 /** What day it is here, which the greeting remarks on. */

@@ -224,7 +224,9 @@ internal fun Application(universe: Universe?, platform: Platform) {
     val tabs = remember(universe) { TABS.filter { universe != null || !it.needsLogbook } }
     // Home, which is where the application opens whatever it holds yet.
     var tab by remember { mutableStateOf(tabs.first()) }
-    val kept = remember { TABS.associateWith { Kept() } }
+    // Per logbook: what a tab was left on is an item of the one that was open, and another
+    // logbook does not hold it. `GUI-27` keeps a tab's place, within one logbook.
+    val kept = remember(universe) { TABS.associateWith { Kept() } }
     val changer = remember(universe) { Changer(universe) }
     // Absent until read, and a map drawn before then shows its sites on an empty frame.
     val atlas by produceState<Atlas?>(null, platform) {
