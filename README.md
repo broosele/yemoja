@@ -52,12 +52,18 @@ the whole of it. Running the tests is in [testing.md](testing.md).
 given one or opened without.
 
 ```
-./gradlew :ui:installDist             writes ui/build/install/yemoja/bin
+./gradlew :ui:installDist             writes ui/build/install/yemoja
 yemoja tui <logbook folder>           with that bin directory on the path
 yemoja gui [<logbook folder>]         the window, the folder being optional
 
 ./gradlew :ui:gui -Pargs=<folder>     the window straight from the build
 ```
+
+**Reading a dive computer needs libdivecomputer**, which is not built here. Tell the build
+where it is, by a `LIBDIVECOMPUTER` variable or `-Plibdivecomputer=<folder>`, and an
+installation carries it in `native/` beside the jars, where the application looks for it. A
+build told nothing writes none, and that installation reads no dive computer. It stays a
+separate file on purpose; see *Licensing* below and `LOGIC-27`.
 
 `yemoja` on its own says which commands there are. The terminal front end must be started
 from a real terminal, so a pipe or a redirect gets a message rather than a screen — which is

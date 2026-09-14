@@ -486,6 +486,35 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-27 — Where libdivecomputer is when the application ships.** *Settled:* **beside the
+   application, in a folder of its own, found by looking rather than by being told.**
+
+   An installation is `bin` beside `lib` beside `native`, and the application asks where its own
+   jar was read from and looks one folder over. Nothing is set where something already has
+   been, so a user who keeps the library elsewhere says so once with `jna.library.path` and is
+   obeyed, and a run from the build, where there is no installation to look beside, is told by
+   the build instead.
+
+   **It stays a file a user can see and replace**, which is what the licence wants of it: the
+   library is LGPL and this project's own terms depend on it staying separate and replaceable.
+   README says so under *Licensing*. That is what ruled out the tempting answer, which was to
+   put it inside the jar and let JNA unpack it: one artefact ships, no path is set, and the
+   library is buried where nobody can swap it. It would also have needed unpacking the two
+   libraries this one depends on, USB and HID, which JNA would not have done by itself.
+
+   Also declined: **expecting it on the machine**, which is ordinary on Linux and on Windows
+   means asking a diver to build a C library; and **a platform installer**, which is the better
+   answer eventually and is a great deal of build machinery for a thing that is not yet
+   released. An installer places the same file in the same place, so it grows out of this
+   rather than replacing it.
+
+   **A build on a machine that has no library writes none**, and such an installation reads no
+   dive computer. That is the honest outcome and the reason `LOGIC-28` matters: it should say so
+   rather than claim nothing is within reach.
+
+   The phones are a separate question. Android packages a shared object per processor type
+   inside the package, and iPhone has no ordinary place for a third-party dynamic library at
+   all, which is where the licence position and the five targets meet.
 - **LOGIC-26 — What a new logbook is made of.** *Settled:* **a folder with a manifest in it,
    declaring every library the application ships and naming no owner.**
 

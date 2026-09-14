@@ -2,6 +2,7 @@ package yemoja.ui
 
 import yemoja.ui.gui.gui
 import yemoja.ui.tui.tui
+import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 /*
@@ -45,6 +46,7 @@ internal class Command(
 
 /** Run the command named first, and exit with whatever it answers. */
 fun main(args: Array<String>) {
+    findLibrary()
     val command = COMMANDS[args.firstOrNull()]
     if (command == null) {
         // Naming no command at all is asking what there is, so it is not an error worth a
@@ -68,3 +70,51 @@ internal fun usage(): String {
     }
     return (listOf("usage:") + lines).joinToString("\n")
 }
+
+/**
+ * Say where the library that reads dive computers is, before anything asks for it.
+ *
+ * An installation keeps it beside the jars it runs, in a folder of its own, so the application
+ * finds it by looking beside itself rather than by being told. Nothing is said where something
+ * already has been, which is what a development build passes and what a user who keeps the
+ * library elsewhere sets. Nothing is said either where this is not running from an
+ * installation, since then there is nothing beside it. `LOGIC-27`.
+ */
+private fun findLibrary() {
+    if (System.getProperty(LIBRARY_PATH) != null) return
+    val at = Where::class.java.protectionDomain?.codeSource?.location ?: return
+    // Through a Path rather than the URL's own text, which on Windows is `/D:/...` and is a
+    // path to nothing.
+    val source = runCatching { Paths.get(at.toURI()).toString() }.getOrNull()
+    besideOf(source)?.let { System.setProperty(LIBRARY_PATH, it) }
+}
+
+/**
+ * Where an installation keeps the library, given the jar [source] the application was read
+ * from, or absent where that is not a jar in an installation.
+ *
+ * An installation is `bin` beside `lib` beside `native`, which is what `installDist` writes. A
+ * development run reads from a folder of classes rather than a jar and gets nothing.
+ */
+internal fun besideOf(source: String?): String? {
+    // Written with `/` whatever the platform writes, which every platform also reads.
+    val jar = source?.replace('\\', '/')?.takeIf { it.endsWith(JAR, ignoreCase = true) }
+        ?: return null
+    val within = jar.substringBeforeLast('/', "")
+    if (!within.endsWith("/$JARS")) return null
+    return within.substringBeforeLast('/', "").ifEmpty { null }?.let { "$it/$NATIVE" }
+}
+
+/** What a JVM is told, and what JNA reads, to find a library that is not on the usual path. */
+private const val LIBRARY_PATH = "jna.library.path"
+
+/** What the jars are under in an installation, and what the library is under beside them. */
+private const val JARS = "lib"
+
+private const val NATIVE = "native"
+
+/** What a jar is called. */
+private const val JAR = ".jar"
+
+/** Something in this file to ask where this file was loaded from. */
+private object Where

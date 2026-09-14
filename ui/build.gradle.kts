@@ -53,6 +53,11 @@ tasks.named<Copy>("jvmProcessResources") {
     }
 }
 
+// Where libdivecomputer is on this machine, for what is run and tested from here. Absent is a
+// fine answer: nothing is told where it is, and nothing reads a dive computer. `LOGIC-27`.
+val libdivecomputer: String? =
+    System.getenv("LIBDIVECOMPUTER") ?: findProperty("libdivecomputer")?.toString()
+
 // A window needs no terminal, so unlike the other front end this one can be run from here.
 tasks.register<JavaExec>("gui") {
     description = "Opens a logbook in a window: ./gradlew :ui:gui --args=<logbook folder>."
@@ -66,10 +71,8 @@ tasks.register<JavaExec>("gui") {
     // Whatever follows --args, so the folder is named where every other command names one.
     (providers.gradleProperty("args").orNull ?: "").split(" ").filter { it.isNotBlank() }
         .let { args = listOf("gui") + it }
-    // Where libdivecomputer is, as the tests are told. Without it nothing loads and the window
-    // says no dive computer is within reach, which is true of the machine and not of the desk.
-    (System.getenv("LIBDIVECOMPUTER") ?: findProperty("libdivecomputer")?.toString())
-        ?.let { systemProperty("jna.library.path", it) }
+    // Run from here there is no installation to look beside, so it is told. `LOGIC-27`.
+    libdivecomputer?.let { systemProperty("jna.library.path", it) }
 }
 
 // Start scripts, so this is run as `yemoja <command>` rather than through Gradle. They are the
@@ -88,9 +91,19 @@ val startScripts = tasks.register<CreateStartScripts>("startScripts") {
 }
 
 tasks.register<Sync>("installDist") {
-    description = "Writes bin/yemoja and the jars it needs into build/install/yemoja."
+    description = "Writes bin/yemoja, the jars it needs and the dive computer library."
     group = "distribution"
     into(layout.buildDirectory.dir("install/yemoja"))
     from(startScripts) { into("bin") }
     from(runtime) { into("lib") }
+    // The library that reads dive computers travels beside the jars, where the application
+    // looks for it, and stays a file a user can see and replace -- which is what the licence
+    // wants of it. A build on a machine without it writes none, and such an installation reads
+    // no dive computer. `LOGIC-27`.
+    libdivecomputer?.let { where ->
+        from(where) {
+            include("*.dll", "*.so", "*.so.*", "*.dylib")
+            into("native")
+        }
+    }
 }

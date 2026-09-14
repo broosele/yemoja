@@ -2,6 +2,7 @@ package yemoja.ui
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** What `yemoja` answers when it is asked what it can do. */
@@ -35,6 +36,28 @@ class MainTest {
         assertEquals(listOf("logbook folder"), gui.arguments)
         assertEquals(0, gui.least)
         assertEquals("[<logbook folder>]", gui.written, "written as what it may be given")
+    }
+
+    @Test
+    fun `an installation keeps the dive computer library beside its jars`() {
+        assertEquals(
+            "/opt/yemoja/native",
+            besideOf("/opt/yemoja/lib/ui-jvm.jar"),
+            "lib and native are siblings, which is what installDist writes",
+        )
+        assertEquals(
+            "D:/yemoja/native",
+            besideOf("D:\\yemoja\\lib\\ui-jvm.jar"),
+            "written with the separator every platform reads",
+        )
+    }
+
+    @Test
+    fun `anywhere else says nothing, and a development run is anywhere else`() {
+        assertNull(besideOf(null))
+        assertNull(besideOf("/opt/yemoja/lib/classes"), "a folder of classes is not a jar")
+        assertNull(besideOf("/opt/yemoja/other/ui-jvm.jar"), "not under lib")
+        assertNull(besideOf("lib/ui-jvm.jar"), "nothing above lib to put it beside")
     }
 
     @Test
