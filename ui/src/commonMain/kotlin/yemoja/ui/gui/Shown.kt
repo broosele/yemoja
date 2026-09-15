@@ -254,12 +254,17 @@ internal fun prettyOf(key: String): String =
  * nobody filled in has nothing to show, while a value that would not read has a reason, and the
  * reason is the useful part. `GUI-8` is how the difference is made visible; this is the text it
  * has to work with.
+ *
+ * **A list with nothing in it says nothing too.** A worked-out list always answers, so a region
+ * no site names has an empty list of sites rather than none, and showing it as *(empty)* put a
+ * line on every such card that an absent field would never have. A stored empty list is kept in
+ * the file as something written, and is not worth a line on the screen either. `GUI-16`.
  */
 internal fun shownOf(field: FieldDescription, item: Item): Shown? =
     when (val read = item.read(field.name)) {
         Result.Absent -> null
         is Result.Unusable -> Shown(field.label, listOf(Part(read.reason)), wrong = true)
-        is Result.Usable -> Shown(
+        is Result.Usable -> if ((read.value as? List<*>)?.isEmpty() == true) null else Shown(
             field.label,
             said(field, read.value, item),
             worked = read.origin == Result.Origin.DERIVED,

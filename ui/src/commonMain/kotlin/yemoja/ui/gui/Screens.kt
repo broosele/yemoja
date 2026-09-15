@@ -2265,7 +2265,7 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
     val arranged = remember(item.description) { arrangedOf(item.description) }
     val shown = arranged.plain.mapNotNull { shownOf(it, item) }
     val insets = arranged.insets.filter { item.read(it.name) is Result.Usable }
-    val foot = arranged.foot.filter { !emptyOn(item, it) }.mapNotNull { shownOf(it, item) }
+    val foot = arranged.foot.mapNotNull { shownOf(it, item) }
     if (shown.isEmpty() && insets.isEmpty() && foot.isEmpty()) {
         Aside("this one says nothing yet")
         return
@@ -2290,10 +2290,6 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
     }
     for (footing in foot) Inset(footing.label) { Said(footing, onFollow) }
 }
-
-/** Whether [field] on [item] reads as a list with nothing in it. */
-private fun emptyOn(item: Item, field: FieldDescription): Boolean =
-    ((item.read(field.name) as? Result.Usable)?.value as? List<*>)?.isEmpty() == true
 
 /** A keyed owned item as an inset with a tab per entry, the first open. */
 @Composable

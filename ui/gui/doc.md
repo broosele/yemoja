@@ -1017,6 +1017,11 @@ once and corrected. The numbers stay unused rather than being given to something
   narrow ribbon that pushed every field after it off the screen. The box is left out where the
   list is empty. The form keeps the field among the rest, nobody typing into it.
 
+  **A list with nothing in it is not shown, wherever it sits.** A worked-out list always answers,
+  so a region no site names has an empty list of sites rather than none, and it read *(empty)*
+  on every such card where an absent field says nothing. An empty list says nothing either, and
+  in the form a read-only one shows the dash an absent one does.
+
   **What a number reads as.** A file keeps three decimals of a metre so nothing measured is
   lost; a reader wants one. A depth, a temperature, a mass and a volume read to one decimal,
   a pressure and a density to none, and an angle as the file writes it, a coordinate being

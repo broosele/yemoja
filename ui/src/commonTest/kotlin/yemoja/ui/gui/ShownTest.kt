@@ -52,6 +52,19 @@ class ShownTest {
     }
 
     @Test
+    fun `a list with nothing in it says nothing, worked out or written`() {
+        // A worked-out list always answers, so a site nobody dived had "Dives: (empty)".
+        val held = logbook(
+            "dive_site.json" to """{"blue": {"name": "Blue Hole"}}""",
+            "person.json" to """{"anna": {"first_name": "Anna",
+                "courses": {"k1": {"number": "7", "dives": []}}}}""",
+        )
+        assertNull(shownOf(held["blue"]!!, "dives"), "worked out, and empty")
+        val course = keyedEntriesOf(held["anna"]!!, "courses").single().second
+        assertNull(shownOf(course, "dives"), "written, and empty")
+    }
+
+    @Test
     fun `a value says what a file would write, under the field's own label`() {
         val shown = shownOf(dive, "dive_number")!!
         assertEquals("Dive number", shown.label)
