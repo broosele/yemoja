@@ -161,7 +161,8 @@ Three things it still turns on, two of them unchanged:
   goes through one call to `change`, which already lands whole or not at all.
 - **The user can see what is coming.** Reviewing four hundred items is only possible if
   what arrived is legible: how many are new, how many answer to something already held,
-  and which. That summary is not built.
+  and which. The window has it, `GUI-33`: the dives a line apiece with what each appears to be,
+  and a count per type of everything else with how many of them are already held.
 - **Applying twice does nothing the second time.** What was added answers to its id
   afterwards, so a second run meets it as the same item and writes what it already
   holds. An interrupted apply is safe to repeat.

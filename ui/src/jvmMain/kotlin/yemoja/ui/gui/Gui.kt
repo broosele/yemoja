@@ -63,6 +63,7 @@ fun gui(folder: String? = null): Int {
                 open = ::browse,
                 today = ::today,
                 ask = ::asked,
+                pick = ::picked,
                 deeds = mapOf(
                     Deed.NEW to {
                         chosen("Make a new logbook in", "Make")?.let { where ->
@@ -108,6 +109,22 @@ fun gui(folder: String? = null): Int {
  * Folders only, and one that is not there yet may be typed: making a logbook makes its folder,
  * so a reader should not have to make it first in another application.
  */
+/**
+ * A folder or a file to import, or nothing where the reader named none.
+ *
+ * One dialog for both, since what is there says how it is read: a folder is another Yemoja
+ * logbook and a file is a UDDF document. `GUI-33`.
+ */
+private fun picked(asking: String): String? {
+    val chooser = JFileChooser().apply {
+        dialogTitle = asking
+        fileSelectionMode = JFileChooser.FILES_AND_DIRECTORIES
+        approveButtonText = "Import"
+    }
+    if (chooser.showDialog(null, "Import") != JFileChooser.APPROVE_OPTION) return null
+    return chooser.selectedFile?.absolutePath
+}
+
 private fun chosen(asking: String, approving: String): String? {
     val chooser = JFileChooser().apply {
         dialogTitle = asking

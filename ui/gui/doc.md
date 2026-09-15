@@ -420,6 +420,46 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-33 — How a logbook is imported from the window.** *Settled:* **one path, the dives
+   reviewed a line apiece, and everything else counted and taken in with them.**
+
+   The logic layer already had all of it: `importFrom` takes a path, reads a folder as another
+   Yemoja logbook and a file as a UDDF document, and stages what it finds beside the logbook as
+   a logbook of its own. What was missing was the window.
+
+   **One dialog, folders and files both.** What is there says how it is read, so asking *which
+   kind* first would be asking a reader something they answered by knowing what they were
+   pointing at. The picker is the platform's, like the two that open and make a logbook, and the
+   deed is greyed where a platform has none.
+
+   **The dives are reviewed with the machinery a download already has**, `GUI-31`: a line
+   apiece, what each appears to be a second copy of, and a button to put it together with that
+   one or take it as a dive of its own. The question is the same question — *which of these am I
+   already holding* — and the answer machinery does not care what put them there. It asks only
+   where the source carried no ids of its own, which today means UDDF.
+
+   **Everything else is counted, not listed.** A download makes dives and sites and nothing
+   else, `LOGIC-20`, while another logbook can bring every type there is. Those arrive matched by
+   the id they came with or as new, so there is nothing to ask and nothing to choose, and a line
+   saying *2 people, 3 dive sites (1 already held)* answers the question a reader has. That
+   count is what `reconciliation.md` asks for and says is not built.
+
+   A type that takes no `s` is not given one: people, and gear, which is what one piece of it is
+   called and what any number of it is called.
+
+   **A dive arriving with a number of its own keeps it.** A download hands numbers out because a
+   computer has none, and doing that to an imported dive would renumber a logbook that already
+   knew what its dives were called. The same goes for the recording it is worked from. So both
+   are written only where the arriving dive says nothing.
+
+   **The rest goes in when the dives are decided.** Taking a dive in leaves it staged no longer,
+   so what is left in the folder is what has not been decided; once the dives are gone the rest
+   is applied in one call. That is two changesets rather than the one `RECON-1` wants, which the
+   download review already had and which the journal will have to settle when it is built.
+
+   Open: nothing lists what arrived of the other types item by item, so an import bringing a
+   person under an id already taken by a different person is taken in on the model's rule rather
+   than the reader's answer. `RECON-6` settles what that rule is.
 - **GUI-32 — What else the home plot can draw.** *Settled:* **a gathering, chosen beside the
    two axes: one dot per dive, how many, a total, an average, the two extremes, or a running
    total.**
@@ -546,8 +586,8 @@ once and corrected. The numbers stay unused rather than being given to something
   is the asking, and the window swapping the logbook it shows. A folder that will not read, or
   will not be made into a logbook, is said in a box over the window rather than on the screen
   behind it: it answers something the reader just asked for, and the window under it has not
-  changed. Reading a dive computer works too, and is `GUI-31`; importing a logbook is the one
-  of the four still greyed.
+  changed. Reading a dive computer works too, and is `GUI-31`; so does importing a logbook,
+  which is `GUI-33`. All four of the deeds are built.
 
   **A folder holding no manifest opens**, as a logbook that declares nothing, which is what the
   command line does with the same folder and what the model calls one. Refusing it would be

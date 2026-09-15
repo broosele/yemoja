@@ -150,6 +150,15 @@ internal class Platform(
      */
     val ask: (question: String) -> String? = { null },
     /**
+     * Asks the reader for a folder or a file to import, or nothing where they name none.
+     *
+     * One dialog for both, because what is there says how it is read — a folder is another
+     * logbook and a file is a UDDF document — and the reader already knows which they have.
+     * Absent where the platform cannot ask, and the deed is then greyed like any other.
+     * `GUI-33`.
+     */
+    val pick: ((asking: String) -> String?)? = null,
+    /**
      * What this platform can do to a logbook as a whole, by deed.
      *
      * A deed the platform cannot do yet is absent, and the home screen offers it greyed: the
@@ -360,6 +369,7 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
     val edition = changer.edition
     val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
     val reading = remember(universe) { Reading() }
+    val taking = remember(universe) { Taking() }
     val scope = rememberCoroutineScope()
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -382,11 +392,15 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
         val deeds = platform.deeds + buildMap {
             if (universe != null) {
                 put(Deed.DOWNLOAD) { scope.launch { look(universe, platform, reading, changer) } }
+                if (platform.pick != null) {
+                    put(Deed.IMPORT) { take(universe, platform, taking, changer) }
+                }
             }
         }
         Inset("System") {
             Deeds(deeds)
             Reader(universe, platform, reading, changer, scope)
+            Taker(universe, taking, changer)
         }
         // Nothing to count where there is no logbook, and nothing to say about that.
         if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
@@ -438,6 +452,48 @@ private class Reading {
     var reading: String? by mutableStateOf(null)
     var said: String? by mutableStateOf(null)
     var arrived: Int by mutableStateOf(0)
+}
+
+/**
+ * Taking is where an import has got to: whether one is open, and what it has to say.
+ *
+ * Apart from [Reading] because the two are different errands that happen to end in the same
+ * review. An import has nothing to look for and nothing to choose between; it is a path, and
+ * then a list. `GUI-33`.
+ */
+private class Taking {
+    var open: Boolean by mutableStateOf(false)
+    var said: String? by mutableStateOf(null)
+    var arrived: Int by mutableStateOf(0)
+}
+
+/**
+ * Stage what is at the path the reader names, and open the review on it.
+ *
+ * What a folder or a file turns out to hold is the model's to say, and so is refusing it, so
+ * what is here is the asking and the showing. `GUI-33`.
+ */
+private fun take(universe: Universe, platform: Platform, taking: Taking, changer: Changer) {
+    val pick = platform.pick ?: return
+    val from = pick("Import a logbook or a UDDF file") ?: return
+    taking.open = true
+    when (val done = universe.importFrom(from)) {
+        is Outcome.Refused -> {
+            taking.said = done.reason
+            taking.arrived = 0
+        }
+
+        is Outcome.Done -> {
+            val import = universe.importing
+            taking.arrived = arrivedIn(import)
+            taking.said = if (import == null || taking.arrived == 0) {
+                "Nothing in $from that this can read."
+            } else {
+                summaryOf(countedIn(import))
+            }
+        }
+    }
+    changer.changed()
 }
 
 /** Look for what is within reach, and read it where exactly one thing is. */
@@ -510,10 +566,70 @@ private fun Reader(
         }
         reading.said?.let { Aside(it) }
         if (reading.stage == Stage.DONE && reading.arrived > 0) {
-            Arrived(universe, reading, changer)
+            Arrived(
+                universe = universe,
+                changer = changer,
+                after = { taken ->
+                    reading.arrived = arrivedIn(universe.importing)
+                    if (reading.arrived == 0) universe.stopImporting()
+                    reading.said = taken.refusal ?: "${taken.many} taken into the logbook."
+                },
+                leave = { reading.stage = Stage.IDLE },
+            )
         } else if (reading.stage == Stage.DONE) {
             TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Close") }
         }
+    }
+}
+
+/**
+ * What an import brought: the dives to review, and a line counting everything else.
+ *
+ * The same list a download is reviewed with, because the question is the same one — which of
+ * these am I already holding — and the answer machinery does not care what put them there.
+ * What differs is the rest: a download makes dives and sites and nothing else, `LOGIC-20`,
+ * while another logbook can bring every type there is. Those are counted rather than listed,
+ * and they come in with the dives. `GUI-33`.
+ */
+@Composable
+private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
+    if (universe == null || !taking.open) return
+    Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
+        taking.said?.let { Aside(it) }
+        if (taking.arrived > 0) {
+            Arrived(
+                universe = universe,
+                changer = changer,
+                after = { taken ->
+                    taking.arrived = arrivedIn(universe.importing)
+                    val rest = universe.importing?.let { theRest(it) } ?: Taken(0, null)
+                    if (taking.arrived == 0) universe.stopImporting()
+                    taking.said = taken.refusal ?: rest.refusal
+                        ?: "${taken.many + rest.many} taken into the logbook."
+                },
+                leave = { taking.open = false },
+            )
+        } else {
+            TextButton(onClick = {
+                universe.stopImporting()
+                taking.open = false
+            }) { Text("Close") }
+        }
+    }
+}
+
+/**
+ * Take in whatever is still staged once the dives are decided, as one change.
+ *
+ * Only what the review did not list: a site, a person, a piece of gear. Each was matched by the
+ * id it came with or is new, so there is nothing to ask and nothing to choose. `RECON-6`.
+ */
+private fun theRest(import: Import): Taken {
+    val many = import.incoming.size
+    if (many == 0) return Taken(0, null)
+    return when (val done = import.apply()) {
+        is Outcome.Refused -> Taken(0, done.reason)
+        is Outcome.Done -> Taken(many, null)
     }
 }
 
@@ -526,15 +642,18 @@ private fun Reader(
  * number it would take. `GUI-31`.
  */
 @Composable
-private fun Arrived(universe: Universe, reading: Reading, changer: Changer) {
+private fun Arrived(
+    universe: Universe,
+    changer: Changer,
+    after: (Taken) -> Unit,
+    leave: () -> Unit,
+) {
     val import = universe.importing ?: return
     val arriving = remember(import, changer.edition) {
         arrivingIn(import, universe.logbook, nextNumberIn(universe.logbook))
     }
-    val after = { taken: Taken ->
-        reading.arrived = arrivedIn(universe.importing)
-        if (reading.arrived == 0) universe.stopImporting()
-        reading.said = taken.refusal ?: "${taken.many} taken into the logbook."
+    val done = { taken: Taken ->
+        after(taken)
         changer.changed()
     }
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
@@ -548,14 +667,15 @@ private fun Arrived(universe: Universe, reading: Reading, changer: Changer) {
                     Aside(dive.said)
                     if (dive.glued > 1) Aside("glued from ${dive.glued} recordings")
                     dive.ontoSaid?.let { Aside("the same dive as $it, already logged") }
+                    if (dive.held) Aside("already in this logbook, and laid over it")
                     Where(import, dive, changer)
                 }
                 if (dive.onto != null) {
-                    Button(onClick = { after(oneIn(import, dive, dive.onto)) }) {
+                    Button(onClick = { done(oneIn(import, dive, dive.onto)) }) {
                         Text("Put together")
                     }
                 }
-                TextButton(onClick = { after(oneIn(import, dive, null)) }) {
+                TextButton(onClick = { done(oneIn(import, dive, null)) }) {
                     Text("As dive ${dive.number}")
                 }
             }
@@ -564,10 +684,10 @@ private fun Arrived(universe: Universe, reading: Reading, changer: Changer) {
             modifier = Modifier.padding(top = HALF),
             horizontalArrangement = Arrangement.spacedBy(GAP),
         ) {
-            Button(onClick = { after(takenIn(import, universe.logbook)) }) {
+            Button(onClick = { done(takenIn(import, universe.logbook)) }) {
                 Text("All as proposed")
             }
-            TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Leave them") }
+            TextButton(onClick = leave) { Text("Leave them") }
         }
     }
 }

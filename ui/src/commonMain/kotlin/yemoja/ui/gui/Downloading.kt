@@ -13,6 +13,7 @@ import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.logic.Change
 import yemoja.logic.Import
+import yemoja.logic.Meeting
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
 import yemoja.logic.Types
@@ -108,6 +109,14 @@ internal class Arriving(
     val number: Int,
     /** The site the device's own fix proposed, waiting to be answered. `LOGIC-18`. */
     val site: String?,
+    /**
+     * Whether something already in the logbook answers to this dive's id.
+     *
+     * Only another Yemoja logbook carries ids that mean the same on both sides, so this is
+     * always false for a download. The arriving dive is laid over the held one member by
+     * member, `RECON-6`, which is a thing to say before it happens. `GUI-33`.
+     */
+    val held: Boolean,
     /** Where the device said the dive was, written out, or absent where it said nothing. */
     val fix: String?,
     /** The sites already held that are nearest that fix, nearest first. */
@@ -174,16 +183,22 @@ internal fun arrivingIn(import: Import, into: ItemSet, next: Int): List<Arriving
         val id = import.staged.logbook.idOf(item) ?: continue
         val onto = if (import.asked(id)) import.proposal(id) else null
         val site = siteNamedBy(item)?.takeIf { import.staged.logbook[it] != null }
-        val at = site?.let { import.staged.logbook[it] }
+        // Where the dive was is a question only while the site it names has no name of its
+        // own: that is a fix the device proposed and nobody has answered. A site arriving with
+        // an imported dive is a site the dive already knows, and asking would be asking about
+        // something the file settled. `LOGIC-18`, `GUI-33`.
+        val at = site?.takeIf { unnamedIn(import, it) }?.let { import.staged.logbook[it] }
         val latitude = at?.let { numberOf(it, "latitude") }
         val longitude = at?.let { numberOf(it, "longitude") }
+        val own = numberOf(item)
         out += Arriving(
             id = id,
             said = saidOf(item),
             glued = gluedIn(item),
             onto = onto,
             ontoSaid = onto?.let { into[it] }?.let { saidOf(it) },
-            number = number,
+            number = own ?: number,
+            held = import.meeting(id) == Meeting.THE_SAME,
             site = site,
             fix = if (latitude == null || longitude == null) null else placeOf(latitude, longitude),
             nearby = if (latitude == null || longitude == null) {
@@ -192,10 +207,20 @@ internal fun arrivingIn(import: Import, into: ItemSet, next: Int): List<Arriving
                 nearestTo(into, latitude, longitude)
             },
         )
-        if (onto == null) number++
+        if (onto == null && own == null) number++
     }
     return out
 }
+
+/** Whether [id] is a site staged with no name, which is what a device's fix proposes. */
+private fun unnamedIn(import: Import, id: String): Boolean {
+    val site = import.staged.logbook[id] ?: return false
+    return (site.single<String>("name") as? Result.Usable)?.value.isNullOrBlank()
+}
+
+/** The number a dive already carries, or absent where it carries none. */
+private fun numberOf(dive: Item): Int? =
+    ((dive.read("dive_number") as? Result.Usable)?.value as? Number)?.toInt()
 
 /** When a dive was, as a number that sorts, or the end of time where it does not say. */
 private fun whenOf(dive: Item): Long {
@@ -283,11 +308,20 @@ internal fun takeIn(import: Import, arriving: Arriving, onto: String?): Outcome 
     if (onto == null) {
         import.staged.logbook[arriving.id]?.let { dive ->
             val writes = ArrayList<Change>()
-            writes += Change.Write(dive, "dive_number", Stored.Leaf(arriving.number))
-            primaryFor(dive)?.let {
-                writes += Change.Write(dive, "primary_profile", Stored.Leaf("*$it"))
+            // Only what the dive does not already say. A computer numbers nothing, so a download
+            // is always given one; another logbook's dive arrives with its own and keeps it, and
+            // so does one that already names the recording it is worked from. `GUI-33`.
+            if (numberOf(dive) == null) {
+                writes += Change.Write(dive, "dive_number", Stored.Leaf(arriving.number))
             }
-            import.staged.change(Operation.IMPORT, *writes.toTypedArray())
+            if (dive.read("primary_profile") !is Result.Usable) {
+                primaryFor(dive)?.let {
+                    writes += Change.Write(dive, "primary_profile", Stored.Leaf("*$it"))
+                }
+            }
+            if (writes.isNotEmpty()) {
+                import.staged.change(Operation.IMPORT, *writes.toTypedArray())
+            }
         }
     }
     return import.insert(arriving.id, onto)
