@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import yemoja.data.Item
 import yemoja.data.Element
 import yemoja.data.OwnedItem
 import yemoja.data.Result
@@ -8,6 +9,7 @@ import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.assertNull
 
 /*
@@ -297,5 +299,54 @@ class ArrangedTest {
         assertEquals("OW", entryLabelOf("k1", first), "raising the first letter leaves OW alone")
         assertEquals("Cave Diver", entryLabelOf("k2", second), "and the name where there is none")
         assertEquals("Nitrox", entryLabelOf("k3", third), "a label begins with a capital")
+    }
+}
+
+/*
+ * Which fields a form puts forward, and which it folds away.
+ * See ../../../../../../gui/doc.md — `GUI-29`.
+ */
+class ForwardTest {
+
+    private fun gear(json: String): Item =
+        LogbookReader.read(MemoryFileStore(mapOf("gear.json" to json)), Types.ALL)
+            .allOf(Types.GEAR).single()
+
+    private fun folded(item: Item): List<String> =
+        arrangedOf(item.description, editing = true).plain
+            .filterNot { forwardOf(it, item) }.map { it.name }
+
+    @Test
+    fun `a computer's fields are put forward on a computer`() {
+        val held = gear("""{"p": {"name": "Perdix 2", "category": "instruments"}}""")
+        assertEquals(listOf("capacity"), folded(held), "and a cylinder's is not")
+    }
+
+    @Test
+    fun `a computer's fields are folded away on a suit`() {
+        val held = gear("""{"s": {"name": "Drysuit", "category": "suit"}}""")
+        assertEquals(
+            listOf("serial", "access_code", "capacity", "salt_density"),
+            folded(held),
+            "an access code on a drysuit is how a form reads as though nobody thought",
+        )
+    }
+
+    @Test
+    fun `an item saying nothing about what it is keeps them folded`() {
+        // A reader who has not said what it is has not said the field applies either.
+        val held = gear("""{"x": {"name": "Something"}}""")
+        assertTrue("salt_density" in folded(held))
+    }
+
+    @Test
+    fun `nothing is folded on a type that has no fields of one kind only`() {
+        val set = LogbookReader.read(
+            MemoryFileStore(mapOf("person.json" to """{"a": {"first_name": "Anna"}}""")),
+            Types.ALL,
+        )
+        val anna = set.allOf(Types.PERSON).single()
+        assertEquals(emptyList(), arrangedOf(anna.description, editing = true).plain
+            .filterNot { forwardOf(it, anna) }.map { it.name })
     }
 }

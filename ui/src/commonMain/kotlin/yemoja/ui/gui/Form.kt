@@ -50,6 +50,7 @@ import yemoja.data.KeyReferenceDescription
 import yemoja.data.OwnedItem
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
+import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.logic.Change
 import yemoja.logic.Types
@@ -88,7 +89,8 @@ internal fun EditActions(draft: Draft, onCancel: () -> Unit, onSave: () -> Unit)
 @Composable
 internal fun EditFields(item: Item, draft: Draft) {
     val arranged = remember(item.description) { arrangedOf(item.description, editing = true) }
-    for (pair in arranged.plain.chunked(COLUMNS)) {
+    val forward = arranged.plain.filter { forwardOf(it, item) }
+    for (pair in forward.chunked(COLUMNS)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(GAP * 2),
@@ -97,13 +99,76 @@ internal fun EditFields(item: Item, draft: Draft) {
             repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
+    Folded(arranged.plain.filterNot { forwardOf(it, item) }, item, draft)
     for (inset in arranged.insets) {
         when (inset.cardinality) {
             Cardinality.KEYED -> KeyedEditor(inset.label, inset.name, item, draft)
-            else -> {
-                val owned = (item.read(inset.name) as? Result.Usable)?.value as? OwnedItem
-                if (owned != null) Inset(inset.label) { EditFields(owned, draft) }
-            }
+            else -> SingleEditor(inset, item, draft)
+        }
+    }
+}
+
+/**
+ * A singular owned item's fields, or an offer to begin one where the item has none.
+ *
+ * **An item that has never had one has to be able to get one.** A gear item with no buoyancy
+ * block cannot say what it weighs, and until this the form simply left the box out: the fields
+ * existed, the manual described them, and there was no way to reach them from the window.
+ * `GUI-29`.
+ *
+ * Beginning one lands at once rather than waiting for Save, which is what adding a keyed entry
+ * already does: an empty block is the collection changing shape, not a value being typed.
+ */
+@Composable
+private fun SingleEditor(inset: FieldDescription, item: Item, draft: Draft) {
+    val changer = LocalChanger.current
+    val owned = (item.read(inset.name) as? Result.Usable)?.value as? OwnedItem
+    if (owned != null) {
+        Inset(inset.label) { EditFields(owned, draft) }
+        return
+    }
+    Inset(inset.label) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Aside("none yet")
+            TextButton(
+                onClick = {
+                    changer.change(
+                        listOf(Change.Write(item, inset.name, Stored.Members(emptyMap()))),
+                    )
+                },
+            ) { Text("Add") }
+        }
+    }
+}
+
+/**
+ * The fields that do not apply to this kind of item, behind a fold that opens.
+ *
+ * Shut by default and never taken away: what decides is a `category` a reader typed, and one
+ * typed wrongly must not make a field unreachable. `GUI-29`.
+ */
+@Composable
+private fun Folded(fields: List<FieldDescription>, item: Item, draft: Draft) {
+    if (fields.isEmpty()) return
+    var open by remember(item) { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = HALF),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = { open = !open }) {
+            // What they are for is said by what they are: naming the kind here would be
+            // right for gear and wrong for whatever else grows a fold.
+            Text(if (open) "Fewer fields" else "${fields.size} more fields")
+        }
+    }
+    if (!open) return
+    for (pair in fields.chunked(COLUMNS)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+        ) {
+            for (field in pair) Box(modifier = Modifier.weight(1f)) { Editor(field, item, draft) }
+            repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
 }

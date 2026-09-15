@@ -725,6 +725,28 @@ once and corrected. The numbers stay unused rather than being given to something
   as it was; Save hands every field changed to the model as one change, and a refusal comes
   back to the field it was about.
 
+  **A field that belongs to one kind of gear is folded away on the rest.** Gear is one type
+  whatever the item is — [../../data/doc.md](../../data/doc.md) settles that under *Types are
+  not subdivided*, a variant simply omitting what does not apply — so a drysuit's form offered
+  an access code and a salt density, both of which are a dive computer's. They now sit behind
+  a fold that opens, counted on its own line. Four fields need it, all on gear: `serial`,
+  `access_code` and `salt_density` belong to `instruments`, and `capacity` to `cylinder`.
+
+  **Folded, never hidden**, and the distinction is the whole of why this is allowed. What
+  decides is the item's own `category`, which is free text a reader typed; a cylinder filed
+  under the wrong word would lose its capacity for good if the form took the field away rather
+  than tucking it out of the way. An item that says nothing about what it is keeps everything
+  folded, a reader who has not said what it is not having said the field applies. And the data
+  layer's refusal was about validation — it will not insist on or forbid a field because of
+  another's value — which says nothing about what a screen offers, that being `GUI-16`'s.
+
+  **A singular owned item that is absent can be begun.** Until this the form drew an inset only
+  where the item already had one, so a gear item with no buoyancy block could not be given one:
+  the fields existed, the manual described them, and the window could not reach them. The inset
+  is now always drawn, with *Add* where there is nothing yet, which lands at once the way adding
+  a keyed entry does — an empty block is the item changing shape rather than a value being
+  typed.
+
   **One widget per kind of field**, chosen from its description: a text field, taller for
   multiline text; a number field with its unit after it, a time as `m:ss`; a date as text; a
   yes-or-no as a three-state box, the third being *not said*; a fixed set as a drop-down, and a

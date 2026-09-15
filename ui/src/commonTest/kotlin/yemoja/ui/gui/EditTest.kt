@@ -1,10 +1,15 @@
 package yemoja.ui.gui
 
+import yemoja.data.OwnedItem
+import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Change
+import yemoja.logic.Operation
+import yemoja.logic.Outcome
 import yemoja.logic.Types
+import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -149,5 +154,51 @@ class EditTest {
         draft.dropAll(tank)
         assertTrue(!draft.changed(tank, "remarks"))
         assertTrue(draft.changed(dive, "rating"))
+    }
+}
+
+/*
+ * Beginning a singular owned item that the logbook has none of.
+ * See ../../../../../../gui/doc.md — `GUI-29`.
+ */
+class BegunTest {
+
+    private fun logbook(vararg files: Pair<String, String>): Universe {
+        val store = MemoryFileStore(mapOf(*files))
+        return Universe(LogbookReader.read(store, Types.ALL), null, store, null, null)
+    }
+
+    @Test
+    fun `writing an empty block gives an item one it did not have`() {
+        val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")
+        val suit = held.logbook["suit"]!!
+        assertEquals(Result.Absent, suit.read("buoyancy"), "nothing to fill in yet")
+        val done = held.change(
+            Operation.EDIT,
+            Change.Write(suit, "buoyancy", Stored.Members(emptyMap())),
+        )
+        assertTrue(done is Outcome.Done, "an empty block is a shape, not a value")
+        val begun = held.logbook["suit"]!!.read("buoyancy")
+        assertTrue(begun is Result.Usable, "and now there is one")
+        val buoyancy = (begun as Result.Usable).value as OwnedItem
+        assertEquals(Result.Absent, buoyancy.read("mass"), "empty, with its fields to fill in")
+        assertTrue(
+            buoyancy.description.fields.any { it.name == "compressible_fraction" },
+            "including the ones that were unreachable",
+        )
+    }
+
+    @Test
+    fun `a field written into the begun block lands`() {
+        val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")
+        held.change(
+            Operation.EDIT,
+            Change.Write(held.logbook["suit"]!!, "buoyancy", Stored.Members(emptyMap())),
+        )
+        val buoyancy = (held.logbook["suit"]!!.read("buoyancy") as Result.Usable).value as OwnedItem
+        val done = held.change(Operation.EDIT, Change.Write(buoyancy, "mass", Stored.Leaf(4.2)))
+        assertTrue(done is Outcome.Done)
+        val read = (held.logbook["suit"]!!.read("buoyancy") as Result.Usable).value as OwnedItem
+        assertEquals(4.2, (read.single<Double>("mass") as Result.Usable).value)
     }
 }

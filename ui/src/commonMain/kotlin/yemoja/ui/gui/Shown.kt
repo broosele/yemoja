@@ -73,6 +73,42 @@ internal fun fieldsShownOf(
     }
 
 /**
+ * Whether [field] is worth offering on [item], or belongs under the fold.
+ *
+ * **A field that only means something for one kind of thing is folded away on the rest.** Gear
+ * is one type whatever the item is — the data layer settles that under *Types are not
+ * subdivided* — and a drysuit therefore has an access code and a salt density, both of which are
+ * a dive computer's. Offering them is how the form reads as though nobody thought about it.
+ *
+ * **Folded, never hidden.** What decides is the item's own `category`, which is free text a
+ * reader typed: a cylinder filed under the wrong word would lose its capacity for good if this
+ * took fields away rather than tucking them out of the way. So everything stays reachable and
+ * the fold is the only thing that moves. The data layer's refusal was about validation, not
+ * about what a screen offers, which is `GUI-16`'s to decide. `GUI-29`.
+ */
+internal fun forwardOf(field: FieldDescription, item: Item): Boolean {
+    val only = ONLY_FOR[item.description.name]?.get(field.name) ?: return true
+    val category = (item.single<String>("category") as? Result.Usable)?.value?.lowercase()
+    return category in only
+}
+
+/**
+ * By type, the fields that belong to one category of item and to no other.
+ *
+ * Only gear needs this, being the one type covering things as unalike as a computer and a suit.
+ * A category not named here keeps the field folded, which is the safe way round: a reader who
+ * has not said what an item is has not said the field applies either.
+ */
+private val ONLY_FOR: Map<String, Map<String, Set<String>>> = mapOf(
+    "gear" to mapOf(
+        "serial" to setOf("instruments"),
+        "access_code" to setOf("instruments"),
+        "salt_density" to setOf("instruments"),
+        "capacity" to setOf("cylinder"),
+    ),
+)
+
+/**
  * By type name, the fields the screen around an item view shows already: a region's children
  * are the tree beside it, and a trip's dives are the box of their statistics under it.
  */
