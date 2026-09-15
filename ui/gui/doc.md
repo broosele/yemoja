@@ -420,6 +420,40 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-38 — How an agent is reached from the window.** *Settled:* **a side panel hosting the
+  user's own agent over the Agent Client Protocol, on desktop only.**
+
+  **The window starts the agent the user picked and is its interface.** Any agent that speaks
+  the protocol is offered, and the manual names the ones tested. The agent logs in by itself, so
+  whether it runs on a subscription, an API key or a local model is between the user and its
+  provider. Yemoja makes no call to a model and stores no key. Providers refuse a subscription
+  to an application calling their models directly, and allow it to their own agent hosted by
+  another program. That is the position at the time of writing, and it has changed before.
+
+  **Desktop only**, because an agent is a program installed on a computer.
+
+  **When a conversation starts the agent is handed the tool server**, `API-4`. Its own requests
+  to read or write a file or to run a command are refused, every time, so the tools are the only
+  way to the logbook. `API-5`.
+
+  **The panel sits beside whichever tab is showing** and stays open while the user moves between
+  tabs, so a dive the agent names can be opened while the conversation carries on. It holds the
+  choice of agent, the conversation, and two boxes that are off at the start of every
+  conversation: *allowed to change data*, and *include personal details*. `API-5`.
+
+  **An item is cited as a mention**, `@2026-04-28#1`, the convention `JSON-23` settles for a
+  remark. A mention that resolves is shown as the item's name and leads to it, which keeps *an id
+  is never shown* the way an ordinary reference keeps it. One that resolves to nothing is shown
+  as written.
+
+  **Staged changes are reviewed as an import is**, with each field shown before and after.
+  `RECON-8`.
+
+  **Nothing of a conversation is kept.** It lasts as long as the panel holds it, and whatever the
+  agent keeps on its own side is between the user and its provider. What was asked, and whose
+  names were in it, is never written beside the logbook, where syncing would carry it.
+
+  Nothing of this is built.
 - **GUI-37 — How a logbook is exported from the window.** *Settled:* **a deed on the home
    screen, a file named, and one sentence about what went.**
 

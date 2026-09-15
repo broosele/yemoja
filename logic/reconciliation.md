@@ -329,6 +329,29 @@ columns mapped by the user rather than guessed.
 
 ## Settled
 
+- **RECON-8 — What an agent's staged changes may hold, and how they land.** *Settled:*
+  **additions, edits and deletions, and each edit remembers the value it replaced.** An agent
+  allowed to change data, `API-5`, writes into a staging logbook of its own, as an import does
+  by `RECON-1`, and the user reviews it and applies it. Nothing an agent does reaches the
+  logbook without that.
+
+  **A deletion is staged explicitly.** An import cannot say one, because a field or item absent
+  from the staged set is left alone, which is the rule under *What applying does*. An agent's
+  staging marks an item or an entry for deletion instead. The review shows it with the
+  references it would leave naming nothing, and applying deletes through `Delete`.
+
+  **An edit remembers what it replaced**, and the review shows each field before and after,
+  which the review of an import does not. On applying, a field whose value in the logbook is no
+  longer the one remembered is not written. The review says why, and every other field still
+  lands.
+
+  **An agent's staging and an import may both be waiting**, each reviewed and applied on its
+  own. The protection runs one way. An agent's edit applied after an import is refused where the
+  import changed that field. An import applied after an agent's edits remembers nothing and
+  writes over them, which is the undetected collision named under *What is built*.
+
+  Nothing of this is built.
+
 - **RECON-4 — Whether importers are also exporters.** *Settled:* **for UDDF, yes, and export is
   not reconciliation.** One package reads and writes the format, `logic/uddf`, so the mapping is
   one table read in both directions and a vocabulary crossing it is one list of pairs. Export

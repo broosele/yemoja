@@ -475,6 +475,22 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-34 — How a figure is taken over items somebody else chose.** *Settled:* **over ids, a
+  field and an operation, and the answer says what it was based on.** The operations are a count,
+  a sum, a minimum, a maximum and a mean. The answer gives the value, how many values went into
+  it, and each id left out with the reason. A dive with no `sac` is left out rather than counted
+  as nothing, which is `GUI-9`'s rule applied to a caller that is not a screen.
+
+  The first caller is an agent's `aggregate` tool, `API-4`, which chooses the items by reading
+  them and hands this the arithmetic. It is a service beside the Universe, as every statistic
+  is, and the first piece of `FEAT-8`.
+
+  **The mean is named rather than chosen for the caller.** Within one dive `LOGIC-33` weights by
+  time. Across dives a plain mean counts a twenty-minute dive like a ninety-minute one, and a
+  weighted one counts the long dive more. Both are fair answers to *what is my average SAC*, so
+  the answer says which mean it is, and a user who wanted the other asks for it. Which weighted
+  means are offered beside the plain one is not settled.
+
 - **LOGIC-33 — How a SAC is worked out.** *Settled:* **a series on each recording, and a figure
   on each gas source over the time it was breathed, in litres a minute.**
 

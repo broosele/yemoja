@@ -75,6 +75,19 @@ them.
   [data/doc.md](data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
   stored value: the data layer records when a thing falls due and this feature decides
   when that is worth saying.
+- **FEAT-18 — An AI agent over the logbook.** Asking for something in ordinary language
+  and having it answered or done, where doing it by hand would be many reads or many edits:
+  how often a stage richer than 36% was breathed, a clock error set across a trip, one dive's
+  gear given to the others on it. The user brings their own agent and whatever account it
+  runs on. Yemoja supplies no model, pays for none and holds no key. Desktop only.
+  Moved from *Future* once its design was settled.
+
+  Built on `FEAT-12`, so an agent reaches the data through tools over the Universe and gets
+  no privileged path of its own. What an agent is given and what it is not is `API-4` and
+  `API-5` in [ui/api/doc.md](ui/api/doc.md). How it is hosted and talked to is `GUI-38` in
+  [ui/gui/doc.md](ui/gui/doc.md). Its changes are staged and reviewed like an import, which is
+  `RECON-8` in [logic/reconciliation.md](logic/reconciliation.md), and its arithmetic is
+  `LOGIC-34` in [logic/doc.md](logic/doc.md).
 
 ## Future
 
@@ -96,16 +109,6 @@ them.
 - **FEAT-15 — More than one logbook.** *Answered by `JSON-8`:* any number may exist on
   disk and one is open at a time. What remains here is the convenience around it —
   remembering recent logbooks, switching without hunting for a folder.
-- **FEAT-18 — An AI agent over the logbook.** Asking for something in ordinary language
-  and having it done, where doing it by hand would be many edits: retagging a season,
-  filling a site in across a trip, finding what disagrees with itself. The user brings
-  their own subscription — Yemoja supplies no model and pays for none.
-  Built on `FEAT-12`, so an agent reaches the data through the same surface as any other
-  program and gets no privileged path of its own. Two things it needs already exist by
-  design: a changeset is one revertible unit, and work is applied to live data for review
-  before it is saved, so an agent's edits are inspected and undone like any import — see
-  [logic/reconciliation.md](logic/reconciliation.md). What is sent to the service
-  and what stays local is undecided.
 
 ## Low priority
 
