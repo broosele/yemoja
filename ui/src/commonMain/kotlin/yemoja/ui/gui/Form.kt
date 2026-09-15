@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -407,7 +406,7 @@ private fun Suggested(options: List<String>, shown: String, onChange: (String) -
                 )
             },
         )
-        DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
+        Menu(expanded = picking, onDismissRequest = { picking = false }) {
             for (option in options) {
                 DropdownMenuItem(
                     text = { Text(option) },
@@ -486,7 +485,7 @@ private fun Choice(options: List<String>, shown: String, onChoose: (String) -> U
                 modifier = Modifier.size(GLYPH),
             )
         }
-        DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
+        Menu(expanded = picking, onDismissRequest = { picking = false }) {
             DropdownMenuItem(text = { Text("—") }, onClick = { onChoose(""); picking = false })
             for (option in options) {
                 DropdownMenuItem(
@@ -597,7 +596,7 @@ private fun ReferenceEditor(
                 )
             },
         )
-        DropdownMenu(expanded = open && matches.isNotEmpty(), onDismissRequest = { open = false }) {
+        Menu(expanded = open && matches.isNotEmpty(), onDismissRequest = { open = false }) {
             for (match in matches) {
                 DropdownMenuItem(
                     text = { Text(match.title) },

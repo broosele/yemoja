@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.AlertDialog
@@ -360,6 +361,26 @@ internal fun Application(universe: Universe?, platform: Platform) {
 @Composable
 internal fun Selectable(content: @Composable () -> Unit) {
     SelectionContainer(content = content)
+}
+
+/**
+ * A dropdown menu whose words are outside every selection.
+ *
+ * A menu opens in a layer of its own and still inherits the selection of the view it opened from.
+ * Pressing on one of its words would then begin a selection in a layer the view cannot measure
+ * against, and Compose throws rather than choosing. A menu's words are pressed and not read, so
+ * nothing is lost by it. `GUI-36`.
+ */
+@Composable
+internal fun Menu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
+        val column = this
+        DisableSelection { column.content() }
+    }
 }
 
 @Composable
@@ -950,7 +971,7 @@ private fun Picked(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
                 modifier = Modifier.size(GLYPH),
             )
         }
-        DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
+        Menu(expanded = picking, onDismissRequest = { picking = false }) {
             for ((index, label) in labels.withIndex()) {
                 DropdownMenuItem(
                     text = { Text(label) },
@@ -2494,7 +2515,7 @@ private fun ProfileGraph(dive: Item, profile: Item) {
                         modifier = Modifier.size(GLYPH),
                     )
                 }
-                DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
+                Menu(expanded = picking, onDismissRequest = { picking = false }) {
                     for ((index, choice) in overlays.withIndex()) {
                         DropdownMenuItem(
                             text = { Text(choice.title) },

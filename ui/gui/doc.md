@@ -444,6 +444,11 @@ once and corrected. The numbers stay unused rather than being given to something
    view's selection across the box rather than moving the caret. Those are the one exception,
    and nothing is lost by it, a text field already copying what it holds.
 
+   **A menu's words are outside it too.** A dropdown opens in a layer of its own and inherits the
+   selection of the view it opened from all the same, and pressing on one of its words began a
+   selection the view could not measure against: choosing *quarter* in the statistics threw
+   rather than choosing. Every menu is `Menu` in `Screens.kt`, which switches selection off.
+
    **A click still chooses.** A row in a list inside a view is chosen by a click as it was
    before, and the click clears whatever was selected; only a drag selects.
 - **GUI-35 — How an item is made and unmade.** *Settled:* **two buttons beside the pencil, and
