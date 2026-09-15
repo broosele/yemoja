@@ -109,6 +109,7 @@ import yemoja.data.Units
 import yemoja.data.ItemReader
 import yemoja.data.Cardinality
 import yemoja.data.Element
+import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
@@ -2208,6 +2209,8 @@ private fun ItemCard(
 /**
  * An item's fields as a desktop lays them out: the plain ones in two columns, then each owned
  * item in an inset of its own, shown in full, and a keyed one as an inset with a tab per entry.
+ * Last come the fields at the foot, each in a box as wide as the card and left out where it holds
+ * nothing.
  *
  * Insets nest, since an owned item may own one: a recording's tolerances sit inside it. `GUI-16`.
  */
@@ -2216,7 +2219,8 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
     val arranged = remember(item.description) { arrangedOf(item.description) }
     val shown = arranged.plain.mapNotNull { shownOf(it, item) }
     val insets = arranged.insets.filter { item.read(it.name) is Result.Usable }
-    if (shown.isEmpty() && insets.isEmpty()) {
+    val foot = arranged.foot.filter { !emptyOn(item, it) }.mapNotNull { shownOf(it, item) }
+    if (shown.isEmpty() && insets.isEmpty() && foot.isEmpty()) {
         Aside("this one says nothing yet")
         return
     }
@@ -2238,7 +2242,12 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
             }
         }
     }
+    for (footing in foot) Inset(footing.label) { Said(footing, onFollow) }
 }
+
+/** Whether [field] on [item] reads as a list with nothing in it. */
+private fun emptyOn(item: Item, field: FieldDescription): Boolean =
+    ((item.read(field.name) as? Result.Usable)?.value as? List<*>)?.isEmpty() == true
 
 /** A keyed owned item as an inset with a tab per entry, the first open. */
 @Composable
@@ -2390,35 +2399,41 @@ private fun Field(shown: Shown, onFollow: (String) -> Unit) {
             textAlign = TextAlign.End,
             modifier = Modifier.width(LABEL),
         )
-        // A part that leads somewhere is a link, in the link colour; the rest reads as it is.
-        val link = TextLinkStyles(SpanStyle(color = MaterialTheme.colorScheme.primary))
-        val said = buildAnnotatedString {
-            for (part in shown.parts) {
-                val to = part.leadsTo
-                if (to == null) {
-                    append(part.text)
-                } else {
-                    val clickable = LinkAnnotation.Clickable(to, link) { onFollow(to) }
-                    withLink(clickable) { append(part.text) }
-                }
+        Said(shown, onFollow, Modifier.weight(1f))
+    }
+}
+
+/** What a field says, without what it is called. */
+@Composable
+private fun Said(shown: Shown, onFollow: (String) -> Unit, modifier: Modifier = Modifier) {
+    val rating = shown.rating
+    if (rating != null) {
+        Stars(rating)
+        return
+    }
+    // A part that leads somewhere is a link, in the link colour; the rest reads as it is.
+    val link = TextLinkStyles(SpanStyle(color = MaterialTheme.colorScheme.primary))
+    val said = buildAnnotatedString {
+        for (part in shown.parts) {
+            val to = part.leadsTo
+            if (to == null) {
+                append(part.text)
+            } else {
+                val clickable = LinkAnnotation.Clickable(to, link) { onFollow(to) }
+                withLink(clickable) { append(part.text) }
             }
         }
-        val rating = shown.rating
-        if (rating != null) {
-            Stars(rating)
-        } else {
-            Text(
-                text = said,
-                style = MaterialTheme.typography.bodyMedium,
-                color = when {
-                    shown.wrong -> MaterialTheme.colorScheme.error
-                    shown.worked -> MaterialTheme.colorScheme.outline
-                    else -> MaterialTheme.colorScheme.onSurface
-                },
-                modifier = Modifier.weight(1f),
-            )
-        }
     }
+    Text(
+        text = said,
+        style = MaterialTheme.typography.bodyMedium,
+        color = when {
+            shown.wrong -> MaterialTheme.colorScheme.error
+            shown.worked -> MaterialTheme.colorScheme.outline
+            else -> MaterialTheme.colorScheme.onSurface
+        },
+        modifier = modifier,
+    )
 }
 
 /** A rating as five stars, filled, half filled or empty, and nothing else. */

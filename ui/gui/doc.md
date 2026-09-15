@@ -983,6 +983,11 @@ once and corrected. The numbers stay unused rather than being given to something
   recording by the computer that made it, a course by its certification — and by its key only
   where nothing on it says anything. A series is not laid out at all: the graph is where it is read.
 
+  **A list of dives on gear, a person, a dive site or an operator sits at the foot**, in a box of
+  its own as wide as the card, after every owned item. It runs to hundreds of names, and in one of two columns it was a
+  narrow ribbon that pushed every field after it off the screen. The box is left out where the
+  list is empty. The form keeps the field among the rest, nobody typing into it.
+
   **What a number reads as.** A file keeps three decimals of a metre so nothing measured is
   lost; a reader wants one. A depth, a temperature, a mass and a volume read to one decimal,
   a pressure and a density to none, and an angle as the file writes it, a coordinate being

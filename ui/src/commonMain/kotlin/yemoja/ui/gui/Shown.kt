@@ -118,22 +118,44 @@ private val ALREADY_SHOWN: Map<String, Set<String>> = mapOf(
 )
 
 /**
- * Arranged is how an item view lays a type out: the plain fields, which flow into columns, and
- * then the owned items, each an inset of its own, in the type's order. `GUI-16`.
+ * By type name, the fields an item view sets in a box of their own under everything else, the
+ * box as wide as the card.
+ *
+ * A list of dives runs to hundreds of names, and in one of two columns it is a narrow ribbon
+ * pushing every field after it off the screen. `GUI-16`.
  */
-internal class Arranged(val plain: List<FieldDescription>, val insets: List<OwnedItemDescription>)
+private val AT_FOOT: Map<String, Set<String>> = mapOf(
+    "gear" to setOf("dives"),
+    "person" to setOf("dives"),
+    "dive_site" to setOf("dives"),
+    "operator" to setOf("dives"),
+)
+
+/**
+ * Arranged is how an item view lays a type out: the plain fields, which flow into columns, then
+ * the owned items, each an inset of its own, in the type's order, and last the fields at its foot.
+ * `GUI-16`.
+ */
+internal class Arranged(
+    val plain: List<FieldDescription>,
+    val insets: List<OwnedItemDescription>,
+    val foot: List<FieldDescription> = emptyList(),
+)
 
 /**
  * The fields of [type] as an item view lays them out, or as the edit form does.
  *
  * A series is not laid out at all: the graph is where it is read, and a count of its samples
- * beside the graph says nothing a reader wants.
+ * beside the graph says nothing a reader wants. The form has no foot, a field there being one
+ * nobody types into.
  */
 internal fun arrangedOf(type: ItemDescription, editing: Boolean = false): Arranged {
     val shown = fieldsShownOf(type, editing).filter { it.cardinality !in SERIES }
+    val footed = if (editing) emptySet() else AT_FOOT[type.name].orEmpty()
     return Arranged(
-        plain = shown.filter { it !is OwnedItemDescription },
+        plain = shown.filter { it !is OwnedItemDescription && it.name !in footed },
         insets = shown.filterIsInstance<OwnedItemDescription>(),
+        foot = shown.filter { it.name in footed },
     )
 }
 

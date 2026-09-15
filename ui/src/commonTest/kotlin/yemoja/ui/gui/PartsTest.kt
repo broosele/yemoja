@@ -236,6 +236,27 @@ class ArrangedTest {
     }
 
     @Test
+    fun `the dives of gear, a person, a site and an operator sit at the foot, apart`() {
+        for (type in listOf(Types.GEAR, Types.PERSON, Types.DIVE_SITE, Types.OPERATOR)) {
+            val arranged = arrangedOf(type)
+            assertEquals(listOf("dives"), arranged.foot.map { it.name }, type.name)
+            assertEquals(false, arranged.plain.any { it.name == "dives" }, type.name)
+        }
+        assertEquals(
+            true,
+            arrangedOf(Types.OPERATOR).plain.any { it.name == "dive_trips" },
+            "a handful of trips stays in the columns",
+        )
+    }
+
+    @Test
+    fun `the form has no foot, and lays out what the view put there among the rest`() {
+        val arranged = arrangedOf(Types.GEAR, editing = true)
+        assertEquals(emptyList(), arranged.foot)
+        assertEquals(true, arranged.plain.any { it.name == "dives" })
+    }
+
+    @Test
     fun `a series is not laid out, the graph being where it is read`() {
         val profile = (Types.DIVE["profiles"] as yemoja.data.OwnedItemDescription).description
         val names = arrangedOf(profile).plain.map { it.name }
