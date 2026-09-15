@@ -532,7 +532,8 @@ To settle when we discuss architecture and features:
 
   UDDF writes a zone after a `datetime`, `+02:00`, and it is read as the dive's offset and
   written back from it. A screen reads and takes either offset as hours and minutes with a sign,
-  `GUI-16`.
+  `GUI-16`. **Both are housekeeping**, `DATA-115`: the times shown already have them applied, so
+  a card leaves them off, and the form is where they are set.
 - **LOGIC-31 — What a download writes about the gas a dive began on.** *Settled:* **the
    switch the computer reports on the first sample, kept whatever it names. What is dropped is a
    reading naming the gas already being breathed.**

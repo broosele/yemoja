@@ -256,10 +256,11 @@ private val PROFILE = ItemDescription(
         REMARKS,
     ),
     proposedId = ::profilesProposedKey,
-    // The bookmark and the key a download reads back, and how much a download thinned: kept,
-    // and not read. The recording's own start is what the dive works its start from, and the
-    // dive's is the one read.
-    housekeeping = setOf("fingerprint", "serial", "tolerances"),
+    // The bookmark and the key a download reads back, how much a download thinned, and how far
+    // the clock was out, which the dive's own times already have applied: kept, and not read.
+    // The recording's own start is what the dive works its start from, and the dive's is the one
+    // read.
+    housekeeping = setOf("fingerprint", "serial", "tolerances", "recorded_time_offset"),
     sources = setOf("start_date", "start_time"),
 )
 
@@ -515,8 +516,9 @@ internal val DIVE: ItemDescription = ItemDescription(
         Ordering("start_time", Direction.DESCENDING),
     ),
     proposedId = ::divesProposedId,
-    // Which recording is worked from is a choice about the machinery, not a fact about the dive.
-    housekeeping = setOf("primary_profile"),
+    // Which recording is worked from is a choice about the machinery, not a fact about the dive,
+    // and the zone only puts two dives on one clock, the times shown being local already.
+    housekeeping = setOf("primary_profile", "time_zone_offset"),
 )
 
 /**

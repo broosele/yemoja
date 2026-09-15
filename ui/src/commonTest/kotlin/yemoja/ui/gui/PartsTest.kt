@@ -170,11 +170,16 @@ class HousekeepingTest {
     @Test
     fun `what is kept for the machinery, or solely feeds other fields, is not shown`() {
         val names = fieldsShownOf(profile).map { it.name }
-        for (hidden in listOf("fingerprint", "serial", "tolerances", "start_date")) {
+        for (hidden in listOf(
+            "fingerprint", "serial", "tolerances", "start_date", "recorded_time_offset",
+        )) {
             assertEquals(false, hidden in names, hidden)
         }
         assertEquals(true, "duration" in names)
         assertEquals(false, "primary_profile" in fieldsShownOf(Types.DIVE).map { it.name })
+        assertEquals(false, "time_zone_offset" in fieldsShownOf(Types.DIVE).map { it.name })
+        val form = fieldsShownOf(Types.DIVE, editing = true).map { it.name }
+        assertEquals(true, "time_zone_offset" in form, "still set in the form")
         assertEquals(false, "access_code" in fieldsShownOf(Types.GEAR).map { it.name })
         assertEquals(true, "dive_number" in fieldsShownOf(Types.DIVE).map { it.name })
     }
