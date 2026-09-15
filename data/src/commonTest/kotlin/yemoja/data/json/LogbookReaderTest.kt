@@ -198,6 +198,16 @@ class ManifestTest {
     }
 
     @Test
+    fun `the set read carries the owner, whether or not it holds them`() {
+        // A derived field is worked out from an item and its set, and the user's dives are all of
+        // them. `DATA-118`.
+        val store =
+            MemoryFileStore(mapOf(LogbookReader.MANIFEST to """{"user": "@anna_devries"}"""))
+        assertEquals("anna_devries", LogbookReader.read(store, emptyList()).user?.id)
+        assertNull(LogbookReader.read(MemoryFileStore(emptyMap()), emptyList()).user)
+    }
+
+    @Test
     fun `a manifest naming no owner has none`() {
         val store = MemoryFileStore(mapOf(LogbookReader.MANIFEST to """{"libraries": {}}"""))
         assertNull(LogbookReader.manifest(store).user)

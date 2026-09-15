@@ -84,7 +84,7 @@ object LogbookReader {
         types: List<ItemDescription>,
         manifest: Manifest = manifest(store),
     ): ItemSet {
-        val set = ItemSet(types)
+        val set = ItemSet(types, manifest.user)
         for (description in types) {
             val named = manifest.libraries[description.name].orEmpty()
             for ((id, held) in itemsOf(store, description.name, named)) {

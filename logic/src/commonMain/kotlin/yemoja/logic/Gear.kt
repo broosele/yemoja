@@ -119,8 +119,9 @@ internal val GEAR: ItemDescription = ItemDescription(
         NumberDescription("salt_density", Dimension.DENSITY),
         OwnedItemDescription("buoyancy", BUOYANCY),
         OwnedItemDescription("maintenances", MAINTENANCE, cardinality = Cardinality.KEYED),
-        // Every dive that took this item, named on the dive's gear. Never written: each dive
-        // says what it took. For a generic item this is every dive that listed the kind.
+        // Every dive that took this item, named on the dive's gear or, for a dive computer, by
+        // a profile recorded on it. Never written: each dive says what it took. For a generic
+        // item this is every dive that listed the kind.
         ReferenceDescription(
             "dives",
             targetType = "dive",
@@ -135,6 +136,10 @@ internal val GEAR: ItemDescription = ItemDescription(
     housekeeping = setOf("access_code"),
 )
 
-/** The dives whose gear names [gear] among its items. */
-private fun gearsDives(gear: Item): Result<Any> =
-    pointingAt(gear, Types.DIVE, "items", inside = "gear")
+/** The dives whose gear names [gear] among its items, or a profile of which names it. */
+private fun gearsDives(gear: Item): Result<Any> = pointingAt(
+    gear,
+    Types.DIVE,
+    Naming("items", inside = "gear"),
+    Naming("dive_computer", inside = "profiles"),
+)

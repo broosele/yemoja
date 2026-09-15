@@ -95,6 +95,48 @@ class BackLinkTest {
     }
 
     @Test
+    fun `a dive computer holds the dives it recorded, whether or not the dive lists it as gear`() {
+        val held = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "gear.json" to """{"perdix": {"name": "Perdix", "serial": "A1B2"},
+                        "petrel": {"name": "Petrel"}}""",
+                    "dive/2026-06-01#0.json" to """{"profiles": {"perdix": {"serial": "A1B2"}}}""",
+                    "dive/2026-06-02#0.json" to """{"gear": {"items": ["@perdix"]},
+                        "profiles": {"perdix": {"serial": "A1B2"},
+                                     "petrel": {"dive_computer": "@petrel"}}}""",
+                    "dive/2026-06-03#0.json" to """{"gear": {"items": ["@petrel"]}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        assertEquals(
+            listOf("2026-06-01#0", "2026-06-02#0"),
+            named(held["perdix"]!!, "dives"),
+            "worked out from the serial, and listed once where the gear names it too",
+        )
+        assertEquals(listOf("2026-06-02#0", "2026-06-03#0"), named(held["petrel"]!!, "dives"))
+    }
+
+    @Test
+    fun `the user holds every dive, being on each of them whoever else was`() {
+        val held = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "yemoja.json" to """{"user": "@bram"}""",
+                    "person.json" to """{"anna": {"first_name": "Anna"},
+                        "bram": {"first_name": "Bram"}}""",
+                    "dive/2026-06-01#0.json" to """{"buddies": ["@anna"]}""",
+                    "dive/2026-06-02#0.json" to "{}",
+                ),
+            ),
+            Types.ALL,
+        )
+        assertEquals(listOf("2026-06-01#0", "2026-06-02#0"), named(held["bram"]!!, "dives"))
+        assertEquals(listOf("2026-06-01#0"), named(held["anna"]!!, "dives"), "a buddy is not")
+    }
+
+    @Test
     fun `nothing pointing back is an empty list, having been asked`() {
         assertEquals(emptyList(), named(set["bram"]!!, "dives").filter { it == "none" })
         val trips = assertIs<Result.Usable<*>>(set["egypt_2026"]!!.read("dives"))

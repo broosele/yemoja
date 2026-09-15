@@ -2144,6 +2144,25 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-118 — Whether an item set knows whose logbook it is.** *Settled:* **yes, as the
+  reference the manifest holds.** `ItemSet.user` is what `yemoja.json` names, or nothing.
+
+  A person's `dives` are worked out from the dives naming them as a buddy, and the user is not
+  their own buddy, so the one person a reader is sure to open found no dives at all. Their dives
+  are every dive, and a derived field is worked out from an item and the set it sits in: without
+  the set knowing, nothing reachable from the person could tell the user from anybody else.
+
+  The Universe already held the owner, which is where `JSON-22` first put it to use. That is
+  above a derived field and out of its reach, and passing the owner down into every read would
+  put an argument on every field for the sake of one.
+
+  It is carried as the reference and not resolved, for the reason `JSON-22` gives: naming
+  somebody not there is a dangling reference and not an error. It is not a third question in
+  the sense of `DATA-4` either, answering nothing about the items the set holds.
+
+  An import read into a set of its own carries the other logbook's owner, which is right: that
+  logbook's dives are theirs.
+
 - **DATA-117 — How far clearing a deleted item's references reaches.** *Settled:* **all the
   way down, into the owned items.**
 

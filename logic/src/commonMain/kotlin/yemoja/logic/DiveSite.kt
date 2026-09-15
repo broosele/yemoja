@@ -62,4 +62,4 @@ internal val DIVE_SITE: ItemDescription = ItemDescription(
 )
 
 /** The dives naming [site]. */
-private fun sitesDives(site: Item): Result<Any> = pointingAt(site, Types.DIVE, "dive_site")
+private fun sitesDives(site: Item): Result<Any> = pointingAt(site, Types.DIVE, Naming("dive_site"))

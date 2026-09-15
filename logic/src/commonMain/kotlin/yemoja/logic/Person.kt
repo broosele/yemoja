@@ -10,6 +10,7 @@ import yemoja.data.NumberDescription
 import yemoja.data.Ordering
 import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceDescription
+import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Role
 import yemoja.data.TextDescription
@@ -110,8 +111,8 @@ internal val PERSON: ItemDescription = ItemDescription(
         OwnedItemDescription("medical", MEDICAL),
         OwnedItemDescription("insurance", INSURANCE),
         OwnedItemDescription("courses", COURSE, cardinality = Cardinality.KEYED),
-        // Every dive naming this person among its buddies. Never written: each dive says who
-        // was there.
+        // Every dive naming this person among its buddies, and for the logbook's user every
+        // dive, each one being theirs. Never written: each dive says who was there. `DATA-118`.
         ReferenceDescription(
             "dives",
             targetType = "dive",
@@ -140,5 +141,11 @@ private fun assembledName(person: Item): Result<Any> {
 
 private val NAME_PARTS = listOf("first_name", "middle_names", "last_name")
 
-/** The dives naming [person] as a buddy. */
-private fun personsDives(person: Item): Result<Any> = pointingAt(person, Types.DIVE, "buddies")
+/** The dives naming [person] as a buddy, or every dive where [person] is the user. */
+private fun personsDives(person: Item): Result<Any> {
+    val id = (person as? ReferenceableItem)?.let { person.set.idOf(it) }
+    if (id != null && id == person.set.user?.id) {
+        return referencesTo(person.set, person.set.allOf(Types.DIVE))
+    }
+    return pointingAt(person, Types.DIVE, Naming("buddies"))
+}

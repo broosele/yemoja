@@ -56,4 +56,5 @@ internal val WRECK: ItemDescription = ItemDescription(
 )
 
 /** The sites naming [wreck]. */
-private fun wrecksSites(wreck: Item): Result<Any> = pointingAt(wreck, Types.DIVE_SITE, "wrecks")
+private fun wrecksSites(wreck: Item): Result<Any> =
+    pointingAt(wreck, Types.DIVE_SITE, Naming("wrecks"))

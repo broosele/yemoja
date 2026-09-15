@@ -66,7 +66,7 @@ internal val DIVE_TRIP: ItemDescription = ItemDescription(
  * The other side of `parent`, gathered the way [regionsChildren] is.
  */
 private fun tripsParts(trip: Item): Result<Any> =
-    pointingAt(trip, Types.DIVE_TRIP, "parent")
+    pointingAt(trip, Types.DIVE_TRIP, Naming("parent"))
 
 /**
  * Every dive made on a trip, and on any trip beneath it.

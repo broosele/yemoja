@@ -69,7 +69,8 @@ internal val REGION: ItemDescription = ItemDescription(
  * a region with nothing inside it has been asked and answered.
  */
 private fun regionsChildren(region: Item): Result<Any> =
-    pointingAt(region, Types.REGION, "parents")
+    pointingAt(region, Types.REGION, Naming("parents"))
 
 /** The sites naming [region] among their regions. */
-private fun regionsSites(region: Item): Result<Any> = pointingAt(region, Types.DIVE_SITE, "regions")
+private fun regionsSites(region: Item): Result<Any> =
+    pointingAt(region, Types.DIVE_SITE, Naming("regions"))
