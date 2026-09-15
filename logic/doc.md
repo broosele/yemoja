@@ -1254,8 +1254,10 @@ To settle when we discuss architecture and features:
   *Settled:* **none, because nothing computes it.** `deco` is read off the primary
   profile, from either of two things the computer recorded:
 
-  - a `decostop` above zero, at any point — the dive went into decompression;
-  - failing that, a `no_deco_time` that never reached zero — it did not.
+  - a `decostop` above zero, at any point — the dive went into decompression, and a `decostop`
+    recorded but never above zero — it did not;
+  - failing a `decostop`, a `no_deco_time` that never reached zero — it did not — or one that
+    did, after a positive reading — it did.
 
   Where the profile has neither, or there is no profile at all, `deco` is absent and the
   user answers it.

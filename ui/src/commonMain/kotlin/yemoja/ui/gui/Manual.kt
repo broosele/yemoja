@@ -20,11 +20,13 @@ package yemoja.ui.gui
  */
 internal val CHAPTERS: List<String> = listOf(
     "app-info.md",
+    "getting-started.md",
     "data-format.md",
     "data-fields.md",
     "decompression.md",
     "settings.md",
     "uddf.md",
+    "computers-and-importing.md",
 )
 
 /** Chapter is one file of the manual, read into its blocks. */

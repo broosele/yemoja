@@ -1,13 +1,28 @@
 # The decompression model
 
-Yemoja can work out what a decompression model would have said about a dive you have
-already made: how loaded your tissues were, how shallow you could have gone at any
-moment, and how long you had before stops became necessary.
+What a decompression model says about a dive: how loaded your tissues were, how shallow you
+could have gone at any moment, and how long you had before stops became necessary.
+
+## What Yemoja shows today
+
+**Yemoja does not run a decompression model yet.** Nothing in it works out tissue loading, a
+ceiling or a no-decompression limit of its own. What you see on a dive's graph is what your
+dive computer recorded at the time:
+
+- the **NDL** on the graph's right axis is your computer's own no-decompression time;
+- the **stepped line** is the stop your computer set, and the water above it is shaded red
+  while a stop stood;
+- whether a dive was a **decompression dive** is read off those same two recordings, as
+  [data-fields.md](data-fields.md) explains under `deco`.
+
+The rest of this chapter explains the model a later version is meant to run, so that the
+figures make sense when they arrive and so that what your computer recorded can be understood
+now.
 
 ## What this is, and what it is not
 
-This is arithmetic performed on a recording, after the fact. It is offered so you can
-look at a dive you have already done and understand it better.
+A model's figures are arithmetic performed on a recording, after the fact. They are offered so
+you can look at a dive you have already done and understand it better.
 
 **It is not dive planning software, it is not a dive computer, and it has been neither
 certified nor validated as either.** The figures are one model's estimate. They will
@@ -17,8 +32,8 @@ may simply be wrong.
 Never plan a dive from them. Never take them into the water. Never let them override
 your training, your computer, your tables or your own judgement.
 
-Nothing computed here is stored in your logbook. It is worked out when you ask and
-forgotten afterwards, so a later version of Yemoja that calculates differently will
+Nothing a model computes will be stored in your logbook. It is to be worked out when you ask
+and forgotten afterwards, so a later version of Yemoja that calculates differently will
 change what you see. That is deliberate: the recording is the fact, and the model is
 only an opinion about it.
 
@@ -64,14 +79,14 @@ equilibrium can you go before that happens?**
 
 ### Working in pressure, not depth
 
-Depth is what a diver reads. Pressure is what the body responds to, so the model works
-in pressure throughout and converts once at the start.
+Depth is what a diver reads. Pressure is what the body responds to, so a model works in
+pressure throughout and converts once at the start.
 
 Two adjustments matter and are easy to miss:
 
 - **The water itself.** Salt water is denser than fresh, so the same ten metres results in
-  slightly more pressure in the sea than in a quarry. This is why a dive site records
-  its water type.
+  slightly more pressure in the sea than in a quarry. This is why a recording notes the water
+  type its computer was set to: the depths it wrote down were converted with it.
 - **Your lungs are wet.** The gas in them is saturated with water vapour at body
   temperature, which occupies about 0.06 bar and displaces the gas you are breathing.
   The amount of nitrogen actually available to dissolve is therefore slightly lower than the
@@ -81,8 +96,8 @@ Two adjustments matter and are easy to miss:
 ## The Bühlmann model
 
 Albert Bühlmann published a family of decompression models from the 1960s onwards,
-refined over decades of chamber work and diving in Zurich — including at altitude,
-which is why the model handles it properly. ZHL-16C is the version Yemoja uses. The
+refined over decades of chamber work and diving in Zurich — including at altitude, which
+the model was built to handle. ZHL-16C is the version this chapter describes. The
 sixteen is the number of compartments; the C is the third revision of its limits, and
 the most conservative of the three.
 
@@ -112,8 +127,8 @@ and why a fast compartment can fill and empty several times over during a dive t
 barely moves the slow ones at all.
 
 When depth is changing rather than steady, the same arithmetic applies continuously
-against a moving target. Yemoja does this along the whole profile: descent, bottom,
-every ascent and every stop.
+against a moving target, along the whole profile: descent, bottom, every ascent and every
+stop.
 
 ### How much a compartment tolerates
 
@@ -151,6 +166,9 @@ The pair does two different jobs, which is why there are two. GF Low decides how
 the ascent is held back; GF High decides how much loading you are willing to reach the
 surface carrying.
 
+The gradient factors a recording holds are the ones your computer was set to. Yemoja does
+not recalculate a logged dive with them, or with any others.
+
 ### The ceiling
 
 The **ceiling** is the shallowest depth the model would allow you at a given moment —
@@ -181,8 +199,8 @@ and it knows nothing about:
 - **Exertion.** Working hard at depth takes up more gas than drifting does.
 - **Bubbles.** ZHL-16 tracks dissolved gas only. It has no concept of a bubble that has
   already formed, which is the thing that actually causes harm.
-- **What happened before.** The model can be seeded with recent diving, but flights,
-  altitude, and dives it has not been told about are simply absent.
+- **What happened before.** Recent diving can be given to a model, but flights, altitude,
+  and dives it has not been told about are simply absent.
 - **Whether the recording is right.** A depth reading that drifted, a gap in the data,
   the wrong gas — the arithmetic will proceed regardless and give a confident answer.
 
@@ -192,9 +210,7 @@ to say about why.
 
 ## Other models
 
-Only Bühlmann ZHL-16C is available in Yemoja.
-
-Others exist. The bubble models — such as VPM-B and RGBM — track the growth of gas
+Bühlmann ZHL-16C is the model explained here. Others exist. The bubble models — such as VPM-B and RGBM — track the growth of gas
 nuclei rather than dissolved gas alone, and generally call for deeper early stops and
 shorter shallow ones. DCIEM and other tabulated schedules come from experimental work
 rather than a compartment model at all.

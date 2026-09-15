@@ -295,10 +295,10 @@ shown in full, and a keyed one is such a box with a tab per entry. The manual is
 tab, a chapter at a time. Two tabs hold nothing yet and say what they will hold rather than
 showing an empty box.
 
-**An item's fields can be edited.** A pencil on the item card turns it over into the edit form,
-which `GUI-29` describes, and an entry of a keyed collection can be taken out or added there;
-nothing else writes yet. No item is added or deleted from here, no owned item is added, and
-there is no journal to undo with.
+**An item's fields can be edited, and an item made and deleted.** A pencil on the item card
+turns it over into the edit form, which `GUI-29` describes, and an entry of a keyed collection
+can be taken out or added there. A **+** beside it makes another of the same type and a bin
+deletes, `GUI-35`, except on Location, which offers neither. There is no journal to undo with.
 
 It opens as `yemoja gui [<logbook folder>]`, beside the terminal front end, and unlike that one
 it can be run from the build, a window needing no console. The folder is optional: with none it

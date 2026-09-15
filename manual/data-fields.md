@@ -152,7 +152,8 @@ All five can be corrected where the working out is wrong.
 
 - `deco` (true or false, worked out) — whether the dive went past the no-decompression limit,
   so that stops were required on the way up. Taken from the primary profile: a `decostop` above
-  zero at any point means yes, and failing that a `no_deco_time` that never reached zero means
+  zero at any point means yes, and one recorded but never above zero means no. Where there is
+  no `decostop`, `no_deco_time` decides: reaching zero means yes, and never reaching it means
   no. Most computers write stops only when there are stops, which is why the second reading
   matters. A zero before the first positive value is ignored: some computers read zero at the
   surface before they have calculated anything, and a dive cannot begin in deco.
@@ -186,10 +187,11 @@ All five can be corrected where the working out is wrong.
   back in. Leave it out for a dive you started clean, which is most of them. Yemoja does
   not work this out from the clock: whether a surface interval was long enough to ignore
   is a judgement, and any threshold that decided it for you would be wrong for somebody.
-  It must name a dive that started earlier than this one.
+  It must name a dive in this logbook that ended before this one began.
 - `surface_interval` (number, worked out) — how long you were out of the water before this
   dive, from `previous_dive`'s end time to this dive's start. Nothing is worked out when
-  `previous_dive` is unset. Write it yourself for a dive whose predecessor is not in this
+  `previous_dive` is unset, and where it names a dive that is not in this logbook or that
+  ended after this one began, the interval is shown as something that cannot be worked out. Write it yourself for a dive whose predecessor is not in this
   logbook — an imported dive often knows the interval without knowing the dive.
 - `primary_profile` (key reference) — which of them to work from: `"*p1"`. Leave it out
   when there is only one profile, since there is nothing to choose between. With several
@@ -237,13 +239,12 @@ One per dive. What the conditions were.
   getting in. Not the air: a computer that reports a *surface* temperature is nearly
   always reporting water, which is why this is a field of its own rather than a second
   source for `air_temperature`.
-- `bottom_temperature` (number) — the coldest water you were in, from the primary
-  profile. Correct it where there is no profile, or where it did not measure
-  temperature.
+- `bottom_temperature` (number) — the coldest water you were in. A download fills it in
+  from what the computer itself reported.
 - `atmospheric_pressure` (number) — from where the dive was, and **absolute**: about 1 bar
   at sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge
-  reads against; it is the pressure itself. Correct it when you know better; weather moves
-  it about, and altitude matters more than most divers expect.
+  reads against; it is the pressure itself. Weather moves it about, and altitude matters
+  more than most divers expect.
 - `remarks` (multiline text) — the conditions in words, where six steps and a
   handful of numbers do not tell it.
 
@@ -254,7 +255,8 @@ own; this is what you took on one particular dive and how it served you.
 
 - `items` (list of references) — the equipment used.
 - `mass` (number) — the total mass of what you carried.
-- `weight` (number, worked out) — how much lead you carried, added up from the items. Correct
+- `weight` (number, worked out) — how much lead you carried: the buoyancy `mass` of every item
+  in the `weights` category, added up. An item with no mass written on it adds nothing. Correct
   it when the items do not tell the whole story.
 - `temperature_evaluation` (text) — how you fared for warmth. The usual answers are
   `very cold`, `cold`, `good`, `warm` and `too warm`.
@@ -339,7 +341,8 @@ that is the only record of it.
   metre unless the file says otherwise. Fresh is 1000 and `en13319` is exactly 1020, both of
   them fixed. Salt is whatever the computer was set to, so it comes from the `salt_density` of
   the gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
-  figure on it. Write it in yourself if you know better.
+  figure on it. Nothing is worked out where `water_type` is not written, which is the case for
+  a recording imported from UDDF. Write it in yourself if you know better.
 - `deco_model` (text) — which decompression model the computer was running: `buhlmann`,
   `vpm`, `rgbm` or `dciem`. Anything you like, since a maker may use something else.
 - `gradient_factor_low`, `gradient_factor_high` (number) — how conservative a Bühlmann
@@ -364,8 +367,8 @@ that is the only record of it.
 
   A computer does not end a dive the moment you reach the surface — it waits a while in case you
   go back down, and how long it waits is a setting. Whatever it recorded during that wait is not
-  diving, so a download or an import cuts it off: the last sample below a metre, the one after it
-  so that the line still reaches the surface, and nothing more. What the computer itself said
+  diving, so a download or an import cuts it off: the last sample not known to be within a metre
+  of the surface, the one after it so that the line still reaches the surface, and nothing more. What the computer itself said
   about the dive is left alone, since it had already stopped counting when you surfaced.
 
   Surfacing part way through a dive keeps everything, that being diving either side of it. And a
@@ -481,7 +484,8 @@ its `parent`. A dive always belongs to the trip it was actually on, which is the
 rather than the fortnight.
 
 - `name` (text) — the item's id is worked out from it.
-- `start_date`, `end_date` (date, worked out) — when the trip ran, taken from the dives on it.
+- `start_date`, `end_date` (date, worked out) — when the trip ran: the day its first dive
+  started and the day its last dive started.
   Correct them where the trip was longer than the diving — a travelling day at either end — or
   where you have set it up before logging anything.
 - `region` (reference) — where it went.
@@ -762,7 +766,8 @@ is half the reason for the dive.
 Anyone who appears in your logbook: the people you dive with, your instructors, your
 emergency contacts, and yourself. They need not be divers.
 
-- `name` (text, worked out) — the person's full name, assembled from the parts above, and what
+- `name` (text, worked out) — the person's full name, assembled from `first_name`, `middle_names`
+  and `last_name`, and what
   Yemoja works the item's id out from. Correct it whenever the assembly is wrong: names do not
   all follow the same pattern, and yours is the one that counts.
 - `first_name` (text)
@@ -795,8 +800,8 @@ than scattered through the item.
 
 - `last_medical_check` (date) — when this person was last examined.
 
-  **Home takes a medical to run a year from this**, and warns you a month before it falls due
-  and once it has. That is a guess: nothing here records how long your certificate runs, and a
+  **Home takes your own medical to run a year from this**, and warns you a month before it falls
+  due and once it has. Nobody else's medical is warned about. That is a guess: nothing here records how long your certificate runs, and a
   year is the common answer rather than the rule — age, the authority and your employer all
   change it. The warning says the check falls due rather than claiming your certificate
   expired. Where the year is wrong for you, what fixes it is writing the check date the
@@ -806,10 +811,6 @@ than scattered through the item.
 - `body_mass` (number)
 - `remarks` (multiline text) — anything worth keeping: an allergy, a medication,
   what the examiner said.
-
-Yemoja does not work out whether a medical is still valid, and does not remind you to
-renew one. How long a check counts for depends on who is asking — the agency, the
-operator, the country — not on the examination itself.
 
 #### Insurance
 

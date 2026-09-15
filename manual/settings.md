@@ -4,6 +4,10 @@ Your preferences: the units you want to be shown, how dates are written, and wha
 else the application lets you choose. They live in your logbook folder, in two files
 beside `yemoja.json`.
 
+**Yemoja does not read either file yet.** This chapter says how they will work, which is
+decided, so that a file you find in a logbook makes sense. Changing one today changes
+nothing you see.
+
 **These files belong to Yemoja, not to your data.** Everything in `data-format.md` and
 `data-fields.md` is yours — a format that stays readable and that Yemoja promises not to
 break. Settings carry no such promise. What they hold, and how, changes as the
@@ -13,10 +17,10 @@ ignored, and you are shown the default instead.
 
 ## The two files
 
-`settings.json` holds the choices that follow you. It is synced and backed up with the
-logbook, so a new phone or a reinstalled desktop starts where you left off.
+`settings.json` holds the choices that follow you. It travels with the logbook, so once
+syncing and backup exist a new phone or a reinstalled desktop starts where you left off.
 
-`settings.local.json` holds the choices that belong to this device alone. It is never
+`settings.local.json` holds the choices that belong to this device alone. It will never be
 synced and never backed up.
 
 The second exists because some choices should not travel. A window size means nothing on
@@ -44,7 +48,8 @@ together without contradicting each other.
 The list will grow. At present:
 
 - `default_gf_low`, `default_gf_high` — the gradient factors a new dive plan starts
-  with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`.
+  with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`. Dive planning is
+  not built yet, so nothing uses them.
 
 Those two are worth a word, because their name is doing real work. They are *defaults*
 for a new plan and nothing more. A plan keeps the gradient factors it was made with, so

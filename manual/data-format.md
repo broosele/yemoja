@@ -102,7 +102,7 @@ Two different things are easily confused, so it is worth separating them at the 
   Vries`, `Zeelandbrug`, `Red Sea`. You read it, you can change it, and it is what
   Yemoja shows you.
 - An item's **id** is the text other items use to point at it:
-  `anna_devries`. It is not inside the item at all.
+  `anna_de_vries`. It is not inside the item at all.
 
 Where an id comes from depends on how you store the item:
 
@@ -112,7 +112,7 @@ Where an id comes from depends on how you store the item:
 
 ```json
 {
-  "anna_devries": { },
+  "anna_de_vries": { },
   "john_smith": { }
 }
 ```
@@ -143,7 +143,7 @@ free to differ, and for most people they will.
 
 ### When two items would share an id
 
-Yemoja adds a number. A second Anna De Vries becomes `anna_devries#1`, leaving the
+Yemoja adds a number. A second Anna De Vries becomes `anna_de_vries#1`, leaving the
 first as it was.
 
 Dives always carry such a number, because several dives in one day is perfectly normal.
@@ -170,11 +170,11 @@ To point at another item, write its id with an `@` in front:
 
 ```json
 {
-  "buddies": ["@anna_devries"]
+  "buddies": ["@anna_de_vries"]
 }
 ```
 
-This means *the person stored under `anna_devries`* — the same person every time,
+This means *the person stored under `anna_de_vries`* — the same person every time,
 wherever they appear.
 
 ### When you do not want to name someone
@@ -292,17 +292,17 @@ after the field.
 - **multiline text** — line breaks are allowed. Tabs are not, nor is anything else you
   would not see.
 
-  **`@` and `*` point at things here too**, as they do in a field: writing `@willy` in
+  **`@` points at things here too**, as it does in a field: writing `@willy` in
   a remark names the item with that id. It is a convention and nothing more — a remark is
   free text, so nothing has to act on a pointer and a name matching nothing is simply what
   you wrote. What an interface makes of one is up to it: a link, the item's name in its
   place, or nothing at all.
 
   A pointer is an `@` and the name that follows it, ending where the name does. A trailing
-  `.`, `-` or `_` is punctuation rather than part of it, since no id ends with one, so
+  `.`, `-`, `_` or `#` is punctuation rather than part of it, since no id ends with one, so
   `We met @willy, who was on his @padi_wreck course.` points at two items and the comma
-  and the full stop are punctuation. A dot inside a name is kept —
-  `@generic_0.5_kg_lead_weight` is one pointer. Capitals do not matter: `@Willy` at the
+  and the full stop are punctuation. A dot or a `#` inside a name is kept —
+  `@generic_0.5_kg_lead_weight` is one pointer, and so is `@2026-02-23#0`. Capitals do not matter: `@Willy` at the
   start of a sentence finds the same item as `@willy`.
 
   **Nothing else about an `@` is examined**, because nothing could be. You may write an
@@ -322,15 +322,14 @@ after the field.
 - **number** — with or without one: `31.4`.
 
   A number that is a proportion is written **from 0 to 1**: `compressible_fraction` is
-  `0.29`, and a gradient factor of 20 is written `0.2`. Two kinds run from 0 to 100
-  instead — a field whose name says *percentage*, and `cns`, which is quoted that way
-  everywhere else in diving too. The field list says which each one is.
+  `0.29`, and a gradient factor of 20 is written `0.2`. One runs from 0 to 100 instead:
+  `cns`, which is quoted that way everywhere in diving.
 - **true or false** — written `true` or `false`. Reading is forgiving, as it is for a
   mix: case is ignored, and `yes`, `no`, `t`, `f`, `y` and `n` are understood too, and
   written back as `true` or `false`. A number is not — `1` is a count, not a yes.
 - **date** — always `"2026-02-23"`.
 - **time** — always `"09:15:00"`.
-- **reference** — another item's id with `@` in front: `"@anna_devries"`.
+- **reference** — another item's id with `@` in front: `"@anna_de_vries"`.
 - **key reference** — a part of this same item, with `*` in front: `"*p1"`. Where an `@`
   points at another item anywhere in the logbook, a `*` points at one entry of one list
   inside the item you are already reading — a dive saying which of its profiles to work
@@ -347,7 +346,7 @@ after the field.
   Yemoja understands is written back in the standard form the next time it saves that
   dive, so `nx 32` becomes `EAN32`. One it cannot make sense of is kept exactly as you
   typed it and reported rather than dropped.
-- **list of** — several values together: `["@anna_devries", "john"]`.
+- **list of** — several values together: `["@anna_de_vries", "john"]`.
 - **keyed owned items** — several owned items together, each under a key: `{"k1": {…},
   "k2": {…}}`. The key names the entry and is not written inside it.
 - **series** — a measurement through a dive, as a list of pairs: a time and a value,
@@ -423,8 +422,9 @@ the one that counts.
 3. **Do not invent fields.** Anything Yemoja does not recognise is kept but ignored.
    The fields each item may hold are listed in [data-fields.md](data-fields.md).
 4. **Do not store anything the application works out for itself**, such as totals or
-   averages. These are recalculated and your value would be discarded. Where a
-   calculated value is allowed to be corrected, it is listed as such below.
+   averages. These are recalculated, and a value you write is kept in the file but never
+   used. Which calculated values may be corrected is said in
+   [data-fields.md](data-fields.md).
 5. **Renaming items is for the application**, as described above.
 
 ## Two complete examples
@@ -444,7 +444,7 @@ Stored as `dive/2026-02-23#0.json`. The file is the dive itself.
   "end_time": "09:58:00",
   "dive_number": 143,
   "dive_site": "@blue_quarry",
-  "buddies": ["@anna_devries", "john"],
+  "buddies": ["@anna_de_vries", "john"],
   "rating": 8,
   "max_depth": 31.4,
   "details": {
@@ -487,7 +487,7 @@ Stored as `person.json`. Each key is a person's id.
 
 ```json
 {
-  "anna_devries": {
+  "anna_de_vries": {
     "first_name": "Anna",
     "last_name": "De Vries",
     "email": "anna@example.invalid",

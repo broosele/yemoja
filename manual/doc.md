@@ -76,6 +76,8 @@ current as they are decided.
 
 ## Chapters
 
+- `getting-started.md` — the window: opening a logbook, the home screen, the tabs, reading
+  an item, changing, adding and deleting, and copying text. **Written.**
 - `data-format.md` — the logbook on disk: how the files are arranged, named and
   written, and how to edit them by hand. **Written.**
 - `data-fields.md` — every kind of item and every field it may hold. **Written**,
@@ -89,11 +91,11 @@ current as they are decided.
   **Written.**
 - `uddf.md` — what survives a UDDF file, in both directions, and what does not.
   **Written**, and kept current as the comparison is. It states what the two formats can
-  and cannot say about a dive, which is settled; it does not describe a button, and gains
-  a paragraph about how importing is *driven* when that is.
-- Getting started — not written.
+  and cannot say about a dive, and what an export does not write yet; how an import is
+  driven is the next chapter's.
+- `computers-and-importing.md` — downloading from a dive computer, looking over what
+  arrived, importing another logbook, and exporting. **Written.** `uddf.md` covers what a
+  file keeps; this one covers doing it.
 - Dives, gear, sites and buddies — not written; waits on the data model.
-- Dive computers and importing — not written. `uddf.md` covers what an imported file
-  keeps; this one covers doing it.
 - Sync and backup — not written. The behaviour is settled, so this is writable whenever
   the feature is.

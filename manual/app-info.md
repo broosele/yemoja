@@ -10,7 +10,15 @@ yourself, whatever becomes of the app.
 
 ## Known bugs and limitations
 
-None recorded yet.
+- **There is no undo.** Every change is written to your files the moment it is saved.
+- **Deciding one dive when importing takes in the rest.** In the list of dives an import
+  brought, answering any one line takes in every dive still waiting with it, as though you had
+  pressed **All as proposed**. Look over the whole list before answering the first line.
+- **No decompression model runs yet.** What a dive's graph shows is what your computer
+  recorded; see [decompression.md](decompression.md).
+- **The settings files are not read yet**; see [settings.md](settings.md).
+- **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.
+- **Location cannot add or delete a site** from the window.
 
 ## Credits
 
@@ -26,9 +34,9 @@ The atlas of regions was written for Yemoja, following the conventions of Natura
 Earth — a public domain map dataset that asks for no credit and gets this one anyway.
 The map itself — coastlines, lakes, borders, rivers and cities — is Natural Earth's data.
 
-The decompression constants are the published Bühlmann ZHL-16C figures. With thanks
-to Erik C. Baker, whose writing on gradient factors made them comprehensible to a
-generation of divers.
+The decompression chapter explains the published Bühlmann ZHL-16C model. With thanks to
+Erik C. Baker, whose writing on gradient factors made it comprehensible to a generation of
+divers.
 
 ## The name
 
@@ -91,9 +99,10 @@ Yemoja is a logbook, and an aid to understanding dives you have already made. It
 is not dive-planning software, it is not a dive computer, and it has been neither
 certified nor validated as either.
 
-The decompression figures it shows are one model's estimate, computed from a
-recording after the fact. They will differ from what your computer told you at
-the time, and they may be wrong. Never plan a dive from them, never carry them
+The decompression figures it shows are what your computer recorded, and any it
+works out in future will be one model's estimate, computed from a recording after the
+fact. Such figures will differ from what your computer told you at the time, and they
+may be wrong. Never plan a dive from them, never carry them
 into the water, and never let them override your training, your computer, your
 tables, or your own judgement.
 
