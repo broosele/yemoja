@@ -174,6 +174,20 @@ class ChangedLogbookTest {
     }
 
     @Test
+    fun `clearing leaves a derived reference alone rather than storing it`() {
+        // A site's dives follow from the dives naming it. Clearing wrote what it worked out
+        // into the file, and a stored value on a derived field shadows the working out.
+        val (store, universe) = opened(
+            "dive_site.json" to """{"blue": {"name": "Blue Hole"}}""",
+            "person.json" to """{"anna": {"first_name": "Anna"}}""",
+            "dive/2026-01-01#0.json" to """{"dive_site": "@blue", "buddies": ["@anna"]}""",
+        )
+        universe.change(Operation.EDIT, Change.Delete("2026-01-01#0", alsoReferences = true))
+        assertTrue("dives" !in store.readText("dive_site.json"), store.readText("dive_site.json"))
+        assertTrue("dives" !in store.readText("person.json"), store.readText("person.json"))
+    }
+
+    @Test
     fun `a reference to something deleted is left dangling, not hunted down`() {
         // A state the model already carries: a person not entered yet looks the same from here.
         val (store, universe) = opened(

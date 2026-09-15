@@ -462,7 +462,9 @@ once and corrected. The numbers stay unused rather than being given to something
 
    What is counted is references rather than the items holding them — one dive naming a person
    twice is two references and one item, and *reference* is the word the format uses for the
-   thing being left dangling. What is *named* is the items, up to three of them: a reader can
+   thing being left dangling. A derived one is not counted at all: a site's `dives` works itself
+   out, so deleting the last dive leaves nothing dangling and the question says so by saying
+   nothing. `DATA-117`. What is *named* is the items, up to three of them: a reader can
    check three names against what they meant to delete and cannot check forty, and a dialog
    that tries turns a question into a wall. Past three they are counted and not named, which is
    the same handful `LOGIC-18` offers of the sites nearest a fix, for the same reason.

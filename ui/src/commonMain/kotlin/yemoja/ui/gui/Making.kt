@@ -100,11 +100,20 @@ private fun listedOf(names: List<String>): String = when (names.size) {
     else -> names.dropLast(1).joinToString(", ") + " and " + names.last()
 }
 
-/** How many references to [id] sit anywhere in [item], its owned items included. */
+/**
+ * How many references to [id] sit anywhere in [item], its owned items included.
+ *
+ * **A derived reference is not counted.** It is worked out afresh every time it is read, so it
+ * cannot be left pointing at nothing: a site's `dives` follows from the dives naming the site
+ * and answers without the deleted one the moment it is gone. Counting it would warn a reader
+ * about something that puts itself right.
+ */
 private fun referencesIn(item: Item, id: String): Int =
     item.description.fields.sumOf { field ->
         when (val read = item.read(field.name)) {
-            is Result.Usable -> referencesAmong(read.value, id)
+            is Result.Usable ->
+                if (read.origin == Result.Origin.DERIVED) 0 else referencesAmong(read.value, id)
+
             else -> 0
         }
     }

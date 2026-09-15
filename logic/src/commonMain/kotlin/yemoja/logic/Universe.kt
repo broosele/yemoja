@@ -227,7 +227,13 @@ class Universe(
             }
             if (field !is ReferenceDescription) continue
             when (val read = item.read(field.name)) {
-                is Result.Usable -> {
+                // A derived reference is worked out afresh every time it is read, so it cannot
+                // dangle: a site's `dives` follows from the dives naming it and answers without
+                // the deleted one the moment it is gone. Clearing it would store what it works
+                // out, and a stored value on a derived field shadows the working out for good.
+                is Result.Usable -> if (read.origin == Result.Origin.DERIVED) {
+                    Unit
+                } else {
                     if (field.cardinality == Cardinality.LIST) {
                         @Suppress("UNCHECKED_CAST")
                         val held = read.value as List<Element<Any>>

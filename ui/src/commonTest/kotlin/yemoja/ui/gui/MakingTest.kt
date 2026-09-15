@@ -108,6 +108,23 @@ class DeleteAskedTest {
     }
 
     @Test
+    fun `a derived reference is not counted, putting itself right`() {
+        // A site's dives and a person's dives follow from the dives naming them, so deleting the
+        // last dive leaves nothing dangling at all.
+        val held = set(
+            "dive_site.json" to """{"blue": {"name": "Blue Hole"}}""",
+            "person.json" to """{"anna": {"first_name": "Anna"}}""",
+            "dive/2026-06-21#0.json" to """{"dive_site": "@blue", "buddies": ["@anna"]}""",
+        )
+        assertNull(deleteWarned(held, setOf("2026-06-21#0")), "nothing stored points at it")
+        assertEquals(
+            "One reference to it will be left pointing at nothing, in 2026-06-21#0.",
+            deleteWarned(held, setOf("blue")),
+            "and the dive's own dive_site, which is stored, still counts",
+        )
+    }
+
+    @Test
     fun `too many to check are counted and not named`() {
         val crowd = set(
             "person.json" to """{"anna": {"first_name": "Anna"}}""",

@@ -2158,6 +2158,16 @@ Kept with their identifiers so earlier discussion still resolves.
   still touches references and nothing else: a mention in free text is prose, `JSON-23`, and
   removing one would be editing what somebody wrote.
 
+  **A derived reference is left alone, and is not counted either.** It is worked out afresh
+  every time it is read, so it cannot be left pointing at nothing: a site's `dives` follows from
+  the dives naming the site and answers without the deleted one the moment it is gone.
+
+  Clearing one was worse than pointless. Reading a derived field computes it and ignores
+  anything stored, so the clearing changed no answer at all — but it put what the field had
+  worked out into the file, and the writer writes back every stored value whether or not a
+  reader consults it. Deleting the last dive left `"dives": []` in the site and in every buddy,
+  for ever, in a format whose point is being legible by hand.
+
   Nothing reaches the other way. An owned item lives inside its owner and no reference can
   point at one, so deleting an owner needs no clearing at all — the file goes and everything in
   it goes with it.
