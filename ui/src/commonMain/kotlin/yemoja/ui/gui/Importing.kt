@@ -3,7 +3,9 @@ package yemoja.ui.gui
 import yemoja.data.ItemDescription
 import yemoja.logic.Import
 import yemoja.logic.Meeting
+import yemoja.logic.Outcome
 import yemoja.logic.Types
+import yemoja.logic.Universe
 
 /*
  * Taking in another logbook, worked out without a screen.
@@ -78,3 +80,42 @@ internal fun summaryOf(counted: List<Counted>): String? {
 /** How many dives arrived, which is what the review lists. */
 internal fun divesIn(import: Import): Int =
     import.incoming.count { it.description == Types.DIVE }
+
+/** Decided is where an import's review stands once a dive has been answered, and what it says. */
+internal class Decided(val arrived: Int, val said: String?)
+
+/**
+ * Where an import stands once [taken] has been decided, taking in the rest once nothing is left.
+ *
+ * **The rest waits for the last dive.** What the review does not list — a site, a person, a piece
+ * of gear — goes in once no dive is left to decide, in one change, and not before: taking it in
+ * with the first answer took every dive still waiting in with it, since the rest is everything
+ * still staged. `GUI-33`.
+ */
+internal fun afterDeciding(universe: Universe, taken: Taken): Decided {
+    val import = universe.importing ?: return Decided(0, taken.refusal ?: takenSaid(taken.many))
+    val arrived = arrivedIn(import)
+    if (taken.refusal != null || arrived > 0) {
+        return Decided(arrived, taken.refusal ?: takenSaid(taken.many))
+    }
+    val rest = theRest(import)
+    universe.stopImporting()
+    return Decided(0, rest.refusal ?: takenSaid(taken.many + rest.many))
+}
+
+private fun takenSaid(many: Int): String = "$many taken into the logbook."
+
+/**
+ * Take in whatever is still staged once the dives are decided, as one change.
+ *
+ * Only what the review did not list: a site, a person, a piece of gear. Each was matched by the
+ * id it came with or is new, so there is nothing to ask and nothing to choose. `RECON-6`.
+ */
+private fun theRest(import: Import): Taken {
+    val many = import.incoming.size
+    if (many == 0) return Taken(0, null)
+    return when (val done = import.apply()) {
+        is Outcome.Refused -> Taken(0, done.reason)
+        is Outcome.Done -> Taken(many, null)
+    }
+}

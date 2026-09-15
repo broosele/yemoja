@@ -11,9 +11,6 @@ yourself, whatever becomes of the app.
 ## Known bugs and limitations
 
 - **There is no undo.** Every change is written to your files the moment it is saved.
-- **Deciding one dive when importing takes in the rest.** In the list of dives an import
-  brought, answering any one line takes in every dive still waiting with it, as though you had
-  pressed **All as proposed**. Look over the whole list before answering the first line.
 - **No decompression model runs yet.** What a dive's graph shows is what your computer
   recorded; see [decompression.md](decompression.md).
 - **The settings files are not read yet**; see [settings.md](settings.md).

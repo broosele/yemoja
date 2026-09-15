@@ -749,11 +749,9 @@ private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
                 universe = universe,
                 changer = changer,
                 after = { taken ->
-                    taking.arrived = arrivedIn(universe.importing)
-                    val rest = universe.importing?.let { theRest(it) } ?: Taken(0, null)
-                    if (taking.arrived == 0) universe.stopImporting()
-                    taking.said = taken.refusal ?: rest.refusal
-                        ?: "${taken.many + rest.many} taken into the logbook."
+                    val decided = afterDeciding(universe, taken)
+                    taking.arrived = decided.arrived
+                    taking.said = decided.said
                 },
                 leave = { taking.open = false },
             )
@@ -763,21 +761,6 @@ private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
                 taking.open = false
             }) { Text("Close") }
         }
-    }
-}
-
-/**
- * Take in whatever is still staged once the dives are decided, as one change.
- *
- * Only what the review did not list: a site, a person, a piece of gear. Each was matched by the
- * id it came with or is new, so there is nothing to ask and nothing to choose. `RECON-6`.
- */
-private fun theRest(import: Import): Taken {
-    val many = import.incoming.size
-    if (many == 0) return Taken(0, null)
-    return when (val done = import.apply()) {
-        is Outcome.Refused -> Taken(0, done.reason)
-        is Outcome.Done -> Taken(many, null)
     }
 }
 

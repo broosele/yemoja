@@ -74,6 +74,32 @@ class ImportingTest {
     }
 
     @Test
+    fun `answering one dive takes in that dive, and the rest waits for the last`() {
+        // Taking the rest in with the first answer took every dive still waiting with it.
+        val into = logbook()
+        val import = staged(
+            into,
+            Matching.BY_ID,
+            "person.json" to """{"anna": {"first_name": "Anna"}}""",
+            "dive/2026-06-21#0.json" to """{"buddies": ["@anna"]}""",
+            "dive/2026-06-22#0.json" to """{"buddies": ["@anna"]}""",
+        )
+        val (first, second) = arrivingIn(import, into.logbook, nextNumberIn(into.logbook))
+        takeIn(import, first, null)
+        val one = afterDeciding(into, Taken(1, null))
+        assertEquals(1, one.arrived, "the other dive is still waiting")
+        assertEquals(1, into.logbook.allOf(Types.DIVE).size)
+        assertNull(into.logbook["anna"], "and so is the person")
+        assertEquals("1 taken into the logbook.", one.said)
+        takeIn(import, second, null)
+        val last = afterDeciding(into, Taken(1, null))
+        assertEquals(0, last.arrived)
+        assertTrue(into.logbook["anna"] != null, "the rest goes in with the last dive")
+        assertEquals("2 taken into the logbook.", last.said, "the last dive and the person")
+        assertNull(into.importing, "and the review is over")
+    }
+
+    @Test
     fun `the summary says what else is coming, and nothing where only dives are`() {
         assertNull(summaryOf(emptyList()))
         val said = summaryOf(
