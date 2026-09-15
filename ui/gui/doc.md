@@ -420,6 +420,25 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-37 — How a logbook is exported from the window.** *Settled:* **a deed on the home
+   screen, a file named, and one sentence about what went.**
+
+   The logic layer does the writing, `Universe.exportTo`, and what UDDF can and cannot carry is
+   `logic/uddf.md`'s. What the window adds is where to put the file and what to tell the reader.
+
+   **A deed beside the import, and the whole logbook.** Export changes nothing in the logbook,
+   so there is nothing to review and nothing to choose among: the question a reader has is
+   *where*, and the platform's save dialog asks it. A name typed bare is given `.uddf`, and a
+   file already there is asked about before it is written over, since the dialog does not.
+
+   **One sentence afterwards, under the deeds**, saying how many dives went and where. The one
+   loss said aloud is a dive recorded on more than one computer, which goes out with its primary
+   recording only: nothing in the file shows it, and a reader would otherwise find out in the
+   other application. Every other loss is the manual's to list rather than the screen's to
+   repeat on each export.
+
+   It runs off the interface's thread, as a download does, since a logbook of recorded dives is
+   megabytes of samples.
 - **GUI-36 — Whether what the window shows can be copied.** *Settled:* **all of it, a view at
    a time.**
 

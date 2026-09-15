@@ -323,15 +323,19 @@ columns mapped by the user rather than guessed.
   Found by doing it: a hundred and two i330R recordings laid onto dives a Perdix had already
   recorded, beside the application rather than through it, for exactly this reason.
 
-- **RECON-4 — Whether importers are also exporters.** Interoperating with other applications
-   is likely wanted in both directions, but export raises none of these questions and
-   may not belong here at all.
 - **RECON-5 — Which formats to import**, at which level of support, and in which
    versions — see *Two levels of support* above. Also whether a common intermediate form
    is worth having, or each format converts directly to the item model.
 
 ## Settled
 
+- **RECON-4 — Whether importers are also exporters.** *Settled:* **for UDDF, yes, and export is
+  not reconciliation.** One package reads and writes the format, `logic/uddf`, so the mapping is
+  one table read in both directions and a vocabulary crossing it is one list of pairs. Export
+  raises none of this document's questions — nothing arrives, nothing is matched, nothing is
+  staged — so it does not pass through the machinery here: the Universe writes the file and
+  says what went. Whether another format gets a writer is that format's question under
+  `RECON-5`.
 - **RECON-1 — Where unsaved state lives.** *Settled:* **on disk, as a logbook of its
   own.** The question was written as a trade-off — in memory is simpler, staging is safer
   and costs more machinery — and the trade-off turned out not to exist. Incoming items

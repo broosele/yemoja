@@ -97,11 +97,20 @@ class ReadDiveTest {
     }
 
     @Test
-    fun `how warm the diver was is kept with the gear`() {
+    fun `how warm the diver was is kept with the gear, in this model's words`() {
         val dive = oneDive(dived(after = "<thermalcomfort>comfortable</thermalcomfort>"))
         val gear = (dive.single<OwnedItem>("gear") as Result.Usable).value
         val said = gear.single<String>("temperature_evaluation") as Result.Usable
-        assertEquals("comfortable", said.value)
+        assertEquals("good", said.value)
+    }
+
+    @Test
+    fun `a current is read in this model's words, and one it has none for is left out`() {
+        val dive = oneDive(dived(after = "<current>very-mild-current</current>"))
+        val environment = (dive.single<OwnedItem>("environment") as Result.Usable).value
+        assertEquals("very mild", (environment.single<String>("current") as Result.Usable).value)
+        val gusty = oneDive(dived(after = "<current>gusty</current>"))
+        assertEquals(Result.Absent, gusty.read("environment"))
     }
 
     @Test
@@ -216,6 +225,62 @@ class ReadProfileTest {
         assertEquals(2, switches.size, "the one at a minute repeats the air and is dropped")
         assertEquals(listOf(0, 1200), (0..<switches.size).map { switches.secondAt(it) })
         assertEquals("gas#1", ((switches.valueAt(1) as Element.Usable).value as KeyReference).key)
+    }
+
+    @Test
+    fun `a mandatory stop is its depth until it runs out, and a safety stop is not one`() {
+        // Theirs is a stop and how long it stands; ours is the stop standing, through time.
+        val stopped = """
+            <waypoint><divetime>0</divetime><depth>0.0</depth></waypoint>
+            <waypoint><divetime>600</divetime><depth>9.0</depth>
+              <decostop kind="mandatory" decodepth="6.0" duration="120"/></waypoint>
+            <waypoint><divetime>720</divetime><depth>6.0</depth>
+              <decostop kind="mandatory" decodepth="3.0" duration="180"/></waypoint>
+            <waypoint><divetime>1000</divetime><depth>3.0</depth>
+              <decostop kind="safety" decodepth="3.0" duration="180"/></waypoint>
+            <waypoint><divetime>1200</divetime><depth>0.5</depth></waypoint>
+        """
+        val stops = recorded(stopped).series<Double>("decostop") as Result.Usable
+        val points = (0..<stops.value.size).map {
+            stops.value.secondAt(it) to (stops.value.valueAt(it) as Element.Usable).value
+        }
+        assertEquals(listOf(600 to 6.0, 720 to 3.0, 900 to 0.0), points)
+    }
+
+    @Test
+    fun `an alarm and a cylinder's pressure are read against the waypoint carrying them`() {
+        val document = """
+<uddf xmlns="http://www.streit.cc/uddf/3.2/" version="3.2.0">
+  <profiledata><repetitiongroup id="g1"><dive id="d1">
+    <informationbeforedive><datetime>2024-06-15T10:05:00</datetime></informationbeforedive>
+    <tankdata id="t1"><tankpressurebegin>20000000</tankpressurebegin></tankdata>
+    <samples>
+      <waypoint><divetime>0</divetime><depth>0.0</depth>
+        <tankpressure tankref="t1">20000000</tankpressure></waypoint>
+      <waypoint><divetime>300</divetime><depth>20.0</depth><alarm>ascent</alarm>
+        <tankpressure tankref="t1">15000000</tankpressure></waypoint>
+      <waypoint><divetime>600</divetime><depth>0.5</depth></waypoint>
+    </samples>
+    <informationafterdive><noflighttime>43200</noflighttime></informationafterdive>
+  </dive></repetitiongroup></profiledata>
+</uddf>
+"""
+        val dive = Uddf.read(document).allOf(Types.DIVE).single()
+        val profiles = (dive.keyed<OwnedItem>("profiles") as Result.Usable).value
+        val profile = (profiles.values.first() as Element.Usable).value
+        val alarms = (profile.series<String>("alarms") as Result.Usable).value
+        assertEquals(300, alarms.secondAt(0))
+        assertEquals("ascent", (alarms.valueAt(0) as Element.Usable).value)
+        val pressures = (profile.keyedSeries<Double>("pressures") as Result.Usable).value
+        val gas = (pressures.getValue("gas") as Element.Usable).value
+        assertEquals(150.0, (gas.valueAt(1) as Element.Usable).value as Double, 0.001)
+        assertEquals(43200.0, (profile.single<Double>("no_flight_time") as Result.Usable).value)
+    }
+
+    private fun recorded(samples: String): yemoja.data.Item {
+        val dive = oneDive(dived(samples = samples))
+        val profiles = (dive.keyed<OwnedItem>("profiles") as Result.Usable).value
+        return (profiles.values.first() as Element.Usable).value
     }
 
     @Test

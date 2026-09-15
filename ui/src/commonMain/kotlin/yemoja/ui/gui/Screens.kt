@@ -171,6 +171,13 @@ internal class Platform(
      */
     val pick: ((asking: String) -> String?)? = null,
     /**
+     * Asks the reader for a file to write an export to, or nothing where they name none.
+     *
+     * The platform's, like [pick], and absent where it cannot ask. A name typed without an
+     * extension is given `.uddf`, and a file already there is the reader's to confirm. `GUI-37`.
+     */
+    val save: ((asking: String) -> String?)? = null,
+    /**
      * What this platform can do to a logbook as a whole, by deed.
      *
      * A deed the platform cannot do yet is absent, and the home screen offers it greyed: the
@@ -424,6 +431,7 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
     val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
     val reading = remember(universe) { Reading() }
     val taking = remember(universe) { Taking() }
+    val giving = remember(universe) { Giving() }
     val scope = rememberCoroutineScope()
     Selectable {
         Column(
@@ -457,12 +465,23 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
                     if (platform.pick != null) {
                         put(Deed.IMPORT) { take(universe, platform, taking, changer) }
                     }
+                    platform.save?.let { save ->
+                        put(Deed.EXPORT) {
+                            // Asked here rather than inside the writing: a platform's dialog
+                            // waits, and waiting inside a coroutine the window is running
+                            // breaks the window's own machinery.
+                            save("Export this logbook to UDDF")?.let { to ->
+                                scope.launch { give(universe, to, giving) }
+                            }
+                        }
+                    }
                 }
             }
             Inset("System") {
                 Deeds(deeds)
                 Reader(universe, platform, reading, changer, scope)
                 Taker(universe, taking, changer)
+                giving.said?.let { Aside(it) }
             }
             // Nothing to count where there is no logbook, and nothing to say about that.
             if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
@@ -602,6 +621,27 @@ private fun take(universe: Universe, platform: Platform, taking: Taking, changer
         }
     }
     changer.changed()
+}
+
+/** What the last export said, which stays under the deeds until the next. `GUI-37`. */
+private class Giving {
+    var said: String? by mutableStateOf(null)
+}
+
+/**
+ * Write the logbook to [to], off the interface's thread, and say what went.
+ *
+ * Nothing in the logbook changes, so there is nothing to review and nothing to refresh. `GUI-37`.
+ */
+private suspend fun give(universe: Universe, to: String, giving: Giving) {
+    giving.said = "Writing $to…"
+    giving.said = withContext(Dispatchers.Default) {
+        try {
+            exportSaid(universe.exportTo(to), to)
+        } catch (refused: RuntimeException) {
+            "$to could not be written: ${refused.message}"
+        }
+    }
 }
 
 /** Look for what is within reach, and read it where exactly one thing is. */

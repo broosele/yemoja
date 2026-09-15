@@ -36,6 +36,26 @@ Several more come back subtly changed rather than missing — a site's kind, an 
 where a site sits. Each of those is explained under its own subject below, with everything
 else.
 
+## Exporting
+
+Press **Export to UDDF** on the home screen and name a file. The whole logbook goes: every
+dive, and the sites, wrecks, people, gear, trips and operators they refer to. Nothing in your
+logbook changes. When it is written, Yemoja says how many dives went, and how many were
+recorded on more than one computer and so went with one recording only.
+
+Some things this chapter says survive are **not written yet**, and will come back empty if you
+export and import again:
+
+- a person's insurance,
+- a piece of gear's service records,
+- where a trip went,
+- which regions a site is in,
+- a site's water type.
+
+Regions and qualifications themselves are not written either. They come with the application
+rather than from your logbook, and a UDDF file has nowhere to put them: a course goes out with
+the name of its qualification in words.
+
 ## Units, which are not a problem
 
 UDDF is written in strict SI throughout: metres, kilograms, seconds, and then **kelvin**

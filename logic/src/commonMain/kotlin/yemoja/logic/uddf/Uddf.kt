@@ -1,5 +1,6 @@
 package yemoja.logic.uddf
 
+import yemoja.data.Gas
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
 import yemoja.data.ItemSet
@@ -52,9 +53,13 @@ object Uddf {
         val set = ItemSet(Types.ALL)
         // What this reader called each thing the document names, by the name the document used.
         val ours = HashMap<String, String>()
-        for (tag in root.everywhere("wreck")) put(Types.WRECK, wreckIn(tag), tag, set, ours)
+        // A wreck carries no id of its own there, so a site finds its wreck by the tag itself.
+        val wrecks = HashMap<Tag, String>()
+        for (tag in root.everywhere("wreck")) {
+            put(Types.WRECK, wreckIn(tag), tag, set, ours)?.let { wrecks[tag] = it }
+        }
         for (tag in root.everywhere("site")) {
-            val wreck = tag.one("wreck")?.attributes?.get("id")?.let { ours[it] }
+            val wreck = tag.find("wreck", APART)?.let { wrecks[it] }
             put(Types.DIVE_SITE, siteIn(tag, wreck), tag, set, ours)
         }
         for (tag in root.everywhere("divebase")) {
@@ -79,11 +84,13 @@ object Uddf {
         }
         // A `mix` is defined once for the whole document and named by id from within a dive,
         // so which ids are mixes has to be known before a dive's switches can be read.
-        val mixes = root.everywhere("mix").mapNotNull { it.attributes["id"] }.toSet()
+        val mixes = HashMap<String, String?>()
+        for (mix in root.everywhere("mix")) mix.attributes["id"]?.let { mixes[it] = gasIn(mix) }
         for (group in root.everywhere("repetitiongroup")) {
             var before: String? = null
             for (dive in group.all("dive")) {
-                val id = put(Types.DIVE, diveIn(dive, ours, trips, before, mixes), dive, set, ours)
+                val fields = diveIn(dive, ours, trips, before, mixes, set)
+                val id = put(Types.DIVE, fields, dive, set, ours)
                 before = id ?: before
             }
         }
@@ -126,7 +133,8 @@ object Uddf {
         ours: Map<String, String>,
         trips: Map<String, String>,
         before: String?,
-        mixes: Set<String>,
+        mixes: Map<String, String?>,
+        set: ItemSet,
     ): Map<String, Stored> {
         val fields = LinkedHashMap<String, Stored>()
         val said = { name: String -> dive.said(name) }
@@ -142,7 +150,11 @@ object Uddf {
         val rating = dive.find("rating", setOf(SAMPLES))
         (rating?.text("ratingvalue") ?: rating?.said?.trim()?.ifEmpty { null })
             ?.let { fields["rating"] = Stored.Leaf(it) }
-        fields.put("dive_site", dive.points("informationbeforedive", ours))
+        val linked = linksIn(dive, ours, set)
+        linked[Types.DIVE_SITE]?.firstOrNull()?.let { fields["dive_site"] = Stored.Leaf("@$it") }
+        linked[Types.PERSON]?.let { buddies ->
+            fields["buddies"] = Stored.Elements(buddies.map { Stored.Leaf("@$it") })
+        }
         if (before != null) fields["previous_dive"] = Stored.Leaf("@$before")
         // Kept only on the first of a group, where it describes a dive the file does not hold.
         // Anywhere else the two dives it sits between are both here and their clocks say it.
@@ -152,18 +164,42 @@ object Uddf {
         }
         environmentOf(dive, said)?.let { fields["environment"] = it }
         gearOf(dive, said, ours)?.let { fields["gear"] = it }
-        detailsOf(dive, trips)?.let { fields["details"] = it }
-        profileOf(dive, keysOf(dive, mixes))?.let { fields["profiles"] = it }
-        gasesOf(dive, ours)?.let { fields["gas_sources"] = it }
+        detailsOf(dive, trips, linked[Types.OPERATOR]?.firstOrNull())
+            ?.let { fields["details"] = it }
+        profileOf(dive, keysOf(dive, mixes.keys), tanksOf(dive))?.let { fields["profiles"] = it }
+        gasesOf(dive, ours, mixes)?.let { fields["gas_sources"] = it }
         return fields
     }
 
     private val SAMPLES_APART = setOf(SAMPLES)
 
+    /**
+     * What the links before a dive point at, by the type of what each resolves to.
+     *
+     * A `link` carries no type and its parent is the same for all of them, so what one means is
+     * what it lands on: a site is where the dive was, a person a buddy, a divebase the operator.
+     * `uddf.md`, under *How references work on both sides*. One that resolves to nothing read is
+     * passed over.
+     */
+    private fun linksIn(
+        dive: Tag,
+        ours: Map<String, String>,
+        set: ItemSet,
+    ): Map<ItemDescription, List<String>> {
+        val before = dive.find("informationbeforedive", SAMPLES_APART) ?: return emptyMap()
+        val out = LinkedHashMap<ItemDescription, MutableList<String>>()
+        for (link in before.all("link")) {
+            val id = link.attributes["ref"]?.let { ours[it] } ?: continue
+            val type = set[id]?.description ?: continue
+            out.getOrPut(type) { ArrayList() } += id
+        }
+        return out
+    }
+
     /** The conditions of a dive, or nothing where the document said none of them. */
     private fun environmentOf(dive: Tag, said: (String) -> String?): Stored.Members? {
         val fields = LinkedHashMap<String, Stored>()
-        said("current")?.let { fields["current"] = Stored.Leaf(it) }
+        said("current")?.let { CURRENTS.ours(it) }?.let { fields["current"] = Stored.Leaf(it) }
         said("visibility")?.let { fields["visibility"] = Stored.Leaf(it) }
         said("airtemperature")?.let { fields["air_temperature"] = Stored.Leaf(it) }
         said("lowesttemperature")?.let { fields["bottom_temperature"] = Stored.Leaf(it) }
@@ -177,7 +213,7 @@ object Uddf {
         ours: Map<String, String>,
     ): Stored.Members? {
         val fields = LinkedHashMap<String, Stored>()
-        fields.put("temperature_evaluation", said("thermalcomfort"))
+        fields.put("temperature_evaluation", said("thermalcomfort")?.let { WARMTHS.ours(it) })
         val used = dive.find("equipmentused", SAMPLES_APART)?.all("link").orEmpty()
             .mapNotNull { it.attributes["ref"] }.mapNotNull { ours[it] }
         if (used.isNotEmpty()) {
@@ -192,7 +228,11 @@ object Uddf {
      * A `mix` defines a gas once for the whole file and a `tankdata` holds one cylinder's
      * pressures for one dive; a gas source is both at once. `uddf.md`.
      */
-    private fun gasesOf(dive: Tag, ours: Map<String, String>): Stored.Members? {
+    private fun gasesOf(
+        dive: Tag,
+        ours: Map<String, String>,
+        mixes: Map<String, String?>,
+    ): Stored.Members? {
         val tanks = dive.everywhere("tankdata", SAMPLES_APART)
         if (tanks.isEmpty()) return null
         val sources = LinkedHashMap<String, Stored>()
@@ -201,12 +241,31 @@ object Uddf {
             fields.put("start_pressure", tank.said("tankpressurebegin"))
             fields.put("end_pressure", tank.said("tankpressureend"))
             fields.put("volume", tank.said("tankvolume"))
+            val links = tank.all("link").mapNotNull { it.attributes["ref"] }
+            fields.put("gas_type", links.firstNotNullOfOrNull { mixes[it] })
             tank.all("link").firstNotNullOfOrNull { ours[it.attributes["ref"]] }
                 ?.let { fields["cylinder"] = Stored.Leaf("@$it") }
             if (fields.isEmpty()) continue
             sources[keyAt(at)] = Stored.Members(fields)
         }
         return sources.ifEmpty { null }?.let { Stored.Members(it) }
+    }
+
+    /**
+     * The gas a `mix` defines, as this model writes one, or absent where it says no oxygen.
+     *
+     * Whole percentages, as fine as this model goes: an `o2` of 0.318 arrives as `EAN32`. Argon
+     * and hydrogen have nowhere to go and are not read. `uddf.md`, under *Gas and cylinders*. A
+     * mix whose parts do not add up is left unread rather than refused.
+     */
+    private fun gasIn(mix: Tag): String? {
+        val oxygen = mix.text("o2")?.toDoubleOrNull() ?: return null
+        val helium = mix.text("he")?.toDoubleOrNull() ?: 0.0
+        return try {
+            Gas(oxygen, helium).toString()
+        } catch (refused: IllegalArgumentException) {
+            null
+        }
     }
 
     /** What the gas source made from the tank at [at] is keyed by. */
@@ -231,11 +290,16 @@ object Uddf {
         return out
     }
 
-    /** A dive's notes and the trip it belonged to, which this model keeps together. */
-    private fun detailsOf(dive: Tag, trips: Map<String, String>): Stored.Members? {
+    /** A dive's notes, its trip and who ran it, which this model keeps together. */
+    private fun detailsOf(
+        dive: Tag,
+        trips: Map<String, String>,
+        operator: String?,
+    ): Stored.Members? {
         val fields = LinkedHashMap<String, Stored>()
         fields.put("remarks", dive.prose("notes"))
         fields.put("dive_trip", dive.attributes["id"]?.let { trips[it] }?.let { "@$it" })
+        fields.put("operator", operator?.let { "@$it" })
         return fields.ifEmpty { null }?.let { Stored.Members(it) }
     }
 
@@ -252,7 +316,11 @@ object Uddf {
      * of floating and stops the cut where it stands, so a file this cannot parse keeps
      * everything and says what it says through the field that refuses it. `LOGIC-30`.
      */
-    private fun profileOf(dive: Tag, keys: Map<String, String>): Stored.Members? {
+    private fun profileOf(
+        dive: Tag,
+        keys: Map<String, String>,
+        tanks: Map<String, String>,
+    ): Stored.Members? {
         val all = dive.one(SAMPLES)?.all("waypoint").orEmpty()
         if (all.isEmpty()) return null
         // What the computer recorded while floating after the dive is not the dive. `LOGIC-30`.
@@ -262,6 +330,12 @@ object Uddf {
             seriesOf(waypoints, theirs)?.let { fields[ours] = it }
         }
         switchesOf(waypoints, keys)?.let { fields["gas_switches"] = it }
+        stopsOf(waypoints)?.let { fields["decostop"] = it }
+        alarmsOf(waypoints)?.let { fields["alarms"] = it }
+        pressuresOf(waypoints, tanks)?.let { fields["pressures"] = it }
+        val after = dive.find("informationafterdive", SAMPLES_APART)
+        fields.put("no_flight_time", after?.text("noflighttime"))
+        fields.put("desaturation_time", after?.text("desaturationtime"))
         if (fields.isEmpty()) return null
         // One profile, under the key its own type proposes for a recording naming no computer.
         return Stored.Members(mapOf("profile" to Stored.Members(fields)))
@@ -289,6 +363,81 @@ object Uddf {
             points += Stored.Elements(listOf(when_, Stored.Leaf("*$key")))
         }
         return if (points.isEmpty()) null else Stored.Elements(points)
+    }
+
+    /**
+     * The stops a computer set, as the depth of the one standing at each moment.
+     *
+     * UDDF's `decostop` is a stop with a depth and how long it lasts; this model's is the depth
+     * of the stop standing, through time, nought where none is. So each mandatory stop is its
+     * depth at the waypoint carrying it, and where it runs out before another begins, a nought
+     * where it ran out. A safety stop is not read: a dive with one is not a decompression dive,
+     * and this series is what says a dive was. `uddf.md`, under *Where the two disagree*.
+     */
+    private fun stopsOf(waypoints: List<Tag>): Stored.Elements? {
+        val points = ArrayList<Pair<Int, String>>()
+        var until: Int? = null
+        for (waypoint in waypoints) {
+            val at = waypoint.text("divetime")?.toDoubleOrNull()?.toInt() ?: continue
+            val stop = waypoint.all("decostop").firstOrNull { it.attributes["kind"] == "mandatory" }
+            val ended = until
+            if (ended != null && ended <= at && (stop == null || ended < at)) {
+                points += ended to "0"
+                until = null
+            }
+            if (stop == null) continue
+            val depth = stop.attributes["decodepth"] ?: continue
+            points += at to depth
+            val lasting = stop.attributes["duration"]?.toDoubleOrNull()?.toInt() ?: 0
+            until = if (lasting > 0) at + lasting else null
+        }
+        until?.let { points += it to "0" }
+        if (points.isEmpty()) return null
+        return Stored.Elements(points.map { (at, value) ->
+            Stored.Elements(listOf(Stored.Leaf(at), Stored.Leaf(value)))
+        })
+    }
+
+    /** The alarms a computer raised, the first a waypoint carries. */
+    private fun alarmsOf(waypoints: List<Tag>): Stored.Elements? {
+        val points = ArrayList<Stored>()
+        for (waypoint in waypoints) {
+            val at = waypoint.text("divetime")?.toDoubleOrNull()?.toInt() ?: continue
+            val alarm = waypoint.text("alarm") ?: continue
+            points += Stored.Elements(listOf(Stored.Leaf(at), Stored.Leaf(alarm)))
+        }
+        return if (points.isEmpty()) null else Stored.Elements(points)
+    }
+
+    /**
+     * The pressure left in each cylinder, a series per gas source.
+     *
+     * A `tankpressure` names the `tankdata` it belongs to by `tankref`, and one naming none belongs
+     * to the only one there is; where there are several, it belongs to nobody and is not read.
+     */
+    private fun pressuresOf(waypoints: List<Tag>, tanks: Map<String, String>): Stored.Members? {
+        val by = LinkedHashMap<String, MutableList<Stored>>()
+        val only = tanks.values.distinct().singleOrNull()
+        for (waypoint in waypoints) {
+            val at = waypoint.text("divetime")?.toDoubleOrNull()?.toInt() ?: continue
+            for (held in waypoint.all("tankpressure")) {
+                val key = held.attributes["tankref"]?.let { tanks[it] } ?: only ?: continue
+                val value = held.said.trim().ifEmpty { null } ?: continue
+                by.getOrPut(key) { ArrayList() } +=
+                    Stored.Elements(listOf(Stored.Leaf(at), Stored.Leaf(value)))
+            }
+        }
+        if (by.isEmpty()) return null
+        return Stored.Members(by.mapValues { Stored.Elements(it.value) })
+    }
+
+    /** What each `tankdata` of [dive] became, by its own id, and by nothing where it has none. */
+    private fun tanksOf(dive: Tag): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        for ((at, tank) in dive.everywhere("tankdata", SAMPLES_APART).withIndex()) {
+            out[tank.attributes["id"] ?: "#$at"] = keyAt(at)
+        }
+        return out
     }
 
     /** One quantity across [waypoints], as a time and a value apiece. */
@@ -320,6 +469,19 @@ object Uddf {
             .takeWhile { it.isDigit() || it == ':' || it == '.' }
             .ifEmpty { null }
 
+    /**
+     * [set] as a UDDF document, and what could not go into it.
+     *
+     * What reading takes in is what this puts out, so a logbook exported and imported again keeps
+     * whatever the importer reads. Everything is written, the user as the owner and everybody else
+     * as a buddy; what UDDF has no place for is left out as `uddf.md` sets out, item by item.
+     */
+    fun write(set: ItemSet): Exported {
+        val writer = Writer(set)
+        val text = writer.document()
+        return Exported(text, set.allOf(Types.DIVE).size, writer.leftOut)
+    }
+
     /** Each series this model keeps, and the waypoint child it is read from. `uddf.md`. */
     private val SERIES = listOf(
         "depth" to "depth",
@@ -329,3 +491,13 @@ object Uddf {
         "otu" to "otu",
     )
 }
+
+/**
+ * Exported is a logbook written out as a UDDF document, and what the user should hear about it.
+ *
+ * Immutable.
+ *
+ * [leftOut] counts the dives recorded on more than one computer, which went out with their primary
+ * recording and no other: UDDF holds one `samples` to a dive. `uddf.md`.
+ */
+class Exported(val text: String, val dives: Int, val leftOut: Int)

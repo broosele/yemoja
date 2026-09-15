@@ -45,7 +45,7 @@ internal fun siteIn(tag: Tag, wreck: String?): Map<String, Stored> {
     fields.put("latitude", where?.said("latitude"))
     fields.put("longitude", where?.said("longitude"))
     fields.put("elevation", where?.said("altitude"))
-    fields.put("environment_type", tag.said("environment"))
+    fields.put("environment_type", tag.said("environment")?.let { ENVIRONMENTS.ours(it) })
     fields.put("max_depth", tag.said("maximumdepth"))
     fields.put("substrate", tag.said("bottom"))
     fields.put("rating", ratingIn(tag))

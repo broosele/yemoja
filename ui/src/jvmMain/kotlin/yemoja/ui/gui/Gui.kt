@@ -20,7 +20,9 @@ import yemoja.logic.divecomputer.FoundDevices
 import java.awt.Desktop
 import java.net.URI
 import java.time.LocalDate
+import java.io.File
 import javax.swing.JFileChooser
+import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 
@@ -64,6 +66,7 @@ fun gui(folder: String? = null): Int {
                 today = ::today,
                 ask = ::asked,
                 pick = ::picked,
+                save = ::saved,
                 deeds = mapOf(
                     Deed.NEW to {
                         chosen("Make a new logbook in", "Make")?.let { where ->
@@ -123,6 +126,31 @@ private fun picked(asking: String): String? {
     }
     if (chooser.showDialog(null, "Import") != JFileChooser.APPROVE_OPTION) return null
     return chooser.selectedFile?.absolutePath
+}
+
+/**
+ * A file to write an export to, or nothing where the reader named none or would not write over one.
+ *
+ * `.uddf` is added to a name typed without an extension. A file already there is asked about
+ * rather than written over silently, the dialog itself not asking. `GUI-37`.
+ */
+private fun saved(asking: String): String? {
+    val chooser = JFileChooser().apply {
+        dialogTitle = asking
+        fileSelectionMode = JFileChooser.FILES_ONLY
+        fileFilter = FileNameExtensionFilter("UDDF documents", "uddf")
+        approveButtonText = "Export"
+    }
+    if (chooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) return null
+    val to = chooser.selectedFile?.absolutePath?.let(::uddfNamed) ?: return null
+    if (!File(to).exists()) return to
+    val answer = JOptionPane.showConfirmDialog(
+        null,
+        "$to is already there. Write over it?",
+        "Yemoja",
+        JOptionPane.YES_NO_OPTION,
+    )
+    return if (answer == JOptionPane.YES_OPTION) to else null
 }
 
 private fun chosen(asking: String, approving: String): String? {

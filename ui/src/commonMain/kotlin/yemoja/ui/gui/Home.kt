@@ -192,7 +192,7 @@ internal fun southernOf(set: ItemSet): Boolean {
 }
 
 /** [many] of [word], the word made plural where it needs to be. */
-private fun counted(many: Int, word: String): String =
+internal fun counted(many: Int, word: String): String =
     if (many == 1) "1 $word" else "$many ${word}s"
 
 /**
@@ -223,6 +223,7 @@ internal enum class Deed(val label: String) {
     NEW("New logbook"),
     OPEN("Open a logbook"),
     IMPORT("Import a logbook"),
+    EXPORT("Export to UDDF"),
     DOWNLOAD("Download from a computer"),
 }
 

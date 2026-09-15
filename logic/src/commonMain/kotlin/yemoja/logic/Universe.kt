@@ -26,6 +26,7 @@ import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.Download
 import yemoja.logic.divecomputer.Session
+import yemoja.logic.uddf.Exported
 import yemoja.logic.uddf.Uddf
 import yemoja.logic.uddf.UddfFormatException
 
@@ -289,6 +290,25 @@ class Universe(
         matching: Matching = Matching.BY_ID,
     ) {
         importing = Import.begin(source, staging, this, matching)
+    }
+
+    /**
+     * Writes this logbook to the file at [to] as a UDDF document, and says what went.
+     *
+     * The whole logbook, and nothing asked about it first: an export changes nothing here, so
+     * there is nothing to review. A file already at [to] is written over, the reader having named
+     * it. What UDDF has no place for is left out as `uddf.md` sets out, and the one loss worth
+     * saying aloud, a dive's other recordings, is counted on what comes back.
+     *
+     * Throws where the file cannot be written, which is a fault of the place rather than of the
+     * logbook.
+     */
+    fun exportTo(to: String): Exported {
+        val exported = Uddf.write(logbook)
+        val cut = maxOf(to.lastIndexOf('/'), to.lastIndexOf('\\'))
+        val folder = if (cut < 0) "." else to.substring(0, cut).ifEmpty { "/" }
+        DiskFileStore(folder).writeText(to.substring(cut + 1), exported.text)
+        return exported
     }
 
     /**

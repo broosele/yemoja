@@ -181,7 +181,13 @@ class GreetingTest {
     @Test
     fun `every deed the application knows is named, built or not`() {
         assertEquals(
-            listOf("New logbook", "Open a logbook", "Import a logbook", "Download from a computer"),
+            listOf(
+                "New logbook",
+                "Open a logbook",
+                "Import a logbook",
+                "Export to UDDF",
+                "Download from a computer",
+            ),
             Deed.entries.map { it.label },
         )
     }

@@ -116,6 +116,23 @@ class ReadSiteTest {
     }
 
     @Test
+    fun `an environment is read in this model's words, a joined pair as its first half`() {
+        // `ocean-sea` cannot say which of the two it started from. `uddf.md`.
+        val set = document("""<divesite><site><name>A</name><environment>ocean-sea</environment>
+            </site></divesite>""")
+        assertEquals("ocean", said(one(set, Types.DIVE_SITE), "environment_type"))
+    }
+
+    @Test
+    fun `a wreck in the site's data is the one the site points at`() {
+        // Where the specification puts it, and a wreck there carries no id to link by.
+        val set = document("""<divesite><site id="s1"><name>Reef</name>
+            <sitedata><wreck><name>Thistlegorm</name></wreck></sitedata></site></divesite>""")
+        val held = one(set, Types.DIVE_SITE).list<Reference>("wrecks") as Result.Usable
+        assertEquals(1, held.value.size)
+    }
+
+    @Test
     fun `a rating is read from the value inside it`() {
         val held = one(document(site), Types.DIVE_SITE).read("rating") as Result.Usable
         assertEquals(9, held.value)
@@ -292,6 +309,44 @@ class ReadDiveLinksTest {
     fun `a link under informationbeforedive is where the dive was`() {
         // The parent supplies the role; the ref says only which item.
         assertEquals("reef", named(document(linked).allOf(Types.DIVE).first(), "dive_site"))
+    }
+
+    @Test
+    fun `a link before the dive means what it lands on, a buddy or the operator`() {
+        // A link carries no type, so what it resolves to says what it is. `uddf.md`.
+        val set = document("""
+            <diver><owner id="p1"><personal><firstname>Anna</firstname></personal></owner>
+              <buddy id="p2"><personal><firstname>Tom</firstname></personal></buddy></diver>
+            <divesite><divebase id="b1"><name>Northshore</name></divebase>
+              <site id="s1"><name>Reef</name></site></divesite>
+            <profiledata><repetitiongroup><dive id="d1"><informationbeforedive>
+              <link ref="b1"/><link ref="p2"/><link ref="s1"/>
+              <datetime>2025-05-30T10:00:00</datetime>
+            </informationbeforedive></dive></repetitiongroup></profiledata>
+        """)
+        val dive = one(set, Types.DIVE)
+        assertEquals("reef", named(dive, "dive_site"), "not the divebase, though it comes first")
+        val buddies = dive.list<Reference>("buddies") as Result.Usable
+        val buddy = (buddies.value.single() as Element.Usable).value as Reference.Identified
+        assertEquals("tom", buddy.id)
+        val details = (dive.single<OwnedItem>("details") as Result.Usable).value
+        assertEquals("northshore", named(details, "operator"))
+    }
+
+    @Test
+    fun `a tankdata linking a mix breathes that gas`() {
+        val set = document("""
+            <gasdefinitions><mix id="m1"><o2>0.318</o2><he>0.0</he></mix></gasdefinitions>
+            <profiledata><repetitiongroup><dive id="d1">
+              <informationbeforedive><datetime>2025-05-30T10:00:00</datetime>
+              </informationbeforedive>
+              <tankdata><link ref="m1"/><tankpressurebegin>20000000</tankpressurebegin></tankdata>
+            </dive></repetitiongroup></profiledata>
+        """)
+        val sources = (one(set, Types.DIVE).keyed<OwnedItem>("gas_sources") as Result.Usable).value
+        val gas = (sources.values.single() as Element.Usable).value
+        // Whole percentages, as fine as this model goes.
+        assertEquals("EAN32", (gas.read("gas_type") as Result.Usable).value.toString())
     }
 
     @Test

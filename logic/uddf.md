@@ -5,10 +5,9 @@ version 3.2.3 and the items described in `manual/data-fields.md`. It answers `DA
 what the interchange formats carry that this model does not — and feeds `DATA-55`, which
 asks whether what this model records can be written back out.
 
-This is analysis, not behaviour. Nothing here describes an importer: `FEAT-7` is
-*Planned*, `RECON-4` has not decided whether importers are also exporters, and `RECON-5`
-has not decided which formats get active support. What is settled is the correspondence
-between two data models, which is a fact about both and does not wait on either.
+This is analysis first. What is settled is the correspondence between two data models, which is
+a fact about both; what of it is read and written is under *What is built*, and `RECON-4` settled
+that the one package does both.
 
 **What a user keeps or loses is stated in [../../manual/uddf.md](../manual/uddf.md),
 and that chapter owns it.** This document holds what the manual deliberately does not: the
@@ -695,12 +694,18 @@ put blood group, height or mass.
 `city`, `postcode` and `country`. Import concatenates and export cannot take it apart, so
 a round trip through this model flattens an address for good.
 
-### Suspected, and resting on things not yet read
+### A stop, now that both pages are read
 
-**`decostop` on both sides.** The two are mapped to each other on the strength of their
-names. Ours is a series of stop depths; UDDF's may carry a duration as well, in which case
-theirs is a schedule and ours is a depth through time — related but not the same, and the
-mapping would need more than a rename.
+**`decostop` is a stop there and a stop standing here.** UDDF's carries a `kind`, a `decodepth`
+and a `duration`, all three compulsory, on the waypoint where the stop begins. Ours is a series:
+the depth of the stop standing at each moment, nought where none is. The two convert as steps.
+Going out, a sample above nought writes a mandatory stop lasting until the series next says
+anything, and a nought writes nothing. Coming in, a mandatory stop is its depth at its waypoint,
+and where it runs out before another begins a nought is put where it ran out. A safety stop is
+not read, since this series is what says a dive was a decompression dive.
+
+What does not survive is a nought before the first stop, which says nothing a series of steps did
+not already say, and how long the last stop of all lasted, there being nothing after it to say.
 
 ### Not incompatible, only asymmetric
 
@@ -712,7 +717,7 @@ already taken.
 
 ## What is built
 
-**Every type in this document is read.** `logic/uddf/` holds an XML document read into a tree,
+**Every type in this document is read, and written.** `logic/uddf/` holds an XML document read into a tree,
 one file of shared reading, the equipment table, and a mapping per type. Dives, their recordings
 and their gas; sites and the wrecks in them; people, whether owner or buddy; equipment; trips;
 and operators.
@@ -729,9 +734,7 @@ naming one dive centre would be two items. A `divebase` and a `link` is the loss
 the only one taken. It is reached the way another logbook is:
 the import screen takes a path, and a file at that path is read as UDDF where a folder is read as
 a logbook. A document holding no dives is refused rather than opening a review with nothing in
-it, since dives are all that is read. Everything else this document maps — sites,
-people, equipment, trips, operators, wrecks, repetitive dives, references — is analysed and not
-read yet.
+it.
 
 **No arithmetic was written.** UDDF is strict SI and `DATA-61` already has `K`, `m3` and `Pa`
 among the names a file may declare, so the reader hands `ItemReader` those units and the
@@ -761,6 +764,44 @@ One thing that follows and is not handled: a reference to an item whose id was m
 not rewritten. Nothing read from UDDF points at anything else read from it yet, so there is
 nothing to follow; a source that did would need this.
 
+### Writing
+
+**The whole logbook goes out, and what goes out is what reading takes in**, so a logbook exported
+and imported again keeps whatever the importer reads. A test runs the populated fixture through
+both and compares dive by dive.
+
+- **The user is the `owner` and holds every piece of gear**; everybody else is a `buddy`. A
+  logbook naming nobody writes an owner with nothing but the equipment.
+- **A dive's links name what it points at** — its site, its buddies, its operator — all under
+  `informationbeforedive`, and reading classifies each by what it resolves to rather than by where
+  it sits. That is the rule under *How references work on both sides*, and reading had taken the
+  first link as the site.
+- **An id is made legal.** A dive's id holds a `#` and begins with a digit, and an XML id may do
+  neither, so what is not a letter, digit, point, hyphen or underscore becomes an underscore and
+  one beginning with a digit gains one in front.
+- **Dives go out earliest first, in the groups `previous_dive` makes**, as *Repetitive dives*
+  sets out, and a trip with legs is a `trip` with a `trippart` apiece.
+- **A gas is a `mix` defined once**, and reading now takes the mix back as the gas source's
+  `gas_type` rather than leaving it out.
+- **The primary recording goes out as waypoints** at every second anything was measured, the
+  depth read off the line where only something else was: temperature, stops, no-deco time, CNS,
+  OTU, alarms, switches and each cylinder's pressure by `tankref`. A dive's other recordings are
+  counted and the user told once.
+- **A closed word crosses by table**: a current, how warm the diver was, and what kind of place a
+  site is. Reading had copied UDDF's words in, which the fields then refused.
+- **A computer a recording names is a `divecomputer`** whatever its kind says, since the table
+  cannot tell one from a kind of `wrist`.
+- **A wreck goes in the site's `sitedata`**, where the specification puts it, and reading finds
+  it there.
+
+**Not written yet**, though this document maps each of them: a person's insurance, gear's
+maintenance, where a trip went, a site's regions as `geography`, and a site's water type as a
+density. Nor is anything a library supplies, a region or a certification, which UDDF has no item
+for; a course goes out naming its certification's title as its `level`.
+
+The document follows the element order of the specification's examples where it shows one. It
+has not been checked against the schema, which the specification's pages do not link.
+
 Two things a document may hold that this slice does not read: which of a dive's two halves a
 value sits in is not relied on, since the reader looks for the name in either; and a zone after
 a `datetime` is dropped rather than kept, `gmt_offset` sitting on the profile and not being read
@@ -784,7 +825,7 @@ gap to close:
 - `setmarker`, rebreather data with `FEAT-21`, `minimumdepth` on a site, the taxonomy, and
   `exposuretoaltitude` with `wayaltitude`, each recorded where it arose.
 
-**`DATA-55`.** *Where the two disagree* lists eleven confirmed incompatibilities and two
-still suspected. One entry has been closed rather than answered: trips were a mismatch
+**`DATA-55`.** *Where the two disagree* lists eleven confirmed incompatibilities, and the
+one that was suspected, `decostop`, has been read and settled as steps. One entry has been closed rather than answered: trips were a mismatch
 until this model took UDDF's shape and gave a trip its parts. The worst is settled and is bad: a UDDF dive holds one `samples` block,
 so a dive recorded on two computers cannot be written out whole.

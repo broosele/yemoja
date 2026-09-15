@@ -88,7 +88,9 @@ them.
   what up and down move over and space follows the one the cursor is on, and only those that
   resolve are marked. A rename carries them with it, which is `JSON-24` and waits on there
   being a rename at all.
-- **FEAT-13 — Export to other applications' formats.** Waits on `RECON-4`.
+- **FEAT-13 — Export to other applications' formats.** UDDF is written: the whole logbook,
+  from the home screen, and read back by the importer. What goes and what is not written yet is
+  under *What is built* in [logic/uddf.md](logic/uddf.md). No other format is written.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).
 - **FEAT-15 — More than one logbook.** *Answered by `JSON-8`:* any number may exist on
