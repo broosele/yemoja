@@ -420,6 +420,50 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-32 — What else the home plot can draw.** *Settled:* **a gathering, chosen beside the
+   two axes: one dot per dive, how many, a total, an average, the two extremes, or a running
+   total.**
+
+   `GUI-30` drew a dot per dive and nothing else. That answers *how do these two things go
+   together* and refuses every question of the form *how much diving did I do*: three hundred
+   dots say less about a diver's year than four bars would.
+
+   **The gathering is a third box beside the two axes**, and it decides what the others mean.
+   Counting needs nothing up the side, so that box goes and the axis is titled *Dives*.
+   Everything else reads the variable up the side and gathers the dives in each bar: their sum,
+   their mean, the greatest and the least.
+
+   **It opens on how many dives a month**, which is the figure a diver looks for first and the
+   only one that needs no variable chosen to be worth drawing. The axes keep `GUI-30`'s opening
+   pair underneath, so a reader who switches to a total is already plotting against the date.
+
+   **A date is cut by the calendar.** A month is a month and no fraction of a year is one:
+   cutting at a twelfth of an average year begins March two days late and files the first
+   weekend of it under February. So a variable that reads a date carries the day as well as the
+   number it plots, and the calendar cuts on that. Everything else is cut at a round width —
+   one, two or five times a power of ten — chosen over the range the dives actually cover.
+
+   **How wide is chosen to fit and can be overridden.** The narrowest cut drawing no more than
+   a hundred and twenty bars, which is ten years of months; past that the fit steps up to
+   quarters and a fourth box steps it back down. Narrowest rather than roundest, because the
+   detailed question is the one asked first and the only reason to widen is that the bars stop
+   being legible. The width is forgotten when the bottom axis changes, a cut chosen for a
+   calendar meaning nothing on an axis of metres.
+
+   **A bar nothing fell in is nought for a count and a total, and absent for the rest.** No
+   dives in February is none made and no hours spent, which are figures; it is not an average
+   depth of nought, which is a claim about diving that did not happen. That is `DATA-50`'s
+   distinction between absent and zero, applied to a bar.
+
+   **A running total is not cut into bars at all.** It is a line through the dives in the order
+   they were made, each point carrying what the logbook came to once that dive was in it, so it
+   only climbs and its last point is the figure the greeting gives.
+
+   **Bars stand on nought whatever they reach**, which the dots do not. A bar read against an
+   axis beginning elsewhere lies about how big it is, and being read by size is the whole of
+   what a bar is for.
+
+   Open: clicking a bar to see the dives in it, which `GUI-30` already owes for a dot.
 - **GUI-31 — How a dive computer is read from the window.** *Settled:* **the screens drive it
   and the platform only asks; every dive that comes across is taken in together or left staged.**
 
