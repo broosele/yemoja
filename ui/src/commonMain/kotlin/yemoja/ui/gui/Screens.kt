@@ -73,6 +73,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -385,8 +386,13 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
         Text(
             text = tellingOf(universe?.user, greeting),
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = HALF, bottom = GAP * 2),
+            modifier = Modifier.padding(top = HALF),
         )
+        val owed = remember(set, edition, universe?.user) {
+            set?.let { owedIn(it, universe?.user, platform.today()) }.orEmpty()
+        }
+        Owing(owed)
+        Spacer(modifier = Modifier.height(GAP * 2))
         // Reading a computer is this layer's own: everything it needs is on the universe, and
         // what a platform adds is only the asking. `GUI-31`.
         val deeds = platform.deeds + buildMap {
@@ -405,6 +411,51 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
         // Nothing to count where there is no logbook, and nothing to say about that.
         if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
         Spacer(modifier = Modifier.height(GAP * 2))
+    }
+}
+
+/**
+ * What the logbook owes, under the greeting, in two boxes rather than one.
+ *
+ * What has lapsed is read as an error and what is merely near is read as a caution, and the two
+ * are separated because a box can only be one colour: putting a service due next week inside a
+ * red one says it is already a problem. Nothing at all is shown where nothing is due, which is
+ * the ordinary case and should stay silent. `GUI-34`.
+ */
+@Composable
+private fun Owing(owed: List<Owed>) {
+    if (owed.isEmpty()) return
+    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    Warned(
+        owed.filter { it.lapsed },
+        MaterialTheme.colorScheme.errorContainer,
+        MaterialTheme.colorScheme.onErrorContainer,
+    )
+    Warned(
+        owed.filterNot { it.lapsed },
+        if (dark) CAUTION_DARK else CAUTION_LIGHT,
+        if (dark) ON_CAUTION_DARK else ON_CAUTION_LIGHT,
+    )
+}
+
+/** One box of warnings, a line apiece, or nothing at all where there are none. */
+@Composable
+private fun Warned(owed: List<Owed>, behind: Color, infront: Color) {
+    if (owed.isEmpty()) return
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(top = GAP),
+        shape = MaterialTheme.shapes.medium,
+        color = behind,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(GAP)) {
+            for (one in owed) {
+                Text(
+                    text = one.said,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = infront,
+                )
+            }
+        }
     }
 }
 

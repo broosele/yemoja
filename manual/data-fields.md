@@ -793,6 +793,13 @@ One per person. Health details, kept together rather
 than scattered through the item.
 
 - `last_medical_check` (date) — when this person was last examined.
+
+  **Home takes a medical to run a year from this**, and warns you a month before it falls due
+  and once it has. That is a guess: nothing here records how long your certificate runs, and a
+  year is the common answer rather than the rule — age, the authority and your employer all
+  change it. The warning says the check falls due rather than claiming your certificate
+  expired. Where the year is wrong for you, what fixes it is writing the check date the
+  certificate's own interval implies.
 - `blood_group` (text)
 - `height` (number)
 - `body_mass` (number)

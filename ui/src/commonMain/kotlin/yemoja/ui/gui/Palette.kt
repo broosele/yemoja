@@ -16,6 +16,22 @@ import androidx.compose.ui.graphics.Color
  * See ../../../../../../gui/doc.md — `GUI-3`.
  */
 
+/**
+ * Caution, for a warning that is not yet a failure.
+ *
+ * Material's scheme has no role for it: there is an error and there is everything else, and a
+ * thing falling due next week is neither. So these are the project's own, a pair to match the
+ * container roles beside them, and they are read the same way — the container behind, the on
+ * colour in front. `GUI-34`.
+ *
+ * Amber rather than a paler red, because the two warnings sit next to each other and have to be
+ * told apart at a glance rather than by reading them.
+ */
+internal val CAUTION_LIGHT: Color = Color(0xFFFCEFC7)
+internal val ON_CAUTION_LIGHT: Color = Color(0xFF4A3A00)
+internal val CAUTION_DARK: Color = Color(0xFF4A3A00)
+internal val ON_CAUTION_DARK: Color = Color(0xFFFCEFC7)
+
 /** Marine, for a light window. */
 internal val MARINE_LIGHT: ColorScheme = lightColorScheme(
     primary = Color(0xFF2A5A87),

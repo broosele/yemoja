@@ -420,6 +420,46 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-34 — What the home screen says about what has fallen due.** *Settled:* **two boxes
+   under the greeting, red for what has lapsed and amber for what falls due within a month.**
+
+   A logbook knows when a cylinder is out of test and when a medical has run out, and a reader
+   who has to go looking for that will find out when the shop turns them away. So it is said
+   where they arrive, above everything they might have come for.
+
+   **Three things fall due**, which is all the model has a date for: a piece of gear owing work,
+   the user's medical, and their insurance. Nothing else carries a day it runs out on.
+
+   **Only the user's own medical and insurance.** A logbook holds other people, and when their
+   certificates run out is their business rather than a banner on somebody else's screen. Gear
+   is not qualified that way, a logbook's gear being the logbook's; a `generic` item is left out,
+   describing a kind rather than one that is owned.
+
+   **Two boxes rather than one**, because a box is one colour and a service due next week put
+   inside a red one says it is already a problem. What lapsed is read as an error, in the role
+   Material has for one; what is merely near is amber, which is a colour Material's scheme has
+   no role for and which the palette therefore carries itself. Amber rather than a paler red:
+   the two sit next to each other and have to be told apart at a glance rather than by reading.
+
+   **A month's notice**, which `LOGIC-7` in [../../logic/doc.md](../../logic/doc.md) leaves open
+   and which this does not close: that question asks what notice each kind of obligation wants,
+   and a service and a five-yearly pressure test do not want the same. One month for everything
+   is what a first version says rather than the answer.
+
+   **What lapsed is never dropped, however long ago.** A cylinder two years out of test is more
+   of a problem than one due next week, not less, so only the far future is left out.
+
+   **A medical is taken to run a year from the last check.** The model records when a person was
+   examined and nothing about how long that lasts, and a year is the common answer rather than
+   the rule: age, the authority and an employer all change it. So the warning says the check
+   *falls due* rather than claiming a certificate expired, and it is the one line on this screen
+   resting on something the logbook did not say. Gear and insurance rest on dates that were
+   written down.
+
+   Nothing at all is shown where nothing is due, which is the ordinary case and stays silent.
+
+   Open: a warning leads nowhere. Clicking one should open the gear item or the person it is
+   about, which is the same thing `GUI-30` owes for a dot on the plot.
 - **GUI-33 — How a logbook is imported from the window.** *Settled:* **one path, the dives
    reviewed a line apiece, and everything else counted and taken in with them.**
 
