@@ -156,9 +156,26 @@ internal fun entryLabelOf(key: String, entry: Item): String {
         if (field.cardinality != Cardinality.SINGLE) continue
         val read = (entry.read(field.name) as? Result.Usable)?.value as? Reference.Identified
         val target = read?.let { entry.set[it.id] } ?: continue
-        return titleOf(target)
+        return briefOf(target)
     }
     return prettyOf(key)
+}
+
+/**
+ * What an item is called where there is room for a word and not a name.
+ *
+ * Its `abbreviation` where it has one, which is the field's whole purpose: *the short form it
+ * is usually known by*. A tab is the shortest place an interface has, and a row of them reading
+ * *Advanced Open Water Diver* is a row nobody can see the ends of. `GUI-16`.
+ *
+ * **The first letter is raised and the rest is left alone.** A label begins with a capital, and
+ * the rest of an abbreviation is not a label's to touch: a specialty written *nitrox* reads
+ * *Nitrox* beside the others, and `OW` stays `OW` rather than becoming `Ow`.
+ */
+internal fun briefOf(item: Item): String {
+    if (item.description["abbreviation"] == null) return titleOf(item)
+    val short = (item.single<String>("abbreviation") as? Result.Usable)?.value?.ifBlank { null }
+    return short?.replaceFirstChar { it.uppercase() } ?: titleOf(item)
 }
 
 /**

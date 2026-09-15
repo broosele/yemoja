@@ -265,4 +265,37 @@ class ArrangedTest {
         assertEquals("Perdix 2", entryLabelOf("p1", p1), "the computer that made it")
         assertEquals("P2", entryLabelOf("p2", p2), "nothing on it says a thing, so the key, read")
     }
+
+    @Test
+    fun `an entry naming something with a short form is labelled by the short form`() {
+        // A row of tabs reading Advanced Open Water Diver has ends nobody can see. `GUI-16`.
+        val set = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "certification.json" to """{
+                        "ow": {"name": "Open Water Diver", "abbreviation": "OW"},
+                        "nitrox": {"name": "Enriched Air Diver", "abbreviation": "nitrox"},
+                        "cave": {"name": "Cave Diver"}
+                    }""",
+                    "person.json" to """{"anna": {"first_name": "Anna", "last_name": "Devries",
+                        "courses": {
+                            "k1": {"certification": "@ow", "date": "2020-06-07"},
+                            "k2": {"certification": "@cave", "date": "2021-06-07"},
+                            "k3": {"certification": "@nitrox", "date": "2022-06-07"}
+                        }}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val anna = set["anna"]!!
+        val read = (anna.read("courses") as Result.Usable<*>).value
+        @Suppress("UNCHECKED_CAST")
+        val courses = read as Map<String, Element<Any>>
+        val first = (courses.getValue("k1") as Element.Usable).value as OwnedItem
+        val second = (courses.getValue("k2") as Element.Usable).value as OwnedItem
+        val third = (courses.getValue("k3") as Element.Usable).value as OwnedItem
+        assertEquals("OW", entryLabelOf("k1", first), "raising the first letter leaves OW alone")
+        assertEquals("Cave Diver", entryLabelOf("k2", second), "and the name where there is none")
+        assertEquals("Nitrox", entryLabelOf("k3", third), "a label begins with a capital")
+    }
 }

@@ -842,6 +842,14 @@ once and corrected. The numbers stay unused rather than being given to something
   not rewrite a file; and a rating out of ten reads as five stars, two points to a star and an
   odd rating ending in a half, and the number is not shown.
 
+  **A tab takes the short form of what it names.** A keyed entry with no name of its own is
+  labelled by what it points at, and where that carries an `abbreviation` it is the
+  abbreviation: a person's courses read *OW*, *AOW*, *EFR* rather than a row of tabs whose ends
+  nobody can see. The field exists for exactly this — *the short form it is usually known by* —
+  and a tab is the shortest place an interface has. Its first letter is raised and the rest is
+  left alone, a label beginning with a capital and the rest of an abbreviation being none of a
+  label's business: a specialty written *nitrox* reads *Nitrox*, and `OW` stays `OW`.
+
   **A word from a vocabulary is a word rather than a name.** A file writes one in lower case
   with an underscore where a reader puts a space, and a screen reads back what it says, so
   `back_mounted` is *Back mounted*. Only a field with a set of words to draw on has words in
