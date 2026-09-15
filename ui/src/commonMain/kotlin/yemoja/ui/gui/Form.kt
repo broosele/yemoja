@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -218,52 +219,60 @@ private fun KeyedEditor(label: String, name: String, item: Item, draft: Draft) {
 private fun Editor(field: FieldDescription, item: Item, draft: Draft) {
     val kind = kindOf(field)
     if (kind == Kind.NONE) return
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = HALF)) {
-        Text(
-            text = field.label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.outline,
-        )
-        if (!editable(field)) {
-            Read(field, item)
-            return@Column
-        }
-        val stored = item.read(field.name)
-        val workedOut = stored is Result.Usable && stored.origin == Result.Origin.DERIVED
-        if (overrideable(field) && workedOut && !draft.changed(item, field.name)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    // Outside the view's selection, which every other word is in. `GUI-36`. A field being typed
+    // into has a selection of its own, which is what a caret is, and two over one run of text
+    // fight: a drag would paint the view's selection across the box rather than move the caret.
+    // Nothing is lost, a text field copying what it holds already.
+    DisableSelection {
+        Column(modifier = Modifier.fillMaxWidth().padding(vertical = HALF)) {
+            Text(
+                text = field.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.outline,
+            )
+            if (!editable(field)) {
                 Read(field, item)
-                Spacer(modifier = Modifier.width(GAP))
-                TextButton(onClick = { draft.put(item, field.name, textOf(field, stored.value)) }) {
-                    Text("override")
+                return@Column
+            }
+            val stored = item.read(field.name)
+            val workedOut = stored is Result.Usable && stored.origin == Result.Origin.DERIVED
+            if (overrideable(field) && workedOut && !draft.changed(item, field.name)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Read(field, item)
+                    Spacer(modifier = Modifier.width(GAP))
+                    TextButton(
+                        onClick = { draft.put(item, field.name, textOf(field, stored.value)) },
+                    ) {
+                        Text("override")
+                    }
+                }
+                return@Column
+            }
+            if (field.cardinality == Cardinality.LIST) {
+                ListEditor(field, item, draft, kind)
+            } else {
+                val shown = if (draft.changed(item, field.name)) {
+                    draft.shownOf(item, field.name)?.toString().orEmpty()
+                } else {
+                    textOf(field, (stored as? Result.Usable)?.value)
+                }
+                SingleEditor(field, kind, item, shown) { text, given ->
+                    draft.put(item, field.name, text, given)
                 }
             }
-            return@Column
-        }
-        if (field.cardinality == Cardinality.LIST) {
-            ListEditor(field, item, draft, kind)
-        } else {
-            val shown = if (draft.changed(item, field.name)) {
-                draft.shownOf(item, field.name)?.toString().orEmpty()
-            } else {
-                textOf(field, (stored as? Result.Usable)?.value)
+            val overridden = stored is Result.Usable && stored.origin == Result.Origin.OVERRIDDEN
+            if (overrideable(field) && (overridden || draft.changed(item, field.name))) {
+                TextButton(onClick = { draft.put(item, field.name, null, null) }) {
+                    Text("revert to what is worked out")
+                }
             }
-            SingleEditor(field, kind, item, shown) { text, given ->
-                draft.put(item, field.name, text, given)
+            draft.refusalOf(item, field.name)?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
-        }
-        val overridden = stored is Result.Usable && stored.origin == Result.Origin.OVERRIDDEN
-        if (overrideable(field) && (overridden || draft.changed(item, field.name))) {
-            TextButton(onClick = { draft.put(item, field.name, null, null) }) {
-                Text("revert to what is worked out")
-            }
-        }
-        draft.refusalOf(item, field.name)?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
-            )
         }
     }
 }

@@ -82,40 +82,49 @@ internal fun Manuals(chapters: List<Chapter>, onOpen: (String) -> Unit, kept: Ke
         kept.unfolded = unfolded + chapter.file
     }
     Row(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = kept.tree,
-            modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP),
-        ) {
-            for (chapter in chapters) {
-                item(key = chapter.file) {
-                    BranchLine(
-                        label = chapter.title,
-                        depth = 0,
-                        open = if (chapter.sections.isEmpty()) null else chapter.file in unfolded,
-                        chosen = chapter === shown,
-                        onToggle = {
-                            kept.unfolded = if (chapter.file in unfolded) {
-                                unfolded - chapter.file
+        Selectable {
+            LazyColumn(
+                state = kept.tree,
+                modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP),
+            ) {
+                for (chapter in chapters) {
+                    item(key = chapter.file) {
+                        BranchLine(
+                            label = chapter.title,
+                            depth = 0,
+                            open = if (chapter.sections.isEmpty()) {
+                                null
                             } else {
-                                unfolded + chapter.file
-                            }
-                        },
-                        onClick = { goTo(chapter, 0) },
-                    )
-                }
-                if (chapter.file !in unfolded) continue
-                items(chapter.sections, key = { chapter.file + "#" + it.anchor }) { section ->
-                    Line(section.title, 1, chosen = false) { goTo(chapter, section.block) }
+                                chapter.file in unfolded
+                            },
+                            chosen = chapter === shown,
+                            onToggle = {
+                                kept.unfolded = if (chapter.file in unfolded) {
+                                    unfolded - chapter.file
+                                } else {
+                                    unfolded + chapter.file
+                                }
+                            },
+                            onClick = { goTo(chapter, 0) },
+                        )
+                    }
+                    if (chapter.file !in unfolded) continue
+                    items(chapter.sections, key = { chapter.file + "#" + it.anchor }) { section ->
+                        Line(section.title, 1, chosen = false) { goTo(chapter, section.block) }
+                    }
                 }
             }
         }
         VerticalDivider()
         val chapter = shown
-        if (chapter == null) {
-            Middle("no manual is bundled")
-        } else {
-            ChapterView(chapter, wanted, kept.page, onArrived = { wanted = null }) { target ->
-                followed(chapters, target)?.let { (to, block) -> goTo(to, block) } ?: onOpen(target)
+        Selectable {
+            if (chapter == null) {
+                Middle("no manual is bundled")
+            } else {
+                ChapterView(chapter, wanted, kept.page, onArrived = { wanted = null }) { target ->
+                    followed(chapters, target)?.let { (to, block) -> goTo(to, block) }
+                        ?: onOpen(target)
+                }
             }
         }
     }

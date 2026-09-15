@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Delete
@@ -348,6 +349,18 @@ internal fun Application(universe: Universe?, platform: Platform) {
  * `GUI-13` settled that a phone keeps this a gesture away instead, which is a placement rather
  * than a different set of tabs.
  */
+/**
+ * One view whose words can be selected and copied, apart from every other view's.
+ *
+ * A selection stays inside the view it began in, so a drag down a site's fields does not run on
+ * into the list beside it. The tabs along the top are in none: they are what is pressed to move
+ * about, not what is read. `GUI-36`.
+ */
+@Composable
+internal fun Selectable(content: @Composable () -> Unit) {
+    SelectionContainer(content = content)
+}
+
 @Composable
 private fun Tabs(tabs: List<Tab>, chosen: Tab, onChoose: (Tab) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -390,45 +403,49 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
     val reading = remember(universe) { Reading() }
     val taking = remember(universe) { Taking() }
     val scope = rememberCoroutineScope()
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = GAP * 2),
-    ) {
-        val southern = remember(set, edition) { set != null && southernOf(set) }
-        val hail = hailOf(universe?.user, greeting, platform.today(), southern)
-        Text(
-            text = greeted(hail, platform.open),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(top = GAP * 2),
-        )
-        Text(
-            text = tellingOf(universe?.user, greeting),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = HALF),
-        )
-        val owed = remember(set, edition, universe?.user) {
-            set?.let { owedIn(it, universe?.user, platform.today()) }.orEmpty()
-        }
-        Owing(owed)
-        Spacer(modifier = Modifier.height(GAP * 2))
-        // Reading a computer is this layer's own: everything it needs is on the universe, and
-        // what a platform adds is only the asking. `GUI-31`.
-        val deeds = platform.deeds + buildMap {
-            if (universe != null) {
-                put(Deed.DOWNLOAD) { scope.launch { look(universe, platform, reading, changer) } }
-                if (platform.pick != null) {
-                    put(Deed.IMPORT) { take(universe, platform, taking, changer) }
+    Selectable {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = GAP * 2),
+        ) {
+            val southern = remember(set, edition) { set != null && southernOf(set) }
+            val hail = hailOf(universe?.user, greeting, platform.today(), southern)
+            Text(
+                text = greeted(hail, platform.open),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(top = GAP * 2),
+            )
+            Text(
+                text = tellingOf(universe?.user, greeting),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = HALF),
+            )
+            val owed = remember(set, edition, universe?.user) {
+                set?.let { owedIn(it, universe?.user, platform.today()) }.orEmpty()
+            }
+            Owing(owed)
+            Spacer(modifier = Modifier.height(GAP * 2))
+            // Reading a computer is this layer's own: everything it needs is on the universe, and
+            // what a platform adds is only the asking. `GUI-31`.
+            val deeds = platform.deeds + buildMap {
+                if (universe != null) {
+                    put(Deed.DOWNLOAD) {
+                        scope.launch { look(universe, platform, reading, changer) }
+                    }
+                    if (platform.pick != null) {
+                        put(Deed.IMPORT) { take(universe, platform, taking, changer) }
+                    }
                 }
             }
+            Inset("System") {
+                Deeds(deeds)
+                Reader(universe, platform, reading, changer, scope)
+                Taker(universe, taking, changer)
+            }
+            // Nothing to count where there is no logbook, and nothing to say about that.
+            if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
+            Spacer(modifier = Modifier.height(GAP * 2))
         }
-        Inset("System") {
-            Deeds(deeds)
-            Reader(universe, platform, reading, changer, scope)
-            Taker(universe, taking, changer)
-        }
-        // Nothing to count where there is no logbook, and nothing to say about that.
-        if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
-        Spacer(modifier = Modifier.height(GAP * 2))
     }
 }
 
@@ -1133,9 +1150,12 @@ private fun Subject(
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.width(wide)) {
             when (tab.shape) {
-                Shape.DIVES -> Dives(set, kept)
-                Shape.GEAR -> Gear(set, chosen, kept) { kept.chosen = it }
-                Shape.TYPES -> Types(set, tab, user, chosen, kept) { kept.chosen = it }
+                Shape.DIVES -> Selectable { Dives(set, kept) }
+                Shape.GEAR -> Selectable { Gear(set, chosen, kept) { kept.chosen = it } }
+                Shape.TYPES -> Selectable {
+                    Types(set, tab, user, chosen, kept) { kept.chosen = it }
+                }
+                // Two views of its own, the regions and what is at the one chosen.
                 Shape.PLACES -> Places(
                     set = set,
                     tree = tree,
@@ -1178,30 +1198,32 @@ private fun Subject(
             }
         }
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
-            when {
-                tab.shape == Shape.PLACES -> {
-                    PlaceView(set, atlas, kept.hideUnused, kept.place, chosen, onFollow)
+            Selectable {
+                when {
+                    tab.shape == Shape.PLACES -> {
+                        PlaceView(set, atlas, kept.hideUnused, kept.place, chosen, onFollow)
+                    }
+                    kept.chosenMany.size > 1 -> {
+                        ManyView(set, kept.chosenMany, onFollow) { asking = true }
+                    }
+                    kept.making != null -> {
+                        NewCard(
+                            type = kept.making!!,
+                            set = set,
+                            onCancel = { kept.making = null },
+                            onMade = { id ->
+                                kept.making = null
+                                set[id]?.let { kept.chosen = Chosen(id, titleOf(it), it) }
+                                kept.chosenMany = emptySet()
+                            },
+                        )
+                    }
+                    chosen != null -> ItemView(chosen, onFollow, add, { asking = true })
+                    // Where nothing is chosen the middle still offers to make one, which is the
+                    // only way a logbook with nothing in it grows a first item. `GUI-35`.
+                    making != null && add != null -> Empty(makeSaid(making), add)
+                    else -> Middle("choose something on the left")
                 }
-                kept.chosenMany.size > 1 -> {
-                    ManyView(set, kept.chosenMany, onFollow) { asking = true }
-                }
-                kept.making != null -> {
-                    NewCard(
-                        type = kept.making!!,
-                        set = set,
-                        onCancel = { kept.making = null },
-                        onMade = { id ->
-                            kept.making = null
-                            set[id]?.let { kept.chosen = Chosen(id, titleOf(it), it) }
-                            kept.chosenMany = emptySet()
-                        },
-                    )
-                }
-                chosen != null -> ItemView(chosen, onFollow, add, { asking = true })
-                // Where nothing is chosen the middle still offers to make one, which is the only
-                // way a logbook with nothing in it grows a first item. `GUI-35`.
-                making != null && add != null -> Empty(makeSaid(making), add)
-                else -> Middle("choose something on the left")
             }
         }
     }
@@ -1589,38 +1611,46 @@ private fun Places(
     val chosen = kept.chosen
     val hideUnused = kept.hideUnused
     Row(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.width(TREE).fillMaxHeight().padding(GAP)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { kept.hideUnused = !hideUnused },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = hideUnused, onCheckedChange = { kept.hideUnused = it })
-                Text("Hide unused", style = MaterialTheme.typography.bodyMedium)
-            }
-            LazyColumn(state = kept.tree, modifier = Modifier.fillMaxHeight()) {
-                branchesIn(
-                    branches = tree,
-                    path = "",
-                    depth = 0,
-                    chosen = place,
-                    open = open,
-                    onToggle = { key -> kept.open = if (key in open) open - key else open + key },
-                    onChoose = onPlace,
-                )
+        Selectable {
+            Column(modifier = Modifier.width(TREE).fillMaxHeight().padding(GAP)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { kept.hideUnused = !hideUnused },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = hideUnused, onCheckedChange = { kept.hideUnused = it })
+                    Text("Hide unused", style = MaterialTheme.typography.bodyMedium)
+                }
+                LazyColumn(state = kept.tree, modifier = Modifier.fillMaxHeight()) {
+                    branchesIn(
+                        branches = tree,
+                        path = "",
+                        depth = 0,
+                        chosen = place,
+                        open = open,
+                        onToggle = { key ->
+                            kept.open = if (key in open) open - key else open + key
+                        },
+                        onChoose = onPlace,
+                    )
+                }
             }
         }
         VerticalDivider()
         val what = remember(set, place, hideUnused, LocalChanger.current.edition) {
             place?.let { atPlaceIn(set, it.id, hideUnused) }
         }
-        LazyColumn(state = kept.list, modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
-            if (what == null) return@LazyColumn
-            item(key = "sites") { Label("Sites", 0) }
-            if (what.first.isEmpty()) item(key = "nosite") { Aside("none here") }
-            items(what.first, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
-            if (what.second.isEmpty()) return@LazyColumn
-            item(key = "wrecks") { Label("Wrecks", 0) }
-            items(what.second, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Selectable {
+                LazyColumn(state = kept.list, modifier = Modifier.fillMaxSize().padding(GAP)) {
+                    if (what == null) return@LazyColumn
+                    item(key = "sites") { Label("Sites", 0) }
+                    if (what.first.isEmpty()) item(key = "nosite") { Aside("none here") }
+                    items(what.first, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
+                    if (what.second.isEmpty()) return@LazyColumn
+                    item(key = "wrecks") { Label("Wrecks", 0) }
+                    items(what.second, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
+                }
+            }
         }
     }
 }

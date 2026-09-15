@@ -420,6 +420,32 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-36 — Whether what the window shows can be copied.** *Settled:* **all of it, a view at
+   a time.**
+
+   A logbook is full of things worth taking somewhere else: a site's coordinates into a map, a
+   serial into a shop's form, a computer's own words into a search, a remark into a message. A
+   window that shows them and will not let them be copied makes a reader type them out with the
+   answer in front of them.
+
+   **A selection stays inside the view it began in.** The list on the left, the item on the
+   right, the regions and the sites at one, the manual's contents and its chapter: each is a
+   view of its own. One container over the whole window would let a drag over two lines take
+   both panes with it, and what came out would be a site's remarks spliced with the names of
+   the sites listed beside it.
+
+   Every view is one, so the rule is still *every word*, and no list of which words may be
+   copied has to be kept true as screens are added. The tabs along the top are in none, being
+   what is pressed to move about rather than what is read. A new view is wrapped in
+   `Selectable`, in `Screens.kt`.
+
+   **A field being typed into is outside it.** A text field has a selection of its own, which is
+   what a caret is, and two selections over one run of text fight: a drag would paint the
+   view's selection across the box rather than moving the caret. Those are the one exception,
+   and nothing is lost by it, a text field already copying what it holds.
+
+   **A click still chooses.** A row in a list inside a view is chosen by a click as it was
+   before, and the click clears whatever was selected; only a drag selects.
 - **GUI-35 — How an item is made and unmade.** *Settled:* **two buttons beside the pencil, and
    a question before anything is deleted.**
 
