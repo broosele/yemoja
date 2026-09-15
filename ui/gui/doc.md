@@ -31,10 +31,10 @@ There are six:
 
 - **Home** — a greeting, what the application can be asked to do to a logbook as a whole,
   and everything counted. `GUI-30`.
-- **Dive** — dives and dive trips.
+- **Dives** — dives and dive trips.
 - **Gear** — equipment.
 - **Community** — people, operators and certifications.
-- **Location** — regions, dive sites and wrecks.
+- **Locations** — regions, dive sites and wrecks.
 - **Manuals** — the documentation, read inside the application.
 
 **The application opens on Home**, which is first in the list and is what a user arrives at
@@ -71,7 +71,7 @@ neither, and the compromise usually costs the reading.
 them. These are those decisions. Three of the six are not a list at all, which is why the
 question had to be asked per tab.
 
-- **Dive** — a table of four columns: the trip, the dive's own number, the date, and the site,
+- **Dives** — a table of four columns: the trip, the dive's own number, the date, and the site,
   divided by year, every year but the last folded. The trip column has one cell per trip,
   spanning the consecutive dives on it within a year with the trip's name in the middle of
   the cell, and a dive on no trip stands alone. Which
@@ -83,7 +83,7 @@ question had to be asked per tab.
   whichever branch is chosen.
 - **Community** — a subtab per type: people, operators, certifications. The user, whoever the
   logbook names as its own, is marked among the people and is what the tab opens on.
-- **Location** — a tree of regions, and beside it the dive sites in whichever region is chosen
+- **Locations** — a tree of regions, and beside it the dive sites in whichever region is chosen
   or in any region inside it, with the wrecks at those sites in the same list and marked apart
   from them. A region and a site are chosen at once, and the item view shows a map of the
   region above the two of them. `GUI-25`. A box, *Hide unused*, on by default, takes out what
@@ -298,7 +298,7 @@ showing an empty box.
 **An item's fields can be edited, and an item made and deleted.** A pencil on the item card
 turns it over into the edit form, which `GUI-29` describes, and an entry of a keyed collection
 can be taken out or added there. A **+** beside it makes another of the same type and a bin
-deletes, `GUI-35`, except on Location, which offers neither. There is no journal to undo with.
+deletes, `GUI-35`, except on Locations, which offers neither. There is no journal to undo with.
 
 It opens as `yemoja gui [<logbook folder>]`, beside the terminal front end, and unlike that one
 it can be run from the build, a window needing no console. The folder is optional: with none it
@@ -905,7 +905,7 @@ once and corrected. The numbers stay unused rather than being given to something
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and
   the list scrolled to it where the tab has a list, the year holding a dive unfolded first,
   since a line in a folded year is not there to scroll to. A site sets the region as well, since the
-  map would otherwise show wherever Location was left: a site names several regions and none
+  map would otherwise show wherever Locations was left: a site names several regions and none
   of them is *the* one, so the map goes to the most specific, which is the one with the
   smallest frame — Egypt rather than the Red Sea, Zeeland rather than the Netherlands. A wreck
   goes through the first site it lies at. That holds in every item view, so a site's
@@ -920,7 +920,7 @@ once and corrected. The numbers stay unused rather than being given to something
   go with the tab, and is one object per tab for as long as the application runs. The one
   thing not kept is a transient: where a section click is scrolling to, which is over by the
   time anyone could leave.
-- **GUI-26 — What Location shows of an atlas.** *Settled:* **what the dives touch, unless
+- **GUI-26 — What Locations shows of an atlas.** *Settled:* **what the dives touch, unless
   asked otherwise.** The atlas holds the world, and a logbook touches a few corners of it; a
   tree of every region to reach three of them is a tree of noise. With *Hide unused* on, which
   it is by default, a site no dive names is left out, a region with no such site at it or
@@ -951,7 +951,7 @@ once and corrected. The numbers stay unused rather than being given to something
   have to grow a tab. Gear with no category sits at the top of the tree rather than in a bucket
   called *other*, which is what it is: not filed yet.
 
-  It is also the shape `Location` uses, a tree beside a list, so the application has one way of
+  It is also the shape Locations uses, a tree beside a list, so the application has one way of
   narrowing something down that is used twice rather than two ways used once each.
 - **GUI-20 — How a wreck is reached.** *Settled:* **in the site list, marked apart from the
   sites.** A wreck is a ship rather than a place: it has no region and no position of its own,

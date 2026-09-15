@@ -82,14 +82,14 @@ internal class Tab(
  */
 internal val TABS: List<Tab> = listOf(
     Tab("Home", Icons.Filled.Home, shape = Shape.HOME),
-    Tab("Dive", Icons.Filled.ScubaDiving, listOf(Types.DIVE, Types.DIVE_TRIP), Shape.DIVES),
+    Tab("Dives", Icons.Filled.ScubaDiving, listOf(Types.DIVE, Types.DIVE_TRIP), Shape.DIVES),
     Tab("Gear", Icons.Filled.PropaneTank, listOf(Types.GEAR), Shape.GEAR),
     Tab(
         "Community", Icons.Filled.Groups,
         listOf(Types.PERSON, Types.OPERATOR, Types.CERTIFICATION), Shape.TYPES,
     ),
     Tab(
-        "Location", Icons.Filled.Map,
+        "Locations", Icons.Filled.Map,
         listOf(Types.REGION, Types.DIVE_SITE, Types.WRECK), Shape.PLACES,
     ),
     Tab("Manuals", Icons.Filled.MenuBook, shape = Shape.MANUAL),

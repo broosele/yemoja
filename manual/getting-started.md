@@ -57,14 +57,14 @@ you made each month, widening the bars where there would be too many to read.
 
 ## The tabs
 
-- **Dive** lists your dives in a table, newest first, grouped by year. A year folds away with
+- **Dives** lists your dives in a table, newest first, grouped by year. A year folds away with
   its arrow, and clicking the year chooses all its dives. A trip is one cell down the dives made
   on it, and clicking it chooses the trip.
 - **Gear** lists your equipment by category and then by kind. Anything with no category sits at
   the top.
 - **Community** holds people, operators and certifications, each on a small tab of its own. You
   are marked among the people, and the tab opens on you.
-- **Location** holds the regions of the world as a tree, the sites and wrecks in the one chosen,
+- **Locations** holds the regions of the world as a tree, the sites and wrecks in the one chosen,
   and a map of it with your sites marked. **Hide unused**, which is on to begin with, leaves out
   the sites none of your dives were at, and the regions left with nothing in them.
 - **Manuals** is this manual.
@@ -129,7 +129,7 @@ items point at it, the question says how many references will be left pointing a
 names where they are when there are only a few; ticking **Clear the references too** takes them
 out as well. With several dives chosen, the bin deletes them all.
 
-Location has no + and no bin yet. A new dive site arrives with a download, which offers to name
+Locations has no + and no bin yet. A new dive site arrives with a download, which offers to name
 one where a dive was, or with an import.
 
 **Everything is written to your files the moment it is saved**, and there is no undo yet. Keep

@@ -213,10 +213,10 @@ internal class Kept {
      */
     var making: ItemDescription? by mutableStateOf(null)
 
-    /** Location's region. */
+    /** Locations' region. */
     var place: Chosen? by mutableStateOf(null)
 
-    /** Location's box. On, so a logbook opens on where its dives were. `GUI-26`. */
+    /** Locations' box. On, so a logbook opens on where its dives were. `GUI-26`. */
     var hideUnused: Boolean by mutableStateOf(true)
 
     /**
@@ -1157,7 +1157,7 @@ private fun titledOf(variable: Variable): String =
 /**
  * A subject: what it holds on the left, and the one chosen on the right.
  *
- * Location chooses two things, a region and something at it, and shows both. `GUI-25`.
+ * Locations chooses two things, a region and something at it, and shows both. `GUI-25`.
  */
 @Composable
 private fun Subject(
@@ -1170,7 +1170,7 @@ private fun Subject(
 ) {
     val edition = LocalChanger.current.edition
     val tree = remember(set, kept.hideUnused, edition) { shownTreeOf(set, kept.hideUnused) }
-    // What a tab opens on the first time: Location on the widest root, which is the world, and
+    // What a tab opens on the first time: Locations on the widest root, which is the world, and
     // Community on the user, whose logbook this is.
     remember(kept) {
         if (!kept.opened) {

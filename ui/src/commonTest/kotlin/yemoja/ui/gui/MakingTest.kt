@@ -19,7 +19,7 @@ private fun chosen(held: yemoja.data.ItemSet, id: String) =
 
 class MadeTypeTest {
 
-    private val dive = TABS.first { it.name == "Dive" }
+    private val dive = TABS.first { it.name == "Dives" }
     private val community = TABS.first { it.name == "Community" }
 
     @Test

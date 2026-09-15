@@ -15,7 +15,7 @@ yourself, whatever becomes of the app.
   recorded; see [decompression.md](decompression.md).
 - **The settings files are not read yet**; see [settings.md](settings.md).
 - **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.
-- **Location cannot add or delete a site** from the window.
+- **Locations cannot add or delete a site** from the window.
 
 ## No warranty, and no liability
 

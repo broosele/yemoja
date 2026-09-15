@@ -30,7 +30,7 @@ class TabsTest {
         val without = TABS.filter { !it.needsLogbook }
         assertEquals(listOf("Home", "Manuals"), without.map { it.name })
         assertEquals(
-            listOf("Dive", "Gear", "Community", "Location"),
+            listOf("Dives", "Gear", "Community", "Locations"),
             TABS.filter { it.needsLogbook }.map { it.name },
         )
         assertEquals("Home", without.first().name, "a window with no logbook still opens on Home")
@@ -42,16 +42,16 @@ class TabsTest {
             // Statistics is Home's, not a tab: the figures shown without asking and all of
             // them are the same subject at two depths. What the application does to a logbook
             // as a whole is Home's too, which is why there is no System. `GUI-30`.
-            listOf("Home", "Dive", "Gear", "Community", "Location", "Manuals"),
+            listOf("Home", "Dives", "Gear", "Community", "Locations", "Manuals"),
             TABS.map { it.name },
         )
         assertEquals(
             listOf("dive", "dive_trip"),
-            TABS.first { it.name == "Dive" }.types.map { it.name },
+            TABS.first { it.name == "Dives" }.types.map { it.name },
         )
         assertEquals(
             listOf("region", "dive_site", "wreck"),
-            TABS.first { it.name == "Location" }.types.map { it.name },
+            TABS.first { it.name == "Locations" }.types.map { it.name },
         )
     }
 }
