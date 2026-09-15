@@ -560,6 +560,11 @@ once and corrected. The numbers stay unused rather than being given to something
    and a service and a five-yearly pressure test do not want the same. One month for everything
    is what a first version says rather than the answer.
 
+   **The latest work for each thing owed is the one that counts.** An entry sets the clock for
+   what its `follow_up_type` names, or for its own `type`, and a later entry for the same thing
+   replaces it. Warning about every dated entry put a regulator on the screen twice, once for an
+   inspection already redone. Latest is by `date`, and by `valid_until` where entries give none.
+
    **What lapsed is never dropped, however long ago.** A cylinder two years out of test is more
    of a problem than one due next week, not less, so only the far future is left out.
 

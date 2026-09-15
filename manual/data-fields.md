@@ -650,6 +650,10 @@ of them — the one named in `follow_up_type`, or its own `type` where that is n
 so the inspection falling due does not hide the test, and having the test done does not
 make the inspection look current.
 
+**The latest entry for each counts.** Doing an inspection again replaces the one before it,
+which owes nothing any more, so keeping the old entry as history is safe. Latest is by `date`;
+between entries with no date, by `valid_until`.
+
 Entries with no `valid_until` owe nothing and start no clock. A cleaning is worth
 recording and is not a due date.
 

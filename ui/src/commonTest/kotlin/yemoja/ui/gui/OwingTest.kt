@@ -66,6 +66,56 @@ class OwedGearTest {
     }
 
     @Test
+    fun `work done again replaces the time before, which owes nothing any more`() {
+        // Warning about both put the item on the home screen twice, once for work already redone.
+        val held = set(
+            "gear.json" to """{"reg": {"name": "Regulator", "category": "regulator",
+                "maintenances": {
+                "k1": {"type": "visual inspection", "date": "2024-09-01",
+                       "valid_until": "2025-09-01"},
+                "k2": {"type": "visual inspection", "date": "2025-09-20",
+                       "valid_until": "2026-09-20"}}}}""",
+        )
+        assertEquals(
+            listOf("Regulator: visual inspection due in 5 days."),
+            owedIn(held, null, TODAY).map { it.said },
+        )
+    }
+
+    @Test
+    fun `the latest is by the day the work was done, whatever it set the clock to`() {
+        val held = set(
+            "gear.json" to """{"reg": {"name": "Regulator", "category": "regulator",
+                "maintenances": {
+                "k1": {"type": "service", "date": "2025-01-01", "valid_until": "2027-01-01"},
+                "k2": {"type": "repair", "date": "2026-06-01", "valid_until": "2026-09-20",
+                       "follow_up_type": "service"}}}}""",
+        )
+        assertEquals(
+            listOf("Regulator: service due in 5 days."),
+            owedIn(held, null, TODAY).map { it.said },
+            "the repair came later and set the service for sooner",
+        )
+    }
+
+    @Test
+    fun `one thing done does not answer for another owed beside it`() {
+        // A pressure test done does not make the inspection look current.
+        val held = set(
+            "gear.json" to """{"tank": {"name": "Twelve", "category": "cylinder",
+                "maintenances": {
+                "k1": {"type": "visual inspection", "date": "2025-08-01",
+                       "valid_until": "2026-08-01"},
+                "k2": {"type": "pressure test", "date": "2026-09-01",
+                       "valid_until": "2031-09-01"}}}}""",
+        )
+        assertEquals(
+            listOf("Twelve: visual inspection 6 weeks overdue."),
+            owedIn(held, null, TODAY).map { it.said },
+        )
+    }
+
+    @Test
     fun `a generic item owes nothing, describing a kind rather than one that is owned`() {
         assertTrue(owedIn(owing("2026-09-20", generic = """, "generic": true"""), null, TODAY)
             .isEmpty())
