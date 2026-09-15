@@ -167,8 +167,10 @@ private val PROFILE = ItemDescription(
         TextDescription("fingerprint", cardinality = Cardinality.LIST),
         DateDescription("start_date"),
         TimeDescription("start_time"),
-        // A length of time like any other, and scoped like one. `DATA-10`.
-        NumberDescription("gmt_offset", Dimension.TIME, label = "GMT offset"),
+        // How far the computer's clock read ahead of local time: one that drifted, one left on
+        // home time, one that missed summer time. The user's to set, and a download never writes
+        // it. A length of time like any other, and scoped like one. `LOGIC-32`, `DATA-10`.
+        NumberDescription("recorded_time_offset", Dimension.TIME),
         // From the last sample, and correctable where the recording stopped before the user
         // surfaced.
         DateDescription("end_date", role = Role.Overrideable(::profilesEndDate)),
@@ -245,14 +247,14 @@ private val PROFILE = ItemDescription(
         REMARKS,
     ),
     proposedId = ::profilesProposedKey,
-    // The bookmark and the key a download reads back, the offset every worked-out time has had
-    // applied, and how much a download thinned: kept, and not read. The recording's own start
-    // is what the dive works its start from, and the dive's is the one read.
-    housekeeping = setOf("fingerprint", "serial", "gmt_offset", "tolerances"),
+    // The bookmark and the key a download reads back, and how much a download thinned: kept,
+    // and not read. The recording's own start is what the dive works its start from, and the
+    // dive's is the one read.
+    housekeeping = setOf("fingerprint", "serial", "tolerances"),
     sources = setOf("start_date", "start_time"),
 )
 
-/** When the last sample was taken, as a moment in GMT, or absent where there is none. */
+/** When the last sample was taken, in local time, or absent where there is none. */
 private fun ended(profile: Item): Moment? {
     val start = began(profile) ?: return null
     val ran = ranFor(profile) ?: return null
@@ -433,6 +435,10 @@ internal val DIVE: ItemDescription = ItemDescription(
         TimeDescription("start_time", role = Role.Overrideable(::divesStartTime)),
         DateDescription("end_date", role = Role.Overrideable(::divesEndDate)),
         TimeDescription("end_time", role = Role.Overrideable(::divesEndTime)),
+        // How far local time was ahead of GMT where the dive was made. The times above are local
+        // and shown as they are; this puts two dives on one clock to compare them, and a dive
+        // saying nothing is taken to be on GMT. `LOGIC-32`.
+        NumberDescription("time_zone_offset", Dimension.TIME),
         NumberDescription(
             "duration",
             Dimension.TIME,
@@ -645,8 +651,8 @@ private fun buddyCount(dive: Item): Result<Any> {
 /**
  * How long the user was out of the water before a dive, in seconds.
  *
- * From `previous_dive`'s end to this dive's start, both in GMT, which is what makes it right
- * when two dives sit in different countries. **Absent where no previous dive is named**: whether
+ * From `previous_dive`'s end to this dive's start, each taken off its own local time by its
+ * `time_zone_offset`, which is what makes it right when two dives sit in different zones. **Absent where no previous dive is named**: whether
  * a surface interval was long enough to ignore is a judgement, and any threshold deciding it
  * would be wrong for somebody.
  */
@@ -655,8 +661,10 @@ private fun surfaceInterval(dive: Item): Result<Any> {
     val id = (named.value as? Reference.Identified)?.id
         ?: return unusable("a surface interval needs a dive with an id to measure from")
     val before = dive.set[id] ?: return unusable("$id is not in this logbook")
-    val out = momentOf(before, "end_date", "end_time") ?: return Result.Absent
-    val back = momentOf(dive, "start_date", "start_time") ?: return Result.Absent
+    val out = momentOf(before, "end_date", "end_time")?.let { absoluteOf(before, it) }
+        ?: return Result.Absent
+    val back = momentOf(dive, "start_date", "start_time")?.let { absoluteOf(dive, it) }
+        ?: return Result.Absent
     val seconds = out.secondsUntil(back)
     if (seconds < 0) return unusable("$id ended after this dive began")
     return Result.Usable(seconds.toDouble(), Result.Origin.DERIVED)

@@ -26,14 +26,15 @@ private fun set(vararg files: Pair<String, String>): ItemSet =
 private fun value(item: Item, field: String): Any? =
     (item.read(field) as? Result.Usable)?.value
 
-/** A dive with one profile, begun at the given local moment and corrected by [offset]. */
+/** A dive with one profile, begun at the given moment on its clock and corrected by [offset]. */
 private fun dived(
     start: String = """"start_date": "2026-06-21", "start_time": "10:00:00"""",
     offset: Int = 0,
     series: String = """"depth": [[0, 0], [60, 12.4], [1800, 18.9], [3600, 0]]""",
     dive: String = "",
 ): Item = set(
-    "dive/d#0.json" to """{"profiles": {"p1": {$start, "gmt_offset": $offset, $series}}$dive}""",
+    "dive/d#0.json" to
+        """{"profiles": {"p1": {$start, "recorded_time_offset": $offset, $series}}$dive}""",
 )["d#0"]!!
 
 class ProfileTimesTest {
@@ -72,8 +73,8 @@ class ProfileTimesTest {
 class DiveTimesTest {
 
     @Test
-    fun `a dive takes its times from the recording, in GMT`() {
-        // A recording two hours ahead of GMT: the offset comes off rather than going on.
+    fun `a dive takes its times from the recording, less what its clock was out by`() {
+        // A clock two hours ahead of local time: the offset comes off rather than going on.
         val dive = dived(offset = 7200)
         assertEquals(Date(2026, 6, 21), value(dive, "start_date"))
         assertEquals(Time(8, 0, 0), value(dive, "start_time"))
@@ -321,6 +322,35 @@ class SurfaceIntervalTest {
     fun `the interval runs from one dive's end to the next dive's start`() {
         // Out at 10:00, back in at 12:00.
         assertEquals(7200.0, value(two["b#0"]!!, "surface_interval"))
+    }
+
+    @Test
+    fun `two dives in different zones are put on one clock by their own offsets`() {
+        // Out at 10:00 in a zone two hours ahead, in at 11:00 local in one an hour ahead: that is
+        // 08:00 and 10:00 on one clock, two hours apart rather than one.
+        val apart = set(
+            "dive/a#0.json" to """{"time_zone_offset": 7200, "profiles": {"p1": {
+                "start_date": "2026-06-21", "start_time": "09:00:00",
+                "depth": [[0, 0], [3600, 0]]}}}""",
+            "dive/b#0.json" to """{"previous_dive": "@a#0", "time_zone_offset": 3600,
+                "profiles": {"p1": {"start_date": "2026-06-21", "start_time": "11:00:00",
+                "depth": [[0, 0], [1800, 0]]}}}""",
+        )
+        assertEquals(7200.0, value(apart["b#0"]!!, "surface_interval"))
+    }
+
+    @Test
+    fun `a dive saying nothing about its zone is on GMT, and its times stay local`() {
+        val dive = set(
+            "dive/a#0.json" to """{"time_zone_offset": 7200, "profiles": {"p1": {
+                "start_date": "2026-06-21", "start_time": "09:00:00",
+                "depth": [[0, 0], [3600, 0]]}}}""",
+            "dive/b#0.json" to """{"previous_dive": "@a#0", "profiles": {"p1": {
+                "start_date": "2026-06-21", "start_time": "12:00:00",
+                "depth": [[0, 0], [1800, 0]]}}}""",
+        )
+        assertEquals(Time(9, 0, 0), value(dive["a#0"]!!, "start_time"), "the zone moves no time")
+        assertEquals(14400.0, value(dive["b#0"]!!, "surface_interval"), "08:00 to 12:00")
     }
 
     @Test

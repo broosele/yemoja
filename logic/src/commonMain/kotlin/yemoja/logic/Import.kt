@@ -5,6 +5,7 @@ import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
 import yemoja.data.ItemWriter
+import yemoja.data.Moment
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Stored
@@ -171,17 +172,19 @@ class Import private constructor(
     }
 
     /**
-     * When [item] began and ended, in seconds, or absent where it does not say.
+     * When [item] began and ended, in seconds on the clock every dive shares, or absent where it
+     * does not say.
      *
      * A missing duration is no length rather than no answer, so two that began at the same
      * instant still meet. `duration` is worked out from the times or the recording where nothing
-     * wrote one, so a dive that says when it was usually says how long it took as well.
+     * wrote one, so a dive that says when it was usually says how long it took as well. Each dive's
+     * local time has its own `time_zone_offset` taken off. `LOGIC-32`.
      */
     private fun spanOf(item: Item): Pair<Long, Long>? {
         if (item.description["start_date"] == null) return null
         val date = (item.read("start_date") as? Result.Usable)?.value as? Date ?: return null
         val time = (item.read("start_time") as? Result.Usable)?.value as? Time ?: return null
-        val began = date.epochDay * SECONDS_IN_DAY + time.secondOfDay
+        val began = absoluteOf(item, Moment(date, time)).epochSecond
         val long = (item.read("duration") as? Result.Usable)?.value as? Double ?: 0.0
         return began to began + long.toLong()
     }
@@ -278,8 +281,6 @@ class Import private constructor(
     }
 
     companion object {
-
-        private const val SECONDS_IN_DAY = 24L * 60 * 60
 
         /**
          * Stage [incoming] in [staging], to go into [into].

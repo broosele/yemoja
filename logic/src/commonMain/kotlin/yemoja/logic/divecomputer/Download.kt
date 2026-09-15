@@ -229,8 +229,10 @@ object Download {
         where: String? = null,
     ): Map<String, Stored> {
         val fields = LinkedHashMap<String, Stored>()
-        held.began?.let { fields["start_date"] = Stored.Leaf(it) }
-        held.at?.let { fields["start_time"] = Stored.Leaf(it) }
+        // The start is not written: it follows from the recording, and writing it would fix it
+        // where a later `recorded_time_offset` could not reach. The zone is the device's where it
+        // reports one, which is local time against GMT if its clock was set. `LOGIC-32`.
+        held.offset?.let { fields["time_zone_offset"] = Stored.Leaf(it) }
         where?.let { fields["dive_site"] = Stored.Leaf("@$it") }
         // Written as overrides: a computer usually reports a better figure than its own recording,
         // which is sampled only every few seconds. `LOGIC-19`.
@@ -289,7 +291,6 @@ object Download {
         }
         held.began?.let { fields["start_date"] = Stored.Leaf(it) }
         held.at?.let { fields["start_time"] = Stored.Leaf(it) }
-        held.offset?.let { fields["gmt_offset"] = Stored.Leaf(it) }
         held.duration?.let { fields["duration"] = Stored.Leaf(it) }
         // A download hands the conversion over, which is what a file cannot: a depth is a
         // pressure divided by an assumed density, and UDDF discards the density. `DATA-59`.

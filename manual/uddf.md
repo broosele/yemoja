@@ -70,7 +70,8 @@ open it in a text editor — 200 bar reads as 20000000 — but that is all it is
 
 **Kept, unchanged, both ways.** The dive number, the date and time, the deepest point, the
 coldest water, visibility, air temperature, how the current was, your rating out of ten,
-your notes, which site it was, and how you fared for warmth.
+your notes, which site it was, and how you fared for warmth. A time zone written after the
+time becomes the dive's time zone offset, and goes back out the same way.
 
 Two of those deserve a note. **Current** uses the same six steps in both formats, so it
 crosses over exactly rather than being squeezed into a different scale. **Rating** is 1 to

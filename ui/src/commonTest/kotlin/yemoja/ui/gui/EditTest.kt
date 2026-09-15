@@ -240,6 +240,22 @@ class BegunTest {
     }
 
     @Test
+    fun `an offset is typed and read as hours and minutes with a sign`() {
+        // As minutes and seconds two hours would read 120:00. `LOGIC-32`.
+        val zone = Types.DIVE["time_zone_offset"]!!
+        assertEquals(Kind.OFFSET, kindOf(zone))
+        assertEquals(Kind.CLOCK, kindOf(Types.DIVE["duration"]!!), "a length of time is a clock")
+        assertEquals("+2:00", textOf(zone, 7200.0))
+        assertEquals("-3:30", textOf(zone, -12600.0))
+        assertEquals("+0:00", textOf(zone, 0.0))
+        assertEquals("7200", givenOf(Kind.OFFSET, "+2:00"))
+        assertEquals("-12600", givenOf(Kind.OFFSET, "-3:30"))
+        assertEquals("19800", givenOf(Kind.OFFSET, "5:30"))
+        assertEquals("-5400", givenOf(Kind.OFFSET, "-1.5"), "a bare number is hours")
+        assertEquals("2:75", givenOf(Kind.OFFSET, "2:75"), "not an offset, and left for the model")
+    }
+
+    @Test
     fun `closing the form forgets what was typed, and the blocks it began`() {
         // A cancelled edit reopened with its values still typed in, and Save offered them.
         val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")

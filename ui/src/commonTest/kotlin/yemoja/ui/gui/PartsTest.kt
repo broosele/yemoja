@@ -170,7 +170,7 @@ class HousekeepingTest {
     @Test
     fun `what is kept for the machinery, or solely feeds other fields, is not shown`() {
         val names = fieldsShownOf(profile).map { it.name }
-        for (hidden in listOf("fingerprint", "serial", "gmt_offset", "tolerances", "start_date")) {
+        for (hidden in listOf("fingerprint", "serial", "tolerances", "start_date")) {
             assertEquals(false, hidden in names, hidden)
         }
         assertEquals(true, "duration" in names)

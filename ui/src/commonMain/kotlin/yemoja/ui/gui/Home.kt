@@ -277,6 +277,8 @@ internal fun variablesOf(): List<Variable> {
  * which is the only difference between the two and is why they are read the same way here.
  */
 private fun variableOf(field: FieldDescription, reach: (Item) -> Item?): Variable? {
+    // How far one clock is ahead of another says nothing about the diving. `LOGIC-32`.
+    if (field.name in OFFSETS) return null
     val read = readerOf(field) ?: return null
     val day = if (field is DateDescription) dayReaderOf(field) else null
     return Variable(

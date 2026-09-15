@@ -802,10 +802,9 @@ for; a course goes out naming its certification's title as its `level`.
 The document follows the element order of the specification's examples where it shows one. It
 has not been checked against the schema, which the specification's pages do not link.
 
-Two things a document may hold that this slice does not read: which of a dive's two halves a
-value sits in is not relied on, since the reader looks for the name in either; and a zone after
-a `datetime` is dropped rather than kept, `gmt_offset` sitting on the profile and not being read
-yet.
+Which of a dive's two halves a value sits in is not relied on, since the reader looks for the
+name in either. A zone after a `datetime` is the dive's `time_zone_offset`, read and written;
+the time before it is local, which is what a dive's own time is. `LOGIC-32`.
 
 ## Where this stands
 

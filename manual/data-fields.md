@@ -132,14 +132,24 @@ All five can be corrected where the working out is wrong.
 - `dive_number` (whole number) — your own numbering, if you keep one. Not every diver
   numbers every dive, and Yemoja does not require it. This is unrelated to the number at
   the end of the item's id.
-- `start_date` (date, worked out) — the day the dive began, in GMT. From the primary profile,
-  corrected by its `gmt_offset`, or from you.
-- `start_time` (time, worked out) — when you went in, in GMT.
+- `start_date` (date, worked out) — the day the dive began, in the local time where it was made.
+  From the primary profile, corrected by its `recorded_time_offset`, or from you.
+- `start_time` (time, worked out) — when you went in, in local time. The dive's times are all
+  local, and shown as they are.
 - `end_date` (date, worked out) — the day the dive finished. From the primary profile, or from
   your own times: an end time earlier than the start means it ran past midnight. Correct it for
   the rare dive spanning more than one night, or where the clocks moved underneath you. A dive
   with no start time leaves this blank, there being nothing to tell the two days apart.
 - `end_time` (time, worked out) — when you came out.
+- `time_zone_offset` (number) — how far local time was ahead of GMT where the dive was made, in
+  seconds unless the file says otherwise, and shown as hours and minutes: summer in Western
+  Europe is `7200`, shown `+2:00`, and New York in winter is `-18000`.
+
+  The dive's times stay as they are; this is what puts two dives on one clock. It is what makes
+  a surface interval right when two dives sit in different zones, and what tells a downloaded
+  dive apart from one you already have when you have crossed a zone since. A dive that says
+  nothing is taken to be on GMT, which compares correctly with any other dive that says nothing.
+  A download fills it in where the computer reports its zone.
 - `duration` (number, worked out) — how long the dive lasted, in seconds unless the file says
   otherwise. From the primary profile, or from your start and end times where there is no
   recording.
@@ -308,24 +318,22 @@ that is the only record of it.
 - `start_date` (date) — the day the recording began, as the computer had it.
 - `start_time` (time) — the moment it began, as the computer had it.
 
-- `gmt_offset` (number) — how far ahead of GMT the two above read, which is what has to come
-  off them. Seconds, unless the file says otherwise, the same as any other length of time.
+- `recorded_time_offset` (number) — how far the computer's clock read ahead of the local time,
+  which is what has to come off the two above. Seconds, unless the file says otherwise, and
+  shown as hours and minutes. Yours to write: a download never does.
 
-  A computer set to Egyptian time writes `7200`, Egypt being two hours ahead, so a recording
-  that says `09:00` began at `07:00` GMT. One reading two hours behind writes `-7200`.
-
-  It covers three things at once, because they are one thing to arithmetic: a computer set
-  to the wrong time, a clock that has drifted, and a computer set to a different zone from
-  the water you were in. Whatever the reason, this is the correction.
+  It covers three things at once, because they are one thing to arithmetic: a clock that has
+  drifted, a computer left on home time in another country, and one that missed the change to
+  summer time. A computer still on Belgian winter time in Egypt reads an hour behind, so it
+  writes `-3600`, and a recording that says `09:00` began at `10:00` local time. One whose clock
+  gained two minutes writes `120`.
 
   A recording keeps what the computer said, so correcting a clock you find was wrong means
   changing this one number and nothing else.
 
-  **Everything worked out from a recording is GMT**, this having been applied — a dive's
-  own date and time among them. That is what makes a surface interval right when two dives
-  sit in different countries, and what makes dives sort into the order you did them. It
-  also means a dive begun just after midnight in an eastern zone is dated the day before,
-  because in GMT it was.
+  **Everything worked out from a recording is local time**, this having been applied — a dive's
+  own date and time among them. Where local time stood against GMT is the dive's own
+  `time_zone_offset`, which this does not touch.
 
   The correction moves the date as well as the time where it has to: two minutes past
   midnight, with two hours coming off, is late the previous evening.

@@ -60,6 +60,16 @@ class DownloadedDiveTest {
     }
 
     @Test
+    fun `the start is the recording's and the zone is the device's`() {
+        // A start written on the dive would be fixed where a later clock correction cannot reach.
+        val dive = recorded { it.copy(offset = 7200) }
+        assertEquals(Result.Origin.DERIVED, (dive.read("start_time") as Result.Usable).origin)
+        assertEquals(7200.0, (dive.single<Double>("time_zone_offset") as Result.Usable).value)
+        assertEquals(Result.Absent, profile(dive).read("recorded_time_offset"), "the user's alone")
+        assertEquals(Result.Absent, recorded().read("time_zone_offset"), "none reported, none")
+    }
+
+    @Test
     fun `a downloaded dive is a skeleton, and nothing else is created`() {
         // No gear, no person, no operator, no trip, no region. `LOGIC-20`.
         val one = Recording(began = Date(2026, 6, 21), at = Time(10, 5, 0))

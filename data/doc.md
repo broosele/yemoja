@@ -1233,8 +1233,8 @@ To settle when we discuss architecture:
 - **DATA-75 — A moment, which is not a field.** *Settled:* a `Moment` pairs a `Date` with
   a `Time` **for arithmetic only, and is never stored**.
 
-  A start is three fields — a date, a time and a `gmt_offset` — and they are not
-  independent. Correcting the time alone can push it out of the day, which means the date
+  A recording's start is three fields — a date, a time and a `recorded_time_offset` — and they
+  are not independent. Correcting the time alone can push it out of the day, which means the date
   was wrong too: two minutes past midnight less two hours is late the evening before. So
   the correction is an operation on a moment, not on a time.
 
@@ -2376,14 +2376,15 @@ Kept with their identifiers so earlier discussion still resolves.
   dates and times do not — one notation, everywhere. Durations do, being quantities with
   the time dimension.
 
-  *Amended:* a profile's `gmt_offset` does too. It was exempt, on the grounds that it
-  corrects a clock rather than measuring a length of time. It is still that, but the
+  *Amended:* a clock offset does too — a recording's `recorded_time_offset` and a dive's
+  `time_zone_offset`, which were one `gmt_offset` when this was written. It was exempt, on the
+  grounds that it corrects a clock rather than measuring a length of time. It is still that, but the
   distinction bought an exemption the model has no way to state: what a `units` declaration
   reaches is a dimension, so the only way to keep one off a measurement is to say it measures
   nothing. That describes the field wrongly to say something true about it, and an exemption
   nothing can express is one nothing enforces.
 
-  So it is a number of seconds unless its file says otherwise, like every other quantity with
+  So each is a number of seconds unless its file says otherwise, like every other quantity with
   the time dimension. A file writing its times in minutes writes this in minutes too, which is
   at worst odd to read and never wrong.
 - **DATA-39 — How a duration is written.** *Settled:* as a number of seconds, and so

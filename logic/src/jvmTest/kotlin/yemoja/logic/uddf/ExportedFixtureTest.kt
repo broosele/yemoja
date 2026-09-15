@@ -117,6 +117,14 @@ class ExportedFixtureTest {
     }
 
     @Test
+    fun `a dive's zone goes out after its time and comes back as its offset`() {
+        for (dive in logbook.allOf(Types.DIVE)) {
+            assertEquals(said(dive, "time_zone_offset"), said(returned(dive), "time_zone_offset"))
+        }
+        assertTrue("T08:50:00+02:00<" in exported.text, "the fixture's North Sea dive")
+    }
+
+    @Test
     fun `a closed word leaves in UDDF's and comes back as this model's`() {
         for (dive in logbook.allOf(Types.DIVE)) {
             val again = returned(dive)

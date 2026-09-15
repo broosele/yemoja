@@ -378,7 +378,8 @@ internal class Writer(private val set: ItemSet) {
             owned(dive, "environment")?.let { say("airtemperature", number(it, "air_temperature")) }
             val date = said(dive, "start_date")
             val time = said(dive, "start_time")
-            say("datetime", date?.let { if (time == null) it else "${it}T$time" })
+            val zone = if (time == null) "" else zoneOf(dive)
+            say("datetime", date?.let { if (time == null) it else "${it}T$time$zone" })
             if (opens) {
                 val interval = number(dive, "surface_interval")
                 tag("surfaceintervalbeforedive") {
@@ -517,6 +518,20 @@ internal class Writer(private val set: ItemSet) {
             }
             return
         }
+    }
+
+    /**
+     * The zone after a dive's local time, `+02:00`, or nothing where the dive gives no
+     * `time_zone_offset`: a time with no zone is local, which is all such a dive says. `LOGIC-32`.
+     */
+    private fun zoneOf(dive: Item): String {
+        val offset = (dive.single<Double>("time_zone_offset") as? Result.Usable)?.value
+            ?: return ""
+        val minutes = kotlin.math.round(offset / 60).toLong()
+        val sign = if (minutes < 0) "-" else "+"
+        val hours = (abs(minutes) / 60).toString().padStart(2, '0')
+        val rest = (abs(minutes) % 60).toString().padStart(2, '0')
+        return "$sign$hours:$rest"
     }
 
     /** Every trip under a `trip` of its own, its legs as the parts, deeper legs flattened. */

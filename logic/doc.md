@@ -475,6 +475,40 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-32 — What a dive's time means, and where the clocks' differences are kept.**
+  *Settled:* **a dive's times are local, the dive says how far local time was ahead of GMT, and
+  each recording says how far its clock was out.** It replaces `LOGIC-11`.
+
+  **Two offsets, because two different things go wrong.** A dive has a `time_zone_offset`: how
+  far local time was ahead of GMT where it was made. A recording has a `recorded_time_offset`:
+  how far the computer's clock read ahead of that local time, which a user sets for a clock that
+  drifted, one left on home time abroad, or one that missed summer time. The single
+  `gmt_offset` before them was both at once, and the two do not belong to the same thing: a zone
+  is a fact about where the dive was, and a clock's error is a fact about one computer, so a dive
+  on two computers has one zone and two errors.
+
+  **The times shown are local**, which is what a diver logs and what every logbook already
+  held. A recording's start less its `recorded_time_offset` is the dive's start, and nothing
+  about the zone moves it. **One clock is needed only to compare two dives**: a surface interval,
+  and whether a downloaded dive overlaps one already held. There each dive's local time has its
+  own `time_zone_offset` taken off.
+
+  **A dive that says nothing about its zone is taken to be on GMT.** No computer read so far
+  reports a zone, so every dive a real logbook holds says nothing, and two such dives compare as
+  their local times do, which is right unless a zone was crossed between them. The alternatives
+  were to leave everything needing one clock unworked until an offset is written, which empties
+  every surface interval a logbook has, and to inherit the previous dive's, which is a guess that
+  is wrong on the first dive home.
+
+  **A download writes the zone where the device reports one, and never the start.** The device's
+  `timezone` is its clock against GMT, which is local time against GMT where its clock was set,
+  so it lands on the dive. Its unit and sign are still the unverified pair `LOGIC-11` named. The
+  start is left for the recording to give: written on the dive it was a stored value, and a
+  `recorded_time_offset` set later could not move it. Nobody is asked anything during a download.
+
+  UDDF writes a zone after a `datetime`, `+02:00`, and it is read as the dive's offset and
+  written back from it. A screen reads and takes either offset as hours and minutes with a sign,
+  `GUI-16`.
 - **LOGIC-31 — What a download writes about the gas a dive began on.** *Settled:* **the
    switch the computer reports on the first sample, kept whatever it names. What is dropped is a
    reading naming the gas already being breathed.**
@@ -1095,7 +1129,8 @@ To settle when we discuss architecture and features:
    is a property of the cylinder and not of the dive, and there is no cylinder to put it on.
    Whether a hand-entered gear item should gain a `working_pressure` of its own is a separate
    want, and would serve the same purpose for cylinders a user does record.
-- **LOGIC-11 — Where a downloaded dive's `gmt_offset` comes from.** *Settled:* **asked once
+- **LOGIC-11 — Where a downloaded dive's `gmt_offset` comes from.** *Replaced by `LOGIC-32`*,
+   which split the one offset in two and asks nothing during a download. It said: **asked once
    for the download, and changeable per dive afterwards.**
 
    **The device is asked first, and the user where it has nothing to say.** `dc_datetime_t`
@@ -1169,9 +1204,9 @@ To settle when we discuss architecture and features:
    Nothing else in the project asks what day it is, and until these are written nothing
    does.
 
-   **Local, and the zone is not worth deciding.** Recordings are GMT — `DATA-58` — and a
-   moment in GMT is already tomorrow in Auckland, so the two disagree for a third of every
-   day. That gap does not matter here: these fields are hints, and no renewal turns on
+   **Local, and the zone is not worth deciding.** A dive's times are local too — `LOGIC-32` —
+   but a moment in GMT is already tomorrow in Auckland, so a day judged by one clock and a day
+   judged by another disagree for a third of every day. That gap does not matter here: these fields are hints, and no renewal turns on
    which side of midnight it is judged from. A cover that ran out this morning and one that
    runs out tonight are the same news.
 

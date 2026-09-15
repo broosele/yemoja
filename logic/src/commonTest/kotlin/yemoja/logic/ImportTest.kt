@@ -333,6 +333,17 @@ class ProposalTest {
     }
 
     @Test
+    fun `two dives are compared on one clock, whatever zone each was logged in`() {
+        // 10:00 two hours ahead of GMT and 09:00 an hour ahead are the same instant.
+        val held = """{"start_date": "2024-06-15", "start_time": "10:00:00",
+            "time_zone_offset": 7200, "duration": 600}"""
+        val coming = """{"start_date": "2024-06-15", "start_time": "09:00:00",
+            "time_zone_offset": 3600, "duration": 600}"""
+        assertEquals("d#0", over(held, coming).proposal("x#0"))
+        assertNull(over(held, dived("09:00:00", "600")).proposal("x#0"), "an hour apart on GMT")
+    }
+
+    @Test
     fun `one that says no time appears to be nothing`() {
         assertNull(over(dived("10:00:00"), """{"max_depth": 12}""").proposal("x#0"))
     }

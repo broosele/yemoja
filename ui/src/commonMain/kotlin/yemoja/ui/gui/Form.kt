@@ -327,7 +327,11 @@ private fun SingleEditor(
             value = shown,
             onChange = { onChange(it, givenOf(kind, it)) },
             after = unitOf(field),
-            hint = if (kind == Kind.CLOCK) "m:ss" else "",
+            hint = when (kind) {
+                Kind.CLOCK -> "m:ss"
+                Kind.OFFSET -> "+h:mm"
+                else -> ""
+            },
         )
     }
 }

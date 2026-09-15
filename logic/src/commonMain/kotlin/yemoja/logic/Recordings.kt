@@ -62,18 +62,31 @@ internal fun primaryProfile(dive: Item): Result<Item> {
 }
 
 /**
- * When a recording began, in GMT.
+ * When a recording began, in the local time of the dive.
  *
- * `gmt_offset` is how far ahead of GMT the recording reads, so it comes off rather than going
- * on: a computer on Egyptian time writes 7200 and a recording saying 09:00 began at 07:00. The
- * correction moves the date as well as the time where it has to, so two minutes past midnight
- * with two hours coming off is late the previous evening.
+ * `recorded_time_offset` is how far ahead of local time the computer's clock read, so it comes
+ * off rather than going on: a computer still on a clock two hours ahead writes 7200, and a
+ * recording saying 09:00 began at 07:00. The correction moves the date as well as the time where
+ * it has to, so two minutes past midnight with two hours coming off is late the previous evening.
+ * `LOGIC-32`.
  */
 internal fun began(profile: Item): Moment? {
     val date = (profile.single<Date>("start_date") as? Result.Usable)?.value ?: return null
     val time = (profile.single<Time>("start_time") as? Result.Usable)?.value ?: Time(0, 0, 0)
-    val offset = (profile.single<Double>("gmt_offset") as? Result.Usable)?.value ?: 0.0
+    val offset = (profile.single<Double>("recorded_time_offset") as? Result.Usable)?.value ?: 0.0
     return Moment(date, time).plusSeconds(-offset.toLong())
+}
+
+/**
+ * [moment], in the local time of [dive], on the one clock every dive shares.
+ *
+ * Local time less the dive's `time_zone_offset`, which is how far local time was ahead of GMT.
+ * A dive saying nothing is taken to be on GMT, so two dives that both say nothing compare as
+ * their local times do. `LOGIC-32`.
+ */
+internal fun absoluteOf(dive: Item, moment: Moment): Moment {
+    val offset = (dive.single<Double>("time_zone_offset") as? Result.Usable)?.value ?: 0.0
+    return moment.plusSeconds(-offset.toLong())
 }
 
 /**

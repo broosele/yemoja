@@ -359,6 +359,7 @@ internal fun displayOf(field: FieldDescription, value: Any): String {
 internal fun numberOf(field: FieldDescription, value: Any): String {
     if (field !is NumberDescription) return wordOf(field, value)
     val number = (value as? Number)?.toDouble() ?: return field.format(value, Units.DEFAULT)
+    if (field.name in OFFSETS) return offsetOf(number)
     if (field.dimension == Dimension.TIME) return clockOf(number)
     val decimals = DECIMALS[field.dimension] ?: return field.format(value, Units.DEFAULT)
     return rounded(number, decimals)
@@ -393,6 +394,23 @@ private val SYMBOLS: Map<Dimension, String> = mapOf(
     Dimension.DENSITY to "kg/m³",
     Dimension.ANGLE to "°",
 )
+
+/**
+ * The fields holding how far one clock is ahead of another, rather than how long something took.
+ *
+ * Seconds in the file like any time, and read as hours and minutes with a sign, `+2:00`, which is
+ * how a zone is written everywhere: as minutes and seconds two hours would read `120:00`.
+ * `LOGIC-32`.
+ */
+internal val OFFSETS: Set<String> = setOf("time_zone_offset", "recorded_time_offset")
+
+/** Seconds as hours and minutes with a sign always in front: `+2:00`, `-3:30`, `+0:00`. */
+internal fun offsetOf(seconds: Double): String {
+    val minutes = (seconds / 60).roundToLong()
+    val sign = if (minutes < 0) "-" else "+"
+    val whole = abs(minutes)
+    return sign + (whole / 60) + ":" + (whole % 60).toString().padStart(2, '0')
+}
 
 /** Seconds as minutes and seconds, `61:16`, a sign in front where they are negative. */
 internal fun clockOf(seconds: Double): String {

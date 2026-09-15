@@ -1,5 +1,6 @@
 {
   "dive_number": 38,
+  "time_zone_offset": 7200,
   "dive_site": "@lantern_reef",
   "entry": "boat",
   "exit": "boat",
@@ -41,7 +42,6 @@
       "dive_computer": "@reef_computer",
       "start_date": "2025-05-30",
       "start_time": "16:05:00",
-      "gmt_offset": 7200,
       "water_type": "salt",
       "depth": [
         [0, 0],

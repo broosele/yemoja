@@ -54,7 +54,7 @@ being live before they are saved.
 | `devinfo.serial` | `profile.serial` | what `dive_computer` is worked out from: `LOGIC-23` |
 | `devinfo.model`, `.firmware` | — | dropped: the product name is what a user reads |
 | `clock.devtime`, `.systime` | — | a second route to the offset, unverified |
-| `datetime.timezone` | `profile.gmt_offset` | where reported; else asked: `LOGIC-11` |
+| `datetime.timezone` | `dive.time_zone_offset` | where reported: `LOGIC-32` |
 | `DIVETIME` | `profile.duration` | written as an override: `LOGIC-19` |
 | `MAXDEPTH` | `dive.max_depth` | written as an override |
 | `AVGDEPTH` | `dive.average_depth` | written as an override |
@@ -121,8 +121,10 @@ them.
 Six things this model holds that a download may not supply, and each has somewhere else to
 come from:
 
-- **`profile.gmt_offset`** — where the device reports no zone, which some do not.
-  `LOGIC-11` asks for it once then and lets the user change it per dive either way.
+- **`dive.time_zone_offset`** — where the device reports no zone, which no computer read so far
+  has. The dive is then taken to be on GMT, and the user writes it: `LOGIC-32`.
+- **`profile.recorded_time_offset`** — a device cannot know its own clock was wrong. The user's
+  alone, and a download never writes it.
 - **`profile.tolerances`** — nothing gives it because nothing else does the thinning.
   `LOGIC-15` makes the import owe the figures.
 - **`otu`, `no_flight_time`, `desaturation_time`** — computers display them; the library

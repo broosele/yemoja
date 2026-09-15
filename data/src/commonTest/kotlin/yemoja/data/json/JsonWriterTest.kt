@@ -108,7 +108,7 @@ class RoundTripTest {
           "environment": {"visibility": 18, "remarks": "Flat calm.\nSand at twelve."},
           "profiles": {
             "p1": {
-              "gmt_offset": 7200,
+              "recorded_time_offset": 7200,
               "depth": [[0, 0], [90, 8.6], [2340, 0]],
               "pressures": {"g1": [[0, 205], [2340, 106]]}
             }

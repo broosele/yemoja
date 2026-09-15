@@ -59,10 +59,24 @@ class ReadDiveTest {
     }
 
     @Test
-    fun `a zone after the time is left off`() {
-        // gmt_offset lives on the profile and is not read yet, so this drops rather than lies.
+    fun `a zone after the time is the dive's offset, and the time stays local`() {
         val dive = oneDive(dived().replace("10:05:00<", "10:05:00+02:00<"))
         assertEquals("10:05:00", (dive.read("start_time") as Result.Usable).value.toString())
+        assertEquals(7200.0, (dive.single<Double>("time_zone_offset") as Result.Usable).value)
+    }
+
+    @Test
+    fun `a zone is read however it is written, and one that will not read is left out`() {
+        val zone = { written: String ->
+            oneDive(dived().replace("10:05:00<", "10:05:00$written<"))
+                .read("time_zone_offset").let { (it as? Result.Usable)?.value }
+        }
+        assertEquals(0.0, zone("Z"))
+        assertEquals(-12600.0, zone("-03:30"))
+        assertEquals(19800.0, zone("+0530"))
+        assertEquals(3600.0, zone("+01"))
+        assertEquals(null, zone(""), "no zone, no offset")
+        assertEquals(null, zone("+1"), "not a zone")
     }
 
     @Test

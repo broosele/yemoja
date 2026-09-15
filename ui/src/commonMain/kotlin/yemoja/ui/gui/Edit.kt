@@ -29,6 +29,7 @@ import yemoja.data.Units
 import yemoja.data.WholeNumberDescription
 import yemoja.logic.Change
 import yemoja.logic.freeName
+import kotlin.math.roundToLong
 
 /*
  * What an edit form holds and hands to the model: the draft of every field changed, and the
@@ -234,6 +235,8 @@ internal fun keyedEntriesOf(item: Item, name: String): List<Pair<String, OwnedIt
 internal enum class Kind {
     TEXT, LONG_TEXT, CHOICE, SUGGESTED, NUMBER, CLOCK, WHOLE, RATING, DATE, TIME, YES_NO, REFERENCE,
     KEY, GAS,
+    /** How far one clock is ahead of another, typed as hours and minutes: `+2:00`. */
+    OFFSET,
     /** Not as a field: a series is read on the graph. */
     NONE,
 }
@@ -248,7 +251,11 @@ internal fun kindOf(field: FieldDescription): Kind = when {
         field.suggestedSet != null -> Kind.SUGGESTED
         else -> Kind.TEXT
     }
-    field is NumberDescription -> if (field.dimension == Dimension.TIME) Kind.CLOCK else Kind.NUMBER
+    field is NumberDescription -> when {
+        field.name in OFFSETS -> Kind.OFFSET
+        field.dimension == Dimension.TIME -> Kind.CLOCK
+        else -> Kind.NUMBER
+    }
     field is WholeNumberDescription -> if (field.name == "rating") Kind.RATING else Kind.WHOLE
     field is DateDescription -> Kind.DATE
     field is TimeDescription -> Kind.TIME
@@ -275,7 +282,11 @@ internal fun textOf(field: FieldDescription, value: Any?): String = when (value)
     is Reference.OneOff -> value.name
     is KeyReference -> "*" + value.key
     is Number -> {
-        if (kindOf(field) == Kind.CLOCK) clockOf(value.toDouble()) else numberOf(field, value)
+        when (kindOf(field)) {
+            Kind.CLOCK -> clockOf(value.toDouble())
+            Kind.OFFSET -> offsetOf(value.toDouble())
+            else -> numberOf(field, value)
+        }
     }
     else -> field.format(value, Units.DEFAULT)
 }
@@ -284,7 +295,30 @@ internal fun textOf(field: FieldDescription, value: Any?): String = when (value)
 internal fun givenOf(kind: Kind, text: String): Any? {
     val trimmed = text.trim()
     if (trimmed.isEmpty()) return null
-    return if (kind == Kind.CLOCK) secondsOf(trimmed)?.toString() ?: trimmed else trimmed
+    return when (kind) {
+        Kind.CLOCK -> secondsOf(trimmed)?.toString() ?: trimmed
+        Kind.OFFSET -> offsetSecondsOf(trimmed)?.toString() ?: trimmed
+        else -> trimmed
+    }
+}
+
+/**
+ * Seconds from an offset as typed: `+2:00`, `-3:30`, `5:45`, or a bare number of hours, `2` or
+ * `-1.5`; absent where it is none of those.
+ */
+internal fun offsetSecondsOf(typed: String): Long? {
+    val sign = if (typed.startsWith("-")) -1 else 1
+    val parts = typed.removePrefix("-").removePrefix("+").split(':')
+    return when (parts.size) {
+        1 -> parts[0].toDoubleOrNull()?.let { (it * 3600).roundToLong() * sign }
+        2 -> {
+            val hours = parts[0].toLongOrNull() ?: return null
+            val minutes = parts[1].toLongOrNull() ?: return null
+            if (minutes !in 0..59) return null
+            (hours * 3600 + minutes * 60) * sign
+        }
+        else -> null
+    }
 }
 
 /** Seconds from `m:ss`, or from a bare number of minutes; absent where it is neither. */

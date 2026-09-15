@@ -128,10 +128,14 @@ Each of these is here because it is awkward, not because it is typical.
 - Neither wreck carries a `displacement`, on purpose. The figures the books give for both
   are gross tonnages, which are volumes and not weights, and `DATA-62` says a figure you
   had to guess the units of is worse than no figure. The fixture takes its own advice.
-- Both recordings carry a `gmt_offset` of 7200: summer time in Provence and in the North
-  Sea alike, both two hours ahead of GMT, so two hours come off to reach it. Nothing in the
-  fixture exercises a computer left on home time in another country, which is the case the
-  field exists for — that wants a fixture of its own.
+- The three dives of 30 May 2025 and the one of 21 June 2026 carry a `time_zone_offset` of
+  7200: summer time in Provence and in the North Sea alike, both two hours ahead of GMT. All
+  three of a chained day carry it, so their surface intervals come out as their local times
+  say; the dives that say nothing are taken to be on GMT, which compares the same way.
+- The borrowed Aladin on 21 June 2026 has a `recorded_time_offset` of `-60`: its clock ran a
+  minute slow, so its recording says 08:49 for the 08:50 the other computer says. Nothing in
+  the fixture exercises a computer left on home time in another country, which is the larger
+  case the field exists for.
 - Repetitive dives are chained with `previous_dive` where the gap was short: both dives
   of 15 June 2024 and of 21 September 2024, all three of 30 May 2025, and both of 14 March
   2026 — which makes a chain three long. The overnight pairs are deliberately *not*

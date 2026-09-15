@@ -2,6 +2,7 @@
   "dive_number": 71,
   "start_date": "2026-06-21",
   "start_time": "08:50:00",
+  "time_zone_offset": 7200,
   "dive_site": "@serpentine_wall",
   "buddies": [
     "@lena_okafor"
@@ -45,7 +46,6 @@
       "dive_computer": "@reef_computer",
       "start_date": "2026-06-21",
       "start_time": "08:50:00",
-      "gmt_offset": 7200,
       "water_type": "salt",
       "deco_model": "buhlmann",
       "gradient_factor_low": 0.3,
@@ -150,7 +150,7 @@
       "dive_computer": "Aladin borrowed from Lena",
       "start_date": "2026-06-21",
       "start_time": "08:49:00",
-      "gmt_offset": 7200,
+      "recorded_time_offset": -60,
       "water_type": "en13319",
       "depth": [
         [0, 0],

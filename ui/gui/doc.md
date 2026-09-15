@@ -1021,5 +1021,7 @@ once and corrected. The numbers stay unused rather than being given to something
   lost; a reader wants one. A depth, a temperature, a mass and a volume read to one decimal,
   a pressure and a density to none, and an angle as the file writes it, a coordinate being
   nothing to round. A time is seconds in the model and reads as minutes and seconds, `61:16`,
-  however long, since a dive is quoted in minutes. Every other number carries its unit after
+  however long, since a dive is quoted in minutes. An offset between two clocks is seconds too
+  and reads as hours and minutes with a sign, `+2:00`, which is how a zone is written everywhere;
+  it is typed the same way, or as a bare number of hours. `LOGIC-32`. Every other number carries its unit after
   it, once after a range and once after an average.

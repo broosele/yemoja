@@ -142,6 +142,7 @@ object Uddf {
         said("datetime")?.let {
             fields["start_date"] = Stored.Leaf(it.substringBefore('T'))
             timeIn(it)?.let { at -> fields["start_time"] = Stored.Leaf(at) }
+            zoneIn(it)?.let { offset -> fields["time_zone_offset"] = Stored.Leaf(offset) }
         }
         said("greatestdepth")?.let { fields["max_depth"] = Stored.Leaf(it) }
         said("averagedepth")?.let { fields["average_depth"] = Stored.Leaf(it) }
@@ -460,9 +461,8 @@ object Uddf {
      * The time in a UDDF datetime, without the zone it may carry after it.
      *
      * A time is digits, colons and at most a decimal point, so it ends where the first of
-     * anything else begins — `Z`, or the sign of an offset. The offset itself is dropped rather
-     * than kept: `gmt_offset` sits on the profile and is not read yet, and putting the local
-     * time in while saying nothing about the zone is what the file itself does.
+     * anything else begins — `Z`, or the sign of an offset. The time before it is local, which is
+     * what a dive's own time is. `LOGIC-32`.
      */
     private fun timeIn(said: String): String? =
         said.substringAfter('T', "")
@@ -480,6 +480,30 @@ object Uddf {
         val writer = Writer(set)
         val text = writer.document()
         return Exported(text, set.allOf(Types.DIVE).size, writer.leftOut)
+    }
+
+    /**
+     * The zone a UDDF datetime carries after its time, in seconds ahead of GMT, or absent where it
+     * carries none.
+     *
+     * `Z` is GMT, and `+02:00`, `+0200` and `+02` all say two hours ahead. What will not read as
+     * one is left out rather than guessed at, a dive saying nothing being taken to be on GMT.
+     */
+    private fun zoneIn(said: String): Int? {
+        val after = said.substringAfter('T', "")
+            .dropWhile { it.isDigit() || it == ':' || it == '.' }
+        if (after.isEmpty()) return null
+        if (after == "Z") return 0
+        val sign = when (after.first()) {
+            '+' -> 1
+            '-' -> -1
+            else -> return null
+        }
+        val digits = after.drop(1).filter { it != ':' }
+        if (digits.any { !it.isDigit() } || digits.length !in listOf(2, 4)) return null
+        val hours = digits.take(2).toInt()
+        val minutes = if (digits.length == 4) digits.drop(2).toInt() else 0
+        return sign * (hours * 3600 + minutes * 60)
     }
 
     /** Each series this model keeps, and the waypoint child it is read from. `uddf.md`. */
