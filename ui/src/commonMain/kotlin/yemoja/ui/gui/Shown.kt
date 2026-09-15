@@ -6,16 +6,19 @@ import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
+import yemoja.data.ItemSet
 import yemoja.data.KeyReference
 import yemoja.data.KeyReferenceDescription
 import yemoja.data.NumberDescription
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
+import yemoja.data.ReferenceDescription
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.TextDescription
 import yemoja.data.Units
+import yemoja.logic.Types
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -91,6 +94,34 @@ internal fun forwardOf(field: FieldDescription, item: Item): Boolean {
     val category = (item.single<String>("category") as? Result.Usable)?.value?.lowercase()
     return category in only
 }
+
+/**
+ * The items a form offers for [field] of an item of [holder]: every item of the type it points
+ * at, narrowed where the field wants one category of them.
+ *
+ * A gas source's `cylinder` offers the gear in the `cylinder` category and no other: its volume is
+ * taken from the cylinder's capacity, and a regulator named there is refused as a cylinder, so
+ * offering one offers a mistake. What is already written is not narrowed away, only what is
+ * offered. `GUI-29`.
+ */
+internal fun candidatesOf(
+    set: ItemSet,
+    holder: ItemDescription,
+    field: ReferenceDescription,
+): List<Chosen> {
+    val target = Types.ALL.firstOrNull { it.name == field.targetType } ?: return emptyList()
+    val every = entriesOf(set, target)
+    val wanted = CHOSEN_FROM[holder.name]?.get(field.name) ?: return every
+    return every.filter { chosen ->
+        val category = (chosen.item.single<String>("category") as? Result.Usable)?.value
+        category.equals(wanted, ignoreCase = true)
+    }
+}
+
+/** By type and field, the one category of gear a reference is chosen from. */
+private val CHOSEN_FROM: Map<String, Map<String, String>> = mapOf(
+    "gas_source" to mapOf("cylinder" to "cylinder"),
+)
 
 /**
  * By type, the fields that belong to one category of item and to no other.

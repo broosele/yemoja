@@ -240,6 +240,31 @@ class BegunTest {
     }
 
     @Test
+    fun `a cylinder is chosen from the cylinders, and a buddy from everybody`() {
+        val held = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "gear.json" to """{"twelve": {"name": "Twelve", "category": "cylinder"},
+                        "reg": {"name": "Regulator", "category": "regulator"},
+                        "stage": {"name": "Stage", "category": "Cylinder"},
+                        "loose": {"name": "Loose"}}""",
+                    "person.json" to """{"anna": {"first_name": "Anna"}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val source = (Types.DIVE["gas_sources"] as OwnedItemDescription).description
+        val cylinder = source["cylinder"] as yemoja.data.ReferenceDescription
+        assertEquals(
+            listOf("stage", "twelve"),
+            candidatesOf(held, source, cylinder).map { it.id }.sorted(),
+            "the category read without regard to case",
+        )
+        val buddies = Types.DIVE["buddies"] as yemoja.data.ReferenceDescription
+        assertEquals(listOf("anna"), candidatesOf(held, Types.DIVE, buddies).map { it.id })
+    }
+
+    @Test
     fun `an offset is typed and read as hours and minutes with a sign`() {
         // As minutes and seconds two hours would read 120:00. `LOGIC-32`.
         val zone = Types.DIVE["time_zone_offset"]!!

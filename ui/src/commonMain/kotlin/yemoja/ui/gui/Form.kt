@@ -557,9 +557,9 @@ private fun RatingEditor(rating: Int?, onChange: (Int) -> Unit) {
 
 /**
  * A reference as a drop-down and a search: the arrow offers the items of the type it points
- * at, typing narrows them to the ones whose names hold what was typed, and one taken is written
- * as its id. What is typed and not taken stands as a plain name where the field allows one, and
- * is refused where it does not.
+ * at, or of the one category of them the field wants, and typing narrows them to the ones whose
+ * names hold what was typed; one taken is written as its id. What is typed and not taken stands
+ * as a plain name where the field allows one, and is refused where it does not.
  */
 @Composable
 private fun ReferenceEditor(
@@ -570,6 +570,7 @@ private fun ReferenceEditor(
 ) {
     val target = Types.ALL.firstOrNull { it.name == field.targetType }
     val named = remember(item, target) { target?.let { entriesOf(item.set, it) }.orEmpty() }
+    val offered = remember(item, field) { candidatesOf(item.set, item.description, field) }
     // What is shown is a title where the reference resolves, and the text otherwise.
     val display = if (shown.startsWith("@")) {
         named.firstOrNull { it.id == shown.drop(1) }?.title ?: shown
@@ -581,7 +582,7 @@ private fun ReferenceEditor(
     // Every item of the type from the arrow, and the ones whose names hold what was typed
     // while typing; either way the first few dozen, a list of three hundred dives being no
     // list to choose from.
-    val matches = named.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
+    val matches = offered.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
         .take(MATCHES)
     Box {
         Compact(

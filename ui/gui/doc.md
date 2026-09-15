@@ -896,8 +896,10 @@ once and corrected. The numbers stay unused rather than being given to something
   on its tab and a + after the tabs, rather than on Save: either is the collection rewritten
   whole, which makes every entry a new object, so a draft on one would be a draft on nothing.
   Neither asks, as the terminal front end has it: an entry is put back by typing it. A new entry
-  is keyed as its type proposes for one holding nothing, the first free taken. Open: adding and
-  deleting items, adding an owned item, and the phone's form. The text fields are the height of
+  is keyed as its type proposes for one holding nothing, the first free taken. **A reference
+  offers the items it may name**: those of its type, and where a field wants one category of
+  them, that category alone, so a gas source's `cylinder` offers the cylinders and not the
+  regulators its volume could never be taken from. Open: the phone's form. The text fields are the height of
   their text rather than the platform's fifty-six pixels: a form of twenty fields in tall boxes
   is one nobody scrolls to the end of.
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
