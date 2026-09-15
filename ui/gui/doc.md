@@ -740,12 +740,18 @@ once and corrected. The numbers stay unused rather than being given to something
   layer's refusal was about validation — it will not insist on or forbid a field because of
   another's value — which says nothing about what a screen offers, that being `GUI-16`'s.
 
-  **A singular owned item that is absent can be begun.** Until this the form drew an inset only
-  where the item already had one, so a gear item with no buoyancy block could not be given one:
-  the fields existed, the manual described them, and the window could not reach them. The inset
-  is now always drawn, with *Add* where there is nothing yet, which lands at once the way adding
-  a keyed entry does — an empty block is the item changing shape rather than a value being
-  typed.
+  **A singular owned item that is absent is offered anyway.** Until this the form drew an inset
+  only where the item already had one, so a gear item with no buoyancy block could not be given
+  one: the fields existed, the manual described them, and the window could not reach them. The
+  inset is now always drawn, with its fields empty and ready, and no button in front of them —
+  *Add* before eight fields nobody can see asks about storage while pretending to ask about
+  diving.
+
+  **A block nobody had is the form's until Save.** It is not written into the logbook when the
+  form opens: the draft holds it, the fields are edited into it as into any other, and on Save it
+  lands as one write of the whole block onto its owner — or not at all, where nothing was typed.
+  `DATA-116` makes the same rule everywhere, so a block emptied by any route stops being
+  written.
 
   **One widget per kind of field**, chosen from its description: a text field, taller for
   multiline text; a number field with its unit after it, a time as `m:ss`; a date as text; a

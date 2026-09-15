@@ -64,6 +64,32 @@ internal class Drafted(val shown: Any?, val given: Any?)
 internal class Draft {
     private val held: SnapshotStateMap<Slot, Drafted> = mutableStateMapOf()
 
+    /** The blocks this form began, which the item has none of until something is typed in. */
+    private val begun: MutableList<Begun> = ArrayList()
+
+    /** Begun is an owned item drawn for an item that has none: what it is, and whose it is. */
+    private class Begun(val block: Item, val owner: Item, val name: String)
+
+    /**
+     * A block to draw the fields of [inset] into, which [owner] may not have yet.
+     *
+     * **Detached until something is typed.** The form offers an absent block's fields the same
+     * way it offers a present one's, so a gear item with no buoyancy can be given a mass by
+     * typing one; what it must not do is write an empty block into the logbook on the way past.
+     * So the block lives here until Save, and lands only if it has anything in it. `GUI-29`.
+     */
+    fun begin(owner: Item, inset: OwnedItemDescription): Item {
+        begun.firstOrNull { it.owner === owner && it.name == inset.name }?.let { return it.block }
+        val block = ItemReader.read(
+            inset.description,
+            Stored.Members(emptyMap()),
+            owner.set,
+            Units.DEFAULT,
+        )
+        begun += Begun(block, owner, inset.name)
+        return block
+    }
+
     /** Whether [field] of [item] has been changed in this form. */
     fun changed(item: Item, field: String): Boolean = Slot(item, field) in held
 
@@ -87,9 +113,30 @@ internal class Draft {
 
     val isEmpty: Boolean get() = held.isEmpty()
 
-    /** Every change as the model takes it, one per field changed; the model judges them whole. */
-    fun writes(): List<Change> = held.entries.map { (slot, drafted) ->
-        Change.Write(slot.item, slot.field, storedOf(drafted.given))
+    /**
+     * Every change as the model takes it; the model judges them whole.
+     *
+     * One per field changed, bar the fields of a block the form began: those become one write of
+     * the whole block onto its owner, and no write at all where nothing was typed into it. An
+     * empty block says exactly what no block says. `DATA-116`.
+     */
+    fun writes(): List<Change> {
+        val out = ArrayList<Change>()
+        for ((slot, drafted) in held) {
+            if (begun.any { it.block === slot.item }) continue
+            out += Change.Write(slot.item, slot.field, storedOf(drafted.given))
+        }
+        for (one in begun) {
+            val members = LinkedHashMap<String, Stored>()
+            for ((slot, drafted) in held) {
+                if (slot.item !== one.block) continue
+                storedOf(drafted.given)?.let { members[slot.field] = it }
+            }
+            if (members.isNotEmpty()) {
+                out += Change.Write(one.owner, one.name, Stored.Members(members))
+            }
+        }
+        return out
     }
 
     /**

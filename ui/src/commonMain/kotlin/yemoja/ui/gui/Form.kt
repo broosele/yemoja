@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
+import yemoja.data.OwnedItemDescription
 import yemoja.data.Cardinality
 import yemoja.data.Element
 import yemoja.data.FieldDescription
@@ -109,36 +110,21 @@ internal fun EditFields(item: Item, draft: Draft) {
 }
 
 /**
- * A singular owned item's fields, or an offer to begin one where the item has none.
+ * A singular owned item's fields, whether or not the item has one yet.
  *
  * **An item that has never had one has to be able to get one.** A gear item with no buoyancy
  * block cannot say what it weighs, and until this the form simply left the box out: the fields
  * existed, the manual described them, and there was no way to reach them from the window.
- * `GUI-29`.
  *
- * Beginning one lands at once rather than waiting for Save, which is what adding a keyed entry
- * already does: an empty block is the collection changing shape, not a value being typed.
+ * So the fields are offered either way, and a block nobody had is held by the draft rather than
+ * written into the logbook: it lands on Save if something was typed into it and not otherwise.
+ * `GUI-29`.
  */
 @Composable
-private fun SingleEditor(inset: FieldDescription, item: Item, draft: Draft) {
-    val changer = LocalChanger.current
+private fun SingleEditor(inset: OwnedItemDescription, item: Item, draft: Draft) {
     val owned = (item.read(inset.name) as? Result.Usable)?.value as? OwnedItem
-    if (owned != null) {
-        Inset(inset.label) { EditFields(owned, draft) }
-        return
-    }
-    Inset(inset.label) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Aside("none yet")
-            TextButton(
-                onClick = {
-                    changer.change(
-                        listOf(Change.Write(item, inset.name, Stored.Members(emptyMap()))),
-                    )
-                },
-            ) { Text("Add") }
-        }
-    }
+    val block = owned ?: draft.begin(item, inset)
+    Inset(inset.label) { EditFields(block, draft) }
 }
 
 /**

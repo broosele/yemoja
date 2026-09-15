@@ -42,8 +42,26 @@ object ItemWriter {
         when (read) {
             is Result.Unusable -> read.raw
             Result.Absent -> null
-            is Result.Usable -> heldOf(field, read.value, units)
+            is Result.Usable -> heldOf(field, read.value, units).takeUnless { emptily(field, it) }
         }
+
+    /**
+     * Whether [held] is a singular owned item with nothing in it, which is not written.
+     *
+     * **An empty block says exactly what no block says.** A dive whose `environment` holds no
+     * reading is a dive nobody wrote the conditions of, and `"environment": {}` in the file is
+     * that same fact spelled at length. Writing it would also make an interface that offers the
+     * fields of a block before anything is typed into them leave a trail of empty ones.
+     *
+     * Only the singular: a keyed collection with no entries is a list somebody may have emptied
+     * on purpose, and telling that from one nobody made is not this function's to guess.
+     * `DATA-116`.
+     */
+    private fun emptily(field: FieldDescription, held: Stored): Boolean =
+        field is OwnedItemDescription &&
+            field.cardinality == Cardinality.SINGLE &&
+            held is Stored.Members &&
+            held.members.isEmpty()
 
     /** What one field holds, by the shape its cardinality gives it. */
     @Suppress("UNCHECKED_CAST")

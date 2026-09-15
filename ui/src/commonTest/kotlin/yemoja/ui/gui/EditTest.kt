@@ -1,6 +1,7 @@
 package yemoja.ui.gui
 
 import yemoja.data.OwnedItem
+import yemoja.data.OwnedItemDescription
 import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.json.LogbookReader
@@ -166,6 +167,40 @@ class BegunTest {
     private fun logbook(vararg files: Pair<String, String>): Universe {
         val store = MemoryFileStore(mapOf(*files))
         return Universe(LogbookReader.read(store, Types.ALL), null, store, null, null)
+    }
+
+    @Test
+    fun `a block the form began writes nothing while nothing is typed into it`() {
+        val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")
+        val suit = held.logbook["suit"]!!
+        val draft = Draft()
+        val inset = suit.description["buoyancy"] as OwnedItemDescription
+        draft.begin(suit, inset)
+        assertEquals(emptyList(), draft.writes(), "an empty block is not a change")
+    }
+
+    @Test
+    fun `a block the form began lands whole once a field is typed into it`() {
+        val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")
+        val suit = held.logbook["suit"]!!
+        val draft = Draft()
+        val inset = suit.description["buoyancy"] as OwnedItemDescription
+        val block = draft.begin(suit, inset)
+        draft.put(block, "mass", "4.2")
+        val write = draft.writes().single() as Change.Write
+        assertEquals("buoyancy", write.field, "one write, of the block onto its owner")
+        assertTrue(write.item === suit)
+        val members = (write.given as Stored.Members).members
+        assertEquals(listOf("mass"), members.keys.toList(), "holding what was typed and no more")
+    }
+
+    @Test
+    fun `beginning the same block twice gives the same one back`() {
+        val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")
+        val suit = held.logbook["suit"]!!
+        val draft = Draft()
+        val inset = suit.description["buoyancy"] as OwnedItemDescription
+        assertTrue(draft.begin(suit, inset) === draft.begin(suit, inset), "one block, not two")
     }
 
     @Test

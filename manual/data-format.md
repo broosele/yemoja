@@ -89,6 +89,11 @@ An owned item, such as a dive's `environment`, is written as an object inside th
 that holds it. Where there can be several — a person's `courses` — they are written as an
 object too, each entry under a key of its own.
 
+**A single owned item with nothing in it is not written.** `"environment": {}` says exactly
+what leaving `environment` out says, so Yemoja drops it: write one by hand and the next save
+takes it away again, and nothing about the dive reads differently either way. A collection of
+them is left alone — `"courses": {}` stays, an empty list being something you may have meant.
+
 ## How an item is identified
 
 Two different things are easily confused, so it is worth separating them at the start:

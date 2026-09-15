@@ -90,11 +90,34 @@ class ChangedLogbookTest {
 
     @Test
     fun `an owned item is made by writing an empty set of fields`() {
+        val (_, universe) = opened("person.json" to """{"anna": {}}""")
+        val anna = universe.logbook["anna"]!!
+        universe.change(Operation.EDIT, Change.Write(anna, "medical", Stored.Members(emptyMap())))
+        assertIs<Result.Usable<*>>(
+            universe.logbook["anna"]!!.read("medical"),
+            "there to be filled in",
+        )
+    }
+
+    @Test
+    fun `an owned item nothing was put in is not stored`() {
+        // An empty block says exactly what no block says. `DATA-116`.
         val (store, universe) = opened("person.json" to """{"anna": {}}""")
         val anna = universe.logbook["anna"]!!
         universe.change(Operation.EDIT, Change.Write(anna, "medical", Stored.Members(emptyMap())))
+        assertEquals(Result.Absent, saved(store).logbook["anna"]!!.read("medical"))
+    }
+
+    @Test
+    fun `an owned item something was put in is stored`() {
+        val (store, universe) = opened("person.json" to """{"anna": {}}""")
+        val anna = universe.logbook["anna"]!!
+        universe.change(Operation.EDIT, Change.Write(anna, "medical", Stored.Members(emptyMap())))
+        val medical = (universe.logbook["anna"]!!.read("medical") as Result.Usable).value as Item
+        universe.change(Operation.EDIT, Change.Write(medical, "blood_group", Stored.Leaf("O+")))
         val again = saved(store).logbook["anna"]!!
-        assertIs<Result.Usable<*>>(again.read("medical"))
+        assertEquals("O+", text((again.read("medical") as Result.Usable).value as Item,
+            "blood_group"))
     }
 
     @Test

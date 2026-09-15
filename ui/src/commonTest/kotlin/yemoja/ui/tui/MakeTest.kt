@@ -168,8 +168,9 @@ class MadeOwnedItemTest {
         toField(screen, "medical")
         screen.press(Key.OPEN)
         screen.press(NEW)
-        assertIs<Result.Usable<*>>(screen.item!!.read("medical"))
-        assertTrue("medical" in store.readText("person.json"))
+        assertIs<Result.Usable<*>>(screen.item!!.read("medical"), "there to be filled in")
+        // An empty block says exactly what no block says, so it waits for a field. `DATA-116`.
+        assertTrue("medical" !in store.readText("person.json"), "and nothing stored yet")
     }
 
     @Test

@@ -2144,6 +2144,28 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-116 — Whether an owned item with nothing in it is written.** *Settled:* **a singular
+  one is not. A keyed collection is left alone.**
+
+  **An empty block says exactly what no block says.** A dive whose `environment` holds no
+  reading is a dive nobody wrote the conditions of, and `"environment": {}` in the file is that
+  same fact spelled at length. A reader opening the file learns nothing from it, and every
+  reading of the item gives the same answer either way.
+
+  What made the question worth settling is the interface. An edit form that offers the fields of
+  a block before anything is typed into them — which is what it has to do, or a gear item with
+  no buoyancy could never be given a mass — would otherwise leave an empty block behind on every
+  item whose form was merely opened. The alternative is a form that asks first, and a button
+  reading *Add* in front of eight fields nobody can see is a question about storage wearing the
+  costume of a question about diving.
+
+  **The singular only.** A keyed collection that holds no entries is a different thing: it may be
+  a list somebody emptied on purpose, and telling that from one nobody made needs the journal
+  rather than a guess made at writing time. `"maintenances": {}` therefore stays.
+
+  Unrecognised fields count. A block holding nothing this version knows but something a later one
+  does is not empty, since what is written is what the block comes to, and `DATA-65` keeps those.
+
 - **DATA-115 — Which fields are not for reading.** *Settled:* **the type says so, in two sets.**
   `ItemDescription` carries `housekeeping`, the fields kept for the machinery rather than for
   reading — a download's bookmark, a pairing key, which recording a dive is worked from — and
