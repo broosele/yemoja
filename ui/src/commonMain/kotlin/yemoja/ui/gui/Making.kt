@@ -49,41 +49,72 @@ internal fun deleteAsked(set: ItemSet, ids: Set<String>): String? {
 }
 
 /**
- * What deleting says beyond the question.
+ * How many references a delete would leave dangling, said in the model's own word.
  *
- * **What pointed at it goes on pointing.** A reference to something deleted is left dangling
- * rather than hunted down, which is a state the model already carries — a buddy not entered yet
- * looks the same from here — and a reader about to delete a person who is on forty dives should
- * know that before rather than after. `DATA-17`.
+ * A reference to something deleted is left dangling rather than hunted down, which is a state
+ * the model already carries — a buddy not entered yet looks the same from here — and a reader
+ * about to delete a person on forty dives should know before rather than after. `DATA-17`.
+ *
+ * **Counted as references rather than as the items holding them.** One dive naming a person
+ * twice is two references and one item, and *reference* is the word the format uses for the
+ * thing being counted.
  */
 internal fun deleteWarned(set: ItemSet, ids: Set<String>): String? {
-    val pointing = ids.sumOf { pointingAt(set, it) }
-    if (pointing == 0) return null
-    // Both halves agree with what they count: how many point, and how many are going.
-    val naming = if (pointing == 1) "One item names" else "$pointing items name"
+    val holding = holdersOf(set, ids)
+    val many = holding.sumOf { it.second }
+    if (many == 0) return null
+    val what = if (many == 1) "One reference" else "$many references"
     val going = if (ids.size == 1) "it" else "them"
-    return "$naming $going, and will go on naming what is no longer there."
+    val said = "$what to $going will be left pointing at nothing"
+    if (holding.size > FEW) return "$said."
+    return "$said, in ${listedOf(holding.map { titleOf(it.first) })}."
 }
 
-/** How many items in [set] name [id], which is what a delete leaves dangling. */
-private fun pointingAt(set: ItemSet, id: String): Int =
-    Types.ALL.sumOf { type ->
-        set.allOf(type).count { item -> item !== set[id] && names(item, id) }
+/**
+ * How many items may be named before they are merely counted.
+ *
+ * A reader can check three names against what they meant to delete; they cannot check forty,
+ * and a dialog that tries turns the question into a wall. The same handful `LOGIC-18` offers of
+ * the sites nearest a fix, for the same reason.
+ */
+private const val FEW = 3
+
+/** Each item in [set] holding a reference to any of [ids], and how many it holds. */
+private fun holdersOf(set: ItemSet, ids: Set<String>): List<Pair<Item, Int>> {
+    val going = ids.mapNotNull { set[it] }
+    val out = ArrayList<Pair<Item, Int>>()
+    for (type in Types.ALL) {
+        for (item in set.allOf(type)) {
+            if (going.any { it === item }) continue
+            val many = ids.sumOf { referencesIn(item, it) }
+            if (many > 0) out += item to many
+        }
+    }
+    return out
+}
+
+/** A handful of names as a sentence reads them: *a*, *a and b*, *a, b and c*. */
+private fun listedOf(names: List<String>): String = when (names.size) {
+    0 -> ""
+    1 -> names.first()
+    else -> names.dropLast(1).joinToString(", ") + " and " + names.last()
+}
+
+/** How many references to [id] sit anywhere in [item], its owned items included. */
+private fun referencesIn(item: Item, id: String): Int =
+    item.description.fields.sumOf { field ->
+        when (val read = item.read(field.name)) {
+            is Result.Usable -> referencesAmong(read.value, id)
+            else -> 0
+        }
     }
 
-/** Whether [item] names [id] anywhere a reference can sit. */
-private fun names(item: Item, id: String): Boolean =
-    item.description.fields.any { field ->
-        val read = item.read(field.name)
-        read is Result.Usable && mentions(read.value, id)
-    }
-
-/** Whether a value read off a field is, or holds, a reference to [id]. */
-private fun mentions(value: Any?, id: String): Boolean = when (value) {
-    is Reference.Identified -> value.id == id
-    is Element.Usable<*> -> mentions(value.value, id)
-    is List<*> -> value.any { mentions(it, id) }
-    is Map<*, *> -> value.values.any { mentions(it, id) }
-    is OwnedItem -> names(value, id)
-    else -> false
+/** How many references to [id] a value read off a field is, or holds. */
+private fun referencesAmong(value: Any?, id: String): Int = when (value) {
+    is Reference.Identified -> if (value.id == id) 1 else 0
+    is Element.Usable<*> -> referencesAmong(value.value, id)
+    is List<*> -> value.sumOf { referencesAmong(it, id) }
+    is Map<*, *> -> value.values.sumOf { referencesAmong(it, id) }
+    is OwnedItem -> referencesIn(value, id)
+    else -> 0
 }

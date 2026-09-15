@@ -84,19 +84,43 @@ class DeleteAskedTest {
     }
 
     @Test
-    fun `what points at it is counted, and will go on pointing`() {
+    fun `the references a delete would leave dangling are counted, and where few, named`() {
         // A reference to something deleted is left dangling rather than hunted down.
-        val warned = deleteWarned(logbook, setOf("anna"))!!
-        assertTrue(warned.startsWith("2 items name it"), "one is going, so it: $warned")
-        assertTrue("no longer there" in warned)
-        val both = deleteWarned(logbook, setOf("anna", "bo"))!!
-        assertTrue(both.startsWith("3 items name them"), "two are going, so them: $both")
+        assertEquals(
+            "2 references to it will be left pointing at nothing, in 2026-06-21#0 and " +
+                "2026-06-22#0.",
+            deleteWarned(logbook, setOf("anna")),
+        )
+        assertEquals(
+            "3 references to them will be left pointing at nothing, in 2026-06-21#0 and " +
+                "2026-06-22#0.",
+            deleteWarned(logbook, setOf("anna", "bo")),
+            "two references in one dive is one name, not two",
+        )
     }
 
     @Test
-    fun `one thing pointing reads as one`() {
-        val warned = deleteWarned(logbook, setOf("blue"))!!
-        assertTrue(warned.startsWith("One item names it"), warned)
+    fun `one reference reads as one`() {
+        assertEquals(
+            "One reference to it will be left pointing at nothing, in 2026-06-21#0.",
+            deleteWarned(logbook, setOf("blue")),
+        )
+    }
+
+    @Test
+    fun `too many to check are counted and not named`() {
+        val crowd = set(
+            "person.json" to """{"anna": {"first_name": "Anna"}}""",
+            "dive/2026-06-21#0.json" to """{"buddies": ["@anna"]}""",
+            "dive/2026-06-22#0.json" to """{"buddies": ["@anna"]}""",
+            "dive/2026-06-23#0.json" to """{"buddies": ["@anna"]}""",
+            "dive/2026-06-24#0.json" to """{"buddies": ["@anna"]}""",
+        )
+        assertEquals(
+            "4 references to it will be left pointing at nothing.",
+            deleteWarned(crowd, setOf("anna")),
+            "four names is a wall rather than a question",
+        )
     }
 
     @Test

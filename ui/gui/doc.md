@@ -455,10 +455,17 @@ once and corrected. The numbers stay unused rather than being given to something
    counts several — a reader deleting a dive wants to see which, and one deleting twenty wants
    to know it is twenty rather than reading a list they cannot check.
 
-   **And it says what will be left dangling.** A reference to something deleted is not hunted
-   down, `DATA-17`, so deleting a person who is on forty dives leaves forty dives naming
-   somebody who is not there. That is a thing to know before rather than after, so what points
-   at it is counted in the question.
+   **And it counts the references it would leave dangling, naming where they are while they
+   are few.** A reference to something deleted is not hunted down, `DATA-17`, so deleting a
+   person on forty dives leaves forty references pointing at nothing. That is a thing to know
+   before rather than after.
+
+   What is counted is references rather than the items holding them — one dive naming a person
+   twice is two references and one item, and *reference* is the word the format uses for the
+   thing being left dangling. What is *named* is the items, up to three of them: a reader can
+   check three names against what they meant to delete and cannot check forty, and a dialog
+   that tries turns a question into a wall. Past three they are counted and not named, which is
+   the same handful `LOGIC-18` offers of the sites nearest a fix, for the same reason.
 
    **Several at once where several can be chosen**, which today is dives: the box of statistics
    over a selection carries the same delete, asking about the lot as one question. Plus is not

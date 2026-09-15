@@ -29,6 +29,7 @@ Owned by [data/doc.md](data/doc.md).
 | **primary** | a field whose value is recorded and nothing else |
 | **derived** | a field worked out from other values, never stored |
 | **overrideable** | derived, but a stored value *may* be present and corrects it when it is — a correction, never a cache |
+| **reference** | one item pointing at another, written `@anna`. The word for the thing itself, in prose, in the manual and in what a screen says: a delete counts the references it would leave dangling rather than the items holding them |
 | **referenceable item** | an item other items can point at, having an id of its own |
 | **owned item** | a group of fields belonging to one item, with no id of its own |
 | **key** | what an owned item sits under within its owner's collection, never a field it carries. Local: it means nothing outside that collection, and pointing at one is written `*p1`, not `@` |
