@@ -51,7 +51,7 @@ internal fun countedIn(import: Import): List<Counted> {
 }
 
 /** A type as a reader counts them: an s on it, bar the two that do not take one. */
-private fun severalOf(description: ItemDescription): String = when (description) {
+internal fun severalOf(description: ItemDescription): String = when (description) {
     Types.PERSON -> "People"
     // Gear is what one piece of it is called and what any number of it is called.
     Types.GEAR -> "Gear"

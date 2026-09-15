@@ -1,5 +1,10 @@
 package yemoja.ui.gui
 
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -98,6 +103,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import yemoja.data.Stored
+import yemoja.data.Units
+import yemoja.data.ItemReader
 import yemoja.data.Cardinality
 import yemoja.data.Element
 import yemoja.data.Item
@@ -184,6 +192,16 @@ internal class Kept {
 
     /** Every dive chosen, where several are: their statistics are shown instead. `GUI-23`. */
     var chosenMany: Set<String> by mutableStateOf(emptySet())
+
+    /**
+     * The type being made, where **+** has been pressed and nothing saved yet.
+     *
+     * The item does not exist while this is set: pressing **+** opens an empty form, and the
+     * item is made when it is saved, from the fields that were typed. Making it first would
+     * mint its id from an item saying nothing — `unknown_person` — and nothing renames it
+     * afterwards. `GUI-35`.
+     */
+    var making: ItemDescription? by mutableStateOf(null)
 
     /** Location's region. */
     var place: Chosen? by mutableStateOf(null)
@@ -1134,13 +1152,52 @@ private fun Subject(
             }
         }
         VerticalDivider()
+        val changer = LocalChanger.current
+        val making = remember(tab, chosen) { makingOf(tab, chosen) }
+        // Pressing + opens a form and makes nothing: the item is made on Save, so its id is
+        // minted from what was typed rather than from an item saying nothing. `GUI-35`.
+        val add: (() -> Unit)? = making?.let { type -> { kept.making = type } }
+        var asking by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
+        val going = if (kept.chosenMany.size > 1) kept.chosenMany else setOfNotNull(chosen?.id)
+        if (asking) {
+            deleteAsked(set, going)?.let { asked ->
+                Confirm(
+                    asked = asked,
+                    warned = deleteWarned(set, going),
+                    onNo = { asking = false },
+                    onYes = {
+                        asking = false
+                        changer.change(going.map { Change.Delete(it) })
+                        kept.chosen = null
+                        kept.chosenMany = emptySet()
+                    },
+                )
+            }
+        }
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             when {
                 tab.shape == Shape.PLACES -> {
                     PlaceView(set, atlas, kept.hideUnused, kept.place, chosen, onFollow)
                 }
-                kept.chosenMany.size > 1 -> ManyView(set, kept.chosenMany, onFollow)
-                chosen != null -> ItemView(chosen, onFollow)
+                kept.chosenMany.size > 1 -> {
+                    ManyView(set, kept.chosenMany, onFollow) { asking = true }
+                }
+                kept.making != null -> {
+                    NewCard(
+                        type = kept.making!!,
+                        set = set,
+                        onCancel = { kept.making = null },
+                        onMade = { id ->
+                            kept.making = null
+                            set[id]?.let { kept.chosen = Chosen(id, titleOf(it), it) }
+                            kept.chosenMany = emptySet()
+                        },
+                    )
+                }
+                chosen != null -> ItemView(chosen, onFollow, add, { asking = true })
+                // Where nothing is chosen the middle still offers to make one, which is the only
+                // way a logbook with nothing in it grows a first item. `GUI-35`.
+                making != null && add != null -> Empty(makeSaid(making), add)
                 else -> Middle("choose something on the left")
             }
         }
@@ -1704,10 +1761,23 @@ internal fun Line(
 
 /** One item, arranged for reading. It never changes anything. */
 @Composable
-private fun ItemView(chosen: Chosen, onFollow: (String) -> Unit) {
+private fun ItemView(
+    chosen: Chosen,
+    onFollow: (String) -> Unit,
+    onAdd: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+    opensEditing: Boolean = false,
+) {
     // The card scrolls its own fields under a title line that stays put; what follows the
     // card scrolls with the fields.
-    ItemCard(chosen, onFollow, scrolls = true) {
+    ItemCard(
+        chosen = chosen,
+        onFollow = onFollow,
+        scrolls = true,
+        onAdd = onAdd,
+        onDelete = onDelete,
+        opensEditing = opensEditing,
+    ) {
         // A trip is both an item and a set of dives, and shows as both. `GUI-23`.
         if (chosen.item.description == Types.DIVE_TRIP) {
             val dives = remember(chosen) { divesOf(chosen.item) }
@@ -1733,16 +1803,26 @@ private fun divesOf(trip: Item): List<Item> =
  * order, so a reader who knows where one dive's depth sits knows where all of theirs sits.
  */
 @Composable
-private fun ManyView(set: ItemSet, ids: Set<String>, onFollow: (String) -> Unit) {
+private fun ManyView(
+    set: ItemSet,
+    ids: Set<String>,
+    onFollow: (String) -> Unit,
+    onDelete: (() -> Unit)? = null,
+) {
     val dives = remember(set, ids) { ids.mapNotNull { set[it] } }
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        StatsCard("${dives.size} dives", dives, onFollow)
+        StatsCard("${dives.size} dives", dives, onFollow, onDelete)
     }
 }
 
 /** What [items] say together, on a card titled [title]. */
 @Composable
-private fun StatsCard(title: String, items: List<Item>, onFollow: (String) -> Unit) {
+private fun StatsCard(
+    title: String,
+    items: List<Item>,
+    onFollow: (String) -> Unit,
+    onDelete: (() -> Unit)? = null,
+) {
     val stats = remember(items) { listOfNotNull(listedOf(items)) + statisticsOf(items) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1750,11 +1830,17 @@ private fun StatsCard(title: String, items: List<Item>, onFollow: (String) -> Un
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(GAP * 2)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = GAP),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                onDelete?.let { Deleter(it) }
+            }
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
             if (stats.isEmpty()) Aside("these say nothing yet")
             for (pair in stats.chunked(COLUMNS)) {
@@ -1920,6 +2006,53 @@ private fun pathOf(
 }
 
 /**
+ * A delete button, red under the pointer, which is the one thing on a card that cannot be undone.
+ *
+ * Red only while the pointer is on it. A button that is red all the time is a card with an alarm
+ * on it, read a hundred times a day and meant once; one that reddens as it is reached for says
+ * the same thing at the moment it matters. `GUI-35`.
+ */
+@Composable
+private fun Deleter(onDelete: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val over by interaction.collectIsHoveredAsState()
+    IconButton(onClick = onDelete, interactionSource = interaction) {
+        Icon(
+            imageVector = Icons.Filled.Delete,
+            contentDescription = "delete",
+            tint = if (over) {
+                MaterialTheme.colorScheme.error
+            } else {
+                LocalContentColor.current
+            },
+        )
+    }
+}
+
+/**
+ * What a delete asks before it happens, and what it warns of.
+ *
+ * Asked because it cannot be undone: there is no journal yet, `RECON-1`, so a deletion is the
+ * one thing a reader cannot take back. Named where there is one and counted where there are
+ * several, and what points at it is counted too, a reference to something deleted being left
+ * dangling rather than hunted down. `GUI-35`.
+ */
+@Composable
+private fun Confirm(asked: String, warned: String?, onNo: () -> Unit, onYes: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onNo,
+        title = { Text(asked) },
+        text = warned?.let { { Text(it) } },
+        confirmButton = {
+            TextButton(onClick = onYes) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = onNo) { Text("Cancel") } },
+    )
+}
+
+/**
  * One item on a card, with a pencil on its title line that turns the card over into the edit
  * form, where the title line carries Cancel and Save instead. `GUI-29`.
  *
@@ -1932,11 +2065,15 @@ private fun ItemCard(
     chosen: Chosen,
     onFollow: (String) -> Unit,
     scrolls: Boolean = false,
+    onAdd: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+    /** Whether the card opens turned over, which an item made a moment ago does. `GUI-35`. */
+    opensEditing: Boolean = false,
     after: @Composable ColumnScope.() -> Unit = {},
 ) {
     val changer = LocalChanger.current
     val edition = changer.edition
-    var editing by remember(chosen) { mutableStateOf(false) }
+    var editing by remember(chosen) { mutableStateOf(opensEditing) }
     var refused by remember(chosen) { mutableStateOf<String?>(null) }
     val draft = remember(chosen) { Draft() }
     Surface(
@@ -1973,9 +2110,15 @@ private fun ItemCard(
                         },
                     )
                 } else {
+                    onAdd?.let {
+                        IconButton(onClick = it) {
+                            Icon(Icons.Filled.Add, contentDescription = "add another")
+                        }
+                    }
                     IconButton(onClick = { editing = true }) {
                         Icon(Icons.Filled.Edit, contentDescription = "edit")
                     }
+                    onDelete?.let { Deleter(it) }
                 }
             }
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
@@ -2461,6 +2604,90 @@ internal fun shortOf(value: Double): String =
     if (value == value.toLong().toDouble()) value.toLong().toString() else "%.1f".format(value)
 
 // --- What every screen shares.
+
+/**
+ * An item being made: an empty form, and no item until it is saved.
+ *
+ * **Nothing is added until Save.** An id is minted once, from what the item says at the moment
+ * it is made, and nothing renames it afterwards — so making the item first and typing into it
+ * second would leave every item made from this window called `unknown_person`. The form is
+ * therefore over an item nobody holds, and Save hands the fields to `Change.Add`, which mints
+ * the id from them. Cancel leaves no trace. `GUI-35`.
+ */
+@Composable
+private fun NewCard(
+    type: ItemDescription,
+    set: ItemSet,
+    onCancel: () -> Unit,
+    onMade: (String) -> Unit,
+) {
+    val changer = LocalChanger.current
+    val draft = remember(type) { Draft() }
+    val item = remember(type) {
+        ItemReader.read(type, Stored.Members(emptyMap()), set, Units.DEFAULT)
+    }
+    var refused by remember(type) { mutableStateOf<String?>(null) }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(GAP * 2)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "New " + labelOf(type).lowercase(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                EditActions(
+                    draft = draft,
+                    onCancel = onCancel,
+                    onSave = {
+                        val made = changer.change(
+                            listOf(Change.Add(type, draft.fieldsOf(item))),
+                        )
+                        when (made) {
+                            is Outcome.Done -> made.added.firstOrNull()?.let(onMade)
+                            is Outcome.Refused -> refused = made.reason
+                        }
+                    },
+                )
+            }
+            HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            ) {
+                refused?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = GAP),
+                    )
+                }
+                EditFields(item, draft)
+            }
+        }
+    }
+}
+
+/** Nothing chosen, and an offer to make the first of what this tab holds. `GUI-35`. */
+@Composable
+private fun Empty(said: String, onAdd: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "choose something on the left",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline,
+            )
+            TextButton(onClick = onAdd, modifier = Modifier.padding(top = HALF)) { Text(said) }
+        }
+    }
+}
 
 /** A quiet remark where there is nothing else to show. */
 @Composable

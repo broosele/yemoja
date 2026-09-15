@@ -420,6 +420,54 @@ once and corrected. The numbers stay unused rather than being given to something
   own fields for the dives on it, which is what a trip is — the same box either way, however
   the dives came to be chosen. A field a set has nothing to say about is left out rather than
   shown empty, since a set of twenty dives has no remarks and saying so is noise.
+- **GUI-35 — How an item is made and unmade.** *Settled:* **two buttons beside the pencil, and
+   a question before anything is deleted.**
+
+   Reading and editing were reachable and the two ends were not: a logbook could be read and
+   corrected from the window but not grown or pruned, and a new one could hold nothing at all.
+
+   **Plus makes another of what you are looking at.** A tab may hold three types and the one
+   worth adding is the one already in front of the reader, so the chosen item answers it: a
+   person chosen makes a person, a trip chosen on the dive tab makes a trip rather than a dive.
+   Where nothing is chosen the tab's first type answers instead — the dives the table is built
+   around, the regions the sites hang from — and the empty middle offers it in words, *Add a
+   dive*, which is the only way a logbook with nothing in it grows a first item.
+
+   **Plus makes nothing. Save makes it.** An id is minted once, at creation, from what the item
+   says at that moment, and nothing renames it afterwards: there is no `Change.Rename` and the
+   Universe has none, `data/doc.md` recording only that a rename belongs there. So an item made
+   before its form is filled in is minted `unknown_person`, and stays that way after a name is
+   typed into it; a second is `unknown_person#1`.
+
+   The first attempt at this did exactly that. What the same page anticipates is the fix — *an
+   interface that saves a filled form rather than a half-typed one will not produce it* — so
+   plus opens an empty form over an item nobody holds, and Save hands the typed fields to
+   `Change.Add`, which mints `anna_devries` from them. Cancel leaves no trace, there being
+   nothing to undo. A block begun inside the new item folds into those fields rather than
+   becoming a write of its own, there being no owner yet to write it onto.
+
+   **Delete is red under the pointer and nowhere else.** A button red all the time is an alarm
+   on a card that is read a hundred times and meant once; one that reddens as it is reached for
+   says the same thing at the moment it matters.
+
+   **It asks, because it cannot be taken back.** There is no journal yet, `RECON-1`, so a
+   deletion is the one thing in the window with no way back. The question names one item and
+   counts several — a reader deleting a dive wants to see which, and one deleting twenty wants
+   to know it is twenty rather than reading a list they cannot check.
+
+   **And it says what will be left dangling.** A reference to something deleted is not hunted
+   down, `DATA-17`, so deleting a person who is on forty dives leaves forty dives naming
+   somebody who is not there. That is a thing to know before rather than after, so what points
+   at it is counted in the question.
+
+   **Several at once where several can be chosen**, which today is dives: the box of statistics
+   over a selection carries the same delete, asking about the lot as one question. Plus is not
+   offered there — what would be added is not in doubt, but the card is about a set rather than
+   about an item, and one is not made by looking at twenty.
+
+   Open: what a deletion does to an item that owns others is the model's and is not asked here;
+   and nothing yet offers to clear the references a delete leaves, which `Change.Delete` can
+   already do.
 - **GUI-34 — What the home screen says about what has fallen due.** *Settled:* **two boxes
    under the greeting, red for what has lapsed and amber for what falls due within a month.**
 
@@ -717,7 +765,8 @@ once and corrected. The numbers stay unused rather than being given to something
   which is why the mark is the model's rather than a table here. Still open: whether a field
   needs a hint for how much room it takes.
 - **GUI-29 — How a field is edited.** *Settled:* **the item view turned over.** A pencil on
-  the card turns it into the edit form: the same fields in the same places, two columns and
+  the card, between the buttons that make one and unmake one, `GUI-35`, turns it into the edit
+  form: the same fields in the same places, two columns and
   the insets and their tabs, with *Save* and *Cancel* on the title line, so a reader who knows
   where a field sits when reading knows where it sits when editing. The title line, with its
   pencil or its Save and Cancel, stays put while the fields scroll under it, so what is being

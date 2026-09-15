@@ -140,6 +140,30 @@ internal class Draft {
     }
 
     /**
+     * What was typed into [item], as the change that makes it would take it.
+     *
+     * For an item being made, which is not in the logbook and has no id: the fields it was given
+     * go into `Change.Add`, and the id is minted from them. Blocks begun inside it fold in as
+     * their own members, there being no owner yet to write them onto. `GUI-35`.
+     */
+    fun fieldsOf(item: Item): Map<String, Any?> {
+        val out = LinkedHashMap<String, Any?>()
+        for ((slot, drafted) in held) {
+            if (slot.item === item) out[slot.field] = storedOf(drafted.given)
+        }
+        for (one in begun) {
+            if (one.owner !== item) continue
+            val members = LinkedHashMap<String, Stored>()
+            for ((slot, drafted) in held) {
+                if (slot.item !== one.block) continue
+                storedOf(drafted.given)?.let { members[slot.field] = it }
+            }
+            if (members.isNotEmpty()) out[one.name] = Stored.Members(members)
+        }
+        return out
+    }
+
+    /**
      * What the model would refuse [field] of [item] for as drafted, which is found before
      * anything is saved; absent where the field is not drafted or the model takes it.
      */

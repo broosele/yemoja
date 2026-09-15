@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import yemoja.data.ItemReader
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Result
@@ -13,6 +14,7 @@ import yemoja.logic.Types
 import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -167,6 +169,49 @@ class BegunTest {
     private fun logbook(vararg files: Pair<String, String>): Universe {
         val store = MemoryFileStore(mapOf(*files))
         return Universe(LogbookReader.read(store, Types.ALL), null, store, null, null)
+    }
+
+    @Test
+    fun `an item is made from what was typed, so its id is minted from that`() {
+        // An id is minted once, at creation, and nothing renames it afterwards. Making the item
+        // before the form is filled in would call every one of them unknown_person. `GUI-35`.
+        val held = logbook()
+        val draft = Draft()
+        val making = ItemReader.read(
+            Types.PERSON,
+            Stored.Members(emptyMap()),
+            held.logbook,
+            yemoja.data.Units.DEFAULT,
+        )
+        draft.put(making, "first_name", "Anna")
+        draft.put(making, "last_name", "Devries")
+        val done = assertIs<Outcome.Done>(
+            held.change(Operation.EDIT, Change.Add(Types.PERSON, draft.fieldsOf(making))),
+        )
+        assertEquals(listOf("anna_devries"), done.added)
+    }
+
+    @Test
+    fun `a block begun inside an item being made folds into the fields that make it`() {
+        val held = logbook()
+        val draft = Draft()
+        val making = ItemReader.read(
+            Types.GEAR,
+            Stored.Members(emptyMap()),
+            held.logbook,
+            yemoja.data.Units.DEFAULT,
+        )
+        draft.put(making, "name", "Wing blue")
+        val buoyancy = draft.begin(making, making.description["buoyancy"] as OwnedItemDescription)
+        draft.put(buoyancy, "mass", "2.4")
+        val fields = draft.fieldsOf(making)
+        assertEquals(setOf("name", "buoyancy"), fields.keys, "there is no owner to write onto yet")
+        val done = assertIs<Outcome.Done>(
+            held.change(Operation.EDIT, Change.Add(Types.GEAR, fields)),
+        )
+        val made = held.logbook[done.added.single()]!!
+        val block = (made.read("buoyancy") as Result.Usable).value as OwnedItem
+        assertEquals(2.4, (block.single<Double>("mass") as Result.Usable).value)
     }
 
     @Test
