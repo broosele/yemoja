@@ -2199,12 +2199,14 @@ private fun ItemCard(
                         onCancel = {
                             editing = false
                             refused = null
+                            draft.clear()
                         },
                         onSave = {
                             when (val outcome = changer.change(draft.writes())) {
                                 is Outcome.Done -> {
                                     editing = false
                                     refused = null
+                                    draft.clear()
                                 }
                                 is Outcome.Refused -> refused = outcome.reason
                             }

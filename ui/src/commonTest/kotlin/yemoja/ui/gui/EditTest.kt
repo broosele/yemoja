@@ -240,6 +240,22 @@ class BegunTest {
     }
 
     @Test
+    fun `closing the form forgets what was typed, and the blocks it began`() {
+        // A cancelled edit reopened with its values still typed in, and Save offered them.
+        val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")
+        val suit = held.logbook["suit"]!!
+        val draft = Draft()
+        val inset = suit.description["buoyancy"] as OwnedItemDescription
+        val block = draft.begin(suit, inset)
+        draft.put(block, "mass", "4.2")
+        draft.put(suit, "name", "Wetsuit")
+        draft.clear()
+        assertTrue(draft.isEmpty)
+        assertEquals(emptyList(), draft.writes())
+        assertTrue(draft.begin(suit, inset) !== block, "a block begun afterwards is a new one")
+    }
+
+    @Test
     fun `beginning the same block twice gives the same one back`() {
         val held = logbook("gear.json" to """{"suit": {"name": "Drysuit", "category": "suit"}}""")
         val suit = held.logbook["suit"]!!

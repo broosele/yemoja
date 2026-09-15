@@ -111,6 +111,17 @@ internal class Draft {
         held.keys.filter { it.item === item }.forEach { held.remove(it) }
     }
 
+    /**
+     * Forgets every change and every block begun, which is what closing the form does.
+     *
+     * Cancel and a Save that went through both close it. Without this the form reopened on the
+     * same item with what had been cancelled still typed in it, and Save offered to write it.
+     */
+    fun clear() {
+        held.clear()
+        begun.clear()
+    }
+
     val isEmpty: Boolean get() = held.isEmpty()
 
     /**
