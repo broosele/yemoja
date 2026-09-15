@@ -1974,6 +1974,7 @@ Kept with their identifiers so earlier discussion still resolves.
   | pressure | `bar` `psi` `Pa` |
   | angle | `deg` |
   | density | `kg/m3` |
+  | flow | `l/min` `m3/s` |
 
   The first of each is the default. Case is part of the name: `C` is Celsius and `K` is
   kelvin, `Pa` is the pascal, and none can be written the other way round. Cubic metres
@@ -1987,6 +1988,11 @@ Kept with their identifiers so earlier discussion still resolves.
   second spelling was rejected rather than forgotten: `g/cm3` writes the same water as
   1.025, and two spellings a thousand apart is exactly the confusion this set exists to
   prevent.
+
+  *Amended:* **flow** was added for a SAC, gas breathed over time, `LOGIC-33`. Litres a minute
+  is how divers quote one; `m3/s` is the SI name UDDF writes one in, and is here so such a file
+  needs no arithmetic of its own. Imperial cubic feet a minute is not, there being no imperial
+  volume in the set either.
 
 - **DATA-87 — What an unrecognised unit name spoils.** *Settled:* the measurements of
   that dimension, and nothing else. A file declaring `"length": "fathom"` gives up its

@@ -244,6 +244,15 @@ private val PROFILE = ItemDescription(
             Dimension.PRESSURE,
             cardinality = Cardinality.KEYED_SERIES,
         ),
+        // Litres a minute at the surface, through time, from the pressure of whichever source was
+        // being breathed. Never written. `LOGIC-33`.
+        NumberDescription(
+            "sac",
+            Dimension.FLOW,
+            label = "SAC",
+            cardinality = Cardinality.SERIES,
+            role = Role.Derived(::profilesSac),
+        ),
         REMARKS,
     ),
     proposedId = ::profilesProposedKey,
@@ -365,6 +374,14 @@ private val GAS_SOURCE = ItemDescription(
             "volume",
             Dimension.VOLUME,
             role = Role.Overrideable(::cylindersVolume),
+        ),
+        // Litres a minute at the surface over the time this source was breathed, from the primary
+        // recording's; written by hand where there is no recording to give one. `LOGIC-33`.
+        NumberDescription(
+            "sac",
+            Dimension.FLOW,
+            label = "SAC",
+            role = Role.Overrideable(::sourcesSac),
         ),
         REMARKS,
     ),

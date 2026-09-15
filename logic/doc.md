@@ -475,6 +475,30 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-33 — How a SAC is worked out.** *Settled:* **a series on each recording, and a figure
+  on each gas source over the time it was breathed, in litres a minute.**
+
+  A recording's `sac` is worked out between each two pressure readings of a source, where that
+  source was being breathed the whole way: the drop in bar times the source's `volume`, over the
+  minutes between, over the ambient pressure in bar at the depth averaged along the line between
+  samples. The switches say what was breathed; with none, the only source is. A stretch holding a
+  switch is left out rather than shared, since the drop in it is not all this cylinder's doing.
+
+  A gas source's `sac` is the gas it gave over all the stretches it was breathed, divided by those
+  stretches' minutes each weighted by its ambient pressure. That is the series averaged over time
+  rather than a mean of its points, which would weigh a thirty-second stretch like a ten-minute
+  one. It comes from the primary recording, and is overrideable, since a dive with no pressures
+  logged still has a SAC somebody worked out by hand.
+
+  **Litres a minute rather than bar a minute**, because a figure in bar belongs to one cylinder
+  size and cannot be compared between a twin set and a stage; litres can. That needed a unit the
+  model had no dimension for, and `flow` was added to `DATA-8`.
+
+  **What it assumes.** An ideal gas, which undercounts what a full cylinder holds by a few
+  percent, as every logbook's SAC does. Water of the recording's `density`, and of 1020 where it
+  gives none, the nominal figure most computers convert with. Air of the dive's
+  `atmospheric_pressure`, and sea level where it gives none. None of these is written anywhere:
+  change one and the figure follows.
 - **LOGIC-32 — What a dive's time means, and where the clocks' differences are kept.**
   *Settled:* **a dive's times are local, the dive says how far local time was ahead of GMT, and
   each recording says how far its clock was out.** It replaces `LOGIC-11`.

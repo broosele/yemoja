@@ -409,6 +409,12 @@ that is the only record of it.
 - `pressures` (keyed series) — gauge pressure left in each cylinder, throughout: one series
   under each `gas_sources` key it measured, so a dive on twins with a stage has three,
   and two computers watching one cylinder keep their readings apart.
+- `sac` (series, worked out) — how much gas you were breathing, as litres a minute at the
+  surface's pressure, throughout: SAC, for surface air consumption. Worked out from the pressure
+  of whichever cylinder you were breathing, between each two readings of it, from its `volume`
+  and the depth you were at. A stretch in which you switched to another cylinder is left out,
+  and so is one whose cylinder has no `volume`. Nothing is worked out without pressures, and
+  nothing is stored.
 - `remarks` (multiline text) — anything about the recording itself: a computer you
   do not trust, a transmitter that dropped out.
 
@@ -478,6 +484,15 @@ profile's `gas_switches`, not in where the entry happens to sit.
   cannot work the volume out rather than leaving the field looking empty: pointing at a
   regulator, or at a cylinder whose capacity was never filled in, is a mistake worth
   seeing. Writing a volume yourself settles it either way.
+- `sac` (number, worked out) — how much gas you breathed from this source, as litres a minute at
+  the surface's pressure, over the time you were breathing it. Taken from the primary profile's
+  `sac`, and counting a long stretch for more than a short one. Write it yourself where there is
+  no recording with pressures to give one.
+
+  **What went in is an ideal gas.** A cylinder's drop in bar times its volume is taken as the
+  gas it gave; a real gas at 200 bar holds a few percent more, which is not corrected for. Where
+  a recording says nothing of the water, it is taken to be at the standard 1020 kilograms per
+  cubic metre most computers assume, and where the dive says nothing of the air, sea level.
 
 - `remarks` (multiline text) — anything about the cylinder or the fill.
 

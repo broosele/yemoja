@@ -21,7 +21,7 @@ import kotlin.reflect.KClass
  * none. `DATA-8`'s unit table has no row for it.
  */
 enum class Dimension {
-    LENGTH, MASS, TIME, TEMPERATURE, VOLUME, PRESSURE, ANGLE, DENSITY, DIMENSIONLESS,
+    LENGTH, MASS, TIME, TEMPERATURE, VOLUME, PRESSURE, ANGLE, DENSITY, FLOW, DIMENSIONLESS,
 }
 
 /**

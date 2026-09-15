@@ -157,9 +157,10 @@ the question does not arise in that direction.
 mix — a pair of stages, or twins you switched between — the file cannot say which one you
 went to, and reading it back cannot recover it.
 
-**Lost on import.** Gas consumption rate, and the figures a file may carry that follow
-from the mix anyway — equivalent air depth, maximum operating depth, maximum partial
-pressure. Nothing is lost that cannot be worked out again.
+**Lost on import.** Gas consumption rate, which Yemoja works out for itself from the
+pressures, and the figures a file may carry that follow from the mix anyway — equivalent air
+depth, maximum operating depth, maximum partial pressure. Nothing is lost that cannot be worked
+out again.
 
 ## Dive sites
 

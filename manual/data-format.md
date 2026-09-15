@@ -207,6 +207,7 @@ Unless the file says otherwise, measurements are in these units:
 | Pressure | bar, `bar` | psi, `psi`, pascal `Pa` |
 | Longitude and latitude | degrees, `deg` | |
 | Water density | kilograms per cubic metre, `kg/m3` | |
+| Gas breathed | litres per minute, `l/min` | cubic metres a second, `m3/s` |
 
 Case matters: `C` is Celsius and `K` is kelvin, and `Pa` is the pascal. Nothing is
 written with a superscript, so cubic metres are `m3`, and a compound divides with a

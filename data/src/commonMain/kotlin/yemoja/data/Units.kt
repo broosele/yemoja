@@ -148,4 +148,7 @@ private val SCALES: Map<Dimension, Map<String, Scale>> = mapOf(
     // which would not tell two ends of a wreck apart.
     Dimension.ANGLE to mapOf("deg" to Scale(1.0, decimals = 6)),
     Dimension.DENSITY to mapOf("kg/m3" to Scale(1.0, decimals = 3)),
+    // A volume over time, which is what breathing gas is. Nine for cubic metres a second, the
+    // unit UDDF writes: twenty litres a minute is 0.000333333 of one.
+    Dimension.FLOW to mapOf("l/min" to Scale(1.0, decimals = 3), "m3/s" to Scale(60_000.0, 0.0, 9)),
 )

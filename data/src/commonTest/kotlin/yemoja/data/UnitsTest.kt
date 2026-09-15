@@ -136,6 +136,7 @@ class AffineConversionTest {
             Dimension.PRESSURE to listOf("bar", "psi", "Pa"),
             Dimension.ANGLE to listOf("deg"),
             Dimension.DENSITY to listOf("kg/m3"),
+            Dimension.FLOW to listOf("l/min", "m3/s"),
         )
         for ((dimension, names) in every) {
             for (name in names) {

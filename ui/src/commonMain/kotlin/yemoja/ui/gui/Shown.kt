@@ -398,6 +398,7 @@ private val SYMBOLS: Map<Dimension, String> = mapOf(
     Dimension.PRESSURE to "bar",
     Dimension.DENSITY to "kg/m³",
     Dimension.ANGLE to "°",
+    Dimension.FLOW to "l/min",
 )
 
 /**
@@ -439,6 +440,7 @@ private val DECIMALS: Map<Dimension, Int> = mapOf(
     Dimension.VOLUME to 1,
     Dimension.PRESSURE to 0,
     Dimension.DENSITY to 0,
+    Dimension.FLOW to 1,
 )
 
 private fun plain(text: String): List<Part> = listOf(Part(text))

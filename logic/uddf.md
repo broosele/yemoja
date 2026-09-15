@@ -234,8 +234,11 @@ a small one — a mix is named and analysed in whole percentages, and rounding o
 the conservative direction — but it is a loss, and it is in the field `DATA-55` names as
 its own example.
 
-**UDDF's, not modelled.** `breathingconsumptionvolume` — gas consumption rate, which
-this model could derive from pressures and volume but does not. `equivalentairdepth`,
+**A counterpart now, and not yet read or written.** `breathingconsumptionvolume` — a gas
+consumption rate, in `m3/s`, which is a gas source's `sac` here, worked out from the pressures and
+the volume or written by hand. `LOGIC-33`.
+
+**UDDF's, not modelled.** `equivalentairdepth`,
 `maximumoperationdepth`, `maximumpo2` — all derivable from the mix. `priceperlitre`,
 which `FEAT-20` rules out along with everything else about money. `aliasname`.
 
