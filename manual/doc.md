@@ -76,26 +76,28 @@ current as they are decided.
 
 ## Chapters
 
+In reading order, which is the order the Manuals tab lists them in:
+
 - `getting-started.md` — the window: opening a logbook, the home screen, the tabs, reading
   an item, changing, adding and deleting, and copying text. **Written.**
-- `data-format.md` — the logbook on disk: how the files are arranged, named and
-  written, and how to edit them by hand. **Written.**
-- `data-fields.md` — every kind of item and every field it may hold. **Written**,
-  and kept current as fields are decided.
-- `decompression.md` — the model, what it assumes and what it cannot know.
-  **Written.** It carries a safety obligation the others do not, and the wording is
-  reviewed before any release.
-- `settings.md` — the two settings files, which of them wins, and why they are not part
-  of the data format. **Written**, and grows as settings are added.
-- `app-info.md` — version, credits, licence, and the warranty and safety notices.
-  **Written.**
-- `uddf.md` — what survives a UDDF file, in both directions, and what does not.
-  **Written**, and kept current as the comparison is. It states what the two formats can
-  and cannot say about a dive, and what an export does not write yet; how an import is
-  driven is the next chapter's.
 - `computers-and-importing.md` — downloading from a dive computer, looking over what
   arrived, importing another logbook, and exporting. **Written.** `uddf.md` covers what a
   file keeps; this one covers doing it.
+- `uddf.md` — what survives a UDDF file, in both directions, and what does not.
+  **Written**, and kept current as the comparison is. It states what the two formats can
+  and cannot say about a dive, and what an export does not write yet; how an import or an
+  export is done is `computers-and-importing.md`'s.
+- `data-fields.md` — every kind of item and every field it may hold. **Written**,
+  and kept current as fields are decided.
+- `data-format.md` — the logbook on disk: how the files are arranged, named and
+  written, and how to edit them by hand. **Written.**
+- `settings.md` — the two settings files, which of them wins, and why they are not part
+  of the data format. **Written**, and grows as settings are added.
+- `decompression.md` — the model, what it assumes and what it cannot know.
+  **Written.** It carries a safety obligation the others do not, and the wording is
+  reviewed before any release.
+- `app-info.md` — version, credits, licence, and the warranty and safety notices.
+  **Written.**
 - Dives, gear, sites and buddies — not written; waits on the data model.
 - Sync and backup — not written. The behaviour is settled, so this is writable whenever
   the feature is.

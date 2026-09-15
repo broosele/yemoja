@@ -15,18 +15,20 @@ package yemoja.ui.gui
 /**
  * Every chapter, by file, in reading order.
  *
- * App info opens the manual, and after it the order is the manual's own, as its conventions list
- * them. A chapter not named here is not shown, which a test on the folder catches.
+ * The manual's own order, as its conventions list them: using the window first, then getting
+ * dives in and moving them elsewhere, what a logbook holds and how its files are written, and the
+ * application itself last. A chapter not named here is not shown, which a test on the folder
+ * catches.
  */
 internal val CHAPTERS: List<String> = listOf(
-    "app-info.md",
     "getting-started.md",
-    "data-format.md",
-    "data-fields.md",
-    "decompression.md",
-    "settings.md",
-    "uddf.md",
     "computers-and-importing.md",
+    "uddf.md",
+    "data-fields.md",
+    "data-format.md",
+    "settings.md",
+    "decompression.md",
+    "app-info.md",
 )
 
 /** Chapter is one file of the manual, read into its blocks. */

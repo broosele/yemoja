@@ -17,6 +17,60 @@ yourself, whatever becomes of the app.
 - **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.
 - **Location cannot add or delete a site** from the window.
 
+## No warranty, and no liability
+
+Yemoja is provided as it is, with no warranty of any kind. There is no promise
+that it is correct, that it will keep working, or that it is fit for any
+particular purpose. Everything you do with it, you do at your own risk, and the
+author accepts no liability for any loss or damage that follows — including the
+loss or corruption of your logbook.
+
+This matters more than usual for a diving application, so plainly:
+
+Yemoja is a logbook, and an aid to understanding dives you have already made. It
+is not dive-planning software, it is not a dive computer, and it has been neither
+certified nor validated as either.
+
+The decompression figures it shows are what your computer recorded, and any it
+works out in future will be one model's estimate, computed from a recording after the
+fact. Such figures will differ from what your computer told you at the time, and they
+may be wrong. Never plan a dive from them, never carry them
+into the water, and never let them override your training, your computer, your
+tables, or your own judgement.
+
+Diving is dangerous. Responsibility for your dives is yours alone.
+
+## Licence
+
+Two parts of Yemoja are given away outright, under CC0 — a public domain dedication
+with no conditions attached:
+
+- **The manuals**, this chapter among them.
+- **The data the app ships with**: the regions, the certifications, the gear
+  catalogue.
+
+Use them for anything, without asking and without crediting anyone. That is
+deliberate. A logbook you could not read without this application would not really
+be yours, and a format nobody else is free to implement is not really a format.
+
+The format itself — the fields, how they nest, the way a reference is written — is
+disclaimed too. No copyright is asserted over it and no patent. Write your own
+software to read and write these files, and you owe nobody anything.
+
+**The application itself is another matter.** It is not open source, and no licence
+grants you any rights to it: all rights are reserved by the author. You may not use,
+copy, modify or distribute it, in whole or in part, without explicit permission, and
+where permission has been given it covers only what was agreed.
+
+Whether that changes has not been decided.
+
+## Names that belong to others
+
+Yemoja is not affiliated with, endorsed by, or connected to any diving agency,
+manufacturer or operator named in this application or in the data it ships. Those
+names appear because the items are about them: a certification cannot be recorded
+without naming who issued it. All trademarks belong to their owners.
+
 ## Credits
 
 Yemoja is written by Bram Rooseleer.
@@ -50,60 +104,6 @@ it down.
 
 The dot beneath the letter in Yemọja is Yoruba spelling: it marks an open vowel.
 The name is said roughly "yeh-MAW-jah".
-
-## Names that belong to others
-
-Yemoja is not affiliated with, endorsed by, or connected to any diving agency,
-manufacturer or operator named in this application or in the data it ships. Those
-names appear because the items are about them: a certification cannot be recorded
-without naming who issued it. All trademarks belong to their owners.
-
-## Licence
-
-Two parts of Yemoja are given away outright, under CC0 — a public domain dedication
-with no conditions attached:
-
-- **The manuals**, this chapter among them.
-- **The data the app ships with**: the regions, the certifications, the gear
-  catalogue.
-
-Use them for anything, without asking and without crediting anyone. That is
-deliberate. A logbook you could not read without this application would not really
-be yours, and a format nobody else is free to implement is not really a format.
-
-The format itself — the fields, how they nest, the way a reference is written — is
-disclaimed too. No copyright is asserted over it and no patent. Write your own
-software to read and write these files, and you owe nobody anything.
-
-**The application itself is another matter.** It is not open source, and no licence
-grants you any rights to it: all rights are reserved by the author. You may not use,
-copy, modify or distribute it, in whole or in part, without explicit permission, and
-where permission has been given it covers only what was agreed.
-
-Whether that changes has not been decided.
-
-## No warranty, and no liability
-
-Yemoja is provided as it is, with no warranty of any kind. There is no promise
-that it is correct, that it will keep working, or that it is fit for any
-particular purpose. Everything you do with it, you do at your own risk, and the
-author accepts no liability for any loss or damage that follows — including the
-loss or corruption of your logbook.
-
-This matters more than usual for a diving application, so plainly:
-
-Yemoja is a logbook, and an aid to understanding dives you have already made. It
-is not dive-planning software, it is not a dive computer, and it has been neither
-certified nor validated as either.
-
-The decompression figures it shows are what your computer recorded, and any it
-works out in future will be one model's estimate, computed from a recording after the
-fact. Such figures will differ from what your computer told you at the time, and they
-may be wrong. Never plan a dive from them, never carry them
-into the water, and never let them override your training, your computer, your
-tables, or your own judgement.
-
-Diving is dangerous. Responsibility for your dives is yours alone.
 
 ---
 
