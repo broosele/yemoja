@@ -153,6 +153,27 @@ class ChangedLogbookTest {
     }
 
     @Test
+    fun `clearing the references reaches inside the owned items`() {
+        // Most of a dive's references are not the dive's own fields. `DATA-17`.
+        val (store, universe) = opened(
+            "operator.json" to """{"shop": {"name": "Shop"}}""",
+            "gear.json" to """{"fins": {"name": "Fins"}}""",
+            "person.json" to """{"anna": {}}""",
+            "dive/2026-01-01#0.json" to """{"buddies": ["@anna"],
+                "details": {"operator": "@shop"}, "gear": {"items": ["@fins"]}}""",
+        )
+        universe.change(Operation.EDIT, Change.Delete("shop", alsoReferences = true))
+        universe.change(Operation.EDIT, Change.Delete("fins", alsoReferences = true))
+        val dive = saved(store).logbook["2026-01-01#0"]!!
+        val details = (dive.read("details") as? Result.Usable)?.value as? Item
+        assertEquals(Result.Absent, details?.read("operator") ?: Result.Absent, "in an owned item")
+        val gear = (dive.read("gear") as? Result.Usable)?.value as? Item
+        val items = (gear?.read("items") as? Result.Usable)?.value as? List<*>
+        assertTrue(items.isNullOrEmpty(), "and out of a list inside one: $items")
+        assertTrue("@anna" in dive.read("buddies").toString(), "the one not deleted stays")
+    }
+
+    @Test
     fun `a reference to something deleted is left dangling, not hunted down`() {
         // A state the model already carries: a person not entered yet looks the same from here.
         val (store, universe) = opened(

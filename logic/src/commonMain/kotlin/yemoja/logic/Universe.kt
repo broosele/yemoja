@@ -1,5 +1,6 @@
 package yemoja.logic
 
+import yemoja.data.OwnedItem
 import yemoja.data.Cardinality
 import yemoja.data.Element
 import yemoja.data.FieldDescription
@@ -209,10 +210,21 @@ class Universe(
         return changed
     }
 
-    /** Takes [id] out of every reference field of [item], and says whether anything moved. */
+    /**
+     * Takes [id] out of every reference field of [item], and says whether anything moved.
+     *
+     * **Into the owned items too.** Most of a dive's references are not the dive's own fields:
+     * the trip and the operator are in `details`, the equipment in `gear`, the cylinder in a gas
+     * source, the computer in a profile. Clearing only the top level would leave most of what
+     * named a deleted item still naming it, which is worse than not offering to clear at all.
+     */
     private fun clearIn(item: Item, id: String): Boolean {
         var moved = false
         for (field in item.description.fields) {
+            if (field is OwnedItemDescription) {
+                for (owned in ownedIn(item, field)) if (clearIn(owned, id)) moved = true
+                continue
+            }
             if (field !is ReferenceDescription) continue
             when (val read = item.read(field.name)) {
                 is Result.Usable -> {
@@ -234,6 +246,17 @@ class Universe(
             }
         }
         return moved
+    }
+
+    /** Every owned item [field] holds on [item], however many it holds. */
+    private fun ownedIn(item: Item, field: OwnedItemDescription): List<Item> {
+        val read = item.read(field.name) as? Result.Usable ?: return emptyList()
+        return when (val held = read.value) {
+            is OwnedItem -> listOf(held)
+            is Map<*, *> -> held.values.mapNotNull { (it as? Element.Usable<*>)?.value as? Item }
+            is List<*> -> held.mapNotNull { (it as? Element.Usable<*>)?.value as? Item }
+            else -> emptyList()
+        }
     }
 
     private fun names(held: Element<Any>, id: String): Boolean =

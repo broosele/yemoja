@@ -87,8 +87,10 @@ class DeleteAskedTest {
     fun `what points at it is counted, and will go on pointing`() {
         // A reference to something deleted is left dangling rather than hunted down.
         val warned = deleteWarned(logbook, setOf("anna"))!!
-        assertTrue(warned.startsWith("2 items name them"), warned)
+        assertTrue(warned.startsWith("2 items name it"), "one is going, so it: $warned")
         assertTrue("no longer there" in warned)
+        val both = deleteWarned(logbook, setOf("anna", "bo"))!!
+        assertTrue(both.startsWith("3 items name them"), "two are going, so them: $both")
     }
 
     @Test

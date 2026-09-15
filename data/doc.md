@@ -2144,6 +2144,24 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-117 — How far clearing a deleted item's references reaches.** *Settled:* **all the
+  way down, into the owned items.**
+
+  `Change.Delete` can clear what names what is going, and it walked an item's own reference
+  fields only. That is the smaller half: most of a dive's references are not the dive's fields
+  at all — the trip and the operator are in `details`, the equipment in `gear`, the cylinder in
+  a gas source, the computer in a profile. Clearing the top level and calling it done left most
+  of what named a deleted item still naming it, which is worse than not offering to clear,
+  because it looks as though it worked.
+
+  The walk now recurses through singular owned items and through the entries of keyed ones. It
+  still touches references and nothing else: a mention in free text is prose, `JSON-23`, and
+  removing one would be editing what somebody wrote.
+
+  Nothing reaches the other way. An owned item lives inside its owner and nothing outside can
+  name one, so deleting an owner needs no clearing at all — the file goes and everything in it
+  goes with it.
+
 - **DATA-116 — Whether an owned item with nothing in it is written.** *Settled:* **a singular
   one is not. A keyed collection is left alone.**
 

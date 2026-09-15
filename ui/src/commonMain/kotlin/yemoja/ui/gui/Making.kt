@@ -59,8 +59,10 @@ internal fun deleteAsked(set: ItemSet, ids: Set<String>): String? {
 internal fun deleteWarned(set: ItemSet, ids: Set<String>): String? {
     val pointing = ids.sumOf { pointingAt(set, it) }
     if (pointing == 0) return null
-    val many = if (pointing == 1) "One item names it" else "$pointing items name them"
-    return "$many, and will go on naming what is no longer there."
+    // Both halves agree with what they count: how many point, and how many are going.
+    val naming = if (pointing == 1) "One item names" else "$pointing items name"
+    val going = if (ids.size == 1) "it" else "them"
+    return "$naming $going, and will go on naming what is no longer there."
 }
 
 /** How many items in [set] name [id], which is what a delete leaves dangling. */

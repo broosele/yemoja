@@ -465,9 +465,16 @@ once and corrected. The numbers stay unused rather than being given to something
    offered there — what would be added is not in doubt, but the card is about a set rather than
    about an item, and one is not made by looking at twenty.
 
-   Open: what a deletion does to an item that owns others is the model's and is not asked here;
-   and nothing yet offers to clear the references a delete leaves, which `Change.Delete` can
-   already do.
+   **And it offers to clear them.** A box in the question, off until it is ticked, turns the
+   deletion into `Change.Delete`'s `alsoReferences`. Off, because rewriting other items is a
+   second thing being asked for rather than a tidier way of doing the first: `DATA-17` settles
+   that a dangling reference is a state the model carries and an interface shows, the same state
+   as a buddy not entered yet. The box is only there where something points at what is going.
+
+   **What the item owns goes with it**, and needs no rule: an owned item lives inside its
+   owner's file and is written and read as part of it, so deleting the owner deletes the file
+   and everything in it. Nothing outside can name an owned item either — a key names an entry
+   inside one owner and is meaningless the moment it leaves — so there is nothing to dangle.
 - **GUI-34 — What the home screen says about what has fallen due.** *Settled:* **two boxes
    under the greeting, red for what has lapsed and amber for what falls due within a month.**
 

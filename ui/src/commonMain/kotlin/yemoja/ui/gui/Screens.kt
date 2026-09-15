@@ -1158,16 +1158,19 @@ private fun Subject(
         // minted from what was typed rather than from an item saying nothing. `GUI-35`.
         val add: (() -> Unit)? = making?.let { type -> { kept.making = type } }
         var asking by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
+        var clearing by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
         val going = if (kept.chosenMany.size > 1) kept.chosenMany else setOfNotNull(chosen?.id)
         if (asking) {
             deleteAsked(set, going)?.let { asked ->
                 Confirm(
                     asked = asked,
                     warned = deleteWarned(set, going),
+                    clearing = clearing,
+                    onClearing = { clearing = it },
                     onNo = { asking = false },
                     onYes = {
                         asking = false
-                        changer.change(going.map { Change.Delete(it) })
+                        changer.change(going.map { Change.Delete(it, clearing) })
                         kept.chosen = null
                         kept.chosenMany = emptySet()
                     },
@@ -2038,11 +2041,34 @@ private fun Deleter(onDelete: () -> Unit) {
  * dangling rather than hunted down. `GUI-35`.
  */
 @Composable
-private fun Confirm(asked: String, warned: String?, onNo: () -> Unit, onYes: () -> Unit) {
+private fun Confirm(
+    asked: String,
+    warned: String?,
+    clearing: Boolean,
+    onClearing: (Boolean) -> Unit,
+    onNo: () -> Unit,
+    onYes: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onNo,
         title = { Text(asked) },
-        text = warned?.let { { Text(it) } },
+        text = warned?.let {
+            {
+                Column {
+                    Text(it)
+                    // Offered where there is something to clear, and off until it is ticked:
+                    // rewriting other items is a second thing being asked for, not a tidier way
+                    // of doing the first. `DATA-17`, `GUI-35`.
+                    Row(
+                        modifier = Modifier.padding(top = HALF).clickable { onClearing(!clearing) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = clearing, onCheckedChange = onClearing)
+                        Text("Clear the references too")
+                    }
+                }
+            }
+        },
         confirmButton = {
             TextButton(onClick = onYes) {
                 Text("Delete", color = MaterialTheme.colorScheme.error)
