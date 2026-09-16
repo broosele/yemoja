@@ -3,6 +3,7 @@ package yemoja.ui.gui
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
+import yemoja.logic.wasMade
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

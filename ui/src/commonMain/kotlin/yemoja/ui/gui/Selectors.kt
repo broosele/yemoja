@@ -9,6 +9,7 @@ import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.inOrder
 import yemoja.logic.Types
+import yemoja.logic.wasMade
 
 /*
  * What each tab's selector holds, worked out from the logbook and holding no screen in it.
@@ -22,15 +23,6 @@ import yemoja.logic.Types
 
 /** One item a selector offers: what it is called, and how to reach it. */
 internal class Chosen(val id: String, val title: String, val item: ReferenceableItem)
-
-/**
- * Whether [dive] was made rather than only intended, which is what the window counts.
- *
- * A dive says so itself through `planned`, worked out from its profiles, and one that says
- * nothing was made. `LOGIC-36`, `GUI-39`.
- */
-internal fun wasMade(dive: Item): Boolean =
-    (dive.single<Boolean>("planned") as? Result.Usable)?.value != true
 
 /** The dives of [set] that were made, in the order it holds them. `GUI-39`. */
 internal fun divesMadeIn(set: ItemSet): List<ReferenceableItem> =
