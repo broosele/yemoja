@@ -123,7 +123,11 @@ anything you typed, so changing a gas afterwards does not move the stops — ask
 it will tell you they no longer hold. A plan that cannot be answered for says why, which is
 usually that nobody has written its gradient factors in.
 
-Making a plan means adding a profile to a dive in the form and setting `planned` to true.
+**Starting a plan still means editing a file.** The form does not take a series — nobody types a
+thousand samples into a box — so a plan's depths are written into the dive's own file by hand:
+a profile with `planned` set, the water type, the gradient factors, and a `depth` reaching the
+bottom. From there the window does the rest, and *Write the way up* finishes it.
+[data-fields.md](data-fields.md) lists what a profile holds, and
 [decompression.md](decompression.md) explains what the model does, what it assumes, and what it
 cannot know.
 
