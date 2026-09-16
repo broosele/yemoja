@@ -116,17 +116,18 @@ out* so you can tell them from what your computer recorded.
 Most recordings say nothing about it, and then nothing is shown: a computer has to have written
 down which gradient factors it was running before the model can say anything at all.
 
-**A plan carries a button that writes its way up.** Fill in the depths as far as the bottom, and
-*Write the way up* adds the ascent, its stops and its gas switches to the profile, rising at 9
-metres a minute with the shallowest stop at 3. What it wrote is then part of the plan like
-anything you typed, so changing a gas afterwards does not move the stops — ask the model again and
-it will tell you they no longer hold. A plan that cannot be answered for says why, which is
+**A plan carries a button that works its ascent out.** Fill the depths in as far as the bottom,
+and *Add the ascent* writes the rest of the dive into the plan: coming up at 9 metres a minute,
+the decompression stops it owes with the shallowest at 3 metres, and the switch to a richer gas
+wherever the depth allows one. What it wrote is then part of the plan like anything you typed, so
+changing a gas afterwards does not move the stops — ask the model again and it will tell you they
+no longer hold. A plan that cannot be answered for says why, which is
 usually that nobody has written its gradient factors in.
 
 **Starting a plan still means editing a file.** The form does not take a series — nobody types a
 thousand samples into a box — so a plan's depths are written into the dive's own file by hand:
 a profile with `planned` set, the water type, the gradient factors, and a `depth` reaching the
-bottom. From there the window does the rest, and *Write the way up* finishes it.
+bottom. From there the window does the rest, and *Add the ascent* finishes it.
 [data-fields.md](data-fields.md) lists what a profile holds, and
 [decompression.md](decompression.md) explains what the model does, what it assumes, and what it
 cannot know.

@@ -377,7 +377,7 @@ once and corrected. The numbers stay unused rather than being given to something
 
 - **GUI-40 — Where what the model says appears, and how a plan is written.** *Settled:*
   **under the run it is about, in the box that already holds the run, and a plan carries a button
-  that writes its way up.**
+  that works its ascent out.**
 
   A run is a recording or a plan and the window draws either, so the model's answer belongs where
   the run is rather than in a screen of its own. `LOGIC-37` answers for both alike.
@@ -416,7 +416,12 @@ once and corrected. The numbers stay unused rather than being given to something
   **What the ascent assumes is on the button, not behind it**: the rate it rises at and the depth
   of the shallowest stop, which `LOGIC-35` takes as arguments rather than storing. They are
   constants until there is a settings screen to read a preference from, and the row says what they
-  are, so nothing about the way up is worked out from something a reader cannot see.
+  are, so nothing about the ascent is worked out from something a reader cannot see.
+
+  **The button says what pressing it does**: *Add the ascent*, in the word a diver uses for that
+  part of a dive. It read *Write the way up* first, which is this document's phrase for the thing
+  rather than anybody else's, and a button borrowing a document's prose asks a reader to have read
+  the document.
 
 - **GUI-9 — Whether a statistic says what it left out.** *Settled:* a statistic is
   shown with the items behind it, both the number used and the number there were —
