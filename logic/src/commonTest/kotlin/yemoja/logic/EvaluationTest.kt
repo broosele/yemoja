@@ -230,6 +230,20 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a dive says how long before flying, and how long before it is out of you`() {
+        val deep = done(planned(DEEP))
+        val shallow = done(planned(SHALLOW))
+
+        assertTrue(deep.noFlight!! > 0, "forty metres for half an hour is not a wait of nothing")
+        assertTrue(deep.noFlight!! < deep.desaturation!!, "flying comes first, and settling later")
+        assertTrue(
+            shallow.noFlight!! < deep.noFlight!!,
+            "twelve metres asks less of a wait than forty: ${shallow.noFlight} against" +
+                " ${deep.noFlight}",
+        )
+    }
+
+    @Test
     fun `the oxygen clocks run while the dive does, and faster on a richer mix`() {
         val air = done(planned(SHALLOW))
         val nitrox = done(

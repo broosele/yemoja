@@ -53,6 +53,19 @@ sealed class Evaluated {
         /** Oxygen tolerance units taken through the run, which is a count and not a percentage. */
         val otu: Series,
         /**
+         * How long to wait before flying after it, in seconds, or null where a day would not be
+         * enough.
+         *
+         * A cabin is an altitude, so this is the wait until the ceiling allows one. What counts as
+         * a cabin is one figure, the eight thousand feet an aircraft is held to.
+         */
+        val noFlight: Double?,
+        /**
+         * How long the compartments take to come back to what the surface settles them to, in
+         * seconds, or null where a day would not do it.
+         */
+        val desaturation: Double?,
+        /**
          * The gas each source gives up, in litres at the surface, under the key it sits under.
          *
          * A source whose consumption nobody knows is left out rather than counted as nothing.
@@ -241,6 +254,8 @@ private fun walked(
         oxygen,
         seriesOf(seconds, breathedCns),
         seriesOf(seconds, breathedOtu),
+        tissues.noFlightSeconds(surface, CABIN, model.high),
+        tissues.desaturationSeconds(surface),
         used,
         gauges.mapValues { (_, left) -> seriesOf(seconds, left) },
         findings.sortedBy { it.second },
@@ -538,6 +553,14 @@ private const val SECONDS_IN_MINUTE = 60.0
 
 /** The whole of the central nervous system's single-exposure limit, as a percentage. */
 private const val WHOLE_CLOCK = 100.0
+
+/**
+ * The pressure inside an aircraft, in bar.
+ *
+ * Eight thousand feet, which is the cabin altitude aircraft are held to and what a diver is really
+ * asking about when they ask when they may fly.
+ */
+private const val CABIN = 0.7565
 
 /** The step a stop is taken on, in metres: three, six, nine, as a diver counts them. */
 private const val STOP_STEP = 3.0

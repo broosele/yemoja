@@ -25,6 +25,9 @@ private const val SURFACE = 1.0
 /** Thirty metres of sea water, near enough, which is where the limits are worth knowing. */
 private const val DEEP = 4.0
 
+/** The pressure in an aircraft's cabin, which is what a diver waits for before flying. */
+private const val CABIN = 0.7565
+
 private const val WATER_VAPOUR = 0.0627
 
 private const val MINUTE = 60.0
@@ -181,6 +184,40 @@ class DecompressionTest {
     fun `tissues already past their limit have no time left`() {
         val loaded = Tissues.saturated(SURFACE).breathing(Gas.AIR, DEEP, DEEP, 60 * MINUTE)
         near(0.0, assertNotNull(loaded.noDecompressionSeconds(Gas.AIR, DEEP, SURFACE, 1.0)))
+    }
+
+    @Test
+    fun `settled tissues may fly at once, and loaded ones wait`() {
+        val settled = Tissues.saturated(SURFACE)
+        val loaded = settled.breathing(Gas.AIR, DEEP, DEEP, 30 * MINUTE)
+
+        near(0.0, assertNotNull(settled.noFlightSeconds(SURFACE, CABIN, 0.85)))
+        assertTrue(
+            assertNotNull(loaded.noFlightSeconds(SURFACE, CABIN, 0.85)) > 0,
+            "half an hour at thirty metres is not a wait of nothing",
+        )
+        assertTrue(
+            assertNotNull(loaded.noFlightSeconds(SURFACE, CABIN, 0.85)) <
+                assertNotNull(loaded.noFlightSeconds(SURFACE, CABIN, 0.5)),
+            "a cautious factor waits longer",
+        )
+    }
+
+    @Test
+    fun `tissues come back to where they started, and say how long it takes`() {
+        val settled = Tissues.saturated(SURFACE)
+        val loaded = settled.breathing(Gas.AIR, DEEP, DEEP, 30 * MINUTE)
+        val waited = assertNotNull(loaded.desaturationSeconds(SURFACE))
+
+        near(0.0, assertNotNull(settled.desaturationSeconds(SURFACE)))
+        assertTrue(waited > 0, "something was taken on and has to come off")
+        val after = loaded.breathing(Gas.AIR, SURFACE, SURFACE, waited)
+        for (number in 1..Tissues.COMPARTMENTS) {
+            assertTrue(
+                after.nitrogenIn(number) - settled.nitrogenIn(number) <= 0.01,
+                "compartment $number is still ${after.nitrogenIn(number)}",
+            )
+        }
     }
 
     @Test

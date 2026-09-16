@@ -571,9 +571,15 @@ To settle when we discuss architecture and features:
   **The oxygen clocks run beside the compartments**, sampled the same way and given back as a
   percentage and a count. `LOGIC-38` is what they are worked out from.
 
-  Absent so far, and deliberately: no flight and desaturation times, which are the tissues at the
-  end read further. `LOGIC-35` beside this one writes the ascent a plan needs before it can be
-  evaluated at all.
+  **Two waits come from the tissues at the end.** How long before flying, which is the wait until
+  the ceiling allows the 0.7565 bar an aircraft's cabin is held to — a cabin being an altitude, and
+  altitude being something this model has always handled. And how long until the compartments come
+  back to what the surface settles them to, within a hundredth of a bar, which is a definition
+  rather than a standard: a compartment never quite arrives, so somebody has to say how close
+  counts. Either is null where two days of waiting would not do it, which says the question is the
+  wrong one rather than giving a figure nobody should plan on.
+
+  `LOGIC-35` beside this one writes the ascent a plan needs before it can be evaluated at all.
 
   Built in `Evaluation.kt`, over `Decompression.kt`.
 

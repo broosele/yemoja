@@ -125,6 +125,51 @@ class Tissues private constructor(
         return null
     }
 
+    /**
+     * How long these tissues need at [surface] bar before they may be taken up to [cabin] bar, in
+     * seconds, allowing [gradientFactor] of what the model permits.
+     *
+     * Nought where they may go now. Null where a day of breathing air would not be enough, which
+     * says the question is the wrong one rather than giving a figure nobody should plan on.
+     *
+     * A cabin is an altitude like any other: what a flight does is take the surface away, and the
+     * model has always handled that.
+     */
+    fun noFlightSeconds(surface: Double, cabin: Double, gradientFactor: Double): Double? {
+        requireFactor(gradientFactor)
+        return waitingAt(surface) { it.ceiling(gradientFactor) <= cabin }
+    }
+
+    /**
+     * How long these tissues need at [surface] bar to come back to what breathing air there
+     * settles them to, in seconds, or null where a day would not do it.
+     *
+     * **Within a hundredth of a bar**, which is a definition rather than a standard: a compartment
+     * approaches its equilibrium and never quite arrives, so somebody has to say how close counts.
+     * A hundredth is finer than any decision anybody makes from the answer.
+     */
+    fun desaturationSeconds(surface: Double): Double? {
+        val settled = inspired(surface, Gas.AIR.fractionN2)
+        return waitingAt(surface) { tissues ->
+            (1..COMPARTMENTS).all {
+                tissues.nitrogenIn(it) - settled <= SETTLED && tissues.heliumIn(it) <= SETTLED
+            }
+        }
+    }
+
+    /** How long breathing air at [ambient] takes to make [enough] true, to the minute. */
+    private fun waitingAt(ambient: Double, enough: (Tissues) -> Boolean): Double? {
+        if (enough(this)) return 0.0
+        var waited = 0.0
+        var tissues = this
+        while (waited < LONGEST_WAIT) {
+            tissues = tissues.breathing(Gas.AIR, ambient, ambient, STEP)
+            waited += STEP
+            if (enough(tissues)) return waited
+        }
+        return null
+    }
+
     /** Where inside one step the ceiling passes [surface], in seconds from these tissues. */
     private fun crossing(
         gas: Gas,
@@ -273,6 +318,12 @@ private val LN_2 = ln(2.0)
 
 /** How far a no-decompression limit is looked for before it is called no limit at all. */
 private const val LONGEST_SEARCH = 24 * 60 * SECONDS_IN_MINUTE
+
+/** How long a wait on the surface is followed before it is called one that does not end. */
+private const val LONGEST_WAIT = 48 * 60 * SECONDS_IN_MINUTE
+
+/** How near its own equilibrium a compartment has to come to count as settled, in bar. */
+private const val SETTLED = 0.01
 
 /** How coarsely that search steps before it narrows down to the second. */
 private const val STEP = SECONDS_IN_MINUTE
