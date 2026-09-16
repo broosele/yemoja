@@ -74,10 +74,11 @@ A dive that arrives with its own dive number keeps it.
 
 ## Exporting
 
-Press **Export to UDDF** on the home screen and name a file. The whole logbook goes: every dive,
-and the sites, wrecks, people, gear, trips and operators they refer to. Nothing in your logbook
-changes. When it is written, Yemoja says how many dives went, and how many were recorded on more
-than one computer and so went with one recording only.
+Press **Export to UDDF** on the home screen and name a file. The whole logbook goes: every dive
+you have made, and the sites, wrecks, people, gear, trips and operators they refer to. Nothing in
+your logbook changes. When it is written, Yemoja says how many dives went, how many were recorded
+on more than one computer and so went with one recording only, and how many planned dives were
+left behind.
 
 What a UDDF file can and cannot carry, and what is not written yet, is in [uddf.md](uddf.md).
 

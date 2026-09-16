@@ -30,6 +30,11 @@ class ExportedFixtureTest {
     private val exported: Exported = Uddf.write(logbook)
     private val back: ItemSet = Uddf.read(exported.text)
 
+    /** The fixture's dives that were made, which is what an export carries. `LOGIC-36`. */
+    private fun made(set: ItemSet): List<Item> = set.allOf(Types.DIVE).filter { dive ->
+        (dive.single<Boolean>("planned") as? Result.Usable)?.value != true
+    }
+
     private fun text(item: Item, field: String): String? =
         (item.single<String>(field) as? Result.Usable)?.value
 
@@ -58,7 +63,8 @@ class ExportedFixtureTest {
 
     @Test
     fun `every item the importer reads comes back, and the libraries stay behind`() {
-        for (type in listOf(Types.DIVE, Types.GEAR, Types.DIVE_SITE, Types.WRECK, Types.PERSON)) {
+        assertEquals(made(logbook).size, back.allOf(Types.DIVE).size, "the dives that were made")
+        for (type in listOf(Types.GEAR, Types.DIVE_SITE, Types.WRECK, Types.PERSON)) {
             assertEquals(logbook.allOf(type).size, back.allOf(type).size, type.name)
         }
         assertEquals(logbook.allOf(Types.OPERATOR).size, back.allOf(Types.OPERATOR).size)
@@ -89,7 +95,7 @@ class ExportedFixtureTest {
 
     @Test
     fun `a dive comes back saying what it said`() {
-        for (dive in logbook.allOf(Types.DIVE)) {
+        for (dive in made(logbook)) {
             val again = returned(dive)
             val where = said(dive, "start_date") + " " + said(dive, "start_time")
             for (field in listOf("dive_number", "rating")) {
@@ -118,7 +124,7 @@ class ExportedFixtureTest {
 
     @Test
     fun `a dive's zone goes out after its time and comes back as its offset`() {
-        for (dive in logbook.allOf(Types.DIVE)) {
+        for (dive in made(logbook)) {
             assertEquals(said(dive, "time_zone_offset"), said(returned(dive), "time_zone_offset"))
         }
         assertTrue("T08:50:00+02:00<" in exported.text, "the fixture's North Sea dive")
@@ -126,7 +132,7 @@ class ExportedFixtureTest {
 
     @Test
     fun `a closed word leaves in UDDF's and comes back as this model's`() {
-        for (dive in logbook.allOf(Types.DIVE)) {
+        for (dive in made(logbook)) {
             val again = returned(dive)
             val current = owned(dive, "environment")?.let { text(it, "current") }
             assertEquals(current, owned(again, "environment")?.let { text(it, "current") })
@@ -139,7 +145,7 @@ class ExportedFixtureTest {
 
     @Test
     fun `the primary recording's depths come back at every second they were measured`() {
-        for (dive in logbook.allOf(Types.DIVE)) {
+        for (dive in made(logbook)) {
             val profile = (primaryProfile(dive) as? Result.Usable)?.value ?: continue
             val depth = (profile.series<Double>("depth") as Result.Usable).value
             val again = (primaryProfile(returned(dive)) as Result.Usable).value
@@ -155,7 +161,7 @@ class ExportedFixtureTest {
 
     @Test
     fun `a cylinder's pressures come back against the gas they were breathed from`() {
-        for (dive in logbook.allOf(Types.DIVE)) {
+        for (dive in made(logbook)) {
             val profile = (primaryProfile(dive) as? Result.Usable)?.value ?: continue
             val sources = keyed(dive, "gas_sources")
             val again = returned(dive)
@@ -170,7 +176,7 @@ class ExportedFixtureTest {
     @Test
     fun `a stop, an alarm and the times after the dive come back with the recording`() {
         var seen = 0
-        for (dive in logbook.allOf(Types.DIVE)) {
+        for (dive in made(logbook)) {
             val profile = (primaryProfile(dive) as? Result.Usable)?.value ?: continue
             val again = (primaryProfile(returned(dive)) as Result.Usable).value
             // A nought before the first stop says nothing a series of steps did not already say.
@@ -187,7 +193,7 @@ class ExportedFixtureTest {
 
     @Test
     fun `a gas source keeps its pressures, and a switch still names the gas it switched to`() {
-        for (dive in logbook.allOf(Types.DIVE)) {
+        for (dive in made(logbook)) {
             val sources = keyed(dive, "gas_sources")
             if (sources.isEmpty()) continue
             val again = keyed(returned(dive), "gas_sources")
@@ -225,10 +231,21 @@ class ExportedFixtureTest {
     }
 
     @Test
+    fun `a planned dive is left where it is, and counted in what was left`() {
+        // An intention in a file handed to another application is a claim that it happened.
+        val plans = logbook.allOf(Types.DIVE).size - made(logbook).size
+        assertTrue(plans > 0, "the fixture should hold a dive that is only planned")
+        assertEquals(plans, exported.plans)
+        val planned = logbook.allOf(Types.DIVE).first { it !in made(logbook) }
+        val day = said(planned, "start_date")
+        assertTrue(day != null && day !in exported.text, "$day went out and should not have")
+    }
+
+    @Test
     fun `a dive on two computers is counted, only its primary recording going out`() {
-        val several = logbook.allOf(Types.DIVE).count { keyed(it, "profiles").size > 1 }
+        val several = made(logbook).count { keyed(it, "profiles").size > 1 }
         assertEquals(several, exported.leftOut)
-        assertEquals(logbook.allOf(Types.DIVE).size, exported.dives)
+        assertEquals(made(logbook).size, exported.dives)
     }
 
     private fun people(dive: Item, set: ItemSet): Set<String> =

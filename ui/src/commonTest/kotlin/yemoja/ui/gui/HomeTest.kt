@@ -179,6 +179,31 @@ class GreetingTest {
     }
 
     @Test
+    fun `a dive that has only been planned is counted nowhere`() {
+        // A logbook claiming a dive nobody made is wrong; one hiding a plan is useless. `GUI-39`.
+        val held = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive_site.json" to """{"blue": {"name": "Blue Hole"},
+                        "quarry": {"name": "The Quarry"}}""",
+                    "dive/2026-06-21#0.json" to """{"dive_site": "@blue", "profiles": {"p": {
+                        "depth": [[0, 0], [60, 12.0], [1800, 0]]}}}""",
+                    "dive/2026-10-03#0.json" to """{"dive_site": "@quarry", "profiles": {"p": {
+                        "planned": true, "depth": [[0, 0], [60, 30.0], [3600, 0]]}}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val greeting = greetingOf(held)
+        assertEquals(1, greeting.dives, "the one that was made")
+        assertEquals(1, greeting.places, "and the place it was made at")
+        assertEquals(1800.0, greeting.underwater, "the plan's hour is not time underwater")
+        val across = variablesOf().first { it.label == "Max depth" }
+        val up = variablesOf().first { it.label == "Duration" }
+        assertEquals(1, plottedOf(held, across, up).size, "a dot apiece, and no dot for a plan")
+    }
+
+    @Test
     fun `every deed the application knows is named, built or not`() {
         assertEquals(
             listOf(

@@ -22,6 +22,45 @@ private fun dive(day: Int, trip: String? = null, site: String? = null, number: I
         ""","profiles": {"p1": {"start_date": "2026-06-${"%02d".format(day)}",
         "start_time": "10:00:00", "depth": [[0, 0], [60, 12.0]]}}}"""
 
+class PlannedRowTest {
+
+    private val held = logbook(
+        "dive/2026-06-01#0.json" to """{"dive_number": 1, "profiles": {"p": {
+            "start_date": "2026-06-01", "start_time": "10:00:00",
+            "depth": [[0, 0], [60, 12.0], [1800, 0]]}}}""",
+        "dive/2026-10-03#0.json" to """{"start_date": "2026-10-03", "profiles": {"p": {
+            "planned": true, "depth": [[0, 0], [60, 30.0], [3600, 0]]}}}""",
+    )
+
+    @Test
+    fun `a planned dive is a row like any other, saying so where a number would be`() {
+        // Shown and marked, counted nowhere. `GUI-39`.
+        val rows = diveRowsOf(held)
+        assertEquals(2, rows.size, "a plan is listed")
+        val plan = rows.first { it.dive.id == "2026-10-03#0" }
+        assertTrue(plan.planned)
+        assertEquals(PLANNED, plan.number, "its own numbering has no place for one")
+        val made = rows.first { it.dive.id == "2026-06-01#0" }
+        assertTrue(!made.planned)
+        assertEquals("1", made.number)
+    }
+
+    @Test
+    fun `a year counts and chooses the dives made in it`() {
+        val years = yearsOf(diveRowsOf(held))
+        assertEquals(listOf("2026"), years.map { it.label })
+        assertEquals(2, years.single().rows.size, "both are listed under it")
+        assertEquals(listOf("2026-06-01#0"), years.single().made.map { it.dive.id })
+    }
+
+    @Test
+    fun `what was made is what the window counts`() {
+        assertEquals(listOf("2026-06-01#0"), divesMadeIn(held).map { held.idOf(it) })
+        assertTrue(wasMade(held["2026-06-01#0"]!!))
+        assertTrue(!wasMade(held["2026-10-03#0"]!!))
+    }
+}
+
 class DiveTableTest {
 
     private val set = logbook(

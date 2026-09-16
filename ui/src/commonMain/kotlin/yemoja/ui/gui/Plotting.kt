@@ -148,7 +148,7 @@ internal fun barsOf(
     step: Step,
 ): List<Bar> {
     val heaps = LinkedHashMap<Long, MutableList<Double>>()
-    for (dive in set.allOf(Types.DIVE)) {
+    for (dive in divesMadeIn(set)) {
         val at = bucketOf(dive, across, step) ?: continue
         val value = if (gathering.reads) up.of(dive) ?: continue else 0.0
         heaps.getOrPut(at) { ArrayList() }.add(value)

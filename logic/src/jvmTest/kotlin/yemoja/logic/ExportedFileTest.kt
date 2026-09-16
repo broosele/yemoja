@@ -1,5 +1,6 @@
 package yemoja.logic
 
+import yemoja.data.Result
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -27,12 +28,17 @@ class ExportedFileTest {
 
     private val cousteau = Universe.open("../fixtures/cousteau")
 
+    /** How many of the fixture's dives were made: a plan is not written to a file. `LOGIC-36`. */
+    private fun made(): Int = cousteau.logbook.allOf(Types.DIVE).count { dive ->
+        (dive.single<Boolean>("planned") as? Result.Usable)?.value != true
+    }
+
     @Test
     fun `the logbook goes to the file named, and every dive is counted`() {
         val to = File(here, "out.uddf")
         val exported = cousteau.exportTo(to.path)
         assertTrue(to.isFile, "nothing was written")
-        assertEquals(cousteau.logbook.allOf(Types.DIVE).size, exported.dives)
+        assertEquals(made(), exported.dives, "the dives that were made")
         assertEquals(exported.text, to.readText())
     }
 
@@ -51,6 +57,6 @@ class ExportedFileTest {
         val empty = Universe.create(File(here, "empty").path)
         assertEquals(Outcome.Done(), empty.importFrom(to.path))
         val arrived = empty.importing!!.incoming.count { it.description == Types.DIVE }
-        assertEquals(cousteau.logbook.allOf(Types.DIVE).size, arrived)
+        assertEquals(made(), arrived, "the dives that were made")
     }
 }

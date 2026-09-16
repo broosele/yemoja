@@ -329,6 +329,31 @@ that cannot edit.
 
 ## Open questions
 
+- **GUI-39 — What the window does with a dive that has only been planned.** *Settled:* **shown
+   and marked, counted nowhere.** `LOGIC-36` settles the same question for the model; this is the
+   half a reader sees.
+
+   A logbook that claims a dive nobody made is wrong, and one that hides what is planned is
+   useless. So a plan is a row in the dive table like any other, and the column that would carry
+   its number says `plan` instead, greyed: a plan has no place in the reader's own numbering, and
+   that column is the only one whose value a plan does not have. Its recording is drawn as a
+   dashed depth line, dashes being what a line that has not happened yet is drawn with
+   everywhere.
+
+   **Counted nowhere** is the greeting and the places it counts, the statistics in all seven
+   gatherings, the year rows of the table, and what a year chooses when it is clicked. A year
+   still lists its plans and counts only the dives made in it, and clicking it chooses those: what
+   a set of dives comes to is a figure over diving.
+
+   **What a reader chose is answered as chosen.** Ticking a plan by hand and asking what the
+   selection comes to gives an answer including it, which is `LOGIC-34`'s rule — the judgement
+   sits with whoever chose. Only the counts the application makes on its own skip plans.
+
+   **An export leaves plans behind**, `Writing.kt`, and the sentence says how many were left. A
+   plan written into a file handed to another application is a claim that the dive happened, and
+   nothing in the file lets the reader tell otherwise. UDDF's own `diveplan` is the honest route
+   one day.
+
 - **GUI-17 — Where the sync indicator lives.** Syncing is explicit, and the application
   must show at all times whether anything is owed in either direction — see
   [../../data/json/requirements.md](../../data/json/requirements.md). Putting it in the

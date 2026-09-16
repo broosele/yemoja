@@ -16,6 +16,25 @@ class ExportSaidTest {
     }
 
     @Test
+    fun `a planned dive left behind is said aloud too`() {
+        assertEquals(
+            "Wrote 20 dives to log.uddf. 1 planned dive was left behind.",
+            exportSaid(Exported("", 20, 0, 1), "log.uddf"),
+        )
+        assertEquals(
+            "Wrote 20 dives to log.uddf. 2 planned dives were left behind.",
+            exportSaid(Exported("", 20, 0, 2), "log.uddf"),
+        )
+        assertEquals(
+            "Wrote 20 dives to log.uddf. 1 dive recorded on more than one computer was written " +
+                "with its primary recording only, UDDF holding one to a dive. 1 planned dive " +
+                "was left behind.",
+            exportSaid(Exported("", 20, 1, 1), "log.uddf"),
+            "both losses, in the order they happened to the file",
+        )
+    }
+
+    @Test
     fun `a dive on two computers is said aloud, since the file does not show it`() {
         assertEquals(
             "Wrote 20 dives to log.uddf. 1 dive recorded on more than one computer was written " +

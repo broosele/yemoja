@@ -479,7 +479,8 @@ object Uddf {
     fun write(set: ItemSet): Exported {
         val writer = Writer(set)
         val text = writer.document()
-        return Exported(text, set.allOf(Types.DIVE).size, writer.leftOut)
+        val made = set.allOf(Types.DIVE).size - writer.plans
+        return Exported(text, made, writer.leftOut, writer.plans)
     }
 
     /**
@@ -521,7 +522,9 @@ object Uddf {
  *
  * Immutable.
  *
- * [leftOut] counts the dives recorded on more than one computer, which went out with their primary
- * recording and no other: UDDF holds one `samples` to a dive. `uddf.md`.
+ * [dives] counts what was written, which is the dives that were made. [leftOut] counts those
+ * recorded on more than one computer, which went out with their primary recording and no other:
+ * UDDF holds one `samples` to a dive. [plans] counts the dives left where they are, being intended
+ * rather than made. `uddf.md`.
  */
-class Exported(val text: String, val dives: Int, val leftOut: Int)
+class Exported(val text: String, val dives: Int, val leftOut: Int, val plans: Int = 0)

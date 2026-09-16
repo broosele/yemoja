@@ -32,7 +32,9 @@ internal class Greeting(val dives: Int, val places: Int, val underwater: Double)
 
 /** What [set] amounts to. */
 internal fun greetingOf(set: ItemSet): Greeting {
-    val dives = set.allOf(Types.DIVE)
+    // What was dived, not what is intended: a logbook claiming a dive nobody made is wrong.
+    // `GUI-39`.
+    val dives = divesMadeIn(set)
     val places = LinkedHashSet<String>()
     var underwater = 0.0
     for (dive in dives) {
@@ -355,7 +357,7 @@ internal class Spot(val across: Double, val up: Double, val id: String, val titl
  * recorded would be read as a reading.
  */
 internal fun plottedOf(set: ItemSet, across: Variable, up: Variable): List<Spot> =
-    set.allOf(Types.DIVE).mapNotNull { dive ->
+    divesMadeIn(set).mapNotNull { dive ->
         val x = across.of(dive) ?: return@mapNotNull null
         val y = up.of(dive) ?: return@mapNotNull null
         val id = (dive as? ReferenceableItem)?.let { set.idOf(it) } ?: return@mapNotNull null

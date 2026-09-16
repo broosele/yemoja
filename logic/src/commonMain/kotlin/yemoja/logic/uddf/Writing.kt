@@ -350,7 +350,7 @@ internal class Writer(private val set: ItemSet) {
      * which tells a reader there was an earlier dive without showing one. `DATA-60`.
      */
     private fun groupsOut(profiles: Built) {
-        val dives = set.allOf(Types.DIVE).sortedWith(
+        val dives = made().sortedWith(
             compareBy({ said(it, "start_date") }, { said(it, "start_time") }),
         )
         var group: Built? = null
@@ -579,9 +579,23 @@ internal class Writer(private val set: ItemSet) {
         return at
     }
 
-    /** The dives naming [trip] on their details. */
+    /**
+     * The dives of the logbook that were made, which is what a file carries.
+     *
+     * **A plan is not written.** A dive intended and not yet made, said in a file that goes to
+     * another application, is a claim that it happened, and nothing in the file lets the reader
+     * tell. UDDF has a `diveplan` of its own for the honest route one day. `LOGIC-36`, `uddf.md`.
+     */
+    private fun made(): List<ReferenceableItem> = set.allOf(Types.DIVE).filter { dive ->
+        (dive.single<Boolean>("planned") as? Result.Usable)?.value != true
+    }
+
+    /** How many dives were left where they are, being intended rather than made. */
+    val plans: Int get() = set.allOf(Types.DIVE).size - made().size
+
+    /** The dives naming [trip] on their details, the ones made. */
     private fun divesOn(trip: ReferenceableItem): List<ReferenceableItem> =
-        set.allOf(Types.DIVE).filter { dive ->
+        made().filter { dive ->
             owned(dive, "details")?.let { pointed(it, "dive_trip") } === trip
         }
 

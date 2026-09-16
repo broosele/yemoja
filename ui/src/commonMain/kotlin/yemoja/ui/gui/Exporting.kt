@@ -11,15 +11,22 @@ import yemoja.logic.uddf.Exported
 /**
  * What an export says once it is written: how many dives went, where, and what did not.
  *
- * A dive on two computers is the one loss said aloud, since the reader cannot see it in the file
- * and would otherwise find out in the other application. `uddf.md`.
+ * Two things are said aloud, since the reader cannot see either in the file and would otherwise
+ * find out in the other application: a dive on two computers, and a dive left behind because it
+ * has not been made. `uddf.md`, `GUI-39`.
  */
 internal fun exportSaid(exported: Exported, to: String): String {
-    val went = "Wrote ${counted(exported.dives, "dive")} to $to."
-    if (exported.leftOut == 0) return went
-    val (was, its) = if (exported.leftOut == 1) "was" to "its" else "were" to "their"
-    return "$went ${counted(exported.leftOut, "dive")} recorded on more than one computer " +
-        "$was written with $its primary recording only, UDDF holding one to a dive."
+    val said = StringBuilder("Wrote ${counted(exported.dives, "dive")} to $to.")
+    if (exported.leftOut > 0) {
+        val (was, its) = if (exported.leftOut == 1) "was" to "its" else "were" to "their"
+        said.append(" ${counted(exported.leftOut, "dive")} recorded on more than one computer ")
+            .append("$was written with $its primary recording only, UDDF holding one to a dive.")
+    }
+    if (exported.plans > 0) {
+        val was = if (exported.plans == 1) "was" else "were"
+        said.append(" ${counted(exported.plans, "planned dive")} $was left behind.")
+    }
+    return said.toString()
 }
 
 /**

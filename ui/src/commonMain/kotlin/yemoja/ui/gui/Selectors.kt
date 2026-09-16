@@ -23,6 +23,19 @@ import yemoja.logic.Types
 /** One item a selector offers: what it is called, and how to reach it. */
 internal class Chosen(val id: String, val title: String, val item: ReferenceableItem)
 
+/**
+ * Whether [dive] was made rather than only intended, which is what the window counts.
+ *
+ * A dive says so itself through `planned`, worked out from its profiles, and one that says
+ * nothing was made. `LOGIC-36`, `GUI-39`.
+ */
+internal fun wasMade(dive: Item): Boolean =
+    (dive.single<Boolean>("planned") as? Result.Usable)?.value != true
+
+/** The dives of [set] that were made, in the order it holds them. `GUI-39`. */
+internal fun divesMadeIn(set: ItemSet): List<ReferenceableItem> =
+    set.allOf(Types.DIVE).filter { wasMade(it) }
+
 /** Everything of one type, in the order the type asks for. `DATA-89`. */
 internal fun entriesOf(set: ItemSet, type: ItemDescription): List<Chosen> =
     set.inOrder(type).mapNotNull { item -> set.idOf(item)?.let { Chosen(it, titleOf(item), item) } }
@@ -44,6 +57,8 @@ internal class DiveRow(
     val date: String,
     val site: String,
     val run: Int,
+    /** Whether the dive is intended rather than made, which the table says in place of a number. */
+    val planned: Boolean = false,
 )
 
 /** The dive table, in the order dives are kept: newest first. */
@@ -53,17 +68,27 @@ internal fun diveRowsOf(set: ItemSet): List<DiveRow> {
         DiveRow(
             dive = dive,
             trip = trip,
-            number = read(dive.item, "dive_number"),
+            // A plan has no place in the numbering, so the column that would carry a number
+            // says what it is instead. `GUI-39`.
+            number = if (wasMade(dive.item)) read(dive.item, "dive_number") else PLANNED,
             date = read(dive.item, "start_date"),
             site = named(set, dive.item, "dive_site"),
             run = 0,
+            planned = !wasMade(dive.item),
         )
     }
     return runsIn(rows)
 }
 
+/** What the table says in the number's place for a dive that has not been made. `GUI-39`. */
+internal const val PLANNED = "plan"
+
 /** Year is one year's rows of the dive table, in the order the table keeps them. */
-internal class Year(val label: String, val rows: List<DiveRow>)
+internal class Year(val label: String, val rows: List<DiveRow>) {
+
+    /** The dives of this year that were made, which is what the year counts and chooses. */
+    val made: List<DiveRow> get() = rows.filterNot { it.planned }
+}
 
 /**
  * The dive table by year, newest year first, each year's trip runs counted within it.
@@ -119,7 +144,7 @@ private fun runsIn(rows: List<DiveRow>): List<DiveRow> {
     return out
 }
 
-private fun DiveRow.copy(run: Int) = DiveRow(dive, trip, number, date, site, run)
+private fun DiveRow.copy(run: Int) = DiveRow(dive, trip, number, date, site, run, planned)
 
 /** The trip a dive was made on, which sits inside the item it owns rather than on the dive. */
 private fun tripOf(set: ItemSet, dive: Item): Chosen? {

@@ -57,7 +57,8 @@ you made each month, widening the bars where there would be too many to read.
 
 ## The tabs
 
-- **Dives** lists your dives in a table, newest first, grouped by year. A year folds away with
+- **Dives** lists your dives in a table, newest first, grouped by year. A dive you have planned
+  and not yet made is listed too, with **plan** where its number would be. A year folds away with
   its arrow, and clicking the year chooses all its dives. A trip is one cell down the dives made
   on it, and clicking it chooses the trip.
 - **Gear** lists your equipment by category and then by kind. Anything with no category sits at
@@ -91,9 +92,15 @@ What you choose is shown on a card, titled with its name.
 Something an item holds several of, such as a dive's recordings or a person's courses, is a box
 with a small tab for each. The recording a dive is worked from comes first, marked with a star.
 
+A planned dive counts nowhere: not in the greeting, not in the statistics, and not in the
+number a year carries. Clicking a year chooses the dives you made in it. If you tick a plan
+yourself and ask what your selection comes to, the answer includes it — what you chose is what
+is counted.
+
 **A recording is drawn as a graph**: the depth down the left, the minutes along the bottom. A
 stepped line is the stop your computer set, with the water above it shaded red while the stop
-stood. The right-hand axis is chosen from its title: the temperature, a cylinder's pressure,
+stood. A plan is drawn with a dashed line, since it has not happened. The right-hand axis is
+chosen from its title: the temperature, a cylinder's pressure,
 the no-decompression time as **NDL**, and oxygen loading as CNS and OTU. Gas switches are marked
 with the gas moved to, and alarms with red triangles.
 

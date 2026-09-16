@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -926,7 +927,7 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
         (kept.gathering ?: Gathering.COUNT.ordinal).coerceIn(Gathering.entries.indices),
     ]
     val steps = remember(set, edition, across) {
-        stepsOf(across, set.allOf(Types.DIVE).mapNotNull(across.of))
+        stepsOf(across, divesMadeIn(set).mapNotNull(across.of))
     }
     val fitted = remember(set, edition, across, up, gathering, steps) {
         if (gathering.bars) fittedOf(set, across, up, gathering, steps) else 0
@@ -1366,14 +1367,15 @@ private fun Dives(set: ItemSet, kept: Kept) {
                     YearRow(
                         year = year,
                         open = unfolded,
-                        chosen = many.isNotEmpty() && year.rows.all { it.dive.id in many },
+                        chosen = many.isNotEmpty() && year.made.all { it.dive.id in many },
                         onToggle = {
                             kept.open = if (unfolded) open - year.label else open + year.label
                         },
-                        // The year's dives together, which is what a year is for. `GUI-23`.
+                        // The year's dives together, which is what a year is for; the ones made,
+                        // since what they come to is a figure over diving. `GUI-23`, `GUI-39`.
                         onChoose = {
-                            kept.chosenMany = year.rows.map { it.dive.id }.toSet()
-                            kept.chosen = year.rows.firstOrNull()?.dive
+                            kept.chosenMany = year.made.map { it.dive.id }.toSet()
+                            kept.chosen = year.made.firstOrNull()?.dive
                         },
                     )
                 }
@@ -1390,7 +1392,7 @@ private fun Dives(set: ItemSet, kept: Kept) {
                                 .clickable { choose(row.dive) },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Cell(row.number, NUMBER, here, TextAlign.End)
+                            Cell(row.number, NUMBER, here, TextAlign.End, quiet = row.planned)
                             Cell(row.date, DATE, here)
                             Cell(row.site, SITE, here)
                         }
@@ -1432,7 +1434,7 @@ private fun YearRow(
             color = onTint(chosen),
         )
         Text(
-            text = "  ·  ${year.rows.size} dives",
+            text = "  ·  ${year.made.size} dives",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.outline,
         )
@@ -1527,11 +1529,18 @@ private fun Heading(text: String, width: Dp, align: TextAlign = TextAlign.Start)
 
 /** One cell of a dive's own columns. */
 @Composable
-private fun Cell(text: String, width: Dp, chosen: Boolean, align: TextAlign = TextAlign.Start) {
+private fun Cell(
+    text: String,
+    width: Dp,
+    chosen: Boolean,
+    align: TextAlign = TextAlign.Start,
+    /** Whether it is said rather than read: the word a plan carries where a number would be. */
+    quiet: Boolean = false,
+) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
-        color = onTint(chosen),
+        color = if (quiet && !chosen) MaterialTheme.colorScheme.outline else onTint(chosen),
         textAlign = align,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -2529,13 +2538,14 @@ private fun Stars(rating: Int) {
 @Composable
 private fun ProfileGraph(dive: Item, profile: Item) {
     val depth = remember(profile) { depthLinesOf(profile) }
+    val planned = (profile.single<Boolean>("planned") as? Result.Usable)?.value == true
     val overlays = remember(dive, profile) { overlaysOf(dive, profile) }
     val events = remember(dive, profile) { eventsOf(dive, profile) }
     var picked by remember(profile) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }
     val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
     Box(modifier = Modifier.fillMaxWidth()) {
-        Chart(depth, overlay, events)
+        Chart(depth, overlay, events, planned)
         // The right axis's title is the box that chooses it: the label says what the red line
         // is, and clicking it says what else it could be.
         if (overlay != null) {
@@ -2586,7 +2596,13 @@ private fun ProfileGraph(dive: Item, profile: Item) {
  * are thin. Paths are built once per size and lines.
  */
 @Composable
-private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
+private fun Chart(
+    depth: List<Line>,
+    overlay: Overlay?,
+    events: List<Event>,
+    /** Whether the recording is a plan, which is drawn as a dashed line: it has not happened. */
+    planned: Boolean = false,
+) {
     val ink = MaterialTheme.colorScheme.primary
     val stop = MaterialTheme.colorScheme.tertiary
     // The right axis in red, the one colour that reads as another line at a glance.
@@ -2644,7 +2660,11 @@ private fun Chart(depth: List<Line>, overlay: Overlay?, events: List<Event>) {
             val depths = ticksOf(0.0, depthHigh, 5)
             val overs = if (overlay == null) emptyList() else ticksOf(overLow, overHigh, 4)
             val thin = Stroke(THIN.toPx())
-            val thick = Stroke(LINE_WIDTH.toPx())
+            val dashes = LINE_WIDTH.toPx() * 3
+            val thick = if (!planned) Stroke(LINE_WIDTH.toPx()) else Stroke(
+                width = LINE_WIDTH.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashes, dashes)),
+            )
             onDrawBehind {
                 for (tick in depths) {
                     val at = yDepth(tick)

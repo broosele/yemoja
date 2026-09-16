@@ -38,9 +38,16 @@ else.
 
 ## Not written yet
 
-How to export is in [computers-and-importing.md](computers-and-importing.md). Some things this
-chapter says survive are **not written yet**, and will come back empty if you export and import
-again:
+How to export is in [computers-and-importing.md](computers-and-importing.md).
+
+**A dive you have planned and not yet made is not written at all.** An intention in a file handed
+to another application is a claim that the dive happened, and nothing in the file lets whoever
+reads it tell the difference. UDDF has an element of its own for a dive plan, which is the only
+honest way to send one, and Yemoja does not write it yet. The export says how many plans it left
+behind.
+
+Some other things this chapter says survive are **not written yet**, and will come back empty if
+you export and import again:
 
 - a person's insurance,
 - a piece of gear's service records,
