@@ -350,7 +350,17 @@ columns mapped by the user rather than guessed.
   import changed that field. An import applied after an agent's edits remembers nothing and
   writes over them, which is the undetected collision named under *What is built*.
 
-  Nothing of this is built.
+  **Built, less the review.** `Staging` in the logic layer holds it, reached as the Universe's
+  `staging` and kept in a folder beside the logbook with `.proposed` after it. It is two copies of
+  every item it touches — as it was when the change was staged, and as the agent would have it —
+  both ordinary logbooks, so nothing new reads or writes them. Which of the three a change is
+  follows from the pair rather than from anything marked: no *before* is an addition, no *after* is
+  a deletion, and both is an edit whose fields are the difference between the copies.
+
+  A field that has moved says so *before* anything is applied rather than after: each `Changed`
+  carries what the logbook holds now beside what it held when the change was staged, so a review
+  shows it and `apply` leaves it alone. What is owed is the screen that shows all this, which is
+  the window's.
 
 - **RECON-4 — Whether importers are also exporters.** *Settled:* **for UDDF, yes, and export is
   not reconciliation.** One package reads and writes the format, `logic/uddf`, so the mapping is

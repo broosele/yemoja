@@ -76,7 +76,14 @@ class Universe(
      * A logbook opened from a folder stages beside it. One opened from nowhere has nowhere to
      * stage and says so rather than writing a folder wherever it happens to be running.
      */
-    private val staging: FileStore? = null,
+    private val stagingStore: FileStore? = null,
+    /**
+     * Where an agent's changes are staged, or absent where they are staged beside the logbook.
+     *
+     * Its own rather than [stagingStore]'s: an import and a change are two things pending at once,
+     * each with a folder of its own. `RECON-8`.
+     */
+    private val proposing: FileStore? = null,
 ) {
 
     /**
@@ -463,13 +470,26 @@ class Universe(
      * to stage beside.
      */
     private fun stagedIn(source: String?): FileStore? {
-        staging?.let { return it }
+        stagingStore?.let { return it }
         return (path ?: source)?.let { DiskFileStore("$it.import") }
     }
 
     /** Put the review down, leaving whatever is staged where it is. */
     fun stopImporting() {
         importing = null
+    }
+
+    /**
+     * What an agent has staged for this logbook, or absent where it has nowhere to stage it.
+     *
+     * Held here for the reason an import is: it is something being worked on rather than something
+     * a screen owns, and the review of it reaches everything through this. Made on first asking
+     * and kept, so the panel and the review are looking at one thing. A logbook opened from
+     * nowhere has nowhere beside it and gets none. `RECON-8`.
+     */
+    val staging: Staging? by lazy {
+        val where = proposing ?: path?.let { DiskFileStore(it + Staging.BESIDE) }
+        where?.let { Staging.open(this, it) }
     }
 
     /**

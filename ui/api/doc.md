@@ -24,9 +24,13 @@ A person's private details are withheld unless a flag asked on every call says o
 **The window starts it and the panel decides the flag.** A conversation makes a socket of its own,
 hands the tools the box the user ticks beside it, and closes both when it ends. `GUI-38`.
 
-One thing is owed, by a later piece of `FEAT-18`:
+**An agent can stage a change.** `stage_set`, `stage_add`, `stage_delete` and `staged` answer while
+the user allows changes and are refused while they do not, and what they stage is `RECON-8`'s
+`Staging`. Nothing they do reaches the logbook.
 
-- **There are no write tools.** Staging is `RECON-8`'s.
+One thing is owed, by the window rather than by this layer:
+
+- **Nothing shows what is staged.** A review of it, field by field, is `GUI-38`'s.
 
 ## Scope
 
@@ -76,8 +80,8 @@ behaviour of its own, that behaviour is in the wrong place.
   | `get` | One item, whole |
   | `series` | One recording's series |
   | `aggregate` | A figure of a field over ids the agent gives: a count, a mean, a median and the rest. `LOGIC-34`. |
-  | `stage_add`, `stage_set`, `stage_delete` | A change staged for review, `API-5` and `RECON-8` |
-  | `staged` | What is staged so far |
+  | `stage_set`, `stage_add`, `stage_delete` | A change staged for review, `API-5` and `RECON-8` |
+  | `staged` | What is staged so far, each field as it is and as it would be |
 
   **The agent inspects freely.** There is no filter language. It reads whole items, worked-out
   values such as `sac` included, and decides for itself which of them a question is about. A
@@ -123,10 +127,17 @@ behaviour of its own, that behaviour is in the wrong place.
   question about diving rarely needs them. A box beside the conversation puts them back until the
   conversation ends.
 
-  **The write tools exist only while *allowed to change data* is ticked**, and it is off at the
-  start of every conversation. The server enforces it twice: the tools are not listed, and a call
-  to one is refused. An agent that ignores a change to its list of tools still cannot write. Even
-  with the box ticked nothing is applied, only staged. `RECON-8`.
+  **The write tools do nothing while *allowed to change data* is unticked**, and it is off at the
+  start of every conversation. Every call to one is refused, with a reply saying what the user
+  would have to tick, so an agent asked to correct forty dives says so rather than reporting that
+  it cannot. Even ticked, nothing is applied: what a write tool does is stage, and applying is the
+  user's. `RECON-8`.
+
+  *Amended once built:* this said the tools are also **not listed** while the box is unticked, and
+  they are. A tool list is settled when a conversation starts and the box is off at that moment by
+  the rule above, so listing them by the box would mean ticking it did nothing until the next
+  conversation. Refusing every call is the enforcement that holds, and it is the one that was
+  load-bearing: an agent that ignores a change to its list of tools still cannot write.
 
   **The tools are the only way in.** The agent's own requests to read a file or run a command
   are refused by the window, `GUI-38`. An agent given the logbook folder could edit the files

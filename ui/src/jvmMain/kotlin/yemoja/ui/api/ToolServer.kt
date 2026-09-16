@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -126,6 +127,60 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
             )
         }
     }
+
+    server.addTool(
+        "stage_set",
+        "Stage a value in one field of one item, for the user to review. Nothing changes until " +
+            "they apply it.",
+        ToolSchema(
+            properties = buildJsonObject {
+                property("id", "The item's id.")
+                property(
+                    "path",
+                    "The field: rating, environment.visibility, or gas_sources.g1.usage for a " +
+                        "field inside an entry of a keyed collection.",
+                )
+                property("value", "What to put there, written as a file writes it. Leave it out to clear the field.")
+            },
+            required = listOf("id", "path"),
+        ),
+    ) { request ->
+        val id = request.text("id").orEmpty()
+        val path = request.text("path").orEmpty()
+        carried(onto) { tools.stageSet(id, path, request.text("value")) }
+    }
+
+    server.addTool(
+        "stage_add",
+        "Stage a new item of a type, for the user to review. It is named when they apply it.",
+        ToolSchema(
+            properties = buildJsonObject {
+                property("type", "The type to add, such as dive_site.")
+                putJsonObject("fields") {
+                    put("type", "object")
+                    put("description", "The fields it holds, each written as a file writes it.")
+                }
+            },
+            required = listOf("type"),
+        ),
+    ) { request ->
+        val type = request.text("type").orEmpty()
+        val fields = (request.arguments?.get("fields") as? JsonObject)
+            ?.mapValues { (_, held) -> (held as? JsonPrimitive)?.contentOrNull }
+            .orEmpty()
+        carried(onto) { tools.stageAdd(type, fields) }
+    }
+
+    server.addTool(
+        "stage_delete",
+        "Stage an item to be deleted, for the user to review. References to it are left dangling.",
+        schemaOf(required = mapOf("id" to "The item's id.")),
+    ) { request -> carried(onto) { tools.stageDelete(request.text("id").orEmpty()) } }
+
+    server.addTool(
+        "staged",
+        "What is staged so far: each item, and each field as it is and as it would be.",
+    ) { carried(onto) { tools.staged() } }
 
     for (chapter in CHAPTERS) {
         server.addResource(

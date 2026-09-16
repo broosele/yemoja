@@ -25,6 +25,8 @@ import yemoja.data.inOrder
 import yemoja.data.json.Json
 import yemoja.logic.Figured
 import yemoja.logic.Measure
+import yemoja.logic.Outcome
+import yemoja.logic.Staging
 import yemoja.logic.Universe
 import yemoja.logic.fieldAt
 import yemoja.logic.figureOf
@@ -46,18 +48,29 @@ import yemoja.logic.figureOf
 data class Reply(val text: String, val refused: Boolean = false)
 
 /**
- * Tools is the read-only half of what an agent is given: `describe`, `list`, `get`, `series` and
- * `aggregate`.
+ * Tools is what an agent is given: `describe`, `list`, `get`, `series` and `aggregate` to read
+ * with, and `stage_set`, `stage_add`, `stage_delete` and `staged` to propose a change with.
  *
- * Nothing here changes the logbook. The write tools are absent until `RECON-8` is built.
+ * **Nothing here changes the logbook.** A write tool stages, and what is staged happens only when
+ * somebody looks at it and applies it. `RECON-8`.
  *
- * [personal] is asked on every call rather than once, because the user may tick or untick it while
- * a conversation is under way. `API-5`.
+ * [personal] and [writing] are asked on every call rather than once, because the user may tick or
+ * untick either while a conversation is under way. `API-5`.
  *
  * **Not safe to call from two threads.** The Universe is not, and `LOGIC-5` has one operation at a
  * time, so whoever carries a call here carries it onto the thread the Universe lives on.
  */
-class Tools(private val universe: Universe, private val personal: () -> Boolean = { false }) {
+class Tools(
+    private val universe: Universe,
+    /**
+     * Whether the user allows changes to be staged, asked on every call.
+     *
+     * Before [personal], so that a call site passing one flag as a trailing lambda is passing the
+     * one it was passing before this was added.
+     */
+    private val writing: () -> Boolean = { false },
+    private val personal: () -> Boolean = { false },
+) {
 
     /** Every type, or the one called [type], with each field's kind, unit and vocabulary. */
     fun describe(type: String? = null): Reply {
@@ -231,6 +244,75 @@ class Tools(private val universe: Universe, private val personal: () -> Boolean 
         return replied(*members.toList().toTypedArray())
     }
 
+    /**
+     * Stage [value] in the field [path] names on the item called [id], for the user to review.
+     *
+     * A null clears the field. Nothing changes until the user applies what is staged.
+     */
+    fun stageSet(id: String, path: String, value: Any?): Reply =
+        staging { it.set(id, path, value) }
+
+    /** Stage an item of [type] holding [fields], to be added when the user applies it. */
+    fun stageAdd(type: String, fields: Map<String, Any?>): Reply = staging { it.add(type, fields) }
+
+    /** Stage the item called [id] to be deleted when the user applies it. */
+    fun stageDelete(id: String): Reply = staging { it.delete(id) }
+
+    /** What is staged so far, item by item, with each field as it is and as it would be. */
+    fun staged(): Reply {
+        if (!writing()) return notWriting()
+        val staging = universe.staging ?: return refused(NOWHERE)
+        return replied(
+            "staged" to Stored.Elements(
+                staging.staged.map { item ->
+                    Stored.Members(
+                        linkedMapOf(
+                            "id" to Stored.Leaf(item.id),
+                            "type" to Stored.Leaf(item.type),
+                            "doing" to Stored.Leaf(item.kind.name.lowercase()),
+                            "fields" to Stored.Elements(
+                                item.fields.map { field ->
+                                    val said = linkedMapOf<String, Stored>(
+                                        "at" to Stored.Leaf(field.at),
+                                        "from" to Stored.Leaf(field.from),
+                                        "to" to Stored.Leaf(field.to),
+                                    )
+                                    // Only where it matters: the logbook has moved under this
+                                    // change, so applying will leave it alone and it is worth
+                                    // staging again against what is there now.
+                                    if (field.moved) said["now"] = Stored.Leaf(field.now)
+                                    Stored.Members(said)
+                                },
+                            ),
+                        ),
+                    )
+                },
+            ),
+        )
+    }
+
+    /** One staging call, refused where the user has not allowed changes or there is nowhere. */
+    private fun staging(doing: (Staging) -> Outcome): Reply {
+        if (!writing()) return notWriting()
+        val staging = universe.staging ?: return refused(NOWHERE)
+        return when (val done = doing(staging)) {
+            is Outcome.Refused -> refused(done.reason)
+            is Outcome.Done -> staged()
+        }
+    }
+
+    /**
+     * What a write tool answers while the user has not allowed changes.
+     *
+     * Said rather than hidden, so an agent asked to correct forty dives tells the user what to
+     * tick rather than reporting that it cannot do it. `API-5`.
+     */
+    private fun notWriting(): Reply = refused(
+        "changing data is not allowed in this conversation. The user allows it with " +
+            "*allowed to change data* beside the conversation, and what is staged is theirs to " +
+            "review and apply.",
+    )
+
     private fun typeCalled(name: String): ItemDescription? =
         universe.logbook.descriptions.firstOrNull { it.name == name }
 
@@ -321,6 +403,9 @@ class Tools(private val universe: Universe, private val personal: () -> Boolean 
 
         /** How many items one page of a listing holds. */
         const val PAGE: Int = 50
+
+        /** What is said where a logbook has nowhere beside it to stage a change. */
+        private const val NOWHERE = "this logbook has nowhere to stage a change"
     }
 }
 

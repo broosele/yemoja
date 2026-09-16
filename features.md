@@ -67,16 +67,16 @@ them.
   It brings no type of its own: `DATA-57` in [data/doc.md](data/doc.md) settles that a plan is a
   profile marked `planned`, which is the same shape as a recording and compares against one.
 
-  *Built, less the screens:* Bühlmann ZH-L16C (`LOGIC-3`), the profile fields a plan needs, and
-  two operations over them. `evaluate` says what a run costs — the ceiling, the time left, the gas
-  each cylinder gives up, the oxygen clocks, how long before flying, and what it objects to
-  (`LOGIC-37`, `LOGIC-38`). `completeAscent` writes the way out of one (`LOGIC-35`). A plan can be
-  written by hand today and answered for, and the manual describes both.
+  *Built:* Bühlmann ZH-L16C (`LOGIC-3`), the profile fields a plan needs, and two operations over
+  them. `evaluate` says what a run costs — the ceiling, the time left, the gas each cylinder gives
+  up, the oxygen clocks, how long before flying, and what it objects to (`LOGIC-37`, `LOGIC-38`).
+  `completeAscent` writes the way out of one (`LOGIC-35`). In the window, both sit under the run
+  they are about: the ceiling over its graph, the figures and the findings under its fields, and
+  on a plan a button that writes its ascent in. `GUI-40`.
 
-  What is owed is somewhere to do it: a screen to write a plan on, to ask for its ascent, and to
-  show an evaluation beside what a computer said. The settings a screen would offer — an ascent
-  rate and a last stop depth to start from — wait with it, since a preference nothing reads is
-  worse than none.
+  What is owed is the making of a plan from nothing, which today means writing a profile and
+  marking it `planned` in the edit form, and the settings a screen would offer — an ascent rate
+  and a last stop depth to start from — which wait on there being a settings screen at all.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
   — the dive and its recording — and how far it goes is under *What is built* in
@@ -106,9 +106,10 @@ them.
   `RECON-8` in [logic/reconciliation.md](logic/reconciliation.md), and its arithmetic is
   `LOGIC-34` in [logic/doc.md](logic/doc.md).
 
-  *Built, less the changing:* a panel beside the tabs starts the agent the user names, hands it
-  the read-only tools and refuses every request of its own. What is owed is the write tools and
-  the review of what they stage.
+  *Built, less the review:* a panel beside the tabs starts the agent the user names, hands it the
+  tools and refuses every request of its own. It can read, and it can stage a change where the
+  user allows one. What is owed is the screen that shows what was staged, field by field, and
+  applies it.
 
 ## Future
 

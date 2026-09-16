@@ -11,6 +11,7 @@ import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -33,6 +34,25 @@ private fun diving(): Universe = logbook(
             "depth": [[0, 0], [60, 12.5], [120, 0]],
             "pressures": {"g1": [[0, 200], [120, 180]]}}}}""",
 )
+
+/** The same logbook, with somewhere to stage a change beside it. */
+private fun staging(): Universe {
+    val store = MemoryFileStore(
+        mapOf(
+            "dive/2026-06-01#0.json" to """{"rating": 6,
+                "gas_sources": {"g1": {"gas_type": "EAN32", "usage": "bottom"}}}""",
+        ),
+    )
+    return Universe(
+        LogbookReader.read(store, Types.ALL),
+        null,
+        store,
+        null,
+        null,
+        null,
+        MemoryFileStore(emptyMap()),
+    )
+}
 
 /** The reply read back, so a test asks what it says rather than how it is spelled. */
 private fun read(reply: Reply): Stored.Members = Json.parse(reply.text) as Stored.Members
@@ -119,7 +139,7 @@ class GetTest {
     @Test
     fun `allowed, they are sent`() {
         var allowed = false
-        val tools = Tools(diving()) { allowed }
+        val tools = Tools(diving(), personal = { allowed })
         assertNull(read(tools.get("anna")).at("item", "email"))
         allowed = true
         val anna = read(tools.get("anna"))
@@ -269,9 +289,63 @@ class AggregateTest {
             "medical is withheld, being a person's private details, unless the user allows them",
             reason(Tools(diving()).aggregate(listOf("anna"), "medical.body_mass", "mean")),
         )
-        val tools = Tools(diving()) { true }
+        val tools = Tools(diving(), personal = { true })
         val allowed = read(tools.aggregate(listOf("anna"), "medical.body_mass", "mean"))
         assertEquals(60L, allowed.leaf("value"))
         assertFalse(allowed.leaf("unit") == null)
+    }
+}
+
+/*
+ * Staging a change, which is the only way an agent changes anything. `RECON-8`, `API-5`.
+ */
+class StagingToolsTest {
+
+    private fun writing(): Pair<Universe, Tools> {
+        val universe = staging()
+        return universe to Tools(universe, writing = { true })
+    }
+
+    @Test
+    fun `a write tool is refused while the user has not allowed changes`() {
+        val tools = Tools(staging())
+        val said = reason(tools.stageSet("2026-06-01#0", "rating", "8"))
+        assertTrue("not allowed in this conversation" in said, said)
+        assertTrue("allowed to change data" in said, "and says what the user would tick: $said")
+        assertTrue(reason(tools.stageDelete("2026-06-01#0")).isNotEmpty())
+        assertTrue(reason(tools.stageAdd("dive_site", emptyMap())).isNotEmpty())
+        assertTrue(reason(tools.staged()).isNotEmpty())
+    }
+
+    @Test
+    fun `what is staged says the field as it is and as it would be, and changes nothing`() {
+        val (universe, tools) = writing()
+        val staged = read(tools.stageSet("2026-06-01#0", "gas_sources.g1.usage", "stage"))
+        assertEquals("2026-06-01#0", staged.leaf("staged", "0", "id"))
+        assertEquals("edit", staged.leaf("staged", "0", "doing"))
+        assertEquals("gas_sources.g1.usage", staged.leaf("staged", "0", "fields", "0", "at"))
+        assertEquals("bottom", staged.leaf("staged", "0", "fields", "0", "from"))
+        assertEquals("stage", staged.leaf("staged", "0", "fields", "0", "to"))
+        val held = universe.logbook["2026-06-01#0"]!!
+        assertEquals(0, universe.revision, "and the logbook is untouched until somebody applies it")
+        assertNotNull(held)
+    }
+
+    @Test
+    fun `a value the field refuses is refused, in the field's own words`() {
+        val (_, tools) = writing()
+        assertEquals(
+            "rating should be within 1..10",
+            reason(tools.stageSet("2026-06-01#0", "rating", "11")),
+        )
+    }
+
+    @Test
+    fun `an item to delete and an item to add are staged as what they are`() {
+        val (_, tools) = writing()
+        tools.stageDelete("2026-06-01#0")
+        val staged = read(tools.stageAdd("dive_site", mapOf("name" to "Elphinstone")))
+        val doings = (staged.at("staged") as Stored.Elements).elements.map { it.leaf("doing") }
+        assertEquals(listOf("add", "delete"), doings.sortedBy { it.toString() })
     }
 }

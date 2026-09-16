@@ -61,11 +61,22 @@ class ToolServerTest {
     }
 
     @Test
-    fun `the tools are listed, and none of them writes`() = connected { client ->
+    fun `the tools are listed, reading ones and staging ones`() = connected { client ->
         assertEquals(
-            listOf("describe", "list", "get", "series", "aggregate"),
+            listOf(
+                "describe", "list", "get", "series", "aggregate",
+                "stage_set", "stage_add", "stage_delete", "staged",
+            ),
             client.listTools().tools.map { it.name },
         )
+    }
+
+    @Test
+    fun `a staging call is refused while the user has not allowed changes`() = connected { client ->
+        val refused = client.callTool("stage_set", mapOf("id" to "2026-06-01#0", "path" to "rating"))
+        assertEquals(true, refused.isError)
+        val said = (refused.content.single() as TextContent).text
+        assertTrue("not allowed in this conversation" in said, said)
     }
 
     @Test
