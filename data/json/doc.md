@@ -579,6 +579,18 @@ To settle when we discuss architecture:
   not always address a list beside it. The description says which list and where it hangs;
   the file says which entry.
 
+  *Amended:* the description names the list, and **the nearest one is the one meant** — the
+  item holding the reference where it keeps a list of that name, and its owner otherwise. A
+  recording keeps no gas sources, so its switches and its pressures name the dive's, which is
+  what the paragraph above describes. A profile that keeps its own names those, and the field
+  is the same field.
+
+  The rule is written out because it is what a reader of a file has to apply, and it takes one
+  sentence: look inside the item you are reading, and then outwards. It also means adding a
+  collection to a type changes what a key beneath it means, which is the cost of not naming the
+  owner in every description that reaches one. `Item.rootOf` in the data layer is the one place
+  it is worked out.
+
   Two things follow. Text may not begin with `*` any more than with `@`. And multiline
   text is where both markers stop being structure and become a convention, which
   `JSON-23` settles.

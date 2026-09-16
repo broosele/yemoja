@@ -171,6 +171,29 @@ sealed class Item(
         readAs(name, Cardinality.KEYED_SERIES, T::class)
 
     /**
+     * The item a key reference into [collection] names an entry of: this one where it holds any,
+     * and its owner otherwise.
+     *
+     * A recording's `gas_switches` name the dive's gas sources, because a recording keeps none of
+     * its own. One that keeps its own names those instead, and the same field reads both.
+     *
+     * Where nothing from here outwards declares the collection, null.
+     */
+    fun rootOf(collection: String): Item? {
+        var nearest: Item? = null
+        var at: Item? = this
+        while (at != null) {
+            if (at.description[collection] != null) {
+                if (nearest == null) nearest = at
+                val held = (at.read(collection) as? Result.Usable)?.value as? Map<*, *>
+                if (!held.isNullOrEmpty()) return at
+            }
+            at = (at as? OwnedItem)?.parent
+        }
+        return nearest
+    }
+
+    /**
      * The description of the field called [name], or a fault where the type has no such field.
      *
      * Not an absent. A name the description does not carry is a mistake in the code that asked.
