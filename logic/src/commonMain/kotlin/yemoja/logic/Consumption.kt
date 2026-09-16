@@ -70,7 +70,7 @@ internal fun stretchesOf(profile: Item): List<Stretch> {
                 ?: continue
             if (to <= from || !breathing(key, from, to)) continue
             val metres = meanDepth(depth, from, to) ?: continue
-            val ambient = surface + water * GRAVITY * metres / PASCALS_IN_BAR
+            val ambient = ambientAt(metres, water, surface)
             out += Stretch(key, from, to, (before - after) * volume, ambient)
         }
     }
@@ -180,17 +180,3 @@ private fun entriesOf(item: Item, name: String): Map<String, OwnedItem> =
         .toMap()
 
 private const val SECONDS_IN_MINUTE = 60.0
-
-/** Standard gravity, which is what turns a column of water into a pressure. */
-private const val GRAVITY = 9.80665
-
-private const val PASCALS_IN_BAR = 100_000.0
-
-/** The atmosphere at sea level in bar, where the dive says nothing about its own. */
-private const val SEA_LEVEL = 1.01325
-
-/**
- * What water is taken to weigh where the recording gives no density: the EN 13319 figure, which
- * is the one most computers turn pressure into depth with.
- */
-private const val NOMINAL_DENSITY = 1020.0

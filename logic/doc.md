@@ -487,6 +487,47 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-37 — What the model is asked, and what it answers.** *Settled:* **`evaluate(profile)`,
+  a service beside the Universe, answering for a plan and a recording alike and storing nothing.**
+
+  What comes back is the ceiling in metres at each moment the profile holds a depth, how much
+  longer it could have stayed at each of them, the compartments at the end, and findings. The
+  ceiling is on the depth axis rather than in bar because that is what a screen draws beside the
+  profile itself, and the times are the profile's own, so the answer and the recording share an
+  axis without anything being resampled.
+
+  **A stretch where a stop is already owed reports no time left**, rather than nought. That is how
+  a computer writes its own `no_deco_time`, and `manual/data-fields.md` says a graph leaves the
+  gap blank rather than drawing a line through it.
+
+  **It refuses rather than guesses, and says what is missing.** No gradient factors on the
+  profile, a `deco_model` naming something else, no `density`, no depths, nothing saying what was
+  breathed, a chain that comes back on itself, a run before with no surface interval to cross.
+  Each is a sentence a user can act on, and a dive off a depth gauge earns the first of them.
+
+  **The factors are the profile's own and never a preference.** `manual/settings.md` promises that
+  changing what a new plan starts with moves nothing already recorded, and reading
+  `default_gf_low` here would break that promise for every dive at once. Where the air above the
+  dive is unknown it is taken to be sea level, which is `LOGIC-33`'s fallback and is stated rather
+  than hidden: at altitude it is wrong in the unsafe direction, and the field to correct it sits
+  on the profile.
+
+  **Gradient factors slide from the first stop**, which is the deepest pressure at which the low
+  factor demanded one. Before anything is owed the high factor applies, there being no depth to
+  hold an ascent back from.
+
+  **A finding is one to a crossing, not one to a sample.** Ten minutes spent above the ceiling is
+  one mistake, and ten identical lines would bury everything else said about the dive. `Finding`
+  carries a moment, a severity and a sentence; it is never a refusal, so a profile that breaks its
+  own ceiling is evaluated to the end and carries what is wrong with it.
+
+  Absent so far, and deliberately: CNS and OTU, which need the oxygen tables and are a piece of
+  their own; the gas a run costs and the pressures it would leave, which is the next piece; and no
+  flight and desaturation times, which are the tissues at the end read further. `LOGIC-35` still
+  owes the operation that writes an ascent into a plan.
+
+  Built in `Evaluation.kt`, over `Decompression.kt`.
+
 - **LOGIC-36 — Where a dive nobody has made yet is left out.** *Settled:* **shown and marked,
   counted nowhere.** A planned dive is an ordinary dive in the logbook with a plan on it and no
   recording, so it can be opened, edited and looked at; what gathers dives or adds them up leaves
