@@ -521,10 +521,19 @@ To settle when we discuss architecture and features:
   carries a moment, a severity and a sentence; it is never a refusal, so a profile that breaks its
   own ceiling is evaluated to the end and carries what is wrong with it.
 
+  **The gas a run costs comes from the source's own `sac`**, which is written on a plan and worked
+  out from the pressures of a recording, so one field answers *what I assume* and *what I used*
+  depending on which is there. What comes back is the litres each source gives up and what its
+  gauge would read throughout, and a source saying nothing about its rate or its size is left out
+  rather than counted as nothing. A gauge that reaches nought carries a finding and goes on
+  falling: where a run wants more gas than the cylinder holds, how much more is the useful part.
+
+  **Oxygen is checked against 1.6 bar**, the figure agencies teach for a stop and the one a gas is
+  chosen against. Over it is a finding rather than a refusal, once per crossing like the ceiling.
+
   Absent so far, and deliberately: CNS and OTU, which need the oxygen tables and are a piece of
-  their own; the gas a run costs and the pressures it would leave, which is the next piece; and no
-  flight and desaturation times, which are the tissues at the end read further. `LOGIC-35` still
-  owes the operation that writes an ascent into a plan.
+  their own, and no flight and desaturation times, which are the tissues at the end read further.
+  `LOGIC-35` still owes the operation that writes an ascent into a plan.
 
   Built in `Evaluation.kt`, over `Decompression.kt`.
 

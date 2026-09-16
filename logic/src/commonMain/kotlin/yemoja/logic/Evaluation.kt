@@ -46,6 +46,20 @@ sealed class Evaluated {
         val noDecompressionTime: Series,
         /** What the compartments hold at the end, which is what the next dive starts from. */
         val surfacing: Tissues,
+        /**
+         * The gas each source gives up, in litres at the surface, under the key it sits under.
+         *
+         * A source whose consumption nobody knows is left out rather than counted as nothing.
+         */
+        val gasUsed: Map<String, Double>,
+        /**
+         * What each source's gauge would read through the run, under the key it sits under.
+         *
+         * Worked out from what it was filled to and what is breathed from it, so a source with no
+         * `start_pressure` or no `volume` has none of this. It runs below nought where the run
+         * asks for more gas than the cylinder holds, which is what the finding beside it says.
+         */
+        val pressures: Map<String, Series>,
         /** What the model has to say against the profile, earliest first. */
         val findings: List<Finding>,
     ) : Evaluated()
@@ -112,13 +126,20 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated {
     val carried = carriedInto(profile, surface, seen)
     if (carried is Carried.Refused) return Evaluated.Refused(carried.reason)
 
-    return walked(depths, breathed, (carried as Carried.Tissues).tissues, model, density, surface)
+    return walked(
+        depths,
+        breathed,
+        (carried as Carried.Tissues).tissues,
+        model,
+        density,
+        surface,
+    )
 }
 
 /** The walk itself, once everything it needs has been found. */
 private fun walked(
     depths: List<Point>,
-    breathed: (Int) -> Gas,
+    breathing: Breathing,
     carried: Tissues,
     model: Model,
     density: Double,
@@ -130,19 +151,29 @@ private fun walked(
     val ceilings = ArrayList<Double>()
     val limits = ArrayList<Pair<Int, Double>>()
     val findings = ArrayList<Finding>()
+    val used = HashMap<String, Double>()
+    val gauges = breathing.fills.mapValues { ArrayList<Double>() }
     var above = false
+    var rich = false
+    val dry = HashSet<String>()
 
     for ((index, point) in depths.withIndex()) {
+        val ambient = ambientAt(point.metres, density, surface)
         if (index > 0) {
             val before = depths[index - 1]
+            val was = ambientAt(before.metres, density, surface)
+            val key = breathing.keyAt(before.second)
+            val minutes = (point.second - before.second) / SECONDS_IN_MINUTE
             tissues = tissues.breathing(
-                breathed(before.second),
-                ambientAt(before.metres, density, surface),
-                ambientAt(point.metres, density, surface),
+                breathing.mixAt(before.second),
+                was,
+                ambient,
                 (point.second - before.second).toDouble(),
             )
+            breathing.rates[key]?.let { rate ->
+                used[key] = (used[key] ?: 0.0) + rate * minutes * (was + ambient) / 2
+            }
         }
-        val ambient = ambientAt(point.metres, density, surface)
         val held = tissues.ceiling(model.low)
         if (held > surface && held > firstStop) firstStop = held
         val factor = gradientFactorAt(ambient, firstStop, surface, model.low, model.high)
@@ -151,8 +182,15 @@ private fun walked(
         ceilings += depthAt(ceiling, density, surface)
 
         if (ceiling <= surface) {
-            tissues.noDecompressionSeconds(breathed(point.second), ambient, surface, factor)
+            tissues.noDecompressionSeconds(breathing.mixAt(point.second), ambient, surface, factor)
                 ?.let { limits += point.second to it }
+        }
+        for ((key, fill) in breathing.fills) {
+            val left = fill.gauge - (used[key] ?: 0.0) / fill.volume
+            gauges.getValue(key) += left
+            if (left <= 0 && dry.add(key)) {
+                findings += Finding(point.second, Severity.WARNING, "$key is empty by here")
+            }
         }
         // One finding a crossing, not one a sample: a diver who stays above the ceiling for ten
         // minutes has made one mistake, and ten lines of it would bury the rest.
@@ -165,13 +203,25 @@ private fun walked(
             )
         }
         above = ambient < ceiling
+        val oxygen = breathing.mixAt(point.second).fractionO2 * ambient
+        if (oxygen > MOST_OXYGEN && !rich) {
+            findings += Finding(
+                point.second,
+                Severity.WARNING,
+                "the oxygen in ${breathing.mixAt(point.second)} is at ${bar(oxygen)} here," +
+                    " over the ${bar(MOST_OXYGEN)} a diver plans to",
+            )
+        }
+        rich = oxygen > MOST_OXYGEN
     }
 
     return Evaluated.Done(
         seriesOf(seconds, ceilings),
         seriesOf(limits.map { it.first }, limits.map { it.second }),
         tissues,
-        findings,
+        used,
+        gauges.mapValues { (_, left) -> seriesOf(seconds, left) },
+        findings.sortedBy { it.second },
     )
 }
 
@@ -212,14 +262,43 @@ private fun pointsOf(profile: Item): List<Point>? {
 }
 
 /**
- * What was being breathed at each second of [profile], or null where nothing says.
+ * Breathing is what a run takes its gas from: which source at each moment, what is in each, how
+ * fast it is breathed, and what it was filled to.
  *
- * The switches say it, and the source breathed at a moment is the one the last switch at or before
- * it names. A run with no switches breathes its only source where it has exactly one, which is how
- * an ordinary single-cylinder dive is written. A source with no `gas_type` is air, that being what
- * a cylinder nobody said anything about holds.
+ * Immutable.
  */
-private fun breathedBy(profile: Item): ((Int) -> Gas)? {
+private class Breathing(
+    private val mixes: Map<String, Gas>,
+    private val switches: List<Pair<Int, String>>,
+    /** Litres a minute at the surface, for the sources that say. */
+    val rates: Map<String, Double>,
+    /** What each source was filled to and how big it is, for the sources that say both. */
+    val fills: Map<String, Fill>,
+) {
+
+    /** The source breathed at [second]: the one the last switch at or before it names. */
+    fun keyAt(second: Int): String =
+        switches.lastOrNull { it.first <= second }?.second ?: switches.first().second
+
+    /** What is in the source breathed at [second], and air where the source does not say. */
+    fun mixAt(second: Int): Gas = mixes[keyAt(second)] ?: Gas.AIR
+}
+
+/** Fill is what a cylinder was filled to, in bar of gauge pressure, and the litres it holds. */
+private class Fill(val gauge: Double, val volume: Double)
+
+/**
+ * What [profile] breathes from, or null where nothing says.
+ *
+ * The switches say which source, and a run with no switches breathes its only one, which is how an
+ * ordinary single-cylinder dive is written. A source with no `gas_type` is air, that being what a
+ * cylinder nobody said anything about holds.
+ *
+ * A source's `sac` is what it is breathed at: written on a plan, and worked out from the pressures
+ * of a recording. One that says nothing costs nothing, since a figure nobody gave is not a figure
+ * of nought.
+ */
+private fun breathedBy(profile: Item): Breathing? {
     val root = profile.rootOf("gas_sources") ?: return null
     val sources = ((root.keyed<OwnedItem>("gas_sources") as? Result.Usable)?.value.orEmpty())
         .mapNotNull { (key, entry) -> (entry as? Element.Usable)?.let { key to it.value } }
@@ -228,20 +307,26 @@ private fun breathedBy(profile: Item): ((Int) -> Gas)? {
     val mixes = sources.mapValues { (_, source) ->
         (source.single<Gas>("gas_type") as? Result.Usable)?.value ?: Gas.AIR
     }
+    val rates = sources.mapNotNull { (key, source) ->
+        ((source.read("sac") as? Result.Usable)?.value as? Double)?.let { key to it }
+    }.toMap()
+    val fills = sources.mapNotNull { (key, source) ->
+        val gauge = (source.single<Double>("start_pressure") as? Result.Usable)?.value
+        val volume = (source.read("volume") as? Result.Usable)?.value as? Double
+        if (gauge == null || volume == null || volume <= 0) null else key to Fill(gauge, volume)
+    }.toMap()
+
     val switches = (profile.read("gas_switches") as? Result.Usable)?.value as? Series
-    if (switches == null || switches.size == 0) {
-        val only = mixes.values.singleOrNull() ?: return null
-        return { only }
+    val written = (0..<(switches?.size ?: 0)).mapNotNull { at ->
+        ((switches!!.valueAt(at) as? Element.Usable)?.value as? KeyReference)
+            ?.takeIf { it.key in sources }
+            ?.let { switches.secondAt(at) to it.key }
     }
-    val times = (0..<switches.size).map { switches.secondAt(it) }
-    val named = (0..<switches.size).map {
-        ((switches.valueAt(it) as? Element.Usable)?.value as? KeyReference)?.key
+    if (written.isEmpty()) {
+        val only = sources.keys.singleOrNull() ?: return null
+        return Breathing(mixes, listOf(0 to only), rates, fills)
     }
-    return here@{ second ->
-        val last = times.indexOfLast { it <= second }
-        if (last < 0) mixes.getValue(mixes.keys.first()) // Before the first switch, what it names.
-        else mixes[named[last]] ?: return@here Gas.AIR
-    }
+    return Breathing(mixes, written, rates, fills)
 }
 
 /**
@@ -285,5 +370,21 @@ private fun metres(depth: Double): String {
     return "${tenths / 10}.${tenths % 10} m"
 }
 
+/** A pressure as a finding says it, to a hundredth of a bar. */
+private fun bar(pressure: Double): String {
+    val hundredths = (pressure * 100).toLong()
+    return "${hundredths / 100}.${(hundredths % 100).toString().padStart(2, '0')} bar"
+}
+
 /** The one model built here, and what `deco_model` says when a computer was running it. */
 private const val BUHLMANN = "buhlmann"
+
+/**
+ * The most oxygen a diver plans to breathe, in bar.
+ *
+ * The figure agencies teach for a decompression stop, and the one a gas is chosen against. More
+ * than this is not an error in the recording: it is what the run did, and a finding says so.
+ */
+private const val MOST_OXYGEN = 1.6
+
+private const val SECONDS_IN_MINUTE = 60.0

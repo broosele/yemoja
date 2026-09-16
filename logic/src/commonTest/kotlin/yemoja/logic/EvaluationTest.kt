@@ -174,6 +174,62 @@ class EvaluationTest {
     }
 
     @Test
+    fun `what a run costs is the rate, the pressure it is breathed at, and the minutes`() {
+        val evaluated = done(
+            planned(
+                """"depth": [[0, 20], [600, 20]]""",
+                sources = """"g1": {"gas_type": "AIR", "sac": 20, "volume": 12,
+                    "start_pressure": 200}""",
+            ),
+        )
+        // Ten minutes at twenty metres of fresh water, which is 2.9613 bar under a bar of air.
+        val litres = 20 * ambientAt(20.0, 1000.0, 1.0) * 10
+
+        assertEquals(litres, evaluated.gasUsed.getValue("g1"), 1e-9)
+        assertEquals(listOf(200.0, 200.0 - litres / 12), values(evaluated.pressures.getValue("g1")))
+        assertTrue(evaluated.findings.isEmpty(), "${evaluated.findings}")
+    }
+
+    @Test
+    fun `a cylinder the run empties says where it ran out`() {
+        val evaluated = done(
+            planned(
+                """"depth": [[0, 30], [600, 30], [1200, 30]]""",
+                sources = """"g1": {"gas_type": "AIR", "sac": 25, "volume": 3,
+                    "start_pressure": 200}""",
+            ),
+        )
+        val empty = evaluated.findings.single { "empty" in it.said }
+
+        assertEquals(600, empty.second)
+        assertEquals(Severity.WARNING, empty.severity)
+        assertTrue(values(evaluated.pressures.getValue("g1")).last() < 0, "and it goes on falling")
+    }
+
+    @Test
+    fun `a source nobody gave a rate costs nothing that can be counted`() {
+        val evaluated = done(planned(SHALLOW))
+
+        assertTrue(evaluated.gasUsed.isEmpty(), "${evaluated.gasUsed}")
+        assertTrue(evaluated.pressures.isEmpty(), "${evaluated.pressures}")
+    }
+
+    @Test
+    fun `a mix too rich for the depth it is breathed at is said once`() {
+        val evaluated = done(
+            planned(
+                """"gas_switches": [[0, "*g1"]], "depth": [[0, 0], [90, 40], [600, 40],
+                    [700, 0]]""",
+                sources = """"g1": {"gas_type": "EAN50"}""",
+            ),
+        )
+        val rich = evaluated.findings.single { "oxygen" in it.said }
+
+        assertEquals(Severity.WARNING, rich.severity)
+        assertTrue("2.4" in rich.said || "2.5" in rich.said, rich.said)
+    }
+
+    @Test
     fun `two cylinders and nothing saying which was breathed is nothing to work from`() {
         val reason = refused(
             planned(
