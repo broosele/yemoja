@@ -164,6 +164,11 @@ file, write one or run a command is refused, and the panel says so each time one
 change anything: it reads, counts and answers, and staging changes for you to review is not built
 yet.
 
+**It works beside your logbook, not in it.** An agent writes files of its own as it goes — a note
+of which tools it has been allowed, and whatever else it keeps. Those go in a folder next to your
+logbook, named after it with `.agent` on the end, so your logbook stays your dives and nothing
+else. Deleting that folder costs you nothing but what the agent remembered about itself.
+
 **Private details are withheld** unless you tick *include personal details*: your people's
 birthdays, e-mail addresses, telephone numbers, addresses, medicals and insurance. The box starts
 empty for every conversation. Tick it and the agent can read them — which means sending them to
