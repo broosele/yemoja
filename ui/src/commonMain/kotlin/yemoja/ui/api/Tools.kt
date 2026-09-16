@@ -304,13 +304,14 @@ class Tools(
     /**
      * What a write tool answers while the user has not allowed changes.
      *
-     * Said rather than hidden, so an agent asked to correct forty dives tells the user what to
-     * tick rather than reporting that it cannot do it. `API-5`.
+     * **What to do comes first.** An agent asked to correct forty dives should tell the user how
+     * to let it, not report a policy at them: *ask the user to tick…* is something they can act
+     * on, where *changing data is not allowed* is a thing to be sorry about. `API-5`.
      */
     private fun notWriting(): Reply = refused(
-        "changing data is not allowed in this conversation. The user allows it with " +
-            "*allowed to change data* beside the conversation, and what is staged is theirs to " +
-            "review and apply.",
+        "ask the user to tick *allowed to change data* beside the conversation. Until they do, " +
+            "nothing can be staged; once they have, what you stage still waits for them to " +
+            "review it.",
     )
 
     private fun typeCalled(name: String): ItemDescription? =
