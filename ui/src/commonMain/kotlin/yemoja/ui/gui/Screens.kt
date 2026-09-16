@@ -179,6 +179,16 @@ internal class Platform(
      */
     val save: ((asking: String) -> String?)? = null,
     /**
+     * A conversation with the agent the user has installed, or absent where the platform hosts
+     * none.
+     *
+     * An agent is a program on a computer, so a platform that cannot run one has no agent and the
+     * deed that opens the panel is greyed. What it is given is the box the user ticks: the tools
+     * read it on every call, a conversation being long enough for the answer to change part way
+     * through. `GUI-38`, `API-5`.
+     */
+    val conversing: ((personal: () -> Boolean) -> Conversation)? = null,
+    /**
      * What this platform can do to a logbook as a whole, by deed.
      *
      * A deed the platform cannot do yet is absent, and the home screen offers it greyed: the
@@ -334,25 +344,47 @@ internal fun Application(universe: Universe?, platform: Platform) {
             tab = to
         }
     }
+    // The agent panel, opened from home and staying open as the reader moves between tabs: a
+    // dive the agent names is looked at while the conversation carries on. `GUI-38`.
+    val conversing = platform.conversing
+    var talking by remember(universe) { mutableStateOf(false) }
     CompositionLocalProvider(LocalChanger provides changer) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Tabs(tabs, tab) { tab = it }
-                Box(modifier = Modifier.weight(1f)) {
-                    when {
-                        tab.shape == Shape.HOME -> Home(universe, platform, kept.getValue(tab))
-                        tab.shape == Shape.MANUAL ->
-                            Manuals(platform.manual, platform.open, kept.getValue(tab))
+                Row(modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        when {
+                            tab.shape == Shape.HOME -> Home(
+                                universe = universe,
+                                platform = platform,
+                                kept = kept.getValue(tab),
+                                // An agent is asked about a logbook, so there is none to talk to
+                                // before one is open.
+                                onAgent = if (universe == null || conversing == null) {
+                                    null
+                                } else {
+                                    { talking = true }
+                                },
+                            )
 
-                        universe == null -> Unit
-                        else -> Subject(
-                            set = universe.logbook,
-                            user = universe.user,
-                            tab = tab,
-                            atlas = atlas,
-                            kept = kept.getValue(tab),
-                            onFollow = follow,
-                        )
+                            tab.shape == Shape.MANUAL ->
+                                Manuals(platform.manual, platform.open, kept.getValue(tab))
+
+                            universe == null -> Unit
+                            else -> Subject(
+                                set = universe.logbook,
+                                user = universe.user,
+                                tab = tab,
+                                atlas = atlas,
+                                kept = kept.getValue(tab),
+                                onFollow = follow,
+                            )
+                        }
+                    }
+                    if (talking && universe != null && conversing != null) {
+                        VerticalDivider()
+                        Panel(universe.logbook, conversing, follow) { talking = false }
                     }
                 }
             }
@@ -433,7 +465,12 @@ private fun Tabs(tabs: List<Tab>, chosen: Tab, onChoose: (Tab) -> Unit) {
  * diving is in here, and what would you like to do.
  */
 @Composable
-private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
+private fun Home(
+    universe: Universe?,
+    platform: Platform,
+    kept: Kept,
+    onAgent: (() -> Unit)? = null,
+) {
     val set = universe?.logbook
     val changer = LocalChanger.current
     val edition = changer.edition
@@ -474,6 +511,7 @@ private fun Home(universe: Universe?, platform: Platform, kept: Kept) {
                     if (platform.pick != null) {
                         put(Deed.IMPORT) { take(universe, platform, taking, changer) }
                     }
+                    onAgent?.let { put(Deed.AGENT, it) }
                     platform.save?.let { save ->
                         put(Deed.EXPORT) {
                             // Asked here rather than inside the writing: a platform's dialog

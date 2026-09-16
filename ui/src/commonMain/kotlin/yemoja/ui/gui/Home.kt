@@ -227,6 +227,7 @@ internal enum class Deed(val label: String) {
     IMPORT("Import a logbook"),
     EXPORT("Export to UDDF"),
     DOWNLOAD("Download from a computer"),
+    AGENT("Ask an agent"),
 }
 
 /**

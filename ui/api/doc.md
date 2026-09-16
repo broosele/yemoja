@@ -21,12 +21,12 @@ logic layer is designed with it in mind.
 and `ToolServer.kt` serves them over MCP with the instructions and the manual's two data chapters.
 A person's private details are withheld unless a flag asked on every call says otherwise.
 
-Three things are owed, each by a later piece of `FEAT-18`:
+**The window starts it and the panel decides the flag.** A conversation makes a socket of its own,
+hands the tools the box the user ticks beside it, and closes both when it ends. `GUI-38`.
 
-- **Nothing starts the server.** The window hosting an agent and `yemoja api` relaying to it are
-  `GUI-38`'s.
+One thing is owed, by a later piece of `FEAT-18`:
+
 - **There are no write tools.** Staging is `RECON-8`'s.
-- **Nothing decides the flag.** The box beside a conversation that sets it is `GUI-38`'s.
 
 ## Scope
 

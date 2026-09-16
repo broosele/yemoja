@@ -212,6 +212,7 @@ class GreetingTest {
                 "Import a logbook",
                 "Export to UDDF",
                 "Download from a computer",
+                "Ask an agent",
             ),
             Deed.entries.map { it.label },
         )

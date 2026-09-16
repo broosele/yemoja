@@ -102,6 +102,10 @@ them.
   `RECON-8` in [logic/reconciliation.md](logic/reconciliation.md), and its arithmetic is
   `LOGIC-34` in [logic/doc.md](logic/doc.md).
 
+  *Built, less the changing:* a panel beside the tabs starts the agent the user names, hands it
+  the read-only tools and refuses every request of its own. What is owed is the write tools and
+  the review of what they stage.
+
 ## Future
 
 - **FEAT-11 — A terminal interface.** Deliberately raw; see [ui/tui/doc.md](ui/tui/doc.md).

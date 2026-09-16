@@ -476,9 +476,30 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **Nothing of a conversation is kept.** It lasts as long as the panel holds it, and whatever the
   agent keeps on its own side is between the user and its provider. What was asked, and whose
-  names were in it, is never written beside the logbook, where syncing would carry it.
+  names were in it, is never written beside the logbook, where syncing would carry it. The command
+  that starts an agent is typed afresh each time for the same reason: there is nowhere to keep it
+  that a conversation would not also be kept in.
 
-  Nothing of this is built.
+  **It opens from a deed on home**, *Ask an agent*, beside the deeds that make, open, import and
+  export a logbook — an agent is something done to a logbook as a whole, which is what that row
+  is. The deed is greyed where the platform hosts no agent, as every unbuildable deed there is,
+  and absent before a logbook is open, there being nothing to ask about. Once opened the panel
+  keeps a fixed width beside whichever tab is showing, and closes from its own *Close*.
+
+  **What it holds, top to bottom**: the command that starts an agent and the deed that starts it,
+  which become the agent's name and *Stop* once one runs; the conversation, a view of its own for
+  copying; what the stance says while an agent is starting or thinking; the *include personal
+  details* box; and what to ask, with *Ask* live only while an agent waits to be asked. *Allowed
+  to change data* is not there, because nothing an agent can do changes anything yet: the write
+  tools wait on `RECON-8`.
+
+  **The window speaks in the conversation too.** An agent that will not start, one that stops part
+  way through an answer, and each request of its own that was refused are turns in the same
+  column, unattributed and in the outline colour. A refusal is shown once: what an agent was
+  refused only ever grows while it runs, so the panel remembers how many it has said.
+
+  What is built is the panel, the hosting behind it and the read-only tools. Staged changes and
+  the review of them are not.
 - **GUI-37 — How a logbook is exported from the window.** *Settled:* **a deed on the home
    screen, a file named, and one sentence about what went.**
 

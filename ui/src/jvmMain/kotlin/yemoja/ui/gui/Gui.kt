@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadSvgPainter
@@ -17,6 +18,10 @@ import androidx.compose.ui.window.rememberWindowState
 import yemoja.data.Date
 import yemoja.logic.Universe
 import yemoja.logic.divecomputer.FoundDevices
+import yemoja.ui.api.Talking
+import yemoja.ui.api.ToolSocket
+import yemoja.ui.api.Tools
+import kotlinx.coroutines.Dispatchers
 import java.awt.Desktop
 import java.net.URI
 import java.time.LocalDate
@@ -56,6 +61,9 @@ fun gui(folder: String? = null): Int {
         // Which logbook is open can change while the window is: a new one is made into it.
         var at by remember { mutableStateOf(folder) }
         var held by remember { mutableStateOf(universe) }
+        // What an agent runs in, which outlives any one conversation: an agent is started and
+        // stopped many times while a window is open. `GUI-38`.
+        val scope = rememberCoroutineScope()
         val platform = remember {
             Platform(
                 manual = CHAPTERS.map { file -> chapterOf(file, bundled("manual/$file")) },
@@ -67,6 +75,18 @@ fun gui(folder: String? = null): Int {
                 ask = ::asked,
                 pick = ::picked,
                 save = ::saved,
+                conversing = { personal ->
+                    val open = held
+                    val where = at
+                    if (open == null || where == null) {
+                        error("an agent is offered only where a logbook is open")
+                    }
+                    // A socket of its own, which the conversation closes with itself: the token
+                    // an agent was given stops working when the talking stops. `API-4`. Onto the
+                    // toolkit's thread, which is the one the Universe lives on.
+                    val relay = ToolSocket(Tools(open, personal), Dispatchers.Main)
+                    Talking(relay, where, scope)
+                },
                 deeds = mapOf(
                     Deed.NEW to {
                         chosen("Make a new logbook in", "Make")?.let { where ->

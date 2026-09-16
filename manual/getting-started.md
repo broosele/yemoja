@@ -40,9 +40,10 @@ Nobody else's medical or insurance is warned about, and generic gear owes nothin
 is due, nothing is shown.
 
 **System** holds what can be done to a logbook as a whole: making one, opening one, importing,
-exporting to UDDF, and downloading from a dive computer. The last three need a logbook open. The
-last two have chapters of their own: [computers-and-importing.md](computers-and-importing.md)
-and [uddf.md](uddf.md).
+exporting to UDDF, downloading from a dive computer, and asking an agent. All but the first two
+need a logbook open. Three have more written about them: importing and downloading in
+[computers-and-importing.md](computers-and-importing.md), exporting in [uddf.md](uddf.md), and
+the agent below.
 
 **Statistics** plots your dives. The first box chooses what is drawn:
 
@@ -146,6 +147,32 @@ one where a dive was, or with an import.
 
 **Everything is written to your files the moment it is saved**, and there is no undo yet. Keep
 a backup of your logbook folder.
+
+## Asking an agent
+
+Yemoja can put your logbook to an AI agent you have installed yourself. It supplies none and pays
+for none: the agent is yours, it signs itself in, and what it costs is between you and whoever
+runs it.
+
+**Press *Ask an agent*** on the home screen. A panel opens beside whatever tab you are on and
+stays there as you move between tabs, so a dive the agent names can be opened and read while you
+carry on talking. Type the command that starts your agent — whatever its own instructions give
+you, as one line — and press **Start**. Then ask.
+
+**It reaches your logbook through Yemoja and no other way.** Every request it makes to read a
+file, write one or run a command is refused, and the panel says so each time one is. It cannot
+change anything: it reads, counts and answers, and staging changes for you to review is not built
+yet.
+
+**Private details are withheld** unless you tick *include personal details*: your people's
+birthdays, e-mail addresses, telephone numbers, addresses, medicals and insurance. The box starts
+empty for every conversation. Tick it and the agent can read them — which means sending them to
+whoever runs its model, as everything else you ask is sent.
+
+**Nothing of a conversation is kept.** Closing the panel stops the agent and the conversation is
+gone; it is never written beside your logbook. The command that starts an agent is typed afresh
+each time for the same reason. What the agent remembers on its own side is between you and its
+provider.
 
 ## Copying text
 
