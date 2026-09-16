@@ -32,7 +32,7 @@ internal class Talking(
      * socket for it rather than sharing one.
      */
     private val socket: ToolSocket,
-    /** The logbook's folder, which is where the agent is told to work. */
+    /** The logbook being talked about. The agent works beside it rather than in it. `API-4`. */
     private val folder: String,
     private val scope: CoroutineScope,
 ) : Conversation {
