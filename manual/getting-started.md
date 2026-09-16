@@ -169,6 +169,16 @@ birthdays, e-mail addresses, telephone numbers, addresses, medicals and insuranc
 empty for every conversation. Tick it and the agent can read them — which means sending them to
 whoever runs its model, as everything else you ask is sent.
 
+**Check what it tells you.** An agent reads your logbook and answers in ordinary language, and it
+can be confidently wrong: about which dives it counted, or about what you meant. It is asked to
+say what an answer was based on and to name the dives it used, and each one it names can be
+opened from the panel — that is what makes an answer checkable. Arithmetic is Yemoja's rather
+than the agent's, so a total is a total; which dives went into it is the part worth reading.
+
+**It is not a dive planner.** An agent is asked to give no advice about planning a dive or about
+decompression, for the reasons the [app-info](app-info.md) chapter gives, and a model that
+offers some anyway is not speaking for Yemoja.
+
 **Nothing of a conversation is kept.** Closing the panel stops the agent and the conversation is
 gone; it is never written beside your logbook. The command that starts an agent is typed afresh
 each time for the same reason. What the agent remembers on its own side is between you and its

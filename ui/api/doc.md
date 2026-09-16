@@ -16,7 +16,7 @@ logic layer is designed with it in mind.
 
 ## What is built
 
-**The read-only tools and the server that carries them**, and nothing an agent can reach yet.
+**The read-only tools, the server that carries them, and an agent that reaches them.**
 `describe`, `list`, `get`, `series` and `aggregate` answer as `API-4` sets out, in `Tools.kt`,
 and `ToolServer.kt` serves them over MCP with the instructions and the manual's two data chapters.
 A person's private details are withheld unless a flag asked on every call says otherwise.
