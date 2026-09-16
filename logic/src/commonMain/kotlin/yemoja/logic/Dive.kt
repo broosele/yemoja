@@ -161,16 +161,17 @@ private val PROFILE = ItemDescription(
             role = Role.Overrideable(::profilesComputer),
         ),
         // What the device says it is, which is what tells two of one model apart. `LOGIC-23`.
-        TextDescription("serial"),
+        TextDescription("serial", housekeeping = true),
         // What the device knows this recording by, kept so a later download can say where it
         // got to. `DATA-90`. One per stretch where a computer cut the dive up: `LOGIC-25`.
-        TextDescription("fingerprint", cardinality = Cardinality.LIST),
-        DateDescription("start_date"),
-        TimeDescription("start_time"),
+        TextDescription("fingerprint", cardinality = Cardinality.LIST, housekeeping = true),
+        // What the dive works its own start from, and the dive's is the one read.
+        DateDescription("start_date", source = true),
+        TimeDescription("start_time", source = true),
         // How far the computer's clock read ahead of local time: one that drifted, one left on
         // home time, one that missed summer time. The user's to set, and a download never writes
         // it. A length of time like any other, and scoped like one. `LOGIC-32`, `DATA-10`.
-        NumberDescription("recorded_time_offset", Dimension.TIME),
+        NumberDescription("recorded_time_offset", Dimension.TIME, housekeeping = true),
         // From the last sample, and correctable where the recording stopped before the user
         // surfaced.
         DateDescription("end_date", role = Role.Overrideable(::profilesEndDate)),
@@ -208,7 +209,7 @@ private val PROFILE = ItemDescription(
         WholeNumberDescription("conservatism"),
         NumberDescription("no_flight_time", Dimension.TIME),
         NumberDescription("desaturation_time", Dimension.TIME),
-        OwnedItemDescription("tolerances", TOLERANCES),
+        OwnedItemDescription("tolerances", TOLERANCES, housekeeping = true),
         NumberDescription("depth", Dimension.LENGTH, cardinality = Cardinality.SERIES),
         NumberDescription(
             "temperature",
@@ -256,12 +257,6 @@ private val PROFILE = ItemDescription(
         REMARKS,
     ),
     proposedId = ::profilesProposedKey,
-    // The bookmark and the key a download reads back, how much a download thinned, and how far
-    // the clock was out, which the dive's own times already have applied: kept, and not read.
-    // The recording's own start is what the dive works its start from, and the dive's is the one
-    // read.
-    housekeeping = setOf("fingerprint", "serial", "tolerances", "recorded_time_offset"),
-    sources = setOf("start_date", "start_time"),
 )
 
 /** When the last sample was taken, in local time, or absent where there is none. */
@@ -456,7 +451,7 @@ internal val DIVE: ItemDescription = ItemDescription(
         // How far local time was ahead of GMT where the dive was made. The times above are local
         // and shown as they are; this puts two dives on one clock to compare them, and a dive
         // saying nothing is taken to be on GMT. `LOGIC-32`.
-        NumberDescription("time_zone_offset", Dimension.TIME),
+        NumberDescription("time_zone_offset", Dimension.TIME, housekeeping = true),
         NumberDescription(
             "duration",
             Dimension.TIME,
@@ -503,7 +498,7 @@ internal val DIVE: ItemDescription = ItemDescription(
         ),
         // Which of `profiles` to work from. Leaving it out where there is one is the
         // ordinary case.
-        KeyReferenceDescription("primary_profile", collection = "profiles"),
+        KeyReferenceDescription("primary_profile", collection = "profiles", housekeeping = true),
         OwnedItemDescription("details", DETAILS),
         OwnedItemDescription("environment", ENVIRONMENT),
         OwnedItemDescription("gear", DIVE_GEAR),
@@ -516,9 +511,6 @@ internal val DIVE: ItemDescription = ItemDescription(
         Ordering("start_time", Direction.DESCENDING),
     ),
     proposedId = ::divesProposedId,
-    // Which recording is worked from is a choice about the machinery, not a fact about the dive,
-    // and the zone only puts two dives on one clock, the times shown being local already.
-    housekeeping = setOf("primary_profile", "time_zone_offset"),
 )
 
 /**

@@ -99,7 +99,7 @@ internal val GEAR: ItemDescription = ItemDescription(
         TextDescription("serial"),
         // For a dive computer that asks for a code before it talks: the key it hands back once
         // the code is typed, kept so it is not asked again. Put there by a download. `LOGIC-24`.
-        TextDescription("access_code"),
+        TextDescription("access_code", housekeeping = true),
         // Whether this describes a kind of item rather than one the user owns. Your own gear is
         // your own, so nothing written works out false. A default is a constant computation
         // rather than a field of its own. `DATA-56`.
@@ -132,8 +132,6 @@ internal val GEAR: ItemDescription = ItemDescription(
     ),
     orderedBy = listOf(Ordering("name")),
     proposedId = ::namedById,
-    // The pairing key a download hands back. Kept, and not read.
-    housekeeping = setOf("access_code"),
 )
 
 /** The dives whose gear names [gear] among its items, or a profile of which names it. */

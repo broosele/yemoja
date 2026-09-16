@@ -419,17 +419,15 @@ class ResultTest {
 class HousekeepingTest {
 
     @Test
-    fun `a type may mark fields as housekeeping or as sources, and only its own fields`() {
-        val type = ItemDescription(
-            "thing",
-            listOf(TextDescription("name"), TextDescription("key"), TextDescription("raw")),
-            housekeeping = setOf("key"),
-            sources = setOf("raw"),
-        )
-        assertEquals(setOf("key"), type.housekeeping)
-        assertEquals(setOf("raw"), type.sources)
-        assertFailsWith<IllegalArgumentException> {
-            ItemDescription("thing", listOf(TextDescription("name")), housekeeping = setOf("nope"))
-        }
+    fun `a field says whether it is housekeeping, a source, or private`() {
+        val plain = TextDescription("name")
+        assertEquals(false, plain.housekeeping)
+        assertEquals(false, plain.source)
+        assertEquals(false, plain.personal)
+        assertEquals(true, TextDescription("key", housekeeping = true).housekeeping)
+        assertEquals(true, DateDescription("raw", source = true).source)
+        assertEquals(true, NumberDescription("mass", Dimension.MASS, personal = true).personal)
+        val inner = ItemDescription("inner", listOf(plain))
+        assertEquals(true, OwnedItemDescription("detail", inner, personal = true).personal)
     }
 }

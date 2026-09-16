@@ -72,7 +72,7 @@ internal fun fieldsShownOf(
 ): List<FieldDescription> =
     type.fields.filter {
         it.name !in ALREADY_SHOWN[type.name].orEmpty() &&
-            (editing || (it.name !in type.housekeeping && it.name !in type.sources))
+            (editing || (!it.housekeeping && !it.source))
     }
 
 /**

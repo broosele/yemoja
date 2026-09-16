@@ -89,6 +89,26 @@ sealed class FieldDescription(
     label: String?,
     val role: Role,
     val cardinality: Cardinality,
+    /**
+     * Kept for the machinery rather than for reading: a download's bookmark, a pairing key.
+     *
+     * Shown when editing and otherwise not. `DATA-115`.
+     */
+    val housekeeping: Boolean = false,
+    /**
+     * Solely a source for another field, which says it better: a recording's own start beside
+     * the dive's.
+     *
+     * Shown when editing and otherwise not. `DATA-115`.
+     */
+    val source: Boolean = false,
+    /**
+     * A person's private details rather than anything about diving.
+     *
+     * Left out of what an agent is sent unless the user allows it for the conversation in hand.
+     * `DATA-119`.
+     */
+    val personal: Boolean = false,
 ) {
     /** Used in the UI. */
     val label: String =
@@ -190,7 +210,10 @@ sealed class ValueDescription(
     label: String? = null,
     role: Role,
     cardinality: Cardinality,
-) : FieldDescription(name, label, role, cardinality)
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : FieldDescription(name, label, role, cardinality, housekeeping, source, personal)
 
 /**
  * [value] to [decimals] places, with no trailing zeros.
@@ -248,7 +271,10 @@ class NumberDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
     /** Closed at both ends, where given: a latitude is `-90.0..90.0`. */
     val range: ClosedRange<Double>? = null,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = Double::class
 
@@ -308,7 +334,10 @@ class WholeNumberDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
     /** Whole bounds, where given: a rating is `1..10`, not `1.0..10.0`. */
     val range: IntRange? = null,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = Int::class
 
@@ -379,7 +408,10 @@ class TextDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
     fixedSet: Set<String>? = null,
     suggestedSet: Set<String>? = null,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = String::class
 
@@ -431,7 +463,10 @@ class MultilineTextDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = String::class
 
@@ -457,7 +492,10 @@ class DateDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = Date::class
 
@@ -482,7 +520,10 @@ class TimeDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = Time::class
 
@@ -519,7 +560,10 @@ class BooleanDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = Boolean::class
 
@@ -548,7 +592,10 @@ class GasDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = Gas::class
 
@@ -575,7 +622,10 @@ class KeyReferenceDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : ValueDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : ValueDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = KeyReference::class
 
@@ -617,7 +667,10 @@ class ReferenceDescription(
     cardinality: Cardinality = Cardinality.SINGLE,
     /** Whether a plain name may stand in, asserting no id. */
     val oneOffAllowed: Boolean = false,
-) : FieldDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : FieldDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = Reference::class
 
@@ -662,7 +715,10 @@ class OwnedItemDescription(
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
-) : FieldDescription(name, label, role, cardinality) {
+    housekeeping: Boolean = false,
+    source: Boolean = false,
+    personal: Boolean = false,
+) : FieldDescription(name, label, role, cardinality, housekeeping, source, personal) {
 
     override val valueType: KClass<*> get() = OwnedItem::class
 
@@ -682,32 +738,10 @@ class ItemDescription(
     fields: List<FieldDescription>,
     orderedBy: List<Ordering> = emptyList(),
     val proposedId: ((Item) -> String)? = null,
-    housekeeping: Set<String> = emptySet(),
-    sources: Set<String> = emptySet(),
 ) {
 
     // Copied. A List is read-only, not immutable.
     val fields: List<FieldDescription> = fields.toList()
-
-    /**
-     * The fields kept for the machinery rather than for reading: a download's bookmark, a
-     * pairing key. Shown when editing and otherwise not. `DATA-115`.
-     */
-    val housekeeping: Set<String> = housekeeping.toSet()
-
-    /**
-     * The fields that are solely a source for others, which say what they say better: a
-     * recording's own start, which the dive works its own from. Shown when editing and otherwise
-     * not. `DATA-115`.
-     */
-    val sources: Set<String> = sources.toSet()
-
-    init {
-        val named = fields.map { it.name }.toSet()
-        for (field in housekeeping + sources) {
-            require(field in named) { "$name marks $field, which is no field of its own" }
-        }
-    }
 
     /**
      * How to sort items of this type, most significant first, or empty to leave them as read.

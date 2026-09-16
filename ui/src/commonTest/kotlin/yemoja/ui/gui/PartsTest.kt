@@ -56,7 +56,7 @@ class PartsTest {
         assertEquals(Types.REGION.fields.size - 1, names.size)
         assertEquals(false, "children" in names)
         assertEquals(false, "dives" in fieldsShownOf(Types.DIVE_TRIP).map { it.name })
-        val kept = Types.DIVE.housekeeping.size
+        val kept = Types.DIVE.fields.count { it.housekeeping }
         assertEquals(Types.DIVE.fields.size - kept, fieldsShownOf(Types.DIVE).size)
     }
 
@@ -236,7 +236,7 @@ class ArrangedTest {
             dive.insets.map { it.name },
         )
         assertEquals(false, dive.plain.any { it.name in dive.insets.map { i -> i.name } })
-        val kept = Types.DIVE.housekeeping.size
+        val kept = Types.DIVE.fields.count { it.housekeeping }
         assertEquals(Types.DIVE.fields.size - kept, dive.plain.size + dive.insets.size)
     }
 

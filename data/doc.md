@@ -2150,6 +2150,15 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-119 — Which fields hold a person's private details.** *Settled:* **the field says so.**
+  `FieldDescription` carries `personal`, and a person marks `birthday`, `email`, `phone`,
+  `address`, `medical` and `insurance` with it. What reads it is the agent's tool server, which
+  leaves those fields out of what it sends unless the user allows them, `API-5`.
+
+  Two homes were refused. A list in the front end naming a person's fields would be a front end
+  describing a type, `UI-3`. A set on the type, beside the two `DATA-115` had, was what this was
+  built as first; asking why the fact sat away from the field it describes is what moved all
+  three, and `DATA-115` is amended below.
 - **DATA-118 — Whether an item set knows whose logbook it is.** *Settled:* **yes, as the
   reference the manifest holds.** `ItemSet.user` is what `yemoja.json` names, or nothing.
 
@@ -2219,14 +2228,18 @@ Kept with their identifiers so earlier discussion still resolves.
   Unrecognised fields count. A block holding nothing this version knows but something a later one
   does is not empty, since what is written is what the block comes to, and `DATA-65` keeps those.
 
-- **DATA-115 — Which fields are not for reading.** *Settled:* **the type says so, in two sets.**
-  `ItemDescription` carries `housekeeping`, the fields kept for the machinery rather than for
+- **DATA-115 — Which fields are not for reading.** *Settled:* **the field says so, in two marks.**
+  `FieldDescription` carries `housekeeping`, for a field kept for the machinery rather than for
   reading — a download's bookmark, a pairing key, which recording a dive is worked from — and
-  `sources`, the fields that are solely a source for others that say it better, a recording's
-  own start beside the dive's. A front end shows neither in a view and both when editing,
-  without knowing what they name. The manual already said of each that it is not for reading;
-  the type saying it is what lets every front end agree. Both sets name only the type's own
-  fields, which is checked when the type is made.
+  `source`, for one that is solely a source for another that says it better, a recording's own
+  start beside the dive's. A front end shows neither in a view and both when editing, without
+  knowing what they name. The manual already said of each that it is not for reading; the
+  description saying it is what lets every front end agree.
+
+  *Amended by `DATA-119`:* these were two sets of names on `ItemDescription`, which put the fact
+  away from the field it describes and needed a check that each name was one of the type's own.
+  They are now written at the declaration — `TextDescription("access_code", housekeeping = true)`
+  — and a third mark joined them there rather than making a third set.
 - **DATA-51 — Whether typed accessors exist, and for which fields.** *Settled:* three
   ways in, and not one of them is per field.
 
