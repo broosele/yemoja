@@ -153,8 +153,10 @@ puts all three below a port the layer declares, so each target answers the same 
 way. The API front end takes the **MCP Kotlin SDK** to serve an agent the logbook's tools, MIT
 for its earlier code and Apache 2.0 for what is added since, on the JVM side only; it brings
 Ktor's server core and kotlinx serialization and coroutines with it, all Apache 2.0, and no Ktor
-engine is declared since nothing is served over HTTP. See `API-4` in
-[ui/api/doc.md](ui/api/doc.md).
+engine is declared since nothing is served over HTTP. Beside it, the **ACP Kotlin SDK** hosts the
+agent the user installed, which is how their own account answers rather than one of ours: Apache
+2.0 in what it publishes, while the repository it comes from says MIT, and either suits. See
+`API-4` in [ui/api/doc.md](ui/api/doc.md) and `GUI-38` in [ui/gui/doc.md](ui/gui/doc.md).
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.

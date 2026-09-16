@@ -1,5 +1,6 @@
 package yemoja.ui
 
+import yemoja.ui.api.api
 import yemoja.ui.gui.gui
 import yemoja.ui.tui.tui
 import java.nio.file.Paths
@@ -21,6 +22,11 @@ internal val COMMANDS: Map<String, Command> = mapOf(
     },
     "gui" to Command(listOf("logbook folder"), "show a logbook in a window", least = 0) {
         gui(it.firstOrNull())
+    },
+    // Not a front end, and the one command a person has no reason to type: an agent is told to
+    // start it, and it carries that agent's tool calls to a window that is already open. `API-4`.
+    "api" to Command(listOf("port"), "relay an agent to an open window") {
+        api(it.single())
     },
 )
 

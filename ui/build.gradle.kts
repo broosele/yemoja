@@ -40,6 +40,10 @@ kotlin {
             // Apache-2.0 for what is added since. Its HTTP half is not used, so no Ktor engine is
             // declared beside it. `API-4`.
             implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
+            // Hosting the agent the user installed, which is how their own subscription answers.
+            // Apache-2.0 in what it publishes; the repository's own LICENSE.txt says MIT, and
+            // either is fine here. `GUI-38`.
+            implementation("com.agentclientprotocol:acp:0.30.1")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
