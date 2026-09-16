@@ -11,6 +11,7 @@ import com.agentclientprotocol.model.EnvVariable
 import com.agentclientprotocol.model.Implementation
 import com.agentclientprotocol.model.McpServer
 import com.agentclientprotocol.model.PermissionOption
+import com.agentclientprotocol.model.PermissionOptionKind
 import com.agentclientprotocol.model.ReadTextFileResponse
 import com.agentclientprotocol.model.RequestPermissionOutcome
 import com.agentclientprotocol.model.RequestPermissionResponse
@@ -63,12 +64,24 @@ class Hosted(
 
     private var running: Process? = null
 
+    private val complaints = ArrayDeque<String>()
+
     private var talking: ClientSession? = null
 
     private val refusals = ArrayList<String>()
 
     /** Every request of the agent's own that was refused, most recent last. `GUI-38`. */
     val refused: List<String> get() = refusals
+
+    /**
+     * The last few lines the agent wrote to its error stream, oldest first.
+     *
+     * An agent that will not start, or that refuses a session, says why here and nowhere else: the
+     * protocol carries `Internal error` and the reason goes to the stream a terminal would have
+     * shown. Kept to [COMPLAINTS] lines, since some agents log every request there, and read by
+     * whoever has to tell the user what went wrong.
+     */
+    val complained: List<String> get() = complaints.toList()
 
     /**
      * Starts the agent and opens a conversation with it.
@@ -82,6 +95,7 @@ class Hosted(
             .directory(java.io.File(folder))
             .start()
         running = process
+        listen(process)
         val transport = StdioTransport(
             parentScope = scope,
             ioDispatcher = Dispatchers.IO,
@@ -100,7 +114,7 @@ class Hosted(
         client.initialize(ClientInfo(implementation = Implementation(NAME, VERSION)))
         talking = client.newSession(
             SessionCreationParameters(cwd = folder, mcpServers = listOf(relaying(port))),
-        ) { _, _ -> Refusing(refusals) }
+        ) { _, _ -> Refusing(NAME, refusals) }
     }
 
     /**
@@ -119,6 +133,23 @@ class Hosted(
         running?.destroy()
         running = null
         talking = null
+    }
+
+    /**
+     * Keeps what the agent writes to its error stream, and keeps reading it.
+     *
+     * Reading matters whether or not anybody looks: a process whose error stream fills up stops,
+     * and an agent that logs every request would fill one in a minute.
+     */
+    private fun listen(process: Process) {
+        val reading = Thread {
+            process.errorStream.bufferedReader().forEachLine {
+                if (complaints.size >= COMPLAINTS) complaints.removeFirst()
+                complaints.addLast(it)
+            }
+        }
+        reading.isDaemon = true
+        reading.start()
     }
 
     /** How the agent is told to reach this window: by starting the relay `API-4` describes. */
@@ -147,25 +178,56 @@ class Hosted(
 
         /** Where the application starts, which is what the relay is run through. */
         const val ENTRY = "yemoja.ui.MainKt"
+
+        /** How many lines of an agent's complaining are kept. Enough to say what went wrong. */
+        const val COMPLAINTS = 50
     }
 }
 
 /**
- * Refusing is a client that gives an agent nothing of the machine it is running on.
+ * Refusing is a client that gives an agent nothing of the machine it is running on, and the
+ * logbook's tools freely.
  *
- * Every request is turned down and noted in [refused], so the window can say what an agent tried
- * to do. The tools are the only way to the logbook. `API-5`, `GUI-38`.
+ * **An agent asks permission for the tools we gave it as well as for its own**, so refusing
+ * everything refuses the logbook: a real one asked to call `describe` and was turned down, and
+ * the fake one in the tests never asks at all, which is how that got as far as it did. What is
+ * ours is allowed, because the user opening the panel is the consent for it and nothing it holds
+ * can write. Everything else — a file read, a file written, a command run — is turned down and
+ * noted in [refused], so the window can say what the agent tried to do. `API-5`, `GUI-38`.
+ *
+ * [server] is what the tool server calls itself, which is what its tools are named after.
  */
-private class Refusing(private val refused: MutableList<String>) : ClientSessionOperations {
+private class Refusing(
+    private val server: String,
+    private val refused: MutableList<String>,
+) : ClientSessionOperations {
 
     override suspend fun requestPermissions(
         toolCall: SessionUpdate.ToolCallUpdate,
         permissions: List<PermissionOption>,
         _meta: JsonElement?,
     ): RequestPermissionResponse {
-        refused += toolCall.title ?: toolCall.toolCallId.value
-        return RequestPermissionResponse(RequestPermissionOutcome.Cancelled)
+        val called = toolCall.title ?: toolCall.toolCallId.value
+        if (!ours(called)) {
+            refused += called
+            return RequestPermissionResponse(RequestPermissionOutcome.Cancelled)
+        }
+        // Standing where it is offered: the tools are read-only, and a conversation that asks
+        // about eight hundred dives would otherwise ask the user four hundred times.
+        val allowed = permissions.firstOrNull { it.kind == PermissionOptionKind.ALLOW_ALWAYS }
+            ?: permissions.firstOrNull { it.kind == PermissionOptionKind.ALLOW_ONCE }
+            ?: return RequestPermissionResponse(RequestPermissionOutcome.Cancelled)
+        return RequestPermissionResponse(RequestPermissionOutcome.Selected(allowed.optionId))
     }
+
+    /**
+     * Whether [called] is one of the tools this window gave the agent.
+     *
+     * An agent names a tool from an MCP server after the server it came from, so ours are the
+     * ones naming this one. An agent that names them another way gets a refusal, which is the
+     * safe way to be wrong.
+     */
+    private fun ours(called: String): Boolean = called.contains(server, ignoreCase = true)
 
     override suspend fun fsReadTextFile(
         path: String,

@@ -55,6 +55,14 @@ kotlin {
     }
 }
 
+// What an agent with a model behind it needs, and only when somebody asks for it: the command
+// that starts the agent and the logbook to ask about. `RealAgentTest` does nothing without them,
+// because a real conversation sends a logbook to a provider and costs whoever runs it money.
+tasks.withType<Test>().configureEach {
+    findProperty("agent")?.let { environment("YEMOJA_AGENT", it.toString()) }
+    findProperty("logbook")?.let { environment("YEMOJA_LOGBOOK", it.toString()) }
+}
+
 // The manual, bundled so the Manuals tab can read it. Every chapter, and not the file about
 // writing them, which is internal.
 tasks.named<Copy>("jvmProcessResources") {

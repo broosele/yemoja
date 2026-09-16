@@ -124,3 +124,10 @@ behaviour of its own, that behaviour is in the wrong place.
   **The tools are the only way in.** The agent's own requests to read a file or run a command
   are refused by the window, `GUI-38`. An agent given the logbook folder could edit the files
   directly, and nothing in this entry would stop it.
+
+  **What the window does not refuse is these tools.** An agent asks permission for the tools it
+  was given as well as for its own, so a window refusing everything refuses the logbook: the first
+  real agent to run against this asked to call `describe` and was turned down. They are allowed,
+  and allowed standing where the agent offers that, because opening the panel is the user's
+  consent and nothing an agent can reach writes. That is what the box in `API-5` will change, and
+  a write tool is gated by whether it exists at all rather than by this.
