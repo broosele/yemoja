@@ -376,8 +376,8 @@ are not among them: they were never questions, only the priority list above, mis
 once and corrected. The numbers stay unused rather than being given to something else.
 
 - **GUI-40 — Where what the model says appears, and how a plan is written.** *Settled:*
-  **under the run it is about, in the box that already holds it, and a plan carries a button that
-  writes its way up.**
+  **under the run it is about, in the box that already holds the run, and a plan carries a button
+  that writes its way up.**
 
   A run is a recording or a plan and the window draws either, so the model's answer belongs where
   the run is rather than in a screen of its own. `LOGIC-37` answers for both alike.
