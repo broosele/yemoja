@@ -35,13 +35,33 @@ internal class Naming(val field: String, val inside: String? = null)
  * is listed once, in the order [type] is held.
  */
 internal fun pointingAt(item: Item, type: ItemDescription, vararg namings: Naming): Result<Any> {
-    val id = (item as? ReferenceableItem)?.let { item.set.idOf(it) } ?: return Result.Absent
-    val found = item.set.allOf(type).filter { other ->
+    val found = itemsPointingAt(item, type, *namings) ?: return Result.Absent
+    return referencesTo(item.set, found)
+}
+
+/**
+ * Every dive naming [item] in any of [namings], leaving out the ones nobody has made yet.
+ *
+ * A list of dives is a list of diving done, so a plan does not put its dive in the site's list or
+ * in a buddy's. It is shown on its own dive and counted nowhere else. `LOGIC-36`.
+ */
+internal fun divesPointingAt(item: Item, vararg namings: Naming): Result<Any> {
+    val found = itemsPointingAt(item, Types.DIVE, *namings) ?: return Result.Absent
+    return referencesTo(item.set, found.filter(::wasMade))
+}
+
+/** The items themselves, or null where [item] is not one anything could name. */
+private fun itemsPointingAt(
+    item: Item,
+    type: ItemDescription,
+    vararg namings: Naming,
+): List<ReferenceableItem>? {
+    val id = (item as? ReferenceableItem)?.let { item.set.idOf(it) } ?: return null
+    return item.set.allOf(type).filter { other ->
         namings.any { naming ->
             within(other, naming.inside).any { owned -> id in namesIn(owned, naming.field) }
         }
     }
-    return referencesTo(item.set, found)
 }
 
 /** [items] as a derived list of references to them. */

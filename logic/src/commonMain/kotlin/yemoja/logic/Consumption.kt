@@ -92,7 +92,11 @@ internal fun profilesSac(profile: Item): Result<Any> {
 }
 
 /**
- * A gas source's SAC over the time it was breathed, from the dive's primary recording.
+ * A gas source's SAC over the time it was breathed, from the profile it belongs to.
+ *
+ * A dive's sources are read from the recording it is worked from, and a source a profile keeps is
+ * read from that profile. A plan's own has no pressures behind it, so nothing is worked out and
+ * the figure written on it stands, which is how a plan says what it assumes.
  *
  * The gas it gave over every stretch it was breathed, divided by those stretches' minutes each
  * weighted by the ambient pressure they were breathed at. That is the recording's SAC averaged

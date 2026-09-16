@@ -692,6 +692,15 @@ private fun divesDeco(dive: Item): Result<Any> = fromProfile(dive) { profile ->
 }
 
 /**
+ * Whether a dive is one that was made, which is what a list of dives gathers and what a figure
+ * counts.
+ *
+ * A dive says so itself through `planned`. `LOGIC-36`.
+ */
+internal fun wasMade(dive: Item): Boolean =
+    (dive.single<Boolean>("planned") as? Result.Usable)?.value != true
+
+/**
  * Whether a dive is one nobody has made yet.
  *
  * True where it holds profiles and every one of them is a plan. A dive with no profile at all was

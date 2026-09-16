@@ -62,7 +62,7 @@ internal val OPERATOR: ItemDescription = ItemDescription(
 
 /** The dives whose details name [operator]. */
 private fun operatorsDives(operator: Item): Result<Any> =
-    pointingAt(operator, Types.DIVE, Naming("operator", inside = "details"))
+    divesPointingAt(operator, Naming("operator", inside = "details"))
 
 /** The trips naming [operator]. */
 private fun operatorsTrips(operator: Item): Result<Any> =

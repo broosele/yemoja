@@ -119,6 +119,38 @@ class PlannedTest {
     }
 
     @Test
+    fun `a dive not yet made is in no list of dives`() {
+        val set = logbook(
+            "dive_site.json" to """{"kelp_wall": {"name": "Kelp Wall"}}""",
+            "person.json" to """{"anna": {"first_name": "Anna"}}""",
+            "dive_trip.json" to """{"october": {"name": "October"}}""",
+            "operator.json" to """{"harbour": {"name": "Harbour Divers"}}""",
+            "dive/made#0.json" to """{"dive_site": "@kelp_wall", "buddies": ["@anna"],
+                "details": {"dive_trip": "@october", "operator": "@harbour"}}""",
+            "dive/ahead#0.json" to """{"dive_site": "@kelp_wall", "buddies": ["@anna"],
+                "details": {"dive_trip": "@october", "operator": "@harbour"},
+                "profiles": {"a": {"planned": true}}}""",
+        )
+
+        assertEquals(listOf("made#0"), named(set["kelp_wall"]!!, "dives"), "the site's")
+        assertEquals(listOf("made#0"), named(set["anna"]!!, "dives"), "a buddy's")
+        assertEquals(listOf("made#0"), named(set["october"]!!, "dives"), "the trip's")
+        assertEquals(listOf("made#0"), named(set["harbour"]!!, "dives"), "the operator's")
+    }
+
+    @Test
+    fun `nor among the user's own, who is listed every dive there is`() {
+        val set = logbook(
+            "yemoja.json" to """{"user": "@me"}""",
+            "person.json" to """{"me": {"first_name": "Me"}}""",
+            "dive/made#0.json" to "{}",
+            "dive/ahead#0.json" to """{"profiles": {"a": {"planned": true}}}""",
+        )
+
+        assertEquals(listOf("made#0"), named(set["me"]!!, "dives"))
+    }
+
+    @Test
     fun `a profile breathes the dive's air, and a plan may assume another day`() {
         val dive = dive(
             """"environment": {"atmospheric_pressure": 0.95},

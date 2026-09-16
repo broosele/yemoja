@@ -141,11 +141,15 @@ private fun assembledName(person: Item): Result<Any> {
 
 private val NAME_PARTS = listOf("first_name", "middle_names", "last_name")
 
-/** The dives naming [person] as a buddy, or every dive where [person] is the user. */
+/**
+ * The dives naming [person] as a buddy, or every dive where [person] is the user.
+ *
+ * The dives made, either way. A dive still ahead is nobody's diving yet. `LOGIC-36`.
+ */
 private fun personsDives(person: Item): Result<Any> {
     val id = (person as? ReferenceableItem)?.let { person.set.idOf(it) }
     if (id != null && id == person.set.user?.id) {
-        return referencesTo(person.set, person.set.allOf(Types.DIVE))
+        return referencesTo(person.set, person.set.allOf(Types.DIVE).filter(::wasMade))
     }
-    return pointingAt(person, Types.DIVE, Naming("buddies"))
+    return divesPointingAt(person, Naming("buddies"))
 }

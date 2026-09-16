@@ -487,7 +487,31 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
-- **LOGIC-3 — Which decompression models to support, and whether the model is pluggable.**
+- **LOGIC-36 — Where a dive nobody has made yet is left out.** *Settled:* **shown and marked,
+  counted nowhere.** A planned dive is an ordinary dive in the logbook with a plan on it and no
+  recording, so it can be opened, edited and looked at; what gathers dives or adds them up leaves
+  it out.
+
+  Left out of the derived lists — a dive site's `dives`, a person's, a gear item's, an operator's
+  and a trip's — so a plan naming a site does not add to where that user has dived, and the user's
+  own person, which lists every dive there is, lists the ones they have made. A trip's dates follow
+  from its dives, so a trip being planned runs from the first dive done on it.
+
+  **Not left out of what a caller chose.** `LOGIC-34` takes a figure over ids somebody else picked,
+  and it counts what it is given: the choosing is where the judgement sits, and an agent asking
+  about a plan deserves an answer rather than a silent skip.
+
+  **Nor out of matching a download.** An arriving recording is put against dives by the time they
+  overlap, and a planned dive is exactly what a recording of that dive should meet. That is how a
+  plan and what was actually done end up on one dive without anybody filing them together.
+
+  `wasMade` in `Dive.kt` is the one place the question is asked, from the dive's own `planned`.
+
+  **Two halves are owed.** The window counts dives in its greeting, its plot, its year rows and its
+  multi-selection card, and it marks nothing as planned yet. And an export writes every dive: it is
+  to write the ones that were made and say how many plans it left behind, a file handed to another
+  application being unable to say a dive was only intended. The manual describes what a user is
+  shown, so it says none of this until both have landed.
   *Settled:* **Bühlmann ZH-L16C with gradient factors, and only that. Not pluggable.**
 
   Sixteen compartments, the published half-times and coefficients, the Schreiner equation for a

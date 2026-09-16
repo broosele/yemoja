@@ -135,9 +135,8 @@ internal val GEAR: ItemDescription = ItemDescription(
 )
 
 /** The dives whose gear names [gear] among its items, or a profile of which names it. */
-private fun gearsDives(gear: Item): Result<Any> = pointingAt(
+private fun gearsDives(gear: Item): Result<Any> = divesPointingAt(
     gear,
-    Types.DIVE,
     Naming("items", inside = "gear"),
     Naming("dive_computer", inside = "profiles"),
 )

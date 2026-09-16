@@ -61,5 +61,5 @@ internal val DIVE_SITE: ItemDescription = ItemDescription(
     proposedId = ::namedById,
 )
 
-/** The dives naming [site]. */
-private fun sitesDives(site: Item): Result<Any> = pointingAt(site, Types.DIVE, Naming("dive_site"))
+/** The dives naming [site], the ones not yet made left out. */
+private fun sitesDives(site: Item): Result<Any> = divesPointingAt(site, Naming("dive_site"))

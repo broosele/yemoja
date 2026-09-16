@@ -72,7 +72,9 @@ private fun tripsParts(trip: Item): Result<Any> =
  * Every dive made on a trip, and on any trip beneath it.
  *
  * A dive names the leg it was on rather than the fortnight, so a trip gathers from itself and
- * from everything naming it, however deep that goes.
+ * from everything naming it, however deep that goes. A dive not yet made is left out, so a trip
+ * being planned runs from the first dive done on it rather than from the first intended.
+ * `LOGIC-36`.
  *
  * **A trip that is its own ancestor is a fault, not a shorter answer.** `LOGIC-8` leaves what a
  * cycle means to each derivation, and here it would count some dives twice or never stop, so
@@ -97,7 +99,7 @@ private fun tripsDives(trip: Item): Result<Any> {
         edge = next
     }
     val found = trip.set.allOf(Types.DIVE)
-        .filter { dive -> tripOf(dive) in beneath }
+        .filter { dive -> tripOf(dive) in beneath && wasMade(dive) }
         .mapNotNull { trip.set.idOf(it) }
         .map { Element.Usable(Reference.Identified(it) as Any) }
     return Result.Usable(found, Result.Origin.DERIVED)
