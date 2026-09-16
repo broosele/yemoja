@@ -1,6 +1,6 @@
 # The cousteau fixture
 
-A complete logbook: 21 dives, one of them not yet made, 11 people, 10 dive sites, 12 gear
+A complete logbook: 22 dives, two of them not yet made, 11 people, 10 dive sites, 12 gear
 items, 3 regions, 1 certification, 5 operators, 6 trips and 2 wrecks. All of it is
 invented except the two wrecks, which are real ships — see *Real data, deliberately*
 below.
@@ -157,7 +157,7 @@ Each of these is here because it is awkward, not because it is typical.
 
 **Recordings**
 
-Three dives carry profiles, and the other eighteen deliberately do not — a logbook where
+Four dives carry profiles, and the other eighteen deliberately do not — a logbook where
 every dive came off a computer would not be one anybody has.
 
 - `2025-05-30#2` is the simple case: **one profile, so no `primary_profile`**, since there
@@ -193,11 +193,11 @@ every dive came off a computer would not be one anybody has.
   download or a careful user fills those in. Neither carries a `conservatism`: gradient
   factors and a dial position are alternatives, and this computer offers the first.
 
-**A dive not yet made**
+**Dives not yet made**
 
-`2026-10-03#0` holds two plans and no recording, so the dive itself reads as `planned`. It is
-the only dive here that has not happened, and it is what anything counting dives has to leave
-out.
+`2026-10-03#0` and `2026-10-03#1` hold plans and no recording, so both read as `planned`. They
+are the only dives here that have not happened, and they are what anything counting dives has to
+leave out.
 
 - Both profiles set `planned`, and `primary_profile` names `*a`, so the dive's date, depth and
   duration are the main plan's. A plan naming a primary is not the awkward case `2026-06-21#0`
@@ -213,6 +213,11 @@ out.
 - Both plans run their depths to the surface, stops included. `a` holds a 40-metre bottom and
   four stops; `b` holds a 30-metre bottom and none, being the shallow alternative for a day
   with swell.
+- `2026-10-03#1` is the afternoon, and the reason `previous_profile` exists. Its dive names
+  `2026-10-03#0` as the dive before, whose primary is `*a`; its plan writes
+  `"@2026-10-03#0*b"` instead, so it is planned against the shallow alternative rather than
+  against the wreck. That is the only reference in this fixture that reaches an owned item
+  inside another item, and the only place the two markers are written together.
 
   The gas sources are `g1`, back-mounted trimix, and `g2`, a staged deco mix. `pressures`
   holds a series under each of those keys, `gas_switches` points at the second with `*g2`,

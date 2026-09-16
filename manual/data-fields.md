@@ -430,6 +430,13 @@ that is the only record of it.
   and the depth you were at. A stretch in which you switched to another cylinder is left out,
   and so is one whose cylinder has no `volume`. Nothing is worked out without pressures, and
   nothing is stored.
+- `previous_profile` (key reference, worked out) — the run whose gas you were still carrying when
+  this one began, written `"@2026-09-20#0*p1"`: the dive, and which of its profiles. Worked out
+  from the dive's own `previous_dive` and that dive's primary profile.
+
+  **Write it on a plan to say which earlier plan it assumes.** Two plans for the morning are two
+  things that might happen, so a plan for the afternoon says which of them it follows, and a chain
+  of plans sits beside the chain of dives you actually made.
 - `gas_sources` (keyed owned items) — the cylinders this run uses, where they are its own rather
   than the dive's.
 

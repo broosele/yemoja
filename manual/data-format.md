@@ -335,6 +335,15 @@ after the field.
   points at another item anywhere in the logbook, a `*` points at one entry of one list
   inside the item you are already reading — a dive saying which of its profiles to work
   from.
+
+  Which list is the one that field names, and the nearest of that name: the item you are
+  reading where it keeps one, and the item holding it otherwise. So a recording's gas
+  switches name the dive's cylinders, because a recording keeps none of its own, and a plan
+  that keeps its own names those.
+
+  **The two markers join where a field reaches into another item**, and it says so where it
+  does: `"@2026-09-20#0*b"` is the entry keyed `b` inside that dive. The `@` half finds the
+  item and the `*` half finds the entry.
 - **fixed set** — a value from a short closed list, which is given with the field.
   Nothing outside the list means anything.
 - **gas** — a breathing mix, written the way divers write it: `"AIR"`, `"EAN32"` for

@@ -112,7 +112,7 @@ for whoever builds this.
 | **date** | always `"2026-02-23"` |
 | **time** | always `"09:15:00"` |
 | **reference** | another item's id, with `@` in front |
-| **key reference** | one entry inside the item you are reading, with `*` in front |
+| **key reference** | one entry of the nearest list of that name, with `*` in front; `@id*key` where the list is another item's |
 | **gas** | a breathing mix as divers write it — `AIR`, `EAN32`, `TMX18/35` — parsed for its fractions |
 | **series** | a measurement through a dive: pairs of time and value, time always in seconds |
 | **keyed series** | several series together, each under a key |

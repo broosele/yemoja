@@ -88,31 +88,52 @@ sealed class Reference {
  *
  * An entry keyed `p1` is written `*p1`.
  */
-data class KeyReference(val key: String) {
+data class KeyReference(val key: String, val id: String? = null) {
 
     init {
         require(key.isNotEmpty()) { "a key should not be empty" }
         require(key.none { it == '*' || it.isWhitespace() }) {
             "a key should hold no spaces and no *, but was $key"
         }
+        require(id == null || id.isNotEmpty()) { "an id should not be empty" }
+        require(id == null || id.none { it == '*' || it.isWhitespace() }) {
+            "an id should hold no spaces and no *, but was $id"
+        }
     }
 
-    val asWritten: String get() = "*$key"
+    val asWritten: String get() = if (id == null) "*$key" else "@$id*$key"
 
     override fun toString(): String = asWritten
 
     companion object {
 
+        /**
+         * Reads a key reference, with or without the item it reaches into.
+         *
+         * `*p1` is an entry of the item doing the pointing, and `@2026-06-21#0*p1` one of that
+         * dive's. The two markers compose, which `JSON-19` settled, and `*` being excluded from an
+         * id is what keeps the composed form readable.
+         */
         fun parse(text: String): KeyReference {
             val written = text.trim()
+            if (written.startsWith('@')) {
+                val at = written.indexOf('*')
+                if (at < 0) {
+                    throw ValueFormatException("$text names an item but no entry inside it")
+                }
+                return made(text, written.substring(at + 1), written.substring(1, at))
+            }
             if (!written.startsWith('*')) {
                 throw ValueFormatException("$text is not a key reference, which begins with *")
             }
-            return try {
-                KeyReference(written.substring(1))
-            } catch (impossible: IllegalArgumentException) {
-                throw ValueFormatException("$text: ${impossible.message}")
-            }
+            return made(text, written.substring(1), null)
+        }
+
+        /** A key reference from text somebody wrote, so what cannot be one is a bad value. */
+        private fun made(text: String, key: String, id: String?): KeyReference = try {
+            KeyReference(key, id)
+        } catch (impossible: IllegalArgumentException) {
+            throw ValueFormatException("$text: ${impossible.message}")
         }
     }
 }

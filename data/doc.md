@@ -644,9 +644,15 @@ Two kinds of stored item:
 
 - **Referenceable** — has its own id, can be referred to from elsewhere, and is
   stored in its own right: dives, buddies, dive sites, gear items.
-- **Owned** — exists only inside one referenceable item, is never referred to from
-  outside it, and is created and destroyed with its owner: a dive profile, a cylinder
-  entry on a dive, a service item on a gear item.
+- **Owned** — exists only inside one referenceable item, and is created and destroyed with
+  its owner: a dive profile, a cylinder entry on a dive, a service item on a gear item.
+
+  It is **reached through its owner**, never on its own. A field pointing at one names the
+  owner and the key together, `@2026-09-20#0*p1`, so an owned item has no identity apart
+  from where it sits. One field does this: a profile's `previous_profile`, which names the run
+  whose gas is still in the user. `JSON-19` in [json/doc.md](json/doc.md), and `DATA-57` says
+  why a plan has to name one rather than following whichever profile the earlier dive calls
+  primary.
 
 An owned item in a collection sits under a **key**: an identifier, but a local one. It is
 unique within the collection it belongs to and means nothing outside its owner. **It is
@@ -930,6 +936,13 @@ To settle when we discuss architecture:
   **A dive is `planned` where it holds profiles and every one is a plan.** A dive with no
   profile at all was made, which is how a dive typed out of a paper logbook reads, and a
   recording arriving beside the plans is the evidence it happened.
+
+  **A plan names the run it carries gas from**, `previous_profile`, worked out from the dive's
+  `previous_dive` and that dive's primary profile. A dive naming the dive before it is enough
+  while there is one thing that happened; two plans for one afternoon are two things that might,
+  so the plan for the dive after says which of them it assumes and a chain of plans runs beside
+  the chain of dives. That is the first field to point at an owned item from outside its owner,
+  which the *Referenceable and owned items* section above and `JSON-19` both now allow.
 
   What settled it was that a plan outlives the screen it was made on: it is kept to compare
   against what was actually done, and a download lands the recording on the dive the plan is

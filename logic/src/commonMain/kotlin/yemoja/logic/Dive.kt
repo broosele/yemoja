@@ -10,6 +10,7 @@ import yemoja.data.Element
 import yemoja.data.GasDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
+import yemoja.data.KeyReference
 import yemoja.data.KeyReferenceDescription
 import yemoja.data.Moment
 import yemoja.data.NumberDescription
@@ -318,6 +319,15 @@ private val PROFILE = ItemDescription(
             cardinality = Cardinality.SERIES,
             role = Role.Derived(::profilesSac),
         ),
+        // Which run the gas still in the user was carried from, written `@2026-09-20#0*b`. The
+        // dive's `previous_dive` and its primary profile, and written to name one plan of it
+        // rather than another: a chain of plans beside a chain of dives. `DATA-57`.
+        KeyReferenceDescription(
+            "previous_profile",
+            collection = "profiles",
+            targetType = "dive",
+            role = Role.Overrideable(::profilesPrevious),
+        ),
         // A plan's own cylinders, which its switches and its pressures then name instead of the
         // dive's. `JSON-19`. A recording keeps none: one dive was breathed once, however many
         // computers watched it.
@@ -326,6 +336,36 @@ private val PROFILE = ItemDescription(
     ),
     proposedId = ::profilesProposedKey,
 )
+
+/**
+ * The run whose gas is still in the user when this one begins.
+ *
+ * The dive's own `previous_dive`, and that dive's primary profile within it. Absent where the dive
+ * names no earlier one, which is how most dives start, and where the earlier dive has nothing to
+ * work from.
+ *
+ * **Written to follow one plan rather than another.** A dive names the dive before it, and that is
+ * enough while there is one thing that happened. Two plans for one afternoon are two things that
+ * might, so a plan for the dive after says which of them it assumes, and a chain of plans runs
+ * beside the chain of dives.
+ */
+private fun profilesPrevious(profile: Item): Result<Any> {
+    val dive = (profile as? OwnedItem)?.parent ?: return Result.Absent
+    val named = dive.single<Reference>("previous_dive") as? Result.Usable ?: return Result.Absent
+    val id = (named.value as? Reference.Identified)?.id
+        ?: return unusable("the run before this one needs a dive with an id to be found in")
+    val earlier = dive.set[id] ?: return unusable("$id is not in this logbook")
+    if (earlier.description != DIVE) {
+        return unusable("$id is a ${earlier.description.name} rather than a dive")
+    }
+    val chosen = primaryProfile(earlier)
+    if (chosen !is Result.Usable) return chosen as? Result.Unusable ?: Result.Absent
+    val key = (earlier.keyed<OwnedItem>("profiles") as? Result.Usable)?.value.orEmpty()
+        .entries.firstOrNull { (_, entry) -> (entry as? Element.Usable)?.value === chosen.value }
+        ?.key
+        ?: return Result.Absent
+    return Result.Usable(KeyReference(key, id), Result.Origin.DERIVED)
+}
 
 /**
  * The pressure of the air above this run, from the dive it belongs to.

@@ -614,11 +614,22 @@ class GasDescription(
         if (value is Gas) Validity.Valid else Validity.Invalid("$name should be a gas mix")
 }
 
-/** KeyReferenceDescription is a field naming an entry inside the same item, written `*p1`. */
+/**
+ * KeyReferenceDescription is a field naming an entry of a keyed collection, written `*p1`.
+ *
+ * The collection is the nearest one of that name: the item holding the field where it keeps one,
+ * and its owner otherwise. See [Item.rootOf].
+ *
+ * **[targetType] moves the collection to another item**, and the reference then carries that
+ * item's id as well: `@2026-06-21#0*p1`. A field is one or the other, never both, so a value
+ * naming an item where none was asked for is refused as readily as one leaving it out.
+ */
 class KeyReferenceDescription(
     name: String,
     /** The field holding the collection pointed into. */
     val collection: String,
+    /** The type the collection sits on, where that is an item other than the one pointing. */
+    val targetType: String? = null,
     label: String? = null,
     role: Role = Role.Primary,
     cardinality: Cardinality = Cardinality.SINGLE,
@@ -629,28 +640,40 @@ class KeyReferenceDescription(
 
     override val valueType: KClass<*> get() = KeyReference::class
 
-    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
-        is KeyReference -> resultOf(given, given, overrides)
-        is String -> try {
-            resultOf(KeyReference.parse(given), given, overrides)
-        } catch (refused: ValueFormatException) {
-            Result.Unusable(
-                Stored.Leaf(given),
-                "$name should name an entry of $collection: ${refused.message}",
-            )
-        }
-
-        else -> Result.Unusable(Stored.Leaf(given), "$name should name an entry of $collection")
+    /** What a value of this field should look like, for a message that says what was expected. */
+    private val expected: String get() = when (targetType) {
+        null -> "$name should name an entry of $collection, as *key"
+        else -> "$name should name an entry of a $targetType's $collection, as @id*key"
     }
 
+    protected override fun interpret(given: Any?, overrides: Boolean): Result<Any> = when (given) {
+        is KeyReference -> judged(given, given, overrides)
+        is String -> try {
+            judged(KeyReference.parse(given), given, overrides)
+        } catch (refused: ValueFormatException) {
+            Result.Unusable(Stored.Leaf(given), "$expected: ${refused.message}")
+        }
+
+        else -> Result.Unusable(Stored.Leaf(given), expected)
+    }
+
+    /** The reference, or why naming an item here — or failing to — is not what this field holds. */
+    private fun judged(read: KeyReference, given: Any, overrides: Boolean): Result<Any> =
+        if (namesWhatItShould(read)) resultOf(read, given, overrides)
+        else Result.Unusable(Stored.Leaf(given), expected)
+
+    private fun namesWhatItShould(read: KeyReference): Boolean =
+        (read.id == null) == (targetType == null)
+
     /**
-     * Whether the text is written as a key reference, and nothing more.
+     * Whether the value is written as a key reference of the shape this field takes.
      *
-     * Whether the key exists is asked of the collection, not of a value.
+     * Whether the key exists is asked of the collection, not of a value, and so is whether the
+     * item named is of the type wanted: both need the logbook and this needs only the value.
      */
     override fun validate(value: Any): Validity =
-        if (value is KeyReference) Validity.Valid
-        else Validity.Invalid("$name should name an entry of $collection")
+        if (value is KeyReference && namesWhatItShould(value)) Validity.Valid
+        else Validity.Invalid(expected)
 }
 
 /**

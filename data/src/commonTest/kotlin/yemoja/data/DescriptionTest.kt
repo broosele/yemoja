@@ -185,6 +185,17 @@ class ValueDescriptionTest {
     }
 
     @Test
+    fun `a key reference reaching into another item wants that item named`() {
+        val inside = KeyReferenceDescription("before", collection = "runs", targetType = "outing")
+        assertEquals(KeyReference("p1", id = "tuesday"), usable(inside, "@tuesday*p1"))
+        assertEquals("outing", inside.targetType)
+        // The shape is the field's, so a bare key here is as wrong as a named item where the
+        // collection is this item's own.
+        unusable(inside, "*p1")
+        unusable(KeyReferenceDescription("from", collection = "sources"), "@tuesday*p1")
+    }
+
+    @Test
     fun `a reference checks its syntax and not whether it resolves`() {
         val district = ReferenceDescription("district", targetType = "district")
         assertEquals(Reference.Identified("north"), usable(district, "@north"))

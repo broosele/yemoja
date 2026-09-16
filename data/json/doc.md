@@ -603,6 +603,21 @@ To settle when we discuss architecture:
   the syntax falls out of the two sigils already chosen, and knowing the shape is
   available stops a different one being invented later for the same job.
 
+  *Amended:* **something needs it now.** A profile's `previous_profile` names the run whose gas
+  is still in the user, which is a profile of an earlier dive, so it is written
+  `@2026-09-20#0*p1`. `DATA-57` says why a plan names one rather than taking the earlier dive's
+  primary: two plans for one afternoon are two things that might happen, and the plan after says
+  which it assumes.
+
+  **A field takes one form or the other, and its description says which.** Where the collection
+  is another item's, the id is required and a bare `*key` is refused; where it is the nearest
+  one's, an id is refused. Nothing has to guess from the value what the field meant, and a
+  misplaced sigil is reported rather than read as something else.
+
+  This is the first thing to point at an owned item from outside the item that owns it. What is
+  owed with it is the rename: `FEAT-14` carries references when an id changes, and these now
+  carry a key alongside the id.
+
   That form only parses if **`*` is excluded from a proposed id**, as `#` already is —
   otherwise `@a*b*c` has no single reading. Names may contain `*` even though text may
   not begin with one, so the exclusion belongs where `#`'s does: see *An item does not

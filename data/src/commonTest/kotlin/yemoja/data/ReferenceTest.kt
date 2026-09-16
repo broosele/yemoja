@@ -98,6 +98,24 @@ class KeyReferenceTest {
         assertFailsWith<IllegalArgumentException> { KeyReference("p*1") }
         assertFailsWith<IllegalArgumentException> { KeyReference("p 1") }
     }
+
+    @Test
+    fun `the two markers compose, and reach an entry inside another item`() {
+        val inside = KeyReference("p1", id = "2026-06-21#0")
+
+        assertEquals("@2026-06-21#0*p1", inside.asWritten)
+        assertEquals(inside, KeyReference.parse("@2026-06-21#0*p1"))
+        assertEquals(inside, KeyReference.parse("  @2026-06-21#0*p1  "))
+    }
+
+    @Test
+    fun `an item with no entry named is not one, and neither is an empty half`() {
+        assertFailsWith<ValueFormatException> { KeyReference.parse("@2026-06-21#0") }
+        assertFailsWith<ValueFormatException> { KeyReference.parse("@*p1") }
+        assertFailsWith<ValueFormatException> { KeyReference.parse("@dive*") }
+        assertFailsWith<IllegalArgumentException> { KeyReference("p1", id = "") }
+        assertFailsWith<IllegalArgumentException> { KeyReference("p1", id = "a dive") }
+    }
 }
 
 class ReferentTest {

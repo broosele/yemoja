@@ -1,0 +1,51 @@
+{
+  "dive_site": "@serpentine_wall",
+  "buddies": [
+    "@jacques_cousteau"
+  ],
+  "previous_dive": "@2026-10-03#0",
+  "primary_profile": "*a",
+  "details": {
+    "tags": [
+      "planned"
+    ]
+  },
+  "environment": {
+    "atmospheric_pressure": 1.013
+  },
+  "profiles": {
+    "a": {
+      "planned": true,
+      "start_date": "2026-10-03",
+      "start_time": "14:30:00",
+      "water_type": "salt",
+      "deco_model": "buhlmann",
+      "gradient_factor_low": 0.3,
+      "gradient_factor_high": 0.75,
+      "previous_profile": "@2026-10-03#0*b",
+      "depth": [
+        [0, 0],
+        [90, 18],
+        [1800, 18],
+        [1920, 5],
+        [2100, 5],
+        [2140, 0]
+      ],
+      "gas_switches": [
+        [0, "*g1"]
+      ],
+      "gas_sources": {
+        "g1": {
+          "gas_type": "EAN32",
+          "start_pressure": 230,
+          "usage": "bottom",
+          "configuration": "back mounted",
+          "cylinder": "@steel_12",
+          "sac": 17
+        }
+      },
+      "remarks": "After the shallow first dive. If we take the wreck instead, this one changes."
+    }
+  },
+  "remarks": "The afternoon, planned against the morning's shallow alternative."
+}

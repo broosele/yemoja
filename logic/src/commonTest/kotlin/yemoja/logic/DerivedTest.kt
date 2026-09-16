@@ -3,6 +3,7 @@ package yemoja.logic
 import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.ItemSet
+import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
 import yemoja.data.Reference
 import yemoja.data.Result
@@ -116,6 +117,53 @@ class PlannedTest {
             entry(plan, "gas_sources", "s2").read("sac"),
             "a plan has no pressures to work one out from",
         )
+    }
+
+    @Test
+    fun `the run before is the earlier dive's primary, named along with it`() {
+        val set = logbook(
+            "dive/first#0.json" to """{"profiles": {"p1": {"water_type": "salt"}}}""",
+            "dive/second#0.json" to """{"previous_dive": "@first#0",
+                "profiles": {"a": {"planned": true}}}""",
+        )
+        val plan = entry(set["second#0"]!!, "profiles", "a")
+        val before = assertIs<Result.Usable<*>>(plan.read("previous_profile"))
+
+        assertEquals(KeyReference("p1", id = "first#0"), before.value)
+        assertEquals(Result.Origin.DERIVED, before.origin)
+    }
+
+    @Test
+    fun `a plan says which of the earlier plans it assumes`() {
+        val set = logbook(
+            "dive/first#0.json" to """{"primary_profile": "*a",
+                "profiles": {"a": {"planned": true}, "b": {"planned": true}}}""",
+            "dive/second#0.json" to """{"previous_dive": "@first#0",
+                "profiles": {"a": {"planned": true, "previous_profile": "@first#0*b"}}}""",
+        )
+        val plan = entry(set["second#0"]!!, "profiles", "a")
+        val before = assertIs<Result.Usable<*>>(plan.read("previous_profile"))
+
+        assertEquals(KeyReference("b", id = "first#0"), before.value)
+        assertEquals(Result.Origin.OVERRIDDEN, before.origin, "the derived answer would be *a")
+    }
+
+    @Test
+    fun `a dive that carries nothing from before has no run before it`() {
+        val set = logbook("dive/only#0.json" to """{"profiles": {"a": {"planned": true}}}""")
+
+        assertIs<Result.Absent>(entry(set["only#0"]!!, "profiles", "a").read("previous_profile"))
+    }
+
+    @Test
+    fun `an earlier dive nobody has is a fault rather than a blank`() {
+        val set = logbook(
+            "dive/second#0.json" to """{"previous_dive": "@gone",
+                "profiles": {"a": {"planned": true}}}""",
+        )
+        val before = entry(set["second#0"]!!, "profiles", "a").read("previous_profile")
+
+        assertEquals("gone is not in this logbook", assertIs<Result.Unusable>(before).reason)
     }
 
     @Test
