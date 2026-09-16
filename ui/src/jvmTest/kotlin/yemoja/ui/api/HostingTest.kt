@@ -14,6 +14,8 @@ import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -121,21 +123,21 @@ class TalkingTest {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+    private fun talkingOf(): Talking = Talking(
+        ToolSocket(Tools(universe), Dispatchers.Default),
+        Files.createTempDirectory("yemoja-").toString(),
+        scope,
+    )
 
     @AfterTest
     fun letGo() {
-        socket.close()
         scope.cancel()
     }
 
     @Test
     fun `a command typed as one line is started, and what it says comes back in pieces`() {
-        val talking = Talking(socket, Files.createTempDirectory("yemoja-").toString(), scope)
-        val watching = watchdog("talking to an agent") {
-            talking.close()
-            socket.close()
-        }
+        val talking = talkingOf()
+        val watching = watchdog("talking to an agent") { talking.close() }
         val heard = StringBuilder()
         try {
             runBlocking {
@@ -157,8 +159,20 @@ class TalkingTest {
     }
 
     @Test
-    fun `nothing is asked of an agent that was never started`() {
+    fun `closing a conversation closes its tools, so a stale agent cannot come back`() {
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        val port = socket.open()
         val talking = Talking(socket, Files.createTempDirectory("yemoja-").toString(), scope)
+        talking.close()
+        assertEquals(null, socket.port, "the socket goes with the conversation")
+        val nothing = ByteArrayInputStream(ByteArray(0))
+        val answered = relay(port, socket.token, nothing, ByteArrayOutputStream())
+        assertEquals(1, answered, "and nobody answers where the window was listening")
+    }
+
+    @Test
+    fun `nothing is asked of an agent that was never started`() {
+        val talking = talkingOf()
         val refused = assertFailsWith<IllegalStateException> {
             runBlocking { talking.ask("anything") {} }
         }

@@ -23,6 +23,14 @@ import yemoja.ui.gui.Conversation
  * Not immutable: an agent runs from [start] until [close].
  */
 internal class Talking(
+    /**
+     * The tools this conversation's agent reaches, which it owns.
+     *
+     * **One socket to a conversation**, so the token an agent was given stops working when the
+     * conversation it belonged to ends and a process left running cannot come back to a logbook
+     * nobody is talking about. `API-4`. [close] closes it, so whoever makes one of these makes a
+     * socket for it rather than sharing one.
+     */
     private val socket: ToolSocket,
     /** The logbook's folder, which is where the agent is told to work. */
     private val folder: String,
@@ -38,7 +46,10 @@ internal class Talking(
      * as one line because that is how every agent's own instructions give it.
      */
     override suspend fun start(command: String) {
-        close()
+        // Not close(), which would take the socket with it: this is the same conversation getting
+        // another agent, and the tools it reaches are the ones it already had.
+        hosted?.close()
+        hosted = null
         val words = command.trim().split(SPACES).filter { it.isNotEmpty() }
         require(words.isNotEmpty()) { "an agent should be named, and nothing was" }
         val agent = Hosted(Started(words.first(), words.drop(1)), socket, folder, scope)
@@ -63,9 +74,11 @@ internal class Talking(
         }
     }
 
+    /** Stops the agent and closes the socket with it, the token dying with the conversation. */
     override fun close() {
         hosted?.close()
         hosted = null
+        socket.close()
     }
 
     override val refused: List<String> get() = hosted?.refused.orEmpty()
