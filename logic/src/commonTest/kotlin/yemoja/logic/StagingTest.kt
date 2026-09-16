@@ -5,11 +5,14 @@ import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /*
- * What an agent would change, before it happens. See ../../../../../reconciliation.md — `RECON-8`.
+ * What an agent would change, before it happens.
+ *
+ * See ../../../../../reconciliation.md — `RECON-8`.
  */
 
 private fun logbook(vararg files: Pair<String, String>): Universe {
@@ -62,7 +65,7 @@ class StagingTest {
     }
 
     @Test
-    fun `applying writes what was staged, and empties the proposal`() {
+    fun `applying writes what was staged, and empties the staging`() {
         val universe = diving()
         val staging = stagingOf(universe)
         staging.set("2026-06-01#0", "rating", 8)
@@ -71,7 +74,7 @@ class StagingTest {
         assertEquals(Applied(2, 2, emptyList()), applied)
         assertEquals(8, read(universe, "2026-06-01#0", "rating"))
         assertEquals(25.0, read(universe, "2026-06-02#0", "max_depth"))
-        assertTrue(staging.empty, "what has happened is no longer proposed")
+        assertTrue(staging.empty, "what has happened is no longer staged")
     }
 
     @Test
@@ -95,13 +98,18 @@ class StagingTest {
         val staging = stagingOf(universe)
         staging.set("2026-06-01#0", "rating", 8)
         staging.set("2026-06-02#0", "max_depth", 25.0)
-        // Somebody edits one of them while the proposal waits to be looked at.
-        universe.change(Operation.EDIT, Change.Write(universe.logbook["2026-06-01#0"]!!, "rating", 3))
+        // Somebody edits one of them while the change waits to be looked at.
+        universe.change(
+            Operation.EDIT,
+            Change.Write(universe.logbook["2026-06-01#0"]!!, "rating", 3),
+        )
         val applied = staging.apply()
         assertEquals(1, applied.items)
         assertEquals(1, applied.fields)
         assertEquals(
-            listOf(Refused("2026-06-01#0", "rating", "it was 6 when this was staged, and is 3 now")),
+            listOf(
+                Refused("2026-06-01#0", "rating", "it was 6 when this was staged, and is 3 now"),
+            ),
             applied.refused,
         )
         assertEquals(3, read(universe, "2026-06-01#0", "rating"), "what somebody else wrote stands")
@@ -125,11 +133,10 @@ class StagingTest {
         assertEquals(Outcome.Done(), staging.delete("2026-06-02#0"))
         val staged = staging.staged.single()
         assertEquals(Staged.Kind.DELETE, staged.kind)
-        assertTrue(staged.fields.any { it.at == "max_depth" && it.to == null }, "and says what goes")
+        assertTrue(staged.fields.any { it.at == "max_depth" && it.to == null }, "says what goes")
         staging.apply()
         assertNull(universe.logbook["2026-06-02#0"], "the dive is gone")
-        assertEquals(24.0, 24.0, "and the one beside it is not")
-        assertEquals(18.0, read(universe, "2026-06-01#0", "max_depth"))
+        assertEquals(18.0, read(universe, "2026-06-01#0", "max_depth"), "the one beside it is not")
     }
 
     @Test
@@ -199,7 +206,38 @@ class StagingTest {
     }
 
     @Test
-    fun `an item deleted while the proposal waited is said rather than written`() {
+    fun `a change and an import can both be waiting, and are applied on their own`() {
+        val store = MemoryFileStore(mapOf("dive/2026-06-01#0.json" to """{"rating": 6}"""))
+        val universe = Universe(
+            LogbookReader.read(store, Types.ALL),
+            null,
+            store,
+            null,
+            null,
+            MemoryFileStore(emptyMap()),
+            MemoryFileStore(emptyMap()),
+        )
+        val staging = universe.staging!!
+        staging.set("2026-06-01#0", "rating", 8)
+        // Something arrives while the change waits to be looked at.
+        val arriving = LogbookReader.read(
+            MemoryFileStore(mapOf("dive_site.json" to """{"blue": {"name": "Blue Hole"}}""")),
+            Types.ALL,
+        )
+        universe.importFrom(arriving, MemoryFileStore(emptyMap()))
+        val importing = assertNotNull(universe.importing)
+        assertEquals(1, staging.staged.size, "the change is still staged")
+
+        // Each is applied on its own, and neither disturbs the other.
+        importing.insert("blue")
+        assertEquals("Blue Hole", read(universe, "blue", "name"))
+        assertEquals(1, staging.staged.size, "and the change is still staged after the import")
+        staging.apply()
+        assertEquals(8, read(universe, "2026-06-01#0", "rating"))
+    }
+
+    @Test
+    fun `an item deleted while the staging waited is said rather than written`() {
         val universe = diving()
         val staging = stagingOf(universe)
         staging.set("2026-06-01#0", "rating", 8)

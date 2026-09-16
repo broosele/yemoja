@@ -140,7 +140,8 @@ class Staging private constructor(
     fun add(type: String, fields: Map<String, Any?> = emptyMap()): Outcome {
         val description = into.logbook.descriptions.firstOrNull { it.name == type }
             ?: return Outcome.Refused("$type is not a type this logbook holds")
-        val made = ItemReader.read(description, Stored.Members(emptyMap()), into.logbook, Units.DEFAULT)
+        val nothing = Stored.Members(emptyMap())
+        val made = ItemReader.read(description, nothing, into.logbook, Units.DEFAULT)
         for ((name, value) in fields) {
             if (description[name] == null) {
                 return Outcome.Refused("$type has no field called $name")
@@ -258,7 +259,8 @@ class Staging private constructor(
             return Staged(id, would!!.description.name, Staged.Kind.ADD, fieldsOf(null, would))
         }
         if (would == null) {
-            return Staged(id, was.description.name, Staged.Kind.DELETE, asNow(id, fieldsOf(was, null)))
+            val going = asNow(id, fieldsOf(was, null))
+            return Staged(id, was.description.name, Staged.Kind.DELETE, going)
         }
         val fields = fieldsOf(was, would)
         return if (fields.isEmpty()) null

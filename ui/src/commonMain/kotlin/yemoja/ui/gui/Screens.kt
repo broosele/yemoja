@@ -2604,11 +2604,12 @@ private fun WorkedOut(dive: Item, profile: Item, evaluated: Evaluated, onFollow:
 }
 
 /**
- * The way out of a plan, asked for and written into it.
+ * The ascent a plan needs, worked out and written into it.
  *
- * What it assumes is on the button rather than behind it: a rate to rise at and a depth to take
- * the shallowest stop at, which are arguments rather than anything stored. Choosing them waits on
- * the settings a screen would read, `LOGIC-35`.
+ * The button says what pressing it does, in the word a diver uses for that part of a dive. What
+ * it assumes is on the row rather than behind it: a rate to rise at and a depth to take the
+ * shallowest stop at, which are arguments rather than anything stored. Choosing them waits on the
+ * settings a screen would read, `LOGIC-35`.
  *
  * Writing it changes the plan, so the graph above redraws with the stops in it and the model is
  * asked again — which is how a reader sees that what was written is what the model now approves
@@ -2638,7 +2639,7 @@ private fun Ascent(profile: Item) {
                 }
             },
         ) {
-            Text("Write the way up")
+            Text("Add the ascent")
         }
         Text(
             text = said ?: "rising at $ASCENT_RATE m a minute, shallowest stop at $LAST_STOP m",
