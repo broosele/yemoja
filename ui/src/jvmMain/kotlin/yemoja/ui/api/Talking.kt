@@ -1,0 +1,75 @@
+package yemoja.ui.api
+
+import com.agentclientprotocol.common.Event
+import com.agentclientprotocol.model.ContentBlock
+import com.agentclientprotocol.model.SessionUpdate
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collect
+import yemoja.ui.gui.Conversation
+
+/*
+ * What the panel talks to, which is an agent this machine is running.
+ *
+ * See ../../../../../../gui/doc.md — `GUI-38`.
+ */
+
+/**
+ * Talking is a conversation with a hosted agent, as the screens ask for one.
+ *
+ * The window makes one per logbook and hands it to the panel, which knows nothing of processes or
+ * protocols. Everything it does is [Hosted]'s; what is here is turning a command a user typed into
+ * a program to start, and an agent's stream of updates into the words a panel shows.
+ *
+ * Not immutable: an agent runs from [start] until [close].
+ */
+internal class Talking(
+    private val socket: ToolSocket,
+    /** The logbook's folder, which is where the agent is told to work. */
+    private val folder: String,
+    private val scope: CoroutineScope,
+) : Conversation {
+
+    private var hosted: Hosted? = null
+
+    /**
+     * Starts what [command] names, splitting it the way a shell would on spaces.
+     *
+     * `npx @zed-industries/claude-code-acp` is a command and three arguments, and a user types it
+     * as one line because that is how every agent's own instructions give it.
+     */
+    override suspend fun start(command: String) {
+        close()
+        val words = command.trim().split(SPACES).filter { it.isNotEmpty() }
+        require(words.isNotEmpty()) { "an agent should be named, and nothing was" }
+        val agent = Hosted(Started(words.first(), words.drop(1)), socket, folder, scope)
+        agent.open()
+        hosted = agent
+    }
+
+    /**
+     * Puts [said] to the agent, handing each piece of its answer to [heard].
+     *
+     * Only what the agent says in words reaches the panel. Everything else it reports — the tool
+     * it is calling, how far a plan has got — is how it is working rather than what it answered,
+     * and `GUI-38` gives the panel no place to show it.
+     */
+    override suspend fun ask(said: String, heard: (String) -> Unit) {
+        val agent = hosted ?: error("an agent was asked something before it was started")
+        agent.ask(said).collect { event ->
+            if (event !is Event.SessionUpdateEvent) return@collect
+            val update = event.update
+            if (update !is SessionUpdate.AgentMessageChunk) return@collect
+            (update.content as? ContentBlock.Text)?.let { heard(it.text) }
+        }
+    }
+
+    override fun close() {
+        hosted?.close()
+        hosted = null
+    }
+
+    override val refused: List<String> get() = hosted?.refused.orEmpty()
+}
+
+/** What separates a command from its arguments, however many spaces a user typed. */
+private val SPACES = Regex("\\s+")

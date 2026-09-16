@@ -18,6 +18,7 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /*
@@ -108,3 +109,59 @@ class HostingTest {
 
 /** Long enough to start a second JVM, and short enough to fail before the watchdog steps in. */
 private const val WAITING = 30_000L
+
+/*
+ * The same agent reached the way the panel reaches one: through the port the screens hold.
+ */
+class TalkingTest {
+
+    private val universe: Universe = MemoryFileStore(
+        mapOf("dive/2026-06-01#0.json" to """{"max_depth": 18}"""),
+    ).let { Universe(LogbookReader.read(it, Types.ALL), null, it, null, null) }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+
+    @AfterTest
+    fun letGo() {
+        socket.close()
+        scope.cancel()
+    }
+
+    @Test
+    fun `a command typed as one line is started, and what it says comes back in pieces`() {
+        val talking = Talking(socket, Files.createTempDirectory("yemoja-").toString(), scope)
+        val watching = watchdog("talking to an agent") {
+            talking.close()
+            socket.close()
+        }
+        val heard = StringBuilder()
+        try {
+            runBlocking {
+                withTimeout(WAITING) {
+                    // Typed the way an agent's own instructions give it: a command and arguments,
+                    // on one line, with the spaces a user happens to type.
+                    val java = ProcessHandle.current().info().command().orElse("java")
+                    val classes = System.getProperty("java.class.path")
+                    talking.start("$java  -cp $classes  yemoja.ui.api.FakeAgent")
+                    talking.ask("2026-06-01#0") { heard.append(it) }
+                }
+            }
+            assertTrue(""""max_depth": 18""" in heard.toString(), heard.toString())
+            assertEquals(emptyList(), talking.refused)
+        } finally {
+            talking.close()
+            watching.interrupt()
+        }
+    }
+
+    @Test
+    fun `nothing is asked of an agent that was never started`() {
+        val talking = Talking(socket, Files.createTempDirectory("yemoja-").toString(), scope)
+        val refused = assertFailsWith<IllegalStateException> {
+            runBlocking { talking.ask("anything") {} }
+        }
+        assertEquals("an agent was asked something before it was started", refused.message)
+    }
+}
