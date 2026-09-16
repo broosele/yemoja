@@ -90,6 +90,26 @@ class HostingTest {
     }
 
     @Test
+    fun `an agent works beside the logbook, and leaves nothing in it`() {
+        val hosted = hosting()
+        val watching = watchdog("starting an agent") {
+            hosted.close()
+            socket.close()
+        }
+        val logbook = java.io.File(folder)
+        val held = logbook.list().orEmpty().toSet()
+        try {
+            runBlocking { withTimeout(WAITING) { hosted.open() } }
+            val beside = java.io.File("$folder.agent")
+            assertTrue(java.io.File(beside, LEFT_BEHIND).exists(), "should work in $beside")
+            assertEquals(held, logbook.list().orEmpty().toSet(), "and leave the logbook alone")
+        } finally {
+            hosted.close()
+            watching.interrupt()
+        }
+    }
+
+    @Test
     fun `nothing of the machine is given to it, and nothing was asked for`() {
         val hosted = hosting()
         val watching = watchdog("refusing an agent") {

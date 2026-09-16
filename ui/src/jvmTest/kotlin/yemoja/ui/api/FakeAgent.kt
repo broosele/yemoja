@@ -60,6 +60,10 @@ object FakeAgent {
         // itself on this stream is read as a message, which is what it cost to learn.
         val talking = System.out
         System.setOut(System.err)
+        // A real agent writes into the folder it was started in — the first one to run here left
+        // a note of which tools it had been allowed — so this one does too, and a test can say
+        // where that landed.
+        java.io.File(System.getProperty("user.dir"), LEFT_BEHIND).writeText("started here")
         runBlocking {
             val scope = CoroutineScope(coroutineContext + SupervisorJob())
             val transport = StdioTransport(
@@ -128,6 +132,9 @@ private class Reading(private val parameters: SessionCreationParameters) : Agent
         }
     }
 }
+
+/** What the fake agent leaves in the folder it was started in. */
+internal const val LEFT_BEHIND: String = "agent-was-here.txt"
 
 /** The lines [reader] gives, read off the thread that asked for them. */
 private fun linesOf(reader: BufferedReader): Flow<String> = flow {

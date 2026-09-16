@@ -52,12 +52,18 @@ data class Started(val command: String, val arguments: List<String> = emptyList(
  * read a file, write one or run a command is refused. An agent meant for writing code would
  * otherwise edit the logbook's files directly and walk around every rule the tools hold it to.
  *
+ * **It works beside the logbook rather than in it.** An agent treats the folder it is started in
+ * as its own and writes there — the first real one left a file recording which tools it had been
+ * allowed — and a user's dives are not a scratch directory. So it is given the logbook's path with
+ * `.agent` after it, which puts it outside the logbook exactly as staging an import does.
+ * `RECON-1`.
+ *
  * Not immutable: it holds a process from [open] until [close].
  */
 class Hosted(
     private val started: Started,
     private val socket: ToolSocket,
-    /** Where the agent is to work, which is the logbook's folder. */
+    /** The logbook being talked about. The agent is not started here and cannot read it. */
     private val folder: String,
     private val scope: CoroutineScope,
 ) {
@@ -91,8 +97,9 @@ class Hosted(
      */
     suspend fun open() {
         val port = socket.port ?: socket.open()
+        val working = workingBeside(folder)
         val process = ProcessBuilder(listOf(started.command) + started.arguments)
-            .directory(java.io.File(folder))
+            .directory(working)
             .start()
         running = process
         listen(process)
@@ -113,7 +120,10 @@ class Hosted(
         protocol.start()
         client.initialize(ClientInfo(implementation = Implementation(NAME, VERSION)))
         talking = client.newSession(
-            SessionCreationParameters(cwd = folder, mcpServers = listOf(relaying(port))),
+            SessionCreationParameters(
+                cwd = working.path,
+                mcpServers = listOf(relaying(port)),
+            ),
         ) { _, _ -> Refusing(NAME, refusals) }
     }
 
@@ -250,6 +260,19 @@ private class Refusing(
 
     override suspend fun notify(notification: SessionUpdate, _meta: JsonElement?) = Unit
 }
+
+/**
+ * The folder an agent works in, beside the logbook at [folder], made where it is not there.
+ *
+ * The logbook's own path with `.agent` after it, which is how an import's staging folder is named
+ * and for the same reason: what is in it is not part of the logbook and must not be read as
+ * though it were.
+ */
+private fun workingBeside(folder: String): java.io.File =
+    java.io.File(folder.trimEnd('/', '\\') + BESIDE).also { it.mkdirs() }
+
+/** What an agent's own folder is called, beside the logbook. */
+private const val BESIDE = ".agent"
 
 /** The lines [reader] gives, read off the thread that asked for them. */
 private fun linesOf(reader: BufferedReader): Flow<String> = flow {

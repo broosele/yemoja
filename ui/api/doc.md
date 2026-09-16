@@ -57,6 +57,13 @@ behaviour of its own, that behaviour is in the wrong place.
   application, so the agent reads the Universe the window already has open and the logbook is not
   opened a second time.
 
+  **An agent works beside the logbook, never in it.** It is started in the logbook's path with
+  `.agent` after it, which is how an import's staging folder is named and puts it outside the
+  logbook for the same reason, `RECON-1`. An agent treats the folder it is started in as its own
+  and writes there: the first real one to run against this left a file recording which of these
+  tools it had been allowed. A user's dives are not a scratch directory, and what syncing carries
+  is the logbook rather than whatever an agent dropped beside it.
+
   **The agent reaches them through `yemoja api`**, which it starts as an MCP server over its own
   input and output, the one transport every ACP agent must accept. The command holds nothing: it
   relays both ways to the window over a local socket, guarded by a token the window made for that
