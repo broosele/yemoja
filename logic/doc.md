@@ -458,7 +458,6 @@ To settle when we discuss architecture and features:
    that `DATA-50` gives the result somewhere to go: a derived value that cannot be worked
    out is *unusable*, not absent, and a cycle is always a mistake worth reporting rather
    than quietly surviving. Relocated from `DATA-17`.
-- **LOGIC-3 — Which decompression model(s)** to support, and whether the model is pluggable.
 - **LOGIC-4 — State and lifetime.** Is this layer a stateless set of operations over the data
    layer, or does it hold a live in-memory logbook that UIs observe? Which layer holds
    the loaded items is settled — the data layer does, as an `ItemSet`, see `DATA-20`
@@ -474,6 +473,34 @@ To settle when we discuss architecture and features:
    race, so *live* costs only what it costs to hold, not what it costs to protect.
 
 ## Settled
+
+- **LOGIC-3 — Which decompression models to support, and whether the model is pluggable.**
+  *Settled:* **Bühlmann ZH-L16C with gradient factors, and only that. Not pluggable.**
+
+  Sixteen compartments, the published half-times and coefficients, the Schreiner equation for a
+  pressure that is moving, and a ceiling read off the most demanding compartment.
+  [../manual/decompression.md](../manual/decompression.md) owns the explanation and already told
+  divers this is the only model here.
+
+  **A second model is a second implementation, not a setting.** Nothing abstracts over models,
+  because nothing yet has two to abstract over, and the bubble models are a different shape of
+  answer rather than the same one with other numbers. What exists is isolated behind its own file,
+  which is what the safety rules above ask for and what a second one would be added beside.
+
+  **`deco_model` stays a suggested set of four.** A recording says which model the device was
+  running, which is a fact about that device and is kept whether or not this application
+  implements it. `LOGIC-17`.
+
+  **It evaluates a profile rather than producing a schedule.** The depths and times are given, and
+  what comes back is what the model says they cost: the ceiling, the no-decompression limit and
+  the loading. Nothing it says is stored, so a later version that calculates differently changes
+  what is shown and changes no logbook.
+
+  Written from the published coefficients and from the account of gradient factors the manual
+  names under *Further reading*. No implementation was read, ours being a licence the ones that
+  exist would not survive contact with. README under *Licensing*.
+
+  Built in `Decompression.kt`.
 
 - **LOGIC-34 — How a figure is taken over items somebody else chose.** *Settled:* **over ids, a
   field and a measure, and the answer says what it was based on.** The measures are a count, a
