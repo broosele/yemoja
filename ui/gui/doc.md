@@ -517,6 +517,17 @@ once and corrected. The numbers stay unused rather than being given to something
    around, the regions the sites hang from — and the empty middle offers it in words, *Add a
    dive*, which is the only way a logbook with nothing in it grows a first item.
 
+   **A branch of the gear tree chosen fills the form's first fields.** A reader looking at the
+   cylinders who presses plus is adding a cylinder, and the category and the kind are answers the
+   screen watched them give. So a chosen branch puts its own words into `category`, and into
+   `kind` where a kind is what was chosen. They are typed into the form rather than written
+   behind it: a reader sees them and changes them where the branch was not what they meant.
+
+   That gives the gear tree a chosen branch, which it had none of: a click folded a category and
+   nothing more. A click now chooses it as a click on Location's tree chooses a region, the arrow
+   still folds, and choosing an item lets the branch go — a reader looking at one item is no
+   longer at a category. Only gear has such a tree, so nothing else fills anything.
+
    **Plus makes nothing. Save makes it.** An id is minted once, at creation, from what the item
    says at that moment, and nothing renames it afterwards: there is no `Change.Rename` and the
    Universe has none, `data/doc.md` recording only that a rename belongs there. So an item made

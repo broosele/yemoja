@@ -124,6 +124,11 @@ happens at once rather than waiting for Save.
 made until you save, and the item's id is worked out then, from what you typed. Where nothing
 is chosen, the middle of the screen offers to add one.
 
+On the Gear tab you can also click a category or a kind in the tree, which chooses it — the
+arrow beside it still folds it away. A new piece of gear added while one is chosen starts out
+filed there, with the category, and the kind where you chose one, already filled in. Change them
+in the form like anything else.
+
 **The bin** deletes the item, after asking. Anything the item holds goes with it. Where other
 items point at it, the question says how many references will be left pointing at nothing, and
 names where they are when there are only a few; ticking **Clear the references too** takes them

@@ -46,6 +46,18 @@ class MadeTypeTest {
     }
 
     @Test
+    fun `a new piece of gear starts out filed where the tree was`() {
+        // A reader looking at the cylinders who presses + is adding a cylinder.
+        assertEquals(mapOf("category" to "cylinder"), startedOf(Types.GEAR, "cylinder"))
+        assertEquals(
+            mapOf("category" to "cylinder", "kind" to "steel"),
+            startedOf(Types.GEAR, "cylinder/steel"),
+        )
+        assertEquals(emptyMap(), startedOf(Types.GEAR, null), "no branch chosen, nothing filled")
+        assertEquals(emptyMap(), startedOf(Types.PERSON, "cylinder"), "only gear has such a tree")
+    }
+
+    @Test
     fun `the button says what it makes`() {
         assertEquals("Add a dive", makeSaid(Types.DIVE))
         assertEquals("Add a dive site", makeSaid(Types.DIVE_SITE))

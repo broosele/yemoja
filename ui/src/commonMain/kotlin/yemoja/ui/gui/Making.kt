@@ -29,6 +29,25 @@ internal fun makingOf(tab: Tab, chosen: Chosen?): ItemDescription? {
     return tab.types.firstOrNull()
 }
 
+/**
+ * What a new item starts out holding, given the branch of the gear tree that is chosen.
+ *
+ * **A category or a kind chosen in the tree is an answer already given.** A reader looking at the
+ * cylinders who presses **+** is adding a cylinder, and typing the word again is work the screen
+ * watched them do. The branch's own words are used, not a vocabulary's: the tree is built from
+ * what the logbook says, so what comes back is what is already there. `GUI-35`.
+ *
+ * Nothing but gear has such a tree, and a branch of none leaves the form empty.
+ */
+internal fun startedOf(type: ItemDescription, branch: String?): Map<String, String> {
+    if (type != Types.GEAR || branch == null) return emptyMap()
+    val category = branch.substringBefore('/').ifBlank { return emptyMap() }
+    val kind = branch.substringAfter('/', "").ifBlank { null }
+    return if (kind == null) mapOf("category" to category) else {
+        mapOf("category" to category, "kind" to kind)
+    }
+}
+
 /** What the button that makes one is called: *Add a dive*, *Add a person*. */
 internal fun makeSaid(type: ItemDescription): String = "Add a " + labelOf(type).lowercase()
 

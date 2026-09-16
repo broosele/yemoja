@@ -359,6 +359,18 @@ class ForwardTest {
     }
 
     @Test
+    fun `what a form says decides it, before anything is saved`() {
+        // A new cylinder holds nothing yet: its capacity belongs in front of the reader the
+        // moment the word is in the box. `GUI-29`.
+        val held = gear("""{"x": {"name": "Something"}}""")
+        val capacity = Types.GEAR["capacity"]!!
+        assertTrue(!forwardOf(capacity, held), "nothing said, and nothing is put forward")
+        assertTrue(forwardOf(capacity, held, "cylinder"))
+        assertTrue(forwardOf(capacity, held, "Cylinder"), "read without regard to case")
+        assertTrue(!forwardOf(capacity, held, "suit"))
+    }
+
+    @Test
     fun `an item saying nothing about what it is keeps them folded`() {
         // A reader who has not said what it is has not said the field applies either.
         val held = gear("""{"x": {"name": "Something"}}""")

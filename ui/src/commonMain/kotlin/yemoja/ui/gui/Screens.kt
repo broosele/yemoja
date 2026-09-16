@@ -242,6 +242,14 @@ internal class Kept {
     /** Gear's branches folded. */
     var closed: Set<String> by mutableStateOf(emptySet())
 
+    /**
+     * The branch of the gear tree chosen, by its path: `cylinder`, or `cylinder/steel`.
+     *
+     * What a new piece of gear starts out filed under. Choosing an item lets it go, a reader
+     * looking at one item no longer being at a category. `GUI-35`.
+     */
+    var branch: String? by mutableStateOf(null)
+
     /** Which of its types Community shows. */
     var subtab: Int by mutableStateOf(0)
 
@@ -1196,7 +1204,9 @@ private fun Subject(
         Box(modifier = Modifier.width(wide)) {
             when (tab.shape) {
                 Shape.DIVES -> Selectable { Dives(set, kept) }
-                Shape.GEAR -> Selectable { Gear(set, chosen, kept) { kept.chosen = it } }
+                Shape.GEAR -> Selectable {
+                    Gear(set, chosen, kept) { kept.chosen = it }
+                }
                 Shape.TYPES -> Selectable {
                     Types(set, tab, user, chosen, kept) { kept.chosen = it }
                 }
@@ -1255,9 +1265,11 @@ private fun Subject(
                         NewCard(
                             type = kept.making!!,
                             set = set,
+                            started = startedOf(kept.making!!, kept.branch),
                             onCancel = { kept.making = null },
                             onMade = { id ->
                                 kept.making = null
+                                kept.branch = null
                                 set[id]?.let { kept.chosen = Chosen(id, titleOf(it), it) }
                                 kept.chosenMany = emptySet()
                             },
@@ -1540,9 +1552,20 @@ private fun Gear(set: ItemSet, chosen: Chosen?, kept: Kept, onChoose: (Chosen) -
     val (branches, loose) = remember(set, LocalChanger.current.edition) { gearTreeOf(set) }
     val closed = kept.closed
     val toggle = { key: String -> kept.closed = if (key in closed) closed - key else closed + key }
+    // A branch is chosen as a region is on Location: the arrow folds it, the line chooses it, and
+    // what is chosen is what a new piece of gear starts out filed under. `GUI-35`.
+    val choose = { key: String ->
+        kept.branch = key
+        kept.chosen = null
+        kept.chosenMany = emptySet()
+    }
+    val took = { item: Chosen ->
+        kept.branch = null
+        onChoose(item)
+    }
     LazyColumn(state = kept.list, modifier = Modifier.fillMaxHeight().padding(GAP)) {
         // Filed under nothing sits at the top rather than in a bucket called other. `GUI-21`.
-        items(loose, key = { "loose:" + it.id }) { Entry(it, chosen, 0, onChoose) }
+        items(loose, key = { "loose:" + it.id }) { Entry(it, chosen, 0, took) }
         // A category is keyed apart from the gear in it, in case one is named like an id.
         for (branch in branches) {
             item(key = "branch:" + branch.key) {
@@ -1550,26 +1573,26 @@ private fun Gear(set: ItemSet, chosen: Chosen?, kept: Kept, onChoose: (Chosen) -
                     label = branch.label,
                     depth = 0,
                     open = branch.key !in closed,
-                    chosen = false,
+                    chosen = kept.branch == branch.key,
                     onToggle = { toggle(branch.key) },
-                    onClick = { toggle(branch.key) },
+                    onClick = { choose(branch.key) },
                 )
             }
             if (branch.key in closed) continue
-            items(branch.held, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
+            items(branch.held, key = { it.id }) { Entry(it, chosen, 1, took) }
             for (kind in branch.children) {
                 item(key = "branch:" + kind.key) {
                     BranchLine(
                         label = kind.label,
                         depth = 1,
                         open = kind.key !in closed,
-                        chosen = false,
+                        chosen = kept.branch == kind.key,
                         onToggle = { toggle(kind.key) },
-                        onClick = { toggle(kind.key) },
+                        onClick = { choose(kind.key) },
                     )
                 }
                 if (kind.key in closed) continue
-                items(kind.held, key = { it.id }) { Entry(it, chosen, 2, onChoose) }
+                items(kind.held, key = { it.id }) { Entry(it, chosen, 2, took) }
             }
         }
     }
@@ -2731,6 +2754,7 @@ internal fun shortOf(value: Double): String =
 private fun NewCard(
     type: ItemDescription,
     set: ItemSet,
+    started: Map<String, String> = emptyMap(),
     onCancel: () -> Unit,
     onMade: (String) -> Unit,
 ) {
@@ -2738,6 +2762,12 @@ private fun NewCard(
     val draft = remember(type) { Draft() }
     val item = remember(type) {
         ItemReader.read(type, Stored.Members(emptyMap()), set, Units.DEFAULT)
+    }
+    // What the tree already said, typed into the form rather than written behind it: a reader
+    // sees it, and changes it where the branch was not what they meant. `GUI-35`.
+    remember(type, started) {
+        for ((field, value) in started) draft.put(item, field, value)
+        started
     }
     var refused by remember(type) { mutableStateOf<String?>(null) }
     Surface(

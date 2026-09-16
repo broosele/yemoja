@@ -90,7 +90,10 @@ internal fun EditActions(draft: Draft, onCancel: () -> Unit, onSave: () -> Unit)
 @Composable
 internal fun EditFields(item: Item, draft: Draft) {
     val arranged = remember(item.description) { arrangedOf(item.description, editing = true) }
-    val forward = arranged.plain.filter { forwardOf(it, item) }
+    // What the form says rather than what the item holds: a category typed a moment ago decides
+    // where the fields that follow from it sit, without waiting for Save. `GUI-29`.
+    val saying = draft.shownOf(item, "category") as? String
+    val forward = arranged.plain.filter { forwardOf(it, item, saying) }
     for (pair in forward.chunked(COLUMNS)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -100,7 +103,7 @@ internal fun EditFields(item: Item, draft: Draft) {
             repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
-    Folded(arranged.plain.filterNot { forwardOf(it, item) }, item, draft)
+    Folded(arranged.plain.filterNot { forwardOf(it, item, saying) }, item, draft)
     for (inset in arranged.insets) {
         when (inset.cardinality) {
             Cardinality.KEYED -> KeyedEditor(inset.label, inset.name, item, draft)

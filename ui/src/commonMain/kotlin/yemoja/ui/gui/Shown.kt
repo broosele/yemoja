@@ -88,11 +88,15 @@ internal fun fieldsShownOf(
  * took fields away rather than tucking them out of the way. So everything stays reachable and
  * the fold is the only thing that moves. The data layer's refusal was about validation, not
  * about what a screen offers, which is `GUI-16`'s to decide. `GUI-29`.
+ *
+ * [saying] is the category as a form says it, which is what an item being typed goes by: a new
+ * cylinder holds nothing yet, and its capacity belongs in front of the reader the moment the word
+ * is in the box rather than after it is saved.
  */
-internal fun forwardOf(field: FieldDescription, item: Item): Boolean {
+internal fun forwardOf(field: FieldDescription, item: Item, saying: String? = null): Boolean {
     val only = ONLY_FOR[item.description.name]?.get(field.name) ?: return true
-    val category = (item.single<String>("category") as? Result.Usable)?.value?.lowercase()
-    return category in only
+    val stored = (item.single<String>("category") as? Result.Usable)?.value
+    return (saying ?: stored)?.lowercase() in only
 }
 
 /**
