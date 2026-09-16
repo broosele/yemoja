@@ -75,6 +75,10 @@ them.
   [data/doc.md](data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
   stored value: the data layer records when a thing falls due and this feature decides
   when that is worth saying.
+- **FEAT-12 — A programmatic interface.** Another program driving the logbook without a person
+  present. See [ui/api/doc.md](ui/api/doc.md). Moved from *Future* because `FEAT-18` is built on
+  it. The tools an agent reads through are the part built first; scripting and automation follow
+  under this entry.
 - **FEAT-18 — An AI agent over the logbook.** Asking for something in ordinary language
   and having it answered or done, where doing it by hand would be many reads or many edits:
   how often a stage richer than 36% was breathed, a clock error set across a trip, one dive's
@@ -95,7 +99,6 @@ them.
   *Built, less one shape:* it reads a logbook, shows it, and changes it — a value typed
   over, an item or an entry made or deleted — saving each change as it is made. A series is
   what it cannot edit, nobody typing thousands of samples into a terminal.
-- **FEAT-12 — A programmatic interface.** See [ui/api/doc.md](ui/api/doc.md).
 - **FEAT-23 — Following a mention written in a remark.** `@willy` in free text names an
   item by convention, settled in `JSON-23`. *Built in the TUI:* opened, a remark's mentions are
   what up and down move over and space follows the one the cursor is on, and only those that

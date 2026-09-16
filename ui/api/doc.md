@@ -14,6 +14,20 @@ logic layer is designed with it in mind.
 - A test surface that exercises the logic layer the way a real client would.
 - An AI agent answering questions about the logbook and staging changes to it.
 
+## What is built
+
+**The read-only tools and the server that carries them**, and nothing an agent can reach yet.
+`describe`, `list`, `get`, `series` and `aggregate` answer as `API-4` sets out, in `Tools.kt`,
+and `ToolServer.kt` serves them over MCP with the instructions and the manual's two data chapters.
+A person's private details are withheld unless a flag asked on every call says otherwise.
+
+Three things are owed, each by a later piece of `FEAT-18`:
+
+- **Nothing starts the server.** The window hosting an agent and `yemoja api` relaying to it are
+  `GUI-38`'s.
+- **There are no write tools.** Staging is `RECON-8`'s.
+- **Nothing decides the flag.** The box beside a conversation that sets it is `GUI-38`'s.
+
 ## Scope
 
 - The exposed operations and their shape.
@@ -40,8 +54,13 @@ behaviour of its own, that behaviour is in the wrong place.
 
 - **API-4 — What an agent is given.** *Settled:* **tools over the Universe that return whole
   items, and the instructions for using them.** They are served over MCP from inside the running
-  application, on the machine's own address. The agent therefore reads the Universe the window
-  already has open, and the logbook is not opened a second time.
+  application, so the agent reads the Universe the window already has open and the logbook is not
+  opened a second time.
+
+  **The agent reaches them through `yemoja api`**, which it starts as an MCP server over its own
+  input and output, the one transport every ACP agent must accept. The command holds nothing: it
+  relays both ways to the window over a local socket, guarded by a token the window made for that
+  conversation. HTTP was the alternative, and not every agent offers it.
 
   | Tool | What it does |
   |---|---|
@@ -49,7 +68,7 @@ behaviour of its own, that behaviour is in the wrong place.
   | `list` | Every item of a type, whole, a page at a time |
   | `get` | One item, whole |
   | `series` | One recording's series |
-  | `aggregate` | A count, sum, minimum, maximum or mean of a field over ids the agent gives. `LOGIC-34`. |
+  | `aggregate` | A figure of a field over ids the agent gives: a count, a mean, a median and the rest. `LOGIC-34`. |
   | `stage_add`, `stage_set`, `stage_delete` | A change staged for review, `API-5` and `RECON-8` |
   | `staged` | What is staged so far |
 
@@ -91,8 +110,10 @@ behaviour of its own, that behaviour is in the wrong place.
   any way to write, unless the user allows either for the conversation in hand.**
 
   A person's `birthday`, `email`, `phone`, `address`, `medical` and `insurance` are left out of
-  every reply. Most of the people in a logbook are somebody other than the user, and a question
-  about diving rarely needs them. A box beside the conversation puts them back until the
+  every reply, and each of those fields says so itself, `DATA-119`. A reply names the ones it
+  left out that hold something, so an agent asked for an email says it was withheld rather than
+  that there is none. Most of the people in a logbook are somebody other than the user, and a
+  question about diving rarely needs them. A box beside the conversation puts them back until the
   conversation ends.
 
   **The write tools exist only while *allowed to change data* is ticked**, and it is off at the

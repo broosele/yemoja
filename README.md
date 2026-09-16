@@ -150,7 +150,11 @@ Bluetooth LE to the application, and that is **Kable**, Apache 2.0: Kotlin Multi
 same library serves the JVM, Android and iOS, and on the desktop it reaches Windows and Linux
 through the Rust library btleplug that it carries. `LOGIC-2` in [logic/doc.md](logic/doc.md)
 puts all three below a port the layer declares, so each target answers the same port its own
-way.
+way. The API front end takes the **MCP Kotlin SDK** to serve an agent the logbook's tools, MIT
+for its earlier code and Apache 2.0 for what is added since, on the JVM side only; it brings
+Ktor's server core and kotlinx serialization and coroutines with it, all Apache 2.0, and no Ktor
+engine is declared since nothing is served over HTTP. See `API-4` in
+[ui/api/doc.md](ui/api/doc.md).
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.

@@ -476,10 +476,17 @@ To settle when we discuss architecture and features:
 ## Settled
 
 - **LOGIC-34 — How a figure is taken over items somebody else chose.** *Settled:* **over ids, a
-  field and an operation, and the answer says what it was based on.** The operations are a count,
-  a sum, a minimum, a maximum and a mean. The answer gives the value, how many values went into
-  it, and each id left out with the reason. A dive with no `sac` is left out rather than counted
-  as nothing, which is `GUI-9`'s rule applied to a caller that is not a screen.
+  field and a measure, and the answer says what it was based on.** The measures are a count, a
+  sum, a minimum, a maximum, a range, a mean, a weighted mean, a median, and a standard deviation
+  of the values as a whole population. The answer gives the value, how many values went into it,
+  and each place a value was looked for and not used, with the reason. A dive with no `sac` is
+  left out rather than counted as nothing, which is `GUI-9`'s rule applied to a caller that is not
+  a screen.
+
+  **The field is a path**, written as the journal addresses one, `JSON-14`:
+  `environment.bottom_temperature`, `gas_sources.g1.sac`, and `*` in place of a key for every
+  entry. It is checked against the first item's type before anything is read, so a misspelt field
+  is refused rather than answered with every item skipped. An item of another type is skipped.
 
   The first caller is an agent's `aggregate` tool, `API-4`, which chooses the items by reading
   them and hands this the arithmetic. It is a service beside the Universe, as every statistic
@@ -488,8 +495,14 @@ To settle when we discuss architecture and features:
   **The mean is named rather than chosen for the caller.** Within one dive `LOGIC-33` weights by
   time. Across dives a plain mean counts a twenty-minute dive like a ninety-minute one, and a
   weighted one counts the long dive more. Both are fair answers to *what is my average SAC*, so
-  the answer says which mean it is, and a user who wanted the other asks for it. Which weighted
-  means are offered beside the plain one is not settled.
+  the answer says which mean it is, and a user who wanted the other asks for it.
+
+  **A weighted mean names a second path**, and each value is weighted by the weight on the same
+  item whose entries are the value's own or fewer. `gas_sources.*.sac` can therefore be weighted
+  by the dive's `duration`, which every entry shares, or by `gas_sources.*.volume`, which each
+  entry has its own of. A value with no weight beside it, or a negative one, is skipped.
+
+  Built in `Figures.kt`.
 
 - **LOGIC-33 — How a SAC is worked out.** *Settled:* **a series on each recording, and a figure
   on each gas source over the time it was breathed, in litres a minute.**

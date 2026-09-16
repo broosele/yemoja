@@ -93,10 +93,10 @@ internal val PERSON: ItemDescription = ItemDescription(
         // All of them together, where there are several.
         TextDescription("middle_names"),
         TextDescription("last_name"),
-        DateDescription("birthday"),
-        TextDescription("email"),
-        TextDescription("phone"),
-        TextDescription("address"),
+        DateDescription("birthday", personal = true),
+        TextDescription("email", personal = true),
+        TextDescription("phone", personal = true),
+        TextDescription("address", personal = true),
         // Their own number as an instructor. Text: letters and leading zeros are ordinary
         // and nothing is added up.
         TextDescription("instructor_number"),
@@ -108,8 +108,8 @@ internal val PERSON: ItemDescription = ItemDescription(
             cardinality = Cardinality.LIST,
             oneOffAllowed = true,
         ),
-        OwnedItemDescription("medical", MEDICAL),
-        OwnedItemDescription("insurance", INSURANCE),
+        OwnedItemDescription("medical", MEDICAL, personal = true),
+        OwnedItemDescription("insurance", INSURANCE, personal = true),
         OwnedItemDescription("courses", COURSE, cardinality = Cardinality.KEYED),
         // Every dive naming this person among its buddies, and for the logbook's user every
         // dive, each one being theirs. Never written: each dive says who was there. `DATA-118`.

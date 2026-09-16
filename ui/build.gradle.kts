@@ -36,9 +36,17 @@ kotlin {
             // What actually talks to the console. The other one needs JDK 22, and this is 21.
             // JNA is dual-licensed and taken here under Apache-2.0, not the LGPL.
             implementation("com.github.ajalt.mordant:mordant-jvm-jna:3.1.0")
+            // Serving an agent the logbook's tools over MCP. MIT for what was written before, and
+            // Apache-2.0 for what is added since. Its HTTP half is not used, so no Ktor engine is
+            // declared beside it. `API-4`.
+            implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+        }
+        jvmTest.dependencies {
+            // The other end of the protocol, to call the tool server the way an agent does.
+            implementation("io.modelcontextprotocol:kotlin-sdk-client:0.15.0")
         }
     }
 }
