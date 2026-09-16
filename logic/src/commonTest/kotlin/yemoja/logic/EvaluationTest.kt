@@ -230,6 +230,74 @@ class EvaluationTest {
     }
 
     @Test
+    fun `an ascent written into a plan is one the model then approves of`() {
+        val bottom = """"depth": [[0, 0], [90, 40], [1800, 40]]"""
+        val ascent = assertIs<Ascended.Done>(completeAscent(planned(bottom), 9.0, 3.0))
+        val written = ascent.depth.joinToString(", ") { (second, metres) -> "[$second, $metres]" }
+        val whole = done(planned(""""depth": [[0, 0], [90, 40], [1800, 40], $written]"""))
+
+        assertTrue(ascent.depth.isNotEmpty(), "there is a way up from forty metres")
+        assertEquals(0.0, ascent.depth.last().second, "and it ends at the surface")
+        assertTrue(whole.findings.none { "ceiling" in it.said }, "${whole.findings}")
+    }
+
+    @Test
+    fun `an ascent owing stops holds them on the threes, the shallowest where it was asked`() {
+        val ascent = assertIs<Ascended.Done>(
+            completeAscent(planned(""""depth": [[0, 0], [90, 40], [1800, 40]]"""), 9.0, 6.0),
+        )
+        val held = ascent.depth.map { it.second }.filter { it > 0 }.distinct()
+
+        assertTrue(held.isNotEmpty(), "forty metres for half an hour owes a stop")
+        assertTrue(held.all { it % 3.0 == 0.0 }, "$held")
+        assertEquals(6.0, held.min(), "the shallowest stop is the one asked for")
+    }
+
+    @Test
+    fun `a dive owing nothing comes straight up`() {
+        val ascent = assertIs<Ascended.Done>(
+            completeAscent(planned(""""depth": [[0, 0], [60, 12], [1800, 12]]"""), 9.0, 3.0),
+        )
+
+        assertEquals(listOf(0.0), ascent.depth.map { it.second }, "straight to the surface")
+    }
+
+    @Test
+    fun `the ascent moves to the richest gas the depth allows`() {
+        val ascent = assertIs<Ascended.Done>(
+            completeAscent(
+                planned(
+                    """"gas_switches": [[0, "*g1"]], "depth": [[0, 0], [90, 40], [1800, 40]]""",
+                    sources = """"g1": {"gas_type": "EAN28"}, "g2": {"gas_type": "EAN50"}""",
+                ),
+                9.0,
+                3.0,
+            ),
+        )
+        val switch = ascent.switches.single()
+        val at = ascent.depth.first { it.first >= switch.first }.second
+
+        assertEquals("g2", switch.second)
+        assertTrue(at <= 21.0, "EAN50 is breathable from 21 metres, and it switched at $at")
+    }
+
+    @Test
+    fun `a run already at the surface has no way up to write`() {
+        val ascent = assertIs<Ascended.Done>(completeAscent(planned(SHALLOW), 9.0, 3.0))
+
+        assertTrue(ascent.depth.isEmpty() && ascent.switches.isEmpty(), "${ascent.depth}")
+    }
+
+    @Test
+    fun `what cannot be evaluated cannot be ascended from either`() {
+        val reason = assertIs<Ascended.Refused>(
+            completeAscent(bare(""""depth": [[0, 0], [90, 40]]"""), 9.0, 3.0),
+        ).reason
+
+        assertTrue("how conservative" in reason, reason)
+    }
+
+    @Test
     fun `two cylinders and nothing saying which was breathed is nothing to work from`() {
         val reason = refused(
             planned(

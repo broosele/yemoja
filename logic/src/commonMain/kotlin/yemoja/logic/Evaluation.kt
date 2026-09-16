@@ -225,6 +225,111 @@ private fun walked(
     )
 }
 
+/**
+ * Ascended is the way out of a run, or why one could not be worked out.
+ */
+sealed class Ascended {
+
+    /**
+     * Done is the ascent to write into the profile: the depths it passes and holds, and the
+     * switches that go with them.
+     *
+     * Each is a second and a value, to be appended to what the profile already holds. Turning them
+     * into fields is the caller's, since what a screen writes and what an importer writes go
+     * through the same door and neither belongs here. Empty where the run is already at the
+     * surface.
+     */
+    class Done(
+        val depth: List<Pair<Int, Double>>,
+        val switches: List<Pair<Int, String>>,
+    ) : Ascended()
+
+    /** Refused is nothing worked out, and why. */
+    data class Refused(val reason: String) : Ascended()
+}
+
+/**
+ * The ascent [profile] would have to make from where its depths stop, rising at [metresAMinute]
+ * and holding its shallowest stop at [lastStop] metres.
+ *
+ * **What comes back is written into the plan rather than remembered as a recipe.** Nothing reads
+ * a rate to interpret a stored profile, so a plan holds the points themselves and means the same
+ * thing to everything that reads it. The cost is that a generated ascent is frozen: change a gas
+ * afterwards and the stops do not move, which evaluating the plan says at once. `LOGIC-35`.
+ *
+ * Stops go on the threes a diver counts in, and a run that owes any takes its shallowest at
+ * [lastStop]. The gas is chosen at each depth: the richest of the run's own sources whose oxygen
+ * stays within what a diver plans to, which is what a deco cylinder is carried for.
+ *
+ * Refused for whatever [evaluate] refuses, and for a run that will not surface within a day.
+ */
+fun completeAscent(profile: Item, metresAMinute: Double, lastStop: Double): Ascended {
+    require(metresAMinute > 0) {
+        "an ascent rate should be more than nought, but was $metresAMinute"
+    }
+    require(lastStop >= 0) { "a last stop should be 0 or deeper, but was $lastStop" }
+    val evaluated = evaluate(profile)
+    if (evaluated is Evaluated.Refused) return Ascended.Refused(evaluated.reason)
+    val model = modelOf(profile) ?: return Ascended.Refused("nothing says how conservative to be")
+    val breathing = breathedBy(profile) ?: return Ascended.Refused("nothing says what is breathed")
+    val depths = pointsOf(profile) ?: return Ascended.Refused("this run holds no depths")
+    val density = (profile.single<Double>("density") as? Result.Usable)?.value
+        ?: return Ascended.Refused("nothing says what water this run is in")
+    val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
+        ?: SEA_LEVEL
+
+    var tissues = (evaluated as Evaluated.Done).surfacing
+    var second = depths.last().second
+    var metres = depths.last().metres
+    var breathed = breathing.keyAt(second)
+    var firstStop = 0.0
+    val points = ArrayList<Pair<Int, Double>>()
+    val switches = ArrayList<Pair<Int, String>>()
+
+    while (metres > 0) {
+        if (second - depths.last().second > LONGEST_ASCENT) {
+            return Ascended.Refused("this run does not reach the surface within a day")
+        }
+        val ambient = ambientAt(metres, density, surface)
+        val held = tissues.ceiling(model.low)
+        if (held > surface && held > firstStop) firstStop = held
+        val factor = gradientFactorAt(ambient, firstStop, surface, model.low, model.high)
+        val allowed = stopFor(depthAt(tissues.ceiling(factor), density, surface), lastStop)
+        val target = if (allowed < metres) allowed else metres
+        val seconds = if (target < metres) {
+            (((metres - target) / metresAMinute) * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
+        } else {
+            SECONDS_IN_MINUTE.toInt()
+        }
+        tissues = tissues.breathing(
+            breathing.mixes[breathed] ?: Gas.AIR,
+            ambient,
+            ambientAt(target, density, surface),
+            seconds.toDouble(),
+        )
+        second += seconds
+        metres = target
+        points += second to metres
+        breathing.richestAt(ambientAt(metres, density, surface))?.let { richest ->
+            if (richest != breathed) {
+                switches += second to richest
+                breathed = richest
+            }
+        }
+    }
+    return Ascended.Done(points, switches)
+}
+
+/**
+ * The depth an ascent may come up to, in metres: the ceiling rounded to the threes a diver counts
+ * in, and never shallower than [lastStop] while anything is owed at all.
+ */
+private fun stopFor(ceiling: Double, lastStop: Double): Double {
+    if (ceiling <= 0) return 0.0
+    val stop = kotlin.math.ceil(ceiling / STOP_STEP) * STOP_STEP
+    return if (stop < lastStop) lastStop else stop
+}
+
 /** Model is what a profile says it was worked out with: the name, and the two factors. */
 private class Model(val name: String, val low: Double, val high: Double)
 
@@ -268,7 +373,7 @@ private fun pointsOf(profile: Item): List<Point>? {
  * Immutable.
  */
 private class Breathing(
-    private val mixes: Map<String, Gas>,
+    val mixes: Map<String, Gas>,
     private val switches: List<Pair<Int, String>>,
     /** Litres a minute at the surface, for the sources that say. */
     val rates: Map<String, Double>,
@@ -282,6 +387,19 @@ private class Breathing(
 
     /** What is in the source breathed at [second], and air where the source does not say. */
     fun mixAt(second: Int): Gas = mixes[keyAt(second)] ?: Gas.AIR
+
+    /**
+     * The source worth breathing at [ambient] bar: the richest whose oxygen stays within what a
+     * diver plans to, or null where none of them does.
+     *
+     * Richest rather than nearest, because that is what a deco gas is carried for. Helium breaks
+     * no tie: two mixes of one oxygen fraction are as good as each other here, and the one written
+     * first is taken.
+     */
+    fun richestAt(ambient: Double): String? = mixes.entries
+        .filter { it.value.fractionO2 * ambient <= MOST_OXYGEN }
+        .maxByOrNull { it.value.fractionO2 }
+        ?.key
 }
 
 /** Fill is what a cylinder was filled to, in bar of gauge pressure, and the litres it holds. */
@@ -388,3 +506,9 @@ private const val BUHLMANN = "buhlmann"
 private const val MOST_OXYGEN = 1.6
 
 private const val SECONDS_IN_MINUTE = 60.0
+
+/** The step a stop is taken on, in metres: three, six, nine, as a diver counts them. */
+private const val STOP_STEP = 3.0
+
+/** How long an ascent may take before it is called one that does not come up. */
+private const val LONGEST_ASCENT = 24 * 60 * 60

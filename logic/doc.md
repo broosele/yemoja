@@ -458,19 +458,6 @@ To settle when we discuss architecture and features:
    that `DATA-50` gives the result somewhere to go: a derived value that cannot be worked
    out is *unusable*, not absent, and a cycle is always a mistake worth reporting rather
    than quietly surviving. Relocated from `DATA-17`.
-- **LOGIC-35 — How a plan's ascent is produced, and what asks for it.** A plan holds its depths
-   out to the surface, stops included, so nothing interprets one with a parameter it does not
-   carry. Somebody has to put those points there, and working out where a stop goes is
-   decompression arithmetic rather than a screen's business.
-
-   Open: what the operation looks like, what it takes — an ascent rate, a last stop depth, a
-   rounding — and whether those are settings beside `default_gf_low` or answered each time it is
-   asked for. `DATA-57` in [../data/doc.md](../data/doc.md) settles what it writes; this is who
-   does the writing.
-
-   A generated ascent is frozen once written, which is the cost of storing the profile rather
-   than the recipe: change a gas afterwards and the stops do not move. Evaluating the plan says
-   so immediately, and that is how it is meant to be found.
 - **LOGIC-4 — State and lifetime.** Is this layer a stateless set of operations over the data
    layer, or does it hold a live in-memory logbook that UIs observe? Which layer holds
    the loaded items is settled — the data layer does, as an `ItemSet`, see `DATA-20`
@@ -486,6 +473,34 @@ To settle when we discuss architecture and features:
    race, so *live* costs only what it costs to hold, not what it costs to protect.
 
 ## Settled
+
+- **LOGIC-35 — How a plan's ascent is produced, and what asks for it.** *Settled:*
+  **`completeAscent(profile, metresAMinute, lastStop)`, beside `evaluate`, handing back the points
+  to write.**
+
+  Where a stop goes is decompression arithmetic, so it is worked out here rather than in a screen,
+  and three front ends do not each grow their own. What comes back is plain: a second and a depth
+  for each point the ascent passes or holds, and a second and a gas source key for each switch.
+  Turning those into fields is the caller's, a change to an item being the Universe's business
+  rather than the model's.
+
+  **The rate and the last stop are asked for rather than stored.** They describe the moment the
+  ascent was written, not the plan, and nothing reads them again: the plan holds the points, so it
+  means the same thing to everything that reads it afterwards. Their defaults belong beside
+  `default_gf_low` in settings, which is owed once a screen asks for one.
+
+  **Stops go on the threes a diver counts in**, and a run owing any takes its shallowest where it
+  was asked to. The gas at each depth is the richest of the run's own sources whose oxygen stays
+  within 1.6 bar, which is what a deco cylinder is carried for and what a planner is expected to
+  do without being told twice.
+
+  **A generated ascent is frozen**, which is the cost of storing the profile rather than the
+  recipe: change a gas afterwards and the stops do not move. Evaluating the plan says so at once,
+  and that is how it is meant to be found — visibly, rather than by a schedule quietly rewriting
+  itself under somebody who changed nothing.
+
+  Refused for whatever `evaluate` refuses, and for a run that will not reach the surface within a
+  day. Built in `Evaluation.kt`.
 
 - **LOGIC-37 — What the model is asked, and what it answers.** *Settled:* **`evaluate(profile)`,
   a service beside the Universe, answering for a plan and a recording alike and storing nothing.**
@@ -533,7 +548,7 @@ To settle when we discuss architecture and features:
 
   Absent so far, and deliberately: CNS and OTU, which need the oxygen tables and are a piece of
   their own, and no flight and desaturation times, which are the tissues at the end read further.
-  `LOGIC-35` still owes the operation that writes an ascent into a plan.
+  `LOGIC-35` beside this one writes the ascent a plan needs before it can be evaluated at all.
 
   Built in `Evaluation.kt`, over `Decompression.kt`.
 
