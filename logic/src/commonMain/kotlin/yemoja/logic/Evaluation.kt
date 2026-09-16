@@ -46,6 +46,12 @@ sealed class Evaluated {
         val noDecompressionTime: Series,
         /** What the compartments hold at the end, which is what the next dive starts from. */
         val surfacing: Tissues,
+        /** How much of the oxygen clocks the run has spent, as a percentage and a count. */
+        val oxygen: OxygenClock,
+        /** The central nervous system's clock through the run, as a percentage. */
+        val cns: Series,
+        /** Oxygen tolerance units taken through the run, which is a count and not a percentage. */
+        val otu: Series,
         /**
          * The gas each source gives up, in litres at the surface, under the key it sits under.
          *
@@ -126,26 +132,23 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated {
     val carried = carriedInto(profile, surface, seen)
     if (carried is Carried.Refused) return Evaluated.Refused(carried.reason)
 
-    return walked(
-        depths,
-        breathed,
-        (carried as Carried.Tissues).tissues,
-        model,
-        density,
-        surface,
-    )
+    return walked(depths, breathed, carried as Carried.From, model, density, surface)
 }
 
 /** The walk itself, once everything it needs has been found. */
 private fun walked(
     depths: List<Point>,
     breathing: Breathing,
-    carried: Tissues,
+    carried: Carried.From,
     model: Model,
     density: Double,
     surface: Double,
 ): Evaluated.Done {
-    var tissues = carried
+    var tissues = carried.tissues
+    var oxygen = carried.oxygen
+    val breathedCns = ArrayList<Double>()
+    val breathedOtu = ArrayList<Double>()
+    var burnt = false
     var firstStop = 0.0
     val seconds = ArrayList<Int>()
     val ceilings = ArrayList<Double>()
@@ -173,6 +176,12 @@ private fun walked(
             breathing.rates[key]?.let { rate ->
                 used[key] = (used[key] ?: 0.0) + rate * minutes * (was + ambient) / 2
             }
+            val fraction = breathing.mixAt(before.second).fractionO2
+            oxygen = oxygen.breathing(
+                was * fraction,
+                ambient * fraction,
+                (point.second - before.second).toDouble(),
+            )
         }
         val held = tissues.ceiling(model.low)
         if (held > surface && held > firstStop) firstStop = held
@@ -191,6 +200,16 @@ private fun walked(
             if (left <= 0 && dry.add(key)) {
                 findings += Finding(point.second, Severity.WARNING, "$key is empty by here")
             }
+        }
+        breathedCns += oxygen.percentCns
+        breathedOtu += oxygen.otu
+        if (oxygen.percentCns > WHOLE_CLOCK && !burnt) {
+            findings += Finding(
+                point.second,
+                Severity.WARNING,
+                "the whole of the oxygen clock is spent by here",
+            )
+            burnt = true
         }
         // One finding a crossing, not one a sample: a diver who stays above the ceiling for ten
         // minutes has made one mistake, and ten lines of it would bury the rest.
@@ -219,6 +238,9 @@ private fun walked(
         seriesOf(seconds, ceilings),
         seriesOf(limits.map { it.first }, limits.map { it.second }),
         tissues,
+        oxygen,
+        seriesOf(seconds, breathedCns),
+        seriesOf(seconds, breathedOtu),
         used,
         gauges.mapValues { (_, left) -> seriesOf(seconds, left) },
         findings.sortedBy { it.second },
@@ -338,7 +360,7 @@ private class Point(val second: Int, val metres: Double)
 
 /** Carried is what the tissues hold when a run begins, or why that cannot be worked out. */
 private sealed class Carried {
-    class Tissues(val tissues: yemoja.logic.Tissues) : Carried()
+    class From(val tissues: Tissues, val oxygen: OxygenClock) : Carried()
     class Refused(val reason: String) : Carried()
 }
 
@@ -459,7 +481,7 @@ private fun carriedInto(profile: Item, surface: Double, seen: Set<Item>): Carrie
     val before = profile.read("previous_profile")
     if (before is Result.Unusable) return Carried.Refused("the run before this one: ${before.reason}")
     val named = (before as? Result.Usable)?.value as? KeyReference
-        ?: return Carried.Tissues(Tissues.saturated(surface))
+        ?: return Carried.From(Tissues.saturated(surface), OxygenClock.CLEAR)
     val id = named.id ?: return Carried.Refused("the run before this one names no dive")
     val dive = profile.set[id] ?: return Carried.Refused("$id is not in this logbook")
     val earlier = ((dive.keyed<OwnedItem>("profiles") as? Result.Usable)?.value.orEmpty())
@@ -470,8 +492,15 @@ private fun carriedInto(profile: Item, surface: Double, seen: Set<Item>): Carrie
 
     return when (val ran = evaluated(earlier, seen + profile)) {
         is Evaluated.Refused -> Carried.Refused("the run before this one: ${ran.reason}")
-        is Evaluated.Done ->
-            Carried.Tissues(ran.surfacing.breathing(Gas.AIR, surface, surface, interval))
+        is Evaluated.Done -> Carried.From(
+            ran.surfacing.breathing(Gas.AIR, surface, surface, interval),
+            // The clock runs backwards on the surface, which is what a surface interval is for.
+            ran.oxygen.breathing(
+                surface * Gas.AIR.fractionO2,
+                surface * Gas.AIR.fractionO2,
+                interval,
+            ),
+        )
     }
 }
 
@@ -506,6 +535,9 @@ private const val BUHLMANN = "buhlmann"
 private const val MOST_OXYGEN = 1.6
 
 private const val SECONDS_IN_MINUTE = 60.0
+
+/** The whole of the central nervous system's single-exposure limit, as a percentage. */
+private const val WHOLE_CLOCK = 100.0
 
 /** The step a stop is taken on, in metres: three, six, nine, as a diver counts them. */
 private const val STOP_STEP = 3.0

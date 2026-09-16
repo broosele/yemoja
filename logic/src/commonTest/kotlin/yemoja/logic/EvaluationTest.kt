@@ -230,6 +230,45 @@ class EvaluationTest {
     }
 
     @Test
+    fun `the oxygen clocks run while the dive does, and faster on a richer mix`() {
+        val air = done(planned(SHALLOW))
+        val nitrox = done(
+            planned(
+                """"gas_switches": [[0, "*g1"]], $SHALLOW""",
+                sources = """"g1": {"gas_type": "EAN50"}""",
+            ),
+        )
+
+        assertEquals(values(air.cns).size, air.ceiling.size, "one reading a sample")
+        assertTrue(nitrox.oxygen.percentCns > air.oxygen.percentCns, "${nitrox.oxygen}")
+        assertTrue(nitrox.oxygen.otu > air.oxygen.otu, "${nitrox.oxygen}")
+        assertTrue(values(air.cns).zipWithNext().all { (before, after) -> after >= before })
+    }
+
+    @Test
+    fun `a dive shallow enough on air spends nothing of the clock`() {
+        val evaluated = done(planned(""""depth": [[0, 3], [1800, 3]]"""))
+
+        assertEquals(0.0, evaluated.oxygen.percentCns)
+        assertEquals(0.0, evaluated.oxygen.otu)
+    }
+
+    @Test
+    fun `a surface interval gives the clock back, and the tissues keep their gas`() {
+        val second = done(repetitive(""""previous_profile": "@first#0*a", """))
+        val alone = done(planned(DEEP))
+
+        assertTrue(
+            second.oxygen.percentCns > values(alone.cns).last(),
+            "an hour of surface gives back some of the clock, not all of it: ${second.oxygen}",
+        )
+        assertTrue(
+            second.oxygen.percentCns < 2 * values(alone.cns).last(),
+            "and two dives' worth would be more than this: ${second.oxygen}",
+        )
+    }
+
+    @Test
     fun `an ascent written into a plan is one the model then approves of`() {
         val bottom = """"depth": [[0, 0], [90, 40], [1800, 40]]"""
         val ascent = assertIs<Ascended.Done>(completeAscent(planned(bottom), 9.0, 3.0))

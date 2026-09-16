@@ -474,6 +474,28 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-38 — What the oxygen clocks are worked out from.** *Settled:* **the published
+  single-exposure limits for the central nervous system, and the unit pulmonary toxic dose for the
+  lungs.** Two numbers, because they are two risks: a percentage of what one exposure allows, and
+  a count of what the lungs have taken.
+
+  The limits are read straight across between the pressures they are published at, so 1.05 bar
+  allows the 270 minutes that sit between 1.0's three hundred and 1.1's two hundred and forty.
+  Below the lowest of them nothing is spent at all. **Above the highest the rate stops falling
+  rather than being invented**: the table ends at 1.6 bar because that is as far as anybody is
+  willing to say, and an evaluation already raises a finding at that pressure, which is more use
+  than a made-up number past it.
+
+  **The clock runs backwards on the surface**, halving what it holds every ninety minutes, which
+  is what makes a second dive's figure less than two firsts. The lungs' count does not: it is a
+  dose taken, and a surface interval does not untake it.
+
+  Nothing here is stored, as nothing the model says is. A recording's own `cns` and `otu` are what
+  its computer said, kept as recorded, and the two answers sit beside each other — `LOGIC-6`'s rule
+  for `deco`, applied to the clocks.
+
+  Built in `Oxygen.kt`, and sampled through a run by `Evaluation.kt`.
+
 - **LOGIC-35 — How a plan's ascent is produced, and what asks for it.** *Settled:*
   **`completeAscent(profile, metresAMinute, lastStop)`, beside `evaluate`, handing back the points
   to write.**
@@ -546,9 +568,12 @@ To settle when we discuss architecture and features:
   **Oxygen is checked against 1.6 bar**, the figure agencies teach for a stop and the one a gas is
   chosen against. Over it is a finding rather than a refusal, once per crossing like the ceiling.
 
-  Absent so far, and deliberately: CNS and OTU, which need the oxygen tables and are a piece of
-  their own, and no flight and desaturation times, which are the tissues at the end read further.
-  `LOGIC-35` beside this one writes the ascent a plan needs before it can be evaluated at all.
+  **The oxygen clocks run beside the compartments**, sampled the same way and given back as a
+  percentage and a count. `LOGIC-38` is what they are worked out from.
+
+  Absent so far, and deliberately: no flight and desaturation times, which are the tissues at the
+  end read further. `LOGIC-35` beside this one writes the ascent a plan needs before it can be
+  evaluated at all.
 
   Built in `Evaluation.kt`, over `Decompression.kt`.
 

@@ -66,9 +66,13 @@ them.
 
   It brings no type of its own: `DATA-57` in [data/doc.md](data/doc.md) settles that a plan is a
   profile marked `planned`, which is the same shape as a recording and compares against one.
-  The model is built — `LOGIC-3`, Bühlmann ZH-L16C — and the profile carries what a plan needs.
-  What is owed is the service that evaluates one, the operation that writes an ascent
-  (`LOGIC-35`), and the screens.
+
+  *Built, less the screens:* Bühlmann ZH-L16C (`LOGIC-3`), the profile fields a plan needs, and
+  two operations over them — `evaluate`, which says what a run costs in ceiling, time left, gas
+  and findings, and `completeAscent`, which writes the way out of one (`LOGIC-37`, `LOGIC-35`).
+  A plan can be written by hand today and answered for; what is owed is somewhere to do it, the
+  oxygen clocks, and the safety wording in the manual and the licence, which still say this
+  application does not plan.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
   — the dive and its recording — and how far it goes is under *What is built* in
