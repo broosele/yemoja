@@ -458,6 +458,19 @@ To settle when we discuss architecture and features:
    that `DATA-50` gives the result somewhere to go: a derived value that cannot be worked
    out is *unusable*, not absent, and a cycle is always a mistake worth reporting rather
    than quietly surviving. Relocated from `DATA-17`.
+- **LOGIC-35 — How a plan's ascent is produced, and what asks for it.** A plan holds its depths
+   out to the surface, stops included, so nothing interprets one with a parameter it does not
+   carry. Somebody has to put those points there, and working out where a stop goes is
+   decompression arithmetic rather than a screen's business.
+
+   Open: what the operation looks like, what it takes — an ascent rate, a last stop depth, a
+   rounding — and whether those are settings beside `default_gf_low` or answered each time it is
+   asked for. `DATA-57` in [../data/doc.md](../data/doc.md) settles what it writes; this is who
+   does the writing.
+
+   A generated ascent is frozen once written, which is the cost of storing the profile rather
+   than the recipe: change a gas afterwards and the stops do not move. Evaluating the plan says
+   so immediately, and that is how it is meant to be found.
 - **LOGIC-4 — State and lifetime.** Is this layer a stateless set of operations over the data
    layer, or does it hold a live in-memory logbook that UIs observe? Which layer holds
    the loaded items is settled — the data layer does, as an `ItemSet`, see `DATA-20`

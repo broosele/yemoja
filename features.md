@@ -62,8 +62,13 @@ them.
 - **FEAT-6 — Dive planning with decompression.** Carries the safety obligation recorded
   in [logic/doc.md](logic/doc.md). Moved here from *Core*: logging what you did
   and planning what you will do are separate jobs, and a logbook that cannot plan is
-  still a logbook. It also brings a whole item type with it — a plan keeps its own
-  inputs — which is `DATA-57` in [data/doc.md](data/doc.md).
+  still a logbook.
+
+  It brings no type of its own: `DATA-57` in [data/doc.md](data/doc.md) settles that a plan is a
+  profile marked `planned`, which is the same shape as a recording and compares against one.
+  The model is built — `LOGIC-3`, Bühlmann ZH-L16C — and the profile carries what a plan needs.
+  What is owed is the service that evaluates one, the operation that writes an ascent
+  (`LOGIC-35`), and the screens.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
   — the dive and its recording — and how far it goes is under *What is built* in

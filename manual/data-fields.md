@@ -129,6 +129,10 @@ All five can be corrected where the working out is wrong.
 
 - `name` (text, worked out) — the dive's date and its number within that day, as
   `2026-02-23#0`. This is what a dive is listed and linked as.
+- `planned` (true or false, worked out) — whether this dive is still ahead of you. True where the
+  dive holds profiles and every one of them is a plan; false the moment a recording arrives beside
+  them, and false for a dive with no profile at all, which is how a dive typed out of a paper
+  logbook reads.
 - `dive_number` (whole number) — your own numbering, if you keep one. Not every diver
   numbers every dive, and Yemoja does not require it. This is unrelated to the number at
   the end of the item's id.
@@ -276,9 +280,15 @@ own; this is what you took on one particular dive and how it served you.
 
 #### Profile
 
-What a dive computer recorded, one entry for each computer you dived with. A dive with
-two computers has two profiles, and `primary_profile` on the dive says which to work
+One run through the dive: what a dive computer recorded, or what you intend to do. A dive
+with two computers has two profiles, and `primary_profile` on the dive says which to work
 from.
+
+**A plan is a profile with `planned` set.** It is written the same way and read the same
+way, because it is the same thing said in advance: depths against time, the gas you will
+breathe, and how conservative you want to be. What a decompression model makes of either is
+worked out when you ask and never stored, so a plan and the recording of the dive you made
+from it sit side by side and can be compared.
 
 Every series below is a list of pairs — a time and a value — and the time is **seconds
 since the profile started**, always, whatever the file says about other units. Between
@@ -296,6 +306,8 @@ that is the only record of it.
 }
 ```
 
+- `planned` (true or false) — whether this is a dive you intend rather than one you made.
+  Leave it out for a recording, which is what every profile without it is.
 - `dive_computer` (reference, worked out) — the gear item that recorded it. From `serial`:
   the gear item carrying the same serial is the computer. Write it yourself to say otherwise,
   or to name one you borrowed and keep no item for, which a plain name does.
@@ -351,6 +363,9 @@ that is the only record of it.
   the gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
   figure on it. Nothing is worked out where `water_type` is not written, which is the case for
   a recording imported from UDDF. Write it in yourself if you know better.
+- `atmospheric_pressure` (number, worked out) — the air above this run, **absolute**, taken from
+  the dive's own. Write it on a plan made before you know what the day will bring, or where two
+  plans for one dive assume different days.
 - `deco_model` (text) — which decompression model the computer was running: `buhlmann`,
   `vpm`, `rgbm` or `dciem`. Anything you like, since a maker may use something else.
 - `gradient_factor_low`, `gradient_factor_high` (number) — how conservative a Bühlmann
@@ -415,6 +430,16 @@ that is the only record of it.
   and the depth you were at. A stretch in which you switched to another cylinder is left out,
   and so is one whose cylinder has no `volume`. Nothing is worked out without pressures, and
   nothing is stored.
+- `gas_sources` (keyed owned items) — the cylinders this run uses, where they are its own rather
+  than the dive's.
+
+  **A plan keeps its own, and a recording never does.** One dive was breathed once however many
+  computers watched it, so every recording shares the dive's; but two plans for the same dive
+  are free to assume different mixes, different fills and different cylinders, and each keeps
+  what it assumes.
+
+  A profile that keeps none names the dive's, which is what `gas_switches` and `pressures` do on
+  every recording. A profile that keeps its own names those instead, through the same fields.
 - `remarks` (multiline text) — anything about the recording itself: a computer you
   do not trust, a transmitter that dropped out.
 
@@ -459,6 +484,9 @@ One entry for each cylinder you breathed from on the dive, so a dive on several 
 keeps them apart. They are not in any order of their own: which you went in on is in the
 profile's `gas_switches`, not in where the entry happens to sit.
 
+A plan keeps entries of the same shape for the cylinders it assumes, under its own
+`gas_sources`. Everything below is written the same way there.
+
 - `gas_type` (gas) — what was in it: `AIR`, `EAN32`, `TMX18/35`.
 - `start_pressure` (number) — what the gauge read as you went in.
 
@@ -487,7 +515,8 @@ profile's `gas_switches`, not in where the entry happens to sit.
 - `sac` (number, worked out) — how much gas you breathed from this source, as litres a minute at
   the surface's pressure, over the time you were breathing it. Taken from the primary profile's
   `sac`, and counting a long stretch for more than a short one. Write it yourself where there is
-  no recording with pressures to give one.
+  no recording with pressures to give one. On a plan it is always yours to write, and it is what
+  the gas a plan needs is worked out from.
 
   **What went in is an ideal gas.** A cylinder's drop in bar times its volume is taken as the
   gas it gave; a real gas at 200 bar holds a few percent more, which is not corrected for. Where

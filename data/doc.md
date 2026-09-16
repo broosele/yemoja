@@ -904,18 +904,36 @@ To settle when we discuss architecture:
   of support* in [../logic/reconciliation.md](../logic/reconciliation.md), which also
   notes that UDDF's own versions differ enough for "match their representation" to need a
   version named.
-- **DATA-57 — Whether a dive plan is an item, and what it holds.** A plan keeps the
-  inputs it was made with — gases, depths, times, and the gradient factors fixed at the
-  moment it was made — so that changing a preference later does not silently rewrite it.
-  Nothing in the model holds those. There are nine item types and none of them is a plan.
 
-  Open: whether a plan is a tenth type, or something owned by a dive, or not stored at all
-  and merely printed. What settles it is whether a plan outlives the screen it was made
-  on — a plan you keep to compare against what you actually did is an item; a plan you
-  read off and forget is not. `FEAT-6` is *Planned* rather than *Core*, so nothing waits
-  on this, but the gradient-factor defaults in `manual/settings.md` already assume a plan
-  remembers its own.
 ## Settled and relocated
+
+- **DATA-57 — Whether a dive plan is an item, and what it holds.** *Settled:* **a plan is a
+  profile, under `profiles` on a dive, marked `planned`.** No tenth type, and no type of its
+  own beside the profile.
+
+  A plan keeps the inputs it was made with — the depths against time, the gases, and the
+  gradient factors fixed at the moment it was made — so that changing a preference later does
+  not rewrite it. A recording keeps what a device wrote. Those are the same fields, and what a
+  decompression model says about either is worked out when asked and never stored, so the two
+  are one type and the flag says which claim the series make.
+
+  **A plan's depths run to the surface**, a recording's having always done so. The ascent and
+  the stops are written into the series rather than derived from an ascent rate, so nothing
+  interprets a stored profile with a parameter that is not in it. What produces those points is
+  an authoring action and `LOGIC-35`'s business, not the file's.
+
+  **A plan keeps gas sources of its own**, which its `gas_switches` and its `pressures` then
+  name. The dive's are what was breathed, shared by every recording of one dive; two plans for
+  that dive are free to assume different mixes and fills. `JSON-19` roots a key reference at the
+  nearest collection of that name, which is what lets one field read both.
+
+  **A dive is `planned` where it holds profiles and every one is a plan.** A dive with no
+  profile at all was made, which is how a dive typed out of a paper logbook reads, and a
+  recording arriving beside the plans is the evidence it happened.
+
+  What settled it was that a plan outlives the screen it was made on: it is kept to compare
+  against what was actually done, and a download lands the recording on the dive the plan is
+  already on.
 
 - **DATA-86 — What supplies files, and where it lands.** *Settled:* **Okio, behind a
   four-method interface**, so the library is named in one file and nothing above it knows

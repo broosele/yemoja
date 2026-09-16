@@ -1,0 +1,98 @@
+{
+  "dive_site": "@windlass_wreck",
+  "buddies": [
+    "@jacques_cousteau"
+  ],
+  "primary_profile": "*a",
+  "details": {
+    "tags": [
+      "wreck",
+      "planned"
+    ]
+  },
+  "environment": {
+    "atmospheric_pressure": 1.013
+  },
+  "profiles": {
+    "a": {
+      "planned": true,
+      "start_date": "2026-10-03",
+      "start_time": "10:00:00",
+      "water_type": "salt",
+      "deco_model": "buhlmann",
+      "gradient_factor_low": 0.3,
+      "gradient_factor_high": 0.75,
+      "depth": [
+        [0, 0],
+        [150, 40],
+        [1200, 40],
+        [1327, 21],
+        [1387, 12],
+        [1447, 12],
+        [1467, 9],
+        [1587, 9],
+        [1607, 6],
+        [1847, 6],
+        [1867, 3],
+        [2407, 3],
+        [2427, 0]
+      ],
+      "gas_switches": [
+        [0, "*g1"],
+        [1327, "*g2"]
+      ],
+      "gas_sources": {
+        "g1": {
+          "gas_type": "EAN28",
+          "start_pressure": 230,
+          "usage": "bottom",
+          "configuration": "back mounted",
+          "cylinder": "@steel_12",
+          "sac": 18
+        },
+        "g2": {
+          "gas_type": "EAN50",
+          "start_pressure": 200,
+          "usage": "deco",
+          "configuration": "staged",
+          "volume": 7,
+          "sac": 14
+        }
+      },
+      "remarks": "Twenty minutes on the wreck, deco gas from 21 metres."
+    },
+    "b": {
+      "planned": true,
+      "start_date": "2026-10-03",
+      "start_time": "10:00:00",
+      "water_type": "salt",
+      "deco_model": "buhlmann",
+      "gradient_factor_low": 0.4,
+      "gradient_factor_high": 0.85,
+      "atmospheric_pressure": 0.995,
+      "depth": [
+        [0, 0],
+        [120, 30],
+        [1500, 30],
+        [1700, 5],
+        [1880, 5],
+        [1920, 0]
+      ],
+      "gas_switches": [
+        [0, "*g1"]
+      ],
+      "gas_sources": {
+        "g1": {
+          "gas_type": "EAN32",
+          "start_pressure": 230,
+          "usage": "bottom",
+          "configuration": "back mounted",
+          "cylinder": "@steel_12",
+          "sac": 18
+        }
+      },
+      "remarks": "If the forecast holds and the swell keeps us off the wreck: the reef alongside it, no stops."
+    }
+  },
+  "remarks": "Not dived yet. Two plans, and which we take depends on the swell."
+}

@@ -1,8 +1,9 @@
 # The cousteau fixture
 
-A complete logbook: 20 dives, 11 people, 10 dive sites, 12 gear items, 3 regions, 1
-certification, 5 operators, 6 trips and 2 wrecks. All of it is invented except the two
-wrecks, which are real ships — see *Real data, deliberately* below.
+A complete logbook: 21 dives, one of them not yet made, 11 people, 10 dive sites, 12 gear
+items, 3 regions, 1 certification, 5 operators, 6 trips and 2 wrecks. All of it is
+invented except the two wrecks, which are real ships — see *Real data, deliberately*
+below.
 
 It exists to be a *realistic whole* rather than a minimal case, so that anything reading
 a logbook can be pointed at it. Narrower fixtures should be added beside it for
@@ -156,7 +157,7 @@ Each of these is here because it is awkward, not because it is typical.
 
 **Recordings**
 
-Two dives carry profiles, and the other eighteen deliberately do not — a logbook where
+Three dives carry profiles, and the other eighteen deliberately do not — a logbook where
 every dive came off a computer would not be one anybody has.
 
 - `2025-05-30#2` is the simple case: **one profile, so no `primary_profile`**, since there
@@ -191,6 +192,27 @@ every dive came off a computer would not be one anybody has.
   kind, its computer having been borrowed — which is the ordinary case, since only a
   download or a careful user fills those in. Neither carries a `conservatism`: gradient
   factors and a dial position are alternatives, and this computer offers the first.
+
+**A dive not yet made**
+
+`2026-10-03#0` holds two plans and no recording, so the dive itself reads as `planned`. It is
+the only dive here that has not happened, and it is what anything counting dives has to leave
+out.
+
+- Both profiles set `planned`, and `primary_profile` names `*a`, so the dive's date, depth and
+  duration are the main plan's. A plan naming a primary is not the awkward case `2026-06-21#0`
+  is: there are two, and one of them is the intention.
+- Each plan keeps **gas sources of its own**, which is what the dive's own `gas_sources` being
+  absent shows. `a` carries two, a bottom mix and a deco mix switched to at 21 metres, and its
+  `gas_switches` name entries of its own collection rather than the dive's. `b` carries one.
+- `a`'s `g1` names `@steel_12` and takes its volume from it, while `g2` writes a `volume` for a
+  stage nobody here owns an item for. Both write a `sac`, which is what the gas a plan needs is
+  worked out from and what no recording of a dive not yet made could supply.
+- `b` writes an `atmospheric_pressure` of its own where the dive says 1.013, because it is a
+  plan for another day. That is the only place in this fixture where a profile overrides it.
+- Both plans run their depths to the surface, stops included. `a` holds a 40-metre bottom and
+  four stops; `b` holds a 30-metre bottom and none, being the shallow alternative for a day
+  with swell.
 
   The gas sources are `g1`, back-mounted trimix, and `g2`, a staged deco mix. `pressures`
   holds a series under each of those keys, `gas_switches` points at the second with `*g2`,

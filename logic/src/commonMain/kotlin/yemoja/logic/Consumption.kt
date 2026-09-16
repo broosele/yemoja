@@ -47,15 +47,14 @@ internal class Stretch(
  * figure a diver compares against corrects for either.
  */
 internal fun stretchesOf(profile: Item): List<Stretch> {
-    val dive = (profile as? OwnedItem)?.parent ?: return emptyList()
-    val sources = entriesOf(dive, "gas_sources")
+    val sources = profile.rootOf("gas_sources")?.let { entriesOf(it, "gas_sources") }
+        ?: return emptyList()
     val depth = (profile.read("depth") as? Result.Usable)?.value as? Series ?: return emptyList()
     val switches = (profile.read("gas_switches") as? Result.Usable)?.value as? Series
     val held = (profile.keyedSeries<Double>("pressures") as? Result.Usable)?.value.orEmpty()
     val breathing = breathingOf(switches, sources.keys)
     val water = (profile.single<Double>("density") as? Result.Usable)?.value ?: NOMINAL_DENSITY
-    val surface = (dive.single<OwnedItem>("environment") as? Result.Usable)?.value
-        ?.let { (it.single<Double>("atmospheric_pressure") as? Result.Usable)?.value }
+    val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
         ?: SEA_LEVEL
     val out = ArrayList<Stretch>()
     for ((key, entry) in held) {
@@ -102,10 +101,17 @@ internal fun profilesSac(profile: Item): Result<Any> {
  * `LOGIC-33`.
  */
 internal fun sourcesSac(source: Item): Result<Any> {
-    val dive = (source as? OwnedItem)?.parent ?: return Result.Absent
-    val key = entriesOf(dive, "gas_sources").entries.firstOrNull { it.value === source }?.key
+    val owner = (source as? OwnedItem)?.parent ?: return Result.Absent
+    val key = entriesOf(owner, "gas_sources").entries.firstOrNull { it.value === source }?.key
         ?: return Result.Absent
-    val profile = (primaryProfile(dive) as? Result.Usable)?.value ?: return Result.Absent
+    // A source a profile keeps is that profile's, and a dive's is read from the recording it is
+    // worked from. A plan's own has no pressures behind it, so nothing is worked out and what the
+    // user wrote stands.
+    val profile = if (owner.description == Types.DIVE) {
+        (primaryProfile(owner) as? Result.Usable)?.value ?: return Result.Absent
+    } else {
+        owner
+    }
     val mine = stretchesOf(profile).filter { it.key == key }
     if (mine.isEmpty()) return Result.Absent
     val litres = mine.sumOf { it.litres }

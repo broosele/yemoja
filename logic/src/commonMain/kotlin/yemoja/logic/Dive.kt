@@ -144,14 +144,70 @@ private val ALARMS = setOf(
 /** The models a dive computer may be running, as libdivecomputer names them. */
 private val DECO_MODELS = setOf("buhlmann", "vpm", "rgbm", "dciem")
 
+/** Anything is allowed; these are the ones the manual names. */
+private val GAS_USAGES = setOf("bottom", "stage", "deco", "travel")
+
+/** Anything is allowed; these are the ones the manual names. */
+private val GAS_CONFIGURATIONS = setOf("back mounted", "sidemount", "pony", "staged")
+
 /**
- * Profile is one recording through a dive, under a key on that dive.
+ * GasSource is one thing breathed from on a dive, under a key on that dive or on one of its
+ * profiles.
+ *
+ * A dive's are what was breathed, and every recording of that dive shares them. A profile keeps
+ * its own only where it is a plan, two plans for one dive being free to assume different gases.
+ *
+ * Absent so far: nothing of its own.
+ */
+private val GAS_SOURCE = ItemDescription(
+    "gas_source",
+    listOf(
+        GasDescription("gas_type"),
+        NumberDescription("start_pressure", Dimension.PRESSURE),
+        NumberDescription("end_pressure", Dimension.PRESSURE),
+        TextDescription("usage", suggestedSet = GAS_USAGES),
+        TextDescription("configuration", suggestedSet = GAS_CONFIGURATIONS),
+        // Left out where what was breathed from is nobody's item.
+        ReferenceDescription("cylinder", targetType = "gear"),
+        // From the cylinder's own `capacity`, and written by hand where no cylinder is named
+        // or the one dived was not the one recorded.
+        NumberDescription(
+            "volume",
+            Dimension.VOLUME,
+            role = Role.Overrideable(::cylindersVolume),
+        ),
+        // Litres a minute at the surface over the time this source was breathed, from the primary
+        // recording's; written by hand where there is no recording to give one, which is every
+        // source a plan holds. `LOGIC-33`.
+        NumberDescription(
+            "sac",
+            Dimension.FLOW,
+            label = "SAC",
+            role = Role.Overrideable(::sourcesSac),
+        ),
+        REMARKS,
+    ),
+    proposedId = ::gasSourcesProposedKey,
+)
+
+/**
+ * Profile is one run through a dive, under a key on that dive: what a computer recorded, or what
+ * somebody intends.
+ *
+ * The two are one type because they are the same shape. A plan's depths run to the surface as a
+ * recording's do, and what a decompression model says about either is worked out when it is asked
+ * for and never stored. What a plan holds that a recording does not is its own gas sources; what a
+ * recording holds that a plan does not is everything a device wrote.
  *
  * Absent so far: nothing of its own.
  */
 private val PROFILE = ItemDescription(
     "profile",
     listOf(
+        // Whether the series below are what is intended rather than what happened. Absent is a
+        // recording: every profile written before plans existed is one, and a dive is one that was
+        // made unless something says otherwise.
+        BooleanDescription("planned"),
         // Worked out from the serial: the gear item carrying it. Written where the user says
         // otherwise, or names a computer they keep no item for. `LOGIC-23`.
         ReferenceDescription(
@@ -188,6 +244,14 @@ private val PROFILE = ItemDescription(
             "density",
             Dimension.DENSITY,
             role = Role.Overrideable(::profilesDensity),
+        ),
+        // The dive's, and written here where this run is at a pressure of its own: a plan is often
+        // made before anybody knows what the day will bring, and two plans may assume different
+        // days. Absolute, as the dive's is.
+        NumberDescription(
+            "atmospheric_pressure",
+            Dimension.PRESSURE,
+            role = Role.Overrideable(::profilesAtmosphericPressure),
         ),
         // What `decostop` and `no_deco_time` were computed with. Suggested rather than fixed: a
         // maker may run something none of the four names, and nothing exports this to a closed
@@ -254,10 +318,28 @@ private val PROFILE = ItemDescription(
             cardinality = Cardinality.SERIES,
             role = Role.Derived(::profilesSac),
         ),
+        // A plan's own cylinders, which its switches and its pressures then name instead of the
+        // dive's. `JSON-19`. A recording keeps none: one dive was breathed once, however many
+        // computers watched it.
+        OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
         REMARKS,
     ),
     proposedId = ::profilesProposedKey,
 )
+
+/**
+ * The pressure of the air above this run, from the dive it belongs to.
+ *
+ * Absent where the dive says nothing, which is where a plan is most likely to write its own.
+ */
+private fun profilesAtmosphericPressure(profile: Item): Result<Any> {
+    val dive = (profile as? OwnedItem)?.parent ?: return Result.Absent
+    val environment = (dive.single<OwnedItem>("environment") as? Result.Usable)?.value
+        ?: return Result.Absent
+    val pressure = environment.single<Double>("atmospheric_pressure") as? Result.Usable
+        ?: return Result.Absent
+    return Result.Usable(pressure.value, Result.Origin.DERIVED)
+}
 
 /** When the last sample was taken, in local time, or absent where there is none. */
 private fun ended(profile: Item): Moment? {
@@ -343,47 +425,6 @@ private const val SALT = "salt"
 /** What salt water weighs where nothing says otherwise, which is the usual figure. */
 private const val USUAL_SALT = 1030.0
 
-/** Anything is allowed; these are the ones the manual names. */
-private val GAS_USAGES = setOf("bottom", "stage", "deco", "travel")
-
-/** Anything is allowed; these are the ones the manual names. */
-private val GAS_CONFIGURATIONS = setOf("back mounted", "sidemount", "pony", "staged")
-
-/**
- * GasSource is one thing breathed from on a dive, under a key on that dive.
- *
- * Absent so far: nothing of its own.
- */
-private val GAS_SOURCE = ItemDescription(
-    "gas_source",
-    listOf(
-        GasDescription("gas_type"),
-        NumberDescription("start_pressure", Dimension.PRESSURE),
-        NumberDescription("end_pressure", Dimension.PRESSURE),
-        TextDescription("usage", suggestedSet = GAS_USAGES),
-        TextDescription("configuration", suggestedSet = GAS_CONFIGURATIONS),
-        // Left out where what was breathed from is nobody's item.
-        ReferenceDescription("cylinder", targetType = "gear"),
-        // From the cylinder's own `capacity`, and written by hand where no cylinder is named
-        // or the one dived was not the one recorded.
-        NumberDescription(
-            "volume",
-            Dimension.VOLUME,
-            role = Role.Overrideable(::cylindersVolume),
-        ),
-        // Litres a minute at the surface over the time this source was breathed, from the primary
-        // recording's; written by hand where there is no recording to give one. `LOGIC-33`.
-        NumberDescription(
-            "sac",
-            Dimension.FLOW,
-            label = "SAC",
-            role = Role.Overrideable(::sourcesSac),
-        ),
-        REMARKS,
-    ),
-    proposedId = ::gasSourcesProposedKey,
-)
-
 /**
  * What a cylinder holds, from the `capacity` of the gear item it names.
  *
@@ -440,6 +481,9 @@ internal val DIVE: ItemDescription = ItemDescription(
         // The id, which is what a dive is listed and linked as. Not correctable: writing
         // one would be renaming the dive, which the Universe does with its references.
         TextDescription("name", role = Role.Derived(::divesId)),
+        // Whether this dive is still ahead: it holds profiles and every one of them is a plan.
+        // What counts dives leaves it out, and so does what leaves the logbook.
+        BooleanDescription("planned", role = Role.Derived(::divesPlanned)),
         // The user's own numbering, which nothing renumbers. Not every diver keeps one.
         WholeNumberDescription("dive_number"),
         // All five from the primary profile, in GMT, and all five correctable: the computer
@@ -645,6 +689,27 @@ private fun divesDeco(dive: Item): Result<Any> = fromProfile(dive) { profile ->
         left.dropWhile { it <= 0.0 }.all { it > 0.0 } -> Result.Usable(false, Result.Origin.DERIVED)
         else -> Result.Usable(true, Result.Origin.DERIVED)
     }
+}
+
+/**
+ * Whether a dive is one nobody has made yet.
+ *
+ * True where it holds profiles and every one of them is a plan. A dive with no profile at all was
+ * made — one typed out of a paper logbook is the ordinary case — and so is one carrying a
+ * recording beside its plans, the recording being the evidence.
+ *
+ * A profile that cannot be read says nothing, so it is not a plan, and the dive is one that
+ * happened. The safe answer in a figure is the dive that counts.
+ */
+private fun divesPlanned(dive: Item): Result<Any> {
+    val profiles = dive.keyed<OwnedItem>("profiles") as? Result.Usable
+        ?: return Result.Usable(false, Result.Origin.DERIVED)
+    if (profiles.value.isEmpty()) return Result.Usable(false, Result.Origin.DERIVED)
+    val planned = profiles.value.values.all { entry ->
+        val profile = (entry as? Element.Usable)?.value
+        profile != null && (profile.single<Boolean>("planned") as? Result.Usable)?.value == true
+    }
+    return Result.Usable(planned, Result.Origin.DERIVED)
 }
 
 /**
