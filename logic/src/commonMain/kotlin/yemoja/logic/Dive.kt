@@ -663,9 +663,10 @@ private fun buddyCount(dive: Item): Result<Any> {
  * How long the user was out of the water before a dive, in seconds.
  *
  * From `previous_dive`'s end to this dive's start, each taken off its own local time by its
- * `time_zone_offset`, which is what makes it right when two dives sit in different zones. **Absent where no previous dive is named**: whether
- * a surface interval was long enough to ignore is a judgement, and any threshold deciding it
- * would be wrong for somebody.
+ * `time_zone_offset`, which is what makes it right when two dives sit in different zones.
+ *
+ * **Absent where no previous dive is named**: whether a surface interval was long enough to
+ * ignore is a judgement, and any threshold deciding it would be wrong for somebody.
  */
 private fun surfaceInterval(dive: Item): Result<Any> {
     val named = dive.single<Reference>("previous_dive") as? Result.Usable ?: return Result.Absent
