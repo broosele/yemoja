@@ -542,6 +542,13 @@ To settle when we discuss architecture and features:
   breathed, a chain that comes back on itself, a run before with no surface interval to cross.
   Each is a sentence a user can act on, and a dive off a depth gauge earns the first of them.
 
+  **A refusal says which kind it is**, unasked or faulty, because a screen has to tell them
+  apart. Most recordings say nothing about the model they were made with, so a window showing
+  every refusal would put a red line under nearly every dive meaning only *nobody asked* — and a
+  reader who learns to skip it skips the cycle somebody made by hand, or the run holding two
+  cylinders with nothing saying which was breathed. Those are faults in what was written and are
+  worth saying wherever they are found. `GUI-40` is the rule the window applies to the two.
+
   **The factors are the profile's own and never a preference.** `manual/settings.md` promises that
   changing what a new plan starts with moves nothing already recorded, and reading
   `default_gf_low` here would break that promise for every dive at once. Where the air above the
@@ -578,6 +585,14 @@ To settle when we discuss architecture and features:
   state at all today, and `LOGIC-4` has not settled whether it should. Two caches for one answer
   would be worse than either, so this is written down rather than left to be decided twice. A
   second caller wanting one reopens it.
+
+  **What it costs was measured, and the guess would have been wrong.** A four-thousand-sample
+  recording at thirty metres costs about 10 ms. The same profile at ten metres cost 84 ms, because
+  a run owing no stop asks for a no-decompression limit at every sample and the search walked
+  towards a limit of hours a minute at a time — so the cheap-looking dive was the dear one. It now
+  leaps eight minutes and steps through only the sweep the crossing falls in, which is the same
+  answer to the second and brings the shallow case to 23.5 ms. `EvaluationCostTest` prints the
+  figures rather than asserting them, a time being a property of the machine it ran on.
 
   **Two waits come from the tissues at the end.** How long before flying, which is the wait until
   the ceiling allows the 0.7565 bar an aircraft's cabin is held to — a cabin being an altitude, and

@@ -83,8 +83,24 @@ sealed class Evaluated {
         val findings: List<Finding>,
     ) : Evaluated()
 
-    /** Refused is nothing worked out, and why. */
-    data class Refused(val reason: String) : Evaluated()
+    /** Refused is nothing worked out, why, and whether the why is somebody's mistake. */
+    data class Refused(val reason: String, val why: Refusal) : Evaluated()
+}
+
+/**
+ * Refusal is why the model has nothing to say about a run.
+ *
+ * The two are not the same silence, and a screen treats them differently: most recordings say
+ * nothing about the model they were made with, so saying so under each of them would only train a
+ * reader to ignore the place where a real fault appears.
+ */
+enum class Refusal {
+
+    /** Nothing here asks for an answer. A recording with no gradient factors is not a question. */
+    UNASKED,
+
+    /** What is written says something wrong, and somebody can put it right. */
+    FAULTY,
 }
 
 /**
@@ -125,25 +141,36 @@ enum class Severity {
 fun evaluate(profile: Item): Evaluated = evaluated(profile, emptySet())
 
 private fun evaluated(profile: Item, seen: Set<Item>): Evaluated {
-    if (profile in seen) return Evaluated.Refused("this run carries gas from itself")
+    if (profile in seen) {
+        return Evaluated.Refused("this run carries gas from itself", Refusal.FAULTY)
+    }
     val model = modelOf(profile) ?: return Evaluated.Refused(
-        "nothing says what model this run was worked out with, or how conservative it was"
+        "nothing says what model this run was worked out with, or how conservative it was",
+        Refusal.UNASKED,
     )
     if (model.name != BUHLMANN) {
-        return Evaluated.Refused("${model.name} is not the model built here, which is $BUHLMANN")
+        return Evaluated.Refused(
+            "${model.name} is not the model built here, which is $BUHLMANN",
+            Refusal.UNASKED,
+        )
     }
     val density = (profile.single<Double>("density") as? Result.Usable)?.value
         ?: return Evaluated.Refused(
-            "nothing says what water this run was in, so its depths are not pressures"
+            "nothing says what water this run was in, so its depths are not pressures",
+            Refusal.UNASKED,
         )
     val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
         ?: SEA_LEVEL
-    val depths = pointsOf(profile) ?: return Evaluated.Refused("this run holds no depths")
+    val depths = pointsOf(profile)
+        ?: return Evaluated.Refused("this run holds no depths", Refusal.UNASKED)
+    // A run holding cylinders and saying nothing about which was breathed is a gap somebody can
+    // close, unlike a recording that simply says nothing about the model.
     val breathed = breathedBy(profile) ?: return Evaluated.Refused(
-        "nothing says what was breathed on this run"
+        "nothing says what was breathed on this run",
+        Refusal.FAULTY,
     )
     val carried = carriedInto(profile, surface, seen)
-    if (carried is Carried.Refused) return Evaluated.Refused(carried.reason)
+    if (carried is Carried.Refused) return Evaluated.Refused(carried.reason, Refusal.FAULTY)
 
     return walked(depths, breathed, carried as Carried.From, model, density, surface)
 }

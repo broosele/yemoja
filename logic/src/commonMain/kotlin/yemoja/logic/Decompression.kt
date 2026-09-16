@@ -115,14 +115,41 @@ class Tissues private constructor(
         var reached = this
         var elapsed = 0.0
         while (elapsed < LONGEST_SEARCH) {
-            val next = reached.breathing(gas, ambient, ambient, STEP)
-            if (next.ceiling(gradientFactor) > surface) {
-                return elapsed + reached.crossing(gas, ambient, surface, gradientFactor)
+            val swept = reached.breathing(gas, ambient, ambient, SWEEP)
+            if (swept.ceiling(gradientFactor) > surface) {
+                return elapsed + reached.crossingIn(gas, ambient, surface, gradientFactor)
             }
-            reached = next
-            elapsed += STEP
+            reached = swept
+            elapsed += SWEEP
         }
         return null
+    }
+
+    /**
+     * Where inside one sweep the ceiling passes [surface], in seconds from these tissues.
+     *
+     * Minute by minute to find which one it happens in, and then to the second inside that. The
+     * sweep before it is what keeps a shallow dive cheap: a limit of hours is found in tens of
+     * steps rather than hundreds, and no crossing can hide inside a sweep, a compartment at a
+     * steady depth moving one way throughout.
+     */
+    private fun crossingIn(
+        gas: Gas,
+        ambient: Double,
+        surface: Double,
+        gradientFactor: Double,
+    ): Double {
+        var walked = this
+        var at = 0.0
+        while (at < SWEEP) {
+            val next = walked.breathing(gas, ambient, ambient, STEP)
+            if (next.ceiling(gradientFactor) > surface) {
+                return at + walked.crossing(gas, ambient, surface, gradientFactor)
+            }
+            walked = next
+            at += STEP
+        }
+        return at
     }
 
     /**
@@ -327,3 +354,6 @@ private const val SETTLED = 0.01
 
 /** How coarsely that search steps before it narrows down to the second. */
 private const val STEP = SECONDS_IN_MINUTE
+
+/** How far it leaps while nothing has happened, in seconds, before stepping through a sweep. */
+private const val SWEEP = 8 * STEP
