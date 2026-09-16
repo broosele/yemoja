@@ -11,8 +11,9 @@ yourself, whatever becomes of the app.
 ## Known bugs and limitations
 
 - **There is no undo.** Every change is written to your files the moment it is saved.
-- **No decompression model runs yet.** What a dive's graph shows is what your computer
-  recorded; see [decompression.md](decompression.md).
+- **Nothing shows what the decompression model works out, and nowhere writes a plan.**
+  The model runs and will answer for any profile, but no screen asks it yet: what a dive's
+  graph shows is what your computer recorded. See [decompression.md](decompression.md).
 - **The settings files are not read yet**; see [settings.md](settings.md).
 - **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.
 - **Locations cannot add or delete a site** from the window.

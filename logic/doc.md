@@ -571,6 +571,14 @@ To settle when we discuss architecture and features:
   **The oxygen clocks run beside the compartments**, sampled the same way and given back as a
   percentage and a count. `LOGIC-38` is what they are worked out from.
 
+  **Whatever holds an answer holds it in the front end.** An evaluation is far heavier than a
+  derived field — a walk of the whole profile with a search at each sample — so a screen asking on
+  every repaint needs one kept. It is kept where the window already keeps what it works out,
+  against the edition that moves when anything is saved, rather than here: this layer holds no
+  state at all today, and `LOGIC-4` has not settled whether it should. Two caches for one answer
+  would be worse than either, so this is written down rather than left to be decided twice. A
+  second caller wanting one reopens it.
+
   **Two waits come from the tissues at the end.** How long before flying, which is the wait until
   the ceiling allows the 0.7565 bar an aircraft's cabin is held to — a cabin being an altitude, and
   altitude being something this model has always handled. And how long until the compartments come
