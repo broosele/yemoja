@@ -121,12 +121,16 @@ import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.logic.divecomputer.DiveComputer
+import yemoja.logic.Ascended
 import yemoja.logic.Change
+import yemoja.logic.Evaluated
 import yemoja.logic.Import
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import yemoja.logic.completeAscent
+import yemoja.logic.evaluate
 
 /*
  * The application's screens, which are one definition for both form factors.
@@ -2380,8 +2384,16 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
         Spacer(modifier = Modifier.height(HALF))
         // A recording is drawn before it is read: the graph is what it is for.
         val entry = entries[at].second
-        if (depthLinesOf(entry).isNotEmpty()) ProfileGraph(item, entry)
+        val drawn = depthLinesOf(entry).isNotEmpty()
+        // What the model says is worked out once a run or an edit, never once a repaint: it walks
+        // the whole profile and searches at every sample. `LOGIC-37`.
+        val evaluated = if (!drawn) null else {
+            val edition = LocalChanger.current.edition
+            remember(entry, edition) { evaluate(entry) }
+        }
+        if (drawn) ProfileGraph(item, entry, evaluated as? Evaluated.Done)
         Fields(entry, onFollow)
+        if (evaluated != null) WorkedOut(item, entry, evaluated, onFollow)
     }
 }
 
@@ -2567,6 +2579,82 @@ private fun Stars(rating: Int) {
     }
 }
 
+// --- What the model makes of a run. `GUI-40`.
+
+/**
+ * What the model says about a run, under its fields: the figures it works out, what it objects to,
+ * and on a plan the way out of it.
+ *
+ * **A recording it cannot answer for says nothing**, since most cannot: a computer that wrote no
+ * gradient factors leaves nothing to work from, and a red line under every dive in the logbook
+ * would say only that the model was not asked. A plan says why, because a plan exists to be
+ * answered and one that cannot be is a plan with something missing.
+ */
+@Composable
+private fun WorkedOut(dive: Item, profile: Item, evaluated: Evaluated, onFollow: (String) -> Unit) {
+    val planned = isPlanned(profile)
+    when (evaluated) {
+        is Evaluated.Refused -> refusedSaidOf(evaluated, planned)?.let { Field(it, onFollow) }
+        is Evaluated.Done -> {
+            for (figure in workedFiguresOf(dive, profile, evaluated)) Field(figure, onFollow)
+            for (finding in findingsSaidOf(evaluated)) Field(finding, onFollow)
+        }
+    }
+    if (planned) Ascent(profile)
+}
+
+/**
+ * The way out of a plan, asked for and written into it.
+ *
+ * What it assumes is on the button rather than behind it: a rate to rise at and a depth to take
+ * the shallowest stop at, which are arguments rather than anything stored. Choosing them waits on
+ * the settings a screen would read, `LOGIC-35`.
+ *
+ * Writing it changes the plan, so the graph above redraws with the stops in it and the model is
+ * asked again — which is how a reader sees that what was written is what the model now approves
+ * of.
+ */
+@Composable
+private fun Ascent(profile: Item) {
+    val changer = LocalChanger.current
+    var said by remember(profile) { mutableStateOf<String?>(null) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = HALF),
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(modifier = Modifier.width(LABEL))
+        Button(
+            onClick = {
+                said = when (val worked = completeAscent(profile, ASCENT_RATE, LAST_STOP)) {
+                    is Ascended.Refused -> worked.reason
+                    is Ascended.Done -> {
+                        val changes = ascentWrittenTo(profile, worked)
+                        when {
+                            changes.isEmpty() -> "this run is already at the surface"
+                            else -> (changer.change(changes) as? Outcome.Refused)?.reason
+                        }
+                    }
+                }
+            },
+        ) {
+            Text("Write the way up")
+        }
+        Text(
+            text = said ?: "rising at $ASCENT_RATE m a minute, shallowest stop at $LAST_STOP m",
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (said == null) MaterialTheme.colorScheme.outline
+            else MaterialTheme.colorScheme.error,
+        )
+    }
+}
+
+/** How fast an ascent rises, in metres a minute, until a setting says otherwise. */
+private const val ASCENT_RATE = 9.0
+
+/** How deep the shallowest stop is taken, in metres, until a setting says otherwise. */
+private const val LAST_STOP = 3.0
+
 // --- The graph of a recording. `GUI-4`.
 
 /**
@@ -2574,10 +2662,17 @@ private fun Stars(rating: Int) {
  * a box of what it wrote.
  */
 @Composable
-private fun ProfileGraph(dive: Item, profile: Item) {
-    val depth = remember(profile) { depthLinesOf(profile) }
-    val planned = (profile.single<Boolean>("planned") as? Result.Usable)?.value == true
-    val overlays = remember(dive, profile) { overlaysOf(dive, profile) }
+private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?) {
+    // The ceiling is a depth, so it goes on the depth axis: the gap between it and the line a
+    // diver swam is what a reader is looking at. `GUI-40`.
+    val depth = remember(profile, evaluated) {
+        depthLinesOf(profile) + listOfNotNull(evaluated?.let { ceilingLineOf(it) })
+    }
+    val planned = isPlanned(profile)
+    val overlays = remember(dive, profile, evaluated) {
+        overlaysOf(dive, profile) +
+            evaluated?.let { workedOverlaysOf(dive, profile, it) }.orEmpty()
+    }
     val events = remember(dive, profile) { eventsOf(dive, profile) }
     var picked by remember(profile) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }

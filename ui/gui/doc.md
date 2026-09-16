@@ -375,6 +375,49 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-40 — Where what the model says appears, and how a plan is written.** *Settled:*
+  **under the run it is about, in the box that already holds it, and a plan carries a button that
+  writes its way up.**
+
+  A run is a recording or a plan and the window draws either, so the model's answer belongs where
+  the run is rather than in a screen of its own. `LOGIC-37` answers for both alike.
+
+  **The ceiling goes on the depth axis**, not the right one: it is a depth, and what a reader
+  looks at is the gap between it and the line that was swum. `Chart` already draws a second line
+  there with the water above it shaded, which is what a deco stop uses, so a ceiling took no new
+  drawing. It is left out where the run owes no stop, a flat line along the surface saying only
+  that the graph has another line in it.
+
+  **Everything else the model works out is a right-axis overlay, and each says it was worked
+  out.** A recording may carry its computer's own beside it, and the two disagree on purpose:
+  `manual/decompression.md` tells a reader the device decided at the time with settings this
+  cannot reproduce. *NDL worked out* beside *NDL* is the difference stated where it is read.
+
+  **The figures and the findings read as fields.** What a run costs, the clocks and the two waits
+  are shown as worked-out values under the run's own fields, and each finding is a line labelled
+  with the minute it happened at, in the error colour. A finding is a value that would not read,
+  in the sense `GUI-8` already gives the phrase: something here is wrong and the reason is the
+  useful part.
+
+  **A recording the model cannot answer for says nothing; a plan says why.** Most recordings
+  carry no gradient factors, so a refusal under each would put a red line under nearly every dive
+  in the logbook meaning only *the model was not asked* — and a reader who learns to skip that
+  line skips the one that matters. `LOGIC-37`'s refusals carry which kind they are, so a fault in
+  what somebody wrote is shown wherever it is found and an absence is shown only on a plan, where
+  something its writer meant to supply is missing.
+
+  **Worked out once per run per edition**, held by `remember` against the Changer's count. That is
+  `LOGIC-37`'s cache, in the window because the logic layer holds no state and `LOGIC-4` has not
+  settled whether it should. The cost was measured rather than assumed: a four-thousand-sample
+  recording costs about 10 ms, and the same profile at ten metres cost 84 ms until the search
+  behind it was made to leap, which it now does — 23.5 ms. A dive opens in a frame and a half,
+  once.
+
+  **What the ascent assumes is on the button, not behind it**: the rate it rises at and the depth
+  of the shallowest stop, which `LOGIC-35` takes as arguments rather than storing. They are
+  constants until there is a settings screen to read a preference from, and the row says what they
+  are, so nothing about the way up is worked out from something a reader cannot see.
+
 - **GUI-9 — Whether a statistic says what it left out.** *Settled:* a statistic is
   shown with the items behind it, both the number used and the number there were —
   "total time underwater: 210 hours (248/253 dives)". The reader sees the sample and

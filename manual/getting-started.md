@@ -105,6 +105,28 @@ chosen from its title: the temperature, a cylinder's pressure,
 the no-decompression time as **NDL**, and oxygen loading as CNS and OTU. Gas switches are marked
 with the gas moved to, and alarms with red triangles.
 
+**What Yemoja's own model makes of it sits under the graph**, where it can be worked out: how deep
+the stops would start, what each cylinder gives up and ends at, the oxygen clocks, how long before
+you may fly, and how long before it is out of you. Anything it objects to — going above the
+ceiling, a cylinder that runs dry, a mix too rich for the depth it is breathed at — is listed in
+red with the minute it happened at, and the ceiling itself is drawn over the graph with the water
+above it shaded. Its own NDL and clocks can be chosen on the right-hand axis, each marked *worked
+out* so you can tell them from what your computer recorded.
+
+Most recordings say nothing about it, and then nothing is shown: a computer has to have written
+down which gradient factors it was running before the model can say anything at all.
+
+**A plan carries a button that writes its way up.** Fill in the depths as far as the bottom, and
+*Write the way up* adds the ascent, its stops and its gas switches to the profile, rising at 9
+metres a minute with the shallowest stop at 3. What it wrote is then part of the plan like
+anything you typed, so changing a gas afterwards does not move the stops — ask the model again and
+it will tell you they no longer hold. A plan that cannot be answered for says why, which is
+usually that nobody has written its gradient factors in.
+
+Making a plan means adding a profile to a dive in the form and setting `planned` to true.
+[decompression.md](decompression.md) explains what the model does, what it assumes, and what it
+cannot know.
+
 ## Changing things
 
 **The pencil** on a card turns it into a form. **Save** writes what you changed, and is greyed

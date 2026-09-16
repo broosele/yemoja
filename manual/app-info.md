@@ -11,9 +11,11 @@ yourself, whatever becomes of the app.
 ## Known bugs and limitations
 
 - **There is no undo.** Every change is written to your files the moment it is saved.
-- **Nothing shows what the decompression model works out, and nowhere writes a plan.**
-  The model runs and will answer for any profile, but no screen asks it yet: what a dive's
-  graph shows is what your computer recorded. See [decompression.md](decompression.md).
+- **A plan cannot be started from nothing.** What the model works out is shown under each
+  recording and each plan, and a plan can be given its ascent — but making one means adding a
+  profile in the edit form and marking it `planned` by hand. The rate it rises at and the depth
+  of its shallowest stop are fixed at 9 m a minute and 3 m until the settings files are read.
+  See [decompression.md](decompression.md).
 - **The settings files are not read yet**; see [settings.md](settings.md).
 - **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.
 - **Locations cannot add or delete a site** from the window.
