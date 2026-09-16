@@ -45,8 +45,10 @@ particular purpose and non-infringement. In no event shall the copyright holder 
 liable for any claim, damages or other liability, whether in an action of contract,
 tort or otherwise, arising from, out of or in connection with the software or its use.
 
-This bears saying plainly for a diving application: Yemoja is a logbook and an aid to
-understanding dives already made. It is not dive planning software, it is not a dive
-computer, and it has been certified as neither. Any decompression figure it shows is
-one model's estimate of a past dive. Diving is dangerous, and responsibility for your
+This bears saying plainly for a diving application: Yemoja is a logbook, with an aid to
+understanding dives already made and to planning dives not yet made. It is not a dive
+computer, and it has been certified neither as one nor as planning software. Any
+decompression figure it shows, including every figure in a plan, is one model's estimate
+and may be wrong. The copyright holder accepts no responsibility for any dive planned,
+made or judged with the software's help. Diving is dangerous, and responsibility for your
 dives is yours alone.

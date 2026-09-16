@@ -27,16 +27,20 @@ loss or corruption of your logbook.
 
 This matters more than usual for a diving application, so plainly:
 
-Yemoja is a logbook, and an aid to understanding dives you have already made. It
-is not dive-planning software, it is not a dive computer, and it has been neither
-certified nor validated as either.
+Yemoja is a logbook, with an aid to understanding dives you have already made and
+to planning dives you have not. It is not a dive computer, and it has been neither
+certified nor validated as one, nor as planning software.
 
-The decompression figures it shows are what your computer recorded, and any it
-works out in future will be one model's estimate, computed from a recording after the
-fact. Such figures will differ from what your computer told you at the time, and they
-may be wrong. Never plan a dive from them, never carry them
-into the water, and never let them override your training, your computer, your
-tables, or your own judgement.
+Its decompression figures are of two kinds, and both may be wrong. What your
+computer recorded is what that device said at the time. What Yemoja works out is
+one model's estimate, computed from a recording after the fact or from the
+assumptions a plan was given, and it will differ from what a dive computer says.
+
+You use them at your own risk, and the author accepts no responsibility for any
+dive planned, made or judged with their help. Check a plan against your training
+and your tables. Never carry one into the water as the thing you follow, and never
+let any of it override your training, your computer, your tables, or your own
+judgement.
 
 Diving is dangerous. Responsibility for your dives is yours alone.
 

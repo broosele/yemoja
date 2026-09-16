@@ -1,13 +1,18 @@
 # The decompression model
 
 What a decompression model says about a dive: how loaded your tissues were, how shallow you
-could have gone at any moment, and how long you had before stops became necessary.
+could have gone at any moment, and how long you had before stops became necessary. It says the
+same about a dive you have not made yet, which is what planning one is.
 
 ## What Yemoja shows today
 
-**Yemoja does not run a decompression model yet.** Nothing in it works out tissue loading, a
-ceiling or a no-decompression limit of its own. What you see on a dive's graph is what your
-dive computer recorded at the time:
+Yemoja runs Bühlmann ZH-L16C, and will answer for any profile carrying gradient factors and a
+water type: what the ceiling was at each moment, how much longer you could have stayed, how much
+gas each cylinder gave up, what the oxygen clocks reached, how long before you may fly, and what
+it thinks you did wrong. The same questions, asked of a plan, are a dive plan.
+
+**There is no screen for any of it yet.** What you see on a dive's graph is still what your dive
+computer recorded at the time:
 
 - the **NDL** on the graph's right axis is your computer's own no-decompression time;
 - the **stepped line** is the stop your computer set, and the water above it is shaded red
@@ -15,27 +20,31 @@ dive computer recorded at the time:
 - whether a dive was a **decompression dive** is read off those same two recordings, as
   [data-fields.md](data-fields.md) explains under `deco`.
 
-The rest of this chapter explains the model a later version is meant to run, so that the
-figures make sense when they arrive and so that what your computer recorded can be understood
-now.
+The two answers will sit beside each other rather than one replacing the other. Your computer
+decided at the time, with you in the water and with settings this application cannot reproduce;
+Yemoja's is a second opinion arrived at afterwards, and both are honest answers to different
+questions.
 
 ## What this is, and what it is not
 
-A model's figures are arithmetic performed on a recording, after the fact. They are offered so
-you can look at a dive you have already done and understand it better.
+A model's figures are arithmetic. On a recording they are worked out after the fact; on a plan
+they are worked out from assumptions you supplied about a dive that has not happened.
 
-**It is not dive planning software, it is not a dive computer, and it has been neither
-certified nor validated as either.** The figures are one model's estimate. They will
-disagree with what your computer told you at the time, sometimes considerably, and they
-may simply be wrong.
+**It is not a dive computer, and it has been neither certified nor validated as one, nor as
+planning software.** The figures are one model's estimate. They will disagree with what a dive
+computer says, sometimes considerably, and they may simply be wrong. A plan is only as good as
+what you told it, and no dive follows its plan exactly.
 
-Never plan a dive from them. Never take them into the water. Never let them override
-your training, your computer, your tables or your own judgement.
+**You use all of it entirely at your own risk.** No one involved in making Yemoja accepts any
+responsibility for a dive planned, made or judged with its help, or for anything that follows from
+one. Check a plan against your training and your tables before you rely on it. Never carry one
+into the water as the thing you follow: your dive computer and your own judgement decide the dive,
+and nothing here overrides either, or your training, or your tables.
 
-Nothing a model computes will be stored in your logbook. It is to be worked out when you ask
-and forgotten afterwards, so a later version of Yemoja that calculates differently will
-change what you see. That is deliberate: the recording is the fact, and the model is
-only an opinion about it.
+Nothing the model computes is stored in your logbook. A plan keeps what you entered and never the
+answer, which is worked out again whenever you look, so a later version of Yemoja that calculates
+differently will change what you see — for a plan as much as for a recording. That is deliberate:
+what you recorded or entered is the fact, and the model is only an opinion about it.
 
 ## Why decompression happens
 
@@ -187,6 +196,39 @@ being an option.
 It is not a countdown to danger. It is the boundary between an ascent you may make at
 your own pace and one the model wants you to interrupt.
 
+## Planning a dive
+
+A plan is a profile you write instead of one your computer wrote: the depths against time, the
+cylinders you will take, and how conservative you want to be. It sits on a dive like a recording
+does, and [data-fields.md](data-fields.md) lists every field of one under *Profile*.
+
+**What you write is the dive itself, stops and all.** A plan's depths run to the surface, so it
+holds the descent, the bottom, the ascent and every stop as ordinary points. You can ask Yemoja to
+work the ascent out and write it in for you, giving it a rate to rise at and a depth to take the
+shallowest stop at; it puts the stops on the threes divers count in and moves you to the richest
+gas each depth allows.
+
+**An ascent written that way is then fixed, like anything else you wrote.** Change a gas or a
+gradient factor afterwards and the stops do not move by themselves — but asking the model about the
+plan again will tell you at once that they no longer hold. That is the trade for a plan that means
+the same thing every time it is read, rather than a schedule quietly rewriting itself.
+
+Asked about a plan, the model answers what it answers about any dive: the ceiling throughout, the
+time left before stops become necessary, the gas each cylinder gives up and what its gauge would
+read, the two oxygen clocks, how long before you may fly, and a list of what it objects to — going
+above the ceiling, a cylinder that runs out, a mix too rich for the depth it is breathed at.
+
+**Planning a second dive of the day** means telling the plan which earlier run you are carrying
+gas from. Point it at the plan you intend to follow, and the model carries your tissues across the
+surface interval into it. Two plans for the morning are two things that might happen, so the
+afternoon's plan says which of them it assumes — and you can keep a chain of plans beside the
+chain of dives you actually made.
+
+**What it costs in gas** comes from the SAC rate you write on each cylinder: how fast you breathe,
+in litres a minute at the surface. That is a guess about yourself, and the better your guess the
+better the answer. Your own past dives are where to get it, since Yemoja works one out from every
+recording that has cylinder pressures in it.
+
 ## What the model does not know
 
 The model is a description of gas moving through an idealised body. Yours is not one,
@@ -203,6 +245,9 @@ and it knows nothing about:
   and dives it has not been told about are simply absent.
 - **Whether the recording is right.** A depth reading that drifted, a gap in the data,
   the wrong gas — the arithmetic will proceed regardless and give a confident answer.
+- **Whether a plan will be followed.** It answers for the dive you wrote down, not the one you
+  make, and the two differ the moment anything does: the current, the cold, a buddy's gas, a
+  cylinder filled to less than you assumed.
 
 Decompression models are estimates fitted to what has happened to other people. Two
 divers with identical profiles can have different outcomes, and the model has nothing
