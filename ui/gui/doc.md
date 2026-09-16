@@ -461,6 +461,12 @@ once and corrected. The numbers stay unused rather than being given to something
   to read or write a file or to run a command are refused, every time, so the tools are the only
   way to the logbook. `API-5`.
 
+  **An agent asks permission for the tools it was given as well as for its own, and only the
+  second kind is refused.** The protocol makes no distinction between the two, so an agent that is
+  turned down for everything is turned down for `describe` and answers nothing at all. A refusal a
+  reader sees is therefore always the agent reaching past the logbook for the machine, which is
+  what makes it worth saying aloud.
+
   **The panel sits beside whichever tab is showing** and stays open while the user moves between
   tabs, so a dive the agent names can be opened while the conversation carries on. It holds the
   choice of agent, the conversation, and two boxes that are off at the start of every
@@ -496,7 +502,8 @@ once and corrected. The numbers stay unused rather than being given to something
   **The window speaks in the conversation too.** An agent that will not start, one that stops part
   way through an answer, and each request of its own that was refused are turns in the same
   column, unattributed and in the outline colour. A refusal is shown once: what an agent was
-  refused only ever grows while it runs, so the panel remembers how many it has said.
+  refused only ever grows while it runs, so the panel remembers how many it has said. They are
+  rare, for the reason above.
 
   What is built is the panel, the hosting behind it and the read-only tools. Staged changes and
   the review of them are not.
