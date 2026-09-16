@@ -133,6 +133,17 @@ All five can be corrected where the working out is wrong.
   dive holds profiles and every one of them is a plan; false the moment a recording arrives beside
   them, and false for a dive with no profile at all, which is how a dive typed out of a paper
   logbook reads.
+
+  **A planned dive is shown, marked and counted nowhere.** It sits in the dive table like any
+  other dive, marked as a plan, and you can open and edit it — but it is left out of your dive
+  count, your hours underwater, the places you have dived and every other total. It is left out of
+  what Yemoja exports as well, since a file handed to another application has no way of saying a
+  dive was only intended.
+
+  Two things it is not left out of. A figure over dives you picked yourself counts what you
+  picked, because you did the picking. And a recording coming off your computer is matched against
+  planned dives like any other, which is how the dive you planned and the dive you made end up in
+  one place.
 - `dive_number` (whole number) — your own numbering, if you keep one. Not every diver
   numbers every dive, and Yemoja does not require it. This is unrelated to the number at
   the end of the item's id.

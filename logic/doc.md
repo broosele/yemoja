@@ -507,11 +507,13 @@ To settle when we discuss architecture and features:
 
   `wasMade` in `Dive.kt` is the one place the question is asked, from the dive's own `planned`.
 
-  **Two halves are owed.** The window counts dives in its greeting, its plot, its year rows and its
-  multi-selection card, and it marks nothing as planned yet. And an export writes every dive: it is
-  to write the ones that were made and say how many plans it left behind, a file handed to another
-  application being unable to say a dive was only intended. The manual describes what a user is
-  shown, so it says none of this until both have landed.
+  **The window says the same.** A plan is a row in the dive table with `plan` where its number
+  would be and a dashed depth line, and the greeting, the statistics, the year rows and what a year
+  chooses when clicked all leave it out. An export writes the dives that were made and says how
+  many plans it left behind, a file handed to another application being unable to say a dive was
+  only intended. `GUI-39` in [../ui/gui/doc.md](../ui/gui/doc.md).
+
+- **LOGIC-3 — Which decompression models to support, and whether the model is pluggable.**
   *Settled:* **Bühlmann ZH-L16C with gradient factors, and only that. Not pluggable.**
 
   Sixteen compartments, the published half-times and coefficients, the Schreiner equation for a

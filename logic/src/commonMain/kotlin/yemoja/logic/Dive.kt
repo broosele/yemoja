@@ -732,12 +732,14 @@ private fun divesDeco(dive: Item): Result<Any> = fromProfile(dive) { profile ->
 }
 
 /**
- * Whether a dive is one that was made, which is what a list of dives gathers and what a figure
- * counts.
+ * Whether a dive is one that was made, which is what a list of dives gathers, what a figure counts
+ * and what a screen shows as diving done.
  *
- * A dive says so itself through `planned`. `LOGIC-36`.
+ * A dive says so itself through `planned`, so this is one reading of one field. It is public
+ * because a front end asks the same question, and two answers to it would be two defaults for a
+ * dive that says nothing. `LOGIC-36`.
  */
-internal fun wasMade(dive: Item): Boolean =
+fun wasMade(dive: Item): Boolean =
     (dive.single<Boolean>("planned") as? Result.Usable)?.value != true
 
 /**
