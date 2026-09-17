@@ -76,7 +76,7 @@ class ToolServerTest {
         val refused = client.callTool("stage_set", mapOf("id" to "2026-06-01#0", "path" to "rating"))
         assertEquals(true, refused.isError)
         val said = (refused.content.single() as TextContent).text
-        assertTrue("allowed to change data" in said, said)
+        assertTrue("Allowed to change data" in said, said)
     }
 
     @Test

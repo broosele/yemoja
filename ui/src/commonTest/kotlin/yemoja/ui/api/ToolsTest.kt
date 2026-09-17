@@ -311,7 +311,7 @@ class StagingToolsTest {
         val tools = Tools(staging())
         val said = reason(tools.stageSet("2026-06-01#0", "rating", "8"))
         assertTrue(said.startsWith("ask the user to tick"), "what to do comes first: $said")
-        assertTrue("allowed to change data" in said, "and says which box: $said")
+        assertTrue("*Allowed to change data*" in said, "and names the box as it is labelled: $said")
         assertTrue(reason(tools.stageDelete("2026-06-01#0")).isNotEmpty())
         assertTrue(reason(tools.stageAdd("dive_site", emptyMap())).isNotEmpty())
         assertTrue(reason(tools.staged()).isNotEmpty())

@@ -77,7 +77,7 @@ internal fun workedFiguresOf(dive: Item, profile: Item, evaluated: Evaluated.Don
     val deepest = pointsOf(evaluated.ceiling).maxOfOrNull { it.value } ?: 0.0
     figures += worked(
         "Stops",
-        if (deepest > 0) "from ${metresSaid(deepest)}" else "none, if it is dived as written",
+        if (deepest > 0) "from ${metresSaid(deepest)}" else "none",
     )
     val sources = sourcesOf(dive, profile)
     for ((key, litres) in evaluated.gasUsed) {
@@ -88,8 +88,8 @@ internal fun workedFiguresOf(dive: Item, profile: Item, evaluated: Evaluated.Don
     }
     figures += worked("CNS", "${evaluated.oxygen.percentCns.toInt()}%")
     figures += worked("OTU", "${evaluated.oxygen.otu.toInt()}")
-    evaluated.noFlight?.let { figures += worked("Before flying", waitSaid(it)) }
-    evaluated.desaturation?.let { figures += worked("Until it is gone", waitSaid(it)) }
+    evaluated.noFlight?.let { figures += worked("No-fly time", waitSaid(it)) }
+    evaluated.desaturation?.let { figures += worked("Desaturation time", waitSaid(it)) }
     return figures
 }
 

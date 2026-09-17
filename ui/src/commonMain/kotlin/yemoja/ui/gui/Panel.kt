@@ -178,7 +178,7 @@ private fun Starting(talk: Talk, conversation: Conversation, scope: CoroutineSco
                 Compact(
                     value = talk.command,
                     onChange = { talk.command = it },
-                    hint = "the command that starts your agent",
+                    hint = "Agent command",
                 )
             }
             Button(
@@ -200,7 +200,7 @@ private fun Starting(talk: Talk, conversation: Conversation, scope: CoroutineSco
 /** What to ask next, and what the agent is allowed to be told while it answers. */
 @Composable
 private fun Asking(talk: Talk, conversation: Conversation, scope: CoroutineScope) {
-    Boxed("Allowed to change data", talk.writing) { talk.writing = it }
+    Boxed("Allow changes", talk.writing) { talk.writing = it }
     Boxed("Include personal details", talk.personal) { talk.personal = it }
     Compact(
         value = talk.question,

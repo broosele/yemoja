@@ -13,7 +13,7 @@ buttons.
 - **New logbook** asks for a folder, and one that does not exist yet may be typed. The new
   logbook comes with what Yemoja ships already in it — the regions of the world, the agencies'
   certifications and a catalogue of generic gear — and nothing of yours. A folder that already holds a logbook is refused rather than written over.
-- **Open a logbook** asks for a folder holding one. A folder with no logbook files in it opens
+- **Open logbook** asks for a folder holding one. A folder with no logbook files in it opens
   as an empty logbook.
 
 The folder can also be named when Yemoja is started, and it then opens straight away.
@@ -48,7 +48,7 @@ the agent below.
 **Statistics** plots your dives. The first box chooses what is drawn:
 
 - **Each dive** is a dot per dive, one figure against another.
-- **How many**, **Total**, **Average**, **Largest** and **Smallest** cut the bottom axis into
+- **Count**, **Total**, **Average**, **Largest** and **Smallest** cut the bottom axis into
   bars and bring the dives in each to one figure.
 - **Running total** adds the dives up in the order you made them.
 
@@ -166,7 +166,7 @@ in the form like anything else.
 
 **The bin** deletes the item, after asking. Anything the item holds goes with it. Where other
 items point at it, the question says how many references will be left pointing at nothing, and
-names where they are when there are only a few; ticking **Clear the references too** takes them
+names where they are when there are only a few; ticking **Also remove references to it** takes them
 out as well. With several dives chosen, the bin deletes them all.
 
 Locations has no + and no bin yet. A new dive site arrives with a download, which offers to name
@@ -195,8 +195,12 @@ stages touches your logbook. The panel says how many items are waiting, and **Re
 them on the home screen, under the other deeds. Each item shows every field it would change, what
 the field holds and what it would hold. If you have edited one of those fields since the agent
 staged it, the row says what it holds now, in red, and that change is left alone when you apply the
-rest. **Discard** any item you do not want, then press **Apply all** or **Discard all**. The
-box starts empty for every conversation, like the other one.
+rest. It stays waiting afterwards, still in red, until you **Discard** it or the agent stages it
+again against what the field holds now. **Discard** any item you do not want, then press
+**Apply all** or **Discard all**. The box starts empty for every conversation, like the other one.
+
+What is waiting is kept in a folder beside your logbook, with `.proposed` after its name, so it
+survives the window being closed. It is not part of your logbook.
 
 **It works beside your logbook, not in it.** An agent writes files of its own as it goes — a note
 of which tools it has been allowed, and whatever else it keeps. Those go in a folder next to your

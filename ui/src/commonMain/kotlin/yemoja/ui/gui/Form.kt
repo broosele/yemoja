@@ -245,7 +245,7 @@ private fun Editor(field: FieldDescription, item: Item, draft: Draft) {
                     TextButton(
                         onClick = { draft.put(item, field.name, textOf(field, stored.value)) },
                     ) {
-                        Text("override")
+                        Text("Override")
                     }
                 }
                 return@Column
@@ -265,7 +265,7 @@ private fun Editor(field: FieldDescription, item: Item, draft: Draft) {
             val overridden = stored is Result.Usable && stored.origin == Result.Origin.OVERRIDDEN
             if (overrideable(field) && (overridden || draft.changed(item, field.name))) {
                 TextButton(onClick = { draft.put(item, field.name, null, null) }) {
-                    Text("revert to what is worked out")
+                    Text("Revert")
                 }
             }
             draft.refusalOf(item, field.name)?.let {
@@ -466,7 +466,7 @@ private fun ListEditor(field: FieldDescription, item: Item, draft: Draft, kind: 
         }
         TextButton(onClick = { put(entries + "") }) {
             Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(GLYPH))
-            Text("add")
+            Text("Add")
         }
     }
 }

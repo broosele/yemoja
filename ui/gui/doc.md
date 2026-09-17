@@ -861,7 +861,7 @@ once and corrected. The numbers stay unused rather than being given to something
   two dives at once, so two recordings that overlap in time are two recordings of one dive,
   which is `Import`'s own rule and wanted only somewhere to be asked. The row says which dive it
   appears to be and offers to put them together; the dive then carries both recordings, keyed by
-  the computer that made each. Put together is offered, never taken: over-eagerness costs a
+  the computer that made each. *Merge* is offered, never taken: over-eagerness costs a
   keystroke and the other button is always there.
 
   **A dive of its own is offered under the number it would take**, one past the highest the
@@ -875,8 +875,8 @@ once and corrected. The numbers stay unused rather than being given to something
   way through is a thing a reader should know happened rather than discover. `LOGIC-25` does the
   gluing before any of it is a dive; this only reports it.
 
-  *All as proposed* does every row as its own button would, for a reader who has read the list
-  and agrees. *Leave them* keeps them staged, where they are found again and where the terminal
+  *Import all* does every row as its own button would, for a reader who has read the list and
+  agrees. *Close* keeps them staged, where they are found again and where the terminal
   front end can review them. Taking in stops at the first refusal and leaves the rest: what is in
   the folder is what has not been decided, `RECON-1`.
 

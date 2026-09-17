@@ -26,7 +26,7 @@ import kotlin.math.pow
  */
 internal enum class Gathering(val label: String, val reads: Boolean, val bars: Boolean) {
     EACH("Each dive", reads = true, bars = false),
-    COUNT("How many", reads = false, bars = true),
+    COUNT("Count", reads = false, bars = true),
     TOTAL("Total", reads = true, bars = true),
     AVERAGE("Average", reads = true, bars = true),
     LARGEST("Largest", reads = true, bars = true),

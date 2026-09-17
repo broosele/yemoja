@@ -223,10 +223,10 @@ internal fun spanOf(seconds: Double): String {
  */
 internal enum class Deed(val label: String) {
     NEW("New logbook"),
-    OPEN("Open a logbook"),
-    IMPORT("Import a logbook"),
+    OPEN("Open logbook"),
+    IMPORT("Import"),
     EXPORT("Export to UDDF"),
-    DOWNLOAD("Download from a computer"),
+    DOWNLOAD("Download from dive computer"),
     AGENT("Ask an agent"),
 }
 

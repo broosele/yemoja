@@ -95,7 +95,7 @@ fun gui(folder: String? = null): Int {
                 },
                 deeds = mapOf(
                     Deed.NEW to {
-                        chosen("Make a new logbook in", "Make")?.let { where ->
+                        chosen("New logbook", "Create")?.let { where ->
                             made(where)?.let {
                                 at = where
                                 held = it
@@ -103,7 +103,7 @@ fun gui(folder: String? = null): Int {
                         }
                     },
                     Deed.OPEN to {
-                        chosen("Open a logbook", "Open")?.let { where ->
+                        chosen("Open logbook", "Open")?.let { where ->
                             opened(where)?.let {
                                 at = where
                                 held = it

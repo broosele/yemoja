@@ -309,7 +309,7 @@ class Tools(
      * on, where *changing data is not allowed* is a thing to be sorry about. `API-5`.
      */
     private fun notWriting(): Reply = refused(
-        "ask the user to tick *allowed to change data* beside the conversation. Until they do, " +
+        "ask the user to tick *Allowed to change data* beside the conversation. Until they do, " +
             "nothing can be staged; once they have, what you stage still waits for them to " +
             "review it.",
     )

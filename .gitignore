@@ -17,11 +17,12 @@ desktop.ini
 __pycache__/
 *.py[cod]
 
-# What the application writes beside a logbook: an import staged for review, and the folder an
-# agent is started in. Both sit next to the logbook rather than inside it, which puts them here
-# when the logbook being worked on is a fixture.
+# What the application writes beside a logbook: an import staged for review, the folder an agent
+# is started in, and a change an agent staged. All sit next to the logbook rather than inside it,
+# which puts them here when the logbook being worked on is a fixture.
 *.import/
 *.agent/
+*.proposed/
 
 # Gradle build output
 .gradle/

@@ -865,18 +865,18 @@ private fun Arrived(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Aside(dive.said)
-                    if (dive.glued > 1) Aside("glued from ${dive.glued} recordings")
-                    dive.ontoSaid?.let { Aside("the same dive as $it, already logged") }
-                    if (dive.held) Aside("already in this logbook, and laid over it")
+                    if (dive.glued > 1) Aside("merged from ${dive.glued} recordings")
+                    dive.ontoSaid?.let { Aside("matches $it, already logged") }
+                    if (dive.held) Aside("already in this logbook, and will be updated")
                     Where(import, dive, changer)
                 }
                 if (dive.onto != null) {
                     Button(onClick = { done(oneIn(import, dive, dive.onto)) }) {
-                        Text("Put together")
+                        Text("Merge")
                     }
                 }
                 TextButton(onClick = { done(oneIn(import, dive, null)) }) {
-                    Text("As dive ${dive.number}")
+                    Text("Import as dive ${dive.number}")
                 }
             }
         }
@@ -885,9 +885,9 @@ private fun Arrived(
             horizontalArrangement = Arrangement.spacedBy(GAP),
         ) {
             Button(onClick = { done(takenIn(import, universe.logbook)) }) {
-                Text("All as proposed")
+                Text("Import all")
             }
-            TextButton(onClick = leave) { Text("Leave them") }
+            TextButton(onClick = leave) { Text("Close") }
         }
     }
 }
@@ -909,7 +909,7 @@ private fun Where(import: Import, dive: Arriving, changer: Changer) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        Aside("at $fix:")
+        Aside("Site for $fix:")
         for (near in dive.nearby) {
             TextButton(
                 onClick = {
@@ -923,20 +923,20 @@ private fun Where(import: Import, dive: Arriving, changer: Changer) {
                 answered(import, dive, null)
                 changer.changed()
             },
-        ) { Text("nowhere") }
+        ) { Text("No site") }
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        Compact(value = naming, onChange = { naming = it }, hint = "a new site, named")
+        Compact(value = naming, onChange = { naming = it }, hint = "New site name")
         TextButton(
             enabled = naming.isNotBlank(),
             onClick = {
                 namedAs(import, dive, naming.trim())
                 changer.changed()
             },
-        ) { Text("Name it") }
+        ) { Text("Create site") }
     }
 }
 
@@ -962,7 +962,7 @@ private fun Deeds(deeds: Map<Deed, () -> Unit>) {
             Button(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
         }
     }
-    if (Deed.entries.any { it !in deeds }) Aside("what is greyed is not built yet")
+    if (Deed.entries.any { it !in deeds }) Aside("Greyed-out actions are not available yet")
 }
 
 /**
@@ -975,7 +975,7 @@ private fun Deeds(deeds: Map<Deed, () -> Unit>) {
 private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
     val variables = remember { variablesOf() }
     if (variables.size < 2) {
-        Aside("a dive says too little to plot")
+        Aside("Not enough data to plot")
         return
     }
     val opening = remember(variables) { openingOf(variables) }
@@ -1013,13 +1013,13 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
     when (gathering) {
         Gathering.EACH -> {
             val spots = remember(set, edition, across, up) { plottedOf(set, across, up) }
-            if (spots.isEmpty()) Aside("no dive answers both")
+            if (spots.isEmpty()) Aside("No dives have both values")
             else Scatter(spots, titledOf(across), titledOf(up), joined = false)
         }
 
         Gathering.RUNNING -> {
             val spots = remember(set, edition, across, up) { runningOf(set, across, up) }
-            if (spots.isEmpty()) Aside("no dive answers both")
+            if (spots.isEmpty()) Aside("No dives have both values")
             else Scatter(spots, titledOf(across), titledOf(up), joined = true)
         }
 
@@ -1027,7 +1027,7 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
             val bars = remember(set, edition, across, up, gathering, steps, stepAt) {
                 barsOf(set, across, up, gathering, steps[stepAt])
             }
-            if (bars.isEmpty()) Aside("no dive answers both")
+            if (bars.isEmpty()) Aside("No dives have both values")
             else Bars(bars, titledOf(across), sideOf(gathering, up))
         }
     }
@@ -1340,7 +1340,7 @@ private fun Subject(
                     // Where nothing is chosen the middle still offers to make one, which is the
                     // only way a logbook with nothing in it grows a first item. `GUI-35`.
                     making != null && add != null -> Empty(makeSaid(making), add)
-                    else -> Middle("choose something on the left")
+                    else -> Middle("Select an item")
                 }
             }
         }
@@ -1781,7 +1781,7 @@ private fun Places(
                 LazyColumn(state = kept.list, modifier = Modifier.fillMaxSize().padding(GAP)) {
                     if (what == null) return@LazyColumn
                     item(key = "sites") { Label("Sites", 0) }
-                    if (what.first.isEmpty()) item(key = "nosite") { Aside("none here") }
+                    if (what.first.isEmpty()) item(key = "nosite") { Aside("No sites") }
                     items(what.first, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
                     if (what.second.isEmpty()) return@LazyColumn
                     item(key = "wrecks") { Label("Wrecks", 0) }
@@ -2012,7 +2012,7 @@ private fun StatsCard(
                 onDelete?.let { Deleter(it) }
             }
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
-            if (stats.isEmpty()) Aside("these say nothing yet")
+            if (stats.isEmpty()) Aside("No values")
             for (pair in stats.chunked(COLUMNS)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2231,7 +2231,7 @@ private fun Confirm(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Checkbox(checked = clearing, onCheckedChange = onClearing)
-                        Text("Clear the references too")
+                        Text("Also remove references to it")
                     }
                 }
             }
@@ -2359,7 +2359,7 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
     val insets = arranged.insets.filter { item.read(it.name) is Result.Usable }
     val foot = arranged.foot.mapNotNull { shownOf(it, item) }
     if (shown.isEmpty() && insets.isEmpty() && foot.isEmpty()) {
-        Aside("this one says nothing yet")
+        Aside("No values")
         return
     }
     for (pair in shown.chunked(COLUMNS)) {
@@ -2995,7 +2995,7 @@ private fun Empty(said: String, onAdd: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "choose something on the left",
+                text = "Select an item",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.outline,
             )

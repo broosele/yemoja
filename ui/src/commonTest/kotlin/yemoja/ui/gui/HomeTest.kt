@@ -208,10 +208,10 @@ class GreetingTest {
         assertEquals(
             listOf(
                 "New logbook",
-                "Open a logbook",
-                "Import a logbook",
+                "Open logbook",
+                "Import",
                 "Export to UDDF",
-                "Download from a computer",
+                "Download from dive computer",
                 "Ask an agent",
             ),
             Deed.entries.map { it.label },

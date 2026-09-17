@@ -89,8 +89,8 @@ class PlanningTest {
         assertTrue(figures.all { it.worked }, "nobody wrote any of them")
         assertTrue(saidBy(figures, "Stops")!!.startsWith("from "), saidBy(figures, "Stops")!!)
         assertTrue(saidBy(figures, "CNS")!!.endsWith("%"))
-        assertTrue(saidBy(figures, "Before flying") != null)
-        assertTrue(saidBy(figures, "Until it is gone") != null)
+        assertTrue(saidBy(figures, "No-fly time") != null)
+        assertTrue(saidBy(figures, "Desaturation time") != null)
     }
 
     @Test
@@ -120,7 +120,7 @@ class PlanningTest {
         val dive = planned(SHALLOW)
 
         assertEquals(
-            "none, if it is dived as written",
+            "none",
             saidBy(workedFiguresOf(dive, profile(dive), done(dive)), "Stops"),
         )
     }
