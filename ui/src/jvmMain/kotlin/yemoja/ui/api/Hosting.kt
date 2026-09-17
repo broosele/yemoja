@@ -336,7 +336,7 @@ private val JOINS = listOf("__", "/", ".", ":")
  *
  * A shell there finds `npx` by trying each ending in `PATHEXT` against each folder in `PATH`, and
  * what it finds is `npx.cmd`. Nothing does that for a process started directly, so an agent's own
- * instructions — and this application's manual — would be wrong for the first platform it runs on.
+ * instructions, and this application's manual, would be wrong for the first platform it runs on.
  * A command naming a folder of its own, or already carrying an ending, is left as it was typed,
  * and so is anything nothing is found for: the failure to show a user is then the one the machine
  * gives rather than one invented here.
