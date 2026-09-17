@@ -557,9 +557,11 @@ To settle when we discuss architecture and features:
   cylinders with nothing saying which was breathed. Those are faults in what was written and are
   worth saying wherever they are found. `GUI-40` is the rule the window applies to the two.
 
-  **The factors are the profile's own and never a preference.** `manual/settings.md` promises that
-  changing what a new plan starts with moves nothing already recorded, and reading
-  `default_gf_low` here would break that promise for every dive at once. Where the air above the
+  **The factors are the profile's own, and nothing here reads a preference at all.**
+  `manual/settings.md` promises that changing what a new plan starts with moves nothing already
+  recorded, and reading any of its defaults here — the factors, the ascent rate, the last stop —
+  would break that promise for every dive at once. They reach the writing of a plan and nothing
+  after it, `LOGIC-35`. Where the air above the
   dive is unknown it is taken to be sea level, which is `LOGIC-33`'s fallback and is stated rather
   than hidden: at altitude it is wrong in the unsafe direction, and the field to correct it sits
   on the profile.
