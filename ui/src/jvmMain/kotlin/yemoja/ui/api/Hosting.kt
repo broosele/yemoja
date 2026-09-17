@@ -104,7 +104,7 @@ class Hosted(
     suspend fun open() {
         val port = socket.port ?: socket.open()
         val working = workingBeside(folder)
-        val process = ProcessBuilder(listOf(started.command) + started.arguments)
+        val process = ProcessBuilder(listOf(resolved(started.command)) + started.arguments)
             .directory(working)
             .start()
         running = process
@@ -330,6 +330,49 @@ internal fun isOurs(server: String, called: String): Boolean {
 
 /** How agents join a server's name to one of its tools' names. */
 private val JOINS = listOf("__", "/", ".", ":")
+
+/**
+ * [command] as something this machine can start, which on Windows is not always what was typed.
+ *
+ * A shell there finds `npx` by trying each ending in `PATHEXT` against each folder in `PATH`, and
+ * what it finds is `npx.cmd`. Nothing does that for a process started directly, so an agent's own
+ * instructions — and this application's manual — would be wrong for the first platform it runs on.
+ * A command naming a folder of its own, or already carrying an ending, is left as it was typed,
+ * and so is anything nothing is found for: the failure to show a user is then the one the machine
+ * gives rather than one invented here.
+ */
+private fun resolved(command: String): String {
+    if (!onWindows()) return command
+    return resolvedIn(
+        command,
+        (System.getenv("PATH") ?: "").split(';'),
+        (System.getenv("PATHEXT") ?: WINDOWS_ENDINGS).split(';'),
+    )
+}
+
+/**
+ * [command] found in [folders] with one of [endings] after it, or [command] where it is not.
+ *
+ * Apart from what reads the machine, so that it can be tried against folders a test made. A
+ * command naming a folder of its own, or already carrying an ending, is taken as it was typed.
+ */
+internal fun resolvedIn(command: String, folders: List<String>, endings: List<String>): String {
+    if ('/' in command || '\\' in command || '.' in command) return command
+    for (folder in folders.filter { it.isNotBlank() }) {
+        for (ending in endings.filter { it.isNotBlank() }) {
+            val found = java.io.File(folder, command + ending)
+            if (found.isFile) return found.path
+        }
+    }
+    return command
+}
+
+/** Whether this is the platform where a command's ending decides what starts it. */
+private fun onWindows(): Boolean =
+    System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
+
+/** What Windows tries when it is not told, which is what a shell falls back to. */
+private const val WINDOWS_ENDINGS = ".COM;.EXE;.BAT;.CMD"
 
 /** The lines [reader] gives, read off the thread that asked for them. */
 private fun linesOf(reader: BufferedReader): Flow<String> = flow {

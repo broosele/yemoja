@@ -331,3 +331,33 @@ class LauncherTest {
         }
     }
 }
+
+/*
+ * Finding what a command names on a platform where the ending decides what starts it.
+ */
+class ResolvedTest {
+
+    private val folder = Files.createTempDirectory("yemoja-").toFile()
+
+    private val endings = listOf(".COM", ".EXE", ".BAT", ".CMD")
+
+    @Test
+    fun `a command with no ending finds the shim a shell would find`() {
+        val shim = java.io.File(folder, "npx.CMD")
+        shim.writeText("@echo off")
+        assertEquals(shim.path, resolvedIn("npx", listOf(folder.path), endings))
+    }
+
+    @Test
+    fun `a command nothing is found for is taken as it was typed`() {
+        // The failure a user then sees is the machine's own, which says the command was not found.
+        assertEquals("nothing_here", resolvedIn("nothing_here", listOf(folder.path), endings))
+    }
+
+    @Test
+    fun `a command that names a folder or an ending is left alone`() {
+        java.io.File(folder, "npx.CMD").writeText("@echo off")
+        assertEquals("npx.cmd", resolvedIn("npx.cmd", listOf(folder.path), endings))
+        assertEquals("C:/tools/npx", resolvedIn("C:/tools/npx", listOf(folder.path), endings))
+    }
+}
