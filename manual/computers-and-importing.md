@@ -67,8 +67,8 @@ second time.
 
 **A UDDF file is matched by nothing.** The names inside a UDDF file mean something only within
 that file, so every item from one arrives as new, and a dive overlapping one you already have is
-offered to be put together with it. Importing the same file twice, and taking everything as new
-both times, gives you everything twice.
+offered **Merge**. Importing the same file twice, and taking everything as new both times, gives
+you everything twice.
 
 A dive that arrives with its own dive number keeps it.
 
