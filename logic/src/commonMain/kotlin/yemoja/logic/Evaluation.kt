@@ -223,8 +223,7 @@ private fun walked(
                 (point.second - before.second).toDouble(),
             )
         }
-        val held = tissues.ceiling(model.low)
-        if (held > surface && held > firstStop) firstStop = held
+        firstStop = firstStopAfter(tissues, firstStop, model, surface)
         val factor = gradientFactorAt(ambient, firstStop, surface, model.low, model.high)
         val ceiling = tissues.ceiling(factor)
         seconds += point.second
@@ -355,8 +354,7 @@ fun completeAscent(profile: Item, metresAMinute: Double, lastStop: Double): Asce
             return Ascended.Refused("this run does not reach the surface within a day")
         }
         val ambient = ambientAt(metres, density, surface)
-        val held = tissues.ceiling(model.low)
-        if (held > surface && held > firstStop) firstStop = held
+        firstStop = firstStopAfter(tissues, firstStop, model, surface)
         val factor = gradientFactorAt(ambient, firstStop, surface, model.low, model.high)
         val allowed = stopFor(depthAt(tissues.ceiling(factor), density, surface), lastStop)
         val target = if (allowed < metres) allowed else metres
@@ -392,6 +390,22 @@ private fun stopFor(ceiling: Double, lastStop: Double): Double {
     if (ceiling <= 0) return 0.0
     val stop = kotlin.math.ceil(ceiling / STOP_STEP) * STOP_STEP
     return if (stop < lastStop) lastStop else stop
+}
+
+/**
+ * The pressure the low gradient factor is anchored at, once a stop is owed: the deepest the low
+ * factor's ceiling has reached since, or [firstStop] where nothing is owed yet.
+ *
+ * **Owed at the high factor, not the low.** The low one says how deep the first stop is taken; it
+ * says nothing about whether there is one. At 30/75 the low factor's ceiling passes the surface
+ * long before a stop is owed at all, and anchoring it then drew a ceiling beside an hour of time
+ * left on a dive that owed nothing. A computer holds the low factor back until a stop exists, and
+ * so does this. `LOGIC-37`.
+ */
+private fun firstStopAfter(tissues: Tissues, firstStop: Double, model: Model, surface: Double): Double {
+    if (firstStop <= surface && tissues.ceiling(model.high) <= surface) return firstStop
+    val held = tissues.ceiling(model.low)
+    return if (held > firstStop) held else firstStop
 }
 
 /** Model is what a profile says it was worked out with: the name, and the two factors. */

@@ -556,9 +556,17 @@ To settle when we discuss architecture and features:
   than hidden: at altitude it is wrong in the unsafe direction, and the field to correct it sits
   on the profile.
 
-  **Gradient factors slide from the first stop**, which is the deepest pressure at which the low
-  factor demanded one. Before anything is owed the high factor applies, there being no depth to
-  hold an ascent back from.
+  **Gradient factors slide from the first stop, and there is a first stop only once one is owed at
+  the high factor.** Until then the high factor applies throughout, there being no depth to hold
+  an ascent back from; from then on the low factor is anchored at the deepest its own ceiling
+  reaches. The low factor says how deep the first stop is taken and nothing about whether there is
+  one.
+
+  That order is the fix for a contradiction the window made visible. At 30/75 the low factor's
+  ceiling passes the surface long before any stop is owed at 0.75, and anchoring it then drew a
+  ceiling of five metres beside an hour of time left on a half hour at eighteen metres that owed
+  nothing — the two figures saying opposite things. A computer holds the low factor back until a
+  stop exists, and the ascent writer follows the same rule, so it adds no stop a plan does not owe.
 
   **A finding is one to a crossing, not one to a sample.** Ten minutes spent above the ceiling is
   one mistake, and ten identical lines would bury everything else said about the dive. `Finding`

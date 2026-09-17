@@ -77,6 +77,29 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a dive owing no stop at the high factor has no ceiling, however low the low one is`() {
+        // Half an hour at eighteen metres at 30/75, the fixture's afternoon plan. The ceiling at
+        // 0.3 passes the surface long before any stop is owed at 0.75, and taking that as the
+        // first stop drew a ceiling beside an hour of time left: the two saying opposite things.
+        val evaluated = done(
+            logbook(
+                "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+                    "gas_sources": {"g1": {"gas_type": "AIR"}},
+                    "profiles": {"a": {"planned": true, "water_type": "fresh",
+                        "gradient_factor_low": 0.3, "gradient_factor_high": 0.75,
+                        "depth": [[0, 0], [90, 18], [1800, 18], [1920, 0]]}}}""",
+            )["d#0"]!!.let { profile(it, "a") },
+        )
+
+        assertTrue(values(evaluated.ceiling).all { it == 0.0 }, "${values(evaluated.ceiling)}")
+        assertTrue(
+            values(evaluated.noDecompressionTime).all { it > 0 },
+            "time left throughout: ${values(evaluated.noDecompressionTime)}",
+        )
+        assertTrue(evaluated.findings.none { "ceiling" in it.said }, "${evaluated.findings}")
+    }
+
+    @Test
     fun `a deep half hour owes a stop, and the time left runs out before the dive does`() {
         val evaluated = done(planned(DEEP))
 
