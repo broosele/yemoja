@@ -525,7 +525,7 @@ once and corrected. The numbers stay unused rather than being given to something
   **The panel sits beside whichever tab is showing** and stays open while the user moves between
   tabs, so a dive the agent names can be opened while the conversation carries on. It holds the
   choice of agent, the conversation, and two boxes that are off at the start of every
-  conversation: *allowed to change data*, and *include personal details*. `API-5`.
+  conversation: *allow changes*, and *include personal details*. `API-5`.
 
   **An item is cited as a mention**, `@2026-04-28#1`, the convention `JSON-23` settles for a
   remark. A mention that resolves is shown as the item's name and leads to it, which keeps *an id
@@ -574,8 +574,8 @@ once and corrected. The numbers stay unused rather than being given to something
   **What it holds, top to bottom**: the command that starts an agent and the deed that starts it,
   which become the agent's name and *Stop* once one runs; the conversation, a view of its own for
   copying; what the stance says while an agent is starting or thinking; how much is staged and the
-  deed to review it, where anything is; the *allowed to change data* and *include personal
-  details* boxes; and what to ask, with *Ask* live only while an agent waits to be asked. The
+  deed to review it, where anything is; the *allow changes* and *include personal details*
+  boxes; and what to ask, with *Ask* live only while an agent waits to be asked. The
   first box lets an agent stage, not change: nothing it stages lands until the reader takes it in.
 
   **The window speaks in the conversation too.** An agent that will not start, one that stops part
