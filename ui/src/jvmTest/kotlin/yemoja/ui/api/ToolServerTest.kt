@@ -75,7 +75,8 @@ class ToolServerTest {
 
     @Test
     fun `a staging call is refused while the user has not allowed changes`() = connected { client ->
-        val refused = client.callTool("stage_set", mapOf("id" to "2026-06-01#0", "path" to "rating"))
+        val asked = mapOf("id" to "2026-06-01#0", "path" to "rating")
+        val refused = client.callTool("stage_set", asked)
         assertEquals(true, refused.isError)
         val said = (refused.content.single() as TextContent).text
         assertTrue("Allow changes" in said, said)
@@ -119,3 +120,83 @@ private const val TIMEOUT = 30_000L
 
 /** How much a pipe holds before a writer waits for the reader. A reply to `describe` is large. */
 private const val PIPE = 1 shl 20
+
+/*
+ * What an agent sends as a value, which is not always one word: a dive's gear is a list of
+ * references, and copying it from one dive to another is the case `FEAT-18` names.
+ */
+class ValuesTest {
+
+    private val universe: Universe = MemoryFileStore(
+        mapOf(
+            "gear.json" to """{"wing": {"name": "Wing"}, "torch": {"name": "Torch"}}""",
+            "dive/2026-06-01#0.json" to """{"gear": {"items": ["@wing", "@torch"]}}""",
+            "dive/2026-06-02#0.json" to """{"max_depth": 24}""",
+        ),
+    ).let {
+        Universe(
+            LogbookReader.read(it, Types.ALL),
+            null,
+            it,
+            null,
+            null,
+            null,
+            MemoryFileStore(emptyMap()),
+        )
+    }
+
+    private fun staged(name: String, arguments: Map<String, Any?>): String = runBlocking {
+        withTimeout(TIMEOUT) {
+            val tools = Tools(universe, writing = { true })
+            val server = toolServer(tools, Dispatchers.Default)
+            val toServer = PipedOutputStream()
+            val fromClient = PipedInputStream(toServer, PIPE)
+            val toClient = PipedOutputStream()
+            val fromServer = PipedInputStream(toClient, PIPE)
+            serve(server, fromClient.asSource().buffered(), toClient.asSink().buffered())
+            val client = Client(Implementation("test", "1"))
+            val transport =
+                StdioClientTransport(fromServer.asSource().buffered(), toServer.asSink().buffered())
+            client.connect(transport)
+            val answered = client.callTool(name, arguments)
+            val said = (answered.content.single() as TextContent).text
+            client.close()
+            said
+        }
+    }
+
+    @Test
+    fun `a list is staged as a list, not read as nothing and cleared`() {
+        val said = staged(
+            "stage_set",
+            mapOf(
+                "id" to "2026-06-02#0",
+                "path" to "gear.items",
+                "value" to listOf("@wing", "@torch"),
+            ),
+        )
+        assertTrue("@wing" in said, said)
+        val staging = universe.staging!!
+        val changed = staging.staged.single().fields.single()
+        assertEquals("gear.items", changed.at)
+        assertEquals(null, changed.from, "the dive had no gear")
+        assertTrue(changed.to!!.contains("@wing") && changed.to!!.contains("@torch"), changed.to!!)
+        staging.apply()
+        val gear = universe.logbook["2026-06-02#0"]!!.read("gear")
+        assertTrue(gear is yemoja.data.Result.Usable, "the gear landed")
+    }
+
+    @Test
+    fun `a block named instead of a field says which fields it holds`() {
+        val said = staged(
+            "stage_set",
+            mapOf(
+                "id" to "2026-06-02#0",
+                "path" to "environment",
+                "value" to mapOf("visibility" to "14"),
+            ),
+        )
+        assertTrue("a set of fields rather than a value" in said, said)
+        assertTrue("environment.visibility" in said, "and what the caller probably meant: $said")
+    }
+}

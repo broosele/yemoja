@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
@@ -24,6 +25,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import kotlin.coroutines.CoroutineContext
+import yemoja.data.Stored
 
 /*
  * The tools carried over MCP, which is what an agent speaks.
@@ -140,14 +142,20 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
                     "The field: rating, environment.visibility, or gas_sources.g1.usage for a " +
                         "field inside an entry of a keyed collection.",
                 )
-                property("value", "What to put there, written as a file writes it. Leave it out to clear the field.")
+                property(
+                    "value",
+                    "What to put there, written as a file writes it: a string for one value, a " +
+                        "list for a field that holds several, an object for a block. Leave it " +
+                        "out to clear the field.",
+                )
             },
             required = listOf("id", "path"),
         ),
     ) { request ->
         val id = request.text("id").orEmpty()
         val path = request.text("path").orEmpty()
-        carried(onto) { tools.stageSet(id, path, request.text("value")) }
+        val value = request.arguments?.get("value")?.let { storedOf(it) }
+        carried(onto) { tools.stageSet(id, path, value) }
     }
 
     server.addTool(
@@ -166,7 +174,7 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     ) { request ->
         val type = request.text("type").orEmpty()
         val fields = (request.arguments?.get("fields") as? JsonObject)
-            ?.mapValues { (_, held) -> (held as? JsonPrimitive)?.contentOrNull }
+            ?.mapValues { (_, held) -> storedOf(held) }
             .orEmpty()
         carried(onto) { tools.stageAdd(type, fields) }
     }
@@ -203,6 +211,19 @@ suspend fun serve(server: Server, input: Source, output: Sink): ServerSession =
 private suspend fun carried(onto: CoroutineContext, call: () -> Reply): CallToolResult {
     val reply = withContext(onto) { call() }
     return CallToolResult(listOf(TextContent(reply.text)), isError = reply.refused)
+}
+
+/**
+ * What an agent sent, as the neutral shape every source hands a value over in.
+ *
+ * A field reads its own value, so what arrives has only to keep its shape: a list stays a list, an
+ * object stays a group, and everything else is one leaf. Reading a list as nothing is what made
+ * `stage_set` clear a dive's gear instead of copying it. `DATA-64`.
+ */
+private fun storedOf(held: JsonElement): Stored = when (held) {
+    is JsonArray -> Stored.Elements(held.map { storedOf(it) })
+    is JsonObject -> Stored.Members(held.mapValues { (_, each) -> storedOf(each) })
+    is JsonPrimitive -> Stored.Leaf(held.contentOrNull)
 }
 
 private fun CallToolRequest.text(name: String): String? =

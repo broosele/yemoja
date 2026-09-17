@@ -5,6 +5,7 @@ import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemReader
+import yemoja.data.FieldDescription
 import yemoja.data.ItemSet
 import yemoja.data.ItemWriter
 import yemoja.data.OwnedItemDescription
@@ -125,8 +126,7 @@ class Staging private constructor(
         before.keep(id, held)
         refresh(id, path, held)
         val copy = after.copyOf(id, held)
-        val at = walkTo(copy, path)
-            ?: return Outcome.Refused("${held.description.name} has no field at $path")
+        val at = walkTo(copy, path) ?: return Outcome.Refused(unreachable(held.description, path))
         val made = at.item.prepared(at.field, value, Units.DEFAULT)
         if (made is Result.Unusable) return Outcome.Refused(made.reason)
         at.item.apply(at.field, made)
@@ -312,6 +312,46 @@ class Staging private constructor(
         after.write(id, would)
     }
 
+    /**
+     * Why [path] names nothing that can be staged on an item of [type].
+     *
+     * A block is the case worth saying properly: naming `environment` is naming a set of fields
+     * rather than a value, and what the caller meant is a field inside it.
+     */
+    private fun unreachable(type: ItemDescription, path: String): String {
+        val field = describedAt(type, path)
+        if (field is OwnedItemDescription) {
+            val inside = field.description.fields
+                .take(NAMED)
+                .joinToString(", ") { "$path.${it.name}" }
+            return "$path is a set of fields rather than a value. Name one inside it: $inside"
+        }
+        return "${type.name} has no field at $path"
+    }
+
+    /**
+     * The field [path] ends at on an item of [type], block or not, or absent where it names none.
+     *
+     * `fieldAt` answers only for a field holding a value, since a figure can be taken of nothing
+     * else. This answers for a block too, which is what lets a refusal say that a block was named.
+     */
+    private fun describedAt(type: ItemDescription, path: String): FieldDescription? {
+        val segments = path.split('.')
+        var description = type
+        var index = 0
+        while (index < segments.size) {
+            val field = description[segments[index]] ?: return null
+            if (field !is OwnedItemDescription) {
+                return field.takeIf { index == segments.lastIndex }
+            }
+            val step = if (field.cardinality == Cardinality.SINGLE) 1 else 2
+            if (index + step > segments.lastIndex) return field
+            index += step
+            description = field.description
+        }
+        return null
+    }
+
     /** What is staged for the item called [id], or absent where nothing is. */
     private fun stagedOf(id: String): Staged? {
         val was = before.set[id]
@@ -345,7 +385,15 @@ class Staging private constructor(
     /** What walking a path reached: the item holding the field, and the field's own name. */
     private class At(val item: Item, val field: String)
 
-    /** The item and field [path] names inside [item], or absent where it names none. */
+    /**
+     * The item and field [path] names inside [item], or absent where it names none.
+     *
+     * **A singular block that is not there is made on the way through.** A dive with nothing
+     * recorded about its gear has no `gear` block, and a change to `gear.items` is a change to
+     * that dive all the same: an owned item is made by writing an empty set of fields, which is
+     * what `"gear": {}` says in a file. `DATA-85`. A missing entry of a keyed collection is not
+     * made, since which key it should have is not ours to invent.
+     */
     private fun walkTo(item: Item, path: String): At? {
         val segments = path.split('.')
         var at: Item = item
@@ -354,6 +402,11 @@ class Staging private constructor(
             val field = at.description[segments[index]] ?: return null
             if (field !is OwnedItemDescription) {
                 return if (index == segments.lastIndex) At(at, field.name) else null
+            }
+            if (field.cardinality == Cardinality.SINGLE && at.read(field.name) is Result.Absent) {
+                val made = at.prepared(field.name, Stored.Members(emptyMap()), Units.DEFAULT)
+                if (made is Result.Unusable) return null
+                at.apply(field.name, made)
             }
             val value = (at.read(field.name) as? Result.Usable)?.value ?: return null
             if (field.cardinality == Cardinality.SINGLE) {
@@ -462,6 +515,9 @@ class Staging private constructor(
 
         /** What an item to be added is called until it is added and named properly. */
         private const val NEW = "new#"
+
+        /** How many of a block's fields are named when saying what a caller might have meant. */
+        private const val NAMED = 3
     }
 }
 
