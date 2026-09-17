@@ -169,6 +169,48 @@ class StagingTest {
     }
 
     @Test
+    fun `a refused field staged again against what is there now lands`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.set("2026-06-01#0", "rating", 9)
+        universe.change(
+            Operation.EDIT,
+            Change.Write(universe.logbook["2026-06-01#0"]!!, "rating", 7),
+        )
+        assertEquals(1, staging.apply().refused.size, "refused, the logbook having moved")
+        // What the agent is told to do when a field is refused: stage it again.
+        staging.set("2026-06-01#0", "rating", 9)
+        assertEquals(Changed("rating", "7", "9", "7"), staging.staged.single().fields.single())
+        assertEquals(Applied(1, 1, emptyList()), staging.apply())
+        assertEquals(9, read(universe, "2026-06-01#0", "rating"))
+    }
+
+    @Test
+    fun `staging one field again leaves another field's collision to be caught`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.set("2026-06-01#0", "rating", 9)
+        staging.set("2026-06-01#0", "environment.visibility", 20)
+        val dive = universe.logbook["2026-06-01#0"]!!
+        val environment = (dive.read("environment") as Result.Usable).value as yemoja.data.Item
+        universe.change(Operation.EDIT, Change.Write(environment, "visibility", 15.0))
+        // The rating is staged again; the visibility is not, and is still judged against 12.
+        staging.set("2026-06-01#0", "rating", 10)
+        val applied = staging.apply()
+        assertEquals(10, read(universe, "2026-06-01#0", "rating"))
+        assertEquals(
+            listOf(
+                Refused(
+                    "2026-06-01#0",
+                    "environment.visibility",
+                    "it was 12 when this was staged, and is 15 now",
+                ),
+            ),
+            applied.refused,
+        )
+    }
+
+    @Test
     fun `clearing a field is staged as a field with nothing in it`() {
         val universe = diving()
         val staging = stagingOf(universe)

@@ -113,12 +113,17 @@ class Staging private constructor(
      * Stage [value] in the field [path] names on the item called [id].
      *
      * A null clears the field. What is given is read by the field itself, so what a file would
-     * refuse is refused here with the field's own reason. Staging the same field twice keeps the
-     * last of them, and the copy of how the item was stays as it was when the first was staged.
+     * refuse is refused here with the field's own reason.
+     *
+     * **Staging a field again judges it against what the logbook holds now.** The copy of how the
+     * item was is refreshed at that one path, so a change refused for having moved can be staged
+     * again and land, which is what the agent is told to do. Every other field of the item keeps
+     * the value it was staged against, so a collision elsewhere is still caught.
      */
     fun set(id: String, path: String, value: Any?): Outcome {
         val held = into.logbook[id] ?: return Outcome.Refused("$id names nothing")
         before.keep(id, held)
+        refresh(id, path, held)
         val copy = after.copyOf(id, held)
         val at = walkTo(copy, path)
             ?: return Outcome.Refused("${held.description.name} has no field at $path")
@@ -267,6 +272,20 @@ class Staging private constructor(
                 Applied(items, fields, refused)
             }
         }
+    }
+
+    /**
+     * Put what [held] holds at [path] into the copy of how the item was, over what is kept there.
+     *
+     * What a change is judged against is what the agent saw when it staged it, and staging again
+     * is the agent saying it has seen what is there now.
+     */
+    private fun refresh(id: String, path: String, held: Item) {
+        val was = before.set[id] ?: return
+        val at = walkTo(was, path) ?: return
+        val now = storedAtIn(held, path)
+        at.item.apply(at.field, at.item.prepared(at.field, now, Units.DEFAULT))
+        before.write(id, was)
     }
 
     /**
