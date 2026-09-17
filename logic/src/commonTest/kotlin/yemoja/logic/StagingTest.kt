@@ -221,6 +221,25 @@ class StagingTest {
     }
 
     @Test
+    fun `clearing the last field of a block is staged as that field, and lands`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        // `visibility` is the only thing this dive's environment holds, so clearing it empties
+        // the block — which a file writes by leaving the block out. `DATA-116`.
+        staging.set("2026-06-01#0", "environment.visibility", null)
+        assertEquals(
+            listOf(Changed("environment.visibility", "12", null)),
+            staging.staged.single().fields,
+            "the field, not the block it was the last of",
+        )
+        assertEquals(Applied(1, 1, emptyList()), staging.apply())
+        val dive = universe.logbook["2026-06-01#0"]!!
+        val environment = (dive.read("environment") as Result.Usable).value as yemoja.data.Item
+        assertEquals(Result.Absent, environment.read("visibility"))
+        assertTrue(staging.empty, "and nothing is left waiting in the review")
+    }
+
+    @Test
     fun `an item to be deleted has no copy of how it would be`() {
         val universe = diving()
         val staging = stagingOf(universe)

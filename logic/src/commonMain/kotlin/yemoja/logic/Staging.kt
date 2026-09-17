@@ -247,7 +247,13 @@ class Staging private constructor(
                             )
                             continue
                         }
-                        val at = walkTo(held, change.at) ?: continue
+                        val at = walkTo(held, change.at)
+                        if (at == null) {
+                            // Nothing writes a field that cannot be reached, and nothing says
+                            // nothing either: an unreachable change stays visible.
+                            refused += Refused(proposed.id, change.at, "it cannot be reached")
+                            continue
+                        }
                         landing += Change.Write(at.item, at.field, storedAt(proposed.id, change.at))
                         landed += change.at
                     }
@@ -381,9 +387,17 @@ class Staging private constructor(
      */
     private fun differences(at: String, from: Stored?, to: Stored?, into: MutableList<Changed>) {
         if (from == to) return
-        if (from is Stored.Members && to is Stored.Members) {
-            for (name in from.members.keys + to.members.keys) {
-                differences("$at.$name", from.members[name], to.members[name], into)
+        // A block gone from one side is every field of it gone, and is said that way: clearing the
+        // last thing in an environment is `environment.visibility` cleared, which is a path apply
+        // can reach. `environment` is not: nothing writes a block.
+        val members = from as? Stored.Members ?: to as? Stored.Members
+        if (members != null && (from == null || from is Stored.Members) &&
+            (to == null || to is Stored.Members)
+        ) {
+            val was = (from as? Stored.Members)?.members.orEmpty()
+            val would = (to as? Stored.Members)?.members.orEmpty()
+            for (name in was.keys + would.keys) {
+                differences("$at.$name", was[name], would[name], into)
             }
             return
         }
