@@ -117,6 +117,58 @@ class StagingTest {
     }
 
     @Test
+    fun `a refused field stays staged when nothing else landed`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.set("2026-06-01#0", "rating", 9)
+        universe.change(
+            Operation.EDIT,
+            Change.Write(universe.logbook["2026-06-01#0"]!!, "rating", 7),
+        )
+        assertEquals(1, staging.apply().refused.size)
+        val kept = staging.staged.single().fields.single()
+        assertEquals(Changed("rating", "6", "9", "7"), kept, "still staged, still marked as moved")
+        assertEquals(1, staging.apply().refused.size, "and refused again, being still stale")
+        assertEquals(7, read(universe, "2026-06-01#0", "rating"))
+    }
+
+    @Test
+    fun `a refused field stays staged when its neighbours landed, and theirs go`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.set("2026-06-01#0", "rating", 9)
+        staging.set("2026-06-02#0", "max_depth", 25.0)
+        universe.change(
+            Operation.EDIT,
+            Change.Write(universe.logbook["2026-06-01#0"]!!, "rating", 7),
+        )
+        staging.apply()
+        // The same stale row as when nothing landed: its fate does not depend on its neighbours.
+        assertEquals(listOf("2026-06-01#0"), staging.staged.map { it.id })
+        assertEquals(Changed("rating", "6", "9", "7"), staging.staged.single().fields.single())
+    }
+
+    @Test
+    fun `within one item, the field that landed goes and the one refused stays`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.set("2026-06-01#0", "rating", 9)
+        staging.set("2026-06-01#0", "environment.visibility", 20)
+        universe.change(
+            Operation.EDIT,
+            Change.Write(universe.logbook["2026-06-01#0"]!!, "rating", 7),
+        )
+        val applied = staging.apply()
+        assertEquals(1, applied.fields)
+        val dive = universe.logbook["2026-06-01#0"]!!
+        val environment = (dive.read("environment") as Result.Usable).value as yemoja.data.Item
+        assertEquals(20.0, (environment.read("visibility") as Result.Usable).value)
+        // Visibility landed, so it is no longer proposed; the rating did not, so it still is.
+        val left = staging.staged.single().fields
+        assertEquals(listOf(Changed("rating", "6", "9", "7")), left)
+    }
+
+    @Test
     fun `clearing a field is staged as a field with nothing in it`() {
         val universe = diving()
         val staging = stagingOf(universe)

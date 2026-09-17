@@ -359,8 +359,15 @@ columns mapped by the user rather than guessed.
 
   A field that has moved says so *before* anything is applied rather than after: each `Changed`
   carries what the logbook holds now beside what it held when the change was staged, so a review
-  shows it and `apply` leaves it alone. What is owed is the screen that shows all this, which is
-  the window's.
+  shows it and `apply` leaves it alone.
+
+  **What landed leaves the staging, and what was refused stays in it**, still marked, until it is
+  dropped or staged again. That holds field by field and whatever happened beside it. The first
+  version emptied the staging whenever anything landed and kept everything when nothing did, so a
+  stale field survived or vanished depending on its neighbours; the review found that on a copy of
+  the fixture, a rating staged against 6 while the logbook held 7.
+
+  What shows all this is the window's, `GUI-38`.
 
 - **RECON-4 — Whether importers are also exporters.** *Settled:* **for UDDF, yes, and export is
   not reconciliation.** One package reads and writes the format, `logic/uddf`, so the mapping is

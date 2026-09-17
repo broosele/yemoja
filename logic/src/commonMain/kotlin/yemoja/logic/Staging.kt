@@ -187,27 +187,39 @@ class Staging private constructor(
      * somebody edited one of them meanwhile. What was refused is named, so it can be looked at
      * and staged again against what is there now.
      *
-     * Applying empties the staging, what has happened being no longer proposed.
+     * **What landed leaves the staging and what was refused stays in it**, still marked as moved,
+     * until it is dropped or staged again. That holds whatever else happened beside it: a refused
+     * field is not taken away because its neighbours landed, nor kept because they did not. Within
+     * one item the same is true field by field, so an edit to a rating that landed goes while an
+     * edit to its remarks that did not stays. Applying again refuses it again, which is right: it
+     * is still a decision about a value nobody holds.
      */
     fun apply(): Applied {
         val refused = ArrayList<Refused>()
         val changes = ArrayList<Change>()
+        // What leaves the staging once the change lands: whole items, and fields within an item.
+        val going = ArrayList<String>()
+        val landedFields = LinkedHashMap<String, MutableList<String>>()
         var items = 0
         var fields = 0
         for (proposed in staged) {
             when (proposed.kind) {
                 Staged.Kind.DELETE -> {
                     if (into.logbook[proposed.id] == null) {
+                        // Already what was asked for, so there is nothing to keep it staged for.
                         refused += Refused(proposed.id, "", "it has gone already")
+                        going += proposed.id
                         continue
                     }
                     changes += Change.Delete(proposed.id)
+                    going += proposed.id
                     items += 1
                 }
 
                 Staged.Kind.ADD -> {
                     val staged = after.set[proposed.id] ?: continue
                     changes += Change.Add(staged.description, storedOf(staged).members)
+                    going += proposed.id
                     items += 1
                 }
 
@@ -218,6 +230,7 @@ class Staging private constructor(
                         continue
                     }
                     val landing = ArrayList<Change>()
+                    val landed = ArrayList<String>()
                     for (change in proposed.fields) {
                         val now = writtenAt(held, change.at)
                         if (now != change.from) {
@@ -231,23 +244,47 @@ class Staging private constructor(
                         }
                         val at = walkTo(held, change.at) ?: continue
                         landing += Change.Write(at.item, at.field, storedAt(proposed.id, change.at))
+                        landed += change.at
                     }
-                    if (landing.isNotEmpty()) {
-                        changes += landing
-                        fields += landing.size
-                        items += 1
-                    }
+                    if (landing.isEmpty()) continue
+                    changes += landing
+                    fields += landing.size
+                    items += 1
+                    if (landed.size == proposed.fields.size) going += proposed.id
+                    else landedFields[proposed.id] = landed
                 }
             }
         }
-        if (changes.isEmpty()) return Applied(0, 0, refused)
+        if (changes.isEmpty()) {
+            for (id in going) drop(id)
+            return Applied(0, 0, refused)
+        }
         return when (val done = into.change(Operation.EDIT, *changes.toTypedArray())) {
             is Outcome.Refused -> Applied(0, 0, refused + Refused("", "", done.reason))
             is Outcome.Done -> {
-                clear()
+                for (id in going) drop(id)
+                for ((id, paths) in landedFields) forget(id, paths)
                 Applied(items, fields, refused)
             }
         }
+    }
+
+    /**
+     * Take the fields at [paths] out of the item called [id]'s staged edit, leaving the rest.
+     *
+     * Done by putting back into the copy of how the item would be what the copy of how it was
+     * holds there, so the two agree at those paths and the difference between them — which is
+     * what is staged — no longer includes them.
+     */
+    private fun forget(id: String, paths: List<String>) {
+        val would = after.set[id] ?: return
+        for (path in paths) {
+            val at = walkTo(would, path) ?: continue
+            val was = storedAtIn(before.set[id], path)
+            val made = at.item.prepared(at.field, was, Units.DEFAULT)
+            at.item.apply(at.field, made)
+        }
+        after.write(id, would)
     }
 
     /** What is staged for the item called [id], or absent where nothing is. */
@@ -335,8 +372,11 @@ class Staging private constructor(
     }
 
     /** What the staged copy of [id] holds at [path], as something a change can be given. */
-    private fun storedAt(id: String, path: String): Stored? {
-        var stored: Stored? = after.set[id]?.let { storedOf(it) }
+    private fun storedAt(id: String, path: String): Stored? = storedAtIn(after.set[id], path)
+
+    /** What [item] holds at [path], as something a change can be given, or absent for nothing. */
+    private fun storedAtIn(item: Item?, path: String): Stored? {
+        var stored: Stored? = item?.let { storedOf(it) }
         for (segment in path.split('.')) {
             stored = (stored as? Stored.Members)?.members?.get(segment) ?: return null
         }
