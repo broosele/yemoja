@@ -54,8 +54,8 @@ data class Started(val command: String, val arguments: List<String> = emptyList(
  *
  * **It works beside the logbook rather than in it.** An agent treats the folder it is started in
  * as its own and writes there — the first real one left a file recording which tools it had been
- * allowed — and a user's dives are not a scratch directory. So it is given the logbook's path with
- * `.agent` after it, which puts it outside the logbook exactly as staging an import does.
+ * allowed — and a user's dives are not a scratch directory. So it is given the logbook's path
+ * with `.agent` after it, which puts it outside the logbook exactly as staging an import does.
  * `RECON-1`.
  *
  * Not immutable: it holds a process from [open] until [close].
@@ -94,6 +94,12 @@ class Hosted(
      *
      * Throws where the agent cannot be started, which is a fault of the machine rather than of the
      * logbook: an agent that is not installed, or a command the settings name wrongly.
+     *
+     * **What fails after the process is up takes the process with it, and says what the agent
+     * said.** An agent that is installed but not logged in starts, refuses the session, and
+     * answers `Internal error` over the protocol while writing the reason to its error stream —
+     * which is where the reason to show a user is. Leaving it running would leave one stray
+     * process behind every failed start.
      */
     suspend fun open() {
         val port = socket.port ?: socket.open()
@@ -103,6 +109,16 @@ class Hosted(
             .start()
         running = process
         listen(process)
+        try {
+            began(process, port, working.path)
+        } catch (refused: Exception) {
+            close()
+            throw failedBy(refused)
+        }
+    }
+
+    /** Everything after the process is running: the protocol, and a session on it. */
+    private suspend fun began(process: Process, port: Int, working: String) {
         val transport = StdioTransport(
             parentScope = scope,
             ioDispatcher = Dispatchers.IO,
@@ -121,10 +137,23 @@ class Hosted(
         client.initialize(ClientInfo(implementation = Implementation(NAME, VERSION)))
         talking = client.newSession(
             SessionCreationParameters(
-                cwd = working.path,
+                cwd = working,
                 mcpServers = listOf(relaying(port)),
             ),
         ) { _, _ -> Refusing(NAME, refusals) }
+    }
+
+    /**
+     * [refused] with what the agent said for itself, where it said anything.
+     *
+     * The protocol carries `Internal error` and no more, so the words a user can act on are the
+     * ones the agent wrote to its error stream. The last few are enough: the rest is logging.
+     */
+    private fun failedBy(refused: Exception): Exception {
+        val said = complaints.filter { it.isNotBlank() }.takeLast(SAID)
+        if (said.isEmpty()) return refused
+        val words = said.joinToString(" ")
+        return IllegalStateException("${refused.message}. ${started.command} said: $words")
     }
 
     /**
@@ -191,6 +220,9 @@ class Hosted(
 
         /** How many lines of an agent's complaining are kept. Enough to say what went wrong. */
         const val COMPLAINTS = 50
+
+        /** How many of those are shown to a user when a start fails. */
+        const val SAID = 5
     }
 }
 

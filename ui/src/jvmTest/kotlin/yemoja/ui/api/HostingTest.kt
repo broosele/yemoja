@@ -232,3 +232,52 @@ class OursTest {
         }
     }
 }
+
+/*
+ * An agent that starts and then fails: the process goes, and what it said is passed on.
+ */
+class FailedStartTest {
+
+    private val universe: Universe = MemoryFileStore(
+        mapOf("dive/2026-06-01#0.json" to """{"max_depth": 18}"""),
+    ).let { Universe(LogbookReader.read(it, Types.ALL), null, it, null, null) }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @AfterTest
+    fun letGo() {
+        scope.cancel()
+    }
+
+    @Test
+    fun `an agent that says nothing and stops is not left running, and is quoted`() {
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        // A program that complains and exits, which is what an agent that will not log in does.
+        val java = ProcessHandle.current().info().command().orElse("java")
+        val classes = System.getProperty("java.class.path")
+        val hosted = Hosted(
+            Started(java, listOf("-cp", classes, "yemoja.ui.api.SulkingAgent")),
+            socket,
+            Files.createTempDirectory("yemoja-").toString(),
+            scope,
+        )
+        val watching = watchdog("a failed start") {
+            hosted.close()
+            socket.close()
+        }
+        try {
+            val refused = assertFailsWith<Exception> {
+                runBlocking { withTimeout(WAITING) { hosted.open() } }
+            }
+            assertTrue(
+                "Run claude /login" in refused.message.orEmpty(),
+                "should quote what the agent said, but said: ${refused.message}",
+            )
+            assertTrue(hosted.complained.isNotEmpty(), "and keeps what it said")
+        } finally {
+            hosted.close()
+            socket.close()
+            watching.interrupt()
+        }
+    }
+}
