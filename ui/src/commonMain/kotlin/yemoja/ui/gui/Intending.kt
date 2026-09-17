@@ -31,6 +31,7 @@ import yemoja.data.ValueFormatException
 import yemoja.logic.Ascended
 import yemoja.logic.Change
 import yemoja.logic.Outcome
+import yemoja.logic.Settings
 import yemoja.logic.Types
 import yemoja.logic.Universe
 import yemoja.logic.completeAscent
@@ -90,10 +91,10 @@ internal sealed class Intended {
  * logbook's own defaults are read, a plan is started only from factors somebody typed.
  *
  * **The bottom time counts the descent**, which is how a diver means it: forty minutes at thirty
- * metres is forty minutes from leaving the surface. The descent is taken at [DESCENT_RATE], which
- * the form says beside the deed.
+ * metres is forty minutes from leaving the surface. The descent is taken at [descentRate], in metres
+ * a minute, which the form says beside the deed.
  */
-internal fun intendedOf(intention: Intention): Intended {
+internal fun intendedOf(intention: Intention, descentRate: Double): Intended {
     val date = readOrWrong { Date.parse(intention.date) } ?: return wrong(intention.date, "date")
     val time = if (intention.time.isBlank()) {
         null
@@ -110,11 +111,11 @@ internal fun intendedOf(intention: Intention): Intended {
             "a bottom time is minutes, more than nought, and ${said(intention.minutes)} is not",
         )
     }
-    val descent = ceil(depth / DESCENT_RATE * SECONDS_IN_MINUTE).toLong()
+    val descent = ceil(depth / descentRate * SECONDS_IN_MINUTE).toLong()
     val bottom = (minutes * SECONDS_IN_MINUTE).roundToLong()
     if (bottom <= descent) {
         return Intended.Wrong(
-            "at $DESCENT_RATE m a minute the bottom takes ${clockSaid(descent)} to reach, " +
+            "at ${plain(descentRate)} m a minute the bottom takes ${clockSaid(descent)} to reach, " +
                 "which a bottom time of ${intention.minutes.trim()} minutes does not leave room for",
         )
     }
@@ -170,8 +171,18 @@ internal fun intendedOf(intention: Intention): Intended {
     return Intended.Made(dive)
 }
 
-/** What a descent rate, a bottom time's arithmetic and the form all say the descent is taken at. */
-internal const val DESCENT_RATE = 18.0
+/**
+ * The form as it opens on [today]: the day filled in, and the gradient factors [low] and [high] the
+ * user chose, as proportions.
+ *
+ * Only what was chosen is filled. Where nobody chose factors the boxes stay empty, the application
+ * choosing no conservatism on anybody's behalf. `GUI-41`.
+ */
+internal fun intentionOf(today: Date, low: Double?, high: Double?): Intention = Intention(
+    date = today.toString(),
+    gradientLow = shownOf(Settings.DEFAULT_GF_LOW, low),
+    gradientHigh = shownOf(Settings.DEFAULT_GF_HIGH, high),
+)
 
 /** One sample of a series, as a file writes it: the second, then the value. */
 private fun sample(second: Long, value: Double): Stored =
@@ -270,6 +281,10 @@ internal fun Planner(
 ) {
     if (universe == null || !planning.open) return
     val typed = planning.typed
+    val chosen = universe.settings
+    val descent = chosen.number(Settings.DEFAULT_DESCENT_RATE) ?: FALLBACK_DESCENT_RATE
+    val ascent = chosen.number(Settings.DEFAULT_ASCENT_RATE) ?: FALLBACK_ASCENT_RATE
+    val last = chosen.number(Settings.DEFAULT_LAST_STOP) ?: FALLBACK_LAST_STOP
     val put = { changed: Intention ->
         planning.typed = changed
         planning.wrong = null
@@ -318,8 +333,8 @@ internal fun Planner(
             }
         }
         Aside(
-            "Descending at $DESCENT_RATE m a minute. The way up is added at $ASCENT_RATE m a " +
-                "minute, with the shallowest stop at $LAST_STOP m.",
+            "Descending at ${plain(descent)} m a minute. The way up is added at ${plain(ascent)} " +
+                "m a minute, with the shallowest stop at ${plain(last)} m. Change them in Settings.",
         )
         planning.wrong?.let {
             Text(
@@ -335,7 +350,7 @@ internal fun Planner(
         ) {
             Button(
                 onClick = {
-                    when (val made = madeFrom(universe, typed, changer)) {
+                    when (val made = madeFrom(universe, typed, changer, descent, ascent, last)) {
                         is Planned.Made -> {
                             planning.open = false
                             planning.typed = Intention()
@@ -389,8 +404,15 @@ private sealed class Planned {
  * it, and it holds nothing until the first is made. A plan whose way up the model will not give is
  * still made: it is opened, and its own view says why. `GUI-40`.
  */
-private fun madeFrom(universe: Universe, typed: Intention, changer: Changer): Planned {
-    val intended = intendedOf(typed)
+private fun madeFrom(
+    universe: Universe,
+    typed: Intention,
+    changer: Changer,
+    descentRate: Double,
+    ascentRate: Double,
+    lastStop: Double,
+): Planned {
+    val intended = intendedOf(typed, descentRate)
     if (intended is Intended.Wrong) return Planned.Wrong(intended.reason)
     val fields = (intended as Intended.Made).fields
     val id = when (val made = changer.change(listOf(Change.Add(Types.DIVE, fields)))) {
@@ -398,7 +420,7 @@ private fun madeFrom(universe: Universe, typed: Intention, changer: Changer): Pl
         is Outcome.Done -> made.added.firstOrNull() ?: return Planned.Wrong("nothing was made")
     }
     val profile = universe.logbook[id]?.let { plannedRunOf(it) } ?: return Planned.Made(id)
-    val ascent = completeAscent(profile, ASCENT_RATE, LAST_STOP)
+    val ascent = completeAscent(profile, ascentRate, lastStop)
     if (ascent is Ascended.Done) changer.change(ascentWrittenTo(profile, ascent))
     return Planned.Made(id)
 }
@@ -408,6 +430,9 @@ private fun plannedRunOf(dive: Item): Item? {
     val held = (dive.keyed<OwnedItem>("profiles") as? Result.Usable)?.value ?: return null
     return (held[PROFILE] as? Element.Usable)?.value
 }
+
+/** How fast a plan descends where there is no logbook to ask. */
+private val FALLBACK_DESCENT_RATE: Double = Settings.DEFAULT_DESCENT_RATE.default!!
 
 /** How wide a box is for a date. */
 private val WIDE = 120.dp

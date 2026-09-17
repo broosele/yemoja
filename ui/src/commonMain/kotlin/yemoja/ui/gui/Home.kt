@@ -229,6 +229,7 @@ internal enum class Deed(val label: String) {
     DOWNLOAD("Download from dive computer"),
     PLAN("Plan dive"),
     AGENT("Ask an agent"),
+    SETTINGS("Settings"),
 }
 
 /**

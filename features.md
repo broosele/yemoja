@@ -75,9 +75,8 @@ them.
   on a plan a button that writes its ascent in. `GUI-40`.
 
   A plan is started from the home screen at one depth with one gas, and given its ascent at once
-  (`GUI-41`). What is owed is a plan of several levels, which is still written by hand, and the
-  settings a screen would offer — the gradient factors, a descent rate, an ascent rate and a last
-  stop depth to start from — which wait on the settings files being read at all.
+  (`GUI-41`), from the gradient factors and rates the user chose in the settings (`GUI-42`). What
+  is owed is a plan of several levels, which is still written by hand.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
   — the dive and its recording — and how far it goes is under *What is built* in

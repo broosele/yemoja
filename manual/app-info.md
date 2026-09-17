@@ -12,11 +12,10 @@ yourself, whatever becomes of the app.
 
 - **There is no undo.** Every change is written to your files the moment it is saved.
 - **A plan is started at one depth.** *Plan dive* makes a plan with a single bottom and one gas;
-  a plan with several levels is written into the dive's file by hand. The rate a plan descends at,
-  the rate an ascent rises at and the depth of its shallowest stop are fixed at 18 m a minute,
-  9 m a minute and 3 m until the settings files are read.
+  a plan with several levels is written into the dive's file by hand.
   See [decompression.md](decompression.md).
-- **The settings files are not read yet**; see [settings.md](settings.md).
+- **Few settings exist yet.** What a new plan starts from can be chosen; units, date formats
+  and the rest cannot. See [settings.md](settings.md).
 - **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.
 - **Locations cannot add or delete a site** from the window.
 

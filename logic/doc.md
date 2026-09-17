@@ -276,8 +276,15 @@ Three things `change` guarantees, and one it does not.
 
 Two of the things named above are absent and each waits on something. **An import's candidate
 set** is the second thing the Universe is meant to hold, and waits on `RECON-2`. **The units a
-user wants shown** belong here by `UI-2` and wait on somewhere for settings to be read from;
-until then a front end formats in the model's own units, and a change is judged in them.
+user wants shown** belong here by `UI-2`. The settings they would be chosen in are now read,
+`Settings.kt` on the Universe, but no unit is among them yet; until one is, a front end formats in
+the model's own units, and a change is judged in them.
+
+**What the user chose is held here too**, as `settings`: the two files beside the logbook and then
+each setting's own default, first that answers winning, `DATA-9`. Reading the files is the json
+source's and hands back what they say; what a setting may hold and what stands in for it is here,
+so no front end can disagree with another about what the user chose. Writing one is not a `Change`
+and not in the journal, settings not being part of the data model.
 
 **A new item is named here, not by whoever asked for it.** `ItemDescription` carries a
 `proposedId`, and the caller of `change` gives what the item holds rather than what it is called:
@@ -508,8 +515,9 @@ To settle when we discuss architecture and features:
 
   **The rate and the last stop are asked for rather than stored.** They describe the moment the
   ascent was written, not the plan, and nothing reads them again: the plan holds the points, so it
-  means the same thing to everything that reads it afterwards. Their defaults belong beside
-  `default_gf_low` in settings, which is owed once a screen asks for one.
+  means the same thing to everything that reads it afterwards. Their defaults are the settings
+  `default_ascent_rate` and `default_last_stop`, beside `default_gf_low`, read by whatever writes an
+  ascent and passed in.
 
   **Stops go on the threes a diver counts in**, and a run owing any takes its shallowest where it
   was asked to. The gas at each depth is the richest of the run's own sources whose oxygen stays

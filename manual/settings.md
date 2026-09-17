@@ -1,12 +1,13 @@
 # Settings
 
-Your preferences: the units you want to be shown, how dates are written, and whatever
-else the application lets you choose. They live in your logbook folder, in two files
-beside `yemoja.json`.
+Your preferences: what a new dive plan starts from today, and in time the units you want to be
+shown, how dates are written, and whatever else the application lets you choose. They live in your
+logbook folder, in two files beside `yemoja.json`.
 
-**Yemoja does not read either file yet.** This chapter says how they will work, which is
-decided, so that a file you find in a logbook makes sense. Changing one today changes
-nothing you see.
+**Press *Settings* on the home screen** to see and change them. Each shows what it holds and where
+that came from: *set on this device*, *set in this logbook*, *the default*, or *not set*. Change
+any box and press **Save**. Empty a box and save to take your choice away, so the next place in
+line answers again.
 
 **These files belong to Yemoja, not to your data.** Everything in `data-format.md` and
 `data-fields.md` is yours — a format that stays readable and that Yemoja promises not to
@@ -38,6 +39,11 @@ Yemoja looks in three places, in order, and stops at the first that has an answe
 So you can set something once for every device you own, and still overrule it on one of
 them without that overruling following you everywhere.
 
+**Where *Save* writes.** A setting you have not chosen before goes into `settings.json`, so it
+follows the logbook to every device. One already in `settings.local.json` stays there, since
+somebody put it on this device on purpose. To keep a choice to one device, move its line into
+`settings.local.json` by hand; from then on *Save* keeps it there.
+
 A setting that is expected to differ between kinds of device is not left to that
 ordering. It is named for what it applies to — a setting beginning `phone_` is read only
 on a phone, `desktop_` only on a desktop — so both can sit in `settings.json` and travel
@@ -45,17 +51,28 @@ together without contradicting each other.
 
 ## What is in them
 
-The list will grow. At present:
+The list will grow. At present, each in its own unit whatever units your logbook's files are
+written in — a settings file declares none:
 
 - `default_gf_low`, `default_gf_high` — the gradient factors a new dive plan starts
-  with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`. Dive planning is
-  not built yet, so nothing uses them.
+  with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`; the *Settings*
+  form takes them as percentages, 20 and 80. **There is no default.** Until you choose them,
+  a new plan's boxes start empty: how conservative a plan is, is yours to decide.
+- `default_descent_rate` — how fast a new plan descends, in metres a minute, from 1 to 60.
+  Without a choice, 18.
+- `default_ascent_rate` — how fast an ascent is written to rise, in metres a minute, from 1
+  to 30. Without a choice, 9.
+- `default_last_stop` — the depth an ascent takes its shallowest stop at, in metres, from 0
+  to 12. Without a choice, 3.
 
-Those two are worth a word, because their name is doing real work. They are *defaults*
-for a new plan and nothing more. A plan keeps the gradient factors it was made with, so
-changing these does not alter a plan you have already made, and it does not alter
-anything Yemoja tells you about a dive you have already done. Change them freely; nothing
-recorded moves.
+A value that is not a number, or lies outside its range, is ignored, and the next place in line
+answers instead.
+
+All five are worth a word, because their names are doing real work. They are *defaults*
+for making a plan and nothing more. A plan keeps the gradient factors it was made with and
+the depths its ascent was written with, so changing these does not alter a plan you have
+already made, and it does not alter anything Yemoja tells you about a dive you have already
+done. Change them freely; nothing recorded moves.
 
 Gradient factors are explained in [decompression.md](decompression.md).
 

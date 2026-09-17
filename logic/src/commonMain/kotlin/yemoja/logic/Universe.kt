@@ -493,6 +493,14 @@ class Universe(
     }
 
     /**
+     * What the user chose, from the two settings files beside the logbook and then the defaults.
+     *
+     * Here rather than in a front end, so that every front end asks one object and none of them can
+     * disagree about what the user chose. `UI-2`.
+     */
+    val settings: Settings by lazy { Settings(store) }
+
+    /**
      * The values [field] suggests: what it ships with, and what this logbook already uses.
      *
      * `DATA-25` writes the presets on the description and leaves the joining to the Universe,

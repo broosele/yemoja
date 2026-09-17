@@ -127,6 +127,7 @@ import yemoja.logic.Evaluated
 import yemoja.logic.Import
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
+import yemoja.logic.Settings
 import yemoja.logic.Types
 import yemoja.logic.Universe
 import yemoja.logic.completeAscent
@@ -292,6 +293,9 @@ internal class Changer(private val universe: Universe?) {
     fun changed() {
         edition++
     }
+
+    /** What the user chose, or absent where no logbook is open. `UI-2`. */
+    val settings: Settings? get() = universe?.settings
 
     fun change(changes: List<Change>): Outcome {
         // A window opened on no logbook has nothing to write to, and nothing in it asks. `GUI-30`.
@@ -502,6 +506,7 @@ private fun Home(
     val taking = remember(universe) { Taking() }
     val giving = remember(universe) { Giving() }
     val planning = remember(universe) { Planning() }
+    val choosing = remember(universe) { Choosing() }
     val scope = rememberCoroutineScope()
     Selectable {
         Column(
@@ -533,11 +538,21 @@ private fun Home(
                         scope.launch { look(universe, platform, reading, changer) }
                     }
                     put(Deed.PLAN) {
-                        // Opened on today, the day a plan is most often made for.
+                        // Opened on today, the day a plan is most often made for, and on the
+                        // gradient factors the user chose where they chose any. `GUI-41`.
                         if (!planning.open) {
-                            planning.typed = Intention(date = platform.today().toString())
+                            val chosen = universe.settings
+                            planning.typed = intentionOf(
+                                platform.today(),
+                                chosen.number(Settings.DEFAULT_GF_LOW),
+                                chosen.number(Settings.DEFAULT_GF_HIGH),
+                            )
                         }
                         planning.open = true
+                    }
+                    put(Deed.SETTINGS) {
+                        if (!choosing.open) choosing.fill(universe.settings)
+                        choosing.open = true
                     }
                     if (platform.pick != null) {
                         put(Deed.IMPORT) { take(universe, platform, taking, changer) }
@@ -560,6 +575,7 @@ private fun Home(
                 Reader(universe, platform, reading, changer, scope)
                 Taker(universe, taking, changer)
                 Planner(universe, planning, changer, onPlanned)
+                Chooser(universe, choosing)
                 Review(universe, changer, onApplied)
                 giving.said?.let { Aside(it) }
             }
@@ -2654,9 +2670,12 @@ private fun Ascent(profile: Item) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(modifier = Modifier.width(LABEL))
+        // Asked each time the row is drawn, so a rate chosen in the settings is the one pressed.
+        val rate = changer.settings?.number(Settings.DEFAULT_ASCENT_RATE) ?: FALLBACK_ASCENT_RATE
+        val last = changer.settings?.number(Settings.DEFAULT_LAST_STOP) ?: FALLBACK_LAST_STOP
         Button(
             onClick = {
-                said = when (val worked = completeAscent(profile, ASCENT_RATE, LAST_STOP)) {
+                said = when (val worked = completeAscent(profile, rate, last)) {
                     is Ascended.Refused -> worked.reason
                     is Ascended.Done -> {
                         val changes = ascentWrittenTo(profile, worked)
@@ -2671,7 +2690,7 @@ private fun Ascent(profile: Item) {
             Text("Add the ascent")
         }
         Text(
-            text = said ?: "rising at $ASCENT_RATE m a minute, shallowest stop at $LAST_STOP m",
+            text = said ?: "rising at ${plain(rate)} m a minute, shallowest stop at ${plain(last)} m",
             style = MaterialTheme.typography.bodyMedium,
             color = if (said == null) MaterialTheme.colorScheme.outline
             else MaterialTheme.colorScheme.error,
@@ -2679,11 +2698,15 @@ private fun Ascent(profile: Item) {
     }
 }
 
-/** How fast an ascent rises, in metres a minute, until a setting says otherwise. */
-internal const val ASCENT_RATE = 9.0
+/**
+ * How fast an ascent rises where there is no logbook to ask, which a row with a plan in it never is.
+ *
+ * The setting's own default is the answer everywhere else. `GUI-42`.
+ */
+internal val FALLBACK_ASCENT_RATE: Double = Settings.DEFAULT_ASCENT_RATE.default!!
 
-/** How deep the shallowest stop is taken, in metres, until a setting says otherwise. */
-internal const val LAST_STOP = 3.0
+/** How deep the shallowest stop is taken where there is no logbook to ask. */
+internal val FALLBACK_LAST_STOP: Double = Settings.DEFAULT_LAST_STOP.default!!
 
 // --- The graph of a recording. `GUI-4`.
 

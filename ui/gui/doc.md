@@ -375,6 +375,32 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
+  form of every setting saying where each value came from.**
+
+  Five settings are a form rather than a place, so they open in the System box like a download or
+  a plan, from a deed of their own, rather than taking a tab. A tab is the answer once there are
+  enough of them to want sections; nothing about this one stands in its way.
+
+  **Each setting says where its value came from**: *set on this device*, *set in this logbook*,
+  *the default*, or *not set* for one with no default. `DATA-9` has three layers and a reader
+  cannot see them otherwise, and a choice kept on one device is one somebody will look for in vain
+  on another.
+
+  **Save writes what changed, and all or nothing.** Every box is read before anything is written,
+  so one that will not do leaves the rest as they were rather than half a form saved; what will not
+  do is said in the setting's own terms, with its range and unit. An emptied box takes the choice
+  away, and what answers is the next layer. Where a save goes is the Universe's rule, not the
+  form's: to the logbook's file unless this device's file already holds that setting.
+
+  **The gradient factors are typed as percentages**, as the plan form takes them and for the same
+  reason, `GUI-41`, and held as the proportions the file writes. They have no default, and say *not
+  set* until somebody sets them.
+
+  **A setting reaches the making of something and nothing after.** The plan form and the ascent
+  button read them when a plan is made or an ascent written; nothing that works out what a plan or a
+  dive comes to reads one. `LOGIC-35`.
+
 - **GUI-41 — How a plan is started.** *Settled:* **a deed on the home screen and a form of eight
   questions, making a dive at one depth with its ascent already added.**
 
@@ -394,7 +420,8 @@ once and corrected. The numbers stay unused rather than being given to something
   and a number the application chose for the reader is a safety decision nobody made. They are typed
   as percentages, the way divers say 30/70, and a value below one is refused rather than read as a
   fraction of a percent: `0.7` is what somebody who knows the file's proportions types for seventy.
-  When the logbook's settings are read, `default_gf_low` and `default_gf_high` start the two boxes.
+  Where the user chose `default_gf_low` and `default_gf_high` in the settings, those start the two
+  boxes; where they chose nothing, the boxes start empty. `GUI-42`.
 
   **What it makes is written as a file writes a plan**: a dive holding one profile marked `planned`,
   its depths running down at the descent rate and holding the bottom, one gas source switched to at
@@ -402,9 +429,9 @@ once and corrected. The numbers stay unused rather than being given to something
   plan with its stops rather than a bottom waiting for a button. A plan the model will not answer for
   is still made and opened, and its own view says why. `GUI-40`.
 
-  **What it assumes is written beside the deed**: descending at 18 m a minute, rising at 9, the
-  shallowest stop at 3 m. Constants until there are settings to read them from, and said rather than
-  hidden for the reason `GUI-40` gives.
+  **What it assumes is written beside the deed**: the descent rate, the ascent rate and the
+  shallowest stop, as the settings hold them, and a pointer to where they are changed. Said rather
+  than hidden for the reason `GUI-40` gives.
 
   A plan of several levels is not started here. It is still written by hand, and the form would need
   a table of rows to take one.
@@ -448,9 +475,9 @@ once and corrected. The numbers stay unused rather than being given to something
   once.
 
   **What the ascent assumes is on the button, not behind it**: the rate it rises at and the depth
-  of the shallowest stop, which `LOGIC-35` takes as arguments rather than storing. They are
-  constants until there is a settings screen to read a preference from, and the row says what they
-  are, so nothing about the ascent is worked out from something a reader cannot see.
+  of the shallowest stop, which `LOGIC-35` takes as arguments rather than storing. They are read
+  from the settings when the row is drawn, `GUI-42`, and the row says what they are, so nothing
+  about the ascent is worked out from something a reader cannot see.
 
   **The run a plan carries gas from is typed, not chosen**, as `@2026-09-20#0*b`. Every other key a
   form offers is an entry of the item being edited, so it lists them; this one is an entry of

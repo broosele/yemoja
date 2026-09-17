@@ -214,6 +214,7 @@ class GreetingTest {
                 "Download from dive computer",
                 "Plan dive",
                 "Ask an agent",
+                "Settings",
             ),
             Deed.entries.map { it.label },
         )

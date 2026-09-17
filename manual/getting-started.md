@@ -40,10 +40,10 @@ Nobody else's medical or insurance is warned about, and generic gear owes nothin
 is due, nothing is shown.
 
 **System** holds what can be done to a logbook as a whole: making one, opening one, importing,
-exporting to UDDF, downloading from a dive computer, and asking an agent. All but the first two
-need a logbook open. Three have more written about them: importing and downloading in
-[computers-and-importing.md](computers-and-importing.md), exporting in [uddf.md](uddf.md), and
-the agent below.
+exporting to UDDF, downloading from a dive computer, planning a dive, asking an agent, and
+settings. All but the first two need a logbook open. Most have more written about them:
+importing and downloading in [computers-and-importing.md](computers-and-importing.md), exporting
+in [uddf.md](uddf.md), settings in [settings.md](settings.md), and planning and the agent below.
 
 **Statistics** plots your dives. The first box chooses what is drawn:
 
@@ -132,7 +132,8 @@ at 18 metres a minute, and adds its ascent at once, so what opens among your div
 with its stops. Everything else about it — the site, the cylinder, a second gas — is added the way
 you change any dive, and *Add the ascent* is there again once you have.
 
-The gradient factors are never filled in for you. They decide how conservative the plan is, and
+The gradient factors are filled in only if you have chosen defaults for them in **Settings**, and
+so are the rates the form says beside the button. They decide how conservative the plan is, and
 that is a decision for you to make rather than a number for Yemoja to assume.
 
 A plan with more than one level, or one you want to shape sample by sample, is still written into
