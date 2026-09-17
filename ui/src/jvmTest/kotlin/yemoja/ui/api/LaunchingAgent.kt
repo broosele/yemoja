@@ -17,9 +17,12 @@ object LaunchingAgent {
         // The streams are handed straight through, which is what makes this a launcher rather
         // than another party to the conversation: the window speaks to the agent, not to this.
         val started = ProcessBuilder(
-            listOf(running, "-cp", System.getProperty("java.class.path"), "yemoja.ui.api.FakeAgent"),
+            listOf(running, "-cp", System.getProperty("java.class.path"), FAKE),
         ).inheritIO().start()
         java.io.File(arguments[0]).writeText(started.pid().toString())
         started.waitFor()
     }
 }
+
+/** The agent this one launches, which is the one that answers without a model. */
+private const val FAKE = "yemoja.ui.api.FakeAgent"
