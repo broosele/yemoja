@@ -103,6 +103,17 @@ class Staging private constructor(
     private val after: Half,
 ) {
 
+    /**
+     * A number that moves whenever what is staged does.
+     *
+     * Not notification: `DATA-6` settles that nothing is announced and nothing subscribes, and this
+     * is the other half of that answer, as the Universe's own revision is. A review showing what is
+     * staged has to be able to tell that an agent has staged something since, because the agent
+     * goes on working while somebody reads.
+     */
+    var edition: Int = 0
+        private set
+
     /** Every item this staging would touch, in the order their types are declared in. */
     val staged: List<Staged>
         get() = (before.ids() + after.ids()).distinct().mapNotNull { stagedOf(it) }
@@ -131,6 +142,7 @@ class Staging private constructor(
         if (made is Result.Unusable) return Outcome.Refused(made.reason)
         at.item.apply(at.field, made)
         after.write(id, copy)
+        edition += 1
         return Outcome.Done()
     }
 
@@ -156,6 +168,7 @@ class Staging private constructor(
             made.apply(name, read)
         }
         after.write(freshId(), made)
+        edition += 1
         return Outcome.Done()
     }
 
@@ -169,6 +182,7 @@ class Staging private constructor(
         val held = into.logbook[id] ?: return Outcome.Refused("$id names nothing")
         before.keep(id, held)
         after.remove(id, held.description)
+        edition += 1
         return Outcome.Done()
     }
 
@@ -177,6 +191,7 @@ class Staging private constructor(
         val description = (before.set[id] ?: after.set[id])?.description ?: return
         before.remove(id, description)
         after.remove(id, description)
+        edition += 1
     }
 
     /** Forget everything staged, changing nothing in the logbook. */
@@ -198,8 +213,20 @@ class Staging private constructor(
      * one item the same is true field by field, so an edit to a rating that landed goes while an
      * edit to its remarks that did not stays. Applying again refuses it again, which is right: it
      * is still a decision about a value nobody holds.
+     *
+     * **[seen] is the edition the reader was shown.** Where it is given and the staging has moved
+     * since — an agent goes on working while somebody reads — nothing is applied and the reader is
+     * told, because applying a list that changed under them is applying what nobody agreed to.
+     * Left out, whatever is staged now is applied.
      */
-    fun apply(): Applied {
+    fun apply(seen: Int? = null): Applied {
+        if (seen != null && seen != edition) {
+            return Applied(
+                0,
+                0,
+                listOf(Refused("", "", "what is staged has changed since it was shown")),
+            )
+        }
         val refused = ArrayList<Refused>()
         val changes = ArrayList<Change>()
         // What leaves the staging once the change lands: whole items, and fields within an item.

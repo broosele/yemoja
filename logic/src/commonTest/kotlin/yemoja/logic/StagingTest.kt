@@ -381,3 +381,49 @@ class StagingTest {
         )
     }
 }
+
+/*
+ * What a review was shown, and what it applies. `RECON-8`, `GUI-38`.
+ */
+class EditionTest {
+
+    @Test
+    fun `the edition moves whenever what is staged does`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        val first = staging.edition
+        staging.set("2026-06-01#0", "rating", 8)
+        val staged = staging.edition
+        assertTrue(staged > first, "staging a change moves it")
+        staging.delete("2026-06-02#0")
+        assertTrue(staging.edition > staged, "and so does staging a deletion")
+        val before = staging.edition
+        staging.drop("2026-06-02#0")
+        assertTrue(staging.edition > before, "and dropping one")
+    }
+
+    @Test
+    fun `applying what a reader was shown applies it`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.set("2026-06-01#0", "rating", 8)
+        val shown = staging.edition
+        assertEquals(Applied(1, 1, emptyList()), staging.apply(shown))
+        assertEquals(8, read(universe, "2026-06-01#0", "rating"))
+    }
+
+    @Test
+    fun `applying a list that moved under the reader applies none of it`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.set("2026-06-01#0", "rating", 8)
+        val shown = staging.edition
+        // The agent goes on working while somebody reads: this is the item nobody saw.
+        staging.delete("2026-06-02#0")
+        val applied = staging.apply(shown)
+        assertEquals(0, applied.items)
+        assertEquals("what is staged has changed since it was shown", applied.refused.single().reason)
+        assertEquals(6, read(universe, "2026-06-01#0", "rating"), "the edit did not land either")
+        assertNotNull(universe.logbook["2026-06-02#0"], "and the dive nobody saw staged is here")
+    }
+}

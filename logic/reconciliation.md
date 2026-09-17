@@ -367,6 +367,12 @@ columns mapped by the user rather than guessed.
   stale field survived or vanished depending on its neighbours; the review found that on a copy of
   the fixture, a rating staged against 6 while the logbook held 7.
 
+  **A review applies what it was shown.** A staging carries an edition that moves whenever anything
+  is staged, dropped or applied, and `apply` takes the edition the reader was shown and refuses the
+  lot where it has moved since. An agent goes on working while somebody reads, so without it an
+  *apply all* could take in an item that appeared after the list was drawn — a deletion, say — which
+  is applying what nobody agreed to.
+
   What shows all this is the window's, `GUI-38`.
 
 - **RECON-4 — Whether importers are also exporters.** *Settled:* **for UDDF, yes, and export is
