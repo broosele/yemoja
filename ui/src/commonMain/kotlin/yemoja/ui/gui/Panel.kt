@@ -289,12 +289,7 @@ private fun Says(parts: List<Part>, quiet: Boolean, onFollow: (String) -> Unit) 
     )
 }
 
-/**
- * Start the agent named, and say so where it will not start.
- *
- * Only a command that started is remembered, so a mistyped one is not what the panel opens on next
- * time.
- */
+/** Start the agent named, and say so where it will not start. */
 private fun start(
     talk: Talk,
     conversation: Conversation,
@@ -309,18 +304,37 @@ private fun start(
     talk.personal = false
     talk.writing = false
     scope.launch {
-        try {
-            conversation.start(command)
+        val failed = startedWith(conversation, command, onStarted)
+        if (failed == null) {
             talk.stance = Stance.READY
-            onStarted(command)
-        } catch (refused: Exception) {
-            // Wider than a RuntimeException on purpose: a command nobody has installed fails
-            // where the process is started, and that is an IOException.
-            talk.exchanges += Exchange(Turn.WINDOW, failedOf(command, refused.message))
+        } else {
+            talk.exchanges += Exchange(Turn.WINDOW, failed)
             talk.agent = null
             talk.stance = Stance.NONE
         }
     }
+}
+
+/**
+ * Starts what [command] names in [conversation], and answers what to say where it would not start.
+ *
+ * **Only a command that started is kept**, handed to [onStarted] once it has, so a mistyped one is
+ * not what the panel opens on next time. `GUI-38`.
+ */
+internal suspend fun startedWith(
+    conversation: Conversation,
+    command: String,
+    onStarted: (String) -> Unit,
+): String? {
+    try {
+        conversation.start(command)
+    } catch (refused: Exception) {
+        // Wider than a RuntimeException on purpose: a command nobody has installed fails where
+        // the process is started, and that is an IOException.
+        return failedOf(command, refused.message)
+    }
+    onStarted(command)
+    return null
 }
 
 /**
