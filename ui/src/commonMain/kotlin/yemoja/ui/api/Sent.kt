@@ -17,7 +17,7 @@ import yemoja.data.Units
  */
 
 /**
- * [item] as the members an agent reads, leaving out a person's private details unless [personal].
+ * [item] as the members an agent reads.
  *
  * Written the way a file writes it, so the agent can read it against `manual/data-format.md`:
  * references as `@id`, a mix as `EAN32`, numbers in the units a file uses by default. Unlike a
@@ -27,40 +27,28 @@ import yemoja.data.Units
  * **A series is not sent**, only how many samples it holds. A profile is thousands of them, and
  * `series` fetches one when a question needs it.
  */
-internal fun sentOf(item: Item, personal: Boolean): Stored.Members {
+internal fun sentOf(item: Item): Stored.Members {
     val members = LinkedHashMap<String, Stored>()
     for (field in item.description.fields) {
-        if (!personal && field.personal) continue
         when (val read = item.read(field.name)) {
             Result.Absent -> Unit
             is Result.Unusable -> members[field.name] = unusable(read.raw, read.reason)
-            is Result.Usable -> members[field.name] = heldOf(field, read.value, personal)
+            is Result.Usable -> members[field.name] = heldOf(field, read.value)
         }
     }
     return Stored.Members(members)
 }
 
-/**
- * The names of [item]'s private details that hold something and were left out.
- *
- * Said rather than hidden, so an agent asked for an email can tell the user it was withheld rather
- * than that there is none.
- */
-internal fun withheldOf(item: Item): List<String> =
-    item.description.fields
-        .filter { it.personal && item.read(it.name) !is Result.Absent }
-        .map { it.name }
-
 @Suppress("UNCHECKED_CAST")
-private fun heldOf(field: FieldDescription, value: Any, personal: Boolean): Stored =
+private fun heldOf(field: FieldDescription, value: Any): Stored =
     when (field.cardinality) {
-        Cardinality.SINGLE -> oneOf(field, value, personal)
+        Cardinality.SINGLE -> oneOf(field, value)
         Cardinality.LIST -> Stored.Elements(
-            (value as List<Element<Any>>).map { elementOf(field, it, personal) },
+            (value as List<Element<Any>>).map { elementOf(field, it) },
         )
 
         Cardinality.KEYED -> Stored.Members(
-            (value as Map<String, Element<Any>>).mapValues { elementOf(field, it.value, personal) },
+            (value as Map<String, Element<Any>>).mapValues { elementOf(field, it.value) },
         )
 
         Cardinality.SERIES -> countOf(value as Series)
@@ -74,14 +62,14 @@ private fun heldOf(field: FieldDescription, value: Any, personal: Boolean): Stor
         )
     }
 
-private fun elementOf(field: FieldDescription, held: Element<Any>, personal: Boolean): Stored =
+private fun elementOf(field: FieldDescription, held: Element<Any>): Stored =
     when (held) {
-        is Element.Usable -> oneOf(field, held.value, personal)
+        is Element.Usable -> oneOf(field, held.value)
         is Element.Unusable -> unusable(held.raw, held.reason)
     }
 
-private fun oneOf(field: FieldDescription, value: Any, personal: Boolean): Stored =
-    if (field is OwnedItemDescription) sentOf(value as Item, personal) else leafOf(field, value)
+private fun oneOf(field: FieldDescription, value: Any): Stored =
+    if (field is OwnedItemDescription) sentOf(value as Item) else leafOf(field, value)
 
 /**
  * One value as a file writes it: a number and a boolean as themselves, anything else as text.

@@ -92,11 +92,9 @@ class DescribeTest {
     }
 
     @Test
-    fun `an owned item is described with its fields, and a private field is marked`() {
+    fun `an owned item is described with its fields`() {
         val described = read(Tools(diving()).describe("person"))
         val fields = (described.at("types", "0", "fields") as Stored.Elements).elements
-        assertEquals(true, fields.first { it.leaf("name") == "email" }.leaf("personal"))
-        assertNull(fields.first { it.leaf("name") == "name" }.leaf("personal"))
         val medical = fields.first { it.leaf("name") == "medical" }
         assertEquals("owned item", medical.leaf("kind"))
         val inside = (medical.at("fields") as Stored.Elements).elements.map { it.leaf("name") }
@@ -127,25 +125,13 @@ class GetTest {
     }
 
     @Test
-    fun `a person's private details are withheld, and named as withheld`() {
+    fun `a person is sent whole, private details and all`() {
+        // Nothing is held back from an agent, and the manual says so rather than the code doing
+        // it. `API-5`.
         val anna = read(Tools(diving()).get("anna"))
         assertEquals("Anna", anna.leaf("item", "name"))
-        assertNull(anna.at("item", "email"))
-        assertNull(anna.at("item", "medical"))
-        val withheld = (anna.at("withheld") as Stored.Elements).elements
-        assertEquals(listOf("email", "medical"), withheld.map { (it as Stored.Leaf).value })
-    }
-
-    @Test
-    fun `allowed, they are sent`() {
-        var allowed = false
-        val tools = Tools(diving(), personal = { allowed })
-        assertNull(read(tools.get("anna")).at("item", "email"))
-        allowed = true
-        val anna = read(tools.get("anna"))
-        assertEquals("anna@example.invalid", anna.leaf("item", "email"), "asked on every call")
+        assertEquals("anna@example.invalid", anna.leaf("item", "email"))
         assertEquals(60L, anna.leaf("item", "medical", "body_mass"))
-        assertNull(anna.at("withheld"))
     }
 
     @Test
@@ -284,15 +270,9 @@ class AggregateTest {
     }
 
     @Test
-    fun `a private detail is withheld from a figure too, unless allowed`() {
-        assertEquals(
-            "medical is withheld, being a person's private details, unless the user allows them",
-            reason(Tools(diving()).aggregate(listOf("anna"), "medical.body_mass", "mean")),
-        )
-        val tools = Tools(diving(), personal = { true })
-        val allowed = read(tools.aggregate(listOf("anna"), "medical.body_mass", "mean"))
+    fun `a figure may be taken over a person's private details like any other field`() {
+        val allowed = read(Tools(diving()).aggregate(listOf("anna"), "medical.body_mass", "mean"))
         assertEquals(60L, allowed.leaf("value"))
-        assertFalse(allowed.leaf("unit") == null)
     }
 }
 

@@ -430,15 +430,13 @@ class ResultTest {
 class HousekeepingTest {
 
     @Test
-    fun `a field says whether it is housekeeping, a source, or private`() {
+    fun `a field says whether it is housekeeping or a source`() {
         val plain = TextDescription("name")
         assertEquals(false, plain.housekeeping)
         assertEquals(false, plain.source)
-        assertEquals(false, plain.personal)
         assertEquals(true, TextDescription("key", housekeeping = true).housekeeping)
         assertEquals(true, DateDescription("raw", source = true).source)
-        assertEquals(true, NumberDescription("mass", Dimension.MASS, personal = true).personal)
         val inner = ItemDescription("inner", listOf(plain))
-        assertEquals(true, OwnedItemDescription("detail", inner, personal = true).personal)
+        assertEquals(true, OwnedItemDescription("detail", inner, housekeeping = true).housekeeping)
     }
 }

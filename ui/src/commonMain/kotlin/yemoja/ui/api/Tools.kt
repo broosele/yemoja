@@ -54,22 +54,23 @@ data class Reply(val text: String, val refused: Boolean = false)
  * **Nothing here changes the logbook.** A write tool stages, and what is staged happens only when
  * somebody looks at it and applies it. `RECON-8`.
  *
- * [personal] and [writing] are asked on every call rather than once, because the user may tick or
- * untick either while a conversation is under way. `API-5`.
+ * [writing] is asked on every call rather than once, because the user may tick or untick the box
+ * while a conversation is under way. `API-5`.
+ *
+ * **Nothing is held back from an agent.** Everything the logbook holds about a person — an address,
+ * a telephone number, a medical — is sent like anything else, and the user is warned of that rather
+ * than protected from it. `API-5`.
  *
  * **Not safe to call from two threads.** The Universe is not, and `LOGIC-5` has one operation at a
  * time, so whoever carries a call here carries it onto the thread the Universe lives on.
  */
 class Tools(
     private val universe: Universe,
-    /**
-     * Whether the user allows changes to be staged, asked on every call.
-     *
-     * Before [personal], so that a call site passing one flag as a trailing lambda is passing the
-     * one it was passing before this was added.
-     */
+    /** Whether the user allows changes to be staged, asked on every call. */
     private val writing: () -> Boolean = { false },
-    private val personal: () -> Boolean = { false },
+    // Going, and ignored already: nothing is held back from an agent. It stays only until the
+    // window stops passing it, so that the tree compiles between the two commits.
+    @Suppress("UNUSED_PARAMETER") personal: () -> Boolean = { false },
 ) {
 
     /** Every type, or the one called [type], with each field's kind, unit and vocabulary. */
@@ -124,7 +125,7 @@ class Tools(
             "type" to Stored.Leaf(description.name),
             "total" to Stored.Leaf(items.size.toLong()),
             "items" to Stored.Members(
-                page.associate { universe.logbook.idOf(it).orEmpty() to sentOf(it, personal()) },
+                page.associate { universe.logbook.idOf(it).orEmpty() to sentOf(it) },
             ),
         )
         if (next < items.size) members["next"] = Stored.Leaf("${universe.revision}:$next")
@@ -137,12 +138,8 @@ class Tools(
         val members = linkedMapOf<String, Stored>(
             "id" to Stored.Leaf(id),
             "type" to Stored.Leaf(item.description.name),
-            "item" to sentOf(item, personal()),
+            "item" to sentOf(item),
         )
-        val withheld = if (personal()) emptyList() else withheldOf(item)
-        if (withheld.isNotEmpty()) {
-            members["withheld"] = Stored.Elements(withheld.map { Stored.Leaf(it) })
-        }
         return replied(*members.toList().toTypedArray())
     }
 
@@ -209,12 +206,6 @@ class Tools(
                     "but was $measure",
             )
         val type = ids.firstNotNullOfOrNull { universe.logbook[it] }?.description
-        val first = path.substringBefore('.')
-        if (type != null && !personal() && type[first]?.personal == true) {
-            return refused(
-                "$first is withheld, being a person's private details, unless the user allows them",
-            )
-        }
         val figure = when (val figured = figureOf(universe.logbook, ids, path, chosen, weight)) {
             is Figured.Refused -> return refused(figured.reason)
             is Figured.Taken -> figured.figure
@@ -364,7 +355,6 @@ class Tools(
             is OwnedItemDescription -> members["fields"] = fieldsOf(field.description)
             else -> Unit
         }
-        if (field.personal) members["personal"] = Stored.Leaf(true)
         return Stored.Members(members)
     }
 

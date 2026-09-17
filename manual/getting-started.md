@@ -191,6 +191,13 @@ Yemoja can put your logbook to an AI agent you have installed yourself. It suppl
 for none: the agent is yours, it signs itself in, and what it costs is between you and whoever
 runs it.
 
+**Everything the agent reads leaves your machine.** Whatever it looks at to answer you is sent to
+whoever runs its model, and that includes your people's addresses, telephone numbers, e-mail
+addresses and medical notes, because a question about who you dived with is answered from the
+items that hold them. Yemoja holds nothing back, so the only judgement about what a provider sees
+is yours: ask an agent about a logbook you are willing to send, or run a model on your own machine,
+where nothing leaves it.
+
 **Press *Ask an agent*** on the home screen. A panel opens beside whatever tab you are on and
 stays there as you move between tabs, so a dive the agent names can be opened and read while you
 carry on talking. Type the command that starts your agent — whatever its own instructions give
@@ -216,11 +223,6 @@ survives the window being closed. It is not part of your logbook.
 of which tools it has been allowed, and whatever else it keeps. Those go in a folder next to your
 logbook, named after it with `.agent` on the end, so your logbook stays your dives and nothing
 else. Deleting that folder costs you nothing but what the agent remembered about itself.
-
-**Private details are withheld** unless you tick *include personal details*: your people's
-birthdays, e-mail addresses, telephone numbers, addresses, medicals and insurance. The box starts
-empty for every conversation. Tick it and the agent can read them — which means sending them to
-whoever runs its model, as everything else you ask is sent.
 
 **Check what it tells you.** An agent reads your logbook and answers in ordinary language, and it
 can be confidently wrong: about which dives it counted, or about what you meant. It is asked to

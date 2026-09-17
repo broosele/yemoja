@@ -19,10 +19,10 @@ logic layer is designed with it in mind.
 **The read-only tools, the server that carries them, and an agent that reaches them.**
 `describe`, `list`, `get`, `series` and `aggregate` answer as `API-4` sets out, in `Tools.kt`,
 and `ToolServer.kt` serves them over MCP with the instructions and the manual's two data chapters.
-A person's private details are withheld unless a flag asked on every call says otherwise.
+Everything an item holds is sent, private details included: `API-5`.
 
-**The window starts it and the panel decides the flag.** A conversation makes a socket of its own,
-hands the tools the box the user ticks beside it, and closes both when it ends. `GUI-38`.
+**The window starts it and the panel decides what is allowed.** A conversation makes a socket of
+its own, hands the tools the box the user ticks beside it, and closes both when it ends. `GUI-38`.
 
 **An agent can stage a change.** `stage_set`, `stage_add`, `stage_delete` and `staged` answer while
 the user allows changes and are refused while they do not, and what they stage is `RECON-8`'s
@@ -114,15 +114,16 @@ behaviour of its own, that behaviour is in the wrong place.
   makes the arithmetic right and mentions make the choice checkable, but neither makes the
   choice correct.
 
-- **API-5 — What an agent is not given.** *Settled:* **a person's details beyond their name, and
-  any way to write, unless the user allows either for the conversation in hand.**
+- **API-5 — What an agent is not given.** *Settled:* **any way to write, unless the user allows it
+  for the conversation in hand. Nothing else.**
 
-  A person's `birthday`, `email`, `phone`, `address`, `medical` and `insurance` are left out of
-  every reply, and each of those fields says so itself, `DATA-119`. A reply names the ones it
-  left out that hold something, so an agent asked for an email says it was withheld rather than
-  that there is none. Most of the people in a logbook are somebody other than the user, and a
-  question about diving rarely needs them. A box beside the conversation puts them back until the
-  conversation ends.
+  *Reversed once built:* this also held back a person's `birthday`, `email`, `phone`, `address`,
+  `medical` and `insurance` unless a second box was ticked, and `DATA-119` marked those fields for
+  it. The user took all of it out. An agent is now sent whatever it reads, private details
+  included, and what stands in its place is a warning where the manual's agent chapter begins:
+  everything in the logbook you ask about goes to whoever runs the agent's model. The box, the
+  withholding and the mark are gone, since half-kept machinery of that sort is worse than none —
+  it reads as a promise.
 
   **The write tools do nothing while *Allow changes* is unticked**, and it is off at the
   start of every conversation. Every call to one is refused, with a reply saying what the user

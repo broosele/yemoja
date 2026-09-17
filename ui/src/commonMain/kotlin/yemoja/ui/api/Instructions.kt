@@ -27,8 +27,6 @@ Reading:
 - A series is sent as a count of its samples. Call series for its values.
 - Every reply carries the logbook's revision. If it has moved since you read something an answer
   relies on, read that again. A cursor from an older revision is refused.
-- A person's private details are withheld unless the user allows them. A reply names what was
-  withheld, so say that it was withheld rather than that it is missing.
 
 Answering:
 - Choose the items a question is about yourself, then pass their ids to aggregate for any

@@ -2181,15 +2181,17 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
-- **DATA-119 — Which fields hold a person's private details.** *Settled:* **the field says so.**
-  `FieldDescription` carries `personal`, and a person marks `birthday`, `email`, `phone`,
-  `address`, `medical` and `insurance` with it. What reads it is the agent's tool server, which
-  leaves those fields out of what it sends unless the user allows them, `API-5`.
+- **DATA-119 — Which fields hold a person's private details.** *Settled, then reversed:* **no
+  field says, because nothing asks any more.** `FieldDescription` carried `personal`, and a person
+  marked `birthday`, `email`, `phone`, `address`, `medical` and `insurance` with it, so the agent's
+  tools could leave them out of what they sent. The user took that machinery out in favour of
+  saying plainly that everything asked about goes to whoever runs the agent's model — see `API-5`
+  — and a mark nothing reads is noise, so the mark went with it. `DATA-115`'s two marks stay,
+  being read by every front end.
 
-  Two homes were refused. A list in the front end naming a person's fields would be a front end
-  describing a type, `UI-3`. A set on the type, beside the two `DATA-115` had, was what this was
-  built as first; asking why the fact sat away from the field it describes is what moved all
-  three, and `DATA-115` is amended below.
+  What it cost is worth writing down, in case it comes back. A conversation about a buddy now
+  sends that buddy's telephone number, address and medical notes, and the only thing between a
+  user and that is the warning in the manual.
 - **DATA-118 — Whether an item set knows whose logbook it is.** *Settled:* **yes, as the
   reference the manifest holds.** `ItemSet.user` is what `yemoja.json` names, or nothing.
 
