@@ -26,11 +26,8 @@ hands the tools the box the user ticks beside it, and closes both when it ends. 
 
 **An agent can stage a change.** `stage_set`, `stage_add`, `stage_delete` and `staged` answer while
 the user allows changes and are refused while they do not, and what they stage is `RECON-8`'s
-`Staging`. Nothing they do reaches the logbook.
-
-One thing is owed, by the window rather than by this layer:
-
-- **Nothing shows what is staged.** A review of it, field by field, is `GUI-38`'s.
+`Staging`. Nothing they do reaches the logbook until somebody reviews it on the home screen and
+applies it, which is the window's, `GUI-38`.
 
 ## Scope
 
@@ -127,7 +124,7 @@ behaviour of its own, that behaviour is in the wrong place.
   question about diving rarely needs them. A box beside the conversation puts them back until the
   conversation ends.
 
-  **The write tools do nothing while *allowed to change data* is unticked**, and it is off at the
+  **The write tools do nothing while *Allow changes* is unticked**, and it is off at the
   start of every conversation. Every call to one is refused, with a reply saying what the user
   would have to tick, so an agent asked to correct forty dives says so rather than reporting that
   it cannot. Even ticked, nothing is applied: what a write tool does is stage, and applying is the

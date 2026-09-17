@@ -189,7 +189,7 @@ you, as one line — and press **Start**. Then ask.
 **It reaches your logbook through Yemoja and no other way.** Every request it makes to read a
 file, write one or run a command is refused, and the panel says so each time one is.
 
-**It can propose changes, and you decide.** Tick *allowed to change data* and an agent can stage
+**It can propose changes, and you decide.** Tick *Allow changes* and an agent can stage
 changes — correct a clock error across a trip, give one dive's gear to the others. Nothing it
 stages touches your logbook. The panel says how many items are waiting, and **Review** takes you to
 them on the home screen, under the other deeds. Each item shows every field it would change, what
