@@ -253,6 +253,24 @@ class StagingTest {
     }
 
     @Test
+    fun `an item edited since its deletion was staged is not deleted`() {
+        val universe = diving()
+        val staging = stagingOf(universe)
+        staging.delete("2026-06-01#0")
+        universe.change(
+            Operation.EDIT,
+            Change.Write(universe.logbook["2026-06-01#0"]!!, "rating", 3),
+        )
+        val applied = staging.apply()
+        assertEquals(0, applied.items)
+        assertEquals("rating", applied.refused.single().at)
+        val why = applied.refused.single().reason
+        assertTrue("edited since" in why, why)
+        assertNotNull(universe.logbook["2026-06-01#0"], "the dive is still here")
+        assertEquals(1, staging.staged.size, "and the deletion is still waiting to be looked at")
+    }
+
+    @Test
     fun `an item to be added has no copy of how it was, and is named when it lands`() {
         val universe = diving()
         val staging = stagingOf(universe)

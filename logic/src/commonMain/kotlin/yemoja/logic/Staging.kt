@@ -216,6 +216,18 @@ class Staging private constructor(
                         going += proposed.id
                         continue
                     }
+                    // **A deletion waits on the same rule as an edit.** Somebody who corrected a
+                    // dive between an agent staging its deletion and a reader pressing apply would
+                    // otherwise lose the correction and the dive, with nothing said.
+                    val moved = proposed.fields.filter { it.moved }
+                    if (moved.isNotEmpty()) {
+                        refused += Refused(
+                            proposed.id,
+                            moved.first().at,
+                            "it has been edited since this was staged, so it is not deleted",
+                        )
+                        continue
+                    }
                     changes += Change.Delete(proposed.id)
                     going += proposed.id
                     items += 1
