@@ -124,11 +124,20 @@ changing a gas afterwards does not move the stops — ask the model again and it
 no longer hold. A plan that cannot be answered for says why, which is
 usually that nobody has written its gradient factors in.
 
-**Starting a plan still means editing a file.** The form does not take a series — nobody types a
-thousand samples into a box — so a plan's depths are written into the dive's own file by hand:
-a profile with `planned` set, the water type, the gradient factors, and a `depth` reaching the
-bottom. From there the window does the rest, and *Add the ascent* finishes it.
-[data-fields.md](data-fields.md) lists what a profile holds, and
+**Start a plan with *Plan dive*** on the home screen. Give it a day and, if you like, a time; the
+depth of the bottom and how long you mean to be there, counted from leaving the surface; what you
+breathe, written as `air`, `EAN32` or `TMX 21/35`; whether the water is salt or fresh; and the
+gradient factors, as percentages — 30 and 70 for 30/70. **Create plan** makes the dive, descending
+at 18 metres a minute, and adds its ascent at once, so what opens among your dives is a whole plan
+with its stops. Everything else about it — the site, the cylinder, a second gas — is added the way
+you change any dive, and *Add the ascent* is there again once you have.
+
+The gradient factors are never filled in for you. They decide how conservative the plan is, and
+that is a decision for you to make rather than a number for Yemoja to assume.
+
+A plan with more than one level, or one you want to shape sample by sample, is still written into
+the dive's own file by hand: a profile with `planned` set, the water type, the gradient factors,
+and a `depth` reaching the bottom. [data-fields.md](data-fields.md) lists what a profile holds, and
 [decompression.md](decompression.md) explains what the model does, what it assumes, and what it
 cannot know.
 

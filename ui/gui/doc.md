@@ -375,6 +375,40 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-41 — How a plan is started.** *Settled:* **a deed on the home screen and a form of eight
+  questions, making a dive at one depth with its ascent already added.**
+
+  A plan is a dive that has not happened, so it is started beside the deeds that bring dives in,
+  in the System box, and what it makes is opened where dives are read. Everything a plan holds
+  beyond its first shape — the site, the cylinder, a second gas — is changed there like any dive,
+  so the form asks only what a profile cannot be drawn without.
+
+  **Eight questions**: the day, a time if one is known, the depth of the bottom, the minutes from
+  leaving the surface to leaving the bottom, the gas, salt or fresh water, and the two gradient
+  factors. Typed as text and read when the plan is asked for, so a half-typed depth is not refused
+  keystroke by keystroke, and what will not read is said in the reader's terms: *03/10/2026 is not a
+  date, which is written 2026-10-03*. The bottom time counts the descent, which is how a diver means
+  one, and one too short to reach the bottom in is refused with the arithmetic.
+
+  **The gradient factors are asked for and never assumed.** They say how conservative the plan is,
+  and a number the application chose for the reader is a safety decision nobody made. They are typed
+  as percentages, the way divers say 30/70, and a value below one is refused rather than read as a
+  fraction of a percent: `0.7` is what somebody who knows the file's proportions types for seventy.
+  When the logbook's settings are read, `default_gf_low` and `default_gf_high` start the two boxes.
+
+  **What it makes is written as a file writes a plan**: a dive holding one profile marked `planned`,
+  its depths running down at the descent rate and holding the bottom, one gas source switched to at
+  the start, and the model named. The ascent is then worked out and added, so what opens is a whole
+  plan with its stops rather than a bottom waiting for a button. A plan the model will not answer for
+  is still made and opened, and its own view says why. `GUI-40`.
+
+  **What it assumes is written beside the deed**: descending at 18 m a minute, rising at 9, the
+  shallowest stop at 3 m. Constants until there are settings to read them from, and said rather than
+  hidden for the reason `GUI-40` gives.
+
+  A plan of several levels is not started here. It is still written by hand, and the form would need
+  a table of rows to take one.
+
 - **GUI-40 — Where what the model says appears, and how a plan is written.** *Settled:*
   **under the run it is about, in the box that already holds the run, and a plan carries a button
   that works its ascent out.**

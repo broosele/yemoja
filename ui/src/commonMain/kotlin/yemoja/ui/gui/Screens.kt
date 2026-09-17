@@ -371,6 +371,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 platform = platform,
                                 kept = kept.getValue(tab),
                                 onApplied = { said -> told = Told(said) },
+                                onPlanned = follow,
                                 // An agent is asked about a logbook, so there is none to talk to
                                 // before one is open.
                                 onAgent = if (universe == null || conversing == null) {
@@ -491,6 +492,7 @@ private fun Home(
     kept: Kept,
     onAgent: (() -> Unit)? = null,
     onApplied: (String) -> Unit = {},
+    onPlanned: (String) -> Unit = {},
 ) {
     val set = universe?.logbook
     val changer = LocalChanger.current
@@ -499,6 +501,7 @@ private fun Home(
     val reading = remember(universe) { Reading() }
     val taking = remember(universe) { Taking() }
     val giving = remember(universe) { Giving() }
+    val planning = remember(universe) { Planning() }
     val scope = rememberCoroutineScope()
     Selectable {
         Column(
@@ -529,6 +532,13 @@ private fun Home(
                     put(Deed.DOWNLOAD) {
                         scope.launch { look(universe, platform, reading, changer) }
                     }
+                    put(Deed.PLAN) {
+                        // Opened on today, the day a plan is most often made for.
+                        if (!planning.open) {
+                            planning.typed = Intention(date = platform.today().toString())
+                        }
+                        planning.open = true
+                    }
                     if (platform.pick != null) {
                         put(Deed.IMPORT) { take(universe, platform, taking, changer) }
                     }
@@ -549,6 +559,7 @@ private fun Home(
                 Deeds(deeds)
                 Reader(universe, platform, reading, changer, scope)
                 Taker(universe, taking, changer)
+                Planner(universe, planning, changer, onPlanned)
                 Review(universe, changer, onApplied)
                 giving.said?.let { Aside(it) }
             }
@@ -2669,10 +2680,10 @@ private fun Ascent(profile: Item) {
 }
 
 /** How fast an ascent rises, in metres a minute, until a setting says otherwise. */
-private const val ASCENT_RATE = 9.0
+internal const val ASCENT_RATE = 9.0
 
 /** How deep the shallowest stop is taken, in metres, until a setting says otherwise. */
-private const val LAST_STOP = 3.0
+internal const val LAST_STOP = 3.0
 
 // --- The graph of a recording. `GUI-4`.
 
