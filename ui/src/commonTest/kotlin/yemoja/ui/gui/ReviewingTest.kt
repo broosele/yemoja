@@ -177,3 +177,18 @@ class StagedLineTest {
         assertEquals("4 items staged, waiting to be looked at.", stagedLineOf(4))
     }
 }
+
+/*
+ * What a review says when the staging moved under the reader. `RECON-8`, `GUI-38`.
+ */
+class MovedListTest {
+
+    @Test
+    fun `a list that changed since it was drawn says so, and says nothing was applied`() {
+        val said = appliedSaidOf(
+            Applied(0, 0, listOf(Refused("", "", "what is staged has changed since it was shown"))),
+        )
+        assertTrue(said.startsWith("Nothing was applied."), said)
+        assertTrue("changed since it was shown" in said, said)
+    }
+}

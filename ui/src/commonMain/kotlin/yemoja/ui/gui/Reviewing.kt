@@ -48,7 +48,11 @@ internal fun Review(universe: Universe?, changer: Changer, onApplied: (String) -
     // left every row alone changes nothing on the screen, and pressing a deed that visibly does
     // nothing is the one outcome a reader cannot tell from a fault.
     var said by remember(staging) { mutableStateOf<String?>(null) }
-    val staged = remember(staging, changer.edition) { staging.staged }
+    // What is staged is read afresh whenever the logbook changes and whenever the staging does,
+    // since an agent goes on staging while somebody reads. The edition is what says the second.
+    // `RECON-8`.
+    val shown = staging.edition
+    val staged = remember(staging, changer.edition, shown) { staging.staged }
     if (staged.isEmpty()) {
         said?.let { Aside(it) }
         return
@@ -69,7 +73,9 @@ internal fun Review(universe: Universe?, changer: Changer, onApplied: (String) -
         ) {
             Button(
                 onClick = {
-                    val done = appliedSaidOf(staging.apply())
+                    // Only what this list was drawn from: an agent may have staged something
+                    // since, and applying that would be applying what nobody was shown.
+                    val done = appliedSaidOf(staging.apply(shown))
                     said = done
                     onApplied(done)
                     changer.changed()

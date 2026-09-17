@@ -75,7 +75,7 @@ fun gui(folder: String? = null): Int {
                 ask = ::asked,
                 pick = ::picked,
                 save = ::saved,
-                conversing = { personal, writing ->
+                conversing = { writing ->
                     val open = held
                     val where = at
                     if (open == null || where == null) {
@@ -88,7 +88,7 @@ fun gui(folder: String? = null): Int {
                     // one withholds a person's private details and the other lets an agent stage
                     // changes. `API-5`.
                     val relay = ToolSocket(
-                        Tools(open, writing = writing, personal = personal),
+                        Tools(open, writing = writing),
                         Dispatchers.Main,
                     )
                     Talking(relay, where, scope)

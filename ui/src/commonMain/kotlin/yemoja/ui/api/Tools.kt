@@ -57,9 +57,9 @@ data class Reply(val text: String, val refused: Boolean = false)
  * [writing] is asked on every call rather than once, because the user may tick or untick the box
  * while a conversation is under way. `API-5`.
  *
- * **Nothing is held back from an agent.** Everything the logbook holds about a person — an address,
- * a telephone number, a medical — is sent like anything else, and the user is warned of that rather
- * than protected from it. `API-5`.
+ * **Nothing is held back from an agent.** Everything the logbook holds about a person — an
+ * address, a telephone number, a medical — is sent like anything else, and the user is warned of
+ * that rather than protected from it. `API-5`.
  *
  * **Not safe to call from two threads.** The Universe is not, and `LOGIC-5` has one operation at a
  * time, so whoever carries a call here carries it onto the thread the Universe lives on.
@@ -68,9 +68,6 @@ class Tools(
     private val universe: Universe,
     /** Whether the user allows changes to be staged, asked on every call. */
     private val writing: () -> Boolean = { false },
-    // Going, and ignored already: nothing is held back from an agent. It stays only until the
-    // window stops passing it, so that the tree compiles between the two commits.
-    @Suppress("UNUSED_PARAMETER") personal: () -> Boolean = { false },
 ) {
 
     /** Every type, or the one called [type], with each field's kind, unit and vocabulary. */

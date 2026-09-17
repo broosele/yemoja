@@ -118,3 +118,50 @@ class StoppedOfTest {
         assertTrue("said nothing about why" in stoppedOf(null))
     }
 }
+
+/*
+ * A start that finishes after the reader has pressed Stop. `GUI-38`.
+ */
+class StoppedWhileStartingTest {
+
+    @Test
+    fun `a start that finishes says the agent is ready`() {
+        val talk = Talk()
+        talk.stance = Stance.STARTING
+        started(talk, talk.turn, failed = null)
+        assertEquals(Stance.READY, talk.stance)
+    }
+
+    @Test
+    fun `a start stopped while it ran says nothing at all`() {
+        val talk = Talk()
+        talk.stance = Stance.STARTING
+        val turn = talk.turn
+        // Stop: the conversation is closed and the panel is back where it started.
+        talk.stopped()
+        talk.stance = Stance.NONE
+        started(talk, turn, failed = null)
+        assertEquals(Stance.NONE, talk.stance, "a stopped conversation is not made ready again")
+        assertEquals(emptyList(), talk.exchanges)
+    }
+
+    @Test
+    fun `a start that failed after being stopped says nothing either`() {
+        val talk = Talk()
+        val turn = talk.turn
+        talk.stopped()
+        started(talk, turn, failed = "npx could not be started")
+        assertEquals(emptyList(), talk.exchanges, "the reader has moved on; this is not their news")
+    }
+
+    @Test
+    fun `a start that failed says so, and leaves the panel offering to start`() {
+        val talk = Talk()
+        talk.agent = "npx"
+        talk.stance = Stance.STARTING
+        started(talk, talk.turn, failed = "npx could not be started")
+        assertEquals(Stance.NONE, talk.stance)
+        assertEquals(null, talk.agent)
+        assertEquals(listOf(Exchange(Turn.WINDOW, "npx could not be started")), talk.exchanges)
+    }
+}

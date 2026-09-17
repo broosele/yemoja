@@ -192,9 +192,7 @@ internal class Platform(
      * tools read them on every call, a conversation being long enough for either answer to change
      * part way through. `GUI-38`, `API-5`.
      */
-    val conversing: (
-        (personal: () -> Boolean, writing: () -> Boolean) -> Conversation
-    )? = null,
+    val conversing: ((writing: () -> Boolean) -> Conversation)? = null,
     /**
      * What this platform can do to a logbook as a whole, by deed.
      *
@@ -407,6 +405,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                             staged = staged,
                             told = told,
                             onReview = { tab = tabs.first() },
+                            onTurn = { changer.changed() },
                             remembered = universe.settings.text(Settings.AGENT_COMMAND),
                             onStarted = { universe.settings.choose(Settings.AGENT_COMMAND, it) },
                             onFollow = follow,

@@ -55,7 +55,7 @@ import yemoja.data.ItemSet
  *
  * Not immutable.
  */
-private class Talk {
+internal class Talk {
 
     /** The command that starts an agent, as the user types it. */
     var command: String by mutableStateOf("")
@@ -65,18 +65,27 @@ private class Talk {
 
     var stance: Stance by mutableStateOf(Stance.NONE)
 
+    /**
+     * Which conversation this is, counted up whenever one is stopped.
+     *
+     * Starting and asking both answer on a coroutine, and what they answer is stale where the
+     * reader has pressed Stop meanwhile: a start that finishes after a stop would say the agent is
+     * ready when the conversation it belonged to is closed. Each turn keeps the number it began
+     * with and says nothing where it has moved.
+     */
+    var turn: Int = 0
+        private set
+
+    /** Counts this conversation done, so nothing it started still speaks for the panel. */
+    fun stopped() {
+        turn += 1
+    }
+
     /** The conversation so far, oldest first. */
     var exchanges: List<Exchange> by mutableStateOf(emptyList())
 
     /** What is being typed to ask next. */
     var question: String by mutableStateOf("")
-
-    /**
-     * Whether the tools may answer with what is personal.
-     *
-     * Off at the start of every conversation, whatever the last one was allowed. `API-5`.
-     */
-    var personal: Boolean by mutableStateOf(false)
 
     /**
      * Whether an agent may stage changes at all, which is the other box and starts off too.
@@ -102,13 +111,20 @@ private class Talk {
 @Composable
 internal fun Panel(
     set: ItemSet,
-    conversing: (personal: () -> Boolean, writing: () -> Boolean) -> Conversation,
+    conversing: (writing: () -> Boolean) -> Conversation,
     /** How many items an agent has staged, waiting to be reviewed. */
     staged: Int,
     /** What a review came to, which the conversation records as the window's own turn. */
     told: Told?,
     /** Opens the review, which is on the home screen where an import's is. */
     onReview: () -> Unit,
+    /**
+     * Said when a turn ends, an agent having staged whatever it staged while it answered.
+     *
+     * What a review is showing goes out of date while somebody reads it, and nothing below this
+     * layer announces a change. `DATA-6`, `RECON-8`.
+     */
+    onTurn: () -> Unit,
     /** The command an agent was last started from on this device, which the panel opens on. */
     remembered: String?,
     /** Keeps [String] as the command to open on next time, once an agent has started from it. */
@@ -117,7 +133,7 @@ internal fun Panel(
     onClose: () -> Unit,
 ) {
     val talk = remember { Talk().also { it.command = remembered.orEmpty() } }
-    val conversation = remember { conversing({ talk.personal }, { talk.writing }) }
+    val conversation = remember { conversing { talk.writing } }
     // Whatever was said before this panel opened has been read already: a panel opened again is
     // not a conversation carried on, and would otherwise begin with old news.
     val before = remember { told }
@@ -165,7 +181,7 @@ internal fun Panel(
                 TextButton(onClick = onReview) { Text("Review") }
             }
         }
-        Asking(talk, conversation, scope)
+        Asking(talk, conversation, scope, onTurn)
     }
 }
 
@@ -208,9 +224,13 @@ private fun Starting(
 
 /** What to ask next, and what the agent is allowed to be told while it answers. */
 @Composable
-private fun Asking(talk: Talk, conversation: Conversation, scope: CoroutineScope) {
+private fun Asking(
+    talk: Talk,
+    conversation: Conversation,
+    scope: CoroutineScope,
+    onTurn: () -> Unit,
+) {
     Boxed("Allow changes", talk.writing) { talk.writing = it }
-    Boxed("Include personal details", talk.personal) { talk.personal = it }
     Compact(
         value = talk.question,
         onChange = { talk.question = it },
@@ -222,7 +242,7 @@ private fun Asking(talk: Talk, conversation: Conversation, scope: CoroutineScope
         horizontalArrangement = Arrangement.End,
     ) {
         Button(
-            onClick = { ask(talk, conversation, scope) },
+            onClick = { ask(talk, conversation, scope, onTurn) },
             enabled = talk.stance == Stance.READY && talk.question.isNotBlank(),
         ) { Text("Ask") }
     }
@@ -301,18 +321,28 @@ private fun start(
     talk.stance = Stance.STARTING
     talk.exchanges = emptyList()
     talk.shown = 0
-    talk.personal = false
     talk.writing = false
-    scope.launch {
-        val failed = startedWith(conversation, command, onStarted)
-        if (failed == null) {
-            talk.stance = Stance.READY
-        } else {
-            talk.exchanges += Exchange(Turn.WINDOW, failed)
-            talk.agent = null
-            talk.stance = Stance.NONE
-        }
+    val turn = talk.turn
+    scope.launch { started(talk, turn, startedWith(conversation, command, onStarted)) }
+}
+
+/**
+ * What a start that has finished does to the panel, where the conversation is still the same one.
+ *
+ * **A turn that was stopped says nothing.** Starting answers on a coroutine, and a reader who
+ * presses Stop while an agent is starting has closed the conversation already: letting the start
+ * finish the job would leave the panel saying an agent is ready when its tools are shut and its
+ * process is gone. [failed] is what to say where it would not start, or absent where it did.
+ */
+internal fun started(talk: Talk, turn: Int, failed: String?) {
+    if (turn != talk.turn) return
+    if (failed == null) {
+        talk.stance = Stance.READY
+        return
     }
+    talk.exchanges += Exchange(Turn.WINDOW, failed)
+    talk.agent = null
+    talk.stance = Stance.NONE
 }
 
 /**
@@ -345,28 +375,43 @@ internal suspend fun startedWith(
  */
 private fun stop(talk: Talk, conversation: Conversation) {
     conversation.close()
+    talk.stopped()
     talk.agent = null
     talk.stance = Stance.NONE
     talk.shown = 0
 }
 
 /** Put what is typed to the agent, and take the answer as it arrives. */
-private fun ask(talk: Talk, conversation: Conversation, scope: CoroutineScope) {
+private fun ask(
+    talk: Talk,
+    conversation: Conversation,
+    scope: CoroutineScope,
+    onTurn: () -> Unit,
+) {
     val said = talk.question.trim()
     talk.question = ""
     talk.exchanges += Exchange(Turn.USER, said)
     talk.stance = Stance.ANSWERING
+    val turn = talk.turn
     scope.launch {
         try {
             conversation.ask(said) { piece ->
+                if (turn != talk.turn) return@ask
                 talk.exchanges = heard(talk.exchanges, piece)
                 talk.take(conversation.refused)
             }
         } catch (stopped: Exception) {
-            talk.exchanges += Exchange(Turn.WINDOW, stoppedOf(stopped.message))
+            if (turn == talk.turn) {
+                talk.exchanges += Exchange(Turn.WINDOW, stoppedOf(stopped.message))
+            }
         }
+        // Stopped while it was answering: the conversation is gone and nothing here speaks for it.
+        if (turn != talk.turn) return@launch
         talk.take(conversation.refused)
         talk.stance = Stance.READY
+        // An agent stages while it answers, so what a review is showing is out of date the moment
+        // a turn ends. `RECON-8`.
+        onTurn()
     }
 }
 
