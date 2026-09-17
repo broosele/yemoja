@@ -425,10 +425,13 @@ that is the only record of it.
 - `alarms` (series) — what the computer warned about, and when. Each is one of `ascent`,
   `breath`, `deco`, `error`, `link`, `microbubbles`, `rbt`, `skincooling` or `surface`.
 - `gas_switches` (series) — which gas you were on and when, each naming the `gas_sources`
-  entry: `[[1260, "*g2"]]`. **The first entry is the gas you went in on**, and the rest are the
-  changes. Most Shearwaters report it on the first sample of the dive and that is what is
-  written; a computer that reports nothing at all leaves the series out, and then which gas you
-  started on is not recorded and is worth writing in.
+  entry: `[[0, "*g1"], [1260, "*g2"]]`. **An entry at the start says the gas you went in on**,
+  and the rest are the changes. Before the first entry nothing says what you were breathing.
+  Most Shearwaters report the starting gas on the first sample of the dive and that is what is
+  written. A computer that reports only its changes writes just the switch to a deco gas, and a
+  computer that reports nothing leaves the series out; either way the gas you started on is not
+  recorded, and it is worth writing in, since without it Yemoja's model will not work the dive
+  out.
 
   A reading naming the gas you were already on is dropped, being a repeat rather than a change.
   A dive your computer cut in two brings one along at the second stretch's start.

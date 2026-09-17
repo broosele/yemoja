@@ -374,6 +374,38 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a first switch part way down says nothing about what was breathed before it`() {
+        // A computer that reports only its changes: trimix to the bottom, a switch to EAN50 at
+        // twenty-four minutes, and nothing about the trimix. Taking the first switch's gas for
+        // the time before it breathed EAN50 at thirty-five metres, and said so as a finding.
+        val set = logbook(
+            "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+                "gas_sources": {"g1": {"gas_type": "TMX18/35"}, "g2": {"gas_type": "EAN50"}},
+                "profiles": {"p1": {"water_type": "fresh", "gradient_factor_low": 0.3,
+                    "gradient_factor_high": 0.7, "gas_switches": [[1440, "*g2"]],
+                    "depth": [[0, 0], [120, 35], [1400, 35], [1440, 21], [2400, 0]]}}}""",
+        )
+        val refused = assertIs<Evaluated.Refused>(evaluate(profile(set["d#0"]!!, "p1")))
+
+        assertEquals(Refusal.FAULTY, refused.why, "the starting gas is worth writing in")
+        assertTrue("before" in refused.reason && "2:00" in refused.reason, refused.reason)
+    }
+
+    @Test
+    fun `a first switch at the surface is the gas the dive went in on`() {
+        val set = logbook(
+            "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+                "gas_sources": {"g1": {"gas_type": "TMX18/35"}, "g2": {"gas_type": "EAN50"}},
+                "profiles": {"p1": {"water_type": "fresh", "gradient_factor_low": 0.3,
+                    "gradient_factor_high": 0.7, "gas_switches": [[5, "*g1"], [1440, "*g2"]],
+                    "depth": [[0, 0], [120, 35], [1400, 35], [1440, 21], [2400, 0]]}}}""",
+        )
+        val evaluated = done(profile(set["d#0"]!!, "p1"))
+
+        assertTrue(evaluated.findings.none { "oxygen" in it.said }, "${evaluated.findings}")
+    }
+
+    @Test
     fun `two cylinders and nothing saying which was breathed is nothing to work from`() {
         val reason = refused(
             planned(

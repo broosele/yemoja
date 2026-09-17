@@ -222,6 +222,11 @@ leave out.
   The gas sources are `g1`, back-mounted trimix, and `g2`, a staged deco mix. `pressures`
   holds a series under each of those keys, `gas_switches` points at the second with `*g2`,
   and `decostop`, `alarms`, `no_deco_time`, `cns` and `otu` are all there.
+
+  **Its one switch is the switch to the deco gas**, at twenty-four minutes, and nothing records
+  the trimix it went down on — which is how a computer reporting only its changes writes a dive.
+  That is deliberate and kept: it is the case the model refuses rather than guesses, saying what
+  is missing, and a fixture that filled in the starting gas would hide it.
   `tolerances` records what the thinning was allowed to drop.
 
 Between them they exercise every profile and gas source field except `density` and

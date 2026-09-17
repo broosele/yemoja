@@ -169,6 +169,19 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated {
         "nothing says what was breathed on this run",
         Refusal.FAULTY,
     )
+    // A computer that reports only its changes writes the switch to its deco gas and nothing about
+    // the gas it went down on. Taking the first switch's gas for the time before it would breathe
+    // a deco mix on the bottom, which is a confident wrong answer rather than a refusal.
+    depths.firstOrNull { it.metres > SURFACE }?.let { under ->
+        if (breathed.startsAt > under.second) {
+            return Evaluated.Refused(
+                "nothing says what was breathed before the first gas switch, at " +
+                    "${clockOf(breathed.startsAt)}; the run was under water from " +
+                    clockOf(under.second),
+                Refusal.FAULTY,
+            )
+        }
+    }
     val carried = carriedInto(profile, surface, seen)
     if (carried is Carried.Refused) return Evaluated.Refused(carried.reason, Refusal.FAULTY)
 
@@ -459,7 +472,15 @@ private class Breathing(
     val fills: Map<String, Fill>,
 ) {
 
-    /** The source breathed at [second]: the one the last switch at or before it names. */
+    /** When the first switch says what is breathed, in seconds; nothing says before it. */
+    val startsAt: Int get() = switches.first().first
+
+    /**
+     * The source breathed at [second]: the one the last switch at or before it names.
+     *
+     * Before the first switch it is that switch's source, which is only right because
+     * [evaluated] refuses a run whose first switch comes after it has left the surface.
+     */
     fun keyAt(second: Int): String =
         switches.lastOrNull { it.first <= second }?.second ?: switches.first().second
 
@@ -566,6 +587,10 @@ private fun owner(profile: Item): Item? = (profile as? OwnedItem)?.parent
 /** A series from times and values that were worked out together, and so are the same length. */
 private fun seriesOf(seconds: List<Int>, values: List<Double>): Series =
     Series(seconds.toIntArray(), values.map { Element.Usable(it as Any) })
+
+/** Seconds into a run as a reader counts them, minutes and seconds: `24:00`. */
+private fun clockOf(second: Int): String =
+    "${second / 60}:${(second % 60).toString().padStart(2, '0')}"
 
 /** A depth as a finding says it, to a tenth of a metre, which is as fine as anyone reads one. */
 private fun metres(depth: Double): String {
