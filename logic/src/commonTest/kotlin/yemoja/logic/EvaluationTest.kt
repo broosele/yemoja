@@ -392,6 +392,22 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a starting gas written a sample after going under is still the starting gas`() {
+        // A computer sampling every five seconds is under a metre at five and writes the gas it
+        // started on at ten. The rule was one sample wide and refused every such dive; it allows
+        // a minute, which no bottom gas is breathed long enough in to matter.
+        val set = logbook(
+            "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+                "gas_sources": {"g1": {"gas_type": "TMX18/35"}, "g2": {"gas_type": "EAN50"}},
+                "profiles": {"p1": {"water_type": "fresh", "gradient_factor_low": 0.3,
+                    "gradient_factor_high": 0.7, "gas_switches": [[10, "*g1"], [1440, "*g2"]],
+                    "depth": [[0, 0], [5, 2], [120, 35], [1400, 35], [1440, 21], [2400, 0]]}}}""",
+        )
+
+        assertIs<Evaluated.Done>(evaluate(profile(set["d#0"]!!, "p1")))
+    }
+
+    @Test
     fun `a first switch at the surface is the gas the dive went in on`() {
         val set = logbook(
             "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},

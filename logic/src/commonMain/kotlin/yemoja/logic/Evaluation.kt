@@ -173,7 +173,7 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated {
     // the gas it went down on. Taking the first switch's gas for the time before it would breathe
     // a deco mix on the bottom, which is a confident wrong answer rather than a refusal.
     depths.firstOrNull { it.metres > SURFACE }?.let { under ->
-        if (breathed.startsAt > under.second) {
+        if (breathed.startsAt > under.second + STARTING_GAS_LATEST) {
             return Evaluated.Refused(
                 "nothing says what was breathed before the first gas switch, at " +
                     "${clockOf(breathed.startsAt)}; the run was under water from " +
@@ -479,7 +479,7 @@ private class Breathing(
      * The source breathed at [second]: the one the last switch at or before it names.
      *
      * Before the first switch it is that switch's source, which is only right because
-     * [evaluated] refuses a run whose first switch comes after it has left the surface.
+     * [evaluated] refuses a run whose first switch comes well after it has left the surface.
      */
     fun keyAt(second: Int): String =
         switches.lastOrNull { it.first <= second }?.second ?: switches.first().second
@@ -616,6 +616,17 @@ private const val BUHLMANN = "buhlmann"
 private const val MOST_OXYGEN = 1.6
 
 private const val SECONDS_IN_MINUTE = 60.0
+
+/**
+ * How long after a run goes under its first gas switch may still say the gas it went down on, in
+ * seconds.
+ *
+ * A computer writes the starting gas at its first sample or the one after, and one sampling every
+ * five seconds is already under a metre before it has. A minute takes in any of them, and no gas
+ * is breathed long enough in a minute's descent for which one it was to matter. A switch later
+ * than that is a change, and what came before it is unrecorded.
+ */
+private const val STARTING_GAS_LATEST = 60
 
 /** The whole of the central nervous system's single-exposure limit, as a percentage. */
 private const val WHOLE_CLOCK = 100.0

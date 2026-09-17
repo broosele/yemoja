@@ -547,8 +547,8 @@ To settle when we discuss architecture and features:
 
   **It refuses rather than guesses, and says what is missing.** No gradient factors on the
   profile, a `deco_model` naming something else, no `density`, no depths, nothing saying what was
-  breathed, a first gas switch that comes after the run has left the surface, a chain that comes
-  back on itself, a run before with no surface interval to cross.
+  breathed, a first gas switch more than a minute after the run has left the surface, a chain
+  that comes back on itself, a run before with no surface interval to cross.
   Each is a sentence a user can act on, and a dive off a depth gauge earns the first of them.
 
   **A refusal says which kind it is**, unasked or faulty, because a screen has to tell them
