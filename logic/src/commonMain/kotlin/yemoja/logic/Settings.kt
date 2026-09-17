@@ -13,26 +13,50 @@ import yemoja.data.json.SettingsFiles
  */
 
 /**
- * Setting is one thing a user may choose, what it may hold, and what holds where they chose nothing.
+ * Setting is one thing a user may choose, under the name a settings file writes it.
  *
  * **Its granularity is fixed here, with its name.** A setting meant for one kind of device carries
  * the prefix in its name, and a reader asks for that whole name: there is no falling back from one
  * prefix to another. `DATA-53`.
  *
+ * **So is its layer, where it has only one.** A setting [onlyHere] is read from this device's file
+ * alone and written there alone: a copy found in the logbook's file is ignored, since that file
+ * travels and what the setting holds is true of one machine. `DATA-9`.
+ *
  * Immutable.
  */
-class Setting internal constructor(
+sealed class Setting(
     /** As written in a settings file. */
     val name: String,
     /** What a front end calls it. */
     val label: String,
+    /** Whether it belongs to this device alone, and never to the logbook's file. */
+    val onlyHere: Boolean,
+)
+
+/**
+ * NumberSetting is a setting holding a number, in a unit of its own.
+ *
+ * Immutable.
+ */
+class NumberSetting internal constructor(
+    name: String,
+    label: String,
     /** The unit it is written in, which is the setting's own: a settings file declares no units. */
     val unit: String,
     /** What holds where nobody chose, or absent where the application does not choose for them. */
     val default: Double?,
     /** What a written value must lie in to be read at all. */
     val range: ClosedFloatingPointRange<Double>,
-)
+) : Setting(name, label, onlyHere = false)
+
+/**
+ * TextSetting is a setting holding a line of text, with no default.
+ *
+ * Immutable.
+ */
+class TextSetting internal constructor(name: String, label: String, onlyHere: Boolean) :
+    Setting(name, label, onlyHere)
 
 /**
  * Settings are what a logbook's user chose, asked for by name and answered from the first layer
@@ -59,43 +83,72 @@ class Settings internal constructor(private val store: FileStore) {
     private val held = HashMap<SettingsFile, Map<String, Stored>>()
 
     /** What [setting] holds, from the first layer that answers with something it can read. */
-    fun number(setting: Setting): Double? {
-        for (file in SettingsFile.entries) {
+    fun number(setting: NumberSetting): Double? {
+        for (file in layersOf(setting)) {
             readable(setting, file)?.let { return it }
         }
         return setting.default
     }
 
+    /** What [setting] holds, from the first layer that answers with text, or absent where none does. */
+    fun text(setting: TextSetting): String? {
+        for (file in layersOf(setting)) {
+            readable(setting, file)?.let { return it }
+        }
+        return null
+    }
+
     /** The file [setting] is answered from, or absent where its default answers. */
-    fun answeredBy(setting: Setting): SettingsFile? =
-        SettingsFile.entries.firstOrNull { readable(setting, it) != null }
+    fun answeredBy(setting: Setting): SettingsFile? = layersOf(setting).firstOrNull { file ->
+        when (setting) {
+            is NumberSetting -> readable(setting, file) != null
+            is TextSetting -> readable(setting, file) != null
+        }
+    }
 
     /**
      * Chooses [value] for [setting], or takes the choice away where [value] is absent.
      *
      * **Written where it is already kept, and otherwise to the logbook's file**, so a choice made on
      * one device reaches every other. Only a setting already kept on this device alone is written
-     * there, which is where somebody put it on purpose. A value outside the setting's range is
-     * refused rather than written, being one the next read would ignore.
+     * there, which is where somebody put it on purpose, and one [Setting.onlyHere] is written there
+     * always. A value outside the setting's range is refused rather than written, being one the next
+     * read would ignore.
      */
-    fun choose(setting: Setting, value: Double?): Outcome {
+    fun choose(setting: NumberSetting, value: Double?): Outcome {
         if (value != null && value !in setting.range) {
             return Outcome.Refused(
                 "${setting.label} should be ${setting.range.start} to " +
                     "${setting.range.endInclusive}, but was $value",
             )
         }
-        val file = if (keeps(setting, SettingsFile.LOCAL)) SettingsFile.LOCAL else SettingsFile.LOGBOOK
-        SettingsFiles.write(store, file, setting.name, value?.let { Stored.Leaf(it) })
-        held.remove(file)
+        write(setting, value?.let { Stored.Leaf(it) })
         return Outcome.Done()
     }
 
-    /** Whether [file] names [setting] at all, readable or not. */
-    private fun keeps(setting: Setting, file: SettingsFile): Boolean = setting.name in of(file)
+    /** Chooses [value] for [setting], or takes the choice away where it is absent or blank. */
+    fun choose(setting: TextSetting, value: String?): Outcome {
+        write(setting, value?.trim()?.ifEmpty { null }?.let { Stored.Leaf(it) })
+        return Outcome.Done()
+    }
+
+    /** Writes [value] for [setting] to the one file it belongs in. */
+    private fun write(setting: Setting, value: Stored?) {
+        val file = when {
+            setting.onlyHere -> SettingsFile.LOCAL
+            setting.name in of(SettingsFile.LOCAL) -> SettingsFile.LOCAL
+            else -> SettingsFile.LOGBOOK
+        }
+        SettingsFiles.write(store, file, setting.name, value)
+        held.remove(file)
+    }
+
+    /** The files [setting] may be answered from, in the order they answer. */
+    private fun layersOf(setting: Setting): List<SettingsFile> =
+        if (setting.onlyHere) listOf(SettingsFile.LOCAL) else SettingsFile.entries
 
     /** What [file] says [setting] is, where it says something the setting can hold. */
-    private fun readable(setting: Setting, file: SettingsFile): Double? {
+    private fun readable(setting: NumberSetting, file: SettingsFile): Double? {
         val value = (of(file)[setting.name] as? Stored.Leaf)?.value
         val number = when (value) {
             is Double -> value
@@ -106,6 +159,10 @@ class Settings internal constructor(private val store: FileStore) {
         return number.takeIf { it in setting.range }
     }
 
+    /** What [file] says [setting] is, where it says a line of text that is not blank. */
+    private fun readable(setting: TextSetting, file: SettingsFile): String? =
+        ((of(file)[setting.name] as? Stored.Leaf)?.value as? String)?.takeIf { it.isNotBlank() }
+
     /** Every setting [file] holds, read once and again after it is written. */
     private fun of(file: SettingsFile): Map<String, Stored> =
         held.getOrPut(file) { SettingsFiles.read(store, file) }
@@ -113,24 +170,38 @@ class Settings internal constructor(private val store: FileStore) {
     companion object {
 
         /** The low gradient factor a new plan starts with, from 0 to 1. None is assumed. */
-        val DEFAULT_GF_LOW = Setting("default_gf_low", "GF low", "", null, 0.0..1.0)
+        val DEFAULT_GF_LOW = NumberSetting("default_gf_low", "GF low", "", null, 0.0..1.0)
 
         /** The high gradient factor a new plan starts with, from 0 to 1. None is assumed. */
-        val DEFAULT_GF_HIGH = Setting("default_gf_high", "GF high", "", null, 0.0..1.0)
+        val DEFAULT_GF_HIGH = NumberSetting("default_gf_high", "GF high", "", null, 0.0..1.0)
 
         /** How fast a new plan descends, in metres a minute. */
         val DEFAULT_DESCENT_RATE =
-            Setting("default_descent_rate", "Descent rate", "m/min", 18.0, 1.0..60.0)
+            NumberSetting("default_descent_rate", "Descent rate", "m/min", 18.0, 1.0..60.0)
 
         /** How fast an ascent is written to rise, in metres a minute. */
         val DEFAULT_ASCENT_RATE =
-            Setting("default_ascent_rate", "Ascent rate", "m/min", 9.0, 1.0..30.0)
+            NumberSetting("default_ascent_rate", "Ascent rate", "m/min", 9.0, 1.0..30.0)
 
         /** How deep an ascent takes its shallowest stop, in metres. */
-        val DEFAULT_LAST_STOP = Setting("default_last_stop", "Last stop", "m", 3.0, 0.0..12.0)
+        val DEFAULT_LAST_STOP = NumberSetting("default_last_stop", "Last stop", "m", 3.0, 0.0..12.0)
 
-        /** Every setting there is, in the order a screen offers them. */
-        val ALL: List<Setting> = listOf(
+        /**
+         * The command that starts the user's agent, as it was last started.
+         *
+         * A desktop's, since only a desktop hosts an agent, and this device's alone: a command
+         * names a program where one machine keeps it, often in a folder under a user's own name,
+         * and the logbook's file carries whatever is in it to every machine. `GUI-38`.
+         */
+        val AGENT_COMMAND = TextSetting("desktop_agent_command", "Agent command", onlyHere = true)
+
+        /**
+         * Every setting the settings form offers, in its order.
+         *
+         * The agent's command is not among them. It is chosen where it is used, in the agent panel,
+         * which remembers the one last started. `GUI-42`.
+         */
+        val OFFERED: List<NumberSetting> = listOf(
             DEFAULT_GF_LOW,
             DEFAULT_GF_HIGH,
             DEFAULT_DESCENT_RATE,

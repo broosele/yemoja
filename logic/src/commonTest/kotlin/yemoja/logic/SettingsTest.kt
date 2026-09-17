@@ -97,7 +97,37 @@ class SettingsTest {
     }
 
     @Test
-    fun `every setting is offered, the gradient factors first`() {
+    fun `the agent's command is read from this device alone`() {
+        val (chosen, _) = settings("settings.local.json" to """{"desktop_agent_command": "codex-acp"}""")
+        assertEquals("codex-acp", chosen.text(Settings.AGENT_COMMAND))
+        assertEquals(SettingsFile.LOCAL, chosen.answeredBy(Settings.AGENT_COMMAND))
+    }
+
+    @Test
+    fun `a command found in the logbook's file is ignored, that file travelling`() {
+        val (chosen, _) = settings("settings.json" to """{"desktop_agent_command": "C:/Users/x/agent.exe"}""")
+        assertNull(chosen.text(Settings.AGENT_COMMAND))
+        assertNull(chosen.answeredBy(Settings.AGENT_COMMAND))
+    }
+
+    @Test
+    fun `a command chosen for the first time is kept on this device, never in the logbook`() {
+        val (chosen, store) = settings()
+        assertIs<Outcome.Done>(chosen.choose(Settings.AGENT_COMMAND, "  npx some-agent  "))
+        assertEquals("npx some-agent", chosen.text(Settings.AGENT_COMMAND), "as typed, without the spaces")
+        assertTrue(store.isFile("settings.local.json"))
+        assertTrue(!store.isFile("settings.json"), "nothing written where it would travel")
+    }
+
+    @Test
+    fun `a blank command takes the choice away`() {
+        val (chosen, _) = settings("settings.local.json" to """{"desktop_agent_command": "codex-acp"}""")
+        chosen.choose(Settings.AGENT_COMMAND, "   ")
+        assertNull(chosen.text(Settings.AGENT_COMMAND))
+    }
+
+    @Test
+    fun `every setting the form offers is a number, the gradient factors first`() {
         assertEquals(
             listOf(
                 "default_gf_low",
@@ -106,7 +136,7 @@ class SettingsTest {
                 "default_ascent_rate",
                 "default_last_stop",
             ),
-            Settings.ALL.map { it.name },
+            Settings.OFFERED.map { it.name },
         )
     }
 }

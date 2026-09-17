@@ -65,6 +65,13 @@ written in — a settings file declares none:
 - `default_last_stop` — the depth an ascent takes its shallowest stop at, in metres, from 0
   to 12. Without a choice, 3.
 
+One more is kept for you rather than chosen in the form:
+
+- `desktop_agent_command` — the command the agent panel last started an agent from. Only ever in
+  `settings.local.json`, and ignored if it turns up in `settings.json`: a command often names a
+  folder on one computer, and `settings.json` travels. See
+  [getting-started.md](getting-started.md#asking-an-agent).
+
 A value that is not a number, or lies outside its range, is ignored, and the next place in line
 answers instead.
 

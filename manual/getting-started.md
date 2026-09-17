@@ -233,9 +233,13 @@ decompression, for the reasons the [app-info](app-info.md) chapter gives, and a 
 offers some anyway is not speaking for Yemoja.
 
 **Nothing of a conversation is kept.** Closing the panel stops the agent and the conversation is
-gone; it is never written beside your logbook. The command that starts an agent is typed afresh
-each time for the same reason. What the agent remembers on its own side is between you and its
-provider.
+gone; it is never written beside your logbook. What the agent remembers on its own side is between
+you and its provider.
+
+**The command is remembered, on this computer only.** Once an agent has started, the panel opens on
+the same command next time, so you type it once. It is kept in `settings.local.json`, which never
+leaves this computer, because a command often names a folder that exists only here. Type another
+and start it to replace it.
 
 ## Copying text
 

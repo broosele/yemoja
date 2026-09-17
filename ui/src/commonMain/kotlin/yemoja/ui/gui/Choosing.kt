@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import yemoja.data.json.SettingsFile
 import yemoja.logic.Outcome
-import yemoja.logic.Setting
+import yemoja.logic.NumberSetting
 import yemoja.logic.Settings
 import yemoja.logic.Universe
 import kotlin.math.roundToLong
@@ -57,7 +57,7 @@ internal fun Chooser(universe: Universe?, choosing: Choosing) {
     if (universe == null || !choosing.open) return
     val settings = universe.settings
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
-        for (setting in Settings.ALL) {
+        for (setting in Settings.OFFERED) {
             Row(
                 modifier = Modifier.padding(vertical = HALF),
                 horizontalArrangement = Arrangement.spacedBy(GAP),
@@ -101,7 +101,7 @@ internal fun Chooser(universe: Universe?, choosing: Choosing) {
 /** Fills the form with what each setting holds now, as it is shown. */
 internal fun Choosing.fill(settings: Settings) {
     typed.clear()
-    for (setting in Settings.ALL) typed[setting.name] = shownOf(setting, settings.number(setting))
+    for (setting in Settings.OFFERED) typed[setting.name] = shownOf(setting, settings.number(setting))
     said = null
 }
 
@@ -112,8 +112,8 @@ internal fun Choosing.fill(settings: Settings) {
  * rest as they were rather than half the form saved.
  */
 private fun saved(settings: Settings, choosing: Choosing): String {
-    val chosen = LinkedHashMap<Setting, Double?>()
-    for (setting in Settings.ALL) {
+    val chosen = LinkedHashMap<NumberSetting, Double?>()
+    for (setting in Settings.OFFERED) {
         val typed = choosing.typed[setting.name].orEmpty()
         if (typed.trim() == shownOf(setting, settings.number(setting))) continue
         when (val read = chosenOf(setting, typed)) {
@@ -146,7 +146,7 @@ internal sealed class Entered {
  * application's default. The gradient factors are typed as percentages, as the plan form takes
  * them, and a value below one is refused rather than read as a fraction of a percent. `GUI-41`.
  */
-internal fun chosenOf(setting: Setting, typed: String): Entered {
+internal fun chosenOf(setting: NumberSetting, typed: String): Entered {
     val text = typed.trim().removeSuffix("%").trim()
     if (text.isEmpty()) return Entered.Value(null)
     val number = text.toDoubleOrNull()
@@ -167,24 +167,24 @@ internal fun chosenOf(setting: Setting, typed: String): Entered {
 }
 
 /** What a setting holds, as its box shows it: a percentage for a gradient factor, blank for none. */
-internal fun shownOf(setting: Setting, value: Double?): String = when {
+internal fun shownOf(setting: NumberSetting, value: Double?): String = when {
     value == null -> ""
     isPercentage(setting) -> plain(value * PERCENT)
     else -> plain(value)
 }
 
 /** Where a setting's value came from, as the form says it beside the box. */
-internal fun answeredSaid(file: SettingsFile?, setting: Setting): String = when (file) {
+internal fun answeredSaid(file: SettingsFile?, setting: NumberSetting): String = when (file) {
     SettingsFile.LOCAL -> "set on this device"
     SettingsFile.LOGBOOK -> "set in this logbook"
     null -> if (setting.default == null) "not set" else "the default"
 }
 
 /** The unit written after a setting's box. */
-private fun unitOf(setting: Setting): String = if (isPercentage(setting)) "%" else setting.unit
+private fun unitOf(setting: NumberSetting): String = if (isPercentage(setting)) "%" else setting.unit
 
 /** Whether [setting] is held as a proportion and typed as a percentage, which the factors are. */
-private fun isPercentage(setting: Setting): Boolean =
+private fun isPercentage(setting: NumberSetting): Boolean =
     setting == Settings.DEFAULT_GF_LOW || setting == Settings.DEFAULT_GF_HIGH
 
 /** A number as a person writes it: `18`, not `18.0`, and `9.5` where there is a fraction. */

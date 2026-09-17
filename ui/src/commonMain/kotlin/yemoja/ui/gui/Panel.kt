@@ -50,8 +50,8 @@ import yemoja.data.ItemSet
  * Talk is what the panel holds while it is open: an agent, what has been said, and what is typed.
  *
  * It lives as long as the panel does and no longer. **Nothing of a conversation is kept**, so
- * closing the panel is the end of it, and the command that starts an agent is typed afresh each
- * time. `GUI-38`.
+ * closing the panel is the end of it. The command that starts an agent is the one exception, and it
+ * is kept elsewhere: in this device's settings, once an agent has started from it. `GUI-38`.
  *
  * Not immutable.
  */
@@ -109,10 +109,14 @@ internal fun Panel(
     told: Told?,
     /** Opens the review, which is on the home screen where an import's is. */
     onReview: () -> Unit,
+    /** The command an agent was last started from on this device, which the panel opens on. */
+    remembered: String?,
+    /** Keeps [String] as the command to open on next time, once an agent has started from it. */
+    onStarted: (String) -> Unit,
     onFollow: (String) -> Unit,
     onClose: () -> Unit,
 ) {
-    val talk = remember { Talk() }
+    val talk = remember { Talk().also { it.command = remembered.orEmpty() } }
     val conversation = remember { conversing({ talk.personal }, { talk.writing }) }
     // Whatever was said before this panel opened has been read already: a panel opened again is
     // not a conversation carried on, and would otherwise begin with old news.
@@ -134,7 +138,7 @@ internal fun Panel(
             TextButton(onClick = onClose) { Text("Close") }
         }
         HorizontalDivider()
-        Starting(talk, conversation, scope)
+        Starting(talk, conversation, scope, onStarted)
         // A view of its own, so what is copied out of a conversation is the conversation.
         // `GUI-36`.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -167,7 +171,12 @@ internal fun Panel(
 
 /** The agent to run and the deed that starts it, or what is running and the deed that stops it. */
 @Composable
-private fun Starting(talk: Talk, conversation: Conversation, scope: CoroutineScope) {
+private fun Starting(
+    talk: Talk,
+    conversation: Conversation,
+    scope: CoroutineScope,
+    onStarted: (String) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
         horizontalArrangement = Arrangement.spacedBy(HALF),
@@ -182,7 +191,7 @@ private fun Starting(talk: Talk, conversation: Conversation, scope: CoroutineSco
                 )
             }
             Button(
-                onClick = { start(talk, conversation, scope) },
+                onClick = { start(talk, conversation, scope, onStarted) },
                 enabled = talk.command.isNotBlank(),
             ) { Text("Start") }
         } else {
@@ -280,8 +289,18 @@ private fun Says(parts: List<Part>, quiet: Boolean, onFollow: (String) -> Unit) 
     )
 }
 
-/** Start the agent named, and say so where it will not start. */
-private fun start(talk: Talk, conversation: Conversation, scope: CoroutineScope) {
+/**
+ * Start the agent named, and say so where it will not start.
+ *
+ * Only a command that started is remembered, so a mistyped one is not what the panel opens on next
+ * time.
+ */
+private fun start(
+    talk: Talk,
+    conversation: Conversation,
+    scope: CoroutineScope,
+    onStarted: (String) -> Unit,
+) {
     val command = talk.command.trim()
     talk.agent = agentOf(command)
     talk.stance = Stance.STARTING
@@ -293,6 +312,7 @@ private fun start(talk: Talk, conversation: Conversation, scope: CoroutineScope)
         try {
             conversation.start(command)
             talk.stance = Stance.READY
+            onStarted(command)
         } catch (refused: Exception) {
             // Wider than a RuntimeException on purpose: a command nobody has installed fails
             // where the process is started, and that is an IOException.

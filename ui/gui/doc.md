@@ -397,6 +397,10 @@ once and corrected. The numbers stay unused rather than being given to something
   reason, `GUI-41`, and held as the proportions the file writes. They have no default, and say *not
   set* until somebody sets them.
 
+  **The agent's command is a setting the form does not offer.** It is text rather than a number,
+  belongs to one device, and is chosen in the agent panel, which remembers the last command that
+  started. `GUI-38`.
+
   **A setting reaches the making of something and nothing after.** The plan form and the ascent
   button read them when a plan is made or an ascent written; nothing that works out what a plan or a
   dive comes to reads one. `LOGIC-35`.
@@ -622,9 +626,14 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **Nothing of a conversation is kept.** It lasts as long as the panel holds it, and whatever the
   agent keeps on its own side is between the user and its provider. What was asked, and whose
-  names were in it, is never written beside the logbook, where syncing would carry it. The command
-  that starts an agent is typed afresh each time for the same reason: there is nowhere to keep it
-  that a conversation would not also be kept in.
+  names were in it, is never written beside the logbook, where syncing would carry it.
+
+  **The command that starts an agent is kept, and on this device only.** It is a setting,
+  `desktop_agent_command`, written once an agent has started from it so a mistyped command is not
+  what the panel opens on next time. Only in `settings.local.json`, and a copy found in the logbook's
+  file is ignored: a command names a program where one machine keeps it, often under a folder named
+  for the user, and the logbook's file carries whatever is in it to every machine. It is not in the
+  settings form, being chosen where it is used. `GUI-42`, `DATA-9`.
 
   **It opens from a deed on home**, *Ask an agent*, beside the deeds that make, open, import and
   export a logbook — an agent is something done to a logbook as a whole, which is what that row

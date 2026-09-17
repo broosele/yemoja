@@ -407,6 +407,8 @@ internal fun Application(universe: Universe?, platform: Platform) {
                             staged = staged,
                             told = told,
                             onReview = { tab = tabs.first() },
+                            remembered = universe.settings.text(Settings.AGENT_COMMAND),
+                            onStarted = { universe.settings.choose(Settings.AGENT_COMMAND, it) },
                             onFollow = follow,
                             onClose = { talking = false },
                         )
