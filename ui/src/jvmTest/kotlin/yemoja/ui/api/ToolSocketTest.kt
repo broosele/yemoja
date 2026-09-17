@@ -110,3 +110,75 @@ private const val TIMEOUT = 30_000L
 
 /** How much a pipe holds before a writer waits for the reader. */
 private const val PIPE = 1 shl 20
+
+/*
+ * Stopping an agent and starting another, which is what the panel's Stop and Start do.
+ */
+class ReopeningTest {
+
+    private val universe: Universe = MemoryFileStore(
+        mapOf("dive/2026-06-01#0.json" to """{"max_depth": 18}"""),
+    ).let { Universe(LogbookReader.read(it, Types.ALL), null, it, null, null) }
+
+    @Test
+    fun `a socket closed and opened again answers, on another port with another token`() {
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        val watching = watchdog("reopening the tools") { socket.close() }
+        socket.open()
+        val was = socket.token
+        socket.close()
+        val again = socket.open()
+        try {
+            assertEquals(again, socket.port, "it is listening again")
+            assertTrue(socket.token != was, "on a token the last conversation's agent never had")
+            // The one that matters: a tool call over the reopened socket is answered rather than
+            // waiting for ever on a scope that was cancelled with the first conversation.
+            val toRelay = PipedOutputStream()
+            val relaysInput = PipedInputStream(toRelay, PIPE)
+            val relaysOutput = PipedOutputStream()
+            val fromRelay = PipedInputStream(relaysOutput, PIPE)
+            val relaying = Thread { relay(again, socket.token, relaysInput, relaysOutput) }
+            relaying.isDaemon = true
+            relaying.start()
+            runBlocking {
+                withTimeout(TIMEOUT) {
+                    val client = Client(Implementation("test", "1"))
+                    client.connect(
+                        StdioClientTransport(
+                            fromRelay.asSource().buffered(),
+                            toRelay.asSink().buffered(),
+                        ),
+                    )
+                    val answered = client.callTool("get", mapOf("id" to "2026-06-01#0"))
+                    val text = (answered.content.single() as TextContent).text
+                    assertTrue(""""max_depth": 18""" in text, text)
+                    client.close()
+                }
+            }
+        } finally {
+            socket.close()
+            watching.interrupt()
+        }
+    }
+
+    @Test
+    fun `an agent left over from the last conversation is refused by its old token`() {
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        val watching = watchdog("the old token") { socket.close() }
+        socket.open()
+        val was = socket.token
+        socket.close()
+        val again = socket.open()
+        try {
+            Socket(InetAddress.getByName("127.0.0.1"), again).use {
+                it.getOutputStream().write((was + "\n").toByteArray())
+                it.getOutputStream().flush()
+                it.soTimeout = TIMEOUT.toInt()
+                assertEquals(-1, it.getInputStream().read(), "should be dropped, and say nothing")
+            }
+        } finally {
+            socket.close()
+            watching.interrupt()
+        }
+    }
+}

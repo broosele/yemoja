@@ -28,8 +28,8 @@ internal class Talking(
      *
      * **One socket to a conversation**, so the token an agent was given stops working when the
      * conversation it belonged to ends and a process left running cannot come back to a logbook
-     * nobody is talking about. `API-4`. [close] closes it, so whoever makes one of these makes a
-     * socket for it rather than sharing one.
+     * nobody is talking about. `API-4`. [close] closes it and [start] opens it again, on another
+     * port with another token, which is what makes stopping an agent and starting one work.
      */
     private val socket: ToolSocket,
     /** The logbook being talked about. The agent works beside it rather than in it. `API-4`. */

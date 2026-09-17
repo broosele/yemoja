@@ -42,10 +42,16 @@ class ToolSocket(private val tools: Tools, private val onto: CoroutineContext) {
 
     private var listening: ServerSocket? = null
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** What a connection says first to show it was started by this window. */
-    val token: String = tokenOf()
+    /**
+     * What a connection says first to show it was started by this window.
+     *
+     * Made afresh every time this is opened, so an agent left over from a conversation that ended
+     * cannot come back to one that has begun since.
+     */
+    var token: String = tokenOf()
+        private set
 
     /** The port to reach it on, or absent before it is open. */
     val port: Int? get() = listening?.localPort
@@ -55,8 +61,15 @@ class ToolSocket(private val tools: Tools, private val onto: CoroutineContext) {
      *
      * Each connection is served a session of its own, so a second conversation is a second
      * connection rather than a second logbook.
+     *
+     * **It opens again after being closed**, with another port and another token: stopping an
+     * agent and starting one is two conversations, and the second is not owed the first's. Opening
+     * one that is already open changes nothing and answers the port it is on.
      */
     fun open(): Int {
+        listening?.let { return it.localPort }
+        token = tokenOf()
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val socket = ServerSocket(0, BACKLOG, InetAddress.getByName(LOOPBACK))
         listening = socket
         scope.launch {
@@ -72,7 +85,7 @@ class ToolSocket(private val tools: Tools, private val onto: CoroutineContext) {
         return socket.localPort
     }
 
-    /** Stops listening, and lets go of whatever is connected. */
+    /** Stops listening, and lets go of whatever is connected. [open] starts it again. */
     fun close() {
         listening?.close()
         listening = null
