@@ -235,6 +235,16 @@ private fun bundled(path: String): String {
 /** Something to look up resources from. A function has no class of its own to ask. */
 private object Bundled
 
+/**
+ * The name of every tool the server offers, which is also what the window allows an agent to call
+ * without refusing it. A test holds the two to each other, so a tool added to one is not missing
+ * from the other.
+ */
+internal val TOOL_NAMES: List<String> = listOf(
+    "describe", "list", "get", "series", "aggregate",
+    "stage_set", "stage_add", "stage_delete", "staged",
+)
+
 /** The manual's chapters an agent may read, being the definition of what it is reading. */
 private val CHAPTERS: List<String> = listOf("data-fields.md", "data-format.md")
 

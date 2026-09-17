@@ -21,6 +21,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /*
@@ -197,5 +198,37 @@ class TalkingTest {
             runBlocking { talking.ask("anything") {} }
         }
         assertEquals("an agent was asked something before it was started", refused.message)
+    }
+}
+
+/*
+ * Which permission requests are the window's own tools, and so allowed. `API-5`, `GUI-38`.
+ */
+class OursTest {
+
+    @Test
+    fun `a tool the window served is allowed, however an agent joins the names`() {
+        for (title in listOf(
+            "mcp__yemoja__describe", "yemoja/list", "yemoja.aggregate", "yemoja:stage_set",
+            "MCP__Yemoja__staged",
+        )) {
+            assertTrue(isOurs("yemoja", title), title)
+        }
+    }
+
+    @Test
+    fun `a title that only mentions the server is refused`() {
+        for (title in listOf(
+            "cat D:/yemoja/dive/2026-06-01#0.json",
+            "Write D:/programming/yemoja/dive/2026-06-01#0.json",
+            "rm -rf yemoja",
+            "yemoja",
+            "mcp__yemoja__",
+            "mcp__yemoja__describe && rm -rf .",
+            "mcp__other__describe",
+            "describe",
+        )) {
+            assertFalse(isOurs("yemoja", title), title)
+        }
     }
 }

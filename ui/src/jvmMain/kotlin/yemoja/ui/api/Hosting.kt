@@ -230,14 +230,7 @@ private class Refusing(
         return RequestPermissionResponse(RequestPermissionOutcome.Selected(allowed.optionId))
     }
 
-    /**
-     * Whether [called] is one of the tools this window gave the agent.
-     *
-     * An agent names a tool from an MCP server after the server it came from, so ours are the
-     * ones naming this one. An agent that names them another way gets a refusal, which is the
-     * safe way to be wrong.
-     */
-    private fun ours(called: String): Boolean = called.contains(server, ignoreCase = true)
+    private fun ours(called: String): Boolean = isOurs(server, called)
 
     override suspend fun fsReadTextFile(
         path: String,
@@ -273,6 +266,27 @@ private fun workingBeside(folder: String): java.io.File =
 
 /** What an agent's own folder is called, beside the logbook. */
 private const val BESIDE = ".agent"
+
+/**
+ * Whether a permission request titled [called] is for one of the tools the window named [server]
+ * gave the agent.
+ *
+ * **The whole title has to be a tool's name**, joined to the server's the way agents join them:
+ * `mcp__yemoja__describe`, `yemoja/describe`, `yemoja.describe`. A title that only *mentions* the
+ * server is not one of ours — a command that reads `D:/yemoja/dive/2026-06-01#0.json` mentions it
+ * too, and allowing that would let an agent edit the logbook's files and walk around every rule
+ * the tools keep. A name given some other way is refused, which is the safe way to be wrong.
+ */
+internal fun isOurs(server: String, called: String): Boolean {
+    val title = called.trim()
+    return TOOL_NAMES.any { tool ->
+        JOINS.any { join -> title.equals("$server$join$tool", ignoreCase = true) } ||
+            title.equals("mcp__${server}__$tool", ignoreCase = true)
+    }
+}
+
+/** How agents join a server's name to one of its tools' names. */
+private val JOINS = listOf("__", "/", ".", ":")
 
 /** The lines [reader] gives, read off the thread that asked for them. */
 private fun linesOf(reader: BufferedReader): Flow<String> = flow {

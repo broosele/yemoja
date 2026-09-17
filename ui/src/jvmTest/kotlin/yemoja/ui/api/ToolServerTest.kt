@@ -69,6 +69,8 @@ class ToolServerTest {
             ),
             client.listTools().tools.map { it.name },
         )
+        // What the window allows without asking is exactly what is served, no more.
+        assertEquals(client.listTools().tools.map { it.name }, TOOL_NAMES)
     }
 
     @Test
