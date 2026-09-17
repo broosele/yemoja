@@ -261,7 +261,10 @@ internal fun kindOf(field: FieldDescription): Kind = when {
     field is TimeDescription -> Kind.TIME
     field is BooleanDescription -> Kind.YES_NO
     field is ReferenceDescription -> Kind.REFERENCE
-    field is KeyReferenceDescription -> Kind.KEY
+    // Its own entries can be offered in a list; another item's cannot, there being no item
+    // chosen to take them from, so those are typed as `@2026-09-20#0*b`.
+    field is KeyReferenceDescription ->
+        if (field.targetType == null) Kind.KEY else Kind.TEXT
     field is GasDescription -> Kind.GAS
     else -> Kind.NONE
 }

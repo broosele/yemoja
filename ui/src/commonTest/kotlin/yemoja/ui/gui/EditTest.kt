@@ -55,6 +55,39 @@ class EditTest {
         assertEquals(Kind.NONE, kindOf(profile()["depth"]!!), "a series is read on the graph")
     }
 
+    @Test
+    fun `a key reference into another item is typed, not chosen from a list`() {
+        // The entries are another dive's, so this form has no list to offer and would have asked
+        // the profile for a collection profiles do not have. That threw, and opening the form on
+        // any dive with a recording took the window with it.
+        assertEquals(Kind.TEXT, kindOf(profile()["previous_profile"]!!))
+        assertEquals(Kind.KEY, kindOf(field("primary_profile")), "its own are still chosen")
+    }
+
+    @Test
+    fun `every list a form offers keys from is one the edited item has`() {
+        // The general case of the crash above: the form reads the collection off the item it is
+        // editing, so a key field chosen from a list must name a list that type declares. Walked
+        // through everything a dive holds, owned items inside owned items included.
+        val seen = HashSet<String>()
+        fun walk(type: yemoja.data.ItemDescription) {
+            if (!seen.add(type.name)) return
+            val arranged = arrangedOf(type, editing = true)
+            for (each in arranged.plain) {
+                val key = each as? yemoja.data.KeyReferenceDescription ?: continue
+                if (kindOf(key) != Kind.KEY) continue
+                assertTrue(
+                    type[key.collection] != null,
+                    "${type.name}.${key.name} offers keys from ${key.collection}, which a" +
+                        " ${type.name} does not have",
+                )
+            }
+            for (inset in arranged.insets) walk(inset.description)
+        }
+        walk(Types.DIVE)
+        assertTrue("profile" in seen && "gas_source" in seen, "the walk reached a plan's cylinders")
+    }
+
     private fun profile() = (field("profiles") as yemoja.data.OwnedItemDescription).description
 
     @Test

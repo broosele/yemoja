@@ -418,6 +418,13 @@ once and corrected. The numbers stay unused rather than being given to something
   constants until there is a settings screen to read a preference from, and the row says what they
   are, so nothing about the ascent is worked out from something a reader cannot see.
 
+  **The run a plan carries gas from is typed, not chosen**, as `@2026-09-20#0*b`. Every other key a
+  form offers is an entry of the item being edited, so it lists them; this one is an entry of
+  another dive, and there is no dive chosen yet to list from. Offering a list anyway asked the
+  profile for a collection profiles do not have, which threw, and opening the form on any dive with
+  a recording closed the window. The field says what it takes, and the description refuses a bare
+  `*b` with a sentence.
+
   **The button says what pressing it does**: *Add the ascent*, in the word a diver uses for that
   part of a dive. It read *Write the way up* first, which is this document's phrase for the thing
   rather than anybody else's, and a button borrowing a document's prose asks a reader to have read

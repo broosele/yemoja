@@ -621,6 +621,9 @@ private fun ReferenceEditor(
 
 /** The keys a keyed collection of [item] holds, for a key reference to choose among. */
 private fun keysOf(item: Item, collection: String): List<String> {
+    // The description is asked first: `read` refuses a field the type does not have, and a key
+    // reference may name a collection that sits somewhere else.
+    if (item.description[collection] == null) return emptyList()
     val held = (item.read(collection) as? Result.Usable)?.value as? Map<*, *>
     return held?.keys?.map { it.toString() }.orEmpty()
 }
