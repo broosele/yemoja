@@ -167,9 +167,20 @@ class Hosted(
         return session.prompt(listOf(ContentBlock.Text(said)))
     }
 
-    /** Stops the agent, and stops listening for it. */
+    /**
+     * Stops the agent, and stops listening for it.
+     *
+     * **Everything it started goes with it.** A command like `npx …` or a `.cmd` on Windows is a
+     * launcher: the process this started is not the agent, and destroying it alone leaves the
+     * agent running, holding whatever account session it opened and the relay it started beside
+     * it. The tools are closed either way, so a survivor could do nothing to the logbook, but a
+     * process nobody can see is not something to leave behind.
+     */
     fun close() {
-        running?.destroy()
+        running?.let { process ->
+            process.descendants().forEach { it.destroy() }
+            process.destroy()
+        }
         running = null
         talking = null
     }

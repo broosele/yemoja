@@ -17,6 +17,7 @@ import yemoja.logic.Universe
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -274,6 +275,55 @@ class FailedStartTest {
                 "should quote what the agent said, but said: ${refused.message}",
             )
             assertTrue(hosted.complained.isNotEmpty(), "and keeps what it said")
+        } finally {
+            hosted.close()
+            socket.close()
+            watching.interrupt()
+        }
+    }
+}
+
+/*
+ * Stopping an agent that was started by a launcher, which is what `npx …` is.
+ */
+class LauncherTest {
+
+    private val universe: Universe = MemoryFileStore(
+        mapOf("dive/2026-06-01#0.json" to """{"max_depth": 18}"""),
+    ).let { Universe(LogbookReader.read(it, Types.ALL), null, it, null, null) }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @AfterTest
+    fun letGo() {
+        scope.cancel()
+    }
+
+    @Test
+    fun `stopping a launcher stops the agent it started`() {
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        val said = Files.createTempFile("yemoja-", ".pid").toFile()
+        val running = ProcessHandle.current().info().command().orElse("java")
+        val classes = System.getProperty("java.class.path")
+        val hosted = Hosted(
+            Started(running, listOf("-cp", classes, "yemoja.ui.api.LaunchingAgent", said.path)),
+            socket,
+            Files.createTempDirectory("yemoja-").toString(),
+            scope,
+        )
+        val watching = watchdog("stopping a launcher") {
+            hosted.close()
+            socket.close()
+        }
+        try {
+            runBlocking { withTimeout(WAITING) { hosted.open() } }
+            val started = said.readText().trim().toLong()
+            val agent = ProcessHandle.of(started).orElseThrow()
+            assertTrue(agent.isAlive, "the agent behind the launcher is running")
+            hosted.close()
+            // Destroying is not instant: the test waits on the process rather than on a clock.
+            agent.onExit().orTimeout(WAITING, TimeUnit.MILLISECONDS).join()
+            assertFalse(agent.isAlive, "and goes when the launcher does")
         } finally {
             hosted.close()
             socket.close()
