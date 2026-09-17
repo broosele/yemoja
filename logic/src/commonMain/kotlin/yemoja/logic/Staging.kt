@@ -215,8 +215,8 @@ class Staging private constructor(
      * is still a decision about a value nobody holds.
      *
      * **[seen] is the edition the reader was shown.** Where it is given and the staging has moved
-     * since — an agent goes on working while somebody reads — nothing is applied and the reader is
-     * told, because applying a list that changed under them is applying what nobody agreed to.
+     * since, nothing is applied and the reader is told: an agent goes on working while somebody
+     * reads, and applying a list that changed under them is applying what nobody agreed to.
      * Left out, whatever is staged now is applied.
      */
     fun apply(seen: Int? = null): Applied {

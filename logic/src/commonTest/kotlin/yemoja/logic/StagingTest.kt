@@ -422,7 +422,8 @@ class EditionTest {
         staging.delete("2026-06-02#0")
         val applied = staging.apply(shown)
         assertEquals(0, applied.items)
-        assertEquals("what is staged has changed since it was shown", applied.refused.single().reason)
+        val why = applied.refused.single().reason
+        assertEquals("what is staged has changed since it was shown", why)
         assertEquals(6, read(universe, "2026-06-01#0", "rating"), "the edit did not land either")
         assertNotNull(universe.logbook["2026-06-02#0"], "and the dive nobody saw staged is here")
     }
