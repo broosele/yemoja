@@ -75,7 +75,7 @@ fun gui(folder: String? = null): Int {
                 ask = ::asked,
                 pick = ::picked,
                 save = ::saved,
-                conversing = { personal ->
+                conversing = { personal, writing ->
                     val open = held
                     val where = at
                     if (open == null || where == null) {
@@ -84,10 +84,13 @@ fun gui(folder: String? = null): Int {
                     // A socket of its own, which the conversation closes with itself: the token
                     // an agent was given stops working when the talking stops. `API-4`. Onto the
                     // toolkit's thread, which is the one the Universe lives on.
-                    // Named, because which flag is which is what the box on the panel promises:
-                    // one of these withholds a person's private details and another would let an
-                    // agent stage changes. `API-5`.
-                    val relay = ToolSocket(Tools(open, personal = personal), Dispatchers.Main)
+                    // Named, because which flag is which is what the boxes on the panel promise:
+                    // one withholds a person's private details and the other lets an agent stage
+                    // changes. `API-5`.
+                    val relay = ToolSocket(
+                        Tools(open, writing = writing, personal = personal),
+                        Dispatchers.Main,
+                    )
                     Talking(relay, where, scope)
                 },
                 deeds = mapOf(

@@ -187,11 +187,13 @@ internal class Platform(
      * none.
      *
      * An agent is a program on a computer, so a platform that cannot run one has no agent and the
-     * deed that opens the panel is greyed. What it is given is the box the user ticks: the tools
-     * read it on every call, a conversation being long enough for the answer to change part way
-     * through. `GUI-38`, `API-5`.
+     * deed that opens the panel is greyed. What it is given is the two boxes the user ticks: the
+     * tools read them on every call, a conversation being long enough for either answer to change
+     * part way through. `GUI-38`, `API-5`.
      */
-    val conversing: ((personal: () -> Boolean) -> Conversation)? = null,
+    val conversing: (
+        (personal: () -> Boolean, writing: () -> Boolean) -> Conversation
+    )? = null,
     /**
      * What this platform can do to a logbook as a whole, by deed.
      *
@@ -352,6 +354,11 @@ internal fun Application(universe: Universe?, platform: Platform) {
     // dive the agent names is looked at while the conversation carries on. `GUI-38`.
     val conversing = platform.conversing
     var talking by remember(universe) { mutableStateOf(false) }
+    // What a review came to, carried to the panel so the conversation records what became of what
+    // an agent staged. Shown to the reader and never put to the agent. `GUI-38`.
+    var told by remember(universe) { mutableStateOf<Told?>(null) }
+    // How much an agent has staged, which the panel says and the home screen reviews.
+    val staged = remember(universe, changer.edition) { universe?.staging?.staged?.size ?: 0 }
     CompositionLocalProvider(LocalChanger provides changer) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -363,6 +370,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 universe = universe,
                                 platform = platform,
                                 kept = kept.getValue(tab),
+                                onApplied = { said -> told = Told(said) },
                                 // An agent is asked about a logbook, so there is none to talk to
                                 // before one is open.
                                 onAgent = if (universe == null || conversing == null) {
@@ -388,7 +396,15 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     }
                     if (talking && universe != null && conversing != null) {
                         VerticalDivider()
-                        Panel(universe.logbook, conversing, follow) { talking = false }
+                        Panel(
+                            set = universe.logbook,
+                            conversing = conversing,
+                            staged = staged,
+                            told = told,
+                            onReview = { tab = tabs.first() },
+                            onFollow = follow,
+                            onClose = { talking = false },
+                        )
                     }
                 }
             }
@@ -474,6 +490,7 @@ private fun Home(
     platform: Platform,
     kept: Kept,
     onAgent: (() -> Unit)? = null,
+    onApplied: (String) -> Unit = {},
 ) {
     val set = universe?.logbook
     val changer = LocalChanger.current
@@ -532,6 +549,7 @@ private fun Home(
                 Deeds(deeds)
                 Reader(universe, platform, reading, changer, scope)
                 Taker(universe, taking, changer)
+                Review(universe, changer, onApplied)
                 giving.said?.let { Aside(it) }
             }
             // Nothing to count where there is no logbook, and nothing to say about that.
@@ -3030,7 +3048,8 @@ private val TRIP = 170.dp
 private val NUMBER = 52.dp
 private val DATE = 100.dp
 private val SITE = 240.dp
-private val LABEL = 130.dp
+/** How wide the column a field's name sits in is, which a review lines its own up with. */
+internal val LABEL = 130.dp
 private val SITES = 300.dp
 private val MAP = 420.dp
 private val DOT = 3.dp

@@ -532,8 +532,32 @@ once and corrected. The numbers stay unused rather than being given to something
   is never shown* the way an ordinary reference keeps it. One that resolves to nothing is shown
   as written.
 
-  **Staged changes are reviewed as an import is**, with each field shown before and after.
-  `RECON-8`.
+  **Staged changes are reviewed where an import is**, in the home screen's System box, and the
+  panel says how many items wait there with a deed that brings the reader to it from any tab. One
+  place to review a pending change whatever proposed it, and a table of before and after wants the
+  window's width: an agent that corrects forty dives fills a panel's column with a scroll nobody
+  reads. The panel keeps the conversation; the review keeps the table. `RECON-8`.
+
+  **Every row shows both values, and a stale one says so before anything is pressed.** An item is
+  called what the logbook calls it, or *a new dive site* where it is being added, since an id is
+  never shown and the one it is staged under is not the one it will have. Each field is its path
+  read as words — *Environment · Visibility* — then what it holds and what it would hold; one being
+  added or deleted shows its one side. A field the logbook has moved under since it was staged says
+  what it is now, in the error colour, beside the change it spoils. Items are counted by what would
+  happen to them, because *1 item to delete* among nine edits is what a reader most needs to see.
+  Each item can be discarded, and the whole applied or discarded.
+
+  **The values are what a file would write**: `19.7 → 21.4`, and a list as its brackets. A unit
+  beside them would need the review to know each field's description, which a staging does not
+  carry, and a before and after that read like the user's own files are at least read the same way
+  throughout.
+
+  **What a review came to is said where it was done and in the conversation.** Under the review,
+  so that applying changes none of which could be applied visibly does something; and as a turn of the window's
+  own in the panel, so the conversation records what became of what the agent staged. It is shown
+  to the reader and never put to the agent: a line sent to an agent is a prompt it answers, which
+  spends the user's plan on a turn they did not ask for, and the agent learns the logbook moved
+  from the revision on its next reply. `API-4`.
 
   **Nothing of a conversation is kept.** It lasts as long as the panel holds it, and whatever the
   agent keeps on its own side is between the user and its provider. What was asked, and whose
@@ -549,10 +573,10 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **What it holds, top to bottom**: the command that starts an agent and the deed that starts it,
   which become the agent's name and *Stop* once one runs; the conversation, a view of its own for
-  copying; what the stance says while an agent is starting or thinking; the *include personal
-  details* box; and what to ask, with *Ask* live only while an agent waits to be asked. *Allowed
-  to change data* is not there, because nothing an agent can do changes anything yet: the write
-  tools wait on `RECON-8`.
+  copying; what the stance says while an agent is starting or thinking; how much is staged and the
+  deed to review it, where anything is; the *allowed to change data* and *include personal
+  details* boxes; and what to ask, with *Ask* live only while an agent waits to be asked. The
+  first box lets an agent stage, not change: nothing it stages lands until the reader takes it in.
 
   **The window speaks in the conversation too.** An agent that will not start, one that stops part
   way through an answer, and each request of its own that was refused are turns in the same
@@ -560,8 +584,7 @@ once and corrected. The numbers stay unused rather than being given to something
   refused only ever grows while it runs, so the panel remembers how many it has said. They are
   rare, for the reason above.
 
-  What is built is the panel, the hosting behind it and the read-only tools. Staged changes and
-  the review of them are not.
+  All of it is built.
 - **GUI-37 — How a logbook is exported from the window.** *Settled:* **a deed on the home
    screen, a file named, and one sentence about what went.**
 

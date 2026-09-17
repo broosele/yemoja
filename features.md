@@ -106,10 +106,10 @@ them.
   `RECON-8` in [logic/reconciliation.md](logic/reconciliation.md), and its arithmetic is
   `LOGIC-34` in [logic/doc.md](logic/doc.md).
 
-  *Built, less the review:* a panel beside the tabs starts the agent the user names, hands it the
-  tools and refuses every request of its own. It can read, and it can stage a change where the
-  user allows one. What is owed is the screen that shows what was staged, field by field, and
-  applies it.
+  *Built:* a panel beside the tabs starts the agent the user names, hands it the tools and refuses
+  every request of its own. It reads, and it stages a change where the user allows one. What it
+  staged is reviewed on the home screen field by field, with anything the logbook has moved under
+  marked before it is taken in.
 
 ## Future
 

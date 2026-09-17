@@ -78,6 +78,15 @@ private class Talk {
      */
     var personal: Boolean by mutableStateOf(false)
 
+    /**
+     * Whether an agent may stage changes at all, which is the other box and starts off too.
+     *
+     * Staging is not changing: what an agent stages waits for somebody to look at it. The box is
+     * what stands between an agent and the logbook all the same, and the write tools refuse with
+     * a reply naming it while it is off. `API-5`, `RECON-8`.
+     */
+    var writing: Boolean by mutableStateOf(false)
+
     /** How many of the agent's refused requests have been shown. `GUI-38`. */
     var shown: Int by mutableStateOf(0)
 }
@@ -93,12 +102,24 @@ private class Talk {
 @Composable
 internal fun Panel(
     set: ItemSet,
-    conversing: (personal: () -> Boolean) -> Conversation,
+    conversing: (personal: () -> Boolean, writing: () -> Boolean) -> Conversation,
+    /** How many items an agent has staged, waiting to be reviewed. */
+    staged: Int,
+    /** What a review came to, which the conversation records as the window's own turn. */
+    told: Told?,
+    /** Opens the review, which is on the home screen where an import's is. */
+    onReview: () -> Unit,
     onFollow: (String) -> Unit,
     onClose: () -> Unit,
 ) {
     val talk = remember { Talk() }
-    val conversation = remember { conversing { talk.personal } }
+    val conversation = remember { conversing({ talk.personal }, { talk.writing }) }
+    // Whatever was said before this panel opened has been read already: a panel opened again is
+    // not a conversation carried on, and would otherwise begin with old news.
+    val before = remember { told }
+    LaunchedEffect(told) {
+        if (told != null && told !== before) talk.exchanges += Exchange(Turn.WINDOW, told.said)
+    }
     DisposableEffect(conversation) { onDispose { conversation.close() } }
     val scope = rememberCoroutineScope()
     val scroll = rememberScrollState()
@@ -126,6 +147,20 @@ internal fun Panel(
             }
         }
         sayingOf(talk.stance, talk.agent)?.let { Aside(it) }
+        if (staged > 0) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stagedLineOf(staged),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onReview) { Text("Review") }
+            }
+        }
         Asking(talk, conversation, scope)
     }
 }
@@ -165,13 +200,8 @@ private fun Starting(talk: Talk, conversation: Conversation, scope: CoroutineSco
 /** What to ask next, and what the agent is allowed to be told while it answers. */
 @Composable
 private fun Asking(talk: Talk, conversation: Conversation, scope: CoroutineScope) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable { talk.personal = !talk.personal },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(checked = talk.personal, onCheckedChange = { talk.personal = it })
-        Text("Include personal details", style = MaterialTheme.typography.bodyMedium)
-    }
+    Boxed("Allowed to change data", talk.writing) { talk.writing = it }
+    Boxed("Include personal details", talk.personal) { talk.personal = it }
     Compact(
         value = talk.question,
         onChange = { talk.question = it },
@@ -186,6 +216,18 @@ private fun Asking(talk: Talk, conversation: Conversation, scope: CoroutineScope
             onClick = { ask(talk, conversation, scope) },
             enabled = talk.stance == Stance.READY && talk.question.isNotBlank(),
         ) { Text("Ask") }
+    }
+}
+
+/** One box an agent's permissions are ticked in, which the whole row toggles. */
+@Composable
+private fun Boxed(label: String, ticked: Boolean, onTick: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onTick(!ticked) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = ticked, onCheckedChange = onTick)
+        Text(label, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -246,6 +288,7 @@ private fun start(talk: Talk, conversation: Conversation, scope: CoroutineScope)
     talk.exchanges = emptyList()
     talk.shown = 0
     talk.personal = false
+    talk.writing = false
     scope.launch {
         try {
             conversation.start(command)

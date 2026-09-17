@@ -187,9 +187,16 @@ carry on talking. Type the command that starts your agent — whatever its own i
 you, as one line — and press **Start**. Then ask.
 
 **It reaches your logbook through Yemoja and no other way.** Every request it makes to read a
-file, write one or run a command is refused, and the panel says so each time one is. It cannot
-change anything: it reads, counts and answers, and staging changes for you to review is not built
-yet.
+file, write one or run a command is refused, and the panel says so each time one is.
+
+**It can propose changes, and you decide.** Tick *allowed to change data* and an agent can stage
+changes — correct a clock error across a trip, give one dive's gear to the others. Nothing it
+stages touches your logbook. The panel says how many items are waiting, and **Review** takes you to
+them on the home screen, under the other deeds. Each item shows every field it would change, what
+the field holds and what it would hold. If you have edited one of those fields since the agent
+staged it, the row says what it holds now, in red, and that change is left alone when you apply the
+rest. **Discard** any item you do not want, then press **Apply all** or **Discard all**. The
+box starts empty for every conversation, like the other one.
 
 **It works beside your logbook, not in it.** An agent writes files of its own as it goes — a note
 of which tools it has been allowed, and whatever else it keeps. Those go in a folder next to your
