@@ -21,6 +21,12 @@ import com.agentclientprotocol.protocol.Protocol
 import com.agentclientprotocol.transport.StdioTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -66,6 +72,15 @@ class Hosted(
     /** The logbook being talked about. The agent is not started here and cannot read it. */
     private val folder: String,
     private val scope: CoroutineScope,
+    /**
+     * How long a started program is given to answer the protocol, in milliseconds.
+     *
+     * A program that is not an agent starts and says nothing: `claude` on its own is Claude Code's
+     * terminal, which reads its input and waits, and so would this, for ever, saying *Starting*.
+     * Long enough for a real agent to load — some are large programs on a cold start — and no
+     * longer, since a user is watching.
+     */
+    private val patience: Long = HANDSHAKE,
 ) {
 
     private var running: Process? = null
@@ -110,12 +125,52 @@ class Hosted(
         running = process
         listen(process)
         try {
-            began(process, port, working.path)
+            withTimeout(patience) { beganOrDied(process, port, working.path) }
+        } catch (waited: TimeoutCancellationException) {
+            close()
+            throw failedBy(IllegalStateException(silentOf()))
         } catch (refused: Exception) {
             close()
             throw failedBy(refused)
         }
     }
+
+    /**
+     * [began], unless the process stops first.
+     *
+     * A program that exits — not logged in, wrong arguments, not an agent at all — would
+     * otherwise be waited for until the patience ran out, since a request nobody will answer looks
+     * exactly like one not answered yet. Its going is noticed instead, and said with its code.
+     */
+    private suspend fun beganOrDied(process: Process, port: Int, working: String) {
+        coroutineScope {
+            val begun = async { began(process, port, working) }
+            val died = async(Dispatchers.IO) { runInterruptible { process.waitFor() } }
+            select<Unit> {
+                begun.onAwait { died.cancel() }
+                died.onAwait { code ->
+                    begun.cancel()
+                    throw IllegalStateException(
+                        "${started.command} stopped with code $code before it answered as an " +
+                            "agent",
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * What to say of a program that started and never spoke the protocol.
+     *
+     * The likeliest cause is named, because the likeliest cause is a real one: the command an
+     * agent's own documentation gives for using it in a terminal is not the one that speaks to
+     * other programs, and a user has no way to know that from a panel that says *Starting*.
+     */
+    private fun silentOf(): String =
+        "${started.command} started but did not answer as an agent within ${patience / 1000} " +
+            "seconds. An agent has to speak the Agent Client Protocol, and a program made for a " +
+            "terminal does not: for Claude Code, start its adapter, " +
+            "npx @zed-industries/claude-code-acp, rather than claude itself"
 
     /** Everything after the process is running: the protocol, and a session on it. */
     private suspend fun began(process: Process, port: Int, working: String) {
@@ -234,6 +289,9 @@ class Hosted(
 
         /** How many of those are shown to a user when a start fails. */
         const val SAID = 5
+
+        /** How long a start is given before it is called silent, in milliseconds. */
+        const val HANDSHAKE = 30_000L
     }
 }
 

@@ -200,8 +200,16 @@ where nothing leaves it.
 
 **Press *Ask an agent*** on the home screen. A panel opens beside whatever tab you are on and
 stays there as you move between tabs, so a dive the agent names can be opened and read while you
-carry on talking. Type the command that starts your agent — whatever its own instructions give
-you, as one line — and press **Start**. Then ask.
+carry on talking. Type the command that starts your agent as one line and press **Start**. Then
+ask.
+
+**The command is the agent's adapter, not the agent's own program.** Yemoja talks to an agent
+over the Agent Client Protocol, and the program you type at in a terminal does not speak it:
+`claude` on its own is Claude Code's terminal, and it will sit there reading until Yemoja gives up
+on it. What speaks to Yemoja is the adapter the agent's maker publishes for editors — for Claude
+Code that is `npx @zed-industries/claude-code-acp`, and for Codex `npx @zed-industries/codex-acp`.
+Whatever the agent's own instructions give for using it *from Zed or another editor* is the
+command to type here. It is remembered on this computer once it has started.
 
 **It reaches your logbook through Yemoja and no other way.** Every request it makes to read a
 file, write one or run a command is refused, and the panel says so each time one is.

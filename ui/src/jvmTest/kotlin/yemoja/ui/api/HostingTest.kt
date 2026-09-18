@@ -361,3 +361,56 @@ class ResolvedTest {
         assertEquals("C:/tools/npx", resolvedIn("C:/tools/npx", listOf(folder.path), endings))
     }
 }
+
+/*
+ * A program that is not an agent: it starts, and then says nothing. `GUI-38`.
+ */
+class SilentStartTest {
+
+    private val universe: Universe = MemoryFileStore(
+        mapOf("dive/2026-06-01#0.json" to """{"max_depth": 18}"""),
+    ).let { Universe(LogbookReader.read(it, Types.ALL), null, it, null, null) }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @AfterTest
+    fun letGo() {
+        scope.cancel()
+    }
+
+    @Test
+    fun `a program that never answers is given up on, stopped, and explained`() {
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        val running = ProcessHandle.current().info().command().orElse("java")
+        val classes = System.getProperty("java.class.path")
+        val hosted = Hosted(
+            Started(running, listOf("-cp", classes, "yemoja.ui.api.SilentAgent")),
+            socket,
+            Files.createTempDirectory("yemoja-").toString(),
+            scope,
+            patience = PATIENCE,
+        )
+        val watching = watchdog("a silent start") {
+            hosted.close()
+            socket.close()
+        }
+        try {
+            val began = System.currentTimeMillis()
+            val refused = assertFailsWith<Exception> {
+                runBlocking { withTimeout(WAITING) { hosted.open() } }
+            }
+            val waited = System.currentTimeMillis() - began
+            assertTrue(waited < WAITING, "given up on in $waited ms rather than waiting for ever")
+            val why = refused.message.orEmpty()
+            assertTrue("did not answer as an agent" in why, why)
+            assertTrue("claude-code-acp" in why, "and says what to start instead: $why")
+        } finally {
+            hosted.close()
+            socket.close()
+            watching.interrupt()
+        }
+    }
+}
+
+/** How long a silent start is given: enough to start a JVM that then says nothing. */
+private const val PATIENCE = 8_000L
