@@ -211,8 +211,8 @@ Code that is `npx @zed-industries/claude-code-acp`, and for Codex `npx @zed-indu
 Whatever the agent's own instructions give for using it *from Zed or another editor* is the
 command to type here. It is remembered on this computer once it has started.
 
-Those `npx` commands need [Node.js](https://nodejs.org) installed, which is where `npx` comes
-from; without it the panel says the command is not installed. If you would rather not install
+Those `npx` commands need Node.js installed, which is where `npx` comes from; without it the
+panel says the command is not installed. If you would rather not install
 it, the full path to a `node.exe` and to the adapter's `index.js` works in its place.
 
 **It reaches your logbook through Yemoja and no other way.** Every request it makes to read a
