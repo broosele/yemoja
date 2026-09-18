@@ -414,3 +414,42 @@ class SilentStartTest {
 
 /** How long a silent start is given: enough to start a JVM that then says nothing. */
 private const val PATIENCE = 8_000L
+
+/*
+ * A command that names nothing this computer has. `GUI-38`.
+ */
+class NotInstalledTest {
+
+    private val universe: Universe = MemoryFileStore(
+        mapOf("dive/2026-06-01#0.json" to """{"max_depth": 18}"""),
+    ).let { Universe(LogbookReader.read(it, Types.ALL), null, it, null, null) }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @AfterTest
+    fun letGo() {
+        scope.cancel()
+    }
+
+    @Test
+    fun `a command that is not installed is said to be, in words a user can act on`() {
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        val hosted = Hosted(
+            Started("no_such_agent_anywhere"),
+            socket,
+            Files.createTempDirectory("yemoja-").toString(),
+            scope,
+        )
+        try {
+            val refused = assertFailsWith<IllegalStateException> {
+                runBlocking { withTimeout(WAITING) { hosted.open() } }
+            }
+            val why = refused.message.orEmpty()
+            assertTrue(why.startsWith("no_such_agent_anywhere is not installed"), why)
+            assertTrue("npx comes with Node.js" in why, "and where npx comes from: $why")
+        } finally {
+            hosted.close()
+            socket.close()
+        }
+    }
+}

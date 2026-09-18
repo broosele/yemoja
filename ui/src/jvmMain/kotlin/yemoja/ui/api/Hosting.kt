@@ -119,9 +119,13 @@ class Hosted(
     suspend fun open() {
         val port = socket.port ?: socket.open()
         val working = workingBeside(folder)
-        val process = ProcessBuilder(listOf(resolved(started.command)) + started.arguments)
-            .directory(working)
-            .start()
+        val process = try {
+            ProcessBuilder(listOf(resolved(started.command)) + started.arguments)
+                .directory(working)
+                .start()
+        } catch (missing: java.io.IOException) {
+            throw IllegalStateException(notFoundOf(missing), missing)
+        }
         running = process
         listen(process)
         try {
@@ -158,6 +162,19 @@ class Hosted(
             }
         }
     }
+
+    /**
+     * What to say of a command the machine could not find or run.
+     *
+     * The machine says `CreateProcess error=2, The system cannot find the file specified`, which
+     * is true and tells a user nothing they can do. What they can do is install the program or
+     * name where it is, and `npx` in particular comes with Node.js, which is not installed by
+     * default on anything.
+     */
+    private fun notFoundOf(missing: java.io.IOException): String =
+        "${started.command} is not installed on this computer, or is not where programs are " +
+            "looked for. Install it, or type the full path to it. (npx comes with Node.js.) " +
+            "The machine said: ${missing.message}"
 
     /**
      * What to say of a program that started and never spoke the protocol.
