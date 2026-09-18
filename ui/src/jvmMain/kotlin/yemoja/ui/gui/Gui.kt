@@ -21,7 +21,8 @@ import yemoja.logic.divecomputer.FoundDevices
 import yemoja.ui.api.Talking
 import yemoja.ui.api.ToolSocket
 import yemoja.ui.api.Tools
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import java.awt.Desktop
 import java.net.URI
 import java.time.LocalDate
@@ -29,6 +30,7 @@ import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.JOptionPane
+import java.util.concurrent.Executor
 import javax.swing.SwingUtilities
 
 /*
@@ -83,14 +85,10 @@ fun gui(folder: String? = null): Int {
                     }
                     // A socket of its own, which the conversation closes with itself: the token
                     // an agent was given stops working when the talking stops. `API-4`. Onto the
-                    // toolkit's thread, which is the one the Universe lives on.
-                    // Named, because which flag is which is what the boxes on the panel promise:
-                    // one withholds a person's private details and the other lets an agent stage
+                    // toolkit's thread, which is the one the Universe lives on. Named, because
+                    // the flag is what the box on the panel promises: it lets an agent stage
                     // changes. `API-5`.
-                    val relay = ToolSocket(
-                        Tools(open, writing = writing),
-                        Dispatchers.Main,
-                    )
+                    val relay = ToolSocket(Tools(open, writing = writing), eventThread())
                     Talking(relay, where, scope)
                 },
                 deeds = mapOf(
@@ -247,6 +245,17 @@ private fun bundled(path: String): String {
         ?: error("$path is not bundled, and the build should have done that")
     return stream.bufferedReader().use { it.readText() }
 }
+
+/**
+ * The toolkit's event thread as a place to run a coroutine, which is where the Universe is edited.
+ *
+ * Not `Dispatchers.Main`: that is a name with nothing behind it unless a module for the platform
+ * is on the classpath, and none is here. The first agent to call a tool from the window was
+ * answered with *Module with the Main dispatcher is missing*. Swing's own queue is what every
+ * screen already runs on, so it is asked directly.
+ */
+internal fun eventThread(): CoroutineDispatcher =
+    Executor { SwingUtilities.invokeLater(it) }.asCoroutineDispatcher()
 
 /** Something to look up resources from. A function has no class of its own to ask. */
 private object Bundled
