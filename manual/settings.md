@@ -68,6 +68,14 @@ written in — a settings file declares none:
 A value that is not a number, or lies outside its range, is ignored, and the next place in line
 answers instead.
 
+All five are worth a word, because their names are doing real work. They are *defaults*
+for making a plan and nothing more. A plan keeps the gradient factors it was made with and
+the depths its ascent was written with, so changing these does not alter a plan you have
+already made, and it does not alter anything Yemoja tells you about a dive you have already
+done. Change them freely; nothing recorded moves.
+
+Gradient factors are explained in [decompression.md](decompression.md).
+
 ## The agent command
 
 - `desktop_agent_command` — the command that starts your agent, typed as one line. Only ever in
@@ -89,13 +97,6 @@ panel says the command is not installed. If you would rather not install it, the
 Once it is saved, *Ask an agent* at the right of the tabs comes alive; how to use it is in
 [getting-started.md](getting-started.md#asking-an-agent).
 
-All five are worth a word, because their names are doing real work. They are *defaults*
-for making a plan and nothing more. A plan keeps the gradient factors it was made with and
-the depths its ascent was written with, so changing these does not alter a plan you have
-already made, and it does not alter anything Yemoja tells you about a dive you have already
-done. Change them freely; nothing recorded moves.
-
-Gradient factors are explained in [decompression.md](decompression.md).
 
 ## Deleting them
 
