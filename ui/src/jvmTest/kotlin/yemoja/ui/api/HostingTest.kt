@@ -92,7 +92,7 @@ class HostingTest {
     }
 
     @Test
-    fun `an agent works beside the logbook, and leaves nothing in it`() {
+    fun `an agent works beside the logbook, is briefed there, and leaves nothing in it`() {
         val hosted = hosting()
         val watching = watchdog("starting an agent") {
             hosted.close()
@@ -105,6 +105,11 @@ class HostingTest {
             val beside = java.io.File("$folder.agent")
             assertTrue(java.io.File(beside, LEFT_BEHIND).exists(), "should work in $beside")
             assertEquals(held, logbook.list().orEmpty().toSet(), "and leave the logbook alone")
+            for (name in BRIEFING_NAMES) {
+                val written = java.io.File(beside, name)
+                assertTrue(written.exists(), "$name should be written where the agent starts")
+                assertEquals(socket.briefing(), written.readText(), "and say what the tools say")
+            }
         } finally {
             hosted.close()
             watching.interrupt()

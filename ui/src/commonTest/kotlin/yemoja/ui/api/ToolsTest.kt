@@ -110,6 +110,28 @@ class DescribeTest {
     }
 }
 
+class BriefingTest {
+
+    private val briefing = Tools(diving()).briefing()
+
+    @Test
+    fun `the briefing opens with the instructions and lists every type with its fields`() {
+        assertTrue(briefing.startsWith("# Working with this Yemoja logbook"))
+        assertTrue(INSTRUCTIONS.trim() in briefing, "the rules come first")
+        val types = Types.ALL.map { "\n### ${it.name}\n" }
+        assertTrue(types.all { it in briefing }, "each type has a heading")
+        assertTrue("- `max_depth`: number in m; worked out unless written" in briefing)
+        assertTrue("- `buddies`: reference, list to a person" in briefing, "how many, and of what")
+    }
+
+    @Test
+    fun `a block's fields are indented under it, and a worked out field says so`() {
+        assertTrue("- `medical`: owned item\n  - `last_medical_check`: date\n" in briefing)
+        assertTrue("  - `body_mass`: number in kg\n" in briefing)
+        assertTrue("- `sac`: number, series in l/min; worked out, never written" in briefing)
+    }
+}
+
 class GetTest {
 
     @Test
@@ -164,6 +186,26 @@ class ListTest {
         val rest = (second.at("items") as Stored.Members).members.keys
         assertEquals(listOf("site_51"), rest.toList())
         assertNull(second.at("next"))
+    }
+
+    @Test
+    fun `naming fields cuts each item down to them, and leaves out a field an item has not got`() {
+        val tools = Tools(diving())
+        val wanted = listOf("buddies", "rating", "gas_sources.g1.sac")
+        val dive = read(tools.list("dive", fields = wanted)).at("items", "2026-06-01#0")
+        dive as Stored.Members
+        assertEquals(setOf("buddies", "gas_sources"), dive.members.keys, "no profiles, no rating")
+        assertEquals(15.25, dive.leaf("gas_sources", "g1", "sac"))
+        assertNull(dive.at("gas_sources", "g1", "gas_type"), "only the field asked for")
+    }
+
+    @Test
+    fun `a whole block can be named, and no fields at all means whole items`() {
+        val tools = Tools(diving())
+        val block = read(tools.list("dive", fields = listOf("gas_sources")))
+        assertEquals("EAN32", block.leaf("items", "2026-06-01#0", "gas_sources", "g1", "gas_type"))
+        val whole = read(tools.list("dive")).at("items", "2026-06-01#0") as Stored.Members
+        assertTrue("profiles" in whole.members.keys)
     }
 
     @Test

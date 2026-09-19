@@ -16,14 +16,20 @@ const val INSTRUCTIONS: String = """You are working with a diving logbook kept b
 talking to you is the user, who may keep records for other people as well as their own.
 
 What exists:
-- Call describe first. It lists every type of item, each field's kind, its unit, whether it is
-  recorded or worked out, and the words it expects.
+- The types and their fields are listed at the end of this briefing, which is also what the guide
+  tool answers. describe answers the same in JSON, with the words each field suggests from this
+  logbook. Read one of them before reading items, rather than working the structure out from the
+  items themselves.
 - The resources data-fields.md and data-format.md are the manual's own definition of every field
   and of how values are written. Read them when a field's meaning is not obvious from its name.
+- You reach the logbook through these tools and no other way. There are no files to read: what
+  you are given here is complete, and where it is not, say so rather than looking elsewhere.
 
 Reading:
-- list returns every item of a type, whole, a page at a time. Pass the cursor it gives back to
-  read the next page. get returns one item. Read as far as the question needs.
+- list returns every item of a type, a page at a time. Name the fields you need — max_depth,
+  start_date, environment.visibility — and only those come back, which is how a question over
+  hundreds of dives stays small; leave them out for whole items. Pass the cursor it gives back to
+  read the next page. get returns one item whole. Read as far as the question needs.
 - A series is sent as a count of its samples. Call series for its values.
 - Every reply carries the logbook's revision. If it has moved since you read something an answer
   relies on, read that again. A cursor from an older revision is refused.

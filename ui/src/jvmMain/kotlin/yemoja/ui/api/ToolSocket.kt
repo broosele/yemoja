@@ -56,6 +56,9 @@ class ToolSocket(private val tools: Tools, private val onto: CoroutineContext) {
     /** The port to reach it on, or absent before it is open. */
     val port: Int? get() = listening?.localPort
 
+    /** What an agent is told before it is asked anything, for writing where agents read it. */
+    fun briefing(): String = tools.briefing()
+
     /**
      * Listens on a port the machine chooses, and answers which.
      *

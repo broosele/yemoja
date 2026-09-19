@@ -48,8 +48,16 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     val server = Server(Implementation(NAME, VERSION), ServerOptions(capabilities), INSTRUCTIONS)
 
     server.addTool(
+        "guide",
+        "Read this first. How to work with this logbook: the rules, the tools, and every type of " +
+            "item with its fields and units. The same text is in CLAUDE.md and AGENTS.md where " +
+            "you were started.",
+    ) { carried(onto) { Reply(tools.briefing()) } }
+
+    server.addTool(
         "describe",
-        "Every type of item in the logbook, or one, with each field's kind, unit, role and words.",
+        "Every type of item in the logbook, or one, as JSON: each field's kind, unit, role, and " +
+            "the words it takes or suggests. Read this or guide before reading items.",
         schemaOf(
             optional = mapOf("type" to "The type to describe, such as dive, or all if left out."),
         ),
@@ -57,14 +65,30 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
 
     server.addTool(
         "list",
-        "Every item of a type, whole, ${Tools.PAGE} at a time. Pass back the cursor to read the " +
-            "next page.",
-        schemaOf(
-            required = mapOf("type" to "The type to list, such as dive."),
-            optional = mapOf("cursor" to "The next cursor a previous page gave."),
+        "Every item of a type, ${Tools.PAGE} at a time, in the order the type keeps them. Name " +
+            "the fields you need and only those come back; leave them out for whole items. Pass " +
+            "back the cursor to read the next page.",
+        ToolSchema(
+            properties = buildJsonObject {
+                property("type", "The type to list, such as dive.")
+                property("cursor", "The next cursor a previous page gave.")
+                putJsonObject("fields") {
+                    put("type", "array")
+                    putJsonObject("items") { put("type", "string") }
+                    put(
+                        "description",
+                        "The fields wanted of each item, such as max_depth or " +
+                            "environment.visibility. Whole items where left out.",
+                    )
+                }
+            },
+            required = listOf("type"),
         ),
     ) { request ->
-        carried(onto) { tools.list(request.text("type").orEmpty(), request.text("cursor")) }
+        val fields = (request.arguments?.get("fields") as? JsonArray)
+            ?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+            .orEmpty()
+        carried(onto) { tools.list(request.text("type").orEmpty(), request.text("cursor"), fields) }
     }
 
     server.addTool(
@@ -190,6 +214,16 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
         "What is staged so far: each item, and each field as it is and as it would be.",
     ) { carried(onto) { tools.staged() } }
 
+    server.addResource(
+        uri = "$RESOURCES${BRIEFING}",
+        name = BRIEFING,
+        description = "How to work with this logbook, and what it holds. Read this first.",
+        mimeType = "text/markdown",
+    ) { request ->
+        val text = withContext(onto) { tools.briefing() }
+        ReadResourceResult(listOf(TextResourceContents(text, request.uri, "text/markdown")))
+    }
+
     for (chapter in CHAPTERS) {
         server.addResource(
             uri = "$RESOURCES$chapter",
@@ -262,12 +296,15 @@ private object Bundled
  * from the other.
  */
 internal val TOOL_NAMES: List<String> = listOf(
-    "describe", "list", "get", "series", "aggregate",
+    "guide", "describe", "list", "get", "series", "aggregate",
     "stage_set", "stage_add", "stage_delete", "staged",
 )
 
 /** The manual's chapters an agent may read, being the definition of what it is reading. */
 private val CHAPTERS: List<String> = listOf("data-fields.md", "data-format.md")
+
+/** What the briefing is called as a resource. On disk it takes the names agents read. */
+internal const val BRIEFING = "briefing.md"
 
 /** Where a chapter is found, as a resource's address. */
 private const val RESOURCES = "yemoja://manual/"

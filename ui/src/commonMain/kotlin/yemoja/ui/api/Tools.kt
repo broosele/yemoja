@@ -93,12 +93,18 @@ class Tools(
     }
 
     /**
-     * The items of [type], whole, [PAGE] at a time, in the order the type lists them.
+     * The items of [type], [PAGE] at a time, in the order the type lists them.
+     *
+     * Whole, unless [fields] names what is wanted: a question about depths over eight hundred
+     * dives needs `max_depth` and `start_date` of each, and reading the rest to find them is what
+     * made an agent look as though it had to work everything out for itself. A field inside a
+     * block is named by its path, `environment.visibility`, and one an item has not got is left
+     * out of that item.
      *
      * [cursor] continues a listing and is refused once the logbook has changed, so one listing
      * never mixes two states of it.
      */
-    fun list(type: String, cursor: String? = null): Reply {
+    fun list(type: String, cursor: String? = null, fields: List<String> = emptyList()): Reply {
         val description = typeCalled(type) ?: return unknownType(type)
         val from = if (cursor == null) {
             0
@@ -122,7 +128,9 @@ class Tools(
             "type" to Stored.Leaf(description.name),
             "total" to Stored.Leaf(items.size.toLong()),
             "items" to Stored.Members(
-                page.associate { universe.logbook.idOf(it).orEmpty() to sentOf(it) },
+                page.associate {
+                    universe.logbook.idOf(it).orEmpty() to chosenOf(sentOf(it), fields)
+                },
             ),
         )
         if (next < items.size) members["next"] = Stored.Leaf("${universe.revision}:$next")
@@ -302,6 +310,59 @@ class Tools(
             "review it.",
     )
 
+    /**
+     * What an agent is told before it is asked anything: how to behave, and what the logbook holds.
+     *
+     * The instructions the server carries, then every type with its fields — name, kind, unit,
+     * the words a closed field takes — written as a page an agent reads at the start rather than
+     * as a reply it has to ask for. It is written into the folder the agent is started in under
+     * the names agents read on their own (`CLAUDE.md`, `AGENTS.md`), served as a resource, and
+     * answered by the `guide` tool, so it reaches the model whichever of those its agent honours.
+     * `API-4`.
+     */
+    fun briefing(): String {
+        val page = StringBuilder()
+        page.append("# Working with this Yemoja logbook\n\n")
+        page.append(INSTRUCTIONS.trim()).append("\n\n")
+        page.append("## What the logbook holds\n\n")
+        page.append("Every item is one of these types, and holds only the fields listed. ")
+        page.append("A number is sent and given in the unit written after it. ")
+        page.append("The describe tool answers the same in JSON, with the words each field ")
+        page.append("suggests from this logbook.\n")
+        for (description in universe.logbook.descriptions) {
+            page.append("\n### ").append(description.name).append("\n\n")
+            for (field in description.fields) page.append(lineOf(field, ""))
+        }
+        return page.toString()
+    }
+
+    /** One field as a line of the briefing, and the fields of a block indented under it. */
+    private fun lineOf(field: FieldDescription, indent: String): String {
+        val said = StringBuilder("$indent- `${field.name}`: ${kindOf(field)}")
+        if (field.cardinality != Cardinality.SINGLE) {
+            said.append(", ${HOLDS.getValue(field.cardinality)}")
+        }
+        when (field) {
+            is NumberDescription ->
+                Units.defaultName(field.dimension)?.let { said.append(" in $it") }
+            is TextDescription ->
+                field.fixedSet?.let { said.append(", one of ${it.joinToString(", ")}") }
+            is ReferenceDescription -> said.append(" to a ${field.targetType}")
+            is KeyReferenceDescription -> said.append(" into `${field.collection}`")
+            else -> Unit
+        }
+        when (field.role) {
+            is Role.Derived -> said.append("; worked out, never written")
+            is Role.Overrideable -> said.append("; worked out unless written")
+            is Role.Primary -> Unit
+        }
+        said.append("\n")
+        if (field is OwnedItemDescription) {
+            for (inner in field.description.fields) said.append(lineOf(inner, "$indent  "))
+        }
+        return said.toString()
+    }
+
     private fun typeCalled(name: String): ItemDescription? =
         universe.logbook.descriptions.firstOrNull { it.name == name }
 
@@ -425,6 +486,34 @@ private fun rangeOf(least: Double, most: Double): Stored =
 
 private fun wordsOf(words: Collection<String>): Stored =
     Stored.Elements(words.map { Stored.Leaf(it) })
+
+/**
+ * [sent] cut down to [fields], or whole where none are named.
+ *
+ * A path names a field inside a block, and lands in the reply under the same path: asking for
+ * `environment.visibility` answers `{"environment": {"visibility": 12}}`, so what comes back reads
+ * as the item does. A field the item has not got is left out rather than sent as nothing.
+ */
+private fun chosenOf(sent: Stored.Members, fields: List<String>): Stored.Members {
+    if (fields.isEmpty()) return sent
+    val wanted = fields.map { it.split('.') }
+    return reachedIn(sent, wanted) ?: Stored.Members(emptyMap())
+}
+
+/** [sent] with only what [paths] reach, or absent where they reach nothing in it. */
+private fun reachedIn(sent: Stored.Members, paths: List<List<String>>): Stored.Members? {
+    val chosen = LinkedHashMap<String, Stored>()
+    val grouped = paths.filter { it.isNotEmpty() }.groupBy({ it.first() }, { it.drop(1) })
+    for ((first, below) in grouped) {
+        val held = sent.members[first] ?: continue
+        if (below.any { it.isEmpty() }) {
+            chosen[first] = held
+        } else if (held is Stored.Members) {
+            reachedIn(held, below)?.let { chosen[first] = it }
+        }
+    }
+    return if (chosen.isEmpty()) null else Stored.Members(chosen)
+}
 
 /** The entry under [key] in a keyed collection, whether it holds items or series. */
 private fun entryOf(collection: Any, key: String): Any? =

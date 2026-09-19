@@ -119,6 +119,7 @@ class Hosted(
     suspend fun open() {
         val port = socket.port ?: socket.open()
         val working = workingBeside(folder)
+        brief(working)
         val process = try {
             ProcessBuilder(listOf(resolved(started.command)) + started.arguments)
                 .directory(working)
@@ -137,6 +138,21 @@ class Hosted(
             close()
             throw failedBy(refused)
         }
+    }
+
+    /**
+     * Writes what the agent is to know into the folder it is started in, before it is started.
+     *
+     * Agents read a file of their own name from where they run — Claude Code `CLAUDE.md`, Codex
+     * and others `AGENTS.md` — and take it as standing instructions. The same text is served as
+     * the tool server's instructions and answered by `guide`, but an instructions field is one
+     * some agents never show their model, and a tool has to be called: a file in the working
+     * folder reaches the model before it is asked anything. Written afresh at every start, so it
+     * cannot be older than the running version. `API-4`.
+     */
+    private fun brief(working: java.io.File) {
+        val briefing = socket.briefing()
+        for (name in BRIEFING_NAMES) java.io.File(working, name).writeText(briefing)
     }
 
     /**
@@ -311,6 +327,9 @@ class Hosted(
         const val HANDSHAKE = 30_000L
     }
 }
+
+/** The names agents read standing instructions from, in the folder they are started in. */
+internal val BRIEFING_NAMES: List<String> = listOf("CLAUDE.md", "AGENTS.md")
 
 /**
  * Refusing is a client that gives an agent nothing of the machine it is running on, and the

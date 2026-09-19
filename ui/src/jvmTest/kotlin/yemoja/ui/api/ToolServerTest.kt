@@ -64,7 +64,7 @@ class ToolServerTest {
     fun `the tools are listed, reading ones and staging ones`() = connected { client ->
         assertEquals(
             listOf(
-                "describe", "list", "get", "series", "aggregate",
+                "guide", "describe", "list", "get", "series", "aggregate",
                 "stage_set", "stage_add", "stage_delete", "staged",
             ),
             client.listTools().tools.map { it.name },
@@ -104,6 +104,25 @@ class ToolServerTest {
         val refused = client.callTool("get", mapOf("id" to "nobody"))
         assertEquals(true, refused.isError)
         assertTrue("names nothing" in (refused.content.single() as TextContent).text)
+    }
+
+    @Test
+    fun `guide answers the briefing, as does a resource of the same name`() = connected { client ->
+        val guided = client.callTool("guide", emptyMap())
+        val text = (guided.content.single() as TextContent).text
+        assertEquals(Tools(universe).briefing(), text)
+        val asked = ReadResourceRequestParams("yemoja://manual/$BRIEFING")
+        val read = client.readResource(ReadResourceRequest(asked))
+        assertEquals(text, (read.contents.single() as TextResourceContents).text)
+    }
+
+    @Test
+    fun `a listing takes the fields wanted`() = connected { client ->
+        val asked = mapOf("type" to "dive", "fields" to listOf("max_depth"))
+        val listed = client.callTool("list", asked)
+        val text = (listed.content.single() as TextContent).text
+        assertEquals(Tools(universe).list("dive", fields = listOf("max_depth")).text, text)
+        assertTrue("max_depth" in text)
     }
 
     @Test
