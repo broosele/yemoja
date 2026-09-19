@@ -40,10 +40,10 @@ Nobody else's medical or insurance is warned about, and generic gear owes nothin
 is due, nothing is shown.
 
 **System** holds what can be done to a logbook as a whole: making one, opening one, importing,
-exporting to UDDF, downloading from a dive computer, planning a dive, asking an agent, and
-settings. All but the first two need a logbook open. Most have more written about them:
-importing and downloading in [computers-and-importing.md](computers-and-importing.md), exporting
-in [uddf.md](uddf.md), settings in [settings.md](settings.md), and planning and the agent below.
+exporting to UDDF, downloading from a dive computer, and settings. All but the first two need a
+logbook open. Most have more written about them: importing and downloading in
+[computers-and-importing.md](computers-and-importing.md), exporting in [uddf.md](uddf.md), and
+settings in [settings.md](settings.md).
 
 **Statistics** plots your dives. The first box chooses what is drawn:
 
@@ -124,7 +124,7 @@ changing a gas afterwards does not move the stops — ask the model again and it
 no longer hold. A plan that cannot be answered for says why, which is
 usually that nobody has written its gradient factors in.
 
-**Start a plan with *Plan dive*** on the home screen. Give it a day and, if you like, a time; the
+**Start a plan with *Plan dive*** above the table on the Dives tab. Give it a day and, if you like, a time; the
 depth of the bottom and how long you mean to be there, counted from leaving the surface; what you
 breathe, written as `air`, `EAN32` or `TMX 21/35`; whether the water is salt or fresh; and the
 gradient factors, as percentages — 30 and 70 for 30/70. **Create plan** makes the dive, descending
@@ -198,22 +198,13 @@ items that hold them. Yemoja holds nothing back, so the only judgement about wha
 is yours: ask an agent about a logbook you are willing to send, or run a model on your own machine,
 where nothing leaves it.
 
-**Press *Ask an agent*** on the home screen. A panel opens beside whatever tab you are on and
-stays there as you move between tabs, so a dive the agent names can be opened and read while you
-carry on talking. Type the command that starts your agent as one line and press **Start**. Then
-ask.
+**First tell Yemoja how to start your agent**, in **Settings** on the home screen: the *Agent
+command* box, which [settings.md](settings.md#the-agent-command) explains. Until it is set, *Ask an
+agent* is greyed, and resting the pointer on it says so.
 
-**The command is the agent's adapter, not the agent's own program.** Yemoja talks to an agent
-over the Agent Client Protocol, and the program you type at in a terminal does not speak it:
-`claude` on its own is Claude Code's terminal, and it will sit there reading until Yemoja gives up
-on it. What speaks to Yemoja is the adapter the agent's maker publishes for editors — for Claude
-Code that is `npx @zed-industries/claude-code-acp`, and for Codex `npx @zed-industries/codex-acp`.
-Whatever the agent's own instructions give for using it *from Zed or another editor* is the
-command to type here. It is remembered on this computer once it has started.
-
-Those `npx` commands need Node.js installed, which is where `npx` comes from; without it the
-panel says the command is not installed. If you would rather not install
-it, the full path to a `node.exe` and to the adapter's `index.js` works in its place.
+**Press *Ask an agent***, at the right of the tabs, on whichever tab you are on. A panel opens
+beside it and stays there as you move between tabs, so a dive the agent names can be opened and
+read while you carry on talking. Press **Start**, and once the agent is running, ask.
 
 **It reaches your logbook through Yemoja and no other way.** Every request it makes to read a
 file, write one or run a command is refused, and the panel says so each time one is.
@@ -249,11 +240,6 @@ offers some anyway is not speaking for Yemoja.
 **Nothing of a conversation is kept.** Closing the panel stops the agent and the conversation is
 gone; it is never written beside your logbook. What the agent remembers on its own side is between
 you and its provider.
-
-**The command is remembered, on this computer only.** Once an agent has started, the panel opens on
-the same command next time, so you type it once. It is kept in `settings.local.json`, which never
-leaves this computer, because a command often names a folder that exists only here. Type another
-and start it to replace it.
 
 ## Copying text
 

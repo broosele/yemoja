@@ -43,6 +43,8 @@ class PaletteTest {
             "background" to (scheme.background to scheme.onBackground),
             "surface" to (scheme.surface to scheme.onSurface),
             "surfaceVariant" to (scheme.surfaceVariant to scheme.onSurfaceVariant),
+            // A tooltip's own pair, which the platform would otherwise fill in unchecked.
+            "inverseSurface" to (scheme.inverseSurface to scheme.inverseOnSurface),
         )
         for ((role, colours) in pairs) atLeast(BODY, role, colours.first, colours.second)
     }

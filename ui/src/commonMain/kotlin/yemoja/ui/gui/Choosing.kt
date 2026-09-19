@@ -19,10 +19,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import yemoja.data.json.SettingsFile
 import yemoja.logic.Outcome
 import yemoja.logic.NumberSetting
+import yemoja.logic.Setting
 import yemoja.logic.Settings
 import yemoja.logic.Universe
 import kotlin.math.roundToLong
@@ -47,54 +49,68 @@ internal class Choosing {
 /**
  * The settings, each with what it holds and where that came from, and a deed to save what changed.
  *
- * In the home screen's System box, opened by its own deed, as a download and a plan are: a settings
- * list of five is a form rather than a place. Each says whether this device, this logbook or the
+ * In the home screen's System box, opened by its own deed, as a download is: a settings list of
+ * six is a form rather than a place. Each says whether this device, this logbook or the
  * application answered it, since a choice kept on this device is one a reader may otherwise look
  * for in vain on another. `GUI-42`.
  */
 @Composable
-internal fun Chooser(universe: Universe?, choosing: Choosing) {
+internal fun Chooser(universe: Universe?, choosing: Choosing, onChanged: () -> Unit = {}) {
     if (universe == null || !choosing.open) return
     val settings = universe.settings
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
         for (setting in Settings.OFFERED) {
-            Row(
-                modifier = Modifier.padding(vertical = HALF),
-                horizontalArrangement = Arrangement.spacedBy(GAP),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = setting.label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.width(LABEL),
-                )
-                Box(modifier = Modifier.width(BOX)) {
-                    Compact(
-                        value = choosing.typed[setting.name].orEmpty(),
-                        onChange = {
-                            choosing.typed[setting.name] = it
-                            choosing.said = null
-                        },
-                        after = unitOf(setting),
-                    )
-                }
-                Text(
-                    text = answeredSaid(settings.answeredBy(setting), setting),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-            }
+            SettingRow(setting, BOX, unitOf(setting), answeredSaid(settings.answeredBy(setting), setting), choosing)
         }
+        val agent = Settings.AGENT_COMMAND
+        SettingRow(agent, COMMAND, "", answeredSaid(settings.answeredBy(agent), agent), choosing)
+        Aside(AGENT_SETUP)
         choosing.said?.let { Aside(it) }
         Row(
             modifier = Modifier.padding(top = HALF),
             horizontalArrangement = Arrangement.spacedBy(GAP),
         ) {
-            Button(onClick = { choosing.said = saved(settings, choosing) }) { Text("Save") }
+            Button(
+                onClick = {
+                    choosing.said = saved(settings, choosing)
+                    onChanged()
+                },
+            ) { Text("Save") }
             TextButton(onClick = { choosing.open = false }) { Text("Close") }
         }
+    }
+}
+
+/** One setting: what it is called, the box it is typed in, and where its value came from. */
+@Composable
+private fun SettingRow(setting: Setting, wide: Dp, after: String, answered: String, choosing: Choosing) {
+    Row(
+        modifier = Modifier.padding(vertical = HALF),
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = setting.label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(LABEL),
+        )
+        Box(modifier = Modifier.width(wide)) {
+            Compact(
+                value = choosing.typed[setting.name].orEmpty(),
+                onChange = {
+                    choosing.typed[setting.name] = it
+                    choosing.said = null
+                },
+                after = after,
+            )
+        }
+        Text(
+            text = answered,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+        )
     }
 }
 
@@ -102,8 +118,24 @@ internal fun Chooser(universe: Universe?, choosing: Choosing) {
 internal fun Choosing.fill(settings: Settings) {
     typed.clear()
     for (setting in Settings.OFFERED) typed[setting.name] = shownOf(setting, settings.number(setting))
+    typed[Settings.AGENT_COMMAND.name] = settings.text(Settings.AGENT_COMMAND).orEmpty()
     said = null
 }
+
+/**
+ * How the agent's command is set up, said under its box.
+ *
+ * The command is the adapter that speaks the protocol, not the agent's own program: what an
+ * agent's maker publishes for editors. Said here because a reader who types the program itself
+ * gets a panel that says *Starting* for ever, and the box is the place they are looking when
+ * they type it.
+ */
+internal const val AGENT_SETUP: String =
+    "The command that starts your agent, kept on this computer only. It is the agent's adapter " +
+        "for editors, not the agent itself: for Claude Code it is npx @zed-industries/claude-code-acp, " +
+        "and for Codex npx @zed-industries/codex-acp. Those need Node.js installed; the full path " +
+        "to node.exe and to the adapter's index.js works in their place. Whatever the agent's " +
+        "instructions give for using it from Zed or another editor is what to type here."
 
 /**
  * Chooses every setting whose box says something other than what it holds, and says what came of it.
@@ -121,11 +153,14 @@ private fun saved(settings: Settings, choosing: Choosing): String {
             is Entered.Value -> chosen[setting] = read.value
         }
     }
-    if (chosen.isEmpty()) return "Nothing was changed."
+    val command = choosing.typed[Settings.AGENT_COMMAND.name].orEmpty().trim()
+    val commandMoved = command != settings.text(Settings.AGENT_COMMAND).orEmpty()
+    if (chosen.isEmpty() && !commandMoved) return "Nothing was changed."
     for ((setting, value) in chosen) {
         val outcome = settings.choose(setting, value)
         if (outcome is Outcome.Refused) return outcome.reason
     }
+    if (commandMoved) settings.choose(Settings.AGENT_COMMAND, command)
     choosing.fill(settings)
     return "Saved."
 }
@@ -174,10 +209,10 @@ internal fun shownOf(setting: NumberSetting, value: Double?): String = when {
 }
 
 /** Where a setting's value came from, as the form says it beside the box. */
-internal fun answeredSaid(file: SettingsFile?, setting: NumberSetting): String = when (file) {
+internal fun answeredSaid(file: SettingsFile?, setting: Setting): String = when (file) {
     SettingsFile.LOCAL -> "set on this device"
     SettingsFile.LOGBOOK -> "set in this logbook"
-    null -> if (setting.default == null) "not set" else "the default"
+    null -> if ((setting as? NumberSetting)?.default == null) "not set" else "the default"
 }
 
 /** The unit written after a setting's box. */
@@ -201,3 +236,6 @@ private const val PERCENT = 100.0
 
 /** How wide a setting's box is. */
 private val BOX = 110.dp
+
+/** How wide the command's box is, a command being a line rather than a number. */
+private val COMMAND = 420.dp

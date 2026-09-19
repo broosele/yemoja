@@ -65,15 +65,29 @@ written in — a settings file declares none:
 - `default_last_stop` — the depth an ascent takes its shallowest stop at, in metres, from 0
   to 12. Without a choice, 3.
 
-One more is kept for you rather than chosen in the form:
-
-- `desktop_agent_command` — the command the agent panel last started an agent from. Only ever in
-  `settings.local.json`, and ignored if it turns up in `settings.json`: a command often names a
-  folder on one computer, and `settings.json` travels. See
-  [getting-started.md](getting-started.md#asking-an-agent).
-
 A value that is not a number, or lies outside its range, is ignored, and the next place in line
 answers instead.
+
+## The agent command
+
+- `desktop_agent_command` — the command that starts your agent, typed as one line. Only ever in
+  `settings.local.json`, and ignored if it turns up in `settings.json`: a command often names a
+  folder on one computer, and `settings.json` travels.
+
+**The command is the agent's adapter, not the agent's own program.** Yemoja talks to an agent
+over the Agent Client Protocol, and the program you type at in a terminal does not speak it:
+`claude` on its own is Claude Code's terminal, and it will sit there reading until Yemoja gives up
+on it. What speaks to Yemoja is the adapter the agent's maker publishes for editors — for Claude
+Code that is `npx @zed-industries/claude-code-acp`, and for Codex `npx @zed-industries/codex-acp`.
+Whatever the agent's own instructions give for using it *from Zed or another editor* is the
+command to type here.
+
+Those `npx` commands need Node.js installed, which is where `npx` comes from; without it the
+panel says the command is not installed. If you would rather not install it, the full path to a
+`node.exe` and to the adapter's `index.js` works in its place.
+
+Once it is saved, *Ask an agent* at the right of the tabs comes alive; how to use it is in
+[getting-started.md](getting-started.md#asking-an-agent).
 
 All five are worth a word, because their names are doing real work. They are *defaults*
 for making a plan and nothing more. A plan keeps the gradient factors it was made with and

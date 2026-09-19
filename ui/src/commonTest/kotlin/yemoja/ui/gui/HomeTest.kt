@@ -212,8 +212,6 @@ class GreetingTest {
                 "Import",
                 "Export to UDDF",
                 "Download from dive computer",
-                "Plan dive",
-                "Ask an agent",
                 "Settings",
             ),
             Deed.entries.map { it.label },

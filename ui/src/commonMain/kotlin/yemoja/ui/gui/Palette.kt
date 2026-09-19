@@ -60,6 +60,9 @@ internal val MARINE_LIGHT: ColorScheme = lightColorScheme(
     outline = Color(0xFF737B85),
     outlineVariant = Color(0xFFC2C8D0),
     surfaceTint = Color(0xFF2A5A87),
+    // What a tooltip is drawn on: the dark of the other scheme, so it stands off the window.
+    inverseSurface = Color(0xFF2E3338),
+    inverseOnSurface = Color(0xFFEFF2F5),
 )
 
 /** Marine, for a dark window. */
@@ -90,4 +93,6 @@ internal val MARINE_DARK: ColorScheme = darkColorScheme(
     outline = Color(0xFF959DA6),
     outlineVariant = Color(0xFF414A54),
     surfaceTint = Color(0xFFA5C8F0),
+    inverseSurface = Color(0xFFE0E3E7),
+    inverseOnSurface = Color(0xFF2A2F34),
 )

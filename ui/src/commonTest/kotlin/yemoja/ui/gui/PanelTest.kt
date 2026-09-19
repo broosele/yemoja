@@ -165,3 +165,31 @@ class StoppedWhileStartingTest {
         assertEquals(listOf(Exchange(Turn.WINDOW, "npx could not be started")), talk.exchanges)
     }
 }
+
+/*
+ * The button on the tab row, and why it is greyed. `GUI-38`.
+ */
+class UnaskedTest {
+
+    @Test
+    fun `an agent can be asked once a logbook is open and a command is set`() {
+        assertNull(unaskedOf(logbookOpen = true, hosts = true, command = "codex-acp"))
+    }
+
+    @Test
+    fun `without a command the reader is sent to the settings`() {
+        val said = unaskedOf(logbookOpen = true, hosts = true, command = null)
+        assertTrue(said!!.contains("Settings"), said)
+        assertEquals(said, unaskedOf(logbookOpen = true, hosts = true, command = "  "), "blank is none")
+    }
+
+    @Test
+    fun `without a logbook there is nothing to ask about`() {
+        assertTrue(unaskedOf(logbookOpen = false, hosts = true, command = "codex-acp")!!.startsWith("Open a logbook"))
+    }
+
+    @Test
+    fun `a platform that hosts no agent says so first`() {
+        assertTrue("desktop" in unaskedOf(logbookOpen = false, hosts = false, command = null)!!)
+    }
+}

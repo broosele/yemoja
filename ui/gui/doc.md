@@ -378,8 +378,8 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  Five settings are a form rather than a place, so they open in the System box like a download or
-  a plan, from a deed of their own, rather than taking a tab. A tab is the answer once there are
+  Six settings are a form rather than a place, so they open in the System box like a download,
+  from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 
   **Each setting says where its value came from**: *set on this device*, *set in this logbook*,
@@ -397,21 +397,28 @@ once and corrected. The numbers stay unused rather than being given to something
   reason, `GUI-41`, and held as the proportions the file writes. They have no default, and say *not
   set* until somebody sets them.
 
-  **The agent's command is a setting the form does not offer.** It is text rather than a number,
-  belongs to one device, and is chosen in the agent panel, which remembers the last command that
-  started. `GUI-38`.
+  **The agent's command is in the form, with how to set it up under its box.** It is text rather
+  than a number and belongs to one device, which the form says beside it as it says of any setting.
+  The explanation is there because the box is where a reader is looking when they get it wrong: the
+  command is the agent's adapter for editors, not the agent's own program, and the adapters need
+  Node.js. It uses the same words as the failures the panel gives — *adapter*, the `npx` commands,
+  Node.js — so what a reader is told beforehand and what they are told afterwards agree. `GUI-38`.
 
   **A setting reaches the making of something and nothing after.** The plan form and the ascent
   button read them when a plan is made or an ascent written; nothing that works out what a plan or a
   dive comes to reads one. `LOGIC-35`.
 
-- **GUI-41 — How a plan is started.** *Settled:* **a deed on the home screen and a form of eight
+- **GUI-41 — How a plan is started.** *Settled:* **a button on the Dives tab and a form of eight
   questions, making a dive at one depth with its ascent already added.**
 
-  A plan is a dive that has not happened, so it is started beside the deeds that bring dives in,
-  in the System box, and what it makes is opened where dives are read. Everything a plan holds
-  beyond its first shape — the site, the cylinder, a second gas — is changed there like any dive,
-  so the form asks only what a profile cannot be drawn without.
+  A plan is a dive that has not happened, so it is started where dives are read: *Plan dive* sits
+  above the table, and the form takes the place of the dive shown, titled *New plan* as a new
+  item's form is titled. What it makes is chosen in the table, so the reader lands on the plan.
+  Everything a plan holds beyond its first shape — the site, the cylinder, a second gas — is
+  changed there like any dive, so the form asks only what a profile cannot be drawn without. It was
+  a deed on home first, and moved because a plan belongs with the dives rather than with what is
+  done to a logbook as a whole. A half-typed form survives a visit to another tab, as anything a
+  tab holds does. `GUI-27`.
 
   **Eight questions**: the day, a time if one is known, the depth of the bottom, the minutes from
   leaving the surface to leaving the bottom, the gas, salt or fresh water, and the two gradient
@@ -630,21 +637,23 @@ once and corrected. The numbers stay unused rather than being given to something
   agent keeps on its own side is between the user and its provider. What was asked, and whose
   names were in it, is never written beside the logbook, where syncing would carry it.
 
-  **The command that starts an agent is kept, and on this device only.** It is a setting,
-  `desktop_agent_command`, written once an agent has started from it so a mistyped command is not
-  what the panel opens on next time. Only in `settings.local.json`, and a copy found in the logbook's
-  file is ignored: a command names a program where one machine keeps it, often under a folder named
-  for the user, and the logbook's file carries whatever is in it to every machine. It is not in the
-  settings form, being chosen where it is used. `GUI-42`, `DATA-9`.
+  **The command that starts an agent is a setting, and on this device only.** It is
+  `desktop_agent_command`, set in the settings form beside an explanation of what to type, and the
+  panel reads it when it starts an agent: the panel holds no box for it. Only in
+  `settings.local.json`, and a copy found in the logbook's file is ignored: a command names a
+  program where one machine keeps it, often under a folder named for the user, and the logbook's
+  file carries whatever is in it to every machine. `GUI-42`, `DATA-9`.
 
-  **It opens from a deed on home**, *Ask an agent*, beside the deeds that make, open, import and
-  export a logbook — an agent is something done to a logbook as a whole, which is what that row
-  is. The deed is greyed where the platform hosts no agent, as every unbuildable deed there is,
-  and absent before a logbook is open, there being nothing to ask about. Once opened the panel
-  keeps a fixed width beside whichever tab is showing, and closes from its own *Close*.
+  **It opens from a button on the tab row**, *Ask an agent*, at the right of the tabs and so on
+  every tab: a question comes up wherever the reader is, and a deed on home would send them there
+  first. The button is greyed where there is no agent to ask — no logbook open, a platform that
+  hosts none, or no command set — and says why over itself while the pointer rests there, naming
+  the settings where the command is set, so a reader who cannot press it learns where to go without
+  leaving their tab. Once opened the panel keeps a fixed width beside whichever tab is showing, and
+  closes from its own *Close*.
 
-  **What it holds, top to bottom**: the command that starts an agent and the deed that starts it,
-  which become the agent's name and *Stop* once one runs; the conversation, a view of its own for
+  **What it holds, top to bottom**: the agent's name, from the command the settings hold, and the
+  deed that starts it, which becomes *Stop* once one runs; the conversation, a view of its own for
   copying; what the stance says while an agent is starting or thinking; how much is staged and the
   deed to review it, where anything is; the *Allow changes* box; and what to ask, with *Ask* live
   only while an agent waits to be asked. The box lets an agent stage, not change: nothing it stages

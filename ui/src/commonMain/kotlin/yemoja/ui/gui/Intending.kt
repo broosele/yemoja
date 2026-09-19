@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -261,16 +262,51 @@ internal class Planning {
     var open: Boolean by mutableStateOf(false)
     var typed: Intention by mutableStateOf(Intention())
     var wrong: String? by mutableStateOf(null)
+
+    /**
+     * Opens the form on [today], the day a plan is most often made for, and on the gradient
+     * factors the user chose in [settings] where they chose any. A form already open is left as it
+     * was typed. `GUI-41`.
+     */
+    fun openOn(today: Date, settings: Settings) {
+        if (!open) {
+            typed = intentionOf(
+                today,
+                settings.number(Settings.DEFAULT_GF_LOW),
+                settings.number(Settings.DEFAULT_GF_HIGH),
+            )
+            wrong = null
+        }
+        open = true
+    }
+}
+
+/**
+ * The plan form as a card in the place a dive is shown, titled as a new item's form is.
+ *
+ * What it makes is chosen in the table, so the reader lands on the plan with its ascent already
+ * added. `GUI-41`.
+ */
+@Composable
+internal fun PlanCard(universe: Universe, planning: Planning, changer: Changer, onMade: (String) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "New plan",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = HALF),
+        )
+        HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
+        Planner(universe, planning, changer, onMade)
+    }
 }
 
 /**
  * The form a plan is started from: a day, a depth and a time at it, what is breathed, and how
  * conservative to be.
  *
- * In the home screen's System box, beside the deeds that bring dives in, since starting a plan is
- * bringing in a dive that has not happened. What is made is a dive holding one planned run to the
- * bottom, given its way up by the model at once, and then opened where dives are read, which is
- * where everything else about a plan is edited. `GUI-41`.
+ * On the Dives tab, in the place a dive is shown, since a plan is a dive that has not happened.
+ * What is made is a dive holding one planned run to the bottom, given its way up by the model at
+ * once, and then chosen in the table, where everything else about a plan is edited. `GUI-41`.
  */
 @Composable
 internal fun Planner(

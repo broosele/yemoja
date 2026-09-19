@@ -64,6 +64,8 @@ class ShownSettingTest {
         assertEquals("set in this logbook", answeredSaid(SettingsFile.LOGBOOK, Settings.DEFAULT_GF_LOW))
         assertEquals("the default", answeredSaid(null, Settings.DEFAULT_ASCENT_RATE))
         assertEquals("not set", answeredSaid(null, Settings.DEFAULT_GF_LOW), "a factor has no default")
+        assertEquals("not set", answeredSaid(null, Settings.AGENT_COMMAND), "and nor has the command")
+        assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.AGENT_COMMAND))
     }
 
     @Test

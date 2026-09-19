@@ -47,17 +47,22 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -229,6 +234,9 @@ internal class Kept {
      */
     var making: ItemDescription? by mutableStateOf(null)
 
+    /** Dives' plan form, which is where a plan is started. `GUI-41`. */
+    val planning: Planning = Planning()
+
     /** Locations' region. */
     var place: Chosen? by mutableStateOf(null)
 
@@ -352,10 +360,16 @@ internal fun Application(universe: Universe?, platform: Platform) {
             tab = to
         }
     }
-    // The agent panel, opened from home and staying open as the reader moves between tabs: a
-    // dive the agent names is looked at while the conversation carries on. `GUI-38`.
+    // The agent panel, opened from the tab row and staying open as the reader moves between
+    // tabs: a dive the agent names is looked at while the conversation carries on. `GUI-38`.
     val conversing = platform.conversing
     var talking by remember(universe) { mutableStateOf(false) }
+    // The command that starts an agent, read again whenever anything changed, since the settings
+    // form that sets it says so through the changer. `GUI-42`.
+    val command = remember(universe, changer.edition) {
+        universe?.settings?.text(Settings.AGENT_COMMAND)
+    }
+    val unasked = unaskedOf(universe != null, conversing != null, command)
     // What a review came to, carried to the panel so the conversation records what became of what
     // an agent staged. Shown to the reader and never put to the agent. `GUI-38`.
     var told by remember(universe) { mutableStateOf<Told?>(null) }
@@ -364,7 +378,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
     CompositionLocalProvider(LocalChanger provides changer) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Tabs(tabs, tab) { tab = it }
+                Tabs(tabs, tab, onChoose = { tab = it }, unasked = unasked) { talking = true }
                 Row(modifier = Modifier.weight(1f)) {
                     Box(modifier = Modifier.weight(1f)) {
                         when {
@@ -373,14 +387,6 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 platform = platform,
                                 kept = kept.getValue(tab),
                                 onApplied = { said -> told = Told(said) },
-                                onPlanned = follow,
-                                // An agent is asked about a logbook, so there is none to talk to
-                                // before one is open.
-                                onAgent = if (universe == null || conversing == null) {
-                                    null
-                                } else {
-                                    { talking = true }
-                                },
                             )
 
                             tab.shape == Shape.MANUAL ->
@@ -388,11 +394,11 @@ internal fun Application(universe: Universe?, platform: Platform) {
 
                             universe == null -> Unit
                             else -> Subject(
-                                set = universe.logbook,
-                                user = universe.user,
+                                universe = universe,
                                 tab = tab,
                                 atlas = atlas,
                                 kept = kept.getValue(tab),
+                                today = platform.today,
                                 onFollow = follow,
                             )
                         }
@@ -402,12 +408,11 @@ internal fun Application(universe: Universe?, platform: Platform) {
                         Panel(
                             set = universe.logbook,
                             conversing = conversing,
+                            command = command.orEmpty(),
                             staged = staged,
                             told = told,
                             onReview = { tab = tabs.first() },
                             onTurn = { changer.changed() },
-                            remembered = universe.settings.text(Settings.AGENT_COMMAND),
-                            onStarted = { universe.settings.choose(Settings.AGENT_COMMAND, it) },
                             onFollow = follow,
                             onClose = { talking = false },
                         )
@@ -458,26 +463,69 @@ internal fun Menu(
 }
 
 @Composable
-private fun Tabs(tabs: List<Tab>, chosen: Tab, onChoose: (Tab) -> Unit) {
+private fun Tabs(
+    tabs: List<Tab>,
+    chosen: Tab,
+    onChoose: (Tab) -> Unit,
+    /** Why the agent cannot be asked, or absent where it can. */
+    unasked: String?,
+    onAsk: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Tabs as wide as their names, so the row's own rule would stop where they do. The
-        // rule is drawn below instead, across the whole window.
-        ScrollableTabRow(
-            selectedTabIndex = tabs.indexOf(chosen),
-            edgePadding = GAP,
-            divider = {},
-        ) {
-            for (tab in tabs) {
-                LeadingIconTab(
-                    selected = tab === chosen,
-                    onClick = { onChoose(tab) },
-                    text = { Text(tab.name) },
-                    icon = { Icon(tab.icon, contentDescription = null) },
-                )
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // Tabs as wide as their names, so the row's own rule would stop where they do. The
+            // rule is drawn below instead, across the whole window.
+            ScrollableTabRow(
+                selectedTabIndex = tabs.indexOf(chosen),
+                edgePadding = GAP,
+                divider = {},
+                modifier = Modifier.weight(1f),
+            ) {
+                for (tab in tabs) {
+                    LeadingIconTab(
+                        selected = tab === chosen,
+                        onClick = { onChoose(tab) },
+                        text = { Text(tab.name) },
+                        icon = { Icon(tab.icon, contentDescription = null) },
+                    )
+                }
+            }
+            // On every tab rather than on home, since a question comes up wherever the reader
+            // is. Greyed until there is an agent to ask, and says where one is set. `GUI-38`.
+            Explained(unasked) {
+                Button(
+                    onClick = onAsk,
+                    enabled = unasked == null,
+                    modifier = Modifier.padding(horizontal = GAP),
+                ) { Text("Ask an agent") }
             }
         }
         HorizontalDivider()
     }
+}
+
+/**
+ * [content] with [said] shown over it while the pointer rests there, or plain where there is
+ * nothing to say.
+ *
+ * A greyed button says nothing on its own, and a reader who cannot press it wants to know why
+ * without leaving the tab they are on.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun Explained(said: String?, content: @Composable () -> Unit) {
+    if (said == null) {
+        content()
+        return
+    }
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text(said) } },
+        // Kept while the pointer rests there, rather than for a second and a half: a reader is
+        // being told where to go, and reads at their own pace.
+        state = rememberTooltipState(isPersistent = true),
+        content = content,
+    )
 }
 
 // --- Home: the greeting, what can be done to a logbook, and a plot of it. `GUI-30`.
@@ -495,9 +543,7 @@ private fun Home(
     universe: Universe?,
     platform: Platform,
     kept: Kept,
-    onAgent: (() -> Unit)? = null,
     onApplied: (String) -> Unit = {},
-    onPlanned: (String) -> Unit = {},
 ) {
     val set = universe?.logbook
     val changer = LocalChanger.current
@@ -506,7 +552,6 @@ private fun Home(
     val reading = remember(universe) { Reading() }
     val taking = remember(universe) { Taking() }
     val giving = remember(universe) { Giving() }
-    val planning = remember(universe) { Planning() }
     val choosing = remember(universe) { Choosing() }
     val scope = rememberCoroutineScope()
     Selectable {
@@ -538,19 +583,6 @@ private fun Home(
                     put(Deed.DOWNLOAD) {
                         scope.launch { look(universe, platform, reading, changer) }
                     }
-                    put(Deed.PLAN) {
-                        // Opened on today, the day a plan is most often made for, and on the
-                        // gradient factors the user chose where they chose any. `GUI-41`.
-                        if (!planning.open) {
-                            val chosen = universe.settings
-                            planning.typed = intentionOf(
-                                platform.today(),
-                                chosen.number(Settings.DEFAULT_GF_LOW),
-                                chosen.number(Settings.DEFAULT_GF_HIGH),
-                            )
-                        }
-                        planning.open = true
-                    }
                     put(Deed.SETTINGS) {
                         if (!choosing.open) choosing.fill(universe.settings)
                         choosing.open = true
@@ -558,7 +590,6 @@ private fun Home(
                     if (platform.pick != null) {
                         put(Deed.IMPORT) { take(universe, platform, taking, changer) }
                     }
-                    onAgent?.let { put(Deed.AGENT, it) }
                     platform.save?.let { save ->
                         put(Deed.EXPORT) {
                             // Asked here rather than inside the writing: a platform's dialog
@@ -575,8 +606,9 @@ private fun Home(
                 Deeds(deeds)
                 Reader(universe, platform, reading, changer, scope)
                 Taker(universe, taking, changer)
-                Planner(universe, planning, changer, onPlanned)
-                Chooser(universe, choosing)
+                // Said through the changer, so a command set here reaches the button on the tab
+                // row without a change to the logbook.
+                Chooser(universe, choosing) { changer.changed() }
                 Review(universe, changer, onApplied)
                 giving.said?.let { Aside(it) }
             }
@@ -1258,13 +1290,15 @@ private fun titledOf(variable: Variable): String =
  */
 @Composable
 private fun Subject(
-    set: ItemSet,
-    user: ReferenceableItem?,
+    universe: Universe,
     tab: Tab,
     atlas: Atlas?,
     kept: Kept,
+    today: () -> yemoja.data.Date,
     onFollow: (String) -> Unit,
 ) {
+    val set = universe.logbook
+    val user = universe.user
     val edition = LocalChanger.current.edition
     val tree = remember(set, kept.hideUnused, edition) { shownTreeOf(set, kept.hideUnused) }
     // What a tab opens on the first time: Locations on the widest root, which is the world, and
@@ -1292,7 +1326,24 @@ private fun Subject(
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.width(wide)) {
             when (tab.shape) {
-                Shape.DIVES -> Selectable { Dives(set, kept) }
+                // A plan is a dive that has not happened, so it is started where dives are read,
+                // above the table, and the form takes the place of the dive shown. `GUI-41`.
+                Shape.DIVES -> Selectable {
+                    Column(modifier = Modifier.fillMaxHeight()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = GAP, vertical = HALF),
+                            horizontalArrangement = Arrangement.End,
+                        ) {
+                            Button(
+                                onClick = {
+                                    kept.planning.openOn(today(), universe.settings)
+                                    kept.chosenMany = emptySet()
+                                },
+                            ) { Text("Plan dive") }
+                        }
+                        Dives(set, kept)
+                    }
+                }
                 Shape.GEAR -> Selectable {
                     Gear(set, chosen, kept) { kept.chosen = it }
                 }
@@ -1349,6 +1400,9 @@ private fun Subject(
                     }
                     kept.chosenMany.size > 1 -> {
                         ManyView(set, kept.chosenMany, onFollow) { asking = true }
+                    }
+                    kept.planning.open -> PlanCard(universe, kept.planning, changer) { id ->
+                        set[id]?.let { kept.chosen = Chosen(id, titleOf(it), it) }
                     }
                     kept.making != null -> {
                         NewCard(

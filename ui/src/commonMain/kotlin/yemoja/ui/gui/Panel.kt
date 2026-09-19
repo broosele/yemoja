@@ -50,15 +50,12 @@ import yemoja.data.ItemSet
  * Talk is what the panel holds while it is open: an agent, what has been said, and what is typed.
  *
  * It lives as long as the panel does and no longer. **Nothing of a conversation is kept**, so
- * closing the panel is the end of it. The command that starts an agent is the one exception, and it
- * is kept elsewhere: in this device's settings, once an agent has started from it. `GUI-38`.
+ * closing the panel is the end of it. The command that starts an agent is not the panel's to hold:
+ * it is a setting, and the panel reads it when it starts one. `GUI-38`, `GUI-42`.
  *
  * Not immutable.
  */
 internal class Talk {
-
-    /** The command that starts an agent, as the user types it. */
-    var command: String by mutableStateOf("")
 
     /** What the agent running is called, or absent where none is running. */
     var agent: String? by mutableStateOf(null)
@@ -112,6 +109,8 @@ internal class Talk {
 internal fun Panel(
     set: ItemSet,
     conversing: (writing: () -> Boolean) -> Conversation,
+    /** The command that starts the agent, as the settings hold it. `GUI-42`. */
+    command: String,
     /** How many items an agent has staged, waiting to be reviewed. */
     staged: Int,
     /** What a review came to, which the conversation records as the window's own turn. */
@@ -125,14 +124,10 @@ internal fun Panel(
      * layer announces a change. `DATA-6`, `RECON-8`.
      */
     onTurn: () -> Unit,
-    /** The command an agent was last started from on this device, which the panel opens on. */
-    remembered: String?,
-    /** Keeps [String] as the command to open on next time, once an agent has started from it. */
-    onStarted: (String) -> Unit,
     onFollow: (String) -> Unit,
     onClose: () -> Unit,
 ) {
-    val talk = remember { Talk().also { it.command = remembered.orEmpty() } }
+    val talk = remember { Talk() }
     val conversation = remember { conversing { talk.writing } }
     // Whatever was said before this panel opened has been read already: a panel opened again is
     // not a conversation carried on, and would otherwise begin with old news.
@@ -154,7 +149,7 @@ internal fun Panel(
             TextButton(onClick = onClose) { Text("Close") }
         }
         HorizontalDivider()
-        Starting(talk, conversation, scope, onStarted)
+        Starting(talk, conversation, scope, command)
         // A view of its own, so what is copied out of a conversation is the conversation.
         // `GUI-36`.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -191,7 +186,7 @@ private fun Starting(
     talk: Talk,
     conversation: Conversation,
     scope: CoroutineScope,
-    onStarted: (String) -> Unit,
+    command: String,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
@@ -199,16 +194,15 @@ private fun Starting(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (talk.stance == Stance.NONE) {
-            Box(modifier = Modifier.weight(1f)) {
-                Compact(
-                    value = talk.command,
-                    onChange = { talk.command = it },
-                    hint = "Agent command",
-                )
-            }
+            Text(
+                text = agentOf(command) ?: "No agent is set",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.weight(1f),
+            )
             Button(
-                onClick = { start(talk, conversation, scope, onStarted) },
-                enabled = talk.command.isNotBlank(),
+                onClick = { start(talk, conversation, scope, command) },
+                enabled = command.isNotBlank(),
             ) { Text("Start") }
         } else {
             Text(
@@ -314,16 +308,16 @@ private fun start(
     talk: Talk,
     conversation: Conversation,
     scope: CoroutineScope,
-    onStarted: (String) -> Unit,
+    typed: String,
 ) {
-    val command = talk.command.trim()
+    val command = typed.trim()
     talk.agent = agentOf(command)
     talk.stance = Stance.STARTING
     talk.exchanges = emptyList()
     talk.shown = 0
     talk.writing = false
     val turn = talk.turn
-    scope.launch { started(talk, turn, startedWith(conversation, command, onStarted)) }
+    scope.launch { started(talk, turn, startedWith(conversation, command)) }
 }
 
 /**
@@ -345,17 +339,8 @@ internal fun started(talk: Talk, turn: Int, failed: String?) {
     talk.stance = Stance.NONE
 }
 
-/**
- * Starts what [command] names in [conversation], and answers what to say where it would not start.
- *
- * **Only a command that started is kept**, handed to [onStarted] once it has, so a mistyped one is
- * not what the panel opens on next time. `GUI-38`.
- */
-internal suspend fun startedWith(
-    conversation: Conversation,
-    command: String,
-    onStarted: (String) -> Unit,
-): String? {
+/** Starts what [command] names in [conversation], and answers what to say where it would not start. */
+internal suspend fun startedWith(conversation: Conversation, command: String): String? {
     try {
         conversation.start(command)
     } catch (refused: Exception) {
@@ -363,8 +348,20 @@ internal suspend fun startedWith(
         // the process is started, and that is an IOException.
         return failedOf(command, refused.message)
     }
-    onStarted(command)
     return null
+}
+
+/**
+ * Why the agent cannot be asked, or absent where it can.
+ *
+ * Said over the greyed button, so a reader who cannot press it learns where to go without leaving
+ * the tab they are on. `GUI-38`.
+ */
+internal fun unaskedOf(logbookOpen: Boolean, hosts: Boolean, command: String?): String? = when {
+    !hosts -> "An agent is run on a desktop, and this is not one."
+    !logbookOpen -> "Open a logbook first: an agent is asked about one."
+    command.isNullOrBlank() -> "Set the command that starts your agent in Settings, on the home screen."
+    else -> null
 }
 
 /**
