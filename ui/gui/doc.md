@@ -664,12 +664,16 @@ once and corrected. The numbers stay unused rather than being given to something
   after *Stop*, or after a start that failed, where it is the way to try again once the command has
   been mended.
 
-  **What it holds, top to bottom**: the agent's name, from the command the settings hold, and the
-  deed that stops it, or starts it again; the conversation, a view of its own for copying; what the
-  stance says while an agent is starting or thinking; how much is staged and the deed to review it,
-  where anything is; the two boxes; and what to ask, with *Ask* live only while an agent waits to
-  be asked. The first box lets an agent stage, not change: nothing it stages lands until the reader
-  takes it in.
+  **What it holds, top to bottom**: a title naming the agent the command names, *Ask Claude*,
+  with *Stop* beside it — *Start* after a stop or a failed start — and *Close*; the conversation, a
+  view of its own for copying; what the stance says while an agent is starting or thinking; how
+  much is staged and the deed to review it, where anything is; and what to ask, with the two boxes
+  to the left of *Ask*. *Ask* is live only while an agent waits to be asked, and Enter presses it,
+  Shift and Enter making a new line, as in any chat. While the agent answers, *Ask* gives way to
+  *Interrupt*, which is the protocol's own cancel: the answer ends where it has got to and stays on
+  the screen, and the agent stays running to be asked again. *Stop* is the other thing, and ends
+  the agent itself. The first box lets an agent stage, not change: nothing it stages lands until
+  the reader takes it in.
 
   **A turn that was stopped says nothing.** Starting an agent and asking one both answer on a
   coroutine, and a reader who presses *Stop* meanwhile has closed the conversation already, so what

@@ -276,6 +276,17 @@ class Hosted(
     }
 
     /**
+     * Asks the agent to stop the answer under way, and nothing else.
+     *
+     * The protocol's own cancel: the agent ends the turn where it has got to, its process and
+     * its session stay, and the flow [ask] answered with completes. Nothing where no agent is
+     * open, since there is nothing to interrupt.
+     */
+    suspend fun interrupt() {
+        talking?.cancel()
+    }
+
+    /**
      * Stops the agent, and stops listening for it.
      *
      * **Everything it started goes with it.** A command like `npx …` or a `.cmd` on Windows is a

@@ -31,6 +31,14 @@ internal interface Conversation {
     /** Puts [said] to the agent, handing each piece of the answer to [heard] as it arrives. */
     suspend fun ask(said: String, heard: (String) -> Unit)
 
+    /**
+     * Asks the agent to stop answering, leaving it running and the conversation open.
+     *
+     * The answer under way ends where it has got to, and [ask] returns as it does for one that
+     * finished. Nothing where no answer is under way.
+     */
+    suspend fun interrupt()
+
     /** Stops the agent. */
     fun close()
 

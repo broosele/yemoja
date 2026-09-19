@@ -354,6 +354,8 @@ internal fun Compact(
     hint: String = "",
     lines: Int = 1,
     trailing: (@Composable () -> Unit)? = null,
+    /** Added to the field's own, for a caller that reads its keys. */
+    modifier: Modifier = Modifier,
 ) {
     val ink = MaterialTheme.colorScheme.onSurface
     val style = MaterialTheme.typography.bodyMedium.copy(color = ink)
@@ -364,7 +366,7 @@ internal fun Compact(
         singleLine = lines == 1,
         minLines = lines,
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().then(modifier),
         decorationBox = { inner ->
             Row(
                 modifier = Modifier.fillMaxWidth().clip(SHAPE)

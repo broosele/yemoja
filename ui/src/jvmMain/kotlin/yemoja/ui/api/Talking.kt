@@ -88,6 +88,10 @@ internal class Talking(
         if (direct()) reread()?.let { heard("\n\n$it") }
     }
 
+    override suspend fun interrupt() {
+        hosted?.interrupt()
+    }
+
     /** Stops the agent and closes the socket with it, the token dying with the conversation. */
     override fun close() {
         hosted?.close()

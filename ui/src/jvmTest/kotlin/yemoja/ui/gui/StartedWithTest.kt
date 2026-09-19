@@ -39,6 +39,7 @@ class StartedWithTest {
             started = command
         }
         override suspend fun ask(said: String, heard: (String) -> Unit) = Unit
+        override suspend fun interrupt() = Unit
         override fun close() = Unit
         override val refused: List<String> = emptyList()
     }

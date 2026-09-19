@@ -28,6 +28,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -155,16 +161,8 @@ internal fun Panel(
     val scroll = rememberScrollState()
     LaunchedEffect(talk.exchanges) { scroll.scrollTo(scroll.maxValue) }
     Column(modifier = Modifier.width(PANEL).fillMaxHeight().padding(GAP)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "Agent",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(onClick = onClose) { Text("Close") }
-        }
+        Heading(talk, conversation, scope, command, onClose)
         HorizontalDivider()
-        Starting(talk, conversation, scope, command)
         // A view of its own, so what is copied out of a conversation is the conversation.
         // `GUI-36`.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -196,41 +194,36 @@ internal fun Panel(
 }
 
 /**
- * What is running and the deed that stops it, or, after a stop or a failed start, the agent named
- * and the deed that starts it again.
+ * The panel's title, naming the agent, and beside it the deed that stops it and the one that
+ * closes the panel.
+ *
+ * *Stop* becomes *Start* after a stop or a failed start, which is the way to try again once the
+ * command has been mended. The title names the agent the command names whether or not one is
+ * running, so the row does not change shape as the agent comes and goes.
  */
 @Composable
-private fun Starting(
+private fun Heading(
     talk: Talk,
     conversation: Conversation,
     scope: CoroutineScope,
     command: String,
+    onClose: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
-        horizontalArrangement = Arrangement.spacedBy(HALF),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "Ask ${agentOf(command) ?: "the agent"}",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.weight(1f),
+        )
         if (talk.stance == Stance.NONE) {
-            Text(
-                text = agentOf(command) ?: "No agent is set",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.weight(1f),
-            )
-            Button(
+            TextButton(
                 onClick = { start(talk, conversation, scope, command) },
                 enabled = command.isNotBlank(),
             ) { Text("Start") }
         } else {
-            Text(
-                text = talk.agent.orEmpty(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.weight(1f),
-            )
             TextButton(onClick = { stop(talk, conversation) }) { Text("Stop") }
         }
+        TextButton(onClick = onClose) { Text("Close") }
     }
 }
 
@@ -242,22 +235,40 @@ private fun Asking(
     scope: CoroutineScope,
     onTurn: () -> Unit,
 ) {
-    Boxed("Allow changes", talk.writing) { talk.writing = it }
-    Boxed("Allow file access", talk.direct) { talk.direct = it }
+    val canAsk = talk.stance == Stance.READY && talk.question.isNotBlank()
     Compact(
         value = talk.question,
         onChange = { talk.question = it },
         hint = "Ask about your logbook",
         lines = 3,
+        // Enter asks, as it does in any chat; Shift and Enter is the way to a new line. Enter is
+        // taken even where nothing can be asked yet, so a stray press does not start a new line
+        // that is sent with the question.
+        modifier = Modifier.onPreviewKeyEvent { pressed ->
+            val enter = pressed.type == KeyEventType.KeyDown && pressed.key == Key.Enter
+            if (!enter || pressed.isShiftPressed) return@onPreviewKeyEvent false
+            if (canAsk) ask(talk, conversation, scope, onTurn)
+            true
+        },
     )
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = HALF),
-        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Button(
-            onClick = { ask(talk, conversation, scope, onTurn) },
-            enabled = talk.stance == Stance.READY && talk.question.isNotBlank(),
-        ) { Text("Ask") }
+        Column(modifier = Modifier.weight(1f)) {
+            Boxed("Allow changes", talk.writing) { talk.writing = it }
+            Boxed("Allow file access", talk.direct) { talk.direct = it }
+        }
+        if (talk.stance == Stance.ANSWERING) {
+            // The protocol's cancel: the agent stops where it is and stays running, and the
+            // answer so far stays on the screen. Stop is the way to be rid of the agent itself.
+            Button(onClick = { scope.launch { conversation.interrupt() } }) { Text("Interrupt") }
+        } else {
+            Button(
+                onClick = { ask(talk, conversation, scope, onTurn) },
+                enabled = canAsk,
+            ) { Text("Ask") }
+        }
     }
 }
 

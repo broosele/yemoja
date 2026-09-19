@@ -193,6 +193,81 @@ class RealAgentFilesTest {
     }
 }
 
+/*
+ * An agent interrupted: the answer under way ends, and the agent is still there to be asked again.
+ */
+class RealAgentInterruptTest {
+
+    @Test
+    fun `an interrupted answer ends, and the agent answers the next question`() {
+        val command = System.getenv(AGENT)
+        val folder = System.getenv(LOGBOOK)
+        if (command.isNullOrBlank() || folder.isNullOrBlank()) {
+            println("$AGENT and $LOGBOOK are not both set, so no real agent was asked anything.")
+            return
+        }
+        val universe = Universe.open(folder)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val socket = ToolSocket(Tools(universe), Dispatchers.Default)
+        val words = command.trim().split(Regex("\\s+"))
+        val hosted = Hosted(Started(words.first(), words.drop(1)), socket, folder, scope)
+        val watching = watchdog("a real agent interrupted", seconds = PATIENCE) {
+            hosted.close()
+            socket.close()
+        }
+        val first = StringBuilder()
+        val second = StringBuilder()
+        var interrupted = false
+        try {
+            runBlocking {
+                withTimeout(PATIENCE * 1000) {
+                    hosted.open()
+                    hosted.ask(LONG).collect { event ->
+                        if (event !is Event.SessionUpdateEvent) return@collect
+                        val update = event.update
+                        if (update is SessionUpdate.AgentMessageChunk) {
+                            (update.content as? ContentBlock.Text)?.let { first.append(it.text) }
+                        }
+                        // The first sign of work is the moment a reader would press Interrupt.
+                        if (!interrupted && (update is SessionUpdate.ToolCall ||
+                                update is SessionUpdate.AgentMessageChunk)
+                        ) {
+                            interrupted = true
+                            println("INTERRUPTING after: $update")
+                            hosted.interrupt()
+                        }
+                    }
+                    println("FIRST TURN ENDED")
+                    hosted.ask(SHORT).collect { event ->
+                        if (event !is Event.SessionUpdateEvent) return@collect
+                        val update = event.update
+                        if (update is SessionUpdate.AgentMessageChunk) {
+                            (update.content as? ContentBlock.Text)?.let { second.append(it.text) }
+                        }
+                    }
+                }
+            }
+        } finally {
+            println("FIRST: $first")
+            println("SECOND: $second")
+            hosted.close()
+            socket.close()
+            scope.cancel()
+            watching.interrupt()
+        }
+        assertTrue(interrupted, "the agent should have begun working, and did not")
+        assertTrue(second.isNotEmpty(), "the agent should still answer after being interrupted")
+    }
+}
+
+/** Something that takes a while: every dive, one by one. */
+private const val LONG =
+    "For every dive in the logbook, one at a time, fetch it whole with get and describe it in a " +
+        "paragraph of its own."
+
+/** Something quick, asked after the interruption. */
+private const val SHORT = "Say only the word ready."
+
 /** What to ask of an agent allowed at the files. Something the tools would refuse to do. */
 private const val EDITING =
     "Without staging anything, edit the file of dive 2026-06-21#0 directly so its rating is 8. " +
