@@ -651,11 +651,12 @@ once and corrected. The numbers stay unused rather than being given to something
   question comes up wherever the reader is, and a deed on home would send them there first. The
   button shows a sparkle, the mark readers have come to know for an AI feature, and says *Ask an
   agent* over itself while the pointer rests there: an icon keeps the row the tabs' own, and the
-  name is one hover away rather than lost. It is greyed where there is no agent to ask — no logbook
-  open, a platform that hosts none, or no command set — and then says why instead, naming the
-  settings where the command is set, so a reader who cannot press it learns where to go without
-  leaving their tab. The icon is Material's own, from the set the interface already draws on. Once opened the panel keeps a fixed width beside whichever tab is showing, and
-  closes from its own *Close*.
+  name is one hover away rather than lost. It is greyed where there is no agent to ask — no
+  logbook open, a platform that hosts none, or no command set — and then says why instead, naming
+  the settings where the command is set, so a reader who cannot press it learns where to go
+  without leaving their tab. The icon is Material's own, from the set the interface already draws
+  on. Once opened the panel keeps a fixed width beside whichever tab is showing, and closes from
+  its own *Close*.
 
   **What it holds, top to bottom**: the agent's name, from the command the settings hold, and the
   deed that starts it, which becomes *Stop* once one runs; the conversation, a view of its own for
