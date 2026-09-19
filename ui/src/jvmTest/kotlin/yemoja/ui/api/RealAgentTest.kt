@@ -134,6 +134,70 @@ class RealAgentTest {
     }
 }
 
+/*
+ * An agent allowed at the files: it is told where they are, edits one, and the window reads the
+ * logbook again. `API-5`. Against a copy, like the staging trial.
+ */
+class RealAgentFilesTest {
+
+    @Test
+    fun `an agent allowed at the files edits one directly, and the reload shows it`() {
+        val command = System.getenv(AGENT)
+        val folder = System.getenv(LOGBOOK)
+        if (command.isNullOrBlank() || folder.isNullOrBlank()) {
+            println("$AGENT and $LOGBOOK are not both set, so no real agent was asked anything.")
+            return
+        }
+        val copy = copied(folder)
+        val universe = Universe.open(copy)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val socket = ToolSocket(Tools(universe, direct = { true }), Dispatchers.Default)
+        val words = command.trim().split(Regex("\\s+"))
+        val hosted = Hosted(Started(words.first(), words.drop(1)), socket, copy, scope) { true }
+        val watching = watchdog("a real agent at the files", seconds = PATIENCE) {
+            hosted.close()
+            socket.close()
+        }
+        val said = StringBuilder()
+        try {
+            runBlocking {
+                withTimeout(PATIENCE * 1000) {
+                    hosted.open()
+                    hosted.ask(EDITING).collect { event ->
+                        if (event !is Event.SessionUpdateEvent) return@collect
+                        when (val update = event.update) {
+                            is SessionUpdate.AgentMessageChunk ->
+                                (update.content as? ContentBlock.Text)?.let { said.append(it.text) }
+                            is SessionUpdate.ToolCallUpdate ->
+                                println("TOOL: ${update.kind} ${update.title} ${update.locations}")
+                            is SessionUpdate.ToolCall ->
+                                println("CALL: ${update.kind} ${update.title} ${update.locations}")
+                            else -> Unit
+                        }
+                    }
+                }
+            }
+        } finally {
+            println("ASKED: $EDITING")
+            println("ANSWERED: $said")
+            println("REFUSED: ${hosted.refused}")
+            println("RELOAD: ${universe.reload()}")
+            hosted.close()
+            socket.close()
+            scope.cancel()
+            watching.interrupt()
+        }
+        val dive = universe.logbook["2026-06-21#0"]
+        val rating = (dive?.single<Int>("rating") as? yemoja.data.Result.Usable)?.value
+        assertEquals(8, rating, "the file should have been edited, and read again")
+    }
+}
+
+/** What to ask of an agent allowed at the files. Something the tools would refuse to do. */
+private const val EDITING =
+    "Without staging anything, edit the file of dive 2026-06-21#0 directly so its rating is 8. " +
+        "Ask the files tool where the logbook is first, then say which file you changed."
+
 /** A copy of the logbook at [folder], in a folder of its own, so a fixture is left as it was. */
 private fun copied(folder: String): String {
     val from = java.nio.file.Path.of(folder)

@@ -59,7 +59,7 @@ import yemoja.logic.uddf.UddfFormatException
  */
 class Universe(
     val logbook: ItemSet,
-    val user: ReferenceableItem?,
+    owner: ReferenceableItem?,
     private val store: FileStore,
     /** The folder this was opened from, or absent where it was not opened from one. */
     val path: String? = null,
@@ -98,6 +98,41 @@ class Universe(
      */
     var revision: Int = 0
         private set
+
+    /** The logbook's owner, or absent where the manifest names nobody it holds. `JSON-22`. */
+    var user: ReferenceableItem? = owner
+        private set
+
+    /**
+     * Reads the logbook's files again, replacing what is held with what is on disk.
+     *
+     * **For a change made by another hand.** Everything of the window's own goes through [change]
+     * and is already in memory; this is for an agent allowed to edit the files directly, whose
+     * edits nothing here saw. Without it the window shows what was, and the next change it saves
+     * writes an item from memory over the file, losing the edit. `API-5`.
+     *
+     * A file that will not read refuses the whole reload and leaves everything as it was, so a
+     * half-edited logbook does not replace a whole one. The revision moves whether or not anything
+     * differed, since what was read is not compared with what was held.
+     */
+    fun reload(): Outcome {
+        val manifest = LogbookReader.manifest(store)
+        val fresh = try {
+            LogbookReader.read(store, logbook.descriptions, manifest)
+        } catch (refused: RuntimeException) {
+            return Outcome.Refused("the logbook could not be read again: ${refused.message}")
+        }
+        for (description in logbook.descriptions) {
+            for (item in logbook.allOf(description)) logbook.idOf(item)?.let { logbook.remove(it) }
+        }
+        for (description in fresh.descriptions) {
+            for (item in fresh.allOf(description)) fresh.idOf(item)?.let { logbook.add(it, item) }
+        }
+        val named = manifest.user?.let { logbook[it.id] }
+        user = if (named?.description == Types.PERSON) named else null
+        revision += 1
+        return Outcome.Done()
+    }
 
     /**
      * Does [changes] as one [operation], and saves whatever it touched.

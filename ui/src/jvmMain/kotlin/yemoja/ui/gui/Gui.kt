@@ -32,6 +32,7 @@ import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.JOptionPane
 import java.util.concurrent.Executor
 import javax.swing.SwingUtilities
+import yemoja.logic.Outcome
 
 /*
  * The window the screens are shown in, which is the one part per platform.
@@ -77,7 +78,7 @@ fun gui(folder: String? = null): Int {
                 ask = ::asked,
                 pick = ::picked,
                 save = ::saved,
-                conversing = { writing ->
+                conversing = { writing, direct ->
                     val open = held
                     val where = at
                     if (open == null || where == null) {
@@ -86,10 +87,18 @@ fun gui(folder: String? = null): Int {
                     // A socket of its own, which the conversation closes with itself: the token
                     // an agent was given stops working when the talking stops. `API-4`. Onto the
                     // toolkit's thread, which is the one the Universe lives on. Named, because
-                    // the flag is what the box on the panel promises: it lets an agent stage
-                    // changes. `API-5`.
-                    val relay = ToolSocket(Tools(open, writing = writing), eventThread())
-                    Talking(relay, where, scope)
+                    // the flags are what the boxes on the panel promise: one lets an agent stage
+                    // changes, the other lets it at the files. `API-5`.
+                    val tools = Tools(open, writing = writing, direct = direct)
+                    val relay = ToolSocket(tools, eventThread())
+                    Talking(relay, where, scope, direct) {
+                        when (val read = open.reload()) {
+                            is Outcome.Refused -> "Yemoja could not read the logbook again after " +
+                                "the agent's turn: ${read.reason}. What the window shows may be " +
+                                "out of date until the file is mended and the logbook reopened."
+                            is Outcome.Done -> null
+                        }
+                    }
                 },
                 deeds = mapOf(
                     Deed.NEW to {

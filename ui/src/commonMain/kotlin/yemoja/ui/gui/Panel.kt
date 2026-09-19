@@ -93,6 +93,15 @@ internal class Talk {
      */
     var writing: Boolean by mutableStateOf(false)
 
+    /**
+     * Whether an agent may read and edit the logbook's files itself, the second box, off at the
+     * start of every conversation.
+     *
+     * The last resort the tools are not: what it edits is not staged and not reviewed, and the
+     * window reads the logbook again when its turn ends. `API-5`.
+     */
+    var direct: Boolean by mutableStateOf(false)
+
     /** How many of the agent's refused requests have been shown. `GUI-38`. */
     var shown: Int by mutableStateOf(0)
 }
@@ -108,7 +117,7 @@ internal class Talk {
 @Composable
 internal fun Panel(
     set: ItemSet,
-    conversing: (writing: () -> Boolean) -> Conversation,
+    conversing: (writing: () -> Boolean, direct: () -> Boolean) -> Conversation,
     /** The command that starts the agent, as the settings hold it. `GUI-42`. */
     command: String,
     /** How many items an agent has staged, waiting to be reviewed. */
@@ -128,7 +137,7 @@ internal fun Panel(
     onClose: () -> Unit,
 ) {
     val talk = remember { Talk() }
-    val conversation = remember { conversing { talk.writing } }
+    val conversation = remember { conversing({ talk.writing }, { talk.direct }) }
     // Whatever was said before this panel opened has been read already: a panel opened again is
     // not a conversation carried on, and would otherwise begin with old news.
     val before = remember { told }
@@ -225,6 +234,7 @@ private fun Asking(
     onTurn: () -> Unit,
 ) {
     Boxed("Allow changes", talk.writing) { talk.writing = it }
+    Boxed("Allow file access", talk.direct) { talk.direct = it }
     Compact(
         value = talk.question,
         onChange = { talk.question = it },
@@ -316,6 +326,7 @@ private fun start(
     talk.exchanges = emptyList()
     talk.shown = 0
     talk.writing = false
+    talk.direct = false
     val turn = talk.turn
     scope.launch { started(talk, turn, startedWith(conversation, command)) }
 }

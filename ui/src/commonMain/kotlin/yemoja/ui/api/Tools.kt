@@ -68,7 +68,26 @@ class Tools(
     private val universe: Universe,
     /** Whether the user allows changes to be staged, asked on every call. */
     private val writing: () -> Boolean = { false },
+    /** Whether the user allows the logbook's files to be read and edited, asked on every call. */
+    private val direct: () -> Boolean = { false },
 ) {
+
+    /**
+     * Where the logbook's files are and how to treat them, while the user allows direct access.
+     *
+     * Refused while they do not, naming the box, and refused for a logbook that is not on disk.
+     * The path is told here and nowhere else, so an agent that has not been allowed in has
+     * nothing to look for. `API-5`.
+     */
+    fun files(): Reply {
+        if (!direct()) return notDirect()
+        val folder = universe.path ?: return refused("this logbook is not on disk")
+        return replied(
+            "folder" to Stored.Leaf(folder),
+            "format" to Stored.Leaf("$RESOURCES$FORMAT"),
+            "rules" to Stored.Elements(FILE_RULES.map { Stored.Leaf(it) }),
+        )
+    }
 
     /** Every type, or the one called [type], with each field's kind, unit and vocabulary. */
     fun describe(type: String? = null): Reply {
@@ -310,6 +329,12 @@ class Tools(
             "review it.",
     )
 
+    /** What `files` answers while the user has not allowed direct access. */
+    private fun notDirect(): Reply = refused(
+        "ask the user to tick *Allow file access* beside the conversation, and say why the tools " +
+            "were not enough. Until they do, the logbook's files are not yours to read or edit.",
+    )
+
     /**
      * What an agent is told before it is asked anything: how to behave, and what the logbook holds.
      *
@@ -455,6 +480,29 @@ class Tools(
 
         /** What is said where a logbook has nowhere beside it to stage a change. */
         private const val NOWHERE = "this logbook has nowhere to stage a change"
+
+        /** Where the manual's chapters are served as resources. */
+        const val RESOURCES: String = "yemoja://manual/"
+
+        /** The chapter that says how the files are written. */
+        const val FORMAT: String = "data-format.md"
+
+        /**
+         * What an agent allowed at the files is told to do with them.
+         *
+         * Said with the path rather than in the briefing, so they arrive at the moment they apply.
+         */
+        private val FILE_RULES: List<String> = listOf(
+            "Read the format chapter before touching a file. An item that no longer reads makes " +
+                "the whole logbook refuse to open.",
+            "Use the tools for anything they can do. Edit a file only for what they cannot, and " +
+                "say which file you changed and why.",
+            "Edit in place with the smallest change. Do not rewrite a file you did not need to.",
+            "Leave the folders beside the logbook alone: .proposed, .import and .agent are not " +
+                "part of it.",
+            "Yemoja reads the logbook again when your turn ends. Until then the tools answer " +
+                "from what was there before your edit, so do not mix the two in one answer.",
+        )
     }
 }
 

@@ -206,8 +206,11 @@ agent* is greyed, and resting the pointer on it says so.
 beside it and stays there as you move between tabs, so a dive the agent names can be opened and
 read while you carry on talking. Press **Start**, and once the agent is running, ask.
 
-**It reaches your logbook through Yemoja and no other way.** Every request it makes to read a
-file, write one or run a command is refused, and the panel says so each time one is.
+**It reaches your logbook through Yemoja, unless you say otherwise.** Every request it makes to
+read a file, write one or run a command is refused, and the panel says so each time one is. What
+Yemoja can refuse is only what the agent asks it, though: the agent is a program of your own,
+running with your rights, and an agent that goes looking for files on its own is a matter between
+you and it. Yemoja never tells it where your logbook is, and asks it not to look.
 
 **It can propose changes, and you decide.** Tick *Allow changes* and an agent can stage
 changes — correct a clock error across a trip, give one dive's gear to the others. Nothing it
@@ -221,6 +224,15 @@ again against what the field holds now. **Discard** any item you do not want, th
 
 What is waiting is kept in a folder beside your logbook, with `.proposed` after its name, so it
 survives the window being closed. It is not part of your logbook.
+
+**It can be let at the files themselves, as a last resort.** Tick *Allow file access* and the
+agent is told where your logbook is, may read its files, and may edit them — directly, with
+nothing staged and nothing to review. It is asked to do that only for what the tools cannot, to
+make the smallest change, and to say which file it changed and why; Yemoja reads your logbook again
+when its turn ends, so the window shows what it did. A file it leaves unreadable stops the whole
+logbook opening, and the panel says so if that happens. Take a backup first, as you would before
+editing by hand. Running a command is never allowed, whatever is ticked. This box, too, starts
+empty for every conversation.
 
 **It works beside your logbook, not in it.** An agent writes files of its own as it goes — a note
 of which tools it has been allowed, and whatever else it keeps. Those go in a folder next to your

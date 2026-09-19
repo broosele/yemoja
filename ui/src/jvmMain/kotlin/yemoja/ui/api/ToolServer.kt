@@ -214,6 +214,12 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
         "What is staged so far: each item, and each field as it is and as it would be.",
     ) { carried(onto) { tools.staged() } }
 
+    server.addTool(
+        "files",
+        "Where the logbook's files are and how to treat them, for the rare case the other tools " +
+            "cannot do what is asked. Refused unless the user has ticked Allow file access.",
+    ) { carried(onto) { tools.files() } }
+
     server.addResource(
         uri = "$RESOURCES${BRIEFING}",
         name = BRIEFING,
@@ -297,17 +303,17 @@ private object Bundled
  */
 internal val TOOL_NAMES: List<String> = listOf(
     "guide", "describe", "list", "get", "series", "aggregate",
-    "stage_set", "stage_add", "stage_delete", "staged",
+    "stage_set", "stage_add", "stage_delete", "staged", "files",
 )
 
 /** The manual's chapters an agent may read, being the definition of what it is reading. */
-private val CHAPTERS: List<String> = listOf("data-fields.md", "data-format.md")
+private val CHAPTERS: List<String> = listOf("data-fields.md", Tools.FORMAT)
 
 /** What the briefing is called as a resource. On disk it takes the names agents read. */
 internal const val BRIEFING = "briefing.md"
 
 /** Where a chapter is found, as a resource's address. */
-private const val RESOURCES = "yemoja://manual/"
+private const val RESOURCES = Tools.RESOURCES
 
 /** What the server calls itself when an agent asks. */
 private const val NAME = "yemoja"

@@ -3,6 +3,9 @@ package yemoja.ui.api
 import com.agentclientprotocol.common.Event
 import com.agentclientprotocol.model.ContentBlock
 import com.agentclientprotocol.model.SessionUpdate
+import com.agentclientprotocol.model.ToolCallId
+import com.agentclientprotocol.model.ToolCallLocation
+import com.agentclientprotocol.model.ToolKind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -236,6 +239,83 @@ class OursTest {
         )) {
             assertFalse(isOurs("yemoja", title), title)
         }
+    }
+}
+
+/*
+ * Which of the agent's own tools are allowed while the user lets it at the files: those that name
+ * where they act, and act inside the logbook or the agent's own folder. `API-5`.
+ */
+class ReachesOnlyFilesTest {
+
+    private val logbook = Files.createTempDirectory("yemoja-").toFile()
+
+    private val folders = listOf(logbook, java.io.File("${logbook.path}.agent"))
+
+    private fun at(vararg paths: String): List<ToolCallLocation> =
+        paths.map { ToolCallLocation(path = it) }
+
+    @Test
+    fun `reading, editing, deleting, moving and searching inside the logbook are allowed`() {
+        val inside = java.io.File(logbook, "dive/2026-06-01#0.json").path
+        for (kind in listOf(
+            ToolKind.READ, ToolKind.EDIT, ToolKind.DELETE, ToolKind.MOVE, ToolKind.SEARCH,
+        )) {
+            assertTrue(reachesOnlyFiles(kind, at(inside), folders), kind.toString())
+        }
+        val own = java.io.File("${logbook.path}.agent", "notes.md").path
+        assertTrue(reachesOnlyFiles(ToolKind.EDIT, at(own), folders), "its own folder too")
+    }
+
+    @Test
+    fun `a command is never run, and a tool naming nowhere is held to nothing`() {
+        val inside = java.io.File(logbook, "person.json").path
+        assertFalse(reachesOnlyFiles(ToolKind.EXECUTE, at(inside), folders))
+        assertFalse(reachesOnlyFiles(ToolKind.FETCH, at(inside), folders))
+        assertFalse(reachesOnlyFiles(ToolKind.OTHER, at(inside), folders))
+        assertFalse(reachesOnlyFiles(null, at(inside), folders))
+        assertFalse(reachesOnlyFiles(ToolKind.READ, emptyList(), folders))
+        assertFalse(reachesOnlyFiles(ToolKind.READ, null, folders))
+    }
+
+    @Test
+    fun `one location outside refuses the whole call, however it is spelled`() {
+        val inside = java.io.File(logbook, "person.json").path
+        val outside = java.io.File(logbook.parentFile, "elsewhere.json").path
+        val climbing = java.io.File(logbook, "../elsewhere.json").path
+        assertFalse(reachesOnlyFiles(ToolKind.READ, at(inside, outside), folders))
+        assertFalse(reachesOnlyFiles(ToolKind.EDIT, at(climbing), folders))
+        assertTrue(within(folders, java.io.File(logbook, "dive/../person.json").path), "resolved")
+        val longer = "${logbook.path}-other/person.json"
+        assertFalse(within(folders, longer), "a longer name is outside")
+    }
+}
+
+/*
+ * A permission request names a title; what the call is and where it acts were announced earlier.
+ */
+class CallsTest {
+
+    private val here = ToolCallLocation(path = "D:/dives/mine/dive/2026-06-01#0.json")
+
+    @Test
+    fun `an announcement is remembered by id, and a later one fills in what the first left out`() {
+        val calls = Calls()
+        calls.saw(SessionUpdate.ToolCall(ToolCallId("t1"), "Read File", kind = ToolKind.READ))
+        assertEquals(ToolKind.READ, calls.kindOf("t1"))
+        assertEquals(null, calls.locationsOf("t1"), "nowhere said yet")
+        calls.saw(SessionUpdate.ToolCallUpdate(ToolCallId("t1"), locations = listOf(here)))
+        assertEquals(ToolKind.READ, calls.kindOf("t1"), "kept")
+        assertEquals(listOf(here), calls.locationsOf("t1"))
+        calls.saw(SessionUpdate.ToolCallUpdate(ToolCallId("t1"), locations = emptyList()))
+        assertEquals(listOf(here), calls.locationsOf("t1"), "an empty list says nothing new")
+    }
+
+    @Test
+    fun `a call nobody announced is unknown`() {
+        val calls = Calls()
+        assertEquals(null, calls.kindOf("t9"))
+        assertEquals(null, calls.locationsOf("t9"))
     }
 }
 

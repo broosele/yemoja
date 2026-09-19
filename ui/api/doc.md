@@ -156,9 +156,33 @@ behaviour of its own, that behaviour is in the wrong place.
   conversation. Refusing every call is the enforcement that holds, and it is the one that was
   load-bearing: an agent that ignores a change to its list of tools still cannot write.
 
-  **The tools are the only way in.** The agent's own requests to read a file or run a command
-  are refused by the window, `GUI-38`. An agent given the logbook folder could edit the files
-  directly, and nothing in this entry would stop it.
+  **The tools are the only way in, unless the user opens a second.** The agent's own requests to
+  read a file or run a command are refused by the window, `GUI-38`. An agent given the logbook
+  folder could edit the files directly, and nothing in this entry would stop it.
+
+  *Added once built:* **a second box, *Allow file access*, off at the start of every conversation,
+  lets the agent read and edit the logbook's files itself.** It exists because the first box is a
+  promise about Yemoja's tools and not a fence around the agent: an agent is the user's own program
+  with the user's rights, and its own file tools run in its own process, so what the window can
+  refuse is only what the agent asks it. Rather than pretend to a fence, the position is made
+  honest and put in the user's hands. Off, the window refuses the agent's requests to read or write
+  a file, refuses permission for its own tools of the reading and editing kinds, and never tells it
+  where the logbook is: the `files` tool, which answers the path, is refused naming the box. On,
+  the window serves a file read or written inside the logbook or the agent's own folder, allows
+  the agent's own tools of the reading, editing, deleting, moving and searching kinds whose every
+  named location lies inside those two, and `files` answers the path, the format chapter, and the
+  rules: the tools first, a file only for what they cannot do, the smallest edit, and the folders
+  beside the logbook left alone. A command is never run for it, whatever the box says, and a tool
+  that names no location is refused, since there is nothing to hold it to. The briefing calls a
+  file the last resort and tells the agent to ask rather than look.
+
+  **What the agent edits directly is not staged and not reviewed**, and the window did not see it
+  happen. So when a turn ends with the box on, the window reads the logbook again, and the
+  revision moves. Without that the window would show what was, and its next save would write an
+  item from memory over the file, losing the edit. A file that will not read refuses the whole
+  reload and leaves the window's copy as it was, and the conversation says so as the window's own
+  words, since that is where the user is looking. Until the turn ends the tools answer from before
+  the edit, which the rules say not to mix with what was edited.
 
   **What the window does not refuse is these tools.** An agent asks permission for the tools it
   was given as well as for its own, so a window refusing everything refuses the logbook: the first

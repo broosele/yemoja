@@ -132,6 +132,37 @@ class BriefingTest {
     }
 }
 
+/*
+ * Where the files are, told only while the user allows the agent at them. `API-5`.
+ */
+class FilesTest {
+
+    @Test
+    fun `the files are refused until the box is ticked, naming the box`() {
+        val reason = reason(Tools(diving()).files())
+        assertTrue("tick *Allow file access*" in reason, reason)
+        assertTrue("say why the tools were not enough" in reason, reason)
+    }
+
+    @Test
+    fun `allowed, the folder is told with the format chapter and the rules`() {
+        val store = MemoryFileStore(mapOf("dive/2026-06-01#0.json" to "{}"))
+        val onDisk = Universe(LogbookReader.read(store, Types.ALL), null, store, "D:/dives/mine")
+        val told = read(Tools(onDisk, direct = { true }).files())
+        assertEquals("D:/dives/mine", told.leaf("folder"))
+        assertEquals("yemoja://manual/data-format.md", told.leaf("format"))
+        val rules = (told.at("rules") as Stored.Elements).elements.map { (it as Stored.Leaf).value }
+        assertTrue(rules.any { "only for what they cannot" in it.toString() })
+        assertTrue(rules.any { "reads the logbook again" in it.toString() })
+    }
+
+    @Test
+    fun `a logbook held in memory has no files to tell of`() {
+        val tools = Tools(diving(), direct = { true })
+        assertEquals("this logbook is not on disk", reason(tools.files()))
+    }
+}
+
 class GetTest {
 
     @Test

@@ -16,6 +16,8 @@ import com.agentclientprotocol.model.ReadTextFileResponse
 import com.agentclientprotocol.model.RequestPermissionOutcome
 import com.agentclientprotocol.model.RequestPermissionResponse
 import com.agentclientprotocol.model.SessionUpdate
+import com.agentclientprotocol.model.ToolCallLocation
+import com.agentclientprotocol.model.ToolKind
 import com.agentclientprotocol.model.WriteTextFileResponse
 import com.agentclientprotocol.protocol.Protocol
 import com.agentclientprotocol.transport.StdioTransport
@@ -30,6 +32,7 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.JsonElement
 import java.io.BufferedReader
 
@@ -81,6 +84,14 @@ class Hosted(
      * longer, since a user is watching.
      */
     private val patience: Long = HANDSHAKE,
+    /**
+     * Whether the user allows the agent at the logbook's files, asked whenever it asks.
+     *
+     * Off, its own requests to read or write a file and its own tools that would are refused. On,
+     * those that stay inside the logbook or its own folder are allowed, and nothing else is: a
+     * command is never run for it. `API-5`.
+     */
+    private val direct: () -> Boolean = { false },
 ) {
 
     private var running: Process? = null
@@ -90,6 +101,8 @@ class Hosted(
     private var talking: ClientSession? = null
 
     private val refusals = ArrayList<String>()
+
+    private val calls = Calls()
 
     /** Every request of the agent's own that was refused, most recent last. `GUI-38`. */
     val refused: List<String> get() = refusals
@@ -228,7 +241,10 @@ class Hosted(
                 cwd = working,
                 mcpServers = listOf(relaying(port)),
             ),
-        ) { _, _ -> Refusing(NAME, refusals) }
+        ) { _, _ ->
+            val reach = listOf(java.io.File(folder), workingBeside(folder))
+            Refusing(NAME, refusals, reach, direct, calls)
+        }
     }
 
     /**
@@ -252,7 +268,11 @@ class Hosted(
      */
     suspend fun ask(said: String): Flow<Event> {
         val session = talking ?: error("nothing was asked of an agent that is not open")
-        return session.prompt(listOf(ContentBlock.Text(said)))
+        // Noted on the way past, so that a permission request naming only a title can be held to
+        // what its call was announced to be and where. `API-5`.
+        return session.prompt(listOf(ContentBlock.Text(said))).onEach { event ->
+            if (event is Event.SessionUpdateEvent) calls.saw(event.update)
+        }
     }
 
     /**
@@ -347,6 +367,11 @@ internal val BRIEFING_NAMES: List<String> = listOf("CLAUDE.md", "AGENTS.md")
 private class Refusing(
     private val server: String,
     private val refused: MutableList<String>,
+    /** The logbook and the agent's own folder, which is as far as direct access reaches. */
+    private val folders: List<java.io.File>,
+    private val direct: () -> Boolean,
+    /** What each tool call was announced as, which its permission request does not repeat. */
+    private val calls: Calls,
 ) : ClientSessionOperations {
 
     override suspend fun requestPermissions(
@@ -355,7 +380,12 @@ private class Refusing(
         _meta: JsonElement?,
     ): RequestPermissionResponse {
         val called = toolCall.title ?: toolCall.toolCallId.value
-        if (!ours(called)) {
+        // The request itself carries a title and little else: what kind of tool this is and where
+        // it will act were said when the call was announced, so they are looked up by its id.
+        val kind = toolCall.kind ?: calls.kindOf(toolCall.toolCallId.value)
+        val locations = toolCall.locations ?: calls.locationsOf(toolCall.toolCallId.value)
+        val atFiles = direct() && reachesOnlyFiles(kind, locations, folders)
+        if (!ours(called) && !atFiles) {
             refused += called
             return RequestPermissionResponse(RequestPermissionOutcome.Cancelled)
         }
@@ -375,8 +405,14 @@ private class Refusing(
         limit: UInt?,
         _meta: JsonElement?,
     ): ReadTextFileResponse {
-        refused += "read $path"
-        throw NotImplementedError("Yemoja reads no files for an agent: the tools are the way in")
+        if (!direct() || !within(folders, path)) {
+            refused += "read $path"
+            throw NotImplementedError(NOT_FOR_AGENTS)
+        }
+        val lines = java.io.File(path).readLines()
+        val from = line?.toInt()?.minus(1)?.coerceIn(0, lines.size) ?: 0
+        val upTo = limit?.toInt()?.let { (from + it).coerceAtMost(lines.size) } ?: lines.size
+        return ReadTextFileResponse(lines.subList(from, upTo).joinToString("\n"))
     }
 
     override suspend fun fsWriteTextFile(
@@ -384,8 +420,12 @@ private class Refusing(
         content: String,
         _meta: JsonElement?,
     ): WriteTextFileResponse {
-        refused += "write $path"
-        throw NotImplementedError("Yemoja writes no files for an agent: the tools are the way in")
+        if (!direct() || !within(folders, path)) {
+            refused += "write $path"
+            throw NotImplementedError(NOT_FOR_AGENTS)
+        }
+        java.io.File(path).writeText(content)
+        return WriteTextFileResponse()
     }
 
     override suspend fun notify(notification: SessionUpdate, _meta: JsonElement?) = Unit
@@ -424,6 +464,85 @@ internal fun isOurs(server: String, called: String): Boolean {
 
 /** How agents join a server's name to one of its tools' names. */
 private val JOINS = listOf("__", "/", ".", ":")
+
+/**
+ * Calls is what each of the agent's tool calls was announced as: its kind, and where it acts.
+ *
+ * An agent announces a call with its kind and locations, and then asks permission for it with its
+ * id and a title. Claude Code's adapter does exactly that, so a rule about kinds and locations has
+ * to remember the announcement. A later announcement fills in what an earlier one left out, since
+ * the first often comes before the agent has said where. `API-5`.
+ *
+ * Not immutable: it grows as the agent works. Read and written from different threads, so its map
+ * is a concurrent one.
+ */
+internal class Calls {
+
+    private val known = java.util.concurrent.ConcurrentHashMap<String, Announced>()
+
+    fun saw(update: SessionUpdate) {
+        when (update) {
+            is SessionUpdate.ToolCall ->
+                note(update.toolCallId.value, update.kind, update.locations)
+            is SessionUpdate.ToolCallUpdate ->
+                note(update.toolCallId.value, update.kind, update.locations)
+            else -> Unit
+        }
+    }
+
+    private fun note(id: String, kind: ToolKind?, locations: List<ToolCallLocation>?) {
+        known.compute(id) { _, was ->
+            Announced(
+                kind ?: was?.kind,
+                locations?.takeIf { it.isNotEmpty() } ?: was?.locations,
+            )
+        }
+    }
+
+    fun kindOf(id: String): ToolKind? = known[id]?.kind
+
+    fun locationsOf(id: String): List<ToolCallLocation>? = known[id]?.locations
+
+    private class Announced(val kind: ToolKind?, val locations: List<ToolCallLocation>?)
+}
+
+/**
+ * Whether a tool of the agent's own, of [kind] and touching [locations], stays at the files in
+ * [folders] and does nothing else.
+ *
+ * Reading, editing, deleting, moving and searching are what direct access means, and each names
+ * where it will act. Running a command names nothing and can do anything, so it is refused however
+ * it is titled; so is a tool that names no location, since there is nothing to hold it to.
+ * `API-5`.
+ */
+internal fun reachesOnlyFiles(
+    kind: ToolKind?,
+    locations: List<ToolCallLocation>?,
+    folders: List<java.io.File>,
+): Boolean {
+    if (kind !in AT_FILES) return false
+    if (locations.isNullOrEmpty()) return false
+    return locations.all { within(folders, it.path) }
+}
+
+/** What an agent is told when it asks the window for a file it may not have. */
+private const val NOT_FOR_AGENTS =
+    "Yemoja reads and writes no files for an agent unless the user allows it: the tools are the " +
+        "way in"
+
+/** The kinds of tool that act on files they name. */
+private val AT_FILES: Set<ToolKind> =
+    setOf(ToolKind.READ, ToolKind.EDIT, ToolKind.DELETE, ToolKind.MOVE, ToolKind.SEARCH)
+
+/** Whether [path] lies in one of [folders], with `..` and links resolved first. */
+internal fun within(folders: List<java.io.File>, path: String): Boolean {
+    val asked = try {
+        java.io.File(path).canonicalFile.toPath()
+    } catch (unreadable: java.io.IOException) {
+        return false
+    }
+    return folders.any { asked.startsWith(it.canonicalFile.toPath()) }
+}
 
 /**
  * [command] as something this machine can start, which on Windows is not always what was typed.

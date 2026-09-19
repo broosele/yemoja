@@ -35,6 +35,16 @@ internal class Talking(
     /** The logbook being talked about. The agent works beside it rather than in it. `API-4`. */
     private val folder: String,
     private val scope: CoroutineScope,
+    /** Whether the user allows the agent at the logbook's files, asked whenever it asks. */
+    private val direct: () -> Boolean = { false },
+    /**
+     * Reads the logbook again after a turn in which the agent was allowed at its files, answering
+     * what went wrong where it did.
+     *
+     * The window's, since the Universe is its to hold. Called on the thread [ask] resumes on, which
+     * is the panel's. `API-5`.
+     */
+    private val reread: () -> String? = { null },
 ) : Conversation {
 
     private var hosted: Hosted? = null
@@ -52,7 +62,8 @@ internal class Talking(
         hosted = null
         val words = command.trim().split(SPACES).filter { it.isNotEmpty() }
         require(words.isNotEmpty()) { "an agent should be named, and nothing was" }
-        val agent = Hosted(Started(words.first(), words.drop(1)), socket, folder, scope)
+        val started = Started(words.first(), words.drop(1))
+        val agent = Hosted(started, socket, folder, scope, direct = direct)
         agent.open()
         hosted = agent
     }
@@ -72,6 +83,9 @@ internal class Talking(
             if (update !is SessionUpdate.AgentMessageChunk) return@collect
             (update.content as? ContentBlock.Text)?.let { heard(it.text) }
         }
+        // The agent may have edited the files, and nothing in the window saw it. What will not
+        // read again is said in the conversation, since that is where the user is looking.
+        if (direct()) reread()?.let { heard("\n\n$it") }
     }
 
     /** Stops the agent and closes the socket with it, the token dying with the conversation. */

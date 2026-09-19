@@ -586,7 +586,10 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **When a conversation starts the agent is handed the tool server**, `API-4`. Its own requests
   to read or write a file or to run a command are refused, every time, so the tools are the only
-  way to the logbook. `API-5`.
+  way to the logbook — unless the user ticks *Allow file access*, when a read or write inside the
+  logbook or the agent's own folder is served and its own tools of the file-handling kinds are
+  allowed there, and the window reads the logbook again when the turn ends. A command is never
+  run. `API-5`.
 
   **An agent asks permission for the tools it was given as well as for its own, and only the
   second kind is refused.** The protocol makes no distinction between the two, so an agent that is
@@ -596,10 +599,10 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **The panel sits beside whichever tab is showing** and stays open while the user moves between
   tabs, so a dive the agent names can be opened while the conversation carries on. It holds the
-  choice of agent, the conversation, and one box that is off at the start of every conversation:
-  *Allow changes*. `API-5`. A second box held back a person's private details and is gone with the
-  machinery behind it: an agent is sent whatever it reads, and the manual says so where its chapter
-  begins.
+  choice of agent, the conversation, and two boxes that are off at the start of every conversation:
+  *Allow changes*, which lets the agent stage, and *Allow file access*, which lets it at the files
+  directly. `API-5`. A box that held back a person's private details is gone with the machinery
+  behind it: an agent is sent whatever it reads, and the manual says so where its chapter begins.
 
   **An item is cited as a mention**, `@2026-04-28#1`, the convention `JSON-23` settles for a
   remark. A mention that resolves is shown as the item's name and leads to it, which keeps *an id
