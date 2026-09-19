@@ -146,6 +146,12 @@ internal fun Panel(
     }
     DisposableEffect(conversation) { onDispose { conversation.close() } }
     val scope = rememberCoroutineScope()
+    // Opening the panel is asking for the agent: the button that opens it is greyed until a
+    // command is set, so there is nothing a Start of its own would wait for. Start is offered
+    // again only after Stop, or after a start that failed. `GUI-38`.
+    LaunchedEffect(conversation) {
+        if (command.isNotBlank()) start(talk, conversation, scope, command)
+    }
     val scroll = rememberScrollState()
     LaunchedEffect(talk.exchanges) { scroll.scrollTo(scroll.maxValue) }
     Column(modifier = Modifier.width(PANEL).fillMaxHeight().padding(GAP)) {
@@ -189,7 +195,10 @@ internal fun Panel(
     }
 }
 
-/** The agent to run and the deed that starts it, or what is running and the deed that stops it. */
+/**
+ * What is running and the deed that stops it, or, after a stop or a failed start, the agent named
+ * and the deed that starts it again.
+ */
 @Composable
 private fun Starting(
     talk: Talk,

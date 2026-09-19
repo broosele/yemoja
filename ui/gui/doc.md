@@ -658,12 +658,18 @@ once and corrected. The numbers stay unused rather than being given to something
   on. Once opened the panel keeps a fixed width beside whichever tab is showing, and closes from
   its own *Close*.
 
+  **Opening the panel starts the agent.** The button that opens it is greyed until a command is
+  set, so by the time the panel is open there is nothing a *Start* of its own would wait for, and
+  a click that only ever followed another click was a step for nothing. *Start* is offered only
+  after *Stop*, or after a start that failed, where it is the way to try again once the command has
+  been mended.
+
   **What it holds, top to bottom**: the agent's name, from the command the settings hold, and the
-  deed that starts it, which becomes *Stop* once one runs; the conversation, a view of its own for
-  copying; what the stance says while an agent is starting or thinking; how much is staged and the
-  deed to review it, where anything is; the *Allow changes* box; and what to ask, with *Ask* live
-  only while an agent waits to be asked. The box lets an agent stage, not change: nothing it stages
-  lands until the reader takes it in.
+  deed that stops it, or starts it again; the conversation, a view of its own for copying; what the
+  stance says while an agent is starting or thinking; how much is staged and the deed to review it,
+  where anything is; the two boxes; and what to ask, with *Ask* live only while an agent waits to
+  be asked. The first box lets an agent stage, not change: nothing it stages lands until the reader
+  takes it in.
 
   **A turn that was stopped says nothing.** Starting an agent and asking one both answer on a
   coroutine, and a reader who presses *Stop* meanwhile has closed the conversation already, so what

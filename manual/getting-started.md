@@ -203,9 +203,10 @@ command* box, which [settings.md](settings.md#the-agent-command) explains. Until
 sparkle button is greyed, and resting the pointer on it says so.
 
 **Press the sparkle button** at the right of the tabs, on whichever tab you are on; it says *Ask
-an agent* when the pointer rests on it. A panel opens beside it and stays there as you move between
-tabs, so a dive the agent names can be opened and read while you carry on talking. Press
-**Start**, and once the agent is running, ask.
+an agent* when the pointer rests on it. A panel opens beside it and starts your agent, which takes
+a few seconds, and stays there as you move between tabs, so a dive the agent names can be opened
+and read while you carry on talking. Once the agent is running, ask. **Stop** ends the
+conversation and leaves it to read; **Start** then begins another.
 
 **It reaches your logbook through Yemoja, unless you say otherwise.** Every request it makes to
 read a file, write one or run a command is refused, and the panel says so each time one is. What
