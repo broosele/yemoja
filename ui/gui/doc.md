@@ -647,12 +647,14 @@ once and corrected. The numbers stay unused rather than being given to something
   program where one machine keeps it, often under a folder named for the user, and the logbook's
   file carries whatever is in it to every machine. `GUI-42`, `DATA-9`.
 
-  **It opens from a button on the tab row**, *Ask an agent*, at the right of the tabs and so on
-  every tab: a question comes up wherever the reader is, and a deed on home would send them there
-  first. The button is greyed where there is no agent to ask — no logbook open, a platform that
-  hosts none, or no command set — and says why over itself while the pointer rests there, naming
-  the settings where the command is set, so a reader who cannot press it learns where to go without
-  leaving their tab. Once opened the panel keeps a fixed width beside whichever tab is showing, and
+  **It opens from a button on the tab row**, at the right of the tabs and so on every tab: a
+  question comes up wherever the reader is, and a deed on home would send them there first. The
+  button shows a sparkle, the mark readers have come to know for an AI feature, and says *Ask an
+  agent* over itself while the pointer rests there: an icon keeps the row the tabs' own, and the
+  name is one hover away rather than lost. It is greyed where there is no agent to ask — no logbook
+  open, a platform that hosts none, or no command set — and then says why instead, naming the
+  settings where the command is set, so a reader who cannot press it learns where to go without
+  leaving their tab. The icon is Material's own, from the set the interface already draws on. Once opened the panel keeps a fixed width beside whichever tab is showing, and
   closes from its own *Close*.
 
   **What it holds, top to bottom**: the agent's name, from the command the settings hold, and the

@@ -199,12 +199,13 @@ is yours: ask an agent about a logbook you are willing to send, or run a model o
 where nothing leaves it.
 
 **First tell Yemoja how to start your agent**, in **Settings** on the home screen: the *Agent
-command* box, which [settings.md](settings.md#the-agent-command) explains. Until it is set, *Ask an
-agent* is greyed, and resting the pointer on it says so.
+command* box, which [settings.md](settings.md#the-agent-command) explains. Until it is set, the
+sparkle button is greyed, and resting the pointer on it says so.
 
-**Press *Ask an agent***, at the right of the tabs, on whichever tab you are on. A panel opens
-beside it and stays there as you move between tabs, so a dive the agent names can be opened and
-read while you carry on talking. Press **Start**, and once the agent is running, ask.
+**Press the sparkle button** at the right of the tabs, on whichever tab you are on; it says *Ask
+an agent* when the pointer rests on it. A panel opens beside it and stays there as you move between
+tabs, so a dive the agent names can be opened and read while you carry on talking. Press
+**Start**, and once the agent is running, ask.
 
 **It reaches your logbook through Yemoja, unless you say otherwise.** Every request it makes to
 read a file, write one or run a command is refused, and the panel says so each time one is. What

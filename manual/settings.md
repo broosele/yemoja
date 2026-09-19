@@ -94,7 +94,7 @@ Those `npx` commands need Node.js installed, which is where `npx` comes from; wi
 panel says the command is not installed. If you would rather not install it, the full path to a
 `node.exe` and to the adapter's `index.js` works in its place.
 
-Once it is saved, *Ask an agent* at the right of the tabs comes alive; how to use it is in
+Once it is saved, the sparkle button at the right of the tabs comes alive; how to use it is in
 [getting-started.md](getting-started.md#asking-an-agent).
 
 

@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowRight
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
@@ -491,13 +492,14 @@ private fun Tabs(
                 }
             }
             // On every tab rather than on home, since a question comes up wherever the reader
-            // is. Greyed until there is an agent to ask, and says where one is set. `GUI-38`.
-            Explained(unasked) {
-                Button(
+            // is. An icon, so the row stays the tabs' own; its name is said over it while the
+            // pointer rests there, and the reason instead while it is greyed. `GUI-38`.
+            Explained(unasked ?: ASK_AN_AGENT) {
+                IconButton(
                     onClick = onAsk,
                     enabled = unasked == null,
                     modifier = Modifier.padding(horizontal = GAP),
-                ) { Text("Ask an agent") }
+                ) { Icon(Icons.Filled.AutoAwesome, contentDescription = ASK_AN_AGENT) }
             }
         }
         HorizontalDivider()
@@ -3159,3 +3161,6 @@ internal val LINE = 28.dp
 internal val INDENT = 16.dp
 internal val GAP = 12.dp
 internal val HALF = 4.dp
+
+/** What the agent button is called, said over it since it shows only an icon. `GUI-38`. */
+private const val ASK_AN_AGENT = "Ask an agent"
