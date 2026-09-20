@@ -22,9 +22,21 @@ class AgentOfTest {
     }
 
     @Test
-    fun `a command named by its path is named without the path`() {
+    fun `a command named by its path is named without the path or the ending`() {
         assertEquals("gemini", agentOf("/usr/local/bin/gemini"))
-        assertEquals("gemini.exe", agentOf("C:\\Agents\\gemini.exe"), "and a Windows path too")
+        assertEquals("gemini", agentOf("C:\\Agents\\gemini.exe"), "and a Windows path too")
+        assertEquals("acp-agent", agentOf("cmd.exe /c C:/Users/someone/acp-agent/agent.cmd"))
+    }
+
+    @Test
+    fun `an entry file names nothing, so the package above it does`() {
+        val node = "C:\\Users\\someone\\node\\node.exe"
+        val script =
+            "C:\\acp\\node_modules\\@zed-industries\\claude-code-acp\\dist\\index.js"
+        assertEquals("claude-code-acp", agentOf("$node $script"))
+        assertEquals("codex-acp", agentOf("node /opt/codex-acp/bin/main.mjs"))
+        assertEquals("node", agentOf("node index.js"), "nothing above it, so the word before")
+        assertEquals("agent", agentOf("agent"), "a bare word is taken as it is")
     }
 
     @Test

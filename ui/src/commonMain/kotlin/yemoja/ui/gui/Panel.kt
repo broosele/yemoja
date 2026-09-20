@@ -452,18 +452,52 @@ private fun Talk.take(refused: List<String>) {
 /**
  * What to call the agent [command] starts, or absent where it names none.
  *
- * The last word that is not an option, without the folders or the publisher in front of it. An
- * agent is run in whatever way its own instructions give, and the part of that a reader
- * recognises is its name.
+ * The last word that is not an option, without the folders, the publisher or the program's
+ * ending in front of or after it. An agent is run in whatever way its own instructions give, and
+ * the part of that a reader recognises is its name. A file called `index.js` or `main.py` names
+ * nothing a reader knows, so the folders above it are read instead, skipping the ones a build
+ * puts there; a word that still names nothing gives way to the word before it.
  *
- * Examples: `npx @zed-industries/claude-code-acp` is claude-code-acp, and
- * `/usr/local/bin/gemini --experimental-acp` is gemini.
+ * Examples: `npx @zed-industries/claude-code-acp` is claude-code-acp;
+ * `/usr/local/bin/gemini --experimental-acp` is gemini; `C:\Agents\gemini.exe` is gemini; and
+ * `C:\node\node.exe C:\acp\@zed-industries\claude-code-acp\dist\index.js` is claude-code-acp.
  */
 internal fun agentOf(command: String): String? {
-    val words = command.trim().split(SPACES).filter { it.isNotEmpty() }
-    val last = words.lastOrNull { !it.startsWith("-") } ?: return null
-    return last.substringAfterLast('/').substringAfterLast('\\').removePrefix("@").ifEmpty { null }
+    val words = command.trim().split(SPACES).filter { it.isNotEmpty() && !it.startsWith("-") }
+    for (word in words.asReversed()) nameIn(word)?.let { return it }
+    // Every word is a generic file with nothing above it, so the last is taken as it is: a
+    // program somebody called `agent` is still called agent.
+    return words.lastOrNull()?.let { stemOf(segmentsOf(it).lastOrNull().orEmpty()) }
 }
+
+/** The name in one word of a command, read as a path, or absent where it holds none. */
+private fun nameIn(word: String): String? {
+    val segments = segmentsOf(word)
+    val stem = stemOf(segments.lastOrNull() ?: return null)
+    if (stem.lowercase() !in GENERIC_FILES) return stem.removePrefix("@").ifEmpty { null }
+    val above = segments.dropLast(1).dropLastWhile { it.lowercase() in GENERIC_FOLDERS }
+    return above.lastOrNull()?.removePrefix("@")?.ifEmpty { null }
+}
+
+/** The folders and file of [word] read as a path, without a drive letter. */
+private fun segmentsOf(word: String): List<String> =
+    word.split('/', '\\').filter { it.isNotEmpty() && !it.endsWith(':') }
+
+/** [file] without an ending that says how it is run. */
+private fun stemOf(file: String): String {
+    val ending = file.substringAfterLast('.', "").lowercase()
+    return if (ending in ENDINGS) file.substringBeforeLast('.') else file
+}
+
+/** Endings that say how a program is run and nothing about which it is. */
+private val ENDINGS = setOf("exe", "cmd", "bat", "sh", "ps1", "js", "mjs", "cjs", "py")
+
+/** File names a reader learns nothing from, so the folder above them is the name instead. */
+private val GENERIC_FILES =
+    setOf("index", "main", "cli", "app", "agent", "server", "start", "run")
+
+/** Folders a build or a package manager puts between a package and its entry file. */
+private val GENERIC_FOLDERS = setOf("dist", "build", "bin", "lib", "out", "src", "node_modules")
 
 /** What separates a command from its arguments, however many spaces were typed. */
 private val SPACES = Regex("\\s+")
