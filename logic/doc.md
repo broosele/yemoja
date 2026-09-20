@@ -608,11 +608,18 @@ To settle when we discuss architecture and features:
   nought, read the factor there, ask the compartments how deep they hold, and take that as the
   next candidate. A step or two does it, the two moving the same way.
 
-  Reading it at the held depth roughly doubled the stops a sliding pair asked for, and nothing
-  caught it because the schedules had never been checked against a published one — only the
-  no-decompression limits had. Forty metres for twenty-five minutes on air is sixteen minutes of
-  stops at 100/100, which the tables agree with; at 30/70 it was sixty minutes and is forty-six
-  now. Equal factors are unchanged, there being no slide to read at either end of.
+  Reading it at the held depth left a sliding pair asking about a third longer than it should,
+  and nothing caught it because the schedules had never been checked against a published one —
+  only the no-decompression limits had. Forty metres for twenty-five minutes on air is thirteen
+  minutes of stops at 100/100, which the air tables agree with; at 30/70 it was fifty-two minutes
+  and is forty. Equal factors are unchanged, there being no slide to read at either end of.
+
+  **The schedules are now held to a band around what published air tables ask**, four dives a
+  table has a column for, at the full factors and at a sliding pair. The band is wide because a
+  Bühlmann model with gradient factors is not the model the tables were cut from, and a schedule
+  outside it is wrong by more than the two models differ. `ScheduleTest` is the check that was
+  missing; the bottom time it counts runs from leaving the surface, which is how a table counts it
+  and how both plan forms already read what a user types.
 
   **A finding is one to a crossing, not one to a sample.** Ten minutes spent above the ceiling is
   one mistake, and ten identical lines would bury everything else said about the dive. `Finding`

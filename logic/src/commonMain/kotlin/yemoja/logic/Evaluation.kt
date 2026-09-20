@@ -557,8 +557,8 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
  * slides with depth, so a diver at three metres who asks whether they may surface is asking what
  * the model allows at the surface, which is the high factor — as `manual/decompression.md` says it
  * is. Reading the factor where the diver stands instead judged every ascent by a stricter number
- * than the one that applies where they are going, and stops came out half as long again as they
- * should be.
+ * than the one that applies where they are going, and a sliding pair's stops came out about a
+ * third longer than they should be.
  *
  * So the answer is a fixed point: the shallowest depth whose own factor permits being there. It
  * climbs from the surface and settles in a step or two, there being one depth for each stop.
