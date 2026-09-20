@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,10 +10,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -210,6 +215,60 @@ internal fun answerSaid(answer: Answer, unit: String): String? = when (answer) {
  */
 @Composable
 internal fun Calculations(working: Working, settings: Settings?) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Waiver()
+        HorizontalDivider()
+        Calculators(working, settings)
+    }
+}
+
+/**
+ * What these figures are not, above every calculation the tab offers.
+ *
+ * **Said here rather than in the manual alone.** A calculation is the one place in the window
+ * where a reader asks for a number to act on, with no dive and no computer behind it, and a
+ * warning they must go looking for is one they will not find. The words are the manual's own, so
+ * a reader meets one wording here, in `manual/decompression.md` and in the licence. `GUI-43`.
+ */
+@Composable
+private fun Waiver() {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(horizontal = GAP, vertical = HALF),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(HALF),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(ICON),
+        )
+        Text(
+            text = WAIVER,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
+/**
+ * What the tab says of itself, in the words the manual and the licence use.
+ *
+ * One wording in three places rather than three of its own: a reader who has read the manual meets
+ * the sentence they already know, and nothing here can drift into a softer claim than the licence
+ * makes. `manual/decompression.md`, `manual/app-info.md`.
+ */
+internal const val WAIVER: String =
+    "These are one model's arithmetic, not a dive computer: neither certified nor validated as " +
+        "one, nor as planning software. They may be wrong. You use them entirely at your own " +
+        "risk, and nobody involved in making Yemoja accepts responsibility for a dive planned, " +
+        "made or judged with their help. Check them against your training and your tables, and " +
+        "let nothing here override your computer or your own judgement."
+
+/** The list of what can be worked out, and the form for the one chosen. */
+@Composable
+private fun Calculators(working: Working, settings: Settings?) {
     Row(modifier = Modifier.fillMaxSize()) {
         Selectable {
             Column(modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP)) {
@@ -372,3 +431,6 @@ private const val PERCENT = 100.0
 
 /** How wide a figure's box is. */
 private val FIGURE = 140.dp
+
+/** How big the mark beside the waiver is, which is a body line's own height. */
+private val ICON = 18.dp

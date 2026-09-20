@@ -265,6 +265,11 @@ you and its provider.
 Two things can be worked out so far. Neither needs a logbook open, and what you type stays while
 you look at another tab.
 
+**A line at the top of the tab says what these figures are not**, and it is worth reading once:
+they are one model's arithmetic, not a dive computer, and you use them at your own risk. It says
+the same as [app-info.md](app-info.md) and [decompression.md](decompression.md), where the whole
+of it is set out.
+
 **SAC** is six figures under each other: your breathing rate, the average depth, the duration,
 the cylinder's size, and the pressure it started and ended at. Click the bullet before the one you
 want worked out and type the other five; the answer appears in its place as you type. The rate is

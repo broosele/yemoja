@@ -406,6 +406,15 @@ once and corrected. The numbers stay unused rather than being given to something
   Salt water at sea level and the settings' descent rate are assumed, and a line says so. A depth
   the model finds no limit for is said in words rather than left blank.
 
+  **A waiver heads the tab**, above the list and the form both, so it is met before any figure is
+  and whichever calculation is chosen. It is the one place in the window where a reader asks for a
+  number to act on with no dive and no computer behind it, and a warning they would have to go
+  looking for is one they will not find. Its words are the manual's and the licence's rather than
+  its own: not a dive computer, certified and validated as neither, may be wrong, used entirely at
+  the user's own risk, nobody accepting responsibility, checked against training and tables. One
+  wording in three places cannot drift into a softer claim in one of them, which is why the
+  sentence is a constant a test holds against those four claims. `manual/decompression.md`.
+
   **The units are the model's own** — litres a minute, metres, minutes, litres, bar — until the
   units a user wants shown are read. `UI-2`.
 

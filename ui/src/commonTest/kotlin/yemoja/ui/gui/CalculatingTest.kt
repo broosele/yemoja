@@ -118,3 +118,23 @@ class AnswerSaidTest {
         assertEquals("why", answerSaid(Answer.Wrong("why"), "m"))
     }
 }
+
+/*
+ * The waiver over the tab. `GUI-43`.
+ */
+class WaiverTest {
+
+    @Test
+    fun `the waiver makes no claim the licence does not`() {
+        // The four the manual and the licence make, in the tab's own sentence.
+        assertTrue("not a dive computer" in WAIVER, WAIVER)
+        assertTrue("neither certified nor validated" in WAIVER, WAIVER)
+        assertTrue("at your own risk" in WAIVER, WAIVER)
+        assertTrue("accepts responsibility" in WAIVER, WAIVER)
+    }
+
+    @Test
+    fun `it says what to do rather than only what not to trust`() {
+        assertTrue("your training and your tables" in WAIVER, WAIVER)
+    }
+}
