@@ -415,6 +415,27 @@ once and corrected. The numbers stay unused rather than being given to something
   wording in three places cannot drift into a softer claim in one of them, which is why the
   sentence is a constant a test holds against those four claims. `manual/decompression.md`.
 
+  **A dive plan is the third, and belongs to no dive.** Levels in, decompression out: each level is
+  how long and how deep, the minutes counting from leaving the depth before, so a level is travelled
+  to at the descent or ascent rate and held for what is left of them — a level with less time than
+  the travel takes is refused with the arithmetic, as a plan on a dive is. `GUI-41`. What is
+  breathed is one gas, with its rate, size and fill where they are known, and the two gradient
+  factors are prefilled from the settings.
+
+  **The way up is added without being asked for.** A calculation answers as it is typed, as the
+  other two do, so there is no deed to press: the form completes the ascent, evaluates the levels
+  and the ascent together, and shows the stops depth by depth, the runtime, the gas, the clocks and
+  whatever the model objects to. What a reader wants from a plan is the whole dive rather than the
+  bottom of one. The held minutes at a depth are gathered into one stop, the model writing a point a
+  minute while it holds.
+
+  **It reaches the model through a `Run` rather than an item**, `LOGIC-37`, so a plan typed here and
+  a plan on a dive are answered by one walk and cannot disagree; and the figures are the same list
+  `GUI-40` shows under a recording, the cylinders named by whatever knows their names. **Nothing is
+  stored**: putting a plan from here on to a dive is a later question, and until it is answered a
+  plan typed here is gone when the tab is left. It is kept while the window is open, as anything a
+  tab holds is. `GUI-27`.
+
   **The units are the model's own** — litres a minute, metres, minutes, litres, bar — until the
   units a user wants shown are read. `UI-2`.
 

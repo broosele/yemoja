@@ -278,6 +278,15 @@ what you would breathe at the surface, in litres a minute, and the arithmetic is
 uses for the SAC it works out on a recording. An end pressure below nought means the five you typed
 would have emptied the cylinder — the number is left as it is so you can see by how much.
 
+**Dive plan** works out a whole dive: type each level as how long and how deep — the minutes
+counting from when you leave the depth before it, so twenty-five minutes at forty metres includes
+going down — and add levels with **+**. Say what you are breathing, and your breathing rate,
+cylinder size and fill if you want the gas worked out. The gradient factors start as the defaults
+you chose in [Settings](settings.md). There is nothing to press: as you type, Yemoja works out the
+way up and shows the stops, how long the whole dive takes, what gas it costs, the oxygen clocks,
+and anything it objects to — a cylinder run dry, a mix too rich for the depth. The plan is not
+saved anywhere: it is a slate, not a logbook entry.
+
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
 decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts
 as the default you chose in [Settings](settings.md). Only that one is asked for: a stop becomes

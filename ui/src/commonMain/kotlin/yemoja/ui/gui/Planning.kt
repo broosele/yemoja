@@ -73,15 +73,39 @@ internal fun workedOverlaysOf(dive: Item, profile: Item, evaluated: Evaluated.Do
  * saying so on every plan would be a column of blanks.
  */
 internal fun workedFiguresOf(dive: Item, profile: Item, evaluated: Evaluated.Done): List<Shown> {
-    val figures = ArrayList<Shown>()
-    val deepest = pointsOf(evaluated.ceiling).maxOfOrNull { it.value } ?: 0.0
-    figures += worked(
-        "Stops",
-        if (deepest > 0) "from ${metresSaid(deepest)}" else "none",
-    )
     val sources = sourcesOf(dive, profile)
+    return runFiguresOf(
+        evaluated,
+        evaluated.gasUsed.keys.associateWith { key ->
+            sources[key]?.let { entryLabelOf(key, it) } ?: key
+        },
+    )
+}
+
+/**
+ * The same figures for a run that belongs to no dive, its cylinders named by [tanks].
+ *
+ * One list of figures rather than two: a plan typed into the calculations and a plan on a dive are
+ * answered by one walk, `LOGIC-37`, and what a reader is shown of that answer should not depend on
+ * which door it came through. What differs is only what the cylinders are called, which a dive
+ * knows and a run does not. `GUI-43`.
+ */
+internal fun runFiguresOf(
+    evaluated: Evaluated.Done,
+    tanks: Map<String, String>,
+    /** Whether to say how deep the stops begin, which a screen showing each of them says twice. */
+    stops: Boolean = true,
+): List<Shown> {
+    val figures = ArrayList<Shown>()
+    if (stops) {
+        val deepest = pointsOf(evaluated.ceiling).maxOfOrNull { it.value } ?: 0.0
+        figures += worked(
+            "Stops",
+            if (deepest > 0) "from ${metresSaid(deepest)}" else "none",
+        )
+    }
     for ((key, litres) in evaluated.gasUsed) {
-        val tank = sources[key]?.let { entryLabelOf(key, it) } ?: key
+        val tank = tanks[key] ?: key
         val left = evaluated.pressures[key]?.let { ending(it) }
         val said = "${litres.toInt()} l" + if (left == null) "" else ", ending at $left"
         figures += worked("$tank used", said)

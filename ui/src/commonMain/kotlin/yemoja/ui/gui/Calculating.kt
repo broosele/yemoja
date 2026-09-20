@@ -60,6 +60,9 @@ internal enum class Calculation(val label: String) {
 
     /** How long a depth may be stayed at before a stop is owed. */
     NDL("NDL"),
+
+    /** A whole dive, level by level, and the way up it owes. `GUI-43`. */
+    PLAN("Dive plan"),
 }
 
 /**
@@ -99,6 +102,9 @@ internal class Working {
 
     /** Whether the NDL form has been opened before, which decides whether it takes the settings. */
     var prefilled: Boolean = false
+
+    /** The plan form's levels and settings. `GUI-43`. */
+    val shaping: Shaping = Shaping()
 }
 
 /** Answer is what a calculation came to: a number, or why there is none. */
@@ -288,6 +294,7 @@ private fun Calculators(working: Working, settings: Settings?) {
                     when (working.calculation) {
                         Calculation.SAC -> SacForm(working)
                         Calculation.NDL -> NdlForm(working, settings)
+                        Calculation.PLAN -> PlanForm(working.shaping, settings)
                     }
                 }
             }
@@ -334,7 +341,7 @@ private fun SacForm(working: Working) {
             }
         }
     }
-    (answer as? Answer.Wrong)?.let { Wrong(it.reason) }
+    (answer as? Answer.Wrong)?.let { Refused(it.reason) }
 }
 
 /** A depth and what is breathed, and how long a fresh diver may stay. */
@@ -355,9 +362,9 @@ private fun NdlForm(working: Working, settings: Settings?) {
     // factor's question; the low one says how deep a first stop is taken and nothing about
     // whether there is one, so a box for it would ask for a number that changes no answer.
     // `LOGIC-39`.
-    Asked("GF high", working.gradientHigh, "%") { working.gradientHigh = it }
-    Asked("Gas", working.gas, "") { working.gas = it }
-    Asked("Depth", working.depth, "m") { working.depth = it }
+    Field("GF high", working.gradientHigh, "%") { working.gradientHigh = it }
+    Field("Gas", working.gas, "") { working.gas = it }
+    Field("Depth", working.depth, "m") { working.depth = it }
     val answer = ndlAsked(working.depth, working.gas, working.gradientHigh, descent)
     when (answer) {
         is Answer.Value -> Row(
@@ -374,15 +381,15 @@ private fun NdlForm(working: Working, settings: Settings?) {
             )
             Text(answerSaid(answer, "min").orEmpty(), style = MaterialTheme.typography.bodyMedium)
         }
-        is Answer.Wrong -> Wrong(answer.reason)
+        is Answer.Wrong -> Refused(answer.reason)
         Answer.Waiting -> Unit
     }
     Aside("Descending at ${plain(descent)} m a minute, in salt water at sea level.")
 }
 
-/** One labelled box of the NDL form. */
+/** One labelled box of a form in this tab. */
 @Composable
-private fun Asked(label: String, value: String, after: String, onChange: (String) -> Unit) {
+internal fun Field(label: String, value: String, after: String, onChange: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
         verticalAlignment = Alignment.CenterVertically,
@@ -400,7 +407,7 @@ private fun Asked(label: String, value: String, after: String, onChange: (String
 }
 
 @Composable
-private fun Heading(text: String) {
+internal fun Heading(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.headlineSmall,
@@ -410,7 +417,7 @@ private fun Heading(text: String) {
 }
 
 @Composable
-private fun Wrong(reason: String) {
+internal fun Refused(reason: String) {
     Text(
         text = reason,
         style = MaterialTheme.typography.bodyMedium,
@@ -429,8 +436,8 @@ private const val SECONDS_IN_MINUTE = 60.0
 
 private const val PERCENT = 100.0
 
-/** How wide a figure's box is. */
-private val FIGURE = 140.dp
+/** How wide a figure's box is, and a box of any other form in this tab. */
+internal val FIGURE = 140.dp
 
 /** How big the mark beside the waiver is, which is a body line's own height. */
 private val ICON = 18.dp
