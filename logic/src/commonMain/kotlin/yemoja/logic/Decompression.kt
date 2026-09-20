@@ -264,6 +264,41 @@ fun gradientFactorAt(
 }
 
 /**
+ * How long a diver starting fresh may stay at [metres] on [gas], in seconds from leaving the
+ * surface, or null where a day at that depth would owe no stop.
+ *
+ * The figure a table gives for a depth. The descent counts, as it does in a table: a diver going
+ * down at [descentMetresAMinute] breathes on the way, so the limit is the descent and then what is
+ * left at the bottom. A limit already spent on arrival is the descent alone.
+ *
+ * **Only the high gradient factor bears on it.** A limit is the moment a stop becomes owed, and
+ * whether one is owed is the high factor's question; the low one says how deep a first stop is
+ * taken and nothing about whether there is one, which is `LOGIC-37`'s rule for a profile applied
+ * to a depth. A screen offering both factors passes the high.
+ *
+ * Sea water at sea level unless told otherwise, which is what a table assumes too.
+ */
+fun noDecompressionLimit(
+    metres: Double,
+    gas: Gas,
+    gradientFactorHigh: Double,
+    descentMetresAMinute: Double,
+    density: Double = NOMINAL_DENSITY,
+    surface: Double = SEA_LEVEL,
+): Double? {
+    require(metres > 0) { "a depth should be more than nought, but was $metres" }
+    require(descentMetresAMinute > 0) {
+        "a descent rate should be more than nought, but was $descentMetresAMinute"
+    }
+    val descending = metres / descentMetresAMinute * SECONDS_IN_MINUTE
+    val ambient = ambientAt(metres, density, surface)
+    val arrived = Tissues.saturated(surface).breathing(gas, surface, ambient, descending)
+    val left = arrived.noDecompressionSeconds(gas, ambient, surface, gradientFactorHigh)
+        ?: return null
+    return descending + left
+}
+
+/**
  * What one compartment holds after [minutes] of breathing an inert gas whose pressure in the lungs
  * goes from [inspiredFrom] to [inspiredTo].
  *

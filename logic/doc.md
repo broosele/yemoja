@@ -481,6 +481,27 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-39 — What the model answers about a depth rather than a dive.** *Settled:* **a
+  table's own figure, `noDecompressionLimit`, and the pressure arithmetic made public.**
+
+  A screen that lets a reader ask *how long at thirty metres* is asking the same model the same
+  question a plan asks, and it should get the same answer from the same code rather than a copy of
+  it. So the limit for a depth is a function over the engine: fresh tissues, a descent at a rate
+  the caller gives, and then how long is left at the bottom, the two added because a table counts
+  from leaving the surface. Sea water at sea level unless told otherwise, which is what a table
+  assumes too.
+
+  **Only the high gradient factor bears on a limit.** Whether a stop is owed is the high factor's
+  question, and the low one says how deep the first stop goes, which is `LOGIC-37`'s rule for a
+  profile applied to a single depth. The function takes one factor and names it, so nobody passes
+  two and wonders which counted.
+
+  `ambientAt`, `depthAt`, `SEA_LEVEL` and `NOMINAL_DENSITY` are public for the same reason: a SAC
+  typed into a box costs at depth what a recording's does, and a front end working that out with
+  its own arithmetic would drift from the logbook's. Nothing else in the layer widened.
+
+  Built in `Decompression.kt` and `Pressure.kt`, for the window's Calculations tab.
+
 - **LOGIC-38 — What the oxygen clocks are worked out from.** *Settled:* **the published
   single-exposure limits for the central nervous system, and the unit pulmonary toxic dose for the
   lungs.** Two numbers, because they are two risks: a percentage of what one exposure allows, and

@@ -221,6 +221,52 @@ class DecompressionTest {
     }
 
     @Test
+    fun `a table's limit for thirty metres on air is near what the tables say`() {
+        val limit = assertNotNull(noDecompressionLimit(30.0, Gas.AIR, 1.0, 18.0))
+        val minutes = limit / MINUTE
+
+        // Published no-stop limits for thirty metres on air sit between about fifteen and twenty
+        // minutes, counted from leaving the surface, which this counts too.
+        assertTrue(minutes in 14.0..22.0, "$minutes minutes")
+        assertTrue(limit > 30.0 / 18.0 * MINUTE, "it is at least the descent")
+    }
+
+    @Test
+    fun `a table's limit shortens with depth and with caution, and a shallow depth has none`() {
+        val thirty = assertNotNull(noDecompressionLimit(30.0, Gas.AIR, 1.0, 18.0))
+        val forty = assertNotNull(noDecompressionLimit(40.0, Gas.AIR, 1.0, 18.0))
+        val cautious = assertNotNull(noDecompressionLimit(30.0, Gas.AIR, 0.7, 18.0))
+
+        assertTrue(forty < thirty, "$forty at forty against $thirty at thirty")
+        assertTrue(cautious < thirty, "$cautious at 0.7 against $thirty at the bare limit")
+        assertNull(noDecompressionLimit(5.0, Gas.AIR, 1.0, 18.0), "five metres owes nothing")
+    }
+
+    @Test
+    fun `a richer mix earns a longer limit`() {
+        val air = assertNotNull(noDecompressionLimit(30.0, Gas.AIR, 1.0, 18.0))
+        val nitrox = assertNotNull(noDecompressionLimit(30.0, Gas(32, 0), 1.0, 18.0))
+
+        assertTrue(nitrox > air, "$nitrox on EAN32 against $air on air")
+    }
+
+    @Test
+    fun `a limit cannot be asked for nowhere, or with no way down`() {
+        assertEquals(
+            "a depth should be more than nought, but was 0.0",
+            assertFailsWith<IllegalArgumentException> {
+                noDecompressionLimit(0.0, Gas.AIR, 1.0, 18.0)
+            }.message,
+        )
+        assertEquals(
+            "a descent rate should be more than nought, but was 0.0",
+            assertFailsWith<IllegalArgumentException> {
+                noDecompressionLimit(30.0, Gas.AIR, 1.0, 0.0)
+            }.message,
+        )
+    }
+
+    @Test
     fun `the factor slides from the first stop to the surface`() {
         near(0.3, gradientFactorAt(2.5, 2.5, SURFACE, 0.3, 0.8))
         near(0.8, gradientFactorAt(SURFACE, 2.5, SURFACE, 0.3, 0.8))
