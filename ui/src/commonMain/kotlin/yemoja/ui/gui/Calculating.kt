@@ -241,7 +241,7 @@ internal fun Calculations(working: Working, settings: Settings?) {
 @Composable
 private fun SacForm(working: Working) {
     Heading("SAC")
-    Aside("Choose the figure to work out; type the other five.")
+    Aside("Select the quantity to calculate")
     val answer = sacSolved(working.figures, working.unknown, ::ambientOf, ::depthOf)
     for (figure in Figure.entries) {
         val solved = figure == working.unknown
