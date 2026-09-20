@@ -28,7 +28,7 @@ class TabsTest {
     @Test
     fun `a tab about what a logbook holds is not offered without one`() {
         val without = TABS.filter { !it.needsLogbook }
-        assertEquals(listOf("Home", "Manuals"), without.map { it.name })
+        assertEquals(listOf("Home", "Calculations", "Manuals"), without.map { it.name })
         assertEquals(
             listOf("Dives", "Gear", "Community", "Locations"),
             TABS.filter { it.needsLogbook }.map { it.name },
@@ -42,7 +42,7 @@ class TabsTest {
             // Statistics is Home's, not a tab: the figures shown without asking and all of
             // them are the same subject at two depths. What the application does to a logbook
             // as a whole is Home's too, which is why there is no System. `GUI-30`.
-            listOf("Home", "Dives", "Gear", "Community", "Locations", "Manuals"),
+            listOf("Home", "Dives", "Gear", "Community", "Locations", "Calculations", "Manuals"),
             TABS.map { it.name },
         )
         assertEquals(

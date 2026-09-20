@@ -1,6 +1,7 @@
 package yemoja.ui.gui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
@@ -43,6 +44,9 @@ internal enum class Shape {
 
     /** The greeting, what the application can be asked to do, and a plot. `GUI-30`. */
     HOME,
+
+    /** A list of what can be worked out, and the form for the one chosen. `GUI-43`. */
+    CALCULATIONS,
 }
 
 /**
@@ -92,5 +96,6 @@ internal val TABS: List<Tab> = listOf(
         "Locations", Icons.Filled.Map,
         listOf(Types.REGION, Types.DIVE_SITE, Types.WRECK), Shape.PLACES,
     ),
+    Tab("Calculations", Icons.Filled.Calculate, shape = Shape.CALCULATIONS),
     Tab("Manuals", Icons.Filled.MenuBook, shape = Shape.MANUAL),
 )

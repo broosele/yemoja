@@ -468,7 +468,7 @@ private fun plannedRunOf(dive: Item): Item? {
 }
 
 /** How fast a plan descends where there is no logbook to ask. */
-private val FALLBACK_DESCENT_RATE: Double = Settings.DEFAULT_DESCENT_RATE.default!!
+internal val FALLBACK_DESCENT_RATE: Double = Settings.DEFAULT_DESCENT_RATE.default!!
 
 /** How wide a box is for a date. */
 private val WIDE = 120.dp

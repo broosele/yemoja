@@ -71,7 +71,7 @@ you made each month, widening the bars where there would be too many to read.
   the sites none of your dives were at, and the regions left with nothing in them.
 - **Calculations** works out a number from figures you type, with no dive to read them from.
   Choose what to work out on the left; the form is on the right. See
-  [Calculations](#calculations) below.
+  [Calculations](getting-started.md#calculations) below.
 - **Manuals** is this manual.
 
 Each tab keeps what you chose and where you had scrolled to while you look at another.

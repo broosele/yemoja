@@ -238,6 +238,9 @@ internal class Kept {
     /** Dives' plan form, which is where a plan is started. `GUI-41`. */
     val planning: Planning = Planning()
 
+    /** Calculations' boxes, and which calculation is chosen. `GUI-43`. */
+    val working: Working = Working()
+
     /** Locations' region. */
     var place: Chosen? by mutableStateOf(null)
 
@@ -392,6 +395,9 @@ internal fun Application(universe: Universe?, platform: Platform) {
 
                             tab.shape == Shape.MANUAL ->
                                 Manuals(platform.manual, platform.open, kept.getValue(tab))
+
+                            tab.shape == Shape.CALCULATIONS ->
+                                Calculations(kept.getValue(tab).working, universe?.settings)
 
                             universe == null -> Unit
                             else -> Subject(
@@ -1365,7 +1371,7 @@ private fun Subject(
                     },
                     onChoose = { kept.chosen = it },
                 )
-                Shape.MANUAL, Shape.HOME -> Unit
+                Shape.MANUAL, Shape.HOME, Shape.CALCULATIONS -> Unit
             }
         }
         VerticalDivider()
