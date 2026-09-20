@@ -129,6 +129,62 @@ enum class Severity {
 }
 
 /**
+ * Run is a dive as the model takes it: depths against time, what is breathed and when, how
+ * conservative to be, and what water and air it is in. Plain figures belonging to no item, so a
+ * calculation can type one in and a profile can be read into one.
+ *
+ * The depths run forward in time and are read as straight lines between points, as a stored series
+ * is. The switches name keys of [sources]; a run with no switches breathes its only source
+ * throughout. Density and surface default to sea water at sea level, which is what a table
+ * assumes. A run starts fresh unless [carried] and [oxygenCarried] say what it begins with.
+ *
+ * Immutable.
+ */
+class Run(
+    val depth: List<Pair<Int, Double>>,
+    val sources: Map<String, Source>,
+    val gradientFactorLow: Double,
+    val gradientFactorHigh: Double,
+    val switches: List<Pair<Int, String>> = emptyList(),
+    val density: Double = NOMINAL_DENSITY,
+    val surface: Double = SEA_LEVEL,
+    val carried: Tissues? = null,
+    val oxygenCarried: OxygenClock? = null,
+) {
+
+    init {
+        require(gradientFactorLow in 0.0..1.0) {
+            "the low gradient factor should be 0 to 1, but was $gradientFactorLow"
+        }
+        require(gradientFactorHigh in 0.0..1.0) {
+            "the high gradient factor should be 0 to 1, but was $gradientFactorHigh"
+        }
+        for (index in 1..<depth.size) {
+            require(depth[index].first > depth[index - 1].first) {
+                "depths should run forwards, but ${depth[index].first} follows " +
+                    "${depth[index - 1].first}"
+            }
+        }
+    }
+}
+
+/**
+ * Source is one cylinder a run breathes from: what is in it, how fast it is breathed in litres a
+ * minute at the surface, how many litres it holds, and what it was filled to in bar.
+ *
+ * Only the gas is needed. Without a rate it costs nothing that can be counted; without a size and
+ * a fill it has no gauge to read.
+ *
+ * Immutable.
+ */
+class Source(
+    val gas: Gas,
+    val sac: Double? = null,
+    val volume: Double? = null,
+    val fill: Double? = null,
+)
+
+/**
  * What the model makes of [profile], which may be a recording or a plan.
  *
  * The model settings are the profile's own and are never taken from a preference: changing what a
@@ -140,32 +196,19 @@ enum class Severity {
  */
 fun evaluate(profile: Item): Evaluated = evaluated(profile, emptySet())
 
-private fun evaluated(profile: Item, seen: Set<Item>): Evaluated {
-    if (profile in seen) {
-        return Evaluated.Refused("this run carries gas from itself", Refusal.FAULTY)
-    }
-    val model = modelOf(profile) ?: return Evaluated.Refused(
-        "nothing says what model this run was worked out with, or how conservative it was",
-        Refusal.UNASKED,
-    )
-    if (model.name != BUHLMANN) {
-        return Evaluated.Refused(
-            "${model.name} is not the model built here, which is $BUHLMANN",
-            Refusal.UNASKED,
-        )
-    }
-    val density = (profile.single<Double>("density") as? Result.Usable)?.value
-        ?: return Evaluated.Refused(
-            "nothing says what water this run was in, so its depths are not pressures",
-            Refusal.UNASKED,
-        )
-    val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
-        ?: SEA_LEVEL
-    val depths = pointsOf(profile)
+/**
+ * What the model makes of [run], which belongs to no dive.
+ *
+ * The other door to the same model. A profile is read into a run and comes through here, so a
+ * plan typed into a calculation and a plan on a dive are answered by one walk and cannot disagree.
+ * A run starts fresh unless it says what it carries.
+ */
+fun evaluate(run: Run): Evaluated {
+    val depths = pointsOf(run)
         ?: return Evaluated.Refused("this run holds no depths", Refusal.UNASKED)
     // A run holding cylinders and saying nothing about which was breathed is a gap somebody can
     // close, unlike a recording that simply says nothing about the model.
-    val breathed = breathedBy(profile) ?: return Evaluated.Refused(
+    val breathed = breathedBy(run) ?: return Evaluated.Refused(
         "nothing says what was breathed on this run",
         Refusal.FAULTY,
     )
@@ -182,10 +225,72 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated {
             )
         }
     }
-    val carried = carriedInto(profile, surface, seen)
-    if (carried is Carried.Refused) return Evaluated.Refused(carried.reason, Refusal.FAULTY)
+    val carried = Carried.From(
+        run.carried ?: Tissues.saturated(run.surface),
+        run.oxygenCarried ?: OxygenClock.CLEAR,
+    )
+    return walked(depths, breathed, carried, run.model, run.density, run.surface)
+}
 
-    return walked(depths, breathed, carried as Carried.From, model, density, surface)
+/** [evaluate] on a profile, remembering the ones already on the chain behind it. */
+private fun evaluated(profile: Item, seen: Set<Item>): Evaluated =
+    when (val read = runOf(profile, seen)) {
+        is Read.Refused -> Evaluated.Refused(read.reason, read.why)
+        is Read.Run -> evaluate(read.run)
+    }
+
+/**
+ * [profile] as a run, or why it is not one.
+ *
+ * Everything a profile has to say before the model is asked: which model and how conservative,
+ * what water, what air, what it breathed from, and what it carries from the run before it. The
+ * arithmetic sees none of the reading.
+ */
+private fun runOf(profile: Item, seen: Set<Item>): Read {
+    if (profile in seen) return Read.Refused("this run carries gas from itself", Refusal.FAULTY)
+    val low = (profile.single<Double>("gradient_factor_low") as? Result.Usable)?.value
+    val high = (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value
+    // Both factors are needed. One of them is a setting half written down, and guessing the other
+    // would put a number into a decompression answer that nobody chose.
+    if (low == null || high == null) {
+        return Read.Refused(
+            "nothing says what model this run was worked out with, or how conservative it was",
+            Refusal.UNASKED,
+        )
+    }
+    val named = (profile.single<String>("deco_model") as? Result.Usable)?.value ?: BUHLMANN
+    if (named != BUHLMANN) {
+        return Read.Refused("$named is not the model built here, which is $BUHLMANN", Refusal.UNASKED)
+    }
+    val density = (profile.single<Double>("density") as? Result.Usable)?.value
+        ?: return Read.Refused(
+            "nothing says what water this run was in, so its depths are not pressures",
+            Refusal.UNASKED,
+        )
+    val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
+        ?: SEA_LEVEL
+    val carried = carriedInto(profile, surface, seen)
+    if (carried is Carried.Refused) return Read.Refused(carried.reason, Refusal.FAULTY)
+    carried as Carried.From
+    return Read.Run(
+        Run(
+            depth = depthOf(profile),
+            sources = sourcesOf(profile),
+            gradientFactorLow = low,
+            gradientFactorHigh = high,
+            switches = switchesOf(profile),
+            density = density,
+            surface = surface,
+            carried = carried.tissues,
+            oxygenCarried = carried.oxygen,
+        ),
+    )
+}
+
+/** Read is a profile turned into a run, or why it could not be. */
+private sealed class Read {
+    class Run(val run: yemoja.logic.Run) : Read()
+    class Refused(val reason: String, val why: Refusal) : Read()
 }
 
 /** The walk itself, once everything it needs has been found. */
@@ -339,20 +444,25 @@ sealed class Ascended {
  *
  * Refused for whatever [evaluate] refuses, and for a run that will not surface within a day.
  */
-fun completeAscent(profile: Item, metresAMinute: Double, lastStop: Double): Ascended {
+fun completeAscent(profile: Item, metresAMinute: Double, lastStop: Double): Ascended =
+    when (val read = runOf(profile, emptySet())) {
+        is Read.Refused -> Ascended.Refused(read.reason)
+        is Read.Run -> completeAscent(read.run, metresAMinute, lastStop)
+    }
+
+/** [completeAscent] for a run that belongs to no dive, which is the other door to the same walk. */
+fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended {
     require(metresAMinute > 0) {
         "an ascent rate should be more than nought, but was $metresAMinute"
     }
     require(lastStop >= 0) { "a last stop should be 0 or deeper, but was $lastStop" }
-    val evaluated = evaluate(profile)
+    val evaluated = evaluate(run)
     if (evaluated is Evaluated.Refused) return Ascended.Refused(evaluated.reason)
-    val model = modelOf(profile) ?: return Ascended.Refused("nothing says how conservative to be")
-    val breathing = breathedBy(profile) ?: return Ascended.Refused("nothing says what is breathed")
-    val depths = pointsOf(profile) ?: return Ascended.Refused("this run holds no depths")
-    val density = (profile.single<Double>("density") as? Result.Usable)?.value
-        ?: return Ascended.Refused("nothing says what water this run is in")
-    val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
-        ?: SEA_LEVEL
+    val model = run.model
+    val breathing = breathedBy(run) ?: return Ascended.Refused("nothing says what is breathed")
+    val depths = pointsOf(run) ?: return Ascended.Refused("this run holds no depths")
+    val density = run.density
+    val surface = run.surface
 
     var tissues = (evaluated as Evaluated.Done).surfacing
     var second = depths.last().second
@@ -421,8 +531,10 @@ private fun firstStopAfter(tissues: Tissues, firstStop: Double, model: Model, su
     return if (held > firstStop) held else firstStop
 }
 
-/** Model is what a profile says it was worked out with: the name, and the two factors. */
-private class Model(val name: String, val low: Double, val high: Double)
+/** Model is how conservative a run is worked out: the two gradient factors. */
+private class Model(val low: Double, val high: Double)
+
+private val Run.model: Model get() = Model(gradientFactorLow, gradientFactorHigh)
 
 /** Point is one depth in a profile: when, and how deep. */
 private class Point(val second: Int, val metres: Double)
@@ -433,29 +545,17 @@ private sealed class Carried {
     class Refused(val reason: String) : Carried()
 }
 
-/**
- * What [profile] says it was worked out with, or null where it says too little.
- *
- * Both factors are needed. One of them is a setting half written down, and guessing the other
- * would put a number into a decompression answer that nobody chose.
- */
-private fun modelOf(profile: Item): Model? {
-    val low = (profile.single<Double>("gradient_factor_low") as? Result.Usable)?.value ?: return null
-    val high = (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value
-        ?: return null
-    val named = (profile.single<String>("deco_model") as? Result.Usable)?.value ?: BUHLMANN
-    return Model(named, low, high)
+/** Every depth [profile] could read, earliest first, as a run holds them. */
+private fun depthOf(profile: Item): List<Pair<Int, Double>> {
+    val depth = (profile.read("depth") as? Result.Usable)?.value as? Series ?: return emptyList()
+    return (0..<depth.size).mapNotNull { at ->
+        ((depth.valueAt(at) as? Element.Usable)?.value as? Double)?.let { depth.secondAt(at) to it }
+    }
 }
 
-/** Every depth of [profile] that could be read, earliest first, or null where there are none. */
-private fun pointsOf(profile: Item): List<Point>? {
-    val depth = (profile.read("depth") as? Result.Usable)?.value as? Series ?: return null
-    val points = (0..<depth.size).mapNotNull { at ->
-        ((depth.valueAt(at) as? Element.Usable)?.value as? Double)
-            ?.let { Point(depth.secondAt(at), it) }
-    }
-    return points.ifEmpty { null }
-}
+/** The depths of [run] as the walk takes them, or null where it holds none. */
+private fun pointsOf(run: Run): List<Point>? =
+    run.depth.map { (second, metres) -> Point(second, metres) }.ifEmpty { null }
 
 /**
  * Breathing is what a run takes its gas from: which source at each moment, what is in each, how
@@ -505,45 +605,60 @@ private class Breathing(
 private class Fill(val gauge: Double, val volume: Double)
 
 /**
- * What [profile] breathes from, or null where nothing says.
+ * What [run] breathes from, or null where nothing says.
  *
  * The switches say which source, and a run with no switches breathes its only one, which is how an
- * ordinary single-cylinder dive is written. A source with no `gas_type` is air, that being what a
- * cylinder nobody said anything about holds.
- *
- * A source's `sac` is what it is breathed at: written on a plan, and worked out from the pressures
- * of a recording. One that says nothing costs nothing, since a figure nobody gave is not a figure
- * of nought.
+ * ordinary single-cylinder dive is written. A switch naming a source the run does not have is
+ * passed over rather than followed.
  */
-private fun breathedBy(profile: Item): Breathing? {
-    val root = profile.rootOf("gas_sources") ?: return null
-    val sources = ((root.keyed<OwnedItem>("gas_sources") as? Result.Usable)?.value.orEmpty())
-        .mapNotNull { (key, entry) -> (entry as? Element.Usable)?.let { key to it.value } }
-        .toMap()
-    if (sources.isEmpty()) return null
-    val mixes = sources.mapValues { (_, source) ->
-        (source.single<Gas>("gas_type") as? Result.Usable)?.value ?: Gas.AIR
-    }
-    val rates = sources.mapNotNull { (key, source) ->
-        ((source.read("sac") as? Result.Usable)?.value as? Double)?.let { key to it }
-    }.toMap()
-    val fills = sources.mapNotNull { (key, source) ->
-        val gauge = (source.single<Double>("start_pressure") as? Result.Usable)?.value
-        val volume = (source.read("volume") as? Result.Usable)?.value as? Double
+private fun breathedBy(run: Run): Breathing? {
+    if (run.sources.isEmpty()) return null
+    val mixes = run.sources.mapValues { (_, source) -> source.gas }
+    val rates = run.sources.mapNotNull { (key, source) -> source.sac?.let { key to it } }.toMap()
+    val fills = run.sources.mapNotNull { (key, source) ->
+        val gauge = source.fill
+        val volume = source.volume
         if (gauge == null || volume == null || volume <= 0) null else key to Fill(gauge, volume)
     }.toMap()
-
-    val switches = (profile.read("gas_switches") as? Result.Usable)?.value as? Series
-    val written = (0..<(switches?.size ?: 0)).mapNotNull { at ->
-        ((switches!!.valueAt(at) as? Element.Usable)?.value as? KeyReference)
-            ?.takeIf { it.key in sources }
-            ?.let { switches.secondAt(at) to it.key }
-    }
+    val written = run.switches.filter { (_, key) -> key in run.sources }
     if (written.isEmpty()) {
-        val only = sources.keys.singleOrNull() ?: return null
+        val only = run.sources.keys.singleOrNull() ?: return null
         return Breathing(mixes, listOf(0 to only), rates, fills)
     }
     return Breathing(mixes, written, rates, fills)
+}
+
+/**
+ * The sources [profile] breathes from, as a run holds them: its own where it keeps any, and the
+ * dive's otherwise.
+ *
+ * A source with no `gas_type` is air, that being what a cylinder nobody said anything about holds.
+ * Its `sac` is what it is breathed at: written on a plan, and worked out from the pressures of a
+ * recording. One that says nothing costs nothing, since a figure nobody gave is not a figure of
+ * nought.
+ */
+private fun sourcesOf(profile: Item): Map<String, Source> {
+    val root = profile.rootOf("gas_sources") ?: return emptyMap()
+    return ((root.keyed<OwnedItem>("gas_sources") as? Result.Usable)?.value.orEmpty())
+        .mapNotNull { (key, entry) -> (entry as? Element.Usable)?.let { key to it.value } }
+        .associate { (key, source) ->
+            key to Source(
+                gas = (source.single<Gas>("gas_type") as? Result.Usable)?.value ?: Gas.AIR,
+                sac = (source.read("sac") as? Result.Usable)?.value as? Double,
+                volume = (source.read("volume") as? Result.Usable)?.value as? Double,
+                fill = (source.single<Double>("start_pressure") as? Result.Usable)?.value,
+            )
+        }
+}
+
+/** The gas switches [profile] could read, as a run holds them. */
+private fun switchesOf(profile: Item): List<Pair<Int, String>> {
+    val switches = (profile.read("gas_switches") as? Result.Usable)?.value as? Series
+        ?: return emptyList()
+    return (0..<switches.size).mapNotNull { at ->
+        ((switches.valueAt(at) as? Element.Usable)?.value as? KeyReference)
+            ?.let { switches.secondAt(at) to it.key }
+    }
 }
 
 /**

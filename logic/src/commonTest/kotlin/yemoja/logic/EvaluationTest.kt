@@ -1,6 +1,7 @@
 package yemoja.logic
 
 import yemoja.data.Element
+import yemoja.data.Gas
 import yemoja.data.Item
 import yemoja.data.ItemSet
 import yemoja.data.OwnedItem
@@ -10,6 +11,7 @@ import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -371,6 +373,92 @@ class EvaluationTest {
         ).reason
 
         assertTrue("how conservative" in reason, reason)
+    }
+
+    @Test
+    fun `a run typed in and the same run read off a profile are answered alike`() {
+        val typed = Run(
+            depth = listOf(0 to 0.0, 90 to 40.0, 1800 to 40.0, 1900 to 0.0),
+            sources = mapOf("g1" to Source(Gas.AIR, sac = 20.0, volume = 12.0, fill = 200.0)),
+            gradientFactorLow = 1.0,
+            gradientFactorHigh = 1.0,
+            density = 1000.0,
+            surface = 1.0,
+        )
+        val fromRun = assertIs<Evaluated.Done>(evaluate(typed))
+        val fromProfile = done(
+            planned(
+                DEEP,
+                sources = """"g1": {"gas_type": "AIR", "sac": 20, "volume": 12,
+                    "start_pressure": 200}""",
+            ),
+        )
+
+        assertEquals(values(fromProfile.ceiling), values(fromRun.ceiling))
+        assertEquals(fromProfile.gasUsed, fromRun.gasUsed)
+        assertEquals(fromProfile.findings.map { it.said }, fromRun.findings.map { it.said })
+    }
+
+    @Test
+    fun `a run typed in can be given its ascent, and the two doors agree on it`() {
+        val typed = Run(
+            depth = listOf(0 to 0.0, 90 to 40.0, 1800 to 40.0),
+            sources = mapOf("g1" to Source(Gas(28, 0)), "g2" to Source(Gas(50, 0))),
+            gradientFactorLow = 1.0,
+            gradientFactorHigh = 1.0,
+            switches = listOf(0 to "g1"),
+            density = 1000.0,
+            surface = 1.0,
+        )
+        val fromRun = assertIs<Ascended.Done>(completeAscent(typed, 9.0, 3.0))
+        val fromProfile = assertIs<Ascended.Done>(
+            completeAscent(
+                planned(
+                    """"gas_switches": [[0, "*g1"]], "depth": [[0, 0], [90, 40], [1800, 40]]""",
+                    sources = """"g1": {"gas_type": "EAN28"}, "g2": {"gas_type": "EAN50"}""",
+                ),
+                9.0,
+                3.0,
+            ),
+        )
+
+        assertEquals(fromProfile.depth, fromRun.depth)
+        assertEquals(fromProfile.switches, fromRun.switches)
+    }
+
+    @Test
+    fun `a run starts fresh unless told what it carries`() {
+        val loaded = Tissues.saturated(1.0).breathing(Gas.AIR, 4.0, 4.0, 1800.0)
+        val plain = Run(listOf(0 to 0.0, 60 to 12.0, 1800 to 12.0, 1860 to 0.0),
+            mapOf("g1" to Source(Gas.AIR)), 1.0, 1.0, density = 1000.0, surface = 1.0)
+        val carrying = Run(plain.depth, plain.sources, 1.0, 1.0, density = 1000.0, surface = 1.0,
+            carried = loaded)
+
+        val fresh = assertIs<Evaluated.Done>(evaluate(plain))
+        val after = assertIs<Evaluated.Done>(evaluate(carrying))
+        assertTrue(
+            after.surfacing.nitrogenIn(16) > fresh.surfacing.nitrogenIn(16),
+            "what was carried in is still there at the end",
+        )
+    }
+
+    @Test
+    fun `a run says what it will not hold`() {
+        assertEquals(
+            "the high gradient factor should be 0 to 1, but was 1.2",
+            assertFailsWith<IllegalArgumentException> {
+                Run(emptyList(), emptyMap(), 0.3, 1.2)
+            }.message,
+        )
+        assertEquals(
+            "depths should run forwards, but 60 follows 90",
+            assertFailsWith<IllegalArgumentException> {
+                Run(listOf(0 to 0.0, 90 to 30.0, 60 to 30.0), emptyMap(), 0.3, 0.7)
+            }.message,
+        )
+        assertTrue("no depths" in assertIs<Evaluated.Refused>(
+            evaluate(Run(emptyList(), mapOf("g1" to Source(Gas.AIR)), 0.3, 0.7)),
+        ).reason)
     }
 
     @Test

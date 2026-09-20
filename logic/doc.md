@@ -644,6 +644,16 @@ To settle when we discuss architecture and features:
 
   `LOGIC-35` beside this one writes the ascent a plan needs before it can be evaluated at all.
 
+  **Two doors, one walk.** A run is the model's own input — depths against time, sources and
+  switches, the two factors, water and air, and what it carries in — with no item anywhere in it.
+  `evaluate(run)` and `completeAscent(run, …)` work on that, and the profile forms of both only read
+  a profile into a run first. So a plan typed into a calculation, belonging to no dive, and a plan on
+  a dive are answered by the same code and cannot drift apart. Reading a profile is where the
+  refusals about a profile live — no factors written, a model not built here, no water type, a
+  chain that loops — and the walk sees none of it. A run starts fresh unless it says what it
+  carries, which is how a calculation can one day take a surface interval without the model
+  learning what a dive is.
+
   Built in `Evaluation.kt`, over `Decompression.kt`.
 
 - **LOGIC-36 — Where a dive nobody has made yet is left out.** *Settled:* **shown and marked,
