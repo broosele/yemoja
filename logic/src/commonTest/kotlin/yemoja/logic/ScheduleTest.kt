@@ -1,6 +1,7 @@
 package yemoja.logic
 
 import yemoja.data.Gas
+import kotlin.math.ceil
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -15,9 +16,15 @@ import kotlin.test.assertTrue
  * gradient factor read at the wrong depth went unseen.
  */
 
-/** One air dive to [metres], leaving the surface at nought and the bottom at [minutes]. */
+/**
+ * One air dive to [metres], leaving the surface at nought and the bottom at [minutes].
+ *
+ * The descent is rounded up, which is how the form that writes a plan times it, so these are runs
+ * a user can ask for rather than ones only a test can build. A second either way is not a
+ * decompression difference, but it moves a stop that sits near a whole minute.
+ */
 private fun airRun(metres: Double, minutes: Int, low: Double, high: Double): Run {
-    val descent = (metres / DESCENT_METRES_A_MINUTE * 60).toInt()
+    val descent = ceil(metres / DESCENT_METRES_A_MINUTE * 60).toInt()
     return Run(
         depth = listOf(0 to 0.0, descent to metres, minutes * 60 to metres),
         sources = mapOf("g1" to Source(Gas.AIR)),
@@ -87,7 +94,7 @@ class ScheduleTest {
                     " 100/100's $full, and conservatism should cost something",
             )
             // Reading the factor at the depth held rather than the depth ascended to put this
-            // near five, a conservative pair asking roughly twice what it should.
+            // ratio near four and a half, where a sliding pair costs about three.
             assertTrue(
                 sliding < full * 4,
                 "$sliding min against $full is more than a gradient factor accounts for",

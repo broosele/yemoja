@@ -610,7 +610,7 @@ To settle when we discuss architecture and features:
 
   Reading it at the held depth left a sliding pair asking about a third longer than it should,
   and nothing caught it because the schedules had never been checked against a published one —
-  only the no-decompression limits had. Forty metres for twenty-five minutes on air is thirteen
+  only the no-decompression limits had. Forty metres for twenty-five minutes on air is twelve
   minutes of stops at 100/100, which the air tables agree with; at 30/70 it was fifty-two minutes
   and is forty. Equal factors are unchanged, there being no slide to read at either end of.
 
