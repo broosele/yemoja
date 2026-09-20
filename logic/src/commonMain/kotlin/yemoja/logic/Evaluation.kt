@@ -423,6 +423,29 @@ private fun walked(
 }
 
 /**
+ * The deepest [gas] may be breathed before its oxygen passes [most] bar, in metres, or null for a
+ * mix holding no oxygen at all.
+ *
+ * What divers call a mix's maximum operating depth, and what a switch is chosen by: a deco gas is
+ * carried to be breathed from the depth it becomes safe at. The same figure the run is judged
+ * against afterwards, so a plan built to it raises no finding about it. Sea water at sea level
+ * unless told otherwise.
+ *
+ * Null rather than a depth without end: a mix with no oxygen is breathable nowhere, which is a
+ * different answer from *anywhere*, and a form should say so rather than offer a number.
+ */
+fun maximumOperatingDepth(
+    gas: Gas,
+    most: Double = MOST_OXYGEN,
+    density: Double = NOMINAL_DENSITY,
+    surface: Double = SEA_LEVEL,
+): Double? {
+    require(most > 0) { "an oxygen limit should be more than nought, but was $most" }
+    if (gas.percentO2 <= 0) return null
+    return depthAt(most / gas.fractionO2, density, surface)
+}
+
+/**
  * Ascended is the way out of a run, or why one could not be worked out.
  */
 sealed class Ascended {
@@ -743,8 +766,11 @@ private const val BUHLMANN = "buhlmann"
  *
  * The figure agencies teach for a decompression stop, and the one a gas is chosen against. More
  * than this is not an error in the recording: it is what the run did, and a finding says so.
+ *
+ * Public so that a form offering a switch and the finding that judges one are held to a single
+ * figure. A screen inventing its own would let a plan be built that the model then objects to.
  */
-private const val MOST_OXYGEN = 1.6
+const val MOST_OXYGEN = 1.6
 
 private const val SECONDS_IN_MINUTE = 60.0
 

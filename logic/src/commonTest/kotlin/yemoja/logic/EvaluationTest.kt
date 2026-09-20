@@ -13,6 +13,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /*
@@ -478,6 +480,36 @@ class EvaluationTest {
         // The key is a run's word for a cylinder, not a reader's, so it stays out of the sentence.
         assertTrue("g1" !in dry.said, dry.said)
         assertTrue("g1" !in rich.said, rich.said)
+    }
+
+    @Test
+    fun `a mix says how deep it may be breathed, and the run agrees with it`() {
+        // Published figures at 1.6 bar: air to about 66 metres, EAN50 to about 22.
+        val air = assertNotNull(maximumOperatingDepth(Gas.AIR))
+        val fifty = assertNotNull(maximumOperatingDepth(Gas(50, 0)))
+
+        assertTrue(air in 64.0..68.0, "$air m on air")
+        assertTrue(fifty in 21.0..23.0, "$fifty m on EAN50")
+        assertNull(maximumOperatingDepth(Gas(0, 79)), "a mix with no oxygen is breathable nowhere")
+    }
+
+    @Test
+    fun `a plan built to the depth a mix allows raises no finding about it`() {
+        val deepest = assertNotNull(maximumOperatingDepth(Gas(50, 0), density = 1000.0, surface = 1.0))
+        val evaluated = assertIs<Evaluated.Done>(
+            evaluate(
+                Run(
+                    depth = listOf(0 to 0.0, 60 to deepest, 600 to deepest, 700 to 0.0),
+                    sources = mapOf("g1" to Source(Gas(50, 0))),
+                    gradientFactorLow = 1.0,
+                    gradientFactorHigh = 1.0,
+                    density = 1000.0,
+                    surface = 1.0,
+                ),
+            ),
+        )
+
+        assertTrue(evaluated.findings.none { "oxygen" in it.said }, "${evaluated.findings}")
     }
 
     @Test

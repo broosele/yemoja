@@ -615,6 +615,12 @@ To settle when we discuss architecture and features:
   **Oxygen is checked against 1.6 bar**, the figure agencies teach for a stop and the one a gas is
   chosen against. Over it is a finding rather than a refusal, once per crossing like the ceiling.
 
+  **The figure and the depth it allows are public**, `MOST_OXYGEN` and `maximumOperatingDepth`, so
+  a form offering a gas switch chooses the depth by the same rule the run is judged by afterwards.
+  A screen with its own copy of 1.6 could build a plan the model then objects to, which is a
+  screen and a model disagreeing about one figure in front of a reader. Null for a mix holding no
+  oxygen, that being breathable nowhere rather than anywhere.
+
   **The oxygen clocks run beside the compartments**, sampled the same way and given back as a
   percentage and a count. `LOGIC-38` is what they are worked out from.
 
