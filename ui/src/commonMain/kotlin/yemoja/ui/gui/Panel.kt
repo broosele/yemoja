@@ -4,21 +4,25 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +43,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -255,32 +260,53 @@ private fun Asking(
         modifier = Modifier.fillMaxWidth().padding(top = HALF),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(GAP),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Boxed("Allow changes", talk.writing) { talk.writing = it }
-            Boxed("Allow file access", talk.direct) { talk.direct = it }
+            Boxed("Allow files", talk.direct) { talk.direct = it }
         }
         if (talk.stance == Stance.ANSWERING) {
             // The protocol's cancel: the agent stops where it is and stays running, and the
             // answer so far stays on the screen. Stop is the way to be rid of the agent itself.
-            Button(onClick = { scope.launch { conversation.interrupt() } }) { Text("Interrupt") }
+            Button(
+                onClick = { scope.launch { conversation.interrupt() } },
+                contentPadding = SNUG,
+            ) { Text("Interrupt") }
         } else {
             Button(
                 onClick = { ask(talk, conversation, scope, onTurn) },
                 enabled = canAsk,
+                contentPadding = SNUG,
             ) { Text("Ask") }
         }
     }
 }
 
-/** One box an agent's permissions are ticked in, which the whole row toggles. */
+/**
+ * One box an agent's permissions are ticked in, which the label toggles too.
+ *
+ * Drawn small: the platform's checkbox reserves a touch target forty-eight pixels square, sized
+ * for a thumb, and two of those beside a button do not fit a panel this wide. A pointer needs no
+ * such target, and the label is part of the target anyway.
+ */
 @Composable
 private fun Boxed(label: String, ticked: Boolean, onTick: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onTick(!ticked) },
+        modifier = Modifier.clickable { onTick(!ticked) },
+        horizontalArrangement = Arrangement.spacedBy(HALF),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked = ticked, onCheckedChange = onTick)
-        Text(label, style = MaterialTheme.typography.bodyMedium)
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+            Checkbox(
+                checked = ticked,
+                onCheckedChange = onTick,
+                modifier = Modifier.size(GLYPH),
+            )
+        }
+        Text(label, style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -370,7 +396,7 @@ internal fun started(talk: Talk, turn: Int, failed: String?) {
     talk.stance = Stance.NONE
 }
 
-/** Starts what [command] names in [conversation], and answers what to say where it would not start. */
+/** Starts what [command] names in [conversation], and says why where it would not start. */
 internal suspend fun startedWith(conversation: Conversation, command: String): String? {
     try {
         conversation.start(command)
@@ -543,3 +569,6 @@ internal fun stoppedOf(why: String?): String =
 
 /** How wide the panel is, beside whatever tab is showing. */
 private val PANEL = 360.dp
+
+/** A button's padding where it shares a line with the two boxes. */
+private val SNUG = PaddingValues(horizontal = GAP, vertical = HALF)

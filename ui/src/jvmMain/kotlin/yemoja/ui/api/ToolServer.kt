@@ -217,7 +217,7 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     server.addTool(
         "files",
         "Where the logbook's files are and how to treat them, for the rare case the other tools " +
-            "cannot do what is asked. Refused unless the user has ticked Allow file access.",
+            "cannot do what is asked. Refused unless the user has ticked Allow files.",
     ) { carried(onto) { tools.files() } }
 
     server.addResource(

@@ -69,6 +69,9 @@ you made each month, widening the bars where there would be too many to read.
 - **Locations** holds the regions of the world as a tree, the sites and wrecks in the one chosen,
   and a map of it with your sites marked. **Hide unused**, which is on to begin with, leaves out
   the sites none of your dives were at, and the regions left with nothing in them.
+- **Calculations** works out a number from figures you type, with no dive to read them from.
+  Choose what to work out on the left; the form is on the right. See
+  [Calculations](#calculations) below.
 - **Manuals** is this manual.
 
 Each tab keeps what you chose and where you had scrolled to while you look at another.
@@ -229,7 +232,7 @@ again against what the field holds now. **Discard** any item you do not want, th
 What is waiting is kept in a folder beside your logbook, with `.proposed` after its name, so it
 survives the window being closed. It is not part of your logbook.
 
-**It can be let at the files themselves, as a last resort.** Tick *Allow file access* and the
+**It can be let at the files themselves, as a last resort.** Tick *Allow files* and the
 agent is told where your logbook is, may read its files, and may edit them — directly, with
 nothing staged and nothing to review. It is asked to do that only for what the tools cannot, to
 make the smallest change, and to say which file it changed and why; Yemoja reads your logbook again
@@ -256,6 +259,26 @@ offers some anyway is not speaking for Yemoja.
 **Nothing of a conversation is kept.** Closing the panel stops the agent and the conversation is
 gone; it is never written beside your logbook. What the agent remembers on its own side is between
 you and its provider.
+
+## Calculations
+
+Two things can be worked out so far. Neither needs a logbook open, and what you type stays while
+you look at another tab.
+
+**SAC** is six figures under each other: your breathing rate, the average depth, the duration,
+the cylinder's size, and the pressure it started and ended at. Click the bullet before the one you
+want worked out and type the other five; the answer appears in its place as you type. The rate is
+what you would breathe at the surface, in litres a minute, and the arithmetic is the same Yemoja
+uses for the SAC it works out on a recording. An end pressure below nought means the five you typed
+would have emptied the cylinder — the number is left as it is so you can see by how much.
+
+**NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
+decompression stop: type the depth, and the gas if it is not air. The two gradient factors start
+as the defaults you chose in [Settings](settings.md); only the high one changes the answer, because
+a stop becomes owed when the high factor is reached, and the low one only says how deep a first
+stop is taken once you owe one. It assumes salt water at sea level, and the descent rate from
+Settings. Read [decompression.md](decompression.md) before you trust any of it: this is the same
+model as the plans, with the same limits.
 
 ## Copying text
 

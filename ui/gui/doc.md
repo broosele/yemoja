@@ -23,11 +23,11 @@ The application is divided into **tabs**. One is visible at a time, and the mean
 choosing between them is always *accessible* — whatever else is happening, another tab
 is reachable without unwinding what you are doing.
 
-Accessible, not necessarily visible. Six labels fit comfortably across the top of a
+Accessible, not necessarily visible. Seven labels fit comfortably across the top of a
 desktop window and will not fit across the foot of a phone, so the phone is free to keep
 the switcher one gesture away rather than permanently on screen.
 
-There are six:
+There are seven:
 
 - **Home** — a greeting, what the application can be asked to do to a logbook as a whole,
   and everything counted. `GUI-30`.
@@ -35,6 +35,7 @@ There are six:
 - **Gear** — equipment.
 - **Community** — people, operators and certifications.
 - **Locations** — regions, dive sites and wrecks.
+- **Calculations** — what a diver works out on a slate, with no dive to read it from. `GUI-43`.
 - **Manuals** — the documentation, read inside the application.
 
 **The application opens on Home**, which is first in the list and is what a user arrives at
@@ -375,6 +376,38 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
+  the form for the one chosen on the right, and two to begin with: SAC and NDL.**
+
+  A calculation reads no dive: a diver on a boat wants a number from figures they have in their
+  head, and the logbook is neither here nor there. So it is a tab of its own rather than a box
+  under a dive, it needs no logbook to be open, and its shape is the shape a subject with a short
+  list has — the list on the left, as Manuals lists its chapters, and the one chosen on the right.
+  What is typed and which calculation is chosen are kept between visits, as anything a tab holds
+  is. `GUI-27`.
+
+  **SAC is six boxes, one of them worked out.** SAC, average depth, duration, cylinder size, start
+  pressure and end pressure sit under each other, each with a bullet before it; the bullet chooses
+  the one worked out from the other five, and its box shows the answer instead of taking one. The
+  six are one equation — gas used is size times the drop in pressure, and the rate is that spread
+  over the minutes at the pressure of the average depth — turned round six ways, and the pressure
+  is the model's own `ambientAt`, so the tab and a recording's worked-out SAC cannot disagree. An
+  empty box means the form waits; a box that will not read says which one and why; a set of five
+  that gives no number, a duration of nought for a rate, says so rather than showing infinity. An
+  end pressure below nought is shown as it is: it is the honest answer to a dive that would have
+  run the cylinder dry, and a reader can see why.
+
+  **NDL is the two gradient factors, a gas and a depth, and gives minutes.** The factors are
+  prefilled from the settings the first time the form opens, and typed over freely after. The
+  limit is the model's, `LOGIC-39`, which decides what a form must not: only the high factor is
+  passed, and the descent is counted. The low factor's box is shown all the same, so a reader who
+  set both in the settings finds both here, and a line under the answer says why it does not move
+  a limit. Salt water at sea level and the settings' descent rate are assumed, and the line says
+  so. A depth the model finds no limit for is said in words rather than left blank.
+
+  **The units are the model's own** — litres a minute, metres, minutes, litres, bar — until the
+  units a user wants shown are read. `UI-2`.
+
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
@@ -586,7 +619,7 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **When a conversation starts the agent is handed the tool server**, `API-4`. Its own requests
   to read or write a file or to run a command are refused, every time, so the tools are the only
-  way to the logbook — unless the user ticks *Allow file access*, when a read or write inside the
+  way to the logbook — unless the user ticks *Allow files*, when a read or write inside the
   logbook or the agent's own folder is served and its own tools of the file-handling kinds are
   allowed there, and the window reads the logbook again when the turn ends. A command is never
   run. `API-5`.
@@ -600,7 +633,7 @@ once and corrected. The numbers stay unused rather than being given to something
   **The panel sits beside whichever tab is showing** and stays open while the user moves between
   tabs, so a dive the agent names can be opened while the conversation carries on. It holds the
   choice of agent, the conversation, and two boxes that are off at the start of every conversation:
-  *Allow changes*, which lets the agent stage, and *Allow file access*, which lets it at the files
+  *Allow changes*, which lets the agent stage, and *Allow files*, which lets it at the files
   directly. `API-5`. A box that held back a person's private details is gone with the machinery
   behind it: an agent is sent whatever it reads, and the manual says so where its chapter begins.
 
@@ -668,7 +701,7 @@ once and corrected. The numbers stay unused rather than being given to something
   with *Stop* beside it — *Start* after a stop or a failed start — and *Close*; the conversation, a
   view of its own for copying; what the stance says while an agent is starting or thinking; how
   much is staged and the deed to review it, where anything is; and what to ask, with the two boxes
-  to the left of *Ask*. *Ask* is live only while an agent waits to be asked, and Enter presses it,
+  side by side to the left of *Ask*, drawn small so that they fit there. *Ask* is live only while an agent waits to be asked, and Enter presses it,
   Shift and Enter making a new line, as in any chat. While the agent answers, *Ask* gives way to
   *Interrupt*, which is the protocol's own cancel: the answer ends where it has got to and stays on
   the screen, and the agent stays running to be asked again. *Stop* is the other thing, and ends

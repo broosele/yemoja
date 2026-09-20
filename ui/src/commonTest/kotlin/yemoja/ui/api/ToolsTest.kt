@@ -140,7 +140,7 @@ class FilesTest {
     @Test
     fun `the files are refused until the box is ticked, naming the box`() {
         val reason = reason(Tools(diving()).files())
-        assertTrue("tick *Allow file access*" in reason, reason)
+        assertTrue("tick *Allow files*" in reason, reason)
         assertTrue("say why the tools were not enough" in reason, reason)
     }
 

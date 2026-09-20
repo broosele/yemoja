@@ -23,7 +23,7 @@ What exists:
 - The resources data-fields.md and data-format.md are the manual's own definition of every field
   and of how values are written. Read them when a field's meaning is not obvious from its name.
 - You reach the logbook through these tools. Its files are on disk, but they are not yours to
-  read or edit unless the user ticks *Allow file access*, and the files tool is refused until
+  read or edit unless the user ticks *Allow files*, and the files tool is refused until
   they do. Where the tools fall short - a field they will not answer, data they call invalid - say
   so and ask, rather than looking for the files yourself. Once allowed, files tells you where
   they are and what to take care of. Even then the tools come first and a file is the last

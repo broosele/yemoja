@@ -331,7 +331,7 @@ class Tools(
 
     /** What `files` answers while the user has not allowed direct access. */
     private fun notDirect(): Reply = refused(
-        "ask the user to tick *Allow file access* beside the conversation, and say why the tools " +
+        "ask the user to tick *Allow files* beside the conversation, and say why the tools " +
             "were not enough. Until they do, the logbook's files are not yours to read or edit.",
     )
 

@@ -160,7 +160,7 @@ behaviour of its own, that behaviour is in the wrong place.
   read a file or run a command are refused by the window, `GUI-38`. An agent given the logbook
   folder could edit the files directly, and nothing in this entry would stop it.
 
-  *Added once built:* **a second box, *Allow file access*, off at the start of every conversation,
+  *Added once built:* **a second box, *Allow files*, off at the start of every conversation,
   lets the agent read and edit the logbook's files itself.** It exists because the first box is a
   promise about Yemoja's tools and not a fence around the agent: an agent is the user's own program
   with the user's rights, and its own file tools run in its own process, so what the window can
