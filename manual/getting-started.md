@@ -273,12 +273,12 @@ uses for the SAC it works out on a recording. An end pressure below nought means
 would have emptied the cylinder — the number is left as it is so you can see by how much.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
-decompression stop: type the depth, and the gas if it is not air. The two gradient factors start
-as the defaults you chose in [Settings](settings.md); only the high one changes the answer, because
-a stop becomes owed when the high factor is reached, and the low one only says how deep a first
-stop is taken once you owe one. It assumes salt water at sea level, and the descent rate from
-Settings. Read [decompression.md](decompression.md) before you trust any of it: this is the same
-model as the plans, with the same limits.
+decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts
+as the default you chose in [Settings](settings.md). Only that one is asked for: a stop becomes
+owed when the high factor is reached, while the low factor says how deep a first stop is taken
+once you already owe one. It assumes salt water at sea level, and the descent rate from Settings.
+Read [decompression.md](decompression.md) before you trust any of it: this is the same model as
+the plans, with the same limits.
 
 ## Copying text
 

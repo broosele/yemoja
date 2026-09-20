@@ -90,7 +90,6 @@ internal class Working {
 
     var depth: String by mutableStateOf("")
     var gas: String by mutableStateOf("air")
-    var gradientLow: String by mutableStateOf("")
     var gradientHigh: String by mutableStateOf("")
 
     /** Whether the NDL form has been opened before, which decides whether it takes the settings. */
@@ -282,10 +281,9 @@ private fun SacForm(working: Working) {
 /** A depth and what is breathed, and how long a fresh diver may stay. */
 @Composable
 private fun NdlForm(working: Working, settings: Settings?) {
-    // The factors the user chose, the first time the form opens; typed over freely after that.
+    // The factor the user chose, the first time the form opens; typed over freely after that.
     remember(working, settings) {
         if (!working.prefilled && settings != null) {
-            working.gradientLow = shownOf(Settings.DEFAULT_GF_LOW, settings.number(Settings.DEFAULT_GF_LOW))
             working.gradientHigh = shownOf(Settings.DEFAULT_GF_HIGH, settings.number(Settings.DEFAULT_GF_HIGH))
             working.prefilled = true
         }
@@ -294,7 +292,10 @@ private fun NdlForm(working: Working, settings: Settings?) {
     val descent = settings?.number(Settings.DEFAULT_DESCENT_RATE) ?: FALLBACK_DESCENT_RATE
     Heading("NDL")
     Aside("How long a depth may be stayed at, from leaving the surface, before a stop is owed.")
-    Asked("GF low", working.gradientLow, "%") { working.gradientLow = it }
+    // The high factor alone. A limit is the moment a stop becomes owed, which is the high
+    // factor's question; the low one says how deep a first stop is taken and nothing about
+    // whether there is one, so a box for it would ask for a number that changes no answer.
+    // `LOGIC-39`.
     Asked("GF high", working.gradientHigh, "%") { working.gradientHigh = it }
     Asked("Gas", working.gas, "") { working.gas = it }
     Asked("Depth", working.depth, "m") { working.depth = it }
@@ -317,7 +318,7 @@ private fun NdlForm(working: Working, settings: Settings?) {
         is Answer.Wrong -> Wrong(answer.reason)
         Answer.Waiting -> Unit
     }
-    Aside("Descending at ${plain(descent)} m a minute, in salt water at sea level. The low factor does not move a limit: it applies only at a stop, and a dive within its limit owes none.")
+    Aside("Descending at ${plain(descent)} m a minute, in salt water at sea level.")
 }
 
 /** One labelled box of the NDL form. */

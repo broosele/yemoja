@@ -397,13 +397,14 @@ once and corrected. The numbers stay unused rather than being given to something
   end pressure below nought is shown as it is: it is the honest answer to a dive that would have
   run the cylinder dry, and a reader can see why.
 
-  **NDL is the two gradient factors, a gas and a depth, and gives minutes.** The factors are
+  **NDL is the high gradient factor, a gas and a depth, and gives minutes.** The factor is
   prefilled from the settings the first time the form opens, and typed over freely after. The
   limit is the model's, `LOGIC-39`, which decides what a form must not: only the high factor is
-  passed, and the descent is counted. The low factor's box is shown all the same, so a reader who
-  set both in the settings finds both here, and a line under the answer says why it does not move
-  a limit. Salt water at sea level and the settings' descent rate are assumed, and the line says
-  so. A depth the model finds no limit for is said in words rather than left blank.
+  passed, and the descent is counted. **The low factor is not asked for**, since it says how deep
+  a first stop is taken and nothing about whether one is owed: a box for it would ask a reader
+  for a number that changes no answer, which is worse than leaving it out and explaining why.
+  Salt water at sea level and the settings' descent rate are assumed, and a line says so. A depth
+  the model finds no limit for is said in words rather than left blank.
 
   **The units are the model's own** — litres a minute, metres, minutes, litres, bar — until the
   units a user wants shown are read. `UI-2`.
