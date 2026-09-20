@@ -435,12 +435,31 @@ once and corrected. The numbers stay unused rather than being given to something
   `maximumOperatingDepth` rather than from a limit of this form's: one figure, in one place, so a
   reader placing a gas by what they are told here cannot be contradicted by the evaluation.
 
-  **The way up is added without being asked for.** A calculation answers as it is typed, as the
+  **The figures are live and the levels are not.** A calculation answers as it is typed, as the
   other two do, so there is no deed to press: the form completes the ascent, evaluates the levels
   and the ascent together, and shows the stops depth by depth, the runtime, the gas, the clocks and
   whatever the model objects to. What a reader wants from a plan is the whole dive rather than the
   bottom of one. The held minutes at a depth are gathered into one stop, the model writing a point a
   minute while it holds.
+
+  **Add ascent writes that way up into the levels.** The figures already say what it costs; the
+  deed makes it something a reader can take hold of. Each stretch becomes one level, the rise to a
+  depth and the hold there together, carrying the cylinder the model was breathing when it began,
+  so a deco switch it made for itself survives as a level naming that cylinder. Nothing marks a
+  written level as the model's. It is a level like the ones above it, and the live findings are
+  what say whether the plan is still one the model approves of — a second opinion stored beside it
+  would be a second source of truth, and would have to be thrown away on the first edit anyway.
+
+  **The deed is shown only where it would write something.** A plan already ending at the surface
+  has no way up left to add, so the button is not there; one edited to stop short of the surface
+  has again, so it is. That is the whole rule, and it needs no memory of having been pressed.
+
+  Two roundings meet here and the form takes the longer of them. The model and this form work a
+  travel time out to a different second, and a level a second short of its own rise would be
+  refused the moment it was written, so a written level is at least as long as the form will read
+  it as taking. What that adds is held at the stop rather than cut from it. A level that is exactly
+  its own travel is a level, which it had not been before: surfacing from the last stop is a rise
+  and no holding.
 
   **It reaches the model through a `Run` rather than an item**, `LOGIC-37`, so a plan typed here and
   a plan on a dive are answered by one walk and cannot disagree; and the figures are the same list

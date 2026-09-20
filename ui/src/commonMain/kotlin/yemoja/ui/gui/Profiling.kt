@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -247,7 +248,7 @@ private fun depthsOf(
         val rate = if (target > depth) descentRate else ascentRate
         val travel = ceil(abs(target - depth) / rate * SECONDS_IN_MINUTE).toInt()
         val whole = (minutes * SECONDS_IN_MINUTE).roundToInt()
-        if (whole <= travel) {
+        if (whole < travel) {
             return Laid.Wrong(
                 "level ${index + 1} takes ${clockOf(travel)} to reach at ${plain(rate)} m a " +
                     "minute, which ${plain(minutes)} minutes does not leave room for",
@@ -257,8 +258,12 @@ private fun depthsOf(
             second += travel
             points += second to target
         }
-        second += whole - travel
-        points += second to target
+        // A level with nothing left after the travel is written once. Two points at one second
+        // would say the run was in two places.
+        if (whole > travel) {
+            second += whole - travel
+            points += second to target
+        }
         depth = target
     }
     return Laid.Points(points, begins)
@@ -312,6 +317,64 @@ internal fun stopSaid(stop: Stop): String =
     "${plain(stop.metres)} m for ${plain(stop.seconds / SECONDS_IN_MINUTE)} min"
 
 /** How long the whole run takes, in seconds, which is where its last point sits. */
+/** Which cylinder [key] is, by its place in the list the keys were minted from. */
+internal fun gasIndexOf(key: String): Int = (key.removePrefix("g").toIntOrNull() ?: 1) - 1
+
+/**
+ * The way up [ascent] worked out, written as levels of [run], so that it can be typed over.
+ *
+ * Each stretch becomes one level: the rise to a depth and the hold there are one row, because that
+ * is what a level already means. **The ascent does not repeat the point it leaves from**, so the
+ * run's own last point begins the first stretch.
+ *
+ * A level is written at least as long as this form's own arithmetic will read it as taking, and
+ * rounded up to a hundredth of a minute besides. The model and the form round a travel time
+ * differently, by a second at most, and a level a second short of its own rise would be refused the
+ * moment it was written. What the rounding adds is held at the stop, which is the safe direction.
+ *
+ * The cylinder is the one being breathed when the level began, so a deco switch the model made for
+ * itself is kept. Taking it from the beginning rather than the end means a rise carries the mix it
+ * started on, and the plan never breathes one deeper than the model did.
+ */
+internal fun ascentLevelsOf(
+    run: Run,
+    ascent: Ascended.Done,
+    ascentRate: Double,
+    gases: Int,
+): List<Level> {
+    val points = listOfNotNull(run.depth.lastOrNull()) + ascent.depth
+    val levels = ArrayList<Level>()
+    var breathing = carriedOf(run)
+    var at = 0
+    while (at < points.lastIndex) {
+        val (began, from) = points[at]
+        var next = at + 1
+        val target = points[next].second
+        while (next < points.lastIndex && points[next + 1].second == target) next++
+        val ends = points[next].first
+        ascent.switches.lastOrNull { it.first <= began }?.let { breathing = gasIndexOf(it.second) }
+        val travel = ceil(abs(target - from) / ascentRate * SECONDS_IN_MINUTE).toInt()
+        val seconds = maxOf(ends - began, travel)
+        if (seconds > 0) {
+            levels += Level(
+                minutes = plain(ceil(seconds / HUNDREDTHS_IN_MINUTE) / PER_HUNDRED),
+                depth = plain(target),
+                gas = breathing.coerceIn(0, gases - 1),
+            )
+        }
+        at = next
+    }
+    return levels
+}
+
+/** What the run is breathing where it stops being typed and starts being worked out. */
+internal fun carriedOf(run: Run): Int = run.switches.lastOrNull()?.let { gasIndexOf(it.second) } ?: 0
+
+/** Seconds in a hundredth of a minute, which is as fine as a written level is rounded. */
+private const val HUNDREDTHS_IN_MINUTE = 0.6
+
+private const val PER_HUNDRED = 100.0
+
 internal fun runtimeOf(run: Run): Int = run.depth.lastOrNull()?.first ?: 0
 
 /**
@@ -343,7 +406,7 @@ internal fun PlanForm(shaping: Shaping, settings: Settings?) {
     when (val shaped = shapedOf(shaping, descent, ascent)) {
         Shaped.Waiting -> Unit
         is Shaped.Wrong -> Refused(shaped.reason)
-        is Shaped.Ready -> Worked(shaped.run, ascent, last)
+        is Shaped.Ready -> Worked(shaped.run, shaping, ascent, last)
     }
     Aside(
         "Descending at ${plain(descent)} m a minute, rising at ${plain(ascent)}, shallowest stop " +
@@ -515,9 +578,30 @@ private fun Chosen(chosen: String, options: List<String>, onChoose: (Int) -> Uni
     }
 }
 
+/** The deed that writes the way up into the levels, with a word on what it leaves behind. */
+@Composable
+private fun Written(onWrite: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        Box(modifier = Modifier.width(LABEL))
+        Button(onClick = onWrite) { Text(ADD_THE_ASCENT) }
+        Text(
+            text = "The levels then hold the whole dive, and are yours to change.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
+/** What the deed that writes the ascent into the levels is called. */
+internal const val ADD_THE_ASCENT = "Add ascent"
+
 /** What the model makes of the levels once the way up is on the end of them. */
 @Composable
-private fun Worked(run: Run, ascentRate: Double, lastStop: Double) {
+private fun Worked(run: Run, shaping: Shaping, ascentRate: Double, lastStop: Double) {
     val tanks = run.sources.keys.withIndex().associate { (index, key) -> key to gasLabelOf(index) }
     when (val ascended = completeAscent(run, ascentRate, lastStop)) {
         is Ascended.Refused -> Refused(ascended.reason)
@@ -525,6 +609,15 @@ private fun Worked(run: Run, ascentRate: Double, lastStop: Double) {
             val whole = withAscent(run, ascended)
             val stops = stopsOf(ascended)
             Said("Stops", if (stops.isEmpty()) "none" else stops.joinToString(", ") { stopSaid(it) })
+            // Shown only where it would write something. A plan already ending at the surface has
+            // no way up left to add, and one edited to stop short of it has again. `GUI-43`.
+            val writing = ascentLevelsOf(run, ascended, ascentRate, shaping.gases.size)
+            if (writing.isNotEmpty()) {
+                Written {
+                    shaping.levels.removeAll { it.minutes.isBlank() && it.depth.isBlank() }
+                    shaping.levels.addAll(writing)
+                }
+            }
             Said("Runtime", spanOf(runtimeOf(whole).toDouble()))
             when (val evaluated = evaluate(whole)) {
                 is Evaluated.Refused -> Refused(evaluated.reason)

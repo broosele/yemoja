@@ -286,6 +286,11 @@ shows the stops, how long the whole dive takes, what gas it costs, the oxygen cl
 it objects to — a cylinder run dry, a mix too rich for the depth. The plan is not saved anywhere:
 it is a slate, not a logbook entry.
 
+**Add ascent** writes that way up into your levels, so you can take it apart. Each stop becomes a
+level like the ones you typed, on the cylinder Yemoja was breathing at the time, and from then on
+it is yours: lengthen a stop, cut one out, and the figures answer for what you left. The button is
+there whenever the plan does not yet reach the surface, and gone once it does.
+
 Under the levels are the cylinders. Say what is in each, and your breathing rate, its size and its
 fill if you want the gas worked out; **+** adds another, and each says how deep its mix may be
 breathed. With more than one, every level gains a box naming which cylinder it is breathed on, from

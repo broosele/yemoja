@@ -149,6 +149,75 @@ class SwitchesOfTest {
     }
 }
 
+/** The shaping a reader is left with once the deed has written the way up into it. */
+private fun pressed(shaping: Shaping): Shaping {
+    val run = assertIs<Shaped.Ready>(shaped(shaping)).run
+    val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
+    val after = Shaping()
+    after.levels.clear()
+    after.levels.addAll(shaping.levels)
+    after.gases.clear()
+    after.gases.addAll(shaping.gases)
+    after.gradientLow = shaping.gradientLow
+    after.gradientHigh = shaping.gradientHigh
+    after.levels.addAll(ascentLevelsOf(run, ascended, ASCENT, shaping.gases.size))
+    return after
+}
+
+class AscentLevelsOfTest {
+
+    @Test
+    fun `what is written reaches the surface and owes nothing more`() {
+        val after = pressed(shaping("25" to "40"))
+        assertEquals("0", after.levels.last().depth, "the plan ends where the dive does")
+        val run = assertIs<Shaped.Ready>(shaped(after)).run
+        assertIs<Evaluated.Done>(evaluate(run), "and it is a run the model answers for")
+        val again = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
+        assertEquals(emptyList(), stopsOf(again), "there is no way up left to add")
+        assertEquals(emptyList(), ascentLevelsOf(run, again, ASCENT, 1), "so the deed writes nothing")
+    }
+
+    @Test
+    fun `the whole dive is kept, stop for stop`() {
+        val before = shaping("25" to "40")
+        val run = assertIs<Shaped.Ready>(shaped(before)).run
+        val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
+        val written = assertIs<Shaped.Ready>(shaped(pressed(before))).run
+        // Rounded up to a hundredth of a minute a level, so the plan is never the shorter of the
+        // two: a stop a reader is handed must not be less than the one they were shown.
+        assertTrue(runtimeOf(written) >= ascended.depth.last().first, "$written")
+        assertTrue(runtimeOf(written) <= ascended.depth.last().first + written.depth.size, "rounding is slight")
+        assertEquals(stopsOf(ascended).map { it.metres }, stopsOf(ascended).map { it.metres })
+    }
+
+    @Test
+    fun `a switch the model made for itself is written as a level on that cylinder`() {
+        val carrying = shaping("25" to "40")
+        carrying.gases.add(Breathed(gas = "EAN50"))
+        val after = pressed(carrying)
+        val written = after.levels.drop(1)
+        assertTrue(written.any { it.gas == 1 }, "the deco gas the model switched to is kept")
+        assertTrue(written.first().gas == 0, "and the rise from the bottom is still on the bottom mix")
+        val run = assertIs<Shaped.Ready>(shaped(after)).run
+        assertIs<Evaluated.Done>(evaluate(run))
+    }
+
+    @Test
+    fun `a level that is exactly its own travel is a level`() {
+        // Surfacing is that level: the last stop to nought is a rise and no holding.
+        val rising = shaping("20" to "30", "1.67" to "15")
+        val run = assertIs<Shaped.Ready>(shaped(rising)).run
+        assertEquals(listOf(0 to 0.0, 100 to 30.0, 1200 to 30.0, 1300 to 15.0), run.depth)
+    }
+
+    @Test
+    fun `a dive that owes no stop is still walked to the surface`() {
+        val after = pressed(shaping("12" to "18"))
+        assertEquals("0", after.levels.last().depth)
+        assertIs<Evaluated.Done>(evaluate(assertIs<Shaped.Ready>(shaped(after)).run))
+    }
+}
+
 class StopsOfTest {
 
     @Test
