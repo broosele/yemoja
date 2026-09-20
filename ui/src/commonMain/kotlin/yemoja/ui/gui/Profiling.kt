@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -33,6 +36,7 @@ import yemoja.logic.Settings
 import yemoja.logic.Source
 import yemoja.logic.completeAscent
 import yemoja.logic.evaluate
+import yemoja.logic.maximumOperatingDepth
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -55,7 +59,24 @@ import kotlin.math.roundToInt
  *
  * Immutable.
  */
-internal data class Level(val minutes: String = "", val depth: String = "")
+internal data class Level(
+    val minutes: String = "",
+    val depth: String = "",
+    /** Which of the gases is breathed from this level on, by its place in the list. */
+    val gas: Int = 0,
+)
+
+/**
+ * Breathed is one cylinder as it is typed: what is in it, and what is known of its size and use.
+ *
+ * Immutable.
+ */
+internal data class Breathed(
+    val gas: String = "air",
+    val sac: String = "",
+    val size: String = "",
+    val fill: String = "",
+)
 
 /**
  * Shaping is the plan form while the tab holds it: the levels, what is breathed, and how
@@ -65,18 +86,22 @@ internal data class Level(val minutes: String = "", val depth: String = "")
  */
 internal class Shaping {
     val levels = mutableStateListOf(Level())
-    var gas: String by mutableStateOf("air")
+
+    /** The cylinders, in the order they are listed, which is the order they are named in. */
+    val gases = mutableStateListOf(Breathed())
+
     var gradientLow: String by mutableStateOf("")
     var gradientHigh: String by mutableStateOf("")
-
-    /** What the cylinder holds and how fast it is breathed, each empty until somebody says. */
-    var sac: String by mutableStateOf("")
-    var size: String by mutableStateOf("")
-    var fill: String by mutableStateOf("")
 
     /** Whether the form has been opened before, which decides whether it takes the settings. */
     var prefilled: Boolean = false
 }
+
+/** What the cylinder at [index] is called, which is what a reader sees of a key. */
+internal fun gasLabelOf(index: Int): String = "Gas ${index + 1}"
+
+/** The key the cylinder at [index] sits under, as a dive's own cylinders sit under keys. */
+internal fun gasKeyOf(index: Int): String = "g${index + 1}"
 
 /** Shaped is a run built from what was typed, or why there is none yet. */
 internal sealed class Shaped {
@@ -101,7 +126,7 @@ internal sealed class Shaped {
  * The run carries nothing: a plan in the calculations belongs to no dive and so follows none.
  */
 internal fun shapedOf(shaping: Shaping, descentRate: Double, ascentRate: Double): Shaped {
-    val levels = ArrayList<Pair<Double, Double>>()
+    val levels = ArrayList<Laid.Level>()
     for ((index, level) in shaping.levels.withIndex()) {
         if (level.minutes.isBlank() && level.depth.isBlank()) {
             if (shaping.levels.size == 1) return Shaped.Waiting
@@ -120,45 +145,82 @@ internal fun shapedOf(shaping: Shaping, descentRate: Double, ascentRate: Double)
                 "level ${index + 1} is metres, nought or more, and ${said(level.depth)} is not",
             )
         }
-        levels += minutes to depth
+        levels += Laid.Level(minutes, depth, level.gas)
     }
     if (levels.isEmpty()) return Shaped.Waiting
-    val gas = try {
-        Gas.parse(shaping.gas)
-    } catch (refused: ValueFormatException) {
-        return Shaped.Wrong(refused.message ?: "${said(shaping.gas)} is not a gas")
-    } catch (refused: IllegalArgumentException) {
-        return Shaped.Wrong(refused.message ?: "${said(shaping.gas)} is not a gas")
+    val sources = LinkedHashMap<String, Source>()
+    for ((index, breathed) in shaping.gases.withIndex()) {
+        val gas = try {
+            Gas.parse(breathed.gas)
+        } catch (refused: ValueFormatException) {
+            return Shaped.Wrong("${gasLabelOf(index)}: ${refused.message ?: "not a gas"}")
+        } catch (refused: IllegalArgumentException) {
+            return Shaped.Wrong("${gasLabelOf(index)}: ${refused.message ?: "not a gas"}")
+        }
+        sources[gasKeyOf(index)] = Source(
+            gas = gas,
+            sac = breathed.sac.trim().toDoubleOrNull(),
+            volume = breathed.size.trim().toDoubleOrNull(),
+            fill = breathed.fill.trim().toDoubleOrNull(),
+        )
     }
     val low = percentageOf(shaping.gradientLow) ?: return Shaped.Wrong(factorWrong("low", shaping.gradientLow))
     val high = percentageOf(shaping.gradientHigh) ?: return Shaped.Wrong(factorWrong("high", shaping.gradientHigh))
     if (low > high) {
         return Shaped.Wrong("the low gradient factor should not be above the high one")
     }
-    val depths = when (val laid = depthsOf(levels, descentRate, ascentRate)) {
+    val laid = depthsOf(levels, descentRate, ascentRate)
+    val points = when (laid) {
         is Laid.Points -> laid.points
         is Laid.Wrong -> return Shaped.Wrong(laid.reason)
     }
-    val source = Source(
-        gas = gas,
-        sac = shaping.sac.trim().toDoubleOrNull(),
-        volume = shaping.size.trim().toDoubleOrNull(),
-        fill = shaping.fill.trim().toDoubleOrNull(),
-    )
     return Shaped.Ready(
         Run(
-            depth = depths,
-            sources = mapOf(SOURCE to source),
+            depth = points,
+            sources = sources,
             gradientFactorLow = low,
             gradientFactorHigh = high,
-            switches = listOf(0 to SOURCE),
+            switches = switchesOf(levels, laid.begins, sources.size),
         ),
     )
 }
 
+/**
+ * The switches [levels] ask for: one at the start, and one wherever a level changes cylinder.
+ *
+ * **The first is always at nought.** A run saying nothing about what was breathed before its first
+ * switch is refused, and rightly: it is the gap a computer leaves when it logs only its changes.
+ * A level names the cylinder it is breathed on, so the first level names what the dive goes in on
+ * however the list is ordered. A level naming a cylinder that is no longer listed falls back to
+ * the one before it, the list being the reader's to shorten while they think. `LOGIC-37`.
+ *
+ * The ascent's own switches are not here: `completeAscent` works those out and hands them back,
+ * so a reader lists a deco gas and is switched to it without saying when.
+ */
+internal fun switchesOf(
+    levels: List<Laid.Level>,
+    begins: List<Int>,
+    gases: Int,
+): List<Pair<Int, String>> {
+    val switches = ArrayList<Pair<Int, String>>()
+    var breathing = ""
+    for ((index, level) in levels.withIndex()) {
+        val key = gasKeyOf(level.gas.coerceIn(0, gases - 1))
+        if (key == breathing) continue
+        switches += (if (switches.isEmpty()) 0 else begins[index]) to key
+        breathing = key
+    }
+    return switches
+}
+
 /** What laying the levels out came to: the points of the run, or why they will not lie. */
-private sealed class Laid {
-    class Points(val points: List<Pair<Int, Double>>) : Laid()
+internal sealed class Laid {
+
+    /** One level read from the form: how long, how deep, and which cylinder on. */
+    data class Level(val minutes: Double, val metres: Double, val gas: Int)
+
+    /** The points of the run, and the second each level begins to be travelled to. */
+    class Points(val points: List<Pair<Int, Double>>, val begins: List<Int>) : Laid()
 
     class Wrong(val reason: String) : Laid()
 }
@@ -170,16 +232,18 @@ private sealed class Laid {
  * that ends it: two points at one second is not a run the model will take.
  */
 private fun depthsOf(
-    levels: List<Pair<Double, Double>>,
+    levels: List<Laid.Level>,
     descentRate: Double,
     ascentRate: Double,
 ): Laid {
     val points = ArrayList<Pair<Int, Double>>()
+    val begins = ArrayList<Int>()
     points += 0 to 0.0
     var second = 0
     var depth = 0.0
     for ((index, level) in levels.withIndex()) {
         val (minutes, target) = level
+        begins += second
         val rate = if (target > depth) descentRate else ascentRate
         val travel = ceil(abs(target - depth) / rate * SECONDS_IN_MINUTE).toInt()
         val whole = (minutes * SECONDS_IN_MINUTE).roundToInt()
@@ -197,7 +261,7 @@ private fun depthsOf(
         points += second to target
         depth = target
     }
-    return Laid.Points(points)
+    return Laid.Points(points, begins)
 }
 
 /**
@@ -273,12 +337,9 @@ internal fun PlanForm(shaping: Shaping, settings: Settings?) {
     Heading("Dive plan")
     Aside("Each level is reached at the rate below and held for the rest of its minutes.")
     Levels(shaping)
-    Field("Gas", shaping.gas, "") { shaping.gas = it }
+    Gases(shaping)
     Field("GF low", shaping.gradientLow, "%") { shaping.gradientLow = it }
     Field("GF high", shaping.gradientHigh, "%") { shaping.gradientHigh = it }
-    Field("SAC", shaping.sac, "L/min") { shaping.sac = it }
-    Field("Cylinder size", shaping.size, "L") { shaping.size = it }
-    Field("Fill", shaping.fill, "bar") { shaping.fill = it }
     when (val shaped = shapedOf(shaping, descent, ascent)) {
         Shaped.Waiting -> Unit
         is Shaped.Wrong -> Refused(shaped.reason)
@@ -320,6 +381,14 @@ private fun Levels(shaping: Shaping) {
                     after = "m",
                 )
             }
+            // Which cylinder, where there is a choice: a level breathes one from its start, and
+            // one cylinder needs no saying. The ascent's own switches are the model's. `GUI-43`.
+            if (shaping.gases.size > 1) {
+                Chosen(
+                    chosen = gasLabelOf(level.gas.coerceIn(0, shaping.gases.size - 1)),
+                    options = shaping.gases.indices.map { gasLabelOf(it) },
+                ) { chose -> shaping.levels[index] = level.copy(gas = chose) }
+            }
             // The last row is never taken out: a plan with no levels is not one.
             if (shaping.levels.size > 1) {
                 IconButton(onClick = { shaping.levels.removeAt(index) }) {
@@ -332,14 +401,116 @@ private fun Levels(shaping: Shaping) {
             }
         }
     }
+    Added("Add a level") { shaping.levels.add(Level(gas = shaping.levels.lastOrNull()?.gas ?: 0)) }
+}
+
+/**
+ * The cylinders, each a row: what is in it, how fast it is breathed, and what it holds.
+ *
+ * How deep the mix may be breathed is said beside it, from the model rather than from a limit of
+ * this form's own, so what a reader is told here and what the model objects to are one figure.
+ * `LOGIC-39`.
+ */
+@Composable
+private fun Gases(shaping: Shaping) {
+    for ((index, breathed) in shaping.gases.withIndex()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(GAP),
+        ) {
+            Text(
+                text = gasLabelOf(index),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline,
+                textAlign = TextAlign.End,
+                modifier = Modifier.width(LABEL),
+            )
+            Box(modifier = Modifier.width(LEVEL)) {
+                Compact(
+                    value = breathed.gas,
+                    onChange = { shaping.gases[index] = breathed.copy(gas = it) },
+                )
+            }
+            Box(modifier = Modifier.width(LEVEL)) {
+                Compact(
+                    value = breathed.sac,
+                    onChange = { shaping.gases[index] = breathed.copy(sac = it) },
+                    after = "L/min",
+                )
+            }
+            Box(modifier = Modifier.width(LEVEL)) {
+                Compact(
+                    value = breathed.size,
+                    onChange = { shaping.gases[index] = breathed.copy(size = it) },
+                    after = "L",
+                )
+            }
+            Box(modifier = Modifier.width(LEVEL)) {
+                Compact(
+                    value = breathed.fill,
+                    onChange = { shaping.gases[index] = breathed.copy(fill = it) },
+                    after = "bar",
+                )
+            }
+            Text(
+                text = deepestSaid(breathed.gas),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline,
+            )
+            // The first is never taken out: it is what the dive goes in on.
+            if (index > 0) {
+                IconButton(onClick = { shaping.gases.removeAt(index) }) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Take out ${gasLabelOf(index)}",
+                        tint = MaterialTheme.colorScheme.outline,
+                    )
+                }
+            }
+        }
+    }
+    Added("Add a gas") { shaping.gases.add(Breathed()) }
+}
+
+/** A deed that adds a row, under the rows it adds to. */
+@Composable
+private fun Added(said: String, onAdd: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
         Box(modifier = Modifier.width(LABEL))
-        IconButton(onClick = { shaping.levels.add(Level()) }) {
+        IconButton(onClick = onAdd) {
             Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = "Add a level",
+                contentDescription = said,
                 tint = MaterialTheme.colorScheme.outline,
             )
+        }
+    }
+}
+
+/** One of [options], chosen from a menu that names them. */
+@Composable
+private fun Chosen(chosen: String, options: List<String>, onChoose: (Int) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { picking = true }) {
+            Text(chosen, style = MaterialTheme.typography.bodyMedium)
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        }
+        Menu(expanded = picking, onDismissRequest = { picking = false }) {
+            for ((index, option) in options.withIndex()) {
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onChoose(index)
+                        picking = false
+                    },
+                )
+            }
         }
     }
 }
@@ -347,6 +518,7 @@ private fun Levels(shaping: Shaping) {
 /** What the model makes of the levels once the way up is on the end of them. */
 @Composable
 private fun Worked(run: Run, ascentRate: Double, lastStop: Double) {
+    val tanks = run.sources.keys.withIndex().associate { (index, key) -> key to gasLabelOf(index) }
     when (val ascended = completeAscent(run, ascentRate, lastStop)) {
         is Ascended.Refused -> Refused(ascended.reason)
         is Ascended.Done -> {
@@ -359,10 +531,10 @@ private fun Worked(run: Run, ascentRate: Double, lastStop: Double) {
                 is Evaluated.Done -> {
                     // The stops are shown above, depth by depth; the figure that says only how
                     // deep they begin would be the same answer twice.
-                    for (figure in runFiguresOf(evaluated, mapOf(SOURCE to "Gas"), stops = false)) {
+                    for (figure in runFiguresOf(evaluated, tanks, stops = false)) {
                         Said(figure.label, figure.text, worked = true)
                     }
-                    for (finding in findingsSaidOf(evaluated)) {
+                    for (finding in findingsSaidOf(evaluated, tanks)) {
                         Said(finding.label, finding.text, wrong = finding.wrong)
                     }
                 }
@@ -397,6 +569,25 @@ private fun Said(label: String, said: String, worked: Boolean = false, wrong: Bo
     }
 }
 
+/**
+ * How deep [typed] may be breathed, as the row says it, or nothing where it is not a gas.
+ *
+ * The model's own limit, `LOGIC-39`, rather than a rule of this form's: a reader placing a deco gas
+ * by what it says here and the model objecting to the plan they placed would be one figure kept in
+ * two places.
+ */
+private fun deepestSaid(typed: String): String {
+    val gas = try {
+        Gas.parse(typed)
+    } catch (refused: ValueFormatException) {
+        return ""
+    } catch (refused: IllegalArgumentException) {
+        return ""
+    }
+    val deepest = maximumOperatingDepth(gas) ?: return ""
+    return "to ${plain((deepest * 10).roundToInt() / 10.0)} m"
+}
+
 /** A percentage from 1 to 100 as a proportion, or absent where [typed] is not one. `GUI-41`. */
 private fun percentageOf(typed: String): Double? =
     typed.trim().removeSuffix("%").trim().toDoubleOrNull()?.takeIf { it >= 1 && it <= PERCENT }
@@ -415,9 +606,6 @@ private fun said(typed: String): String = if (typed.isBlank()) "nothing" else "\
 /** A length of time as a clock reads it, minutes and seconds. */
 private fun clockOf(seconds: Int): String =
     "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
-
-/** What the one cylinder of a planned run is keyed as. */
-private const val SOURCE = "g1"
 
 private const val SECONDS_IN_MINUTE = 60.0
 

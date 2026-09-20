@@ -26,6 +26,14 @@ private fun shaping(vararg levels: Pair<String, String>): Shaping {
     return shaping
 }
 
+/** The same, with a second cylinder of [gas] and the last level breathed on it. */
+private fun switching(vararg levels: Pair<String, String>, gas: String = "EAN50"): Shaping {
+    val shaping = shaping(*levels)
+    shaping.gases.add(Breathed(gas = gas))
+    shaping.levels[shaping.levels.lastIndex] = shaping.levels.last().copy(gas = 1)
+    return shaping
+}
+
 private fun shaped(shaping: Shaping): Shaped = shapedOf(shaping, DESCENT, ASCENT)
 
 class ShapedOfTest {
@@ -82,17 +90,62 @@ class ShapedOfTest {
     @Test
     fun `what is breathed is read as a gas, and the cylinder is taken where it is given`() {
         val nitrox = shaping("20" to "30")
-        nitrox.gas = "EAN32"
-        nitrox.sac = "18"
-        nitrox.size = "12"
-        nitrox.fill = "200"
+        nitrox.gases[0] = Breathed(gas = "EAN32", sac = "18", size = "12", fill = "200")
         val run = assertIs<Shaped.Ready>(shaped(nitrox)).run
         assertEquals(32, run.sources.getValue("g1").gas.percentO2)
         assertEquals(18.0, run.sources.getValue("g1").sac)
         assertEquals(12.0, run.sources.getValue("g1").volume)
         assertEquals(200.0, run.sources.getValue("g1").fill)
-        nitrox.gas = "nonsense"
-        assertIs<Shaped.Wrong>(shaped(nitrox))
+        nitrox.gases[0] = Breathed(gas = "nonsense")
+        assertTrue("Gas 1" in assertIs<Shaped.Wrong>(shaped(nitrox)).reason)
+    }
+}
+
+class SwitchesOfTest {
+
+    @Test
+    fun `one cylinder is switched to at the start and never again`() {
+        val run = assertIs<Shaped.Ready>(shaped(shaping("20" to "30", "10" to "20"))).run
+        assertEquals(listOf(0 to "g1"), run.switches)
+    }
+
+    @Test
+    fun `a level on another cylinder is switched to where that level begins`() {
+        val run = assertIs<Shaped.Ready>(shaped(switching("20" to "30", "10" to "21"))).run
+        // The first level ends at twenty minutes, which is where the second begins to be reached.
+        assertEquals(listOf(0 to "g1", 1200 to "g2"), run.switches)
+        assertEquals(2, run.sources.size)
+        assertEquals(50, run.sources.getValue("g2").gas.percentO2)
+    }
+
+    @Test
+    fun `the first switch is at nought whichever cylinder the first level names`() {
+        val shaping = shaping("20" to "30")
+        shaping.gases.add(Breathed(gas = "EAN32"))
+        shaping.levels[0] = shaping.levels[0].copy(gas = 1)
+        val run = assertIs<Shaped.Ready>(shaped(shaping)).run
+        assertEquals(listOf(0 to "g2"), run.switches, "a run must say what it goes in on")
+    }
+
+    @Test
+    fun `a level naming a cylinder that is no longer listed falls back rather than refusing`() {
+        val shaping = switching("20" to "30", "10" to "21")
+        shaping.gases.removeAt(1)
+        val run = assertIs<Shaped.Ready>(shaped(shaping)).run
+        assertEquals(listOf(0 to "g1"), run.switches)
+    }
+
+    @Test
+    fun `a deco gas nobody switched to is switched to on the way up, by the model`() {
+        // Listed and left: the bottom stays on air, and the ascent takes the richer mix where it
+        // may. That is what a reader means by carrying a deco gas.
+        val listed = shaping("25" to "40")
+        listed.gases.add(Breathed(gas = "EAN50"))
+        val run = assertIs<Shaped.Ready>(shaped(listed)).run
+        assertEquals(listOf(0 to "g1"), run.switches, "nothing of theirs switches")
+        val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
+        assertEquals(listOf("g2"), ascended.switches.map { it.second }, "the model switches itself")
+        assertIs<Evaluated.Done>(evaluate(withAscent(run, ascended)))
     }
 }
 

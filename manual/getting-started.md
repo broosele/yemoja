@@ -280,12 +280,18 @@ would have emptied the cylinder — the number is left as it is so you can see b
 
 **Dive plan** works out a whole dive: type each level as how long and how deep — the minutes
 counting from when you leave the depth before it, so twenty-five minutes at forty metres includes
-going down — and add levels with **+**. Say what you are breathing, and your breathing rate,
-cylinder size and fill if you want the gas worked out. The gradient factors start as the defaults
-you chose in [Settings](settings.md). There is nothing to press: as you type, Yemoja works out the
-way up and shows the stops, how long the whole dive takes, what gas it costs, the oxygen clocks,
-and anything it objects to — a cylinder run dry, a mix too rich for the depth. The plan is not
-saved anywhere: it is a slate, not a logbook entry.
+going down — and add levels with **+**. The gradient factors start as the defaults you chose in
+[Settings](settings.md). There is nothing to press: as you type, Yemoja works out the way up and
+shows the stops, how long the whole dive takes, what gas it costs, the oxygen clocks, and anything
+it objects to — a cylinder run dry, a mix too rich for the depth. The plan is not saved anywhere:
+it is a slate, not a logbook entry.
+
+Under the levels are the cylinders. Say what is in each, and your breathing rate, its size and its
+fill if you want the gas worked out; **+** adds another, and each says how deep its mix may be
+breathed. With more than one, every level gains a box naming which cylinder it is breathed on, from
+that level until the next says otherwise, so the first level is what you go in on. A decompression
+gas needs no level of its own: list it and leave it, and the way up switches to the richest mix
+each depth allows.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
 decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts

@@ -419,8 +419,21 @@ once and corrected. The numbers stay unused rather than being given to something
   how long and how deep, the minutes counting from leaving the depth before, so a level is travelled
   to at the descent or ascent rate and held for what is left of them — a level with less time than
   the travel takes is refused with the arithmetic, as a plan on a dive is. `GUI-41`. What is
-  breathed is one gas, with its rate, size and fill where they are known, and the two gradient
-  factors are prefilled from the settings.
+  breathed is a list of cylinders, each with its rate, size and fill where they are known, and the
+  two gradient factors are prefilled from the settings.
+
+  **A level names the cylinder it is breathed on, and that is the whole of switching.** A chooser
+  appears on a level only where there is more than one cylinder to choose, and the switch is
+  written where that level begins. The first switch is always at nought, whichever cylinder the
+  first level names: a run that says nothing about what it went in on is refused, and rightly.
+  `LOGIC-37`. A level naming a cylinder the reader has since taken out falls back to the one
+  before it rather than refusing, a list being theirs to shorten while they think.
+
+  **A deco gas is listed and left.** `completeAscent` moves to the richest mix each depth allows,
+  so a reader who adds EAN50 and touches no level gets the switch to it on the way up without
+  saying when. How deep each mix may be breathed is said beside it, from the model's own
+  `maximumOperatingDepth` rather than from a limit of this form's: one figure, in one place, so a
+  reader placing a gas by what they are told here cannot be contradicted by the evaluation.
 
   **The way up is added without being asked for.** A calculation answers as it is typed, as the
   other two do, so there is no deed to press: the form completes the ascent, evaluates the levels
