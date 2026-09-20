@@ -206,7 +206,8 @@ command* box, which [settings.md](settings.md#the-agent-command) explains. Until
 sparkle button is greyed, and resting the pointer on it says so.
 
 **Press the sparkle button** at the right of the tabs, on whichever tab you are on; it says *Ask
-an agent* when the pointer rests on it. A panel opens beside it and starts your agent, which takes
+an agent* when the pointer rests on it, and closes the panel again when you press it a second
+time. A panel opens beside it and starts your agent, which takes
 a few seconds, and stays there as you move between tabs, so a dive the agent names can be opened
 and read while you carry on talking. The panel is headed with the agent's name. Once the agent is
 running, type a question and press Enter, or **Ask**; Shift and Enter starts a new line. While it

@@ -382,7 +382,13 @@ internal fun Application(universe: Universe?, platform: Platform) {
     CompositionLocalProvider(LocalChanger provides changer) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Tabs(tabs, tab, onChoose = { tab = it }, unasked = unasked) { talking = true }
+                Tabs(
+                    tabs = tabs,
+                    chosen = tab,
+                    onChoose = { tab = it },
+                    unasked = unasked,
+                    asking = talking,
+                ) { talking = !talking }
                 Row(modifier = Modifier.weight(1f)) {
                     Box(modifier = Modifier.weight(1f)) {
                         when {
@@ -421,7 +427,6 @@ internal fun Application(universe: Universe?, platform: Platform) {
                             onReview = { tab = tabs.first() },
                             onTurn = { changer.changed() },
                             onFollow = follow,
-                            onClose = { talking = false },
                         )
                     }
                 }
@@ -476,6 +481,8 @@ private fun Tabs(
     onChoose: (Tab) -> Unit,
     /** Why the agent cannot be asked, or absent where it can. */
     unasked: String?,
+    /** Whether the panel is open, which is what the button would shut. */
+    asking: Boolean,
     onAsk: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -498,14 +505,16 @@ private fun Tabs(
                 }
             }
             // On every tab rather than on home, since a question comes up wherever the reader
-            // is. An icon, so the row stays the tabs' own; its name is said over it while the
-            // pointer rests there, and the reason instead while it is greyed. `GUI-38`.
-            Explained(unasked ?: ASK_AN_AGENT) {
+            // is. An icon, so the row stays the tabs' own; what pressing it would do is said over
+            // it while the pointer rests there, and the reason instead while it is greyed. The
+            // one button opens the panel and shuts it: the same press either way. `GUI-38`.
+            val said = if (asking) CLOSE_THE_AGENT else ASK_AN_AGENT
+            Explained(unasked ?: said) {
                 IconButton(
                     onClick = onAsk,
                     enabled = unasked == null,
                     modifier = Modifier.padding(horizontal = GAP),
-                ) { Icon(Icons.Filled.AutoAwesome, contentDescription = ASK_AN_AGENT) }
+                ) { Icon(Icons.Filled.AutoAwesome, contentDescription = said) }
             }
         }
         HorizontalDivider()
@@ -3170,3 +3179,6 @@ internal val HALF = 4.dp
 
 /** What the agent button is called, said over it since it shows only an icon. `GUI-38`. */
 private const val ASK_AN_AGENT = "Ask an agent"
+
+/** What the same button does while the panel is open, which is shut it. */
+private const val CLOSE_THE_AGENT = "Close the agent panel"

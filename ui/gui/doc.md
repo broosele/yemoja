@@ -698,8 +698,11 @@ once and corrected. The numbers stay unused rather than being given to something
   logbook open, a platform that hosts none, or no command set — and then says why instead, naming
   the settings where the command is set, so a reader who cannot press it learns where to go
   without leaving their tab. The icon is Material's own, from the set the interface already draws
-  on. Once opened the panel keeps a fixed width beside whichever tab is showing, and closes from
-  its own *Close*.
+  on. Once opened the panel keeps a fixed width beside whichever tab is showing, and the same
+  button shuts it: one press opens, the next closes, and what the press would do is what the
+  pointer is told. A *Close* of its own was taken out once the button became a toggle — two ways
+  to shut one panel, one of them where the panel is and one where the button is, is a choice a
+  reader should not have to make.
 
   **Opening the panel starts the agent.** The button that opens it is greyed until a command is
   set, so by the time the panel is open there is nothing a *Start* of its own would wait for, and
@@ -708,7 +711,7 @@ once and corrected. The numbers stay unused rather than being given to something
   been mended.
 
   **What it holds, top to bottom**: a title naming the agent the command names, *Ask Claude*,
-  with *Stop* beside it — *Start* after a stop or a failed start — and *Close*; the conversation, a
+  with *Stop* beside it — *Start* after a stop or a failed start; the conversation, a
   view of its own for copying; what the stance says while an agent is starting or thinking; how
   much is staged and the deed to review it, where anything is; and what to ask, with the two boxes
   side by side to the left of *Ask*, drawn small so that they fit there. *Ask* is live only while an agent waits to be asked, and Enter presses it,

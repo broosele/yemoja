@@ -145,7 +145,6 @@ internal fun Panel(
      */
     onTurn: () -> Unit,
     onFollow: (String) -> Unit,
-    onClose: () -> Unit,
 ) {
     val talk = remember { Talk() }
     val conversation = remember { conversing({ talk.writing }, { talk.direct }) }
@@ -166,7 +165,7 @@ internal fun Panel(
     val scroll = rememberScrollState()
     LaunchedEffect(talk.exchanges) { scroll.scrollTo(scroll.maxValue) }
     Column(modifier = Modifier.width(PANEL).fillMaxHeight().padding(GAP)) {
-        Heading(talk, conversation, scope, command, onClose)
+        Heading(talk, conversation, scope, command)
         HorizontalDivider()
         // A view of its own, so what is copied out of a conversation is the conversation.
         // `GUI-36`.
@@ -207,13 +206,7 @@ internal fun Panel(
  * running, so the row does not change shape as the agent comes and goes.
  */
 @Composable
-private fun Heading(
-    talk: Talk,
-    conversation: Conversation,
-    scope: CoroutineScope,
-    command: String,
-    onClose: () -> Unit,
-) {
+private fun Heading(talk: Talk, conversation: Conversation, scope: CoroutineScope, command: String) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = "Ask ${agentOf(command) ?: "the agent"}",
@@ -228,7 +221,6 @@ private fun Heading(
         } else {
             TextButton(onClick = { stop(talk, conversation) }) { Text("Stop") }
         }
-        TextButton(onClick = onClose) { Text("Close") }
     }
 }
 
