@@ -357,12 +357,18 @@ private fun walked(
             )
         }
         firstStop = firstStopAfter(tissues, firstStop, model, surface)
-        val factor = gradientFactorAt(ambient, firstStop, surface, model.low, model.high)
-        val ceiling = tissues.ceiling(factor)
+        val allowed = allowedDepthOf(tissues, firstStop, model, density, surface)
+        val factor = gradientFactorAt(
+            ambientAt(allowed, density, surface),
+            firstStop,
+            surface,
+            model.low,
+            model.high,
+        )
         seconds += point.second
-        ceilings += depthAt(ceiling, density, surface)
+        ceilings += allowed
 
-        if (ceiling <= surface) {
+        if (allowed <= 0) {
             tissues.noDecompressionSeconds(breathing.mixAt(point.second), ambient, surface, factor)
                 ?.let { limits += point.second to it }
         }
@@ -385,15 +391,15 @@ private fun walked(
         }
         // One finding a crossing, not one a sample: a diver who stays above the ceiling for ten
         // minutes has made one mistake, and ten lines of it would bury the rest.
-        if (ambient < ceiling && !above) {
+        if (point.metres < allowed && !above) {
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "above the ceiling: ${metres(depthAt(ceiling, density, surface))} was allowed" +
+                "above the ceiling: ${metres(allowed)} was allowed" +
                     " and ${metres(point.metres)} was taken",
             )
         }
-        above = ambient < ceiling
+        above = point.metres < allowed
         val oxygen = breathing.mixAt(point.second).fractionO2 * ambient
         if (oxygen > MOST_OXYGEN && !rich) {
             findings += Finding(
@@ -517,8 +523,7 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
         }
         val ambient = ambientAt(metres, density, surface)
         firstStop = firstStopAfter(tissues, firstStop, model, surface)
-        val factor = gradientFactorAt(ambient, firstStop, surface, model.low, model.high)
-        val allowed = stopFor(depthAt(tissues.ceiling(factor), density, surface), lastStop)
+        val allowed = allowedDepthOf(tissues, firstStop, model, density, surface, lastStop)
         val target = if (allowed < metres) allowed else metres
         val seconds = if (target < metres) {
             (((metres - target) / metresAMinute) * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
@@ -543,6 +548,48 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
     }
     return Ascended.Done(points, switches)
 }
+
+/**
+ * The shallowest depth these tissues may be brought to, in metres, on the steps [lastStop] asks
+ * for, or the bare depth where it is nought.
+ *
+ * **The factor is read at the depth being asked about, not the one being held.** A gradient factor
+ * slides with depth, so a diver at three metres who asks whether they may surface is asking what
+ * the model allows at the surface, which is the high factor — as `manual/decompression.md` says it
+ * is. Reading the factor where the diver stands instead judged every ascent by a stricter number
+ * than the one that applies where they are going, and stops came out half as long again as they
+ * should be.
+ *
+ * So the answer is a fixed point: the shallowest depth whose own factor permits being there. It
+ * climbs from the surface and settles in a step or two, there being one depth for each stop.
+ */
+private fun allowedDepthOf(
+    tissues: Tissues,
+    firstStop: Double,
+    model: Model,
+    density: Double,
+    surface: Double,
+    lastStop: Double = 0.0,
+): Double {
+    var candidate = 0.0
+    repeat(STEPS_TO_SETTLE) {
+        val factor = gradientFactorAt(
+            ambientAt(candidate, density, surface),
+            firstStop,
+            surface,
+            model.low,
+            model.high,
+        )
+        val needed = depthAt(tissues.ceiling(factor), density, surface)
+            .let { if (lastStop > 0) stopFor(it, lastStop) else it }
+        if (needed <= candidate) return candidate
+        candidate = needed
+    }
+    return candidate
+}
+
+/** How many times the depth allowed is asked for before it is taken to have settled. */
+private const val STEPS_TO_SETTLE = 12
 
 /**
  * The depth an ascent may come up to, in metres: the ceiling rounded to the threes a diver counts

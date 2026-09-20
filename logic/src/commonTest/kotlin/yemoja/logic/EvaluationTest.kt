@@ -513,6 +513,43 @@ class EvaluationTest {
     }
 
     @Test
+    fun `an ascent surfaces as soon as the model allows, and no sooner`() {
+        // The rule the ascent is held to: the factor that decides whether a diver may surface is
+        // the one at the surface, the high one. Reading it where the diver stands instead made
+        // every shallow stop longer than it should be, by a factor nobody chose.
+        val bottom = Run(
+            depth = listOf(0 to 0.0, 133 to 40.0, 1633 to 40.0),
+            sources = mapOf("g1" to Source(Gas.AIR)),
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+        )
+        val ascent = assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0))
+
+        fun findingsOf(depth: List<Pair<Int, Double>>): List<Finding> =
+            assertIs<Evaluated.Done>(
+                evaluate(
+                    Run(depth, bottom.sources, 0.3, 0.7, switches = bottom.switches),
+                ),
+            ).findings
+
+        val whole = bottom.depth + ascent.depth
+        assertTrue(
+            findingsOf(whole).none { "ceiling" in it.said },
+            "what the ascent wrote is what the model allows: ${findingsOf(whole)}",
+        )
+
+        // A minute less at the last stop, surfacing a minute early, and the model objects.
+        val surfaced = whole.last().first
+        val hurried = whole.filter { it.first < surfaced - 80 } +
+            listOf(surfaced - 80 to 3.0, surfaced - 60 to 0.0)
+        assertTrue(
+            findingsOf(hurried).any { "ceiling" in it.said },
+            "a minute early should break the ceiling: ${findingsOf(hurried)}",
+        )
+    }
+
+    @Test
     fun `a finding about the dive rather than a cylinder names none`() {
         val ceiling = done(planned(DEEP)).findings.single { "ceiling" in it.said }
 

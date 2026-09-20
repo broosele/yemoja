@@ -600,6 +600,20 @@ To settle when we discuss architecture and features:
   nothing — the two figures saying opposite things. A computer holds the low factor back until a
   stop exists, and the ascent writer follows the same rule, so it adds no stop a plan does not owe.
 
+  **The factor is read at the depth being ascended to, not the depth being held.** Taken from the
+  depth held, the last step of an ascent is judged at the factor for three metres rather than the
+  one for the surface, and `manual/decompression.md` promises the high factor applies at the
+  surface. The factor depends on the depth and the depth allowed depends on the factor, so the
+  shallowest depth a run may take is found by climbing from the surface until it settles: try
+  nought, read the factor there, ask the compartments how deep they hold, and take that as the
+  next candidate. A step or two does it, the two moving the same way.
+
+  Reading it at the held depth roughly doubled the stops a sliding pair asked for, and nothing
+  caught it because the schedules had never been checked against a published one — only the
+  no-decompression limits had. Forty metres for twenty-five minutes on air is sixteen minutes of
+  stops at 100/100, which the tables agree with; at 30/70 it was sixty minutes and is forty-six
+  now. Equal factors are unchanged, there being no slide to read at either end of.
+
   **A finding is one to a crossing, not one to a sample.** Ten minutes spent above the ceiling is
   one mistake, and ten identical lines would bury everything else said about the dive. `Finding`
   carries a moment, a severity and a sentence; it is never a refusal, so a profile that breaks its
