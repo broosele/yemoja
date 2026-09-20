@@ -113,9 +113,24 @@ enum class Refusal {
  *
  * Immutable.
  */
-class Finding(val second: Int, val severity: Severity, val said: String) {
+class Finding(
+    val second: Int,
+    val severity: Severity,
+    val said: String,
+    /**
+     * The cylinder it is about, under the key its run holds it by, or null where it is about the
+     * dive rather than a cylinder.
+     *
+     * **Named rather than named in the sentence.** A key is what a run calls a cylinder, not what
+     * a reader calls one: on a dive it is the user's own word, and in a calculation it is
+     * machinery. So the sentence says what happened and this says what it happened to, and
+     * whatever shows it supplies the name it shows elsewhere. `GUI-40`.
+     */
+    val source: String? = null,
+) {
 
-    override fun toString(): String = "${second}s $severity: $said"
+    override fun toString(): String =
+        "${second}s $severity: ${source?.let { "$it " }.orEmpty()}$said"
 }
 
 /** How much a [Finding] matters. */
@@ -355,7 +370,7 @@ private fun walked(
             val left = fill.gauge - (used[key] ?: 0.0) / fill.volume
             gauges.getValue(key) += left
             if (left <= 0 && dry.add(key)) {
-                findings += Finding(point.second, Severity.WARNING, "$key is empty by here")
+                findings += Finding(point.second, Severity.WARNING, "runs out of gas by here", key)
             }
         }
         breathedCns += oxygen.percentCns
@@ -386,6 +401,7 @@ private fun walked(
                 Severity.WARNING,
                 "the oxygen in ${breathing.mixAt(point.second)} is at ${bar(oxygen)} here," +
                     " over the ${bar(MOST_OXYGEN)} a diver plans to",
+                breathing.keyAt(point.second),
             )
         }
         rich = oxygen > MOST_OXYGEN

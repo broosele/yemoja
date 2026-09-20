@@ -120,32 +120,37 @@ internal fun runFiguresOf(
 /**
  * What the model objects to, each as a line: when it happened, and what it is.
  *
- * Nothing where it objects to nothing, which is what a plan is adjusted until it says. A warning
- * reads as a value that would not read does, in the error colour, because both are the screen
- * telling a reader that something here is wrong. `GUI-8`.
+ * A finding about a cylinder is named by [tanks], falling back to the key the run holds it by,
+ * which is what a reader of a dive already sees on its gas sources. Nothing where it objects to
+ * nothing, which is what a plan is adjusted until it says. A warning reads as a value that would
+ * not read does, in the error colour, because both are the screen telling a reader that something
+ * here is wrong. `GUI-8`.
  */
-internal fun findingsSaidOf(evaluated: Evaluated.Done): List<Shown> =
+internal fun findingsSaidOf(
+    evaluated: Evaluated.Done,
+    tanks: Map<String, String> = emptyMap(),
+): List<Shown> =
     evaluated.findings.map { finding ->
+        val named = finding.source?.let { "${tanks[it] ?: it} " }.orEmpty()
         Shown(
             atSaid(finding.second),
-            listOf(Part(finding.said)),
+            listOf(Part(named + finding.said)),
             wrong = finding.severity == Severity.WARNING,
             worked = true,
         )
     }
 
-/**
- * A run the model would not answer for, as a reader is told anything it cannot work out, or null
- * where there is nothing worth saying.
- *
- * **A recording is told only of a fault.** Most carry nothing to work from — a computer writes no
- * gradient factors — and a red line under every dive would say only that the model was not asked,
- * which teaches a reader to skip the place a real fault appears. A cycle somebody made by hand or
- * a run whose gas nothing names is a different thing, and is said wherever it is found.
- *
- * **A plan is told of both**, because a plan exists to be answered and one that cannot be has
- * something missing that its writer meant to supply.
- */
+/** The findings of a dive's run, its cylinders named as the rest of the dive names them. */
+internal fun findingsSaidOf(dive: Item, profile: Item, evaluated: Evaluated.Done): List<Shown> {
+    val sources = sourcesOf(dive, profile)
+    return findingsSaidOf(
+        evaluated,
+        evaluated.findings.mapNotNull { it.source }.distinct().associateWith { key ->
+            sources[key]?.let { entryLabelOf(key, it) } ?: key
+        },
+    )
+}
+
 internal fun refusedSaidOf(refused: Evaluated.Refused, planned: Boolean): Shown? {
     if (!planned && refused.why != Refusal.FAULTY) return null
     return Shown("Decompression", listOf(Part(refused.reason)), wrong = true)

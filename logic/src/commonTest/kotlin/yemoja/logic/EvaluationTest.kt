@@ -224,7 +224,7 @@ class EvaluationTest {
                     "start_pressure": 200}""",
             ),
         )
-        val empty = evaluated.findings.single { "empty" in it.said }
+        val empty = evaluated.findings.single { "runs out" in it.said }
 
         assertEquals(600, empty.second)
         assertEquals(Severity.WARNING, empty.severity)
@@ -459,6 +459,32 @@ class EvaluationTest {
         assertTrue("no depths" in assertIs<Evaluated.Refused>(
             evaluate(Run(emptyList(), mapOf("g1" to Source(Gas.AIR)), 0.3, 0.7)),
         ).reason)
+    }
+
+    @Test
+    fun `a finding about a cylinder says which, apart from the sentence`() {
+        val evaluated = done(
+            planned(
+                """"gas_switches": [[0, "*g1"]], "depth": [[0, 0], [90, 40], [600, 40]]""",
+                sources = """"g1": {"gas_type": "EAN50", "sac": 25, "volume": 3,
+                    "start_pressure": 100}""",
+            ),
+        )
+        val dry = evaluated.findings.single { "runs out" in it.said }
+        val rich = evaluated.findings.single { "oxygen" in it.said }
+
+        assertEquals("g1", dry.source, "which cylinder, for whatever names cylinders")
+        assertEquals("g1", rich.source)
+        // The key is a run's word for a cylinder, not a reader's, so it stays out of the sentence.
+        assertTrue("g1" !in dry.said, dry.said)
+        assertTrue("g1" !in rich.said, rich.said)
+    }
+
+    @Test
+    fun `a finding about the dive rather than a cylinder names none`() {
+        val ceiling = done(planned(DEEP)).findings.single { "ceiling" in it.said }
+
+        assertEquals(null, ceiling.source)
     }
 
     @Test

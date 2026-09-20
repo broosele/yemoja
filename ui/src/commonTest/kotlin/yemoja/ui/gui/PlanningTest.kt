@@ -136,7 +136,23 @@ class PlanningTest {
         // This plan runs its cylinder dry as well, and that is said first because it happens
         // first: the findings are in the order a diver would meet them.
         assertTrue(findings.any { "ceiling" in it.text }, "${findings.map { it.text }}")
-        assertTrue("empty" in findings.first().text, findings.first().text)
+        assertTrue("runs out of gas" in findings.first().text, findings.first().text)
+    }
+
+    @Test
+    fun `a finding about a cylinder is named as the rest of the dive names it`() {
+        val dive = planned(
+            DEEP,
+            sources = """"g1": {"gas_type": "AIR", "sac": 25, "volume": 3,
+                "start_pressure": 200}""",
+        )
+        val evaluated = done(dive)
+        val named = findingsSaidOf(dive, profile(dive), evaluated).single { "runs out" in it.text }
+        val bare = findingsSaidOf(evaluated).single { "runs out" in it.text }
+
+        assertTrue(named.text.startsWith("G1 "), named.text)
+        // With nobody to supply a name, the key stands in rather than the line naming nothing.
+        assertTrue(bare.text.startsWith("g1 "), bare.text)
     }
 
     @Test
