@@ -238,6 +238,14 @@ class GasListTest {
     }
 
     @Test
+    fun `a line names a cylinder by its number and its mix`() {
+        val shaping = planned(Segment("18"), gases = listOf(Breathed(), Breathed("EAN50"), Breathed(" ")))
+        assertEquals("1: air", gasChoiceOf(shaping, 0))
+        assertEquals("2: EAN50", gasChoiceOf(shaping, 1))
+        assertEquals("3", gasChoiceOf(shaping, 2), "a mix not yet typed leaves the number alone")
+    }
+
+    @Test
     fun `a line is added below its own, and the last line stays`() {
         val shaping = planned(Segment("18"))
         shaping.addSegment(0)

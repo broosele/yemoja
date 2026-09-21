@@ -168,6 +168,17 @@ internal fun Shaping.prefill(settings: Settings?) {
 /** What the cylinder at [index] is called, which is what a reader sees of a key. */
 internal fun gasLabelOf(index: Int): String = "Gas ${index + 1}"
 
+/**
+ * What a line of the runtime calls the cylinder at [index]: its number in the list and what is in
+ * it, so a reader choosing one need not look across at the gases.
+ *
+ * Example: `2: EAN50`, or `2` alone while its mix is still blank.
+ */
+internal fun gasChoiceOf(shaping: Shaping, index: Int): String {
+    val mix = shaping.gases.getOrNull(index)?.gas?.trim().orEmpty()
+    return if (mix.isEmpty()) "${index + 1}" else "${index + 1}: $mix"
+}
+
 /** The key the cylinder at [index] sits under, as a dive's own cylinders sit under keys. */
 internal fun gasKeyOf(index: Int): String = "g${index + 1}"
 
@@ -669,7 +680,7 @@ private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?) {
         val leg = shaped.legs.firstOrNull { it.index == index }
         TypedLine(shaping, index, segment, leg)
     }
-    for (leg in done?.tail.orEmpty()) WorkedLine(leg)
+    for (leg in done?.tail.orEmpty()) WorkedLine(leg, shaping)
 }
 
 /**
@@ -736,8 +747,8 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
         Box(modifier = Modifier.width(GAS)) {
             Pick(
                 dense = true,
-                chosen = gasLabelOf(shown),
-                options = shaping.gases.indices.map { gasLabelOf(it) },
+                chosen = gasChoiceOf(shaping, shown),
+                options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
                 italic = segment.gas == null,
             ) { chose ->
                 // Choosing what the line above breathes is following it again.
@@ -767,7 +778,7 @@ private fun gasAbove(shaping: Shaping, index: Int): Int {
 
 /** One line of the way up the model adds: all of it worked out, so all of it in italics. */
 @Composable
-private fun WorkedLine(leg: Leg) {
+private fun WorkedLine(leg: Leg, shaping: Shaping) {
     Row(
         modifier = Modifier.height(ROW),
         verticalAlignment = Alignment.CenterVertically,
@@ -779,7 +790,7 @@ private fun WorkedLine(leg: Leg) {
         Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, italic)
         Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
         Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
-        Cell(gasLabelOf(leg.gas), GAS, TextAlign.Start, italic, padding = GAP)
+        Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, italic, padding = GAP)
     }
 }
 
@@ -849,6 +860,7 @@ private fun Conditions(shaping: Shaping) {
         second = {
             Labelled("Water") {
                 Pick(
+                    dense = true,
                     chosen = wordSaid(shaping.water),
                     options = Settings.DEFAULT_WATER_TYPE.choices.map { wordSaid(it) },
                 ) { shaping.water = Settings.DEFAULT_WATER_TYPE.choices[it] }
@@ -870,7 +882,7 @@ private fun Paired(first: @Composable () -> Unit, second: @Composable () -> Unit
 private fun Setting(label: String, value: String, after: String, enabled: Boolean = true, onChange: (String) -> Unit) {
     Labelled(label) {
         Box(modifier = Modifier.width(SETTING)) {
-            Compact(value = value, onChange = onChange, after = after, enabled = enabled)
+            Compact(value = value, onChange = onChange, after = after, enabled = enabled, dense = true)
         }
     }
 }
@@ -878,13 +890,13 @@ private fun Setting(label: String, value: String, after: String, enabled: Boolea
 @Composable
 private fun Labelled(label: String, content: @Composable () -> Unit) {
     Row(
-        modifier = Modifier.padding(vertical = 2.dp),
+        modifier = Modifier.height(ROW),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GAP),
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline,
             textAlign = TextAlign.End,
             modifier = Modifier.width(SETTING_LABEL),
@@ -1023,7 +1035,7 @@ private const val SECONDS_IN_MINUTE = 60.0
 private const val PERCENT = 100.0
 
 /**
- * How tall the top of the plan is: about eighteen lines of the runtime, and about seven cylinders
+ * How tall the top of the plan is: about eighteen lines of the runtime, and about eleven cylinders
  * under the settings, before either scrolls.
  */
 private val ZONE = 508.dp

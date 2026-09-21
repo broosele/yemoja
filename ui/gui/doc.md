@@ -432,8 +432,9 @@ once and corrected. The numbers stay unused rather than being given to something
   table, and a line that is either a rise or a stay is what lets a reader type a way up at a rate
   of their own.
 
-  **A line breathes the gas of the line above until one is chosen**, and says so in italics. The
-  first line follows the first cylinder. Choosing the gas the line above breathes follows it again,
+  **A line breathes the gas of the line above until one is chosen**, and says so in italics. A
+  cylinder is named there by its number and its mix, as `2: EAN50`, so a reader choosing one need
+  not look across at the gases. The first line follows the first cylinder. Choosing the gas the line above breathes follows it again,
   so there is no separate deed for going back. The switches are written where a line changes
   cylinder, and the first is always at nought: a run that says nothing about what it went in on is
   refused, and rightly. `LOGIC-37`.
@@ -450,8 +451,8 @@ once and corrected. The numbers stay unused rather than being given to something
   platform draws one. The settings and the gases beside it stay where they are however long the
   dive is. The gases take what the settings leave of the same height, so the two columns end on one
   line, and they scroll in the same way once there are more than fit, their headings staying above
-  them. The lines of both are dense, in smaller type than a form's, so about eighteen lines of the
-  runtime and about seven cylinders show before either scrolls.
+  them. The lines of all three parts are dense, in smaller type than a form's, so about eighteen
+  lines of the runtime and about eleven cylinders show before either scrolls.
 
   **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent
   rate, safety stop depth and duration, last stop and water each start from what the settings
