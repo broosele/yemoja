@@ -293,10 +293,6 @@ plan takes from the cylinder and leaves in it. The role says what the cylinder i
   where one of your lines names it. If you switch to it yourself, the way up keeps you on it unless
   a richer mix is allowed or it goes past its own limit.
 
-The **Lost** tick marks the cylinders the gas reserve treats as gone when gas is lost. A deco
-cylinder is ticked until you untick it, and the others are not, but you can tick any of them to see
-what losing it would cost.
-
 A cylinder that one of your lines breathes cannot be taken out until you change that line.
 
 Beside each cylinder, *Minimum* is its share of the gas reserve: what it must still hold at the

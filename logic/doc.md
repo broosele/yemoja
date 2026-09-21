@@ -490,9 +490,10 @@ To settle when we discuss architecture and features:
   needed over six thousand litres at four times twenty litres a minute. The user replaced it with
   two scenarios that are each reasonable, and the worse of them is what a cylinder must hold.
 
-  **Lost gas.** The cylinders marked lost are gone, the deco gas unless the user says otherwise, and
-  the way up is to the surface on what is left at the usual `sac`. Its stops and its safety stop
-  are worked out from the tissues at that moment by the same code that completes a plan's ascent.
+  **Lost gas.** The cylinders named lost are gone, and the way up is to the surface on what is left
+  at the usual `sac`. The function takes a set, and the plan form names exactly one, `GUI-43`. Its
+  stops and its safety stop are worked out from the tissues at that moment by the same code that
+  completes a plan's ascent.
 
   **Buddy out of gas.** A buddy has lost their bottom gas, and the two breathe from the source this
   diver is on until either of them can go on to a deco gas: twice this diver's `sac`, times a

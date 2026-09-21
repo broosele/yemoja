@@ -510,12 +510,15 @@ once and corrected. The numbers stay unused rather than being given to something
 
   A cylinder that falls short is also a warning in the list beneath, saying which scenario it falls
   short in and in the names the model's own warnings use, so *Gas 1 runs out* and *Gas 1 is empty*
-  read as one cylinder. Which cylinders the lost-gas scenario takes as lost is a tick of its own in
-  the gases, *Lost*, rather than a fourth role: a deco cylinder is lost until the tick says
-  otherwise, and the others are kept, but losing a bottom gas is a scenario a reader may want to
-  try without changing what the cylinder is for. The tick is greyed while that scenario is off. The
-  panic stress factor is read apart from the other settings, so a factor typed wrong leaves the
-  sharing scenario unsaid and everything else answered.
+  read as one cylinder. Which cylinder the lost-gas scenario loses is a setting of the plan, *Gas
+  lost*, a choice of one cylinder beside the panic stress factor. One, because losing two at once is
+  not a scenario anybody plans for; the user replaced a tick on each cylinder with it for that
+  reason. It is the first deco cylinder until another is chosen, follows its cylinder when others
+  are added or taken out, and goes back to the first deco cylinder when its own is taken out. It is
+  a setting rather than a fourth role, since losing a bottom gas is a scenario a reader may want to
+  try without changing what the cylinder is for. The panic stress factor is read apart from the
+  other settings, so a factor typed wrong leaves the sharing scenario unsaid and everything else
+  answered.
 
   **A cylinder a line breathes stays.** Its × is greyed, and a tooltip says which line breathes it.
   Taking it out would change the dive behind the reader's back, so they change the line first. A

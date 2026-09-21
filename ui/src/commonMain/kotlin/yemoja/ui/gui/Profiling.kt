@@ -124,8 +124,6 @@ internal data class Breathed(
     val fill: String = "",
     /** Litres a minute at the surface. */
     val sac: String = "",
-    /** Whether the gas reserve takes it as lost, or null to follow its role: only a deco gas is. */
-    val lost: Boolean? = null,
 )
 
 /**
@@ -152,8 +150,14 @@ internal class Shaping {
     var lastStop: String by mutableStateOf("")
     var panicFactor: String by mutableStateOf("")
 
-    /** Whether the gas reserve tries losing the cylinders ticked *Lost*. */
+    /** Whether the gas reserve tries losing the cylinder [lostGas] names. */
     var lostGasScenario: Boolean by mutableStateOf(true)
+
+    /**
+     * The cylinder the lost-gas scenario loses, by its place in the list, or null for the first
+     * deco cylinder. One, since losing two cylinders at once is not a scenario anybody plans for.
+     */
+    var lostGas: Int? by mutableStateOf(null)
 
     /** Whether the gas reserve tries a buddy out of gas, sharing this diver's. */
     var sharedScenario: Boolean by mutableStateOf(true)
@@ -270,6 +274,8 @@ private fun Shaping.renumber(moved: (Int) -> Int?) {
         val gas = segment.gas ?: continue
         segments[at] = segment.copy(gas = moved(gas))
     }
+    // A lost cylinder taken out goes back to the first deco cylinder.
+    lostGas = lostGas?.let(moved)
 }
 
 /**
@@ -554,8 +560,12 @@ internal fun workedOf(ready: Shaped.Ready): Worked {
     }
 }
 
-/** Whether the gas reserve takes [breathed] as lost: as ticked, or a deco gas where nobody ticked. */
-internal fun isLost(breathed: Breathed): Boolean = breathed.lost ?: (breathed.role == Role.DECO)
+/**
+ * The cylinder the lost-gas scenario loses: the one chosen, or the first deco cylinder where none
+ * is, or null where there is neither.
+ */
+internal fun Shaping.lostIndex(): Int? =
+    lostGas?.takeIf { it in gases.indices } ?: gases.indexOfFirst { it.role == Role.DECO }.takeIf { it >= 0 }
 
 /** Scenario is one way a dive can go wrong that the gas reserve is kept back for. `LOGIC-40`. */
 internal enum class Scenario(val label: String) {
@@ -602,8 +612,12 @@ internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditi
     }
     val keys = shaping.gases.indices
     val lostGas = if (shaping.lostGasScenario) {
-        val lost = keys.filter { isLost(shaping.gases[it]) }.map { gasKeyOf(it) }.toSet()
-        reckoning(lostGasReserve(done.whole, lost, conditions.ascentRate, conditions.lastStop))
+        val lost = shaping.lostIndex()
+        if (lost == null) {
+            Reckoning.Wrong("there is no deco gas to lose, so choose which gas is lost")
+        } else {
+            reckoning(lostGasReserve(done.whole, setOf(gasKeyOf(lost)), conditions.ascentRate, conditions.lastStop))
+        }
     } else {
         null
     }
@@ -653,9 +667,10 @@ internal fun scenarioReserveSaid(reserve: Reserve.Done): String =
     }.ifEmpty { "nothing" }
 
 /** What a scenario assumes, in a phrase, with [reserve] saying how far the sharing goes. */
-internal fun assumedSaid(scenario: Scenario, reserve: Reserve.Done?, factor: String): String = when (scenario) {
-    Scenario.LOST_GAS -> "to the surface without the gas ticked Lost, at your usual SAC"
-    Scenario.SHARED -> "two divers sharing ${upToSaid(reserve?.upTo)}, each at ${factor.trim()} × SAC"
+internal fun assumedSaid(scenario: Scenario, reserve: Reserve.Done?, shaping: Shaping): String = when (scenario) {
+    Scenario.LOST_GAS ->
+        "to the surface without ${shaping.lostIndex()?.let { gasLabelOf(it) } ?: "it"}, at your usual SAC"
+    Scenario.SHARED -> "two divers sharing ${upToSaid(reserve?.upTo)}, each at ${shaping.panicFactor.trim()} × SAC"
 }
 
 // To a tenth, as the MOD beside the deco gas is, so the two read as the same depth.
@@ -1107,7 +1122,16 @@ private fun Conditions(shaping: Shaping) {
     )
     Paired(
         first = { Setting("Panic stress factor", shaping.panicFactor, "× SAC") { shaping.panicFactor = it } },
-        second = {},
+        second = {
+            // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen.
+            Labelled("Gas lost") {
+                Pick(
+                    dense = true,
+                    chosen = shaping.lostIndex()?.let { gasChoiceOf(shaping, it) } ?: "none",
+                    options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                ) { shaping.lostGas = it }
+            }
+        },
     )
 }
 
@@ -1182,19 +1206,6 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
             }
             Box(modifier = Modifier.width(SAC)) {
                 Compact(dense = true, value = breathed.sac, onChange = { shaping.gases[index] = breathed.copy(sac = it) }, after = "L/min")
-            }
-            Box(modifier = Modifier.width(LOST), contentAlignment = Alignment.Center) {
-                Explained("Taken as lost for the gas reserve") {
-                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-                        Checkbox(
-                            checked = isLost(breathed),
-                            onCheckedChange = { shaping.gases[index] = breathed.copy(lost = it) },
-                            // Only the lost-gas scenario reads it.
-                            enabled = shaping.lostGasScenario,
-                            modifier = Modifier.size(DENSE_GLYPH),
-                        )
-                    }
-                }
             }
             val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
             Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked)
@@ -1294,7 +1305,7 @@ private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
                         Figure("Reserve", scenarioReserveSaid(reckoning.reserve))
                         Figure("Worst moment", worstSaid(reckoning.reserve))
                         Text(
-                            assumedSaid(scenario, reckoning.reserve, shaping.panicFactor),
+                            assumedSaid(scenario, reckoning.reserve, shaping),
                             style = MaterialTheme.typography.bodyMedium,
                             color = quiet,
                         )
@@ -1384,7 +1395,6 @@ private val VOLUME = 56.dp
 private val PRESSURE = 72.dp
 private val SAC = 84.dp
 private val FIGURED = 56.dp
-private val LOST = 28.dp
 
 /** How wide a scenario's name is, so what follows it lines up. */
 private val SCENARIO = 130.dp
@@ -1397,7 +1407,6 @@ private val CYLINDER_COLUMNS: List<Pair<String, Dp>> = listOf(
     "Volume" to VOLUME,
     "Start" to PRESSURE,
     "SAC" to SAC,
-    "Lost" to LOST,
     "MOD" to FIGURED,
     "Used" to FIGURED,
     "End" to FIGURED,

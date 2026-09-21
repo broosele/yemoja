@@ -369,12 +369,33 @@ class ReserveTest {
     }
 
     @Test
-    fun `a deco gas is lost unless ticked otherwise, and the rest are kept`() {
-        assertTrue(isLost(Breathed(role = Role.DECO)))
-        assertTrue(!isLost(Breathed(role = Role.BOTTOM)))
-        assertTrue(!isLost(Breathed(role = Role.BAILOUT)))
-        assertTrue(!isLost(Breathed(role = Role.DECO, lost = false)), "a tick overrides the role")
-        assertTrue(isLost(Breathed(role = Role.BOTTOM, lost = true)))
+    fun `the gas lost is the first deco gas until another is chosen`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO + Breathed(gas = "EAN80", role = Role.DECO))
+        assertEquals(1, shaping.lostIndex())
+
+        shaping.lostGas = 0
+        assertEquals(0, shaping.lostIndex(), "any cylinder may be chosen, the bottom gas too")
+    }
+
+    @Test
+    fun `a plan with no deco gas has nothing lost until one is chosen`() {
+        val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", size = "24", fill = "232", sac = "20")))
+
+        assertNull(shaping.lostIndex())
+        val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[Scenario.LOST_GAS])
+        assertTrue("choose which gas is lost" in wrong.reason, wrong.reason)
+    }
+
+    @Test
+    fun `the gas lost follows its cylinder when others are added or taken out`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO + Breathed(gas = "EAN80", role = Role.DECO))
+        shaping.lostGas = 2
+        shaping.addGas(0)
+        assertEquals(3, shaping.lostIndex(), "moved down with the cylinder added above it")
+
+        shaping.removeGas(3)
+        assertNull(shaping.lostGas, "taken out with its cylinder")
+        assertEquals(1, shaping.lostIndex(), "and back to the first deco cylinder, the one just added")
     }
 
     @Test
@@ -390,7 +411,7 @@ class ReserveTest {
     fun `a buddy shares bottom gas only as far as the deco gas`() {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
         val reserve = scenario(shaping, Scenario.SHARED)
-        val said = assumedSaid(Scenario.SHARED, reserve, shaping.panicFactor)
+        val said = assumedSaid(Scenario.SHARED, reserve, shaping)
 
         assertTrue(reserve.upTo > 20, "EAN50 may be breathed from about 22 m: ${reserve.upTo}")
         assertTrue(said.startsWith("two divers sharing up to ") && said.endsWith("each at 2 × SAC"), said)
@@ -459,7 +480,7 @@ class ReserveTest {
     @Test
     fun `a cylinder with no SAC is named where the reserve would be`() {
         val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", size = "12", fill = "200")))
-        val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[Scenario.LOST_GAS])
+        val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[Scenario.SHARED])
 
         assertTrue(wrong.reason.startsWith("Gas 1: "), wrong.reason)
     }
@@ -474,20 +495,25 @@ class ReserveTest {
     }
 
     @Test
-    fun `a deco gas ticked as kept is breathed on the way up in trouble`() {
-        val kept = BOTTOM_AND_DECO.mapIndexed { index, it -> if (index == 1) it.copy(lost = false) else it }
-        val reserve = scenario(planned(*FORTY, gases = kept), Scenario.LOST_GAS)
+    fun `a deco gas not chosen as lost is breathed on the way up in trouble`() {
+        val gases = BOTTOM_AND_DECO + Breathed(gas = "EAN80", role = Role.DECO, size = "7", fill = "200", sac = "20")
+        val shaping = planned(*FORTY, gases = gases)
+        shaping.lostGas = 2
+        val reserve = scenario(shaping, Scenario.LOST_GAS)
 
         assertTrue("g2" in reserve.needed.keys, "${reserve.needed}")
+        assertTrue("g3" !in reserve.needed.keys, "the one lost is not")
+        assertEquals("to the surface without Gas 3, at your usual SAC", assumedSaid(Scenario.LOST_GAS, reserve, shaping))
     }
 
     @Test
-    fun `the lost tick is read by the lost-gas scenario alone`() {
-        val ticked = BOTTOM_AND_DECO.mapIndexed { index, it -> if (index == 1) it.copy(lost = false) else it }
+    fun `the gas lost is read by the lost-gas scenario alone`() {
+        val chosen = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        chosen.lostGas = 0
 
         assertEquals(
             scenario(planned(*FORTY, gases = BOTTOM_AND_DECO), Scenario.SHARED).needed,
-            scenario(planned(*FORTY, gases = ticked), Scenario.SHARED).needed,
+            scenario(chosen, Scenario.SHARED).needed,
         )
     }
 }
