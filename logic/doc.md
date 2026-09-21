@@ -545,6 +545,13 @@ To settle when we discuss architecture and features:
   within 1.6 bar, which is what a deco cylinder is carried for and what a planner is expected to
   do without being told twice.
 
+  **A rise takes whole seconds, rounded up.** Rounded down, nineteen metres at nine a minute took
+  126 seconds, a shade faster than the rate asked for, and the plan form timing the same rise by
+  its own arithmetic read 127 and refused the level it was handed as too short for its travel.
+  Rounded up, no written rise is faster than asked and the two agree. The point the ascent leaves
+  from is the run's own last one and is not repeated, so a dive owing no stop comes back as a
+  single surfacing point rather than as nothing.
+
   **A generated ascent is frozen**, which is the cost of storing the profile rather than the
   recipe: change a gas afterwards and the stops do not move. Evaluating the plan says so at once,
   and that is how it is meant to be found — visibly, rather than by a schedule quietly rewriting
@@ -610,7 +617,7 @@ To settle when we discuss architecture and features:
 
   Reading it at the held depth left a sliding pair asking about a third longer than it should,
   and nothing caught it because the schedules had never been checked against a published one —
-  only the no-decompression limits had. Forty metres for twenty-five minutes on air is twelve
+  only the no-decompression limits had. Forty metres for twenty-five minutes on air is thirteen
   minutes of stops at 100/100, which the air tables agree with; at 30/70 it was fifty-two minutes
   and is forty. Equal factors are unchanged, there being no slide to read at either end of.
 

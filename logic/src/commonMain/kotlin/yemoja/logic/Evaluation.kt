@@ -1,5 +1,7 @@
 package yemoja.logic
 
+import kotlin.math.ceil
+
 import yemoja.data.Element
 import yemoja.data.Gas
 import yemoja.data.Item
@@ -464,6 +466,10 @@ sealed class Ascended {
      * into fields is the caller's, since what a screen writes and what an importer writes go
      * through the same door and neither belongs here. Empty where the run is already at the
      * surface.
+     *
+     * The point the ascent leaves from is the run's last and is not repeated here, so a caller
+     * drawing the ascent as stretches begins the first at that point. A run owing no stop comes
+     * back as one surfacing point.
      */
     class Done(
         val depth: List<Pair<Int, Double>>,
@@ -526,7 +532,7 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
         val allowed = allowedDepthOf(tissues, firstStop, model, density, surface, lastStop)
         val target = if (allowed < metres) allowed else metres
         val seconds = if (target < metres) {
-            (((metres - target) / metresAMinute) * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
+            ceil((metres - target) / metresAMinute * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
         } else {
             SECONDS_IN_MINUTE.toInt()
         }

@@ -550,6 +550,28 @@ class EvaluationTest {
     }
 
     @Test
+    fun `an ascent never rises faster than the rate it was given`() {
+        // Nineteen metres at nine a minute is 126.7 seconds. Rounded down, the rise is a shade
+        // faster than asked, and a form timing it by its own arithmetic calls it too short.
+        val bottom = Run(
+            depth = listOf(0 to 0.0, 134 to 40.0, 1500 to 40.0),
+            sources = mapOf("g1" to Source(Gas.AIR)),
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+        )
+        val ascent = assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0))
+        val whole = listOf(bottom.depth.last()) + ascent.depth
+
+        for ((from, to) in whole.zipWithNext()) {
+            val risen = from.second - to.second
+            if (risen <= 0) continue
+            val rate = risen / (to.first - from.first) * 60
+            assertTrue(rate <= 9.0, "$risen m in ${to.first - from.first} s is $rate m a minute")
+        }
+    }
+
+    @Test
     fun `a finding about the dive rather than a cylinder names none`() {
         val ceiling = done(planned(DEEP)).findings.single { "ceiling" in it.said }
 
