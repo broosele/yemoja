@@ -416,8 +416,9 @@ once and corrected. The numbers stay unused rather than being given to something
   sentence is a constant a test holds against those four claims. `manual/decompression.md`.
 
   **A dive plan is the third, and belongs to no dive.** Its top half is two columns: the runtime on
-  the left, the settings and the gases on the right. Below them come the whole dive's clocks on one
-  line, what the model objects to, and the graph a recording is drawn with.
+  the left, the settings and the gases on the right, each of the three in a box of its own. Below
+  them come the whole dive's clocks on one line, what the model objects to, and the graph a
+  recording is drawn with.
 
   **Each line of the runtime is one segment, a change of depth or a stay.** A line is typed as a
   depth and either a duration or a rate. The other is worked out and shown in italics in its own

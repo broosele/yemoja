@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -619,8 +620,10 @@ internal fun PlanForm(
             Runtime(shaping, shaped, done, scrollbar)
         }
         Column(modifier = Modifier.weight(1f)) {
-            Conditions(shaping)
-            Cylinders(shaping, conditions, done)
+            Caption("Settings")
+            Framed { Conditions(shaping) }
+            Caption("Gases")
+            Framed { Cylinders(shaping, conditions, done) }
         }
     }
     if (done != null) Figures(done.evaluated)
@@ -660,7 +663,7 @@ private fun Runtime(
     val scrolled = rememberScrollState()
     Box(
         modifier = Modifier.fillMaxWidth().height(ROW * LINES_SHOWN)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, SHAPE),
+            .border(FRAME, MaterialTheme.colorScheme.outlineVariant, SHAPE),
     ) {
         Column(modifier = Modifier.fillMaxWidth().verticalScroll(scrolled).padding(HALF)) {
             for ((index, segment) in shaping.segments.withIndex()) {
@@ -776,6 +779,16 @@ private fun Cell(
     )
 }
 
+/** One part of the form in a box of its own, as the runtime is. */
+@Composable
+private fun Framed(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().border(FRAME, MaterialTheme.colorScheme.outlineVariant, SHAPE)
+            .padding(HALF),
+        content = content,
+    )
+}
+
 /** A small heading over one part of the form. */
 @Composable
 private fun Caption(text: String) {
@@ -793,7 +806,6 @@ private fun Caption(text: String) {
  */
 @Composable
 private fun Conditions(shaping: Shaping) {
-    Caption("Settings")
     val none = shaping.safetyMinutes.trim().toDoubleOrNull() == 0.0
     Paired(
         first = { Setting("GF low", shaping.gradientLow, "%") { shaping.gradientLow = it } },
@@ -869,7 +881,6 @@ private fun Labelled(label: String, content: @Composable () -> Unit) {
  */
 @Composable
 private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?) {
-    Caption("Gases")
     Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
         for ((heading, width) in CYLINDER_COLUMNS) {
             Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.outline))
@@ -982,6 +993,9 @@ private const val PERCENT = 100.0
 
 /** How many lines the runtime box shows before it scrolls. */
 private const val LINES_SHOWN = 12
+
+/** How thick the line round each part of the form is. */
+private val FRAME = 1.dp
 
 /** How tall a line of the runtime box is. */
 private val ROW = 40.dp
