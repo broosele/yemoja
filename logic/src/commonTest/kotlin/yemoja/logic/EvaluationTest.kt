@@ -9,6 +9,7 @@ import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import kotlin.math.ceil
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -640,6 +641,109 @@ class EvaluationTest {
     }
 
     @Test
+    fun `an ascent holds the safety stop where the model would have come straight up`() {
+        val shallow = safetyRun(metres = 18.0, minutes = 20, low = 1.0, high = 1.0)
+        val without = assertIs<Ascended.Done>(completeAscent(shallow, 9.0, 3.0))
+        val with = assertIs<Ascended.Done>(completeAscent(shallow.withSafetyStop(6.0, 180), 9.0, 3.0))
+
+        assertEquals(listOf(0.0), without.depth.map { it.second }, "no stop owed without it")
+        assertEquals(180, heldIn(shallow, with, 6.0), "${with.depth}")
+        assertEquals(0.0, with.depth.last().second, "and then to the surface")
+    }
+
+    @Test
+    fun `a deco stop already longer than the safety stop is left alone`() {
+        val deep = safetyRun(metres = 40.0, minutes = 25, low = 0.3, high = 0.7)
+        val without = assertIs<Ascended.Done>(completeAscent(deep, 9.0, 3.0))
+        val with = assertIs<Ascended.Done>(completeAscent(deep.withSafetyStop(6.0, 180), 9.0, 3.0))
+
+        assertTrue(heldIn(deep, without, 6.0) > 180, "the deco stop at six is the longer")
+        assertEquals(without.depth, with.depth)
+    }
+
+    @Test
+    fun `a deco stop shorter than the safety stop is lengthened to it`() {
+        val deep = safetyRun(metres = 40.0, minutes = 25, low = 0.3, high = 0.7)
+        val without = assertIs<Ascended.Done>(completeAscent(deep, 9.0, 3.0))
+        val longest = heldIn(deep, without, 6.0) + 150
+        val with = assertIs<Ascended.Done>(
+            completeAscent(deep.withSafetyStop(6.0, longest), 9.0, 3.0),
+        )
+
+        assertEquals(longest, heldIn(deep, with, 6.0), "${with.depth}")
+    }
+
+    @Test
+    fun `a run typed to the surface past its safety stop is warned about`() {
+        val skipped = safetyRun(
+            metres = 18.0,
+            minutes = 20,
+            low = 1.0,
+            high = 1.0,
+            end = listOf(1320 to 0.0),
+        ).withSafetyStop(6.0, 180)
+        val short = safetyRun(
+            metres = 18.0,
+            minutes = 20,
+            low = 1.0,
+            high = 1.0,
+            end = listOf(1280 to 6.0, 1340 to 6.0, 1380 to 0.0),
+        ).withSafetyStop(6.0, 180)
+
+        val none = done(skipped).findings.single { "safety stop" in it.said }
+        assertTrue("0:00 of the 3:00" in none.said, none.said)
+        val partly = done(short).findings.single { "safety stop" in it.said }
+        assertTrue("1:00 of the 3:00" in partly.said, partly.said)
+        assertEquals(1340, partly.second, "said where the stop is left")
+    }
+
+    @Test
+    fun `a safety stop is owed only by a run that went deeper and has surfaced`() {
+        val shallow = safetyRun(metres = 5.0, minutes = 30, low = 1.0, high = 1.0, end = listOf(1830 to 0.0))
+        val underWater = safetyRun(metres = 18.0, minutes = 20, low = 1.0, high = 1.0)
+
+        assertTrue(done(shallow.withSafetyStop(6.0, 180)).findings.none { "safety" in it.said })
+        assertTrue(done(underWater.withSafetyStop(6.0, 180)).findings.none { "safety" in it.said })
+    }
+
+    @Test
+    fun `an ascent written with a safety stop is one the model then approves of`() {
+        val run = safetyRun(metres = 40.0, minutes = 25, low = 0.3, high = 0.7).withSafetyStop(6.0, 600)
+        val ascent = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+        val whole = run.withDepth(run.depth + ascent.depth, run.switches + ascent.switches)
+
+        assertTrue(done(whole).findings.none { "safety" in it.said }, "${done(whole).findings}")
+    }
+
+    @Test
+    fun `a rise faster than the plan's rate is said once, where it begins`() {
+        val hurried = Run(
+            depth = listOf(0 to 0.0, 60 to 18.0, 1200 to 18.0, 1230 to 9.0, 1260 to 0.0),
+            sources = mapOf("g1" to Source(Gas.AIR)),
+            gradientFactorLow = 1.0,
+            gradientFactorHigh = 1.0,
+            ascentRate = 9.0,
+        )
+        val fast = done(hurried).findings.single { "rising" in it.said }
+
+        assertEquals(1200, fast.second)
+        assertTrue("18.0 m a minute" in fast.said && "9.0 m a minute" in fast.said, fast.said)
+        assertTrue(
+            done(hurried.withRate(null)).findings.none { "rising" in it.said },
+            "a run that names no rate is not judged by one",
+        )
+    }
+
+    @Test
+    fun `an ascent written at the plan's rate is not called too fast`() {
+        val run = safetyRun(metres = 40.0, minutes = 25, low = 0.3, high = 0.7).withRate(9.0)
+        val ascent = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+        val whole = run.withDepth(run.depth + ascent.depth, run.switches + ascent.switches)
+
+        assertTrue(done(whole).findings.none { "rising" in it.said }, "${done(whole).findings}")
+    }
+
+    @Test
     fun `a finding about the dive rather than a cylinder names none`() {
         val ceiling = done(planned(DEEP)).findings.single { "ceiling" in it.said }
 
@@ -740,3 +844,52 @@ private fun decoRun(deco: Source): Run = Run(
     gradientFactorHigh = 0.7,
     switches = listOf(0 to "g1"),
 )
+
+/** An air dive to [metres], leaving the bottom at [minutes], then whatever [end] adds. */
+private fun safetyRun(
+    metres: Double,
+    minutes: Int,
+    low: Double,
+    high: Double,
+    end: List<Pair<Int, Double>> = emptyList(),
+): Run = Run(
+    depth = listOf(0 to 0.0, ceil(metres / 18.0 * 60).toInt() to metres, minutes * 60 to metres) +
+        end,
+    sources = mapOf("g1" to Source(Gas.AIR)),
+    gradientFactorLow = low,
+    gradientFactorHigh = high,
+    switches = listOf(0 to "g1"),
+)
+
+private fun done(run: Run): Evaluated.Done = assertIs<Evaluated.Done>(evaluate(run))
+
+private fun Run.copied(
+    depth: List<Pair<Int, Double>> = this.depth,
+    switches: List<Pair<Int, String>> = this.switches,
+    safetyStop: SafetyStop? = this.safetyStop,
+    ascentRate: Double? = this.ascentRate,
+): Run = Run(
+    depth = depth,
+    sources = sources,
+    gradientFactorLow = gradientFactorLow,
+    gradientFactorHigh = gradientFactorHigh,
+    switches = switches,
+    density = density,
+    surface = surface,
+    safetyStop = safetyStop,
+    ascentRate = ascentRate,
+)
+
+private fun Run.withSafetyStop(metres: Double, seconds: Int): Run =
+    copied(safetyStop = SafetyStop(metres, seconds))
+
+private fun Run.withRate(rate: Double?): Run = copied(ascentRate = rate)
+
+private fun Run.withDepth(depth: List<Pair<Int, Double>>, switches: List<Pair<Int, String>>): Run =
+    copied(depth = depth, switches = switches)
+
+/** The seconds [ascent] holds at [metres], counting from the run's own last point. */
+private fun heldIn(run: Run, ascent: Ascended.Done, metres: Double): Int =
+    (listOf(run.depth.last()) + ascent.depth).zipWithNext()
+        .filter { (from, to) -> from.second == metres && to.second == metres }
+        .sumOf { (from, to) -> to.first - from.first }

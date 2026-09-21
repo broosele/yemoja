@@ -1,6 +1,8 @@
 package yemoja.logic
 
 import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.min
 
 import yemoja.data.Element
 import yemoja.data.Gas
@@ -155,6 +157,10 @@ enum class Severity {
  * throughout. Density and surface default to sea water at sea level, which is what a table
  * assumes. A run starts fresh unless [carried] and [oxygenCarried] say what it begins with.
  *
+ * [safetyStop] and [ascentRate] are a plan's. An ascent holds the safety stop and a run that does
+ * not is warned about, and a run rising faster than [ascentRate] metres a minute is warned about
+ * where it does. A recording sets neither and is judged as it always was. `LOGIC-37`.
+ *
  * Immutable.
  */
 class Run(
@@ -167,9 +173,14 @@ class Run(
     val surface: Double = SEA_LEVEL,
     val carried: Tissues? = null,
     val oxygenCarried: OxygenClock? = null,
+    val safetyStop: SafetyStop? = null,
+    val ascentRate: Double? = null,
 ) {
 
     init {
+        require(ascentRate == null || ascentRate > 0) {
+            "an ascent rate should be more than nought, but was $ascentRate"
+        }
         require(gradientFactorLow in 0.0..1.0) {
             "the low gradient factor should be 0 to 1, but was $gradientFactorLow"
         }
@@ -182,6 +193,24 @@ class Run(
                     "${depth[index - 1].first}"
             }
         }
+    }
+}
+
+/**
+ * SafetyStop is a depth a plan holds on the way up whether or not the model asks for it, and the
+ * least time it is held there.
+ *
+ * **A minimum, not an extra stop.** A deco stop at the same depth counts towards it, so one that is
+ * already longer is left alone and a shorter one is lengthened. Nought seconds is no safety stop.
+ * It is owed only by a run that went deeper than it.
+ *
+ * Immutable.
+ */
+class SafetyStop(val metres: Double, val seconds: Int) {
+
+    init {
+        require(metres > 0) { "a safety stop should be deeper than the surface, but was $metres" }
+        require(seconds >= 0) { "a safety stop should last 0 seconds or more, but was $seconds" }
     }
 }
 
@@ -258,7 +287,16 @@ fun evaluate(run: Run): Evaluated {
         run.carried ?: Tissues.saturated(run.surface),
         run.oxygenCarried ?: OxygenClock.CLEAR,
     )
-    return walked(depths, breathed, carried, run.model, run.density, run.surface)
+    return walked(
+        depths,
+        breathed,
+        carried,
+        run.model,
+        run.density,
+        run.surface,
+        run.safetyStop,
+        run.ascentRate,
+    )
 }
 
 /** [evaluate] on a profile, remembering the ones already on the chain behind it. */
@@ -330,6 +368,8 @@ private fun walked(
     model: Model,
     density: Double,
     surface: Double,
+    safetyStop: SafetyStop?,
+    ascentRate: Double?,
 ): Evaluated.Done {
     var tissues = carried.tissues
     var oxygen = carried.oxygen
@@ -345,6 +385,7 @@ private fun walked(
     val gauges = breathing.fills.mapValues { ArrayList<Double>() }
     var above = false
     var rich = false
+    var hurried = false
     val dry = HashSet<String>()
 
     for ((index, point) in depths.withIndex()) {
@@ -369,6 +410,19 @@ private fun walked(
                 ambient * fraction,
                 (point.second - before.second).toDouble(),
             )
+            // Once a crossing, as the ceiling is: a fast rise drawn as three segments is one.
+            if (ascentRate != null) {
+                val rate = (before.metres - point.metres) / minutes
+                if (rate > ascentRate && !hurried) {
+                    findings += Finding(
+                        before.second,
+                        Severity.WARNING,
+                        "rising at ${metres(rate)} a minute here, faster than the " +
+                            "${metres(ascentRate)} a minute planned",
+                    )
+                }
+                hurried = rate > ascentRate
+            }
         }
         firstStop = firstStopAfter(tissues, firstStop, model, surface)
         val allowed = allowedDepthOf(tissues, firstStop, model, density, surface)
@@ -427,6 +481,7 @@ private fun walked(
         }
         rich = oxygen > most
     }
+    safetyStopFinding(depths, safetyStop)?.let { findings += it }
 
     return Evaluated.Done(
         seriesOf(seconds, ceilings),
@@ -441,6 +496,45 @@ private fun walked(
         gauges.mapValues { (_, left) -> seriesOf(seconds, left) },
         findings.sortedBy { it.second },
     )
+}
+
+/**
+ * What [depths] owe [safetyStop] and did not hold, or null where they owe nothing or held it.
+ *
+ * Only a run that reaches the surface is judged, since one ending under water may still be about
+ * to stop.
+ */
+private fun safetyStopFinding(depths: List<Point>, safetyStop: SafetyStop?): Finding? {
+    if (safetyStop == null || safetyStop.seconds <= 0) return null
+    if (depths.last().metres > SURFACE) return null
+    val held = heldAt(depths.map { it.second to it.metres }, safetyStop.metres) ?: return null
+    if (held >= safetyStop.seconds) return null
+    // Said where the run leaves the stop's depth for the last time, which is where it went wrong.
+    val left = depths.last { it.metres >= safetyStop.metres }
+    return Finding(
+        left.second,
+        Severity.WARNING,
+        "the safety stop at ${metres(safetyStop.metres)} is held for ${clockOf(held)} of the " +
+            "${clockOf(safetyStop.seconds)} planned",
+    )
+}
+
+/**
+ * The seconds [points] hold at [metres] after they were last deeper than it, or null where they
+ * never were.
+ *
+ * Holding means a stretch that begins and ends at that depth, so the rise to it is not counted.
+ */
+private fun heldAt(points: List<Pair<Int, Double>>, metres: Double): Int? {
+    val deepest = points.indexOfLast { it.second > metres }
+    if (deepest < 0) return null
+    var held = 0
+    for (index in deepest + 2..points.lastIndex) {
+        val (was, from) = points[index - 1]
+        val (now, to) = points[index]
+        if (from == metres && to == metres) held += now - was
+    }
+    return held
 }
 
 /**
@@ -536,6 +630,11 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
     var firstStop = 0.0
     val points = ArrayList<Pair<Int, Double>>()
     val switches = ArrayList<Pair<Int, String>>()
+    // What the safety stop still needs, counting what the typed run already held at its depth.
+    val safety = run.safetyStop?.takeIf { it.seconds > 0 && metres >= it.metres }
+    var owed = safety?.let { stop ->
+        heldAt(run.depth, stop.metres)?.let { held -> stop.seconds - held } ?: 0
+    } ?: 0
 
     while (metres > 0) {
         if (second - depths.last().second > LONGEST_ASCENT) {
@@ -544,12 +643,17 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
         val ambient = ambientAt(metres, density, surface)
         firstStop = firstStopAfter(tissues, firstStop, model, surface)
         val allowed = allowedDepthOf(tissues, firstStop, model, density, surface, lastStop)
-        val target = if (allowed < metres) allowed else metres
-        val seconds = if (target < metres) {
-            ceil((metres - target) / metresAMinute * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
-        } else {
-            SECONDS_IN_MINUTE.toInt()
+        val stopping = safety != null && owed > 0 && metres >= safety.metres
+        val floor = if (safety != null && stopping) max(allowed, safety.metres) else allowed
+        val target = if (floor < metres) floor else metres
+        val seconds = when {
+            target < metres ->
+                ceil((metres - target) / metresAMinute * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
+            // Held for the safety stop alone, so for what it still needs rather than a minute.
+            allowed < metres -> min(owed, SECONDS_IN_MINUTE.toInt())
+            else -> SECONDS_IN_MINUTE.toInt()
         }
+        if (safety != null && target == metres && metres == safety.metres) owed -= seconds
         tissues = tissues.breathing(
             breathing.mixes[breathed] ?: Gas.AIR,
             ambient,

@@ -547,6 +547,11 @@ To settle when we discuss architecture and features:
   within that source's own limit, which is what a deco cylinder is carried for and what a planner
   is expected to do without being told twice.
 
+  **A safety stop is a minimum, not an extra stop.** A plan can name one, a depth and a time, and
+  the ascent holds at least that long at its depth. A deco stop there counts towards it, so a
+  longer one is left alone and a shorter one is lengthened, and time the typed run already held
+  there counts as well. It is owed only by a run that went deeper than it.
+
   **A bailout is never chosen.** A source can say the ascent may not switch to it, and is then
   breathed only where a switch names it, since a bailout is carried for the dive going wrong rather
   than to shorten one going right. An ascent that begins on one leaves it only for a richer mix:
@@ -660,6 +665,12 @@ To settle when we discuss architecture and features:
   A screen with its own copy of 1.6 could build a plan the model then objects to, which is a
   screen and a model disagreeing about one figure in front of a reader. Null for a mix holding no
   oxygen, that being breathable nowhere rather than anywhere.
+
+  **A plan's own promises are checked as well.** A run that names a safety stop and reaches the
+  surface without holding it is warned about where it left the stop's depth, including a dive
+  typed all the way up by hand. A run that names an ascent rate is warned about where it rises
+  faster, once a crossing. A recording names neither, since what a computer recorded is not a
+  promise anybody made, and is judged as before.
 
   **The oxygen clocks run beside the compartments**, sampled the same way and given back as a
   percentage and a count. `LOGIC-38` is what they are worked out from.
