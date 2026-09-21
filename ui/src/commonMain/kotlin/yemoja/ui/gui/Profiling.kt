@@ -116,7 +116,7 @@ internal enum class Role(val label: String) {
  * Immutable.
  */
 internal data class Breathed(
-    val gas: String = "air",
+    val gas: String = Gas.AIR.toString(),
     val role: Role = Role.BOTTOM,
     /** Litres of water it holds. */
     val size: String = "",
@@ -197,8 +197,22 @@ internal fun gasLabelOf(index: Int): String = "Gas ${index + 1}"
  * Example: `2: EAN50`, or `2` alone while its mix is still blank.
  */
 internal fun gasChoiceOf(shaping: Shaping, index: Int): String {
-    val mix = shaping.gases.getOrNull(index)?.gas?.trim().orEmpty()
+    val typed = shaping.gases.getOrNull(index)?.gas?.trim().orEmpty()
+    val mix = gasOf(typed)?.toString() ?: typed
     return if (mix.isEmpty()) "${index + 1}" else "${index + 1}: $mix"
+}
+
+/**
+ * [typed] as the application writes a gas where it says the same thing in another case, and as
+ * typed otherwise.
+ *
+ * Only the case is changed, so the text under a reader's cursor never moves while they type:
+ * `ean50` becomes `EAN50`, while `tmx 21/35`, which would lose its space, is left alone until a
+ * line shows it.
+ */
+internal fun prettyGasOf(typed: String): String {
+    val written = gasOf(typed)?.toString() ?: return typed
+    return if (written.equals(typed, ignoreCase = true)) written else typed
 }
 
 /** The key the cylinder at [index] sits under, as a dive's own cylinders sit under keys. */
@@ -1189,7 +1203,7 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
         ) {
             Cell("${index + 1}", INDEX, TextAlign.End)
             Box(modifier = Modifier.width(MIX)) {
-                Compact(dense = true, value = breathed.gas, onChange = { shaping.gases[index] = breathed.copy(gas = it) })
+                Compact(dense = true, value = breathed.gas, onChange = { shaping.gases[index] = breathed.copy(gas = prettyGasOf(it)) })
             }
             Box(modifier = Modifier.width(ROLE)) {
                 Pick(

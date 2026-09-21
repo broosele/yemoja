@@ -253,9 +253,21 @@ class GasListTest {
     @Test
     fun `a line names a cylinder by its number and its mix`() {
         val shaping = planned(Segment("18"), gases = listOf(Breathed(), Breathed("EAN50"), Breathed(" ")))
-        assertEquals("1: air", gasChoiceOf(shaping, 0))
+        assertEquals("1: AIR", gasChoiceOf(shaping, 0))
         assertEquals("2: EAN50", gasChoiceOf(shaping, 1))
         assertEquals("3", gasChoiceOf(shaping, 2), "a mix not yet typed leaves the number alone")
+    }
+
+    @Test
+    fun `a gas is named as the application writes it, whatever case it was typed in`() {
+        val shaping = planned(Segment("18"), gases = listOf(Breathed("air"), Breathed("ean50"), Breathed("tmx 18/45")))
+        assertEquals("1: AIR", gasChoiceOf(shaping, 0))
+        assertEquals("2: EAN50", gasChoiceOf(shaping, 1))
+        assertEquals("3: TMX18/45", gasChoiceOf(shaping, 2))
+        assertEquals("EAN50", prettyGasOf("ean50"))
+        assertEquals("O2", prettyGasOf("o2"))
+        assertEquals("tmx 18/45", prettyGasOf("tmx 18/45"), "what would move under the cursor is left as typed")
+        assertEquals("nonsense", prettyGasOf("nonsense"))
     }
 
     @Test

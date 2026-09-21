@@ -462,7 +462,9 @@ once and corrected. The numbers stay unused rather than being given to something
   italics. That line need not be filled in yet: a gas chosen before a depth is already what the
   lines below it follow. A
   cylinder is named there by its number and its mix, as `2: EAN50`, so a reader choosing one need
-  not look across at the gases. The first line follows the first cylinder. Choosing the gas the line above breathes follows it again,
+  not look across at the gases. The mix is written as the application writes a gas, whatever case
+  it was typed in, and the gas box itself takes that case as it is typed where only the case
+  differs. The first line follows the first cylinder. Choosing the gas the line above breathes follows it again,
   so there is no separate deed for going back. The switches are written where a line changes
   cylinder, and the first is always at nought: a run that says nothing about what it went in on is
   refused, and rightly. `LOGIC-37`.
