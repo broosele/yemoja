@@ -384,7 +384,10 @@ once and corrected. The numbers stay unused rather than being given to something
   and a plan's *Add the ascent* are gone. One place makes a plan rather than two that would drift
   apart. A dive's profiles offer *Add plan*, and a plan among them offers *Edit plan*. Each opens the
   planner bound to that dive, blank to add a plan and holding the saved one to change it, and
-  saving goes back there. *Save as new dive* is always offered as well. No date or time is asked
+  saving goes back there. *Save as new dive* is always offered as well, and so is *Attach to
+  existing dive*, a menu of the logbook's dives, newest first. Attaching always adds a plan: it
+  takes the name typed where that dive holds no plan of the name, and the next free letter where it
+  does, so it never saves over one. No date or time is asked
   yet, so a plan saved as a new dive has none, which a dive may lack: nothing is required.
 
   **One way.** What is saved is the run with its way up, as points, `LOGIC-35`; its cylinders, each

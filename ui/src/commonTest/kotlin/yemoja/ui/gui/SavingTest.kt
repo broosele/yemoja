@@ -191,6 +191,16 @@ class SavingRoundTripTest {
     }
 
     @Test
+    fun `a plan attached to a dive takes the name typed, or the next free one where it is taken`() {
+        val logbook = emptyLogbook()
+        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))
+        val dive = logbook.logbook[made.added.single()]!!
+        assertEquals("Night_dive", attachedKeyOf(dive, "Night dive"))
+        assertEquals("Plan_B", attachedKeyOf(dive, "Plan A"), "attaching adds a plan and never saves over one")
+        assertEquals("Plan_B", attachedKeyOf(dive, "  "))
+    }
+
+    @Test
     fun `a plan saved over keeps what else was written on it`() {
         val logbook = emptyLogbook()
         val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))

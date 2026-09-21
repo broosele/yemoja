@@ -1,5 +1,10 @@
 package yemoja.ui.gui
 
+import yemoja.data.ReferenceableItem
+import androidx.compose.runtime.remember
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -133,6 +138,17 @@ internal fun roleOf(usage: String?): Role = when (usage?.trim()?.lowercase()) {
 internal fun planNameOn(dive: Item?): String {
     val taken = dive?.let { keyedEntriesOf(it, "profiles").map { (key, _) -> key } }.orEmpty().toSet()
     return planName { planKeyOf(it) in taken }
+}
+
+/**
+ * The key a plan named [name] goes under on [dive] when it is attached there: the name typed where
+ * the dive holds no plan of that name, and the next free letter where it does, since attaching adds
+ * a plan and never saves over one.
+ */
+internal fun attachedKeyOf(dive: Item, name: String): String {
+    val typed = planKeyOf(name)
+    val taken = keyedEntriesOf(dive, "profiles").map { it.first }.toSet()
+    return if (typed.isNotEmpty() && typed !in taken) typed else planKeyOf(planNameOn(dive))
 }
 
 /** The changes that make a new dive holding only the plan [fields], under [key]. */
@@ -322,21 +338,34 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
         val blocked = unsaved ?: nameWrong
         if (target != null) {
             Explained(blocked) {
-                Button(onClick = { save(bound) }, enabled = blocked == null) {
-                    Text(if (bound is Bound.Editing) "Save" else "Add to $target")
+                SmallButton(if (bound is Bound.Editing) "Save" else "Add to $target", blocked == null) {
+                    save(bound)
                 }
             }
         }
         Explained(blocked) {
-            val deed = @Composable { Text("Save as new dive") }
-            if (target == null) {
-                Button(onClick = { save(null) }, enabled = blocked == null) { deed() }
-            } else {
-                OutlinedButton(onClick = { save(null) }, enabled = blocked == null) { deed() }
+            SmallButton("Save as new dive", blocked == null, quiet = target != null) { save(null) }
+        }
+        Explained(unsaved) {
+            Attach(universe, enabled = unsaved == null) { chosen ->
+                val id = universe!!.logbook.idOf(chosen) ?: return@Attach
+                val key = attachedKeyOf(chosen, saving.name)
+                val fields = planFieldsOf(shaping, ready!!.conditions, done!!.whole)
+                saving.said = when (val outcome = changer.change(onDiveOf(chosen, key, fields))) {
+                    is Outcome.Refused -> outcome.reason
+                    is Outcome.Done -> {
+                        saving.bound = Bound.Editing(id, key)
+                        "Saved as ${prettyOf(key)} on ${titleOf(chosen)}."
+                    }
+                }
             }
         }
         if (bound != null) {
-            TextButton(onClick = { saving.bound = null; saving.said = null }) { Text("Forget the dive") }
+            TextButton(
+                onClick = { saving.bound = null; saving.said = null },
+                modifier = Modifier.height(SMALL),
+                contentPadding = PaddingValues(horizontal = GAP / 2),
+            ) { Text("Forget the dive", style = MaterialTheme.typography.labelMedium) }
         }
         Text(
             text = saving.said ?: when (bound) {
@@ -347,6 +376,45 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline,
         )
+    }
+}
+
+/** A button of the save row, smaller than a form's, being one of several in a line. */
+@Composable
+private fun SmallButton(label: String, enabled: Boolean, quiet: Boolean = false, onClick: () -> Unit) {
+    val padding = PaddingValues(horizontal = GAP)
+    val text = @Composable { Text(label, style = MaterialTheme.typography.labelMedium) }
+    if (quiet) {
+        OutlinedButton(onClick, Modifier.height(SMALL), enabled = enabled, contentPadding = padding) { text() }
+    } else {
+        Button(onClick, Modifier.height(SMALL), enabled = enabled, contentPadding = padding) { text() }
+    }
+}
+
+/**
+ * The deed that puts the plan on to a dive already in the logbook: a menu of them, newest first,
+ * the plan going on to the one chosen. `GUI-44`.
+ */
+@Composable
+private fun Attach(universe: Universe?, enabled: Boolean, onChoose: (ReferenceableItem) -> Unit) {
+    var choosing by remember { mutableStateOf(false) }
+    Box {
+        SmallButton("Attach to existing dive", enabled, quiet = true) { choosing = true }
+        Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
+            val dives = universe?.logbook?.allOf(Types.DIVE).orEmpty().sortedByDescending { titleOf(it) }
+            if (dives.isEmpty()) {
+                DropdownMenuItem(text = { Text("No dives yet") }, onClick = { choosing = false }, enabled = false)
+            }
+            for (dive in dives) {
+                DropdownMenuItem(
+                    text = { Text(titleOf(dive)) },
+                    onClick = {
+                        choosing = false
+                        onChoose(dive)
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -395,3 +463,6 @@ private const val MODEL = "buhlmann"
 
 /** How wide the box a plan's name is typed in is. */
 private val NAME = 120.dp
+
+/** How tall the save row's buttons are. */
+private val SMALL = 30.dp
