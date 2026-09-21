@@ -246,8 +246,11 @@ class OpeningTest {
         val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))
         val working = Shaping()
         val saving = Saving()
+        working.gases.addAll(listOf(Breathed(), Breathed("EAN80", Role.DECO)))
+        working.lostGas = 2
         saving.open(Bound.Editing(made.added.single(), "Plan_A"), logbook, working)
         assertEquals("Plan A", saving.name)
+        assertEquals(null, working.lostGas, "a lost cylinder chosen for another plan does not carry over")
         assertEquals("40", working.segments.first().depth)
         assertEquals(2, working.gases.size)
     }

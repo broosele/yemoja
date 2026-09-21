@@ -181,6 +181,7 @@ internal fun Shaping.loadFrom(profile: Item, dive: Item?) {
         dive?.let { keyedEntriesOf(it, "gas_sources") }.orEmpty()
     }
     gases.clear()
+    lostGas = null
     val index = HashMap<String, Int>()
     for ((key, source) in sources) {
         index[key] = gases.size
@@ -230,6 +231,8 @@ internal fun Shaping.startAfresh(settings: Settings?) {
     segments += Segment()
     gases.clear()
     gases += Breathed()
+    // A cylinder chosen as lost names a place in the list just emptied, so the choice goes with it.
+    lostGas = null
     prefill(settings)
 }
 
