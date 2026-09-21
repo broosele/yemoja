@@ -244,8 +244,8 @@ you and its provider.
 
 ## Calculations
 
-Two things can be worked out so far. Neither needs a logbook open, and what you type stays while
-you look at another tab.
+Six things can be worked out: SAC, NDL, MOD, EAD, END, and a dive plan. None needs a logbook open,
+and what you type stays while you look at another tab.
 
 **A line at the top of the tab says what these figures are not**, and it is worth reading once:
 they are one model's arithmetic, not a dive computer, and you use them at your own risk. It says
@@ -323,6 +323,17 @@ owed when the high factor is reached, while the low factor says how deep a first
 once you already owe one. It assumes salt water at sea level, and the descent rate from Settings.
 Read [decompression.md](decompression.md) before you trust any of it: this is the same model as
 the plans, with the same limits.
+
+**MOD** is the deepest a mix may be breathed before its oxygen passes a limit: type the gas and the
+limit, which starts as your *pO₂ max bottom* from Settings. It is the same depth the dive plan shows
+beside a cylinder, and it is rounded down.
+
+**EAD** is the depth at which air holds as much nitrogen as your mix does at the depth you type,
+which is how a nitrox dive is read against air tables. **END** is the depth at which air is as
+narcotic as your mix. Helium is not narcotic. Whether oxygen is, agencies disagree, so END has a
+tick for it: counting oxygen gives the deeper and more cautious depth, and it is on until you turn
+it off. The three share one gas box, and each assumes salt water at sea level. EAD and END are
+rounded up.
 
 ## Copying text
 

@@ -481,6 +481,28 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-41 — What depth of air a mix is equivalent to.** *Settled:* **`equivalentAirDepth` and
+  `equivalentNarcoticDepth`, public beside `maximumOperatingDepth`, with whether oxygen is narcotic
+  asked rather than assumed.**
+
+  The equivalent air depth is where air holds as much nitrogen as the mix does, and the equivalent
+  narcotic depth is where air is as narcotic. Both are the pressure arithmetic of `LOGIC-39` turned
+  round, and they are here rather than in a form for the reason that is: a screen with its own
+  copy of the arithmetic would drift from the logbook's.
+
+  **Whether oxygen is narcotic is a convention the model does not settle.** Agencies teach both.
+  Counting it, the narcotic part of a mix is everything but its helium, and air's is all of it,
+  which gives the deeper and more cautious figure. Not counting it, only nitrogen is narcotic and
+  the answer is the equivalent air depth. The function takes the choice as an argument, counting
+  oxygen unless told otherwise, and helium is not narcotic either way.
+
+  **Nought, never above the surface**, where the mix holds less of what is measured than air does
+  at the surface, which a rich nitrox near the surface does. `depthAt` already refuses a depth
+  above the surface, and a negative depth is a figure nobody can use.
+
+  Sea water at sea level unless told otherwise, as every function beside them assumes. Built in
+  `Equivalents.kt`.
+
 - **LOGIC-40 — What gas a plan keeps back for a way up in trouble.** *Settled:* **two scenarios,
   `lostGasReserve` and `sharedGasReserve`, each trying every moment of the dive; a cylinder keeps
   back the most either asks of it.**

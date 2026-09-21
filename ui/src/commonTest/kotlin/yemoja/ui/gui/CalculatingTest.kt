@@ -138,3 +138,68 @@ class WaiverTest {
         assertTrue("your training and your tables" in WAIVER, WAIVER)
     }
 }
+
+class ModAskedTest {
+
+    @Test
+    fun `EAN32 at 1 point 4 bar may be breathed to about 33 metres, rounded down`() {
+        val deepest = assertIs<Answer.Value>(modAsked("EAN32", "1.4")).value
+
+        assertTrue(deepest in 33.0..34.0, "$deepest")
+        assertEquals(deepest, kotlin.math.floor(deepest * 10) / 10, "to a tenth, down")
+    }
+
+    @Test
+    fun `a richer limit takes a mix deeper`() {
+        val bottom = assertIs<Answer.Value>(modAsked("EAN50", "1.4")).value
+        val deco = assertIs<Answer.Value>(modAsked("EAN50", "1.6")).value
+
+        assertTrue(deco > bottom)
+    }
+
+    @Test
+    fun `an empty box waits, and a wrong one says what it wanted`() {
+        assertEquals(Answer.Waiting, modAsked("", "1.4"))
+        assertEquals(Answer.Waiting, modAsked("EAN32", ""))
+        assertTrue("pO₂ max" in assertIs<Answer.Wrong>(modAsked("EAN32", "0")).reason)
+        assertIs<Answer.Wrong>(modAsked("EAN120", "1.4"))
+    }
+
+    @Test
+    fun `a mix already too rich at the surface says so rather than giving nought`() {
+        val wrong = assertIs<Answer.Wrong>(modAsked("EAN100", "0.8"))
+
+        assertTrue("at the surface" in wrong.reason, wrong.reason)
+    }
+}
+
+class EquivalentAskedTest {
+
+    @Test
+    fun `nitrox is shallower air, rounded up to a tenth`() {
+        val ead = assertIs<Answer.Value>(eadAsked("30", "EAN32")).value
+
+        assertTrue(ead in 24.0..25.0, "$ead")
+        assertEquals(ead, kotlin.math.ceil(ead * 10) / 10, "to a tenth, up")
+    }
+
+    @Test
+    fun `nitrox is as narcotic as air when oxygen counts, and shallower when it does not`() {
+        assertEquals(30.0, assertIs<Answer.Value>(endAsked("30", "EAN32", oxygenNarcotic = true)).value)
+        assertEquals(eadAsked("30", "EAN32"), endAsked("30", "EAN32", oxygenNarcotic = false))
+    }
+
+    @Test
+    fun `helium makes a mix less narcotic`() {
+        val end = assertIs<Answer.Value>(endAsked("60", "TMX18/45", oxygenNarcotic = true)).value
+
+        assertTrue(end in 28.0..29.0, "$end")
+    }
+
+    @Test
+    fun `a depth that will not read says so`() {
+        assertEquals(Answer.Waiting, eadAsked("", "EAN32"))
+        assertTrue("Depth" in assertIs<Answer.Wrong>(eadAsked("deep", "EAN32")).reason)
+        assertTrue("Depth" in assertIs<Answer.Wrong>(endAsked("-5", "EAN32", true)).reason)
+    }
+}

@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +42,12 @@ import yemoja.logic.Settings
 import yemoja.logic.Universe
 import yemoja.logic.ambientAt
 import yemoja.logic.depthAt
+import yemoja.logic.equivalentAirDepth
+import yemoja.logic.equivalentNarcoticDepth
+import yemoja.logic.maximumOperatingDepth
 import yemoja.logic.noDecompressionLimit
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToLong
 
 /*
@@ -62,6 +68,15 @@ internal enum class Calculation(val label: String) {
 
     /** How long a depth may be stayed at before a stop is owed. */
     NDL("NDL"),
+
+    /** The deepest a mix may be breathed at an oxygen limit. `LOGIC-39`. */
+    MOD("MOD"),
+
+    /** The depth of air holding as much nitrogen as a mix does at a depth. `LOGIC-41`. */
+    EAD("EAD"),
+
+    /** The depth of air as narcotic as a mix is at a depth. `LOGIC-41`. */
+    END("END"),
 
     /** A whole dive, level by level, and the way up it owes. `GUI-43`. */
     PLAN("Dive plan"),
@@ -104,6 +119,21 @@ internal class Working {
 
     /** Whether the NDL form has been opened before, which decides whether it takes the settings. */
     var prefilled: Boolean = false
+
+    /** The mix the MOD, EAD and END forms are asked about, one for the three. */
+    var mix: String by mutableStateOf("EAN32")
+
+    /** The depth the EAD and END forms are asked about. */
+    var mixDepth: String by mutableStateOf("")
+
+    /** The oxygen limit the MOD form is asked about, in bar. */
+    var mostOxygen: String by mutableStateOf("")
+
+    /** Whether the END form counts oxygen as narcotic. */
+    var oxygenNarcotic: Boolean by mutableStateOf(true)
+
+    /** Whether the MOD form has been opened before, which decides whether it takes the settings. */
+    var mixPrefilled: Boolean = false
 
     /** The plan form's levels and settings. `GUI-43`. */
     val shaping: Shaping = Shaping()
@@ -211,6 +241,71 @@ internal fun ndlAsked(depth: String, gas: String, gradientHigh: String, descentR
     return Answer.Value(seconds / SECONDS_IN_MINUTE)
 }
 
+/**
+ * The deepest [gas] may be breathed before its oxygen passes [mostOxygen] bar, in metres.
+ *
+ * Rounded down to a tenth, since a depth rounded up would be one the mix is too rich for. Salt
+ * water at sea level, as the other forms assume.
+ */
+internal fun modAsked(gas: String, mostOxygen: String): Answer {
+    if (gas.isBlank() || mostOxygen.isBlank()) return Answer.Waiting
+    val mix = when (val read = mixRead(gas)) {
+        is Mixed.Read -> read.gas
+        is Mixed.Wrong -> return Answer.Wrong(read.reason)
+    }
+    val most = mostOxygen.trim().toDoubleOrNull()?.takeIf { it > 0 }
+        ?: return Answer.Wrong("pO₂ max should be more than nought, but was \"${mostOxygen.trim()}\"")
+    if (mix.fractionO2 * SEA_LEVEL > most) {
+        return Answer.Wrong("$mix is over $most bar of oxygen at the surface already")
+    }
+    val deepest = maximumOperatingDepth(mix, most, NOMINAL_DENSITY, SEA_LEVEL)
+        ?: return Answer.Wrong("$mix holds no oxygen, so it may be breathed at no depth")
+    return Answer.Value(floor(deepest * TENTHS) / TENTHS)
+}
+
+/**
+ * The depth at which air holds as much nitrogen as [gas] does at [depth], in metres.
+ *
+ * Rounded up to a tenth, the cautious way for a depth read against air tables. `LOGIC-41`.
+ */
+internal fun eadAsked(depth: String, gas: String): Answer =
+    equivalentAsked(depth, gas) { metres, mix -> equivalentAirDepth(metres, mix) }
+
+/**
+ * The depth at which air is as narcotic as [gas] is at [depth], in metres, counting oxygen as
+ * narcotic where [oxygenNarcotic] says so.
+ *
+ * Rounded up to a tenth, the cautious way. `LOGIC-41`.
+ */
+internal fun endAsked(depth: String, gas: String, oxygenNarcotic: Boolean): Answer =
+    equivalentAsked(depth, gas) { metres, mix -> equivalentNarcoticDepth(metres, mix, oxygenNarcotic) }
+
+private fun equivalentAsked(depth: String, gas: String, equivalent: (Double, Gas) -> Double): Answer {
+    if (depth.isBlank() || gas.isBlank()) return Answer.Waiting
+    val metres = depth.trim().toDoubleOrNull()
+        ?: return Answer.Wrong("Depth should be a number, but was \"${depth.trim()}\"")
+    if (metres < 0) return Answer.Wrong("Depth should be nought or more, but was ${depth.trim()}")
+    val mix = when (val read = mixRead(gas)) {
+        is Mixed.Read -> read.gas
+        is Mixed.Wrong -> return Answer.Wrong(read.reason)
+    }
+    return Answer.Value(ceil(equivalent(metres, mix) * TENTHS) / TENTHS)
+}
+
+/** Mixed is a gas read from a box, or why the box names none. */
+private sealed class Mixed {
+    class Read(val gas: Gas) : Mixed()
+    class Wrong(val reason: String) : Mixed()
+}
+
+private fun mixRead(typed: String): Mixed = try {
+    Mixed.Read(Gas.parse(typed))
+} catch (refused: ValueFormatException) {
+    Mixed.Wrong(refused.message ?: "\"$typed\" is not a gas")
+} catch (refused: IllegalArgumentException) {
+    Mixed.Wrong(refused.message ?: "\"$typed\" is not a gas")
+}
+
 /** An answer as the form shows it under the boxes. */
 internal fun answerSaid(answer: Answer, unit: String): String? = when (answer) {
     is Answer.Value -> "${plain((answer.value * 10).roundToLong() / 10.0)} $unit".trim()
@@ -310,6 +405,9 @@ private fun Calculators(
                     when (working.calculation) {
                         Calculation.SAC -> SacForm(working)
                         Calculation.NDL -> NdlForm(working, settings)
+                        Calculation.MOD -> ModForm(working, settings)
+                        Calculation.EAD -> EadForm(working)
+                        Calculation.END -> EndForm(working)
                         Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar) {
                             SaveRow(working.saving, working.shaping, universe)
                         }
@@ -405,6 +503,87 @@ private fun NdlForm(working: Working, settings: Settings?) {
     Aside("Descending at ${plain(descent)} m a minute, in salt water at sea level.")
 }
 
+/** A mix and an oxygen limit, and how deep the mix may be breathed. */
+@Composable
+private fun ModForm(working: Working, settings: Settings?) {
+    // The limit the user chose for a bottom gas, the first time the form opens.
+    remember(working, settings) {
+        if (!working.mixPrefilled) {
+            val chosen = settings?.number(Settings.DEFAULT_BOTTOM_PO2) ?: Settings.DEFAULT_BOTTOM_PO2.default
+            working.mostOxygen = shownOf(Settings.DEFAULT_BOTTOM_PO2, chosen)
+            working.mixPrefilled = true
+        }
+        working
+    }
+    Heading("MOD")
+    Aside("The deepest a mix may be breathed before its oxygen passes the limit.")
+    Field("Gas", working.mix, "") { working.mix = it }
+    Field("pO₂ max", working.mostOxygen, "bar") { working.mostOxygen = it }
+    Answered("MOD", modAsked(working.mix, working.mostOxygen), "m")
+    Aside("In salt water at sea level, rounded down to a tenth of a metre.")
+}
+
+/** A mix and a depth, and the depth of air holding as much nitrogen. */
+@Composable
+private fun EadForm(working: Working) {
+    Heading("EAD")
+    Aside("The depth at which air holds as much nitrogen as the mix does, which is how a nitrox dive is read against air tables.")
+    Field("Gas", working.mix, "") { working.mix = it }
+    Field("Depth", working.mixDepth, "m") { working.mixDepth = it }
+    Answered("EAD", eadAsked(working.mixDepth, working.mix), "m")
+    Aside("In salt water at sea level, rounded up to a tenth of a metre.")
+}
+
+/** A mix and a depth, and the depth of air as narcotic. */
+@Composable
+private fun EndForm(working: Working) {
+    Heading("END")
+    Aside("The depth at which air is as narcotic as the mix is. Helium is not narcotic.")
+    Field("Gas", working.mix, "") { working.mix = it }
+    Field("Depth", working.mixDepth, "m") { working.mixDepth = it }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        Box(modifier = Modifier.width(LABEL))
+        Checkbox(checked = working.oxygenNarcotic, onCheckedChange = { working.oxygenNarcotic = it })
+        Text(
+            text = "Oxygen is narcotic",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.clickable { working.oxygenNarcotic = !working.oxygenNarcotic },
+        )
+    }
+    Answered("END", endAsked(working.mixDepth, working.mix, working.oxygenNarcotic), "m")
+    Aside(
+        "Agencies differ on whether oxygen is narcotic. Counting it gives the deeper, more cautious " +
+            "depth. In salt water at sea level, rounded up to a tenth of a metre.",
+    )
+}
+
+/** What a form came to, beside its name, or why it came to nothing. */
+@Composable
+private fun Answered(label: String, answer: Answer, unit: String) {
+    when (answer) {
+        is Answer.Value -> Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(GAP),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline,
+                textAlign = TextAlign.End,
+                modifier = Modifier.width(LABEL),
+            )
+            Text(answerSaid(answer, unit).orEmpty(), style = MaterialTheme.typography.bodyMedium)
+        }
+        is Answer.Wrong -> Refused(answer.reason)
+        Answer.Waiting -> Unit
+    }
+}
+
 /** One labelled box of a form in this tab. */
 @Composable
 internal fun Field(label: String, value: String, after: String, onChange: (String) -> Unit) {
@@ -453,6 +632,9 @@ private fun depthOf(bar: Double): Double = depthAt(bar, NOMINAL_DENSITY, SEA_LEV
 private const val SECONDS_IN_MINUTE = 60.0
 
 private const val PERCENT = 100.0
+
+/** Tenths of a metre in a metre, which is as fine as these forms give a depth. */
+private const val TENTHS = 10.0
 
 /** How wide a figure's box is, and a box of any other form in this tab. */
 internal val FIGURE = 140.dp

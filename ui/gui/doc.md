@@ -406,7 +406,7 @@ once and corrected. The numbers stay unused rather than being given to something
   the recording, and the plan sits beside it for comparing.
 
 - **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
-  the form for the one chosen on the right, and two to begin with: SAC and NDL.**
+  the form for the one chosen on the right: SAC, NDL, MOD, EAD, END, and a dive plan.**
 
   A calculation reads no dive: a diver on a boat wants a number from figures they have in their
   head, and the logbook is neither here nor there. So it is a tab of its own rather than a box
@@ -434,6 +434,17 @@ once and corrected. The numbers stay unused rather than being given to something
   for a number that changes no answer, which is worse than leaving it out and explaining why.
   Salt water at sea level and the settings' descent rate are assumed, and a line says so. A depth
   the model finds no limit for is said in words rather than left blank.
+
+  **MOD, EAD and END are a mix and one more figure each, and give a depth.** MOD takes an oxygen
+  limit, prefilled from *pO₂ max bottom* the first time it opens, and is the model's own
+  `maximumOperatingDepth`, so it is the figure the plan's gas table shows beside a cylinder. EAD and
+  END take a depth, `LOGIC-41`, and END has a tick for whether oxygen is narcotic, on unless the
+  reader says otherwise: agencies differ, the tick is where the difference is chosen, and a line
+  under it says which way is the more cautious. The three share one mix box, since a reader asking
+  one of them about a mix usually asks the others about the same one. **Each is rounded the cautious
+  way**, MOD down and the two equivalents up, to a tenth of a metre: a depth rounded the other way
+  is one the mix is too rich or too narcotic for. A mix too rich for its limit at the surface
+  already says so rather than giving a MOD of nought.
 
   **A waiver heads the tab**, above the list and the form both, so it is met before any figure is
   and whichever calculation is chosen. It is the one place in the window where a reader asks for a
