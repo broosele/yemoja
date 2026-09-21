@@ -8,6 +8,7 @@ import yemoja.data.json.MemoryFileStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 /*
  * What a recording's depths were made with.
@@ -104,5 +105,17 @@ class DensityTest {
         val read = assertIs<Result.Usable<*>>(item.read("density"))
         assertEquals(1035.0, read.value)
         assertEquals(Result.Origin.OVERRIDDEN, read.origin)
+    }
+
+    @Test
+    fun `a plan is worked out at the density a recording falls back to`() {
+        for (water in listOf("fresh", "en13319", "salt")) {
+            assertEquals(
+                density(profile(""""water_type": "$water"""")),
+                densityOfWater(water),
+                "$water with no computer named",
+            )
+        }
+        assertNull(densityOfWater("brackish"), "a type nothing knows a density for")
     }
 }

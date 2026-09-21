@@ -453,6 +453,17 @@ private fun saltDensity(profile: Item): Double {
 }
 
 /**
+ * The density [waterType] is taken at where nothing more is known, in kilograms a cubic metre, or
+ * null for a type this does not know.
+ *
+ * What a plan uses, having no computer whose setting could say otherwise, so a plan in salt water
+ * is worked out at the density a recording in salt water falls back to. A recording of salt water
+ * reads its computer's setting instead.
+ */
+fun densityOfWater(waterType: String): Double? =
+    FIXED_DENSITIES[waterType] ?: if (waterType == SALT) USUAL_SALT else null
+
+/**
  * The two water types whose density is settled whatever the computer is.
  *
  * `en13319` is not a measurement of anything: it is the nominal figure the European standard

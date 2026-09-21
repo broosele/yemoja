@@ -498,7 +498,9 @@ To settle when we discuss architecture and features:
 
   `ambientAt`, `depthAt`, `SEA_LEVEL` and `NOMINAL_DENSITY` are public for the same reason: a SAC
   typed into a box costs at depth what a recording's does, and a front end working that out with
-  its own arithmetic would drift from the logbook's. Nothing else in the layer widened.
+  its own arithmetic would drift from the logbook's. `densityOfWater` is public for the same
+  reason: a plan in salt water is worked out at the density a recording of salt water falls back
+  to, rather than at a figure the screen chose.
 
   Built in `Decompression.kt` and `Pressure.kt`, for the window's Calculations tab.
 
