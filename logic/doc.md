@@ -736,7 +736,8 @@ To settle when we discuss architecture and features:
   oxygen, that being breathable nowhere rather than anywhere.
 
   **Its counterpart, `minimumOperatingDepth`, is the shallowest a hypoxic mix may be breathed**,
-  where its oxygen reaches `LEAST_OXYGEN`, 0.16 bar, the figure most taught for a diver at work.
+  where its oxygen reaches `LEAST_OXYGEN`, 0.18 bar. That is the user's choice and the cautious end
+  of what agencies teach, 0.16 being the figure most often given for a diver at work.
   Nought for a mix breathable at the surface. **The walk warns of a mix breathed shallower than
   that**, once a crossing and naming the source, as it warns of one breathed deeper than its
   maximum: a hypoxic mix at the surface is as dangerous as a rich one too deep. The minimum is the

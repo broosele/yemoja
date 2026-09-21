@@ -327,7 +327,7 @@ the plans, with the same limits.
 **MOD** is the deepest a mix may be breathed before its oxygen passes a limit: type the gas and the
 limit, which starts as your *pO₂ max bottom* from Settings. It is the same depth the dive plan shows
 beside a cylinder, and it is rounded down. Beneath it is the **minimum depth**, the shallowest the
-mix may be breathed before its oxygen falls below *pO₂ min*, which starts at 0.16 bar. Only a
+mix may be breathed before its oxygen falls below *pO₂ min*, which starts at 0.18 bar. Only a
 hypoxic mix, one with too little oxygen to breathe at the surface, has one: trimix 10/70 needs about
 6 m. It is rounded up. A dive plan warns wherever a mix is breathed shallower than this.
 

@@ -745,7 +745,7 @@ class EvaluationTest {
 
     @Test
     fun `a hypoxic mix breathed at the surface is said once, and not at depth`() {
-        // Trimix 10/70 is 0.10 bar at the surface and reaches 0.16 bar at about six metres.
+        // Trimix 10/70 is 0.10 bar at the surface and reaches 0.18 bar at about eight metres.
         fun leanFindings(switches: List<Pair<Int, String>>): List<Finding> = assertIs<Evaluated.Done>(
             evaluate(
                 Run(
@@ -761,7 +761,7 @@ class EvaluationTest {
         val atTheSurface = leanFindings(listOf(0 to "g2")).single()
         assertEquals(0, atTheSurface.second)
         assertEquals("g2", atTheSurface.source)
-        assertTrue("0.16" in atTheSurface.said, atTheSurface.said)
+        assertTrue("0.18" in atTheSurface.said, atTheSurface.said)
         assertTrue(leanFindings(listOf(0 to "g1", 120 to "g2")).isEmpty(), "switched to at 20 m, it is fine")
     }
 

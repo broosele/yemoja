@@ -88,10 +88,10 @@ class EquivalentsTest {
 
     @Test
     fun `a hypoxic mix is breathed from where its oxygen reaches the minimum`() {
-        // Trimix 10/70: 0.16 bar of oxygen at 1.6 bar, which is about 6 m.
+        // Trimix 10/70: 0.18 bar of oxygen at 1.8 bar, which is about 8 m.
         val shallowest = minimumOperatingDepth(Gas.parse("TMX10/70"))!!
 
-        assertEquals(5.9, shallowest, 0.1)
+        assertEquals(7.9, shallowest, 0.1)
         assertEquals(LEAST_OXYGEN, 0.10 * ambientAt(shallowest, NOMINAL_DENSITY, SEA_LEVEL), 1e-9)
     }
 

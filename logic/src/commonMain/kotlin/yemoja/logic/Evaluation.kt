@@ -1043,11 +1043,13 @@ private const val BUHLMANN = "buhlmann"
 const val MOST_OXYGEN = 1.6
 
 /**
- * The least oxygen a mix is breathed at, in bar: the figure most taught for a diver at work, below
- * which a hypoxic mix may not keep them conscious. Less is tolerated at rest, which is why agencies
- * differ and a form lets it be typed over.
+ * The least oxygen a mix is breathed at, in bar, below which a hypoxic mix may not keep a diver
+ * conscious.
+ *
+ * The user's choice, and the cautious end of what agencies teach: 0.16 is the figure most often
+ * given for a diver at work, and less is tolerated at rest. A form lets it be typed over.
  */
-const val LEAST_OXYGEN = 0.16
+const val LEAST_OXYGEN = 0.18
 
 private const val SECONDS_IN_MINUTE = 60.0
 

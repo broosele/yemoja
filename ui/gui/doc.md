@@ -438,7 +438,7 @@ once and corrected. The numbers stay unused rather than being given to something
   **MOD, EAD and END are a mix and one more figure each, and give a depth.** MOD takes an oxygen
   limit, prefilled from *pO₂ max bottom* the first time it opens, and is the model's own
   `maximumOperatingDepth`, so it is the figure the plan's gas table shows beside a cylinder. It
-  gives the minimum depth too, from a least oxygen that starts at 0.16 bar, since a hypoxic mix is
+  gives the minimum depth too, from a least oxygen that starts at 0.18 bar, since a hypoxic mix is
   as dangerous too shallow as a rich one is too deep; a range with its minimum below its maximum
   says the mix is breathable nowhere rather than showing two depths that contradict. EAD and
   END take a depth, `LOGIC-41`, and END has a tick for whether oxygen is narcotic, on unless the

@@ -543,7 +543,7 @@ class WarnedLinesTest {
         val conditions = assertNotNull(conditionsOf(shaping).first)
         val legs = ready(shaping).legs
 
-        assertTrue(tooShallowFor(legs[0], shaping, conditions), "0 to 3 m on 10/70, which needs about 6")
+        assertTrue(tooShallowFor(legs[0], shaping, conditions), "0 to 3 m on 10/70, which needs about 8")
         assertTrue(gasWrongFor(legs[0], shaping, conditions))
         assertTrue(!tooShallowFor(legs[2], shaping, conditions), "at 40 m it is breathable")
     }

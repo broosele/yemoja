@@ -220,8 +220,8 @@ class MinimumAskedTest {
     }
 
     @Test
-    fun `a new form asks for the minimum most taught`() {
-        assertEquals("0.16", Working().leastOxygen)
+    fun `a new form asks for a minimum of 0 point 18 bar`() {
+        assertEquals("0.18", Working().leastOxygen)
     }
 
     @Test
