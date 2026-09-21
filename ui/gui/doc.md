@@ -454,11 +454,11 @@ once and corrected. The numbers stay unused rather than being given to something
   dive is. The gases take what the settings leave of the same height, so the two columns end on one
   line, and they scroll in the same way once there are more than fit, their headings staying above
   them. The lines of all three parts are dense, in smaller type than a form's, so about eighteen
-  lines of the runtime and about eleven cylinders show before either scrolls.
+  lines of the runtime and about ten cylinders show before either scrolls.
 
   **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent
-  rate, safety stop depth and duration, last stop and water each start from what the settings
-  hold, `GUI-42`, and are changed here for this plan alone. A safety stop of nought minutes is none,
+  rate, safety stop depth and duration, last stop, water and panic stress factor each start from
+  what the settings hold, `GUI-42`, and are changed here for this plan alone. A safety stop of nought minutes is none,
   and its depth is greyed. The safety stop is a minimum the ascent holds, with a longer deco stop
   there counting towards it, and a dive that does not hold it is warned of, typed or not. The water
   is weighed as a recording made in it would be.
@@ -472,6 +472,16 @@ once and corrected. The numbers stay unused rather than being given to something
   How deep each may go is the model's `maximumOperatingDepth` at that limit, so the table, the
   ascent's choice and the warning are one figure. What the plan takes from each cylinder and leaves
   in it are worked out beside it.
+
+  **The gas reserve is under the clocks, on a line of its own.** It says what each cylinder must
+  still hold at the dive's worst moment, and when that moment is, `LOGIC-40`. A cylinder that falls
+  short at any moment is a warning in the list beneath, in the same words and the same names as the
+  model's own warnings, so *Gas 1 runs out* and *Gas 1 is empty* read as one cylinder. Which
+  cylinders the reserve takes as lost is a tick of its own in the gases, *Lost*, rather than a
+  fourth role: a deco cylinder is lost until the tick says otherwise, and the others are kept, but
+  losing a bottom gas is a scenario a reader may want to try without changing what the cylinder is
+  for. The panic stress factor is read apart from the other settings, so a factor typed wrong
+  leaves the reserve unsaid and the decompression still answered.
 
   **A cylinder a line breathes stays.** Its × is greyed, and a tooltip says which line breathes it.
   Taking it out would change the dive behind the reader's back, so they change the line first. A
@@ -495,7 +505,7 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  Eleven settings are still a form rather than a place, so they open in the System box like a
+  Twelve settings are still a form rather than a place, so they open in the System box like a
   download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 

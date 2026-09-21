@@ -310,11 +310,19 @@ plan takes from the cylinder and leaves in it. The role says what the cylinder i
   where one of your lines names it. If you switch to it yourself, the way up keeps you on it unless
   a richer mix is allowed or it goes past its own limit.
 
+The **Lost** tick marks the cylinders the gas reserve treats as gone. A deco cylinder is ticked
+until you untick it, and the others are not, but you can tick any of them to see what losing it
+would cost.
+
 A cylinder that one of your lines breathes cannot be taken out until you change that line.
 
-Under all that is a line with the oxygen clocks, the no-fly time and the desaturation time. Then
-comes anything Yemoja objects to, such as going above the ceiling, rising faster than your ascent
-rate, missing the safety stop, a cylinder running dry, or a mix breathed past its limit. Last is a
+Under all that is a line with the oxygen clocks, the no-fly time and the desaturation time. Below
+it is the gas reserve: what each cylinder you still have must hold at the worst moment of the dive,
+and when that moment is. [The decompression model](decompression.md#planning-a-dive) explains the
+rule it follows, and the *panic stress factor* in the settings is how many times your usual rate
+it breathes at. Then comes anything Yemoja objects to, such as going above the ceiling, rising faster than your ascent
+rate, missing the safety stop, a cylinder running dry, a cylinder holding less than its reserve,
+or a mix breathed past its limit. Last is a
 graph of the whole dive. The plan is not saved anywhere: it is a slate, not a logbook entry.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a

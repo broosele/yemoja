@@ -334,3 +334,99 @@ class WorkedOfTest {
         assertIs<Evaluated.Done>(done(planned(*FORTY)).evaluated)
     }
 }
+
+/** Air on the bottom in a twelve-litre cylinder and EAN50 for the stops, each breathed at 20. */
+private val BOTTOM_AND_DECO = listOf(
+    Breathed(gas = "air", size = "12", fill = "200", sac = "20"),
+    Breathed(gas = "EAN50", role = Role.DECO, size = "7", fill = "200", sac = "20"),
+)
+
+private fun reckoned(shaping: Shaping): Reckoned {
+    val done = done(shaping)
+    return reckonedOf(shaping, done, assertNotNull(conditionsOf(shaping).first))
+}
+
+private fun reserve(shaping: Shaping): yemoja.logic.Reserve.Done =
+    assertIs<Reckoned.Done>(reckoned(shaping)).reserve
+
+class ReserveTest {
+
+    @Test
+    fun `a new plan's reserve breathes at four times the usual rate`() {
+        assertEquals("4", planned().panicFactor)
+    }
+
+    @Test
+    fun `a deco gas is lost unless ticked otherwise, and the rest are kept`() {
+        assertTrue(isLost(Breathed(role = Role.DECO)))
+        assertTrue(!isLost(Breathed(role = Role.BOTTOM)))
+        assertTrue(!isLost(Breathed(role = Role.BAILOUT)))
+        assertTrue(!isLost(Breathed(role = Role.DECO, lost = false)), "a tick overrides the role")
+        assertTrue(isLost(Breathed(role = Role.BOTTOM, lost = true)))
+    }
+
+    @Test
+    fun `a deco plan's reserve is bottom gas, in bar, at the end of the bottom`() {
+        val reserve = reserve(planned(*FORTY, gases = BOTTOM_AND_DECO))
+
+        assertEquals(setOf("g1"), reserve.needed.keys, "the deco gas is lost")
+        assertTrue(reserveSaid(reserve).matches(Regex("Gas 1: [0-9]+ bar")), reserveSaid(reserve))
+        assertEquals("25:00 at 40 m", worstSaid(reserve))
+    }
+
+    @Test
+    fun `a plan short of its reserve says which cylinder and when`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        val said = assertNotNull(shortfallSaid(reserve(shaping)))
+
+        assertTrue(said.startsWith("At ") && "Gas 1 " in said, said)
+        assertTrue("-" !in said, "a gauge run dry is empty, not below nought: $said")
+    }
+
+    @Test
+    fun `a plan with enough gas has no shortfall to say`() {
+        val shaping = planned(
+            Segment("18"),
+            Segment("18", duration = "15"),
+            gases = listOf(Breathed(gas = "air", size = "24", fill = "232", sac = "20")),
+        )
+
+        assertNull(shortfallSaid(reserve(shaping)))
+        assertNull(uncheckedSaid(reserve(shaping), shaping))
+    }
+
+    @Test
+    fun `a panic factor typed wrong leaves the decompression answered`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        shaping.panicFactor = "0.5"
+
+        assertIs<Worked.Done>(workedOf(ready(shaping)), "the plan is still worked out")
+        val wrong = assertIs<Reckoned.Wrong>(reckoned(shaping))
+        assertTrue("\"0.5\"" in wrong.reason, wrong.reason)
+    }
+
+    @Test
+    fun `a cylinder with no SAC is named where the reserve would be`() {
+        val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", size = "12", fill = "200")))
+        val wrong = assertIs<Reckoned.Wrong>(reckoned(shaping))
+
+        assertTrue(wrong.reason.startsWith("Gas 1: "), wrong.reason)
+    }
+
+    @Test
+    fun `a cylinder with no size is given in litres and said to be unchecked`() {
+        val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", sac = "20")))
+        val reserve = reserve(shaping)
+
+        assertTrue(reserveSaid(reserve).endsWith(" L"), reserveSaid(reserve))
+        assertTrue(uncheckedSaid(reserve, shaping)!!.startsWith("Gas 1 needs a volume"))
+    }
+
+    @Test
+    fun `a deco gas ticked as kept is breathed on the way up in trouble`() {
+        val kept = BOTTOM_AND_DECO.mapIndexed { index, it -> if (index == 1) it.copy(lost = false) else it }
+        val reserve = reserve(planned(*FORTY, gases = kept))
+
+        assertTrue("g2" in reserve.needed.keys, "${reserve.needed}")
+    }
+}

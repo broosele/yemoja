@@ -18,11 +18,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +42,7 @@ import yemoja.data.Gas
 import yemoja.data.ValueFormatException
 import yemoja.logic.Ascended
 import yemoja.logic.Evaluated
+import yemoja.logic.Reserve
 import yemoja.logic.NumberSetting
 import yemoja.logic.Run
 import yemoja.logic.SafetyStop
@@ -47,9 +51,11 @@ import yemoja.logic.Source
 import yemoja.logic.completeAscent
 import yemoja.logic.densityOfWater
 import yemoja.logic.evaluate
+import yemoja.logic.gasReserve
 import yemoja.logic.maximumOperatingDepth
 import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /*
@@ -116,6 +122,8 @@ internal data class Breathed(
     val fill: String = "",
     /** Litres a minute at the surface. */
     val sac: String = "",
+    /** Whether the gas reserve takes it as lost, or null to follow its role: only a deco gas is. */
+    val lost: Boolean? = null,
 )
 
 /**
@@ -140,6 +148,7 @@ internal class Shaping {
     var safetyDepth: String by mutableStateOf("")
     var safetyMinutes: String by mutableStateOf("")
     var lastStop: String by mutableStateOf("")
+    var panicFactor: String by mutableStateOf("")
 
     /** In the words `water_type` uses. */
     var water: String by mutableStateOf(Settings.DEFAULT_WATER_TYPE.default)
@@ -161,6 +170,7 @@ internal fun Shaping.prefill(settings: Settings?) {
     safetyDepth = shown(Settings.DEFAULT_SAFETY_STOP_DEPTH)
     safetyMinutes = shown(Settings.DEFAULT_SAFETY_STOP_DURATION)
     lastStop = shown(Settings.DEFAULT_LAST_STOP)
+    panicFactor = shown(Settings.DEFAULT_PANIC_FACTOR)
     water = settings?.choice(Settings.DEFAULT_WATER_TYPE) ?: Settings.DEFAULT_WATER_TYPE.default
     prefilled = true
 }
@@ -536,6 +546,75 @@ internal fun workedOf(ready: Shaped.Ready): Worked {
     }
 }
 
+/** Whether the gas reserve takes [breathed] as lost: as ticked, or a deco gas where nobody ticked. */
+internal fun isLost(breathed: Breathed): Boolean = breathed.lost ?: (breathed.role == Role.DECO)
+
+/** Reckoned is the gas reserve a plan keeps back, or why there is none to show. */
+internal sealed class Reckoned {
+
+    class Done(val reserve: Reserve.Done) : Reckoned()
+
+    class Wrong(val reason: String) : Reckoned()
+}
+
+/**
+ * The gas [done] must keep back to reach the surface with [shaping]'s lost cylinders gone, each
+ * breathed at the plan's panic stress factor.
+ *
+ * The factor is read apart from the other settings, so one typed wrong leaves the reserve unsaid
+ * and the decompression still answered. `LOGIC-40`.
+ */
+internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditions): Reckoned {
+    val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
+        ?: return Reckoned.Wrong(
+            "the panic stress factor is a multiple of SAC, 1 or more, and ${said(shaping.panicFactor)} is not",
+        )
+    val lost = shaping.gases.indices.filter { isLost(shaping.gases[it]) }.map { gasKeyOf(it) }.toSet()
+    return when (val reserve = gasReserve(done.whole, factor, lost, conditions.ascentRate, conditions.lastStop)) {
+        is Reserve.Done -> Reckoned.Done(reserve)
+        is Reserve.Refused -> Reckoned.Wrong(
+            reserve.source?.let { "${gasLabelOf(gasIndexOf(it))}: ${reserve.reason}" } ?: reserve.reason,
+        )
+    }
+}
+
+/**
+ * What each cylinder must still hold at the worst moment: in bar, rounded up, or in litres where
+ * nobody said how big it is.
+ *
+ * Named as the warnings beneath name them, so a shortfall and the reserve it falls short of read
+ * as one cylinder.
+ */
+internal fun reserveSaid(reserve: Reserve.Done): String =
+    reserve.needed.keys.joinToString(", ") { key ->
+        val held = reserve.reserve[key]?.let { "${ceil(it).toInt()} bar" }
+            ?: "${ceil(reserve.needed.getValue(key)).toInt()} L"
+        "${gasLabelOf(gasIndexOf(key))}: $held"
+    }.ifEmpty { "none" }
+
+/** When the worst moment is, and how deep. */
+internal fun worstSaid(reserve: Reserve.Done): String =
+    "${clockOf(reserve.worst)} at ${plain(reserve.worstMetres)} m"
+
+/** Where a cylinder first holds less than the way up from there needs, or null where none does. */
+internal fun shortfallSaid(reserve: Reserve.Done): String? = reserve.shortfall?.let {
+    // A gauge the plan has already run below nought is empty, not a negative pressure.
+    val held = if (it.left <= 0) "is empty" else "holds ${floor(it.left).toInt()} bar"
+    "At ${clockOf(it.second)}: ${gasLabelOf(gasIndexOf(it.source))} $held, and the way up from " +
+        "there with the lost gas gone needs ${ceil(it.needed).toInt()} bar"
+}
+
+/** The cylinders a way up breathes that have no size or no start pressure, so cannot be checked. */
+internal fun uncheckedSaid(reserve: Reserve.Done, shaping: Shaping): String? {
+    if (reserve.judged) return null
+    val unchecked = reserve.needed.keys.map { gasIndexOf(it) }.filter {
+        val breathed = shaping.gases[it]
+        breathed.size.trim().toDoubleOrNull() == null || breathed.fill.trim().toDoubleOrNull() == null
+    }
+    return unchecked.joinToString(", ") { gasLabelOf(it) } +
+        " needs a volume and a start pressure before the reserve can be checked against it"
+}
+
 /** [run] with [ascent] on the end of it, and nothing else about it changed. */
 internal fun withAscent(run: Run, ascent: Ascended.Done): Run = Run(
     depth = run.depth + ascent.depth,
@@ -658,20 +737,33 @@ internal fun PlanForm(
             }
         }
     }
+    val reckoned = if (done != null && conditions != null) reckonedOf(shaping, done, conditions) else null
     if (done != null) Figures(done.evaluated)
+    if (reckoned != null) ReserveFigures(reckoned, shaping)
     when {
         shaped is Shaped.Wrong -> Refused(shaped.reason)
         worked is Worked.Refused -> Refused(worked.reason)
-        done != null -> for (finding in findingsSaidOf(done.evaluated, tanksOf(shaping))) {
-            Text(
-                text = "${finding.label}: ${finding.parts.joinToString("") { it.text }}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (finding.wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = GAP, vertical = 2.dp),
-            )
+        done != null -> {
+            for (finding in findingsSaidOf(done.evaluated, tanksOf(shaping))) {
+                Warning("${finding.label}: ${finding.parts.joinToString("") { it.text }}", finding.wrong)
+            }
+            val reserve = (reckoned as? Reckoned.Done)?.reserve
+            reserve?.let { shortfallSaid(it) }?.let { Warning(it, wrong = true) }
+            reserve?.let { uncheckedSaid(it, shaping) }?.let { Warning(it, wrong = false) }
         }
     }
     if (done != null) Graph(done, shaping)
+}
+
+/** One line of what the model objects to, in the error colour where it is a fault. */
+@Composable
+private fun Warning(text: String, wrong: Boolean) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(horizontal = GAP, vertical = 2.dp),
+    )
 }
 
 /** What each cylinder is called, under the key the run holds it by. */
@@ -874,6 +966,10 @@ private fun Conditions(shaping: Shaping) {
             }
         },
     )
+    Paired(
+        first = { Setting("Panic stress factor", shaping.panicFactor, "× SAC") { shaping.panicFactor = it } },
+        second = {},
+    )
 }
 
 /** Two settings side by side, each taking half the width. */
@@ -948,6 +1044,17 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
             Box(modifier = Modifier.width(SAC)) {
                 Compact(dense = true, value = breathed.sac, onChange = { shaping.gases[index] = breathed.copy(sac = it) }, after = "L/min")
             }
+            Box(modifier = Modifier.width(LOST), contentAlignment = Alignment.Center) {
+                Explained("Taken as lost for the gas reserve") {
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        Checkbox(
+                            checked = isLost(breathed),
+                            onCheckedChange = { shaping.gases[index] = breathed.copy(lost = it) },
+                            modifier = Modifier.size(DENSE_GLYPH),
+                        )
+                    }
+                }
+            }
             val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
             Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked)
             Cell(done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(), FIGURED, TextAlign.End, worked)
@@ -990,6 +1097,26 @@ private fun Figures(evaluated: Evaluated.Done) {
         Figure("OTU", "${evaluated.oxygen.otu.toInt()}")
         Figure("No-fly time", evaluated.noFlight?.let { waitSaid(it) } ?: "more than a day")
         Figure("Desaturation time", evaluated.desaturation?.let { waitSaid(it) } ?: "more than a day")
+    }
+}
+
+/**
+ * The gas reserve on a line of its own: what each cylinder must hold at the worst moment, and when
+ * that is, or why it cannot be said. `LOGIC-40`.
+ */
+@Composable
+private fun ReserveFigures(reckoned: Reckoned, shaping: Shaping) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
+        horizontalArrangement = Arrangement.spacedBy(GAP * 3),
+    ) {
+        when (reckoned) {
+            is Reckoned.Done -> {
+                Figure("Reserve", reserveSaid(reckoned.reserve))
+                Figure("Worst moment", worstSaid(reckoned.reserve))
+            }
+            is Reckoned.Wrong -> Figure("Reserve", reckoned.reason)
+        }
     }
 }
 
@@ -1042,7 +1169,7 @@ private const val SECONDS_IN_MINUTE = 60.0
 private const val PERCENT = 100.0
 
 /**
- * How tall the top of the plan is: about eighteen lines of the runtime, and about eleven cylinders
+ * How tall the top of the plan is: about eighteen lines of the runtime, and about ten cylinders
  * under the settings, before either scrolls.
  */
 private val ZONE = 508.dp
@@ -1066,12 +1193,13 @@ private val SETTING_LABEL = 150.dp
 private val SETTING = 104.dp
 
 private val INDEX = 16.dp
-private val MIX = 84.dp
+private val MIX = 76.dp
 private val ROLE = 104.dp
 private val VOLUME = 64.dp
-private val PRESSURE = 80.dp
-private val SAC = 96.dp
-private val FIGURED = 64.dp
+private val PRESSURE = 76.dp
+private val SAC = 88.dp
+private val FIGURED = 60.dp
+private val LOST = 28.dp
 
 /** The cylinders' columns, headed, as wide as what sits under them. */
 private val CYLINDER_COLUMNS: List<Pair<String, Dp>> = listOf(
@@ -1081,6 +1209,7 @@ private val CYLINDER_COLUMNS: List<Pair<String, Dp>> = listOf(
     "Volume" to VOLUME,
     "Start" to PRESSURE,
     "SAC" to SAC,
+    "Lost" to LOST,
     "MOD" to FIGURED,
     "Used" to FIGURED,
     "End" to FIGURED,

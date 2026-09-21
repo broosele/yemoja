@@ -229,6 +229,25 @@ in litres a minute at the surface. That is a guess about yourself, and the bette
 better the answer. Your own past dives are where to get it, since Yemoja works one out from every
 recording that has cylinder pressures in it.
 
+**Whether you carry enough gas for trouble** is a different question from what the dive costs.
+Yemoja answers it with one rule. At whichever moment of the dive it would hurt most, the gases you
+mark as lost are gone, and you must still reach the surface safely: every stop the model asks for,
+and your safety stop. On that way up you breathe several times your usual SAC, because you may be
+sharing gas with a buddy and you will be stressed. The multiple is the *panic stress factor*, four
+unless you change it, and the gas marked lost is your deco gas unless you say otherwise.
+
+Every moment of the plan is tried, and the worst is reported: when it is, how deep you are, and how
+much each remaining cylinder must still hold then, in bar. That figure is the cylinder's reserve.
+If at any moment a cylinder holds less than the way up from there would need, Yemoja says which
+cylinder and when. A bailout cylinder is breathed on that way up, since trouble is what it is
+carried for. A cylinder with no SAC cannot be costed, and one with no size or fill can be costed
+in litres but not checked against what it holds.
+
+**On a dive with stops the answer is severe, and that is the rule working.** The raised rate runs
+through every stop of the way up, not only the first minutes. Forty metres for twenty-five minutes
+on air, with its EAN50 lost, needs over six thousand litres at four times twenty litres a minute.
+A plan that fails this check is telling you that the dive depends on the deco gas you carry.
+
 ## What the model does not know
 
 The model is a description of gas moving through an idealised body. Yours is not one,
