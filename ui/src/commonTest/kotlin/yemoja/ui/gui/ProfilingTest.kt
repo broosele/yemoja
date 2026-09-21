@@ -110,6 +110,19 @@ class LaidOfTest {
     }
 
     @Test
+    fun `a line follows the gas chosen on the line directly above, filled in or not`() {
+        val shaping = planned(
+            Segment(gas = 1),
+            Segment("18"),
+            Segment("18", duration = "20"),
+            gases = listOf(Breathed(), Breathed("EAN32")),
+        )
+        assertEquals(1, gasAbove(shaping, 1), "what the second line shows in italics")
+        assertEquals(listOf(1, 1), ready(shaping).legs.map { it.gas }, "and what it breathes")
+        assertEquals(setOf(1), shaping.breathed())
+    }
+
+    @Test
     fun `the first switch is at nought and the next where a line changes cylinder`() {
         val run = ready(
             planned(

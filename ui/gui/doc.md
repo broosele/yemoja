@@ -432,7 +432,9 @@ once and corrected. The numbers stay unused rather than being given to something
   table, and a line that is either a rise or a stay is what lets a reader type a way up at a rate
   of their own.
 
-  **A line breathes the gas of the line above until one is chosen**, and says so in italics. A
+  **A line breathes the gas of the line directly above until one is chosen**, and says so in
+  italics. That line need not be filled in yet: a gas chosen before a depth is already what the
+  lines below it follow. A
   cylinder is named there by its number and its mix, as `2: EAN50`, so a reader choosing one need
   not look across at the gases. The first line follows the first cylinder. Choosing the gas the line above breathes follows it again,
   so there is no separate deed for going back. The switches are written where a line changes

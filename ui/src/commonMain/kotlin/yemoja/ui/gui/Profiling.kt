@@ -213,8 +213,8 @@ internal fun Shaping.breathed(): Set<Int> {
     val breathed = HashSet<Int>()
     var gas = 0
     for (segment in segments) {
-        if (isBlank(segment)) continue
         gas = segment.gas ?: gas
+        if (isBlank(segment)) continue
         breathed += gas
     }
     return breathed
@@ -254,7 +254,12 @@ private fun Shaping.renumber(moved: (Int) -> Int?) {
     }
 }
 
-/** Whether nothing that times or places [segment] is typed. A gas alone is not a line. */
+/**
+ * Whether nothing that times or places [segment] is typed.
+ *
+ * A gas alone is not a line of the run, but the lines below it still follow it: a reader who
+ * chooses the gas first and the depth after has already said what the next lines breathe.
+ */
 private fun isBlank(segment: Segment): Boolean =
     segment.depth.isBlank() && segment.duration.isBlank() && segment.rate.isBlank()
 
@@ -327,7 +332,10 @@ internal fun laidOf(
     var second = 0
     var gas = 0
     for ((index, segment) in segments.withIndex()) {
-        if (isBlank(segment)) continue
+        if (isBlank(segment)) {
+            segment.gas?.takeIf { it in 0..<gases }?.let { gas = it }
+            continue
+        }
         val line = "line ${index + 1}"
         val to = segment.depth.trim().toDoubleOrNull()?.takeIf { it >= 0 }
             ?: return legs to if (segment.depth.isBlank()) {
@@ -767,10 +775,9 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
 }
 
 /** What the lines above [index] breathe at their end, which a line following them breathes too. */
-private fun gasAbove(shaping: Shaping, index: Int): Int {
+internal fun gasAbove(shaping: Shaping, index: Int): Int {
     var gas = 0
     for (segment in shaping.segments.take(index)) {
-        if (isBlank(segment)) continue
         gas = segment.gas?.takeIf { it in shaping.gases.indices } ?: gas
     }
     return gas
