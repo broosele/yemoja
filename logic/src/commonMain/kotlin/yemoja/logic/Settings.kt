@@ -249,6 +249,13 @@ class Settings internal constructor(private val store: FileStore) {
         val DEFAULT_SAFETY_STOP_DURATION =
             NumberSetting("default_safety_stop_duration", "Safety stop duration", "min", 3.0, 0.0..15.0)
 
+        /**
+         * How many times its usual rate a new plan's reserve breathes each cylinder at, for sharing
+         * gas and for stress. `LOGIC-40`.
+         */
+        val DEFAULT_PANIC_FACTOR =
+            NumberSetting("default_panic_factor", "Panic stress factor", "× SAC", 4.0, 1.0..10.0)
+
         /** The water a new plan is dived in, in the words `water_type` uses. */
         val DEFAULT_WATER_TYPE =
             ChoiceSetting("default_water_type", "Water", listOf("salt", "fresh"), "salt")
@@ -278,6 +285,7 @@ class Settings internal constructor(private val store: FileStore) {
             DEFAULT_DECO_PO2,
             DEFAULT_SAFETY_STOP_DEPTH,
             DEFAULT_SAFETY_STOP_DURATION,
+            DEFAULT_PANIC_FACTOR,
         )
 
         /** Every setting holding one of a set of words that the settings form offers, after the numbers. */

@@ -72,13 +72,15 @@ written in — a settings file declares none:
   12. Without a choice, 6.
 - `default_safety_stop_duration` — how long a new dive plan's safety stop lasts, in minutes, from
   0 to 15. 0 means no safety stop. Without a choice, 3.
+- `default_panic_factor` — how many times its usual SAC a new dive plan's gas reserve breathes
+  each cylinder at, for sharing gas and for stress, from 1 to 10. Without a choice, 4.
 - `default_water_type` — the water a new dive plan is dived in: `salt` or `fresh`. Without a
   choice, `salt`.
 
 A value that is not a number, or lies outside its range, is ignored, and the next place in line
 answers instead.
 
-All five are worth a word, because their names are doing real work. They are *defaults*
+All of them are worth a word, because their names are doing real work. They are *defaults*
 for making a plan and nothing more. A plan keeps the gradient factors it was made with and
 the depths its ascent was written with, so changing these does not alter a plan you have
 already made, and it does not alter anything Yemoja tells you about a dive you have already

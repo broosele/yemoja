@@ -139,6 +139,7 @@ class SettingsTest {
                 "default_deco_po2",
                 "default_safety_stop_depth",
                 "default_safety_stop_duration",
+                "default_panic_factor",
             ),
             Settings.OFFERED.map { it.name },
         )
@@ -153,6 +154,12 @@ class SettingsTest {
         assertEquals(6.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DEPTH))
         assertEquals(3.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
         assertEquals("salt", chosen.choice(Settings.DEFAULT_WATER_TYPE))
+    }
+
+    @Test
+    fun `a new plan's reserve breathes at four times the usual rate`() {
+        val (chosen, _) = settings()
+        assertEquals(4.0, chosen.number(Settings.DEFAULT_PANIC_FACTOR))
     }
 
     @Test
