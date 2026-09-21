@@ -146,7 +146,7 @@ private val ALARMS = setOf(
 private val DECO_MODELS = setOf("buhlmann", "vpm", "rgbm", "dciem")
 
 /** Anything is allowed; these are the ones the manual names. */
-private val GAS_USAGES = setOf("bottom", "stage", "deco", "travel")
+private val GAS_USAGES = setOf("bottom", "stage", "deco", "travel", "bailout")
 
 /** Anything is allowed; these are the ones the manual names. */
 private val GAS_CONFIGURATIONS = setOf("back mounted", "sidemount", "pony", "staged")

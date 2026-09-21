@@ -376,6 +376,32 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-44 — How a plan is kept.** *Settled:* **the Calculations tab's planner saves a plan, as a
+  new dive or on to one already there, and the Dives tab only opens it there.**
+
+  The planner and the form that started plans on the Dives tab wrote the same thing: a dive holding
+  a profile marked `planned`, `DATA-57`. So the planner saves, and the form, its *Plan dive* button
+  and a plan's *Add the ascent* are gone. One place makes a plan rather than two that would drift
+  apart. A dive's profiles offer *Add plan*, and a plan among them offers *Edit plan*. Each opens the
+  planner bound to that dive, blank to add a plan and holding the saved one to change it, and
+  saving goes back there. *Save as new dive* is always offered as well. No date or time is asked
+  yet, so a plan saved as a new dive has none, which a dive may lack: nothing is required.
+
+  **One way.** What is saved is the run with its way up, as points, `LOGIC-35`; its cylinders, each
+  keyed by what it is for, with its role written as `usage`; its gradient factors and its water.
+  The planner's other settings, the oxygen limits, the safety stop, the rates, the reserve and which
+  lines were typed, have no field and are not kept. A plan opened again is its points as typed
+  lines under the settings the planner starts from, and a stop the model wrote a point a minute is
+  one line.
+
+  **A plan is named, and its name is its key.** The first letter free on the dive: *Plan A*, then
+  *Plan B*, typed over freely. A key holds no spaces, so *Plan A* is kept as `Plan_A` and shown back
+  as its name, a key being shown with its underscores as spaces. `JSON-18`. A plan saved over keeps
+  its key, and anything else written on it by hand.
+
+  A dive with no profile before takes the plan as its primary one; a dive with a recording keeps
+  the recording, and the plan sits beside it for comparing.
+
 - **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
   the form for the one chosen on the right, and two to begin with: SAC and NDL.**
 
@@ -427,8 +453,8 @@ once and corrected. The numbers stay unused rather than being given to something
   runtime are worked out, the runtime being the whole minute the line ends in, counted up. A
   duration is `m:ss` or whole minutes, read as every clock in the application is read.
 
-  This is not the shape of a plan started on a dive, `GUI-41`, which asks for a depth and a bottom
-  time counting the descent. That form asks a question with one answer. This one is a runtime
+  This was not the shape of the form plans were once started from on a dive, `GUI-41`, which asked
+  for a depth and a bottom time counting the descent. That form asked a question with one answer. This one is a runtime
   table, and a line that is either a rise or a stay is what lets a reader type a way up at a rate
   of their own.
 
@@ -508,9 +534,9 @@ once and corrected. The numbers stay unused rather than being given to something
   **It reaches the model through a `Run` rather than an item**, `LOGIC-37`, so a plan typed here and
   a plan on a dive are answered by one walk and cannot disagree; and the figures are the same list
   `GUI-40` shows under a recording, and the graph is the one a recording is drawn with, the
-  cylinders named by whatever knows their names. **Nothing is stored**: putting a plan from here on
-  to a dive is a later question, and until it is answered a plan typed here is gone when the tab is
-  left. It is kept while the window is open, as anything a tab holds is. `GUI-27`.
+  cylinders named by whatever knows their names. **Nothing is stored until it is saved**, `GUI-44`.
+  Until then a plan typed here is kept while the window is open, as anything a tab holds is.
+  `GUI-27`.
 
   **The units are the model's own** — litres a minute, metres, minutes, litres, bar — until the
   units a user wants shown are read. `UI-2`.
@@ -548,12 +574,13 @@ once and corrected. The numbers stay unused rather than being given to something
   Node.js. It uses the same words as the failures the panel gives — *adapter*, the `npx` commands,
   Node.js — so what a reader is told beforehand and what they are told afterwards agree. `GUI-38`.
 
-  **A setting reaches the making of something and nothing after.** The plan form and the ascent
-  button read them when a plan is made or an ascent written; nothing that works out what a plan or a
+  **A setting reaches the making of something and nothing after.** The planner reads them when a
+  plan is started; nothing that works out what a plan or a
   dive comes to reads one. `LOGIC-35`.
 
-- **GUI-41 — How a plan is started.** *Settled:* **a button on the Dives tab and a form of eight
-  questions, making a dive at one depth with its ascent already added.**
+- **GUI-41 — How a plan is started.** *Replaced by `GUI-44`*, which makes a plan in the
+  Calculations tab's planner and saves it on to a dive. It said: **a button on the Dives tab and a
+  form of eight questions, making a dive at one depth with its ascent already added.**
 
   A plan is a dive that has not happened, so it is started where dives are read: *Plan dive* sits
   above the table, and the form takes the place of the dive shown, titled *New plan* as a new
@@ -592,8 +619,10 @@ once and corrected. The numbers stay unused rather than being given to something
   a table of rows to take one.
 
 - **GUI-40 — Where what the model says appears, and how a plan is written.** *Settled:*
-  **under the run it is about, in the box that already holds the run, and a plan carries a button
-  that works its ascent out.**
+  **under the run it is about, in the box that already holds the run.** Its second half, *a plan
+  carries a button that works its ascent out*, is *replaced by `GUI-44`*: a plan is saved with its
+  way up already in it, and changed in the planner. What is said below about the button is kept as
+  the record.
 
   A run is a recording or a plan and the window draws either, so the model's answer belongs where
   the run is rather than in a screen of its own. `LOGIC-37` answers for both alike.

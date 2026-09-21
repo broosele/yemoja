@@ -38,6 +38,7 @@ import yemoja.data.ValueFormatException
 import yemoja.logic.NOMINAL_DENSITY
 import yemoja.logic.SEA_LEVEL
 import yemoja.logic.Settings
+import yemoja.logic.Universe
 import yemoja.logic.ambientAt
 import yemoja.logic.depthAt
 import yemoja.logic.noDecompressionLimit
@@ -106,6 +107,9 @@ internal class Working {
 
     /** The plan form's levels and settings. `GUI-43`. */
     val shaping: Shaping = Shaping()
+
+    /** Where the plan will be saved, and what the last save said. `GUI-44`. */
+    val saving: Saving = Saving()
 }
 
 /** Answer is what a calculation came to: a number, or why there is none. */
@@ -225,11 +229,13 @@ internal fun Calculations(
     working: Working,
     settings: Settings?,
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)? = null,
+    /** The logbook a plan is saved into, or absent where none is open. */
+    universe: Universe? = null,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Waiver()
         HorizontalDivider()
-        Calculators(working, settings, scrollbar)
+        Calculators(working, settings, scrollbar, universe)
     }
 }
 
@@ -283,6 +289,7 @@ private fun Calculators(
     working: Working,
     settings: Settings?,
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)?,
+    universe: Universe?,
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         Selectable {
@@ -303,7 +310,9 @@ private fun Calculators(
                     when (working.calculation) {
                         Calculation.SAC -> SacForm(working)
                         Calculation.NDL -> NdlForm(working, settings)
-                        Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar)
+                        Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar) {
+                            SaveRow(working.saving, working.shaping, universe)
+                        }
                     }
                 }
             }

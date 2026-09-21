@@ -121,6 +121,29 @@ internal fun profilesProposedKey(profile: Item): String =
     slug(pointedAt(profile, "dive_computer").orEmpty()).ifEmpty { "profile" }
 
 /**
+ * The name a plan saved into a dive is given where [taken] says which names are held: `Plan A`,
+ * then `Plan B`, the first letter free, and `Plan Z#1` on past the alphabet.
+ *
+ * A plan has no computer to be named for, so it is named as a diver names the plans on a slate.
+ * A letter given up comes back, as [freeName] says a key may until there is history. `JSON-18`.
+ */
+fun planName(taken: (String) -> Boolean): String {
+    for (letter in 'A'..'Z') {
+        val name = "Plan $letter"
+        if (!taken(name)) return name
+    }
+    return freeName("Plan Z", taken)
+}
+
+/**
+ * The key a plan named [name] is kept under: the name itself, a space written as `_` and a `*`
+ * left out, since a key holds neither. Its case is kept, so `Plan_A` is shown back as *Plan A*.
+ * `JSON-18`.
+ */
+fun planKeyOf(name: String): String =
+    name.trim().split(Regex("\\s+")).joinToString("_").replace("*", "")
+
+/**
  * A gas source's key: what it was for, and failing that the gas in it.
  *
  * `bottom` and `deco` are what a diver calls them, and what divides a set of cylinders. The gas

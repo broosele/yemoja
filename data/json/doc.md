@@ -433,10 +433,14 @@ To settle when we discuss architecture:
 
   | Collection | Keyed by | Falling back to |
   |---|---|---|
-  | `profiles` | the dive computer that recorded it | `profile` |
+  | `profiles` | the dive computer that recorded it, or a plan's name | `profile` |
   | `gas_sources` | what it was for — `bottom`, `deco` | the gas in it, then `gas` |
   | `courses` | the certification it was for | the date, then `course` |
   | `maintenances` | what was done and when | `maintenance` |
+
+  A plan has no computer, so it is keyed by the name it is saved under: the first letter free,
+  *Plan A*, written `Plan_A` since a key holds no spaces, its case kept because it is a name a
+  reader gave. `GUI-44`.
 
   Each names the thing that tells one entry from another where there is more than one. A
   dive has a second profile precisely when a second computer was worn; a set of cylinders

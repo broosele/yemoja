@@ -198,48 +198,6 @@ class PlanningTest {
     }
 
     @Test
-    fun `the way up is written on to the end of what was typed`() {
-        val dive = planned(""""depth": [[0, 0], [90, 40], [1800, 40]]""")
-        val plan = profile(dive)
-        val ascent = assertIs<Ascended.Done>(completeAscent(plan, 9.0, 3.0))
-        val changes = ascentWrittenTo(plan, ascent)
-
-        val depth = changes.filterIsInstance<Change.Write>().first { it.field == "depth" }
-        val written = assertIs<Stored.Elements>(depth.given).elements
-        assertEquals(3 + ascent.depth.size, written.size, "what was typed, and then the way up")
-        assertTrue(
-            secondOf(written.first()) == 0 && secondOf(written[2]) == 1800,
-            "the typed points keep their times",
-        )
-        assertTrue(secondOf(written.last()) > 1800, "and the ascent follows them")
-    }
-
-    @Test
-    fun `a plan with a deco gas writes the switch to it as well`() {
-        val dive = planned(
-            """"gas_switches": [[0, "*g1"]], "depth": [[0, 0], [90, 40], [1800, 40]]""",
-            sources = """"g1": {"gas_type": "EAN28"}, "g2": {"gas_type": "EAN50"}""",
-        )
-        val plan = profile(dive)
-        val ascent = assertIs<Ascended.Done>(completeAscent(plan, 9.0, 3.0))
-        val changes = ascentWrittenTo(plan, ascent)
-        val switches = changes.filterIsInstance<Change.Write>()
-            .first { it.field == "gas_switches" }
-        val written = assertIs<Stored.Elements>(switches.given).elements
-
-        assertEquals(2, written.size, "the one that was typed, and the one worked out")
-        assertEquals("*g2", valueOf(written.last()))
-    }
-
-    @Test
-    fun `a run already at the surface has nothing to write`() {
-        val plan = profile(planned(SHALLOW))
-        val ascent = assertIs<Ascended.Done>(completeAscent(plan, 9.0, 3.0))
-
-        assertTrue(ascentWrittenTo(plan, ascent).isEmpty())
-    }
-
-    @Test
     fun `a plan says it is one and a recording does not`() {
         assertTrue(isPlanned(profile(planned(DEEP))))
         val recorded = logbook(

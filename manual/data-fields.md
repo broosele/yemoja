@@ -518,7 +518,7 @@ A plan keeps entries of the same shape for the cylinders it assumes, under its o
   atmosphere itself wherever a calculation needs the absolute figure.
 
 - `usage` (text) — what it was for. Anything you like; the usual ones are `bottom`,
-  `stage`, `deco` and `travel`.
+  `stage`, `deco`, `travel` and `bailout`.
 - `configuration` (text) — how it was carried. Anything you like; the usual ones are
   `back mounted`, `sidemount`, `pony` and `staged`.
 - `cylinder` (reference) — the gear item it was, where it is one you own. Leave it out

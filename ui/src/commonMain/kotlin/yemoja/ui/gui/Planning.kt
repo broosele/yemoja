@@ -164,32 +164,6 @@ internal fun refusedSaidOf(refused: Evaluated.Refused, planned: Boolean): Shown?
     return Shown("Decompression", listOf(Part(refused.reason)), wrong = true)
 }
 
-/**
- * The changes that write [ascent] into [profile]: its depths carried on to the end of the run, and
- * its switches on to the end of the switches.
- *
- * **Appended, never replacing.** What the reader wrote is the dive they intend and the ascent is
- * the way out of it, so the two are one series afterwards and nothing can tell which part was
- * typed. That is the point: a plan holds points and not a recipe, `LOGIC-35`.
- *
- * Empty where the ascent is empty, a run already at the surface having no way up to write.
- */
-internal fun ascentWrittenTo(profile: Item, ascent: Ascended.Done): List<Change> {
-    if (ascent.depth.isEmpty()) return emptyList()
-    val changes = ArrayList<Change>()
-    val depth = samplesOf(profile, "depth") + ascent.depth.map { (second, metres) ->
-        sample(second, metres)
-    }
-    changes += Change.Write(profile, "depth", Stored.Elements(depth))
-    if (ascent.switches.isNotEmpty()) {
-        val switches = samplesOf(profile, "gas_switches") + ascent.switches.map { (second, key) ->
-            sample(second, "*$key")
-        }
-        changes += Change.Write(profile, "gas_switches", Stored.Elements(switches))
-    }
-    return changes
-}
-
 /** Whether [profile] is one somebody intends rather than one a computer wrote. */
 internal fun isPlanned(profile: Item): Boolean =
     (profile.single<Boolean>("planned") as? Result.Usable)?.value == true

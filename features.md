@@ -73,15 +73,14 @@ them.
   `completeAscent` writes the way out of one (`LOGIC-35`). `lostGasReserve` and `sharedGasReserve` say
   what gas a plan must keep back at the dive's worst moment, with gas lost or a buddy sharing it
   (`LOGIC-40`). In the window, both sit under the run
-  they are about: the ceiling over its graph, the figures and the findings under its fields, and
-  on a plan a button that writes its ascent in. `GUI-40`.
+  they are about: the ceiling over its graph, and the figures and the findings under its fields.
+  `GUI-40`.
 
-  A plan is started from the Dives tab at one depth with one gas, and given its ascent at once
-  (`GUI-41`), from the gradient factors and rates the user chose in the settings (`GUI-42`). A
-  dive of several segments and cylinders is planned in the Calculations tab, where the way up is
-  worked out as it is typed, each cylinder has a role, a safety stop is held, and the gas reserve
-  is shown with its worst moment (`GUI-43`). What is owed is putting such a plan on to a dive,
-  which nothing does yet.
+  A plan is made in the Calculations tab, of any number of segments and cylinders, with the way
+  up worked out as it is typed, a role for each cylinder, a safety stop and a gas reserve
+  (`GUI-43`). It is saved as a new dive or on to one already there, and a dive's plans are opened
+  back into the planner from the Dives tab (`GUI-44`). What is owed is saving the planner's own
+  settings with a plan, and a date for a plan saved as a new dive.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
   — the dive and its recording — and how far it goes is under *What is built* in

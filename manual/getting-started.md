@@ -119,31 +119,12 @@ out* so you can tell them from what your computer recorded.
 Most recordings say nothing about it, and then nothing is shown: a computer has to have written
 down which gradient factors it was running before the model can say anything at all.
 
-**A plan carries a button that works its ascent out.** Fill the depths in as far as the bottom,
-and *Add the ascent* writes the rest of the dive into the plan: coming up at 9 metres a minute,
-the decompression stops it owes with the shallowest at 3 metres, and the switch to a richer gas
-wherever the depth allows one. What it wrote is then part of the plan like anything you typed, so
-changing a gas afterwards does not move the stops — ask the model again and it will tell you they
-no longer hold. A plan that cannot be answered for says why, which is
-usually that nobody has written its gradient factors in.
-
-**Start a plan with *Plan dive*** above the table on the Dives tab. Give it a day and, if you like, a time; the
-depth of the bottom and how long you mean to be there, counted from leaving the surface; what you
-breathe, written as `air`, `EAN32` or `TMX 21/35`; whether the water is salt or fresh; and the
-gradient factors, as percentages — 30 and 70 for 30/70. **Create plan** makes the dive, descending
-at 18 metres a minute, and adds its ascent at once, so what opens among your dives is a whole plan
-with its stops. Everything else about it — the site, the cylinder, a second gas — is added the way
-you change any dive, and *Add the ascent* is there again once you have.
-
-The gradient factors are filled in only if you have chosen defaults for them in **Settings**, and
-so are the rates the form says beside the button. They decide how conservative the plan is, and
-that is a decision for you to make rather than a number for Yemoja to assume.
-
-A plan with more than one level, or one you want to shape sample by sample, is still written into
-the dive's own file by hand: a profile with `planned` set, the water type, the gradient factors,
-and a `depth` reaching the bottom. [data-fields.md](data-fields.md) lists what a profile holds, and
-[decompression.md](decompression.md) explains what the model does, what it assumes, and what it
-cannot know.
+**Plans are made in the Calculations tab** and saved from there; see
+[Calculations](getting-started.md#calculations). Beside a dive's profiles, **Add plan** opens the
+planner for a new plan on that dive, and under a plan, **Edit plan** opens it there to change.
+Saving goes back to the dive. A plan sits beside the dive's recording, so you can compare what
+you meant with what you did. [decompression.md](decompression.md) explains what the model does,
+what it assumes, and what it cannot know.
 
 ## Changing things
 
@@ -329,7 +310,14 @@ tick to switch it off, what it asks each cylinder to hold, its worst moment, and
 Yemoja objects to, such as going above the ceiling, rising faster than your ascent
 rate, missing the safety stop, a cylinder running dry, a cylinder holding less than its reserve,
 or a mix breathed past its limit. Last is a
-graph of the whole dive. The plan is not saved anywhere: it is a slate, not a logbook entry.
+graph of the whole dive.
+
+To keep a plan, give it a name, *Plan A* unless you choose another, and press **Save as new dive**.
+If you opened the planner from a dive, with **Add plan** or **Edit plan**, you can also save it back
+to that dive. What is saved is the dive itself: every depth and gas switch, the way up included,
+the cylinders, the gradient factors and the water. The planner's other settings, such as the
+oxygen limits, the safety stop and the reserve, are not saved, so a plan you open again starts
+from your defaults for those. A plan saved as a new dive has no date yet.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
 decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts

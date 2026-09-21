@@ -811,6 +811,8 @@ internal fun PlanForm(
     shaping: Shaping,
     settings: Settings?,
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)? = null,
+    /** The row the plan is saved from, under its heading. `GUI-44`. */
+    saving: @Composable () -> Unit = {},
 ) {
     remember(shaping, settings) {
         if (!shaping.prefilled) shaping.prefill(settings)
@@ -822,6 +824,7 @@ internal fun PlanForm(
     val conditions = conditionsOf(shaping).first
     val reckoned = if (done != null && conditions != null) reckonedOf(shaping, done, conditions) else null
     Heading("Dive plan")
+    saving()
     // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
     // two columns end on one line however many cylinders there are.
     Row(

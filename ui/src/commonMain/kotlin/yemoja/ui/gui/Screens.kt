@@ -240,9 +240,6 @@ internal class Kept {
      */
     var making: ItemDescription? by mutableStateOf(null)
 
-    /** Dives' plan form, which is where a plan is started. `GUI-41`. */
-    val planning: Planning = Planning()
-
     /** Calculations' boxes, and which calculation is chosen. `GUI-43`. */
     val working: Working = Working()
 
@@ -384,7 +381,17 @@ internal fun Application(universe: Universe?, platform: Platform) {
     var told by remember(universe) { mutableStateOf<Told?>(null) }
     // How much an agent has staged, which the panel says and the home screen reviews.
     val staged = remember(universe, changer.edition) { universe?.staging?.staged?.size ?: 0 }
-    CompositionLocalProvider(LocalChanger provides changer) {
+    // A plan is added to a dive, or one saved there edited, in the Calculations tab's planner,
+    // which the Dives tab opens by switching to it. `GUI-44`.
+    val opener: (Bound) -> Unit = { bound ->
+        tabs.firstOrNull { it.shape == Shape.CALCULATIONS }?.let { calculations ->
+            val working = kept.getValue(calculations).working
+            working.calculation = Calculation.PLAN
+            working.saving.open(bound, universe, working.shaping)
+            tab = calculations
+        }
+    }
+    CompositionLocalProvider(LocalChanger provides changer, LocalPlanOpener provides opener) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Tabs(
@@ -408,7 +415,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 Manuals(platform.manual, platform.open, kept.getValue(tab))
 
                             tab.shape == Shape.CALCULATIONS ->
-                                Calculations(kept.getValue(tab).working, universe?.settings, platform.scrollbar)
+                                Calculations(kept.getValue(tab).working, universe?.settings, platform.scrollbar, universe)
 
                             universe == null -> Unit
                             else -> Subject(
@@ -1348,23 +1355,8 @@ private fun Subject(
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.width(wide)) {
             when (tab.shape) {
-                // A plan is a dive that has not happened, so it is started where dives are read,
-                // above the table, and the form takes the place of the dive shown. `GUI-41`.
                 Shape.DIVES -> Selectable {
-                    Column(modifier = Modifier.fillMaxHeight()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = GAP, vertical = HALF),
-                            horizontalArrangement = Arrangement.End,
-                        ) {
-                            Button(
-                                onClick = {
-                                    kept.planning.openOn(today(), universe.settings)
-                                    kept.chosenMany = emptySet()
-                                },
-                            ) { Text("Plan dive") }
-                        }
-                        Dives(set, kept)
-                    }
+                    Dives(set, kept)
                 }
                 Shape.GEAR -> Selectable {
                     Gear(set, chosen, kept) { kept.chosen = it }
@@ -1422,9 +1414,6 @@ private fun Subject(
                     }
                     kept.chosenMany.size > 1 -> {
                         ManyView(set, kept.chosenMany, onFollow) { asking = true }
-                    }
-                    kept.planning.open -> PlanCard(universe, kept.planning, changer) { id ->
-                        set[id]?.let { kept.chosen = Chosen(id, titleOf(it), it) }
                     }
                     kept.making != null -> {
                         NewCard(
@@ -2475,6 +2464,12 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
             repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
+    val opener = LocalPlanOpener.current
+    val dive = diveIdOf(item)
+    val profiles = item.description[PROFILES] as? OwnedItemDescription
+    if (dive != null && opener != null && profiles != null && profiles !in insets) {
+        Inset(profiles.label) { AddPlan { opener(Bound.Adding(dive)) } }
+    }
     for (inset in insets) {
         when (inset.cardinality) {
             Cardinality.KEYED -> KeyedInset(inset, item, onFollow)
@@ -2494,6 +2489,8 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
     if (entries.isEmpty()) return
     var open by remember(item, inset.name) { mutableStateOf(0) }
     val at = open.coerceIn(0, entries.size - 1)
+    val opener = LocalPlanOpener.current
+    val dive = if (inset.name == PROFILES) diveIdOf(item) else null
     val tabs: @Composable RowScope.() -> Unit = {
         SmallTabs(
             labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
@@ -2501,6 +2498,7 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
             marked = pointedEntryOf(item, inset.name),
             onChoose = { open = it },
         )
+        if (dive != null && opener != null) AddPlan { opener(Bound.Adding(dive)) }
     }
     Inset(inset.label, beside = tabs) {
         Spacer(modifier = Modifier.height(HALF))
@@ -2516,8 +2514,28 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
         if (drawn) ProfileGraph(item, entry, evaluated as? Evaluated.Done)
         Fields(entry, onFollow)
         if (evaluated != null) WorkedOut(item, entry, evaluated, onFollow)
+        if (dive != null && opener != null && isPlanned(entry)) {
+            val key = entries[at].first
+            TextButton(onClick = { opener(Bound.Editing(dive, key)) }) { Text("Edit plan") }
+        }
     }
 }
+
+/**
+ * The deed that adds a plan to a dive, beside its profiles: it opens the planner in the
+ * Calculations tab, bound to the dive. `GUI-44`.
+ */
+@Composable
+private fun AddPlan(onAdd: () -> Unit) {
+    TextButton(onClick = onAdd) { Text("Add plan") }
+}
+
+/** The id of [item] where it is a dive, which is the only thing a plan can be added to. */
+private fun diveIdOf(item: Item): String? =
+    (item as? ReferenceableItem)?.takeIf { it.description == Types.DIVE }?.let { item.set.idOf(it) }
+
+/** What a dive's profiles are called, and the one keyed inset a plan can be added to. */
+private const val PROFILES = "profiles"
 
 /**
  * A row of small tabs, each a button as wide as its name, the chosen one tinted.
@@ -2722,68 +2740,11 @@ private fun WorkedOut(dive: Item, profile: Item, evaluated: Evaluated, onFollow:
             for (finding in findingsSaidOf(evaluated)) Field(finding, onFollow)
         }
     }
-    if (planned) Ascent(profile)
 }
 
-/**
- * The ascent a plan needs, worked out and written into it.
- *
- * The button says what pressing it does, in the word a diver uses for that part of a dive. What
- * it assumes is on the row rather than behind it: a rate to rise at and a depth to take the
- * shallowest stop at, which are arguments rather than anything stored. Choosing them waits on the
- * settings a screen would read, `LOGIC-35`.
- *
- * Writing it changes the plan, so the graph above redraws with the stops in it and the model is
- * asked again — which is how a reader sees that what was written is what the model now approves
- * of.
- */
-@Composable
-private fun Ascent(profile: Item) {
-    val changer = LocalChanger.current
-    var said by remember(profile) { mutableStateOf<String?>(null) }
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = HALF),
-        horizontalArrangement = Arrangement.spacedBy(GAP),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Spacer(modifier = Modifier.width(LABEL))
-        // Asked each time the row is drawn, so a rate chosen in the settings is the one pressed.
-        val rate = changer.settings?.number(Settings.DEFAULT_ASCENT_RATE) ?: FALLBACK_ASCENT_RATE
-        val last = changer.settings?.number(Settings.DEFAULT_LAST_STOP) ?: FALLBACK_LAST_STOP
-        Button(
-            onClick = {
-                said = when (val worked = completeAscent(profile, rate, last)) {
-                    is Ascended.Refused -> worked.reason
-                    is Ascended.Done -> {
-                        val changes = ascentWrittenTo(profile, worked)
-                        when {
-                            changes.isEmpty() -> "this run is already at the surface"
-                            else -> (changer.change(changes) as? Outcome.Refused)?.reason
-                        }
-                    }
-                }
-            },
-        ) {
-            Text("Add the ascent")
-        }
-        Text(
-            text = said ?: "rising at ${plain(rate)} m a minute, shallowest stop at ${plain(last)} m",
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (said == null) MaterialTheme.colorScheme.outline
-            else MaterialTheme.colorScheme.error,
-        )
-    }
-}
+/** How fast a plan descends where there is no logbook to ask. */
+internal val FALLBACK_DESCENT_RATE: Double = Settings.DEFAULT_DESCENT_RATE.default!!
 
-/**
- * How fast an ascent rises where there is no logbook to ask, which a row with a plan in it never is.
- *
- * The setting's own default is the answer everywhere else. `GUI-42`.
- */
-internal val FALLBACK_ASCENT_RATE: Double = Settings.DEFAULT_ASCENT_RATE.default!!
-
-/** How deep the shallowest stop is taken where there is no logbook to ask. */
-internal val FALLBACK_LAST_STOP: Double = Settings.DEFAULT_LAST_STOP.default!!
 
 // --- The graph of a recording. `GUI-4`.
 

@@ -11,9 +11,9 @@ yourself, whatever becomes of the app.
 ## Known bugs and limitations
 
 - **There is no undo.** Every change is written to your files the moment it is saved.
-- **A plan is started at one depth.** *Plan dive* makes a plan with a single bottom and one gas;
-  a plan with several levels is written into the dive's file by hand.
-  See [decompression.md](decompression.md).
+- **A saved plan keeps only its dive.** The planner's oxygen limits, safety stop, rates and
+  reserve are not saved with it, and a plan saved as a new dive has no date or time.
+  See [getting-started.md](getting-started.md#calculations).
 - **Few settings exist yet.** What a new plan starts from can be chosen, and the agent's command
   is remembered; units, date formats and the rest cannot be chosen. See [settings.md](settings.md).
 - **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.

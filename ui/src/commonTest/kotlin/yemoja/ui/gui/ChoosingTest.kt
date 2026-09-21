@@ -75,23 +75,3 @@ class ShownSettingTest {
         assertEquals("75", plain(0.75 * 100))
     }
 }
-
-class IntentionOfTest {
-
-    private val today = Date(2026, 9, 17)
-
-    @Test
-    fun `a plan opens on today with the factors the user chose`() {
-        val typed = intentionOf(today, 0.3, 0.75)
-        assertEquals("2026-09-17", typed.date)
-        assertEquals("30", typed.gradientLow)
-        assertEquals("75", typed.gradientHigh)
-    }
-
-    @Test
-    fun `where nobody chose factors the boxes start empty`() {
-        val typed = intentionOf(today, null, null)
-        assertEquals("", typed.gradientLow)
-        assertEquals("", typed.gradientHigh)
-    }
-}
