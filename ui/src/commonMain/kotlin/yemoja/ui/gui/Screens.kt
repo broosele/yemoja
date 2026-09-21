@@ -530,7 +530,7 @@ private fun Tabs(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Explained(said: String?, content: @Composable () -> Unit) {
+internal fun Explained(said: String?, content: @Composable () -> Unit) {
     if (said == null) {
         content()
         return
@@ -2799,7 +2799,25 @@ private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?) 
             evaluated?.let { workedOverlaysOf(dive, profile, it) }.orEmpty()
     }
     val events = remember(dive, profile) { eventsOf(dive, profile) }
-    var picked by remember(profile) { mutableStateOf(0) }
+    Graphed(depth, overlays, events, planned, chosenFor = profile)
+}
+
+/**
+ * A depth graph with a right axis chosen from [overlays], as a recording is drawn and as a plan
+ * worked out in the calculations is.
+ *
+ * The right axis goes back to the first of [overlays] whenever [chosenFor] changes, so a reader
+ * moving to another dive meets that dive's graph as it opens rather than as the last one was left.
+ */
+@Composable
+internal fun Graphed(
+    depth: List<Line>,
+    overlays: List<Overlay>,
+    events: List<Event>,
+    planned: Boolean,
+    chosenFor: Any?,
+) {
+    var picked by remember(chosenFor) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }
     val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
     Box(modifier = Modifier.fillMaxWidth()) {

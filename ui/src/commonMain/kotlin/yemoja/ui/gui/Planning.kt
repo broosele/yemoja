@@ -45,6 +45,15 @@ internal fun ceilingLineOf(evaluated: Evaluated.Done): Line? {
  * with settings this cannot reproduce, and this is a second opinion arrived at afterwards.
  */
 internal fun workedOverlaysOf(dive: Item, profile: Item, evaluated: Evaluated.Done): List<Overlay> {
+    val sources = sourcesOf(dive, profile)
+    return runOverlaysOf(
+        evaluated,
+        evaluated.pressures.keys.associateWith { key -> sources[key]?.let { entryLabelOf(key, it) } ?: key },
+    )
+}
+
+/** The overlays [evaluated] gives a run belonging to no dive, its cylinders named by [tanks]. */
+internal fun runOverlaysOf(evaluated: Evaluated.Done, tanks: Map<String, String>): List<Overlay> {
     val overlays = ArrayList<Overlay>()
     val limits = pointsOf(evaluated.noDecompressionTime, 1.0 / 60.0)
     if (limits.isNotEmpty()) {
@@ -54,9 +63,8 @@ internal fun workedOverlaysOf(dive: Item, profile: Item, evaluated: Evaluated.Do
             Line("NDL worked out", limits.map { Point(it.minute, minOf(it.value, NO_DECO_CAP)) }),
         )
     }
-    val sources = sourcesOf(dive, profile)
     for ((key, series) in evaluated.pressures) {
-        val tank = sources[key]?.let { entryLabelOf(key, it) } ?: key
+        val tank = tanks[key] ?: key
         overlays += Overlay("$tank worked out", "bar", Line(tank, pointsOf(series)))
     }
     overlays += Overlay("CNS worked out", "%", Line("CNS", pointsOf(evaluated.cns)))
@@ -201,11 +209,11 @@ private fun metresSaid(depth: Double): String {
 }
 
 /** A wait as a reader says one, and *none* where there is nothing to wait for. */
-private fun waitSaid(seconds: Double): String =
+internal fun waitSaid(seconds: Double): String =
     if (seconds <= 0) "none" else spanOf(seconds)
 
 /** What a projected gauge ends at, as bar, and *empty* where the run asks for more than it holds. */
-private fun ending(pressures: Series): String? {
+internal fun ending(pressures: Series): String? {
     val last = pointsOf(pressures).lastOrNull()?.value ?: return null
     return if (last <= 0) "empty" else "${last.toInt()} bar"
 }
