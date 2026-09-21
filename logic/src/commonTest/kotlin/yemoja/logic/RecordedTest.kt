@@ -152,15 +152,17 @@ class DiveTimesTest {
     }
 
     @Test
-    fun `a dive that cannot choose a recording says so rather than falling back`() {
-        val dive = set(
+    fun `a dive with several recordings and none named is timed from the first`() {
+        fun dive(profiles: String): Item = set(
             "dive/d#0.json" to """{
                 "start_date": "2024-06-15", "start_time": "10:05:00", "end_time": "10:41:00",
-                "profiles": {"p1": {"depth": [[0, 0]]}, "p2": {"depth": [[0, 0]]}}
+                "profiles": {$profiles}
             }""",
         )["d#0"]!!
-        assertIs<Result.Unusable>(dive.read("end_date"))
-        assertIs<Result.Unusable>(dive.read("duration"))
+        val both = dive(""""p1": {"depth": [[0, 0], [2160, 0]]}, "p2": {"depth": [[0, 0], [600, 0]]}""")
+        val first = dive(""""p1": {"depth": [[0, 0], [2160, 0]]}""")
+        assertEquals(first.read("end_date"), both.read("end_date"))
+        assertEquals(first.read("duration"), both.read("duration"))
     }
 
     /** A dive as a diver writes one: dates and times, and no recording at all. */
@@ -191,13 +193,11 @@ class PrimaryProfileTest {
     }
 
     @Test
-    fun `several and none named is reported rather than guessed at`() {
+    fun `several and none named are worked from the first`() {
         val dive = set("dive/d#0.json" to """{"profiles": {$two}}""")["d#0"]!!
-        val read = assertIs<Result.Unusable>(dive.read("max_depth"))
-        assertTrue("which is primary" in read.reason, read.reason)
-        // Every field taken from a recording says the same thing, not just this one.
-        assertIs<Result.Unusable>(dive.read("start_date"))
-        assertIs<Result.Unusable>(dive.read("duration"))
+        assertEquals(30.0, value(dive, "max_depth"), "p1, written first")
+        // Every field taken from a recording follows it, not just this one.
+        assertEquals(Time(10, 0, 0), assertIs<Result.Usable<*>>(dive.read("start_time")).value)
     }
 
     @Test

@@ -218,11 +218,10 @@ All five can be corrected where the working out is wrong.
   `previous_dive` is unset, and where it names a dive that is not in this logbook or that
   ended after this one began, the interval is shown as something that cannot be worked out. Write it yourself for a dive whose predecessor is not in this
   logbook — an imported dive often knows the interval without knowing the dive.
-- `primary_profile` (key reference) — which of them to work from: `"*p1"`. Leave it out
-  when there is only one profile, since there is nothing to choose between. With several
-  and none named, Yemoja cannot tell which to believe, and everything worked out from a
-  profile — the times, the depths, the temperatures — is reported as something it cannot
-  work out rather than guessed at.
+- `primary_profile` (key reference) — which of them to work from: `"*p1"`. Leave it out and
+  Yemoja works from the first profile the dive holds, in the order its file writes them,
+  which is usually the recording the dive was made with. Name one only where another
+  should be believed instead.
 - `details` (owned item) — tags, and which trip and operator the dive belonged to.
   Described under *Details* below.
 - `environment` (owned item) — the conditions you found.

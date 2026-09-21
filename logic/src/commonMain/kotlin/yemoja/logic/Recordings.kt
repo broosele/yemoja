@@ -35,10 +35,10 @@ internal fun unusable(reason: String): Result.Unusable =
 /**
  * Whichever recording a dive is worked from, or why there is none to work from.
  *
- * **A dive with one profile needs no `primary_profile`**, there being nothing to choose between,
- * and the ordinary dive is that one. With several and none named, nothing here guesses: the
- * manual is explicit that everything taken from a recording is then reported as something that
- * cannot be worked out rather than taken from whichever came first.
+ * **Unnamed, it is the first profile the dive holds**, in the order its file writes them. A dive
+ * with one needs no `primary_profile`, and one with several gets the first rather than nothing:
+ * the first is the one the dive was made with, and a plan or a second computer added later goes
+ * after it. Only a name that points at no profile is a fault.
  */
 internal fun primaryProfile(dive: Item): Result<Item> {
     val profiles = dive.keyed<OwnedItem>("profiles")
@@ -48,13 +48,7 @@ internal fun primaryProfile(dive: Item): Result<Item> {
     }
     if (held.isEmpty()) return Result.Absent
     val named = dive.single<KeyReference>("primary_profile")
-    if (named !is Result.Usable) {
-        val only = held.singleOrNull()
-            ?: return unusable(
-                "a dive with ${held.size} profiles says which is primary, and this one does not",
-            )
-        return Result.Usable(only.second, Result.Origin.DERIVED)
-    }
+    if (named !is Result.Usable) return Result.Usable(held.first().second, Result.Origin.DERIVED)
     val key = named.value.key
     val chosen = held.firstOrNull { it.first == key }
         ?: return unusable("this dive has no profile called $key")

@@ -2495,7 +2495,8 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
         SmallTabs(
             labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
             chosen = at,
-            marked = pointedEntryOf(item, inset.name),
+            // A dive naming no primary recording is worked from its first, so that one is starred.
+            marked = pointedEntryOf(item, inset.name) ?: 0.takeIf { dive != null && entries.size > 1 },
             onChoose = { open = it },
         )
         if (dive != null && opener != null) AddPlan { opener(Bound.Adding(dive)) }
