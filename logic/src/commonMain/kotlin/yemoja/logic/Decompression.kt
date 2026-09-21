@@ -156,7 +156,7 @@ class Tissues private constructor(
      * How long these tissues need at [surface] bar before they may be taken up to [cabin] bar, in
      * seconds, allowing [gradientFactor] of what the model permits.
      *
-     * Nought where they may go now. Null where a day of breathing air would not be enough, which
+     * Nought where they may go now. Null where two days of breathing air would not be enough, which
      * says the question is the wrong one rather than giving a figure nobody should plan on.
      *
      * A cabin is an altitude like any other: what a flight does is take the surface away, and the
@@ -169,7 +169,7 @@ class Tissues private constructor(
 
     /**
      * How long these tissues need at [surface] bar to come back to what breathing air there
-     * settles them to, in seconds, or null where a day would not do it.
+     * settles them to, in seconds, or null where two days would not do it.
      *
      * **Within a hundredth of a bar**, which is a definition rather than a standard: a compartment
      * approaches its equilibrium and never quite arrives, so somebody has to say how close counts.

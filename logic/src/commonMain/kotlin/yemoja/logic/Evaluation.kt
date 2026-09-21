@@ -57,16 +57,23 @@ sealed class Evaluated {
         /** Oxygen tolerance units taken through the run, which is a count and not a percentage. */
         val otu: Series,
         /**
-         * How long to wait before flying after it, in seconds, or null where a day would not be
-         * enough.
+         * How long to wait before flying after it, in seconds, or null where two days would not
+         * be enough.
          *
          * A cabin is an altitude, so this is the wait until the ceiling allows one. What counts as
          * a cabin is one figure, the eight thousand feet an aircraft is held to.
+         *
+         * **This is not the published guideline, which is usually longer.** DAN recommends at
+         * least 12 hours after a single dive without stops, at least 18 hours after several dives
+         * in a day or several days of diving, and substantially longer than 18 hours after a dive
+         * with stops. Those minimums come from trials rather than a tissue model, and after a dive
+         * without stops this figure is often an hour or two. Nothing here applies them, so a screen
+         * showing this figure decides whether to show them beside it.
          */
         val noFlight: Double?,
         /**
          * How long the compartments take to come back to what the surface settles them to, in
-         * seconds, or null where a day would not do it.
+         * seconds, or null where two days would not do it.
          */
         val desaturation: Double?,
         /**
