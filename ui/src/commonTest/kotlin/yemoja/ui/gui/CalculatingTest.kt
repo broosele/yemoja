@@ -203,3 +203,40 @@ class EquivalentAskedTest {
         assertTrue("Depth" in assertIs<Answer.Wrong>(endAsked("-5", "EAN32", true)).reason)
     }
 }
+
+class MinimumAskedTest {
+
+    @Test
+    fun `a mix breathable at the surface has a minimum depth of nought`() {
+        assertEquals(0.0, assertIs<Answer.Value>(minimumAsked("EAN32", "0.16")).value)
+    }
+
+    @Test
+    fun `a hypoxic mix is breathed from about six metres, rounded up`() {
+        val shallowest = assertIs<Answer.Value>(minimumAsked("TMX10/70", "0.16")).value
+
+        assertEquals(5.9, shallowest)
+        assertEquals(shallowest, kotlin.math.ceil(shallowest * 10) / 10, "to a tenth, up")
+    }
+
+    @Test
+    fun `a new form asks for the minimum most taught`() {
+        assertEquals("0.16", Working().leastOxygen)
+    }
+
+    @Test
+    fun `a minimum that will not read says what it wanted`() {
+        assertEquals(Answer.Waiting, minimumAsked("TMX10/70", ""))
+        assertTrue("pO₂ min" in assertIs<Answer.Wrong>(minimumAsked("TMX10/70", "none")).reason)
+    }
+
+    @Test
+    fun `a mix whose minimum is deeper than its maximum is breathable nowhere`() {
+        val shallowest = minimumAsked("TMX5/85", "0.16")
+        // A maximum below the minimum: 0.15 bar is reached at about 20 m, and 0.16 not until 22 m.
+        val deepest = modAsked("TMX5/85", "0.15")
+
+        assertTrue(rangeWrong("TMX5/85", shallowest, deepest)!!.startsWith("TMX5/85 may be breathed at no depth"))
+        assertEquals(null, rangeWrong("TMX10/70", minimumAsked("TMX10/70", "0.16"), modAsked("TMX10/70", "1.4")))
+    }
+}

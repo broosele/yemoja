@@ -44,7 +44,9 @@ import yemoja.logic.ambientAt
 import yemoja.logic.depthAt
 import yemoja.logic.equivalentAirDepth
 import yemoja.logic.equivalentNarcoticDepth
+import yemoja.logic.LEAST_OXYGEN
 import yemoja.logic.maximumOperatingDepth
+import yemoja.logic.minimumOperatingDepth
 import yemoja.logic.noDecompressionLimit
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -128,6 +130,9 @@ internal class Working {
 
     /** The oxygen limit the MOD form is asked about, in bar. */
     var mostOxygen: String by mutableStateOf("")
+
+    /** The least oxygen the MOD form is asked about, in bar, for a mix's minimum depth. */
+    var leastOxygen: String by mutableStateOf(plain(LEAST_OXYGEN))
 
     /** Whether the END form counts oxygen as narcotic. */
     var oxygenNarcotic: Boolean by mutableStateOf(true)
@@ -261,6 +266,35 @@ internal fun modAsked(gas: String, mostOxygen: String): Answer {
     val deepest = maximumOperatingDepth(mix, most, NOMINAL_DENSITY, SEA_LEVEL)
         ?: return Answer.Wrong("$mix holds no oxygen, so it may be breathed at no depth")
     return Answer.Value(floor(deepest * TENTHS) / TENTHS)
+}
+
+/**
+ * The shallowest [gas] may be breathed before its oxygen falls below [leastOxygen] bar, in metres.
+ *
+ * Rounded up to a tenth, since a depth rounded down would be one the mix is too lean for. Nought for
+ * a mix breathable at the surface. Salt water at sea level, as the other forms assume.
+ */
+internal fun minimumAsked(gas: String, leastOxygen: String): Answer {
+    if (gas.isBlank() || leastOxygen.isBlank()) return Answer.Waiting
+    val mix = when (val read = mixRead(gas)) {
+        is Mixed.Read -> read.gas
+        is Mixed.Wrong -> return Answer.Wrong(read.reason)
+    }
+    val least = leastOxygen.trim().toDoubleOrNull()?.takeIf { it > 0 }
+        ?: return Answer.Wrong("pO₂ min should be more than nought, but was \"${leastOxygen.trim()}\"")
+    val shallowest = minimumOperatingDepth(mix, least, NOMINAL_DENSITY, SEA_LEVEL)
+        ?: return Answer.Wrong("$mix holds no oxygen, so it may be breathed at no depth")
+    return Answer.Value(ceil(shallowest * TENTHS) / TENTHS)
+}
+
+/**
+ * Why a mix whose minimum depth is [shallowest] and whose MOD is [deepest] can be breathed nowhere,
+ * or null where there is a depth between the two.
+ */
+internal fun rangeWrong(gas: String, shallowest: Answer, deepest: Answer): String? {
+    if (shallowest !is Answer.Value || deepest !is Answer.Value) return null
+    if (shallowest.value <= deepest.value) return null
+    return "${gas.trim()} may be breathed at no depth: its oxygen reaches the minimum deeper than it passes the maximum"
 }
 
 /**
@@ -516,11 +550,22 @@ private fun ModForm(working: Working, settings: Settings?) {
         working
     }
     Heading("MOD")
-    Aside("The deepest a mix may be breathed before its oxygen passes the limit.")
+    Aside(
+        "The deepest a mix may be breathed before its oxygen passes the maximum, and the shallowest " +
+            "before it falls below the minimum. Only a hypoxic mix has a minimum depth.",
+    )
     Field("Gas", working.mix, "") { working.mix = it }
     Field("pO₂ max", working.mostOxygen, "bar") { working.mostOxygen = it }
-    Answered("MOD", modAsked(working.mix, working.mostOxygen), "m")
-    Aside("In salt water at sea level, rounded down to a tenth of a metre.")
+    Field("pO₂ min", working.leastOxygen, "bar") { working.leastOxygen = it }
+    val deepest = modAsked(working.mix, working.mostOxygen)
+    val shallowest = minimumAsked(working.mix, working.leastOxygen)
+    Answered("MOD", deepest, "m")
+    Answered("Minimum depth", shallowest, "m")
+    rangeWrong(working.mix, shallowest, deepest)?.let { Refused(it) }
+    Aside(
+        "In salt water at sea level. The MOD is rounded down and the minimum depth up, to a tenth of " +
+            "a metre.",
+    )
 }
 
 /** A mix and a depth, and the depth of air holding as much nitrogen. */

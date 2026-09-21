@@ -735,6 +735,12 @@ To settle when we discuss architecture and features:
   screen and a model disagreeing about one figure in front of a reader. Null for a mix holding no
   oxygen, that being breathable nowhere rather than anywhere.
 
+  **Its counterpart, `minimumOperatingDepth`, is the shallowest a hypoxic mix may be breathed**,
+  where its oxygen reaches `LEAST_OXYGEN`, 0.16 bar, the figure most taught for a diver at work.
+  Nought for a mix breathable at the surface. **Nothing judges a run by it yet**: the walk warns of
+  a mix breathed too deep and not of one breathed too shallow, so a plan switching to a hypoxic mix
+  at the surface raises no finding. It is public for the MOD calculation, `GUI-43`.
+
   **A plan's own promises are checked as well.** A run that names a safety stop and reaches the
   surface without holding it is warned about where it left the stop's depth, including a dive
   typed all the way up by hand. A run that names an ascent rate is warned about where it rises

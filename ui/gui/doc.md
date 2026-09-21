@@ -437,13 +437,16 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **MOD, EAD and END are a mix and one more figure each, and give a depth.** MOD takes an oxygen
   limit, prefilled from *pO₂ max bottom* the first time it opens, and is the model's own
-  `maximumOperatingDepth`, so it is the figure the plan's gas table shows beside a cylinder. EAD and
+  `maximumOperatingDepth`, so it is the figure the plan's gas table shows beside a cylinder. It
+  gives the minimum depth too, from a least oxygen that starts at 0.16 bar, since a hypoxic mix is
+  as dangerous too shallow as a rich one is too deep; a range with its minimum below its maximum
+  says the mix is breathable nowhere rather than showing two depths that contradict. EAD and
   END take a depth, `LOGIC-41`, and END has a tick for whether oxygen is narcotic, on unless the
   reader says otherwise: agencies differ, the tick is where the difference is chosen, and a line
   under it says which way is the more cautious. The three share one mix box, since a reader asking
   one of them about a mix usually asks the others about the same one. **Each is rounded the cautious
-  way**, MOD down and the two equivalents up, to a tenth of a metre: a depth rounded the other way
-  is one the mix is too rich or too narcotic for. A mix too rich for its limit at the surface
+  way**, MOD down and the minimum depth and the two equivalents up, to a tenth of a metre: a depth
+  rounded the other way is one the mix is too rich, too lean or too narcotic for. A mix too rich for its limit at the surface
   already says so rather than giving a MOD of nought.
 
   **A waiver heads the tab**, above the list and the form both, so it is met before any figure is

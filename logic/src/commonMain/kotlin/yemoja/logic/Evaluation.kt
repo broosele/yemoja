@@ -568,6 +568,28 @@ fun maximumOperatingDepth(
 }
 
 /**
+ * The shallowest [gas] may be breathed before its oxygen falls below [least] bar, in metres, or null
+ * for a mix holding no oxygen at all.
+ *
+ * What divers call a mix's minimum operating depth, which only a hypoxic mix has: breathed any
+ * shallower, it cannot keep a diver conscious. Nought for a mix breathable at the surface. Sea
+ * water at sea level unless told otherwise.
+ *
+ * **Nothing judges a run by it yet.** The walk warns of a mix breathed too deep and not of one
+ * breathed too shallow, so a plan switching to a hypoxic mix at the surface raises no finding.
+ */
+fun minimumOperatingDepth(
+    gas: Gas,
+    least: Double = LEAST_OXYGEN,
+    density: Double = NOMINAL_DENSITY,
+    surface: Double = SEA_LEVEL,
+): Double? {
+    require(least > 0) { "an oxygen minimum should be more than nought, but was $least" }
+    if (gas.percentO2 <= 0) return null
+    return depthAt(least / gas.fractionO2, density, surface)
+}
+
+/**
  * Ascended is the way out of a run, or why one could not be worked out.
  */
 sealed class Ascended {
@@ -1007,6 +1029,13 @@ private const val BUHLMANN = "buhlmann"
  * figure. A screen inventing its own would let a plan be built that the model then objects to.
  */
 const val MOST_OXYGEN = 1.6
+
+/**
+ * The least oxygen a mix is breathed at, in bar: the figure most taught for a diver at work, below
+ * which a hypoxic mix may not keep them conscious. Less is tolerated at rest, which is why agencies
+ * differ and a form lets it be typed over.
+ */
+const val LEAST_OXYGEN = 0.16
 
 private const val SECONDS_IN_MINUTE = 60.0
 

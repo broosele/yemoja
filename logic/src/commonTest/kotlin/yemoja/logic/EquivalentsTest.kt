@@ -79,4 +79,31 @@ class EquivalentsTest {
             1e-9,
         )
     }
+
+    @Test
+    fun `a mix breathable at the surface has no minimum depth`() {
+        assertEquals(0.0, minimumOperatingDepth(Gas.AIR))
+        assertEquals(0.0, minimumOperatingDepth(EAN32))
+    }
+
+    @Test
+    fun `a hypoxic mix is breathed from where its oxygen reaches the minimum`() {
+        // Trimix 10/70: 0.16 bar of oxygen at 1.6 bar, which is about 6 m.
+        val shallowest = minimumOperatingDepth(Gas.parse("TMX10/70"))!!
+
+        assertEquals(5.9, shallowest, 0.1)
+        assertEquals(LEAST_OXYGEN, 0.10 * ambientAt(shallowest, NOMINAL_DENSITY, SEA_LEVEL), 1e-9)
+    }
+
+    @Test
+    fun `a stricter minimum takes a hypoxic mix deeper`() {
+        val mix = Gas.parse("TMX12/60")
+
+        assertTrue(minimumOperatingDepth(mix, least = 0.18)!! > minimumOperatingDepth(mix, least = 0.16)!!)
+    }
+
+    @Test
+    fun `a mix with no oxygen has no minimum depth either`() {
+        assertEquals(null, minimumOperatingDepth(Gas(0, 100)))
+    }
 }
