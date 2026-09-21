@@ -365,9 +365,12 @@ internal fun Compact(
     derived: Boolean = false,
     /** Whether it can be typed in. One that cannot is greyed rather than hidden. */
     enabled: Boolean = true,
+    /** Smaller text in a tighter box, for a table whose rows should not each take a form's height. */
+    dense: Boolean = false,
 ) {
     val ink = MaterialTheme.colorScheme.onSurface
-    val style = MaterialTheme.typography.bodyMedium.copy(color = ink)
+    val type = if (dense) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
+    val style = type.copy(color = ink)
     BasicTextField(
         value = value,
         onValueChange = onChange,
@@ -382,7 +385,7 @@ internal fun Compact(
                 modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1f else GREYED).clip(SHAPE)
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, SHAPE)
-                    .padding(horizontal = GAP, vertical = 6.dp),
+                    .padding(horizontal = if (dense) GAP / 2 else GAP, vertical = if (dense) 2.dp else 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -402,7 +405,7 @@ internal fun Compact(
                 if (after.isNotEmpty()) {
                     Text(
                         text = after,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = type,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(start = HALF),
                     )
@@ -424,22 +427,45 @@ internal fun Pick(
     chosen: String,
     options: List<String>,
     italic: Boolean = false,
+    /** Smaller text and no button's height, for a row of a table, as [Compact] has. */
+    dense: Boolean = false,
     onChoose: (Int) -> Unit,
 ) {
     var picking by remember { mutableStateOf(false) }
+    val fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal
     Box {
-        TextButton(onClick = { picking = true }) {
-            Text(
-                text = chosen,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
-                ),
-            )
-            Icon(
-                imageVector = Icons.Filled.ArrowDropDown,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-            )
+        if (dense) {
+            // A button keeps a minimum height a table row has no room for, so this is a row that
+            // is clicked instead.
+            Row(
+                modifier = Modifier.clip(SHAPE).clickable { picking = true }
+                    .padding(horizontal = HALF, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = chosen,
+                    style = MaterialTheme.typography.bodySmall.copy(fontStyle = fontStyle),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(DENSE_GLYPH),
+                )
+            }
+        } else {
+            TextButton(onClick = { picking = true }) {
+                Text(
+                    text = chosen,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontStyle = fontStyle),
+                )
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                )
+            }
         }
         Menu(expanded = picking, onDismissRequest = { picking = false }) {
             for ((index, option) in options.withIndex()) {
@@ -695,3 +721,6 @@ private const val MATCHES = 24
 
 /** How much of a greyed box shows, which is Material's own figure for something disabled. */
 private const val GREYED = 0.38f
+
+/** How large an arrow or a mark is in a dense row. */
+internal val DENSE_GLYPH = 16.dp

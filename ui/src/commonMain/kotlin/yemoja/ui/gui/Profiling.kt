@@ -618,7 +618,7 @@ internal fun PlanForm(
     // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
     // two columns end on one line however many cylinders there are.
     Row(
-        modifier = Modifier.fillMaxWidth().height(ROW * LINES_SHOWN + CAPTION),
+        modifier = Modifier.fillMaxWidth().height(ZONE),
         horizontalArrangement = Arrangement.spacedBy(GAP * 2),
     ) {
         Column(modifier = Modifier.width(RUNTIME_BOX).fillMaxHeight()) {
@@ -696,11 +696,16 @@ private fun Scrolling(
 @Composable
 private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?) {
     val staying = leg?.direction == Direction.STAY
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HALF)) {
+    Row(
+        modifier = Modifier.height(ROW),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(HALF),
+    ) {
         Cell(leg?.let { runtimeSaid(it) }.orEmpty(), RUNTIME, TextAlign.End)
         Cell(leg?.direction?.arrow.orEmpty(), ARROW, TextAlign.Center)
         Box(modifier = Modifier.width(DEPTH)) {
             Compact(
+                dense = true,
                 value = segment.depth,
                 onChange = { shaping.segments[index] = segment.copy(depth = it) },
                 after = "m",
@@ -708,6 +713,7 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
         }
         Box(modifier = Modifier.width(DURATION)) {
             Compact(
+                dense = true,
                 value = segment.duration,
                 onChange = { shaping.segments[index] = segment.copy(duration = it, rate = "") },
                 hint = if (segment.duration.isBlank() && leg != null) clockOf(leg.seconds) else "",
@@ -716,6 +722,7 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
         }
         Box(modifier = Modifier.width(RATE)) {
             Compact(
+                dense = true,
                 value = if (staying) "" else segment.rate,
                 onChange = { shaping.segments[index] = segment.copy(rate = it, duration = "") },
                 after = "m/min",
@@ -728,6 +735,7 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
         val shown = segment.gas?.takeIf { it in shaping.gases.indices } ?: above
         Box(modifier = Modifier.width(GAS)) {
             Pick(
+                dense = true,
                 chosen = gasLabelOf(shown),
                 options = shaping.gases.indices.map { gasLabelOf(it) },
                 italic = segment.gas == null,
@@ -737,11 +745,11 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
             }
         }
         IconButton(onClick = { shaping.addSegment(index) }, modifier = Modifier.size(BUTTON)) {
-            Icon(Icons.Filled.Add, contentDescription = "Add a line below", tint = MaterialTheme.colorScheme.outline)
+            Icon(Icons.Filled.Add, contentDescription = "Add a line below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
         }
         if (shaping.segments.size > 1) {
             IconButton(onClick = { shaping.removeSegment(index) }, modifier = Modifier.size(BUTTON)) {
-                Icon(Icons.Filled.Close, contentDescription = "Take out this line", tint = MaterialTheme.colorScheme.outline)
+                Icon(Icons.Filled.Close, contentDescription = "Take out this line", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
             }
         }
     }
@@ -765,7 +773,7 @@ private fun WorkedLine(leg: Leg) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        val italic = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic)
+        val italic = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)
         Cell(runtimeSaid(leg), RUNTIME, TextAlign.End, italic)
         Cell(leg.direction.arrow, ARROW, TextAlign.Center, italic)
         Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, italic)
@@ -781,7 +789,7 @@ private fun Cell(
     text: String,
     width: Dp,
     align: TextAlign,
-    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    style: TextStyle = MaterialTheme.typography.bodySmall,
     padding: Dp = 0.dp,
 ) {
     Text(
@@ -896,32 +904,37 @@ private fun Labelled(label: String, content: @Composable () -> Unit) {
 private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?) {
     for ((index, breathed) in shaping.gases.withIndex()) {
         val key = gasKeyOf(index)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HALF)) {
+        Row(
+            modifier = Modifier.height(ROW),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(HALF),
+        ) {
             Cell("${index + 1}", INDEX, TextAlign.End)
             Box(modifier = Modifier.width(MIX)) {
-                Compact(value = breathed.gas, onChange = { shaping.gases[index] = breathed.copy(gas = it) })
+                Compact(dense = true, value = breathed.gas, onChange = { shaping.gases[index] = breathed.copy(gas = it) })
             }
             Box(modifier = Modifier.width(ROLE)) {
                 Pick(
+                    dense = true,
                     chosen = breathed.role.label,
                     options = Role.entries.map { it.label },
                 ) { shaping.gases[index] = breathed.copy(role = Role.entries[it]) }
             }
             Box(modifier = Modifier.width(VOLUME)) {
-                Compact(value = breathed.size, onChange = { shaping.gases[index] = breathed.copy(size = it) }, after = "L")
+                Compact(dense = true, value = breathed.size, onChange = { shaping.gases[index] = breathed.copy(size = it) }, after = "L")
             }
             Box(modifier = Modifier.width(PRESSURE)) {
-                Compact(value = breathed.fill, onChange = { shaping.gases[index] = breathed.copy(fill = it) }, after = "bar")
+                Compact(dense = true, value = breathed.fill, onChange = { shaping.gases[index] = breathed.copy(fill = it) }, after = "bar")
             }
             Box(modifier = Modifier.width(SAC)) {
-                Compact(value = breathed.sac, onChange = { shaping.gases[index] = breathed.copy(sac = it) }, after = "L/min")
+                Compact(dense = true, value = breathed.sac, onChange = { shaping.gases[index] = breathed.copy(sac = it) }, after = "L/min")
             }
-            val worked = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.outline)
+            val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
             Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked)
             Cell(done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(), FIGURED, TextAlign.End, worked)
             Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
             IconButton(onClick = { shaping.addGas(index) }, modifier = Modifier.size(BUTTON)) {
-                Icon(Icons.Filled.Add, contentDescription = "Add a gas below", tint = MaterialTheme.colorScheme.outline)
+                Icon(Icons.Filled.Add, contentDescription = "Add a gas below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
             }
             val kept = shaping.keptBecause(index)
             Explained(kept) {
@@ -930,7 +943,7 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     enabled = kept == null,
                     modifier = Modifier.size(BUTTON),
                 ) {
-                    Icon(Icons.Filled.Close, contentDescription = "Take out ${gasLabelOf(index)}")
+                    Icon(Icons.Filled.Close, contentDescription = "Take out ${gasLabelOf(index)}", modifier = Modifier.size(DENSE_GLYPH))
                 }
             }
         }
@@ -942,7 +955,7 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
 private fun CylinderHeadings() {
     Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
         for ((heading, width) in CYLINDER_COLUMNS) {
-            Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.outline))
+            Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.outline))
         }
     }
 }
@@ -1009,17 +1022,17 @@ private const val SECONDS_IN_MINUTE = 60.0
 
 private const val PERCENT = 100.0
 
-/** How many lines the runtime box shows before it scrolls. */
-private const val LINES_SHOWN = 12
+/**
+ * How tall the top of the plan is: about eighteen lines of the runtime, and about seven cylinders
+ * under the settings, before either scrolls.
+ */
+private val ZONE = 508.dp
 
 /** How thick the line round each part of the form is. */
 private val FRAME = 1.dp
 
-/** How tall a caption over a part of the form is, with its padding. */
-private val CAPTION = 28.dp
-
-/** How tall a line of the runtime box is. */
-private val ROW = 40.dp
+/** How tall a line of the runtime box and of the gases is. */
+private val ROW = 26.dp
 
 private val RUNTIME_BOX = 540.dp
 private val RUNTIME = 36.dp
@@ -1028,7 +1041,7 @@ private val DEPTH = 80.dp
 private val DURATION = 76.dp
 private val RATE = 110.dp
 private val GAS = 110.dp
-private val BUTTON = 28.dp
+private val BUTTON = 22.dp
 
 private val SETTING_LABEL = 150.dp
 private val SETTING = 104.dp
