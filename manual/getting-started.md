@@ -288,6 +288,8 @@ therefore two lines: 40 m going down, then 40 m staying for 22:46.
 
 Each line breathes the gas of the line above it, shown in italics, until you choose another.
 Choosing the gas above makes it follow again. **+** adds a line below, and **×** takes one out.
+A gas turns red on a line that takes it deeper than its limit, and a depth turns red on a line
+that takes you above the ceiling.
 
 Below your lines, in italics, is the way up Yemoja works out from where you stopped typing: every
 stop, and every gas switch it makes. It changes as you type, and there is nothing to press. If you

@@ -430,3 +430,60 @@ class ReserveTest {
         assertTrue("g2" in reserve.needed.keys, "${reserve.needed}")
     }
 }
+
+class WarnedLinesTest {
+
+    @Test
+    fun `a line deeper than its gas may be breathed is too deep, at the limit its role gives`() {
+        val shaping = planned(
+            Segment("30"),
+            Segment("30", duration = "10", gas = 1),
+            Segment("21", gas = 2),
+            gases = listOf(Breathed(), Breathed("EAN50"), Breathed("EAN50", Role.DECO)),
+        )
+        val conditions = assertNotNull(conditionsOf(shaping).first)
+        val legs = ready(shaping).legs
+        assertEquals(false, tooDeepFor(legs[0], shaping, conditions), "air at 30 m")
+        assertEquals(true, tooDeepFor(legs[1], shaping, conditions), "EAN50 as a bottom gas at 30 m")
+        // The rise to 21 m begins at 30 m, deeper than EAN50 may go even as a deco gas.
+        assertEquals(true, tooDeepFor(legs[2], shaping, conditions))
+    }
+
+    @Test
+    fun `a deco gas within its limit is not too deep`() {
+        val shaping = planned(
+            Segment("21"),
+            Segment("21", duration = "5", gas = 1),
+            gases = listOf(Breathed(), Breathed("EAN50", Role.DECO)),
+        )
+        val conditions = assertNotNull(conditionsOf(shaping).first)
+        assertEquals(false, tooDeepFor(ready(shaping).legs[1], shaping, conditions), "21 m is inside its 21.6")
+    }
+
+    @Test
+    fun `a line typed above the ceiling breaks it, and the lines below it do not`() {
+        val done = done(planned(*FORTY, Segment("0")))
+        val above = aboveCeilingAt(done.whole, done.evaluated)
+        val legs = ready(planned(*FORTY, Segment("0"))).legs
+        assertEquals(listOf(false, false, true), legs.map { breaksCeiling(it, above) })
+    }
+
+    @Test
+    fun `a stay above the ceiling breaks it from where it begins`() {
+        val shaping = planned(*FORTY, Segment("3"), Segment("3", duration = "1"))
+        val done = done(shaping)
+        val above = aboveCeilingAt(done.whole, done.evaluated)
+        val legs = ready(shaping).legs
+        assertTrue(breaksCeiling(legs[2], above), "the rise to 3 m")
+        assertTrue(breaksCeiling(legs[3], above), "and the minute held there")
+        // The way up the model adds can only begin where the typed lines left the dive, so it is
+        // above the ceiling too until the ceiling clears, and is shown so.
+        assertTrue(breaksCeiling(done.tail.first(), above))
+    }
+
+    @Test
+    fun `a dive within its limits breaks nothing`() {
+        val done = done(planned(*FORTY))
+        assertEquals(emptySet(), aboveCeilingAt(done.whole, done.evaluated))
+    }
+}

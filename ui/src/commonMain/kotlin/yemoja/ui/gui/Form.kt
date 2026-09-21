@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.state.ToggleableState
@@ -367,8 +368,10 @@ internal fun Compact(
     enabled: Boolean = true,
     /** Smaller text in a tighter box, for a table whose rows should not each take a form's height. */
     dense: Boolean = false,
+    /** Whether what it holds is something the model objects to, which is said in the error colour. */
+    wrong: Boolean = false,
 ) {
-    val ink = MaterialTheme.colorScheme.onSurface
+    val ink = if (wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
     val type = if (dense) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
     val style = type.copy(color = ink)
     BasicTextField(
@@ -384,7 +387,11 @@ internal fun Compact(
             Row(
                 modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1f else GREYED).clip(SHAPE)
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, SHAPE)
+                    .border(
+                        1.dp,
+                        if (wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
+                        SHAPE,
+                    )
                     .padding(horizontal = if (dense) GAP / 2 else GAP, vertical = if (dense) 2.dp else 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -429,6 +436,8 @@ internal fun Pick(
     italic: Boolean = false,
     /** Smaller text and no button's height, for a row of a table, as [Compact] has. */
     dense: Boolean = false,
+    /** Whether the choice is one the model objects to, which is said in the error colour. */
+    wrong: Boolean = false,
     onChoose: (Int) -> Unit,
 ) {
     var picking by remember { mutableStateOf(false) }
@@ -445,7 +454,7 @@ internal fun Pick(
                 Text(
                     text = chosen,
                     style = MaterialTheme.typography.bodySmall.copy(fontStyle = fontStyle),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = if (wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 )
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,
@@ -459,6 +468,7 @@ internal fun Pick(
                 Text(
                     text = chosen,
                     style = MaterialTheme.typography.bodyMedium.copy(fontStyle = fontStyle),
+                    color = if (wrong) MaterialTheme.colorScheme.error else Color.Unspecified,
                 )
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,

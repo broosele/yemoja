@@ -488,9 +488,14 @@ once and corrected. The numbers stay unused rather than being given to something
   cylinder only the way up breathes can go, and the way up is worked out again without it. The
   first cylinder can therefore go once the first line names another.
 
-  **What the model objects to is a list under the clocks**, one sentence each, rather than a mark on
-  the line at fault. Some warnings have no line to blame, such as a cylinder running out, and one
-  list holds them all.
+  **What the model objects to is a list under the clocks**, one sentence each. Some warnings have no
+  line to blame, such as a cylinder running out, and one list holds them all.
+
+  **Two faults are also marked on the line itself, in the error colour.** A gas is red on a line
+  that goes deeper than its MOD at the limit its role gives. A depth is red on a line where the dive
+  is above the ceiling, judged at the run's own points as the model judges it when it warns, so the
+  mark and the warning are one judgement. A worked-out line can be red too: a way up that begins
+  above the ceiling stays there until the ceiling clears, and saying otherwise would hide it.
 
   **It reaches the model through a `Run` rather than an item**, `LOGIC-37`, so a plan typed here and
   a plan on a dive are answered by one walk and cannot disagree; and the figures are the same list

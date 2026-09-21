@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import yemoja.data.Element
 import yemoja.data.Gas
 import yemoja.data.ValueFormatException
 import yemoja.logic.Ascended
@@ -660,6 +661,43 @@ internal fun tailOf(run: Run, ascent: Ascended.Done): List<Leg> {
     return legs
 }
 
+/**
+ * Whether [leg] goes deeper than its cylinder may be breathed, at the limit its role gives under
+ * [conditions]. A mix with no oxygen may be breathed nowhere, so any line on one is too deep.
+ */
+internal fun tooDeepFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Boolean {
+    if (conditions == null) return false
+    val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
+    val gas = gasOf(breathed.gas) ?: return false
+    val deepest = maximumOperatingDepth(gas, most = limitOf(breathed.role, conditions), density = conditions.density)
+        ?: return true
+    return maxOf(leg.from, leg.to) > deepest
+}
+
+/**
+ * The seconds at which [run] is above the ceiling [evaluated] worked out for it.
+ *
+ * Compared at the run's own points, as the model compares them when it warns, so a line shown in
+ * red and the warning under the plan are one judgement. `LOGIC-37`.
+ */
+internal fun aboveCeilingAt(run: Run, evaluated: Evaluated.Done): Set<Int> {
+    val ceilings = HashMap<Int, Double>()
+    for (at in 0..<evaluated.ceiling.size) {
+        val value = (evaluated.ceiling.valueAt(at) as? Element.Usable)?.value as? Number ?: continue
+        ceilings[evaluated.ceiling.secondAt(at)] = value.toDouble()
+    }
+    return run.depth.filter { (second, metres) -> metres < (ceilings[second] ?: 0.0) }.map { it.first }.toSet()
+}
+
+/**
+ * Whether [leg] is above the ceiling at any of [above]: at a point it reaches, or for a stay at the
+ * point it begins from too. A rise begun from a point above the ceiling leaves the fault with the
+ * line that reached it.
+ */
+internal fun breaksCeiling(leg: Leg, above: Set<Int>): Boolean = above.any {
+    it in (leg.begins + 1)..leg.ends || (leg.direction == Direction.STAY && it == leg.begins)
+}
+
 /** The runtime a line is shown with: the whole minute it ends in, counted up. */
 internal fun runtimeSaid(leg: Leg): String = "${ceil(leg.ends / SECONDS_IN_MINUTE).toInt()}:"
 
@@ -722,7 +760,7 @@ internal fun PlanForm(
         Column(modifier = Modifier.width(RUNTIME_BOX).fillMaxHeight()) {
             Caption("Runtime")
             Scrolling(Modifier.weight(1f).fillMaxWidth().framed().padding(HALF), scrollbar) {
-                RuntimeLines(shaping, shaped, done)
+                RuntimeLines(shaping, shaped, done, conditions)
             }
         }
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -775,12 +813,27 @@ private fun tanksOf(shaping: Shaping): Map<String, String> =
  * boxes.
  */
 @Composable
-private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?) {
+private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?, conditions: Conditions?) {
+    val above = done?.let { aboveCeilingAt(it.whole, it.evaluated) }.orEmpty()
     for ((index, segment) in shaping.segments.withIndex()) {
         val leg = shaped.legs.firstOrNull { it.index == index }
-        TypedLine(shaping, index, segment, leg)
+        TypedLine(
+            shaping,
+            index,
+            segment,
+            leg,
+            tooDeep = leg != null && tooDeepFor(leg, shaping, conditions),
+            ceilingBroken = leg != null && breaksCeiling(leg, above),
+        )
     }
-    for (leg in done?.tail.orEmpty()) WorkedLine(leg, shaping)
+    for (leg in done?.tail.orEmpty()) {
+        WorkedLine(
+            leg,
+            shaping,
+            tooDeep = tooDeepFor(leg, shaping, conditions),
+            ceilingBroken = breaksCeiling(leg, above),
+        )
+    }
 }
 
 /**
@@ -805,7 +858,16 @@ private fun Scrolling(
  * its gas, following the line above in italics until a reader chooses one.
  */
 @Composable
-private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?) {
+private fun TypedLine(
+    shaping: Shaping,
+    index: Int,
+    segment: Segment,
+    leg: Leg?,
+    /** Whether the line goes deeper than its gas may be breathed. */
+    tooDeep: Boolean,
+    /** Whether the dive is above the ceiling on this line. */
+    ceilingBroken: Boolean,
+) {
     val staying = leg?.direction == Direction.STAY
     Row(
         modifier = Modifier.height(ROW),
@@ -820,6 +882,7 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
                 value = segment.depth,
                 onChange = { shaping.segments[index] = segment.copy(depth = it) },
                 after = "m",
+                wrong = ceilingBroken,
             )
         }
         Box(modifier = Modifier.width(DURATION)) {
@@ -850,6 +913,7 @@ private fun TypedLine(shaping: Shaping, index: Int, segment: Segment, leg: Leg?)
                 chosen = gasChoiceOf(shaping, shown),
                 options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
                 italic = segment.gas == null,
+                wrong = tooDeep,
             ) { chose ->
                 // Choosing what the line above breathes is following it again.
                 shaping.segments[index] = segment.copy(gas = if (chose == above) null else chose)
@@ -877,7 +941,7 @@ internal fun gasAbove(shaping: Shaping, index: Int): Int {
 
 /** One line of the way up the model adds: all of it worked out, so all of it in italics. */
 @Composable
-private fun WorkedLine(leg: Leg, shaping: Shaping) {
+private fun WorkedLine(leg: Leg, shaping: Shaping, tooDeep: Boolean, ceilingBroken: Boolean) {
     Row(
         modifier = Modifier.height(ROW),
         verticalAlignment = Alignment.CenterVertically,
@@ -886,10 +950,11 @@ private fun WorkedLine(leg: Leg, shaping: Shaping) {
         val italic = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)
         Cell(runtimeSaid(leg), RUNTIME, TextAlign.End, italic)
         Cell(leg.direction.arrow, ARROW, TextAlign.Center, italic)
-        Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, italic)
+        val error = italic.copy(color = MaterialTheme.colorScheme.error)
+        Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, if (ceilingBroken) error else italic)
         Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
         Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
-        Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, italic, padding = GAP)
+        Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, if (tooDeep) error else italic, padding = GAP)
     }
 }
 
