@@ -548,7 +548,8 @@ once and corrected. The numbers stay unused rather than being given to something
   line to blame, such as a cylinder running out, and one list holds them all.
 
   **Two faults are also marked on the line itself, in the error colour.** A gas is red on a line
-  that goes deeper than its MOD at the limit its role gives. A depth is red on a line where the dive
+  that goes deeper than its MOD at the limit its role gives, or shallower than a hypoxic mix's
+  minimum depth. A depth is red on a line where the dive
   is above the ceiling, judged at the run's own points as the model judges it when it warns, so the
   mark and the warning are one judgement. A worked-out line can be red too: a way up that begins
   above the ceiling stays there until the ceiling clears, and saying otherwise would hide it.

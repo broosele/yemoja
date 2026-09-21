@@ -392,6 +392,7 @@ private fun walked(
     val gauges = breathing.fills.mapValues { ArrayList<Double>() }
     var above = false
     var rich = false
+    var lean = false
     var hurried = false
     val dry = HashSet<String>()
 
@@ -487,6 +488,17 @@ private fun walked(
             )
         }
         rich = oxygen > most
+        // A hypoxic mix breathed too shallow, once a crossing as a rich one breathed too deep is.
+        if (oxygen < LEAST_OXYGEN && !lean) {
+            findings += Finding(
+                point.second,
+                Severity.WARNING,
+                "the oxygen in ${breathing.mixAt(point.second)} is at ${bar(oxygen)} here," +
+                    " under the ${bar(LEAST_OXYGEN)} a diver needs",
+                breathing.keyAt(point.second),
+            )
+        }
+        lean = oxygen < LEAST_OXYGEN
     }
     safetyStopFinding(depths, safetyStop)?.let { findings += it }
 
@@ -575,8 +587,8 @@ fun maximumOperatingDepth(
  * shallower, it cannot keep a diver conscious. Nought for a mix breathable at the surface. Sea
  * water at sea level unless told otherwise.
  *
- * **Nothing judges a run by it yet.** The walk warns of a mix breathed too deep and not of one
- * breathed too shallow, so a plan switching to a hypoxic mix at the surface raises no finding.
+ * The walk warns wherever a run breathes a mix shallower than this, at [LEAST_OXYGEN], as it warns
+ * of one breathed deeper than its maximum.
  */
 fun minimumOperatingDepth(
     gas: Gas,

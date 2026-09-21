@@ -533,6 +533,30 @@ class ReserveTest {
 class WarnedLinesTest {
 
     @Test
+    fun `a line shallower than its hypoxic gas may be breathed is wrong, and one deep enough is not`() {
+        val shaping = planned(
+            Segment("3", gas = 1),
+            Segment("40"),
+            Segment("40", duration = "10"),
+            gases = listOf(Breathed(gas = "air"), Breathed(gas = "TMX10/70")),
+        )
+        val conditions = assertNotNull(conditionsOf(shaping).first)
+        val legs = ready(shaping).legs
+
+        assertTrue(tooShallowFor(legs[0], shaping, conditions), "0 to 3 m on 10/70, which needs about 6")
+        assertTrue(gasWrongFor(legs[0], shaping, conditions))
+        assertTrue(!tooShallowFor(legs[2], shaping, conditions), "at 40 m it is breathable")
+    }
+
+    @Test
+    fun `a mix breathable at the surface is never too shallow`() {
+        val shaping = planned(Segment("10"), Segment("10", duration = "10"))
+        val conditions = assertNotNull(conditionsOf(shaping).first)
+
+        assertTrue(ready(shaping).legs.none { tooShallowFor(it, shaping, conditions) })
+    }
+
+    @Test
     fun `a line deeper than its gas may be breathed is too deep, at the limit its role gives`() {
         val shaping = planned(
             Segment("30"),

@@ -55,7 +55,9 @@ import yemoja.logic.densityOfWater
 import yemoja.logic.evaluate
 import yemoja.logic.lostGasReserve
 import yemoja.logic.sharedGasReserve
+import yemoja.logic.LEAST_OXYGEN
 import yemoja.logic.maximumOperatingDepth
+import yemoja.logic.minimumOperatingDepth
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -775,6 +777,22 @@ internal fun tooDeepFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Bo
 }
 
 /**
+ * Whether [leg] comes shallower than its cylinder may be breathed, where the mix is hypoxic and its
+ * oxygen falls below [LEAST_OXYGEN]. A mix with no oxygen is caught by [tooDeepFor] already.
+ */
+internal fun tooShallowFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Boolean {
+    if (conditions == null) return false
+    val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
+    val gas = gasOf(breathed.gas) ?: return false
+    val shallowest = minimumOperatingDepth(gas, density = conditions.density) ?: return false
+    return minOf(leg.from, leg.to) < shallowest
+}
+
+/** Whether [leg] breathes its cylinder anywhere it may not be breathed, too deep or too shallow. */
+internal fun gasWrongFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Boolean =
+    tooDeepFor(leg, shaping, conditions) || tooShallowFor(leg, shaping, conditions)
+
+/**
  * The seconds at which [run] is above the ceiling [evaluated] worked out for it.
  *
  * Compared at the run's own points, as the model compares them when it warns, so a line shown in
@@ -926,7 +944,7 @@ private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?, c
             index,
             segment,
             leg,
-            tooDeep = leg != null && tooDeepFor(leg, shaping, conditions),
+            gasWrong = leg != null && gasWrongFor(leg, shaping, conditions),
             ceilingBroken = leg != null && breaksCeiling(leg, above),
         )
     }
@@ -934,7 +952,7 @@ private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?, c
         WorkedLine(
             leg,
             shaping,
-            tooDeep = tooDeepFor(leg, shaping, conditions),
+            gasWrong = gasWrongFor(leg, shaping, conditions),
             ceilingBroken = breaksCeiling(leg, above),
         )
     }
@@ -967,8 +985,8 @@ private fun TypedLine(
     index: Int,
     segment: Segment,
     leg: Leg?,
-    /** Whether the line goes deeper than its gas may be breathed. */
-    tooDeep: Boolean,
+    /** Whether the line goes deeper or shallower than its gas may be breathed. */
+    gasWrong: Boolean,
     /** Whether the dive is above the ceiling on this line. */
     ceilingBroken: Boolean,
 ) {
@@ -1017,7 +1035,7 @@ private fun TypedLine(
                 chosen = gasChoiceOf(shaping, shown),
                 options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
                 italic = segment.gas == null,
-                wrong = tooDeep,
+                wrong = gasWrong,
             ) { chose ->
                 // Choosing what the line above breathes is following it again.
                 shaping.segments[index] = segment.copy(gas = if (chose == above) null else chose)
@@ -1045,7 +1063,7 @@ internal fun gasAbove(shaping: Shaping, index: Int): Int {
 
 /** One line of the way up the model adds: all of it worked out, so all of it in italics. */
 @Composable
-private fun WorkedLine(leg: Leg, shaping: Shaping, tooDeep: Boolean, ceilingBroken: Boolean) {
+private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBroken: Boolean) {
     Row(
         modifier = Modifier.height(ROW),
         verticalAlignment = Alignment.CenterVertically,
@@ -1058,7 +1076,7 @@ private fun WorkedLine(leg: Leg, shaping: Shaping, tooDeep: Boolean, ceilingBrok
         Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, if (ceilingBroken) error else italic)
         Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
         Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
-        Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, if (tooDeep) error else italic, padding = GAP)
+        Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, if (gasWrong) error else italic, padding = GAP)
     }
 }
 

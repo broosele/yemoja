@@ -744,6 +744,28 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a hypoxic mix breathed at the surface is said once, and not at depth`() {
+        // Trimix 10/70 is 0.10 bar at the surface and reaches 0.16 bar at about six metres.
+        fun leanFindings(switches: List<Pair<Int, String>>): List<Finding> = assertIs<Evaluated.Done>(
+            evaluate(
+                Run(
+                    depth = listOf(0 to 0.0, 60 to 3.0, 120 to 20.0, 600 to 20.0),
+                    sources = mapOf("g1" to Source(Gas.AIR), "g2" to Source(Gas.parse("TMX10/70"))),
+                    gradientFactorLow = 1.0,
+                    gradientFactorHigh = 1.0,
+                    switches = switches,
+                ),
+            ),
+        ).findings.filter { "under the" in it.said }
+
+        val atTheSurface = leanFindings(listOf(0 to "g2")).single()
+        assertEquals(0, atTheSurface.second)
+        assertEquals("g2", atTheSurface.source)
+        assertTrue("0.16" in atTheSurface.said, atTheSurface.said)
+        assertTrue(leanFindings(listOf(0 to "g1", 120 to "g2")).isEmpty(), "switched to at 20 m, it is fine")
+    }
+
+    @Test
     fun `a finding about the dive rather than a cylinder names none`() {
         val ceiling = done(planned(DEEP)).findings.single { "ceiling" in it.said }
 

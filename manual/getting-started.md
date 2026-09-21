@@ -111,7 +111,7 @@ with the gas moved to, and alarms with red triangles.
 **What Yemoja's own model makes of it sits under the graph**, where it can be worked out: how deep
 the stops would start, what each cylinder gives up and ends at, the oxygen clocks, how long before
 you may fly, and how long before it is out of you. Anything it objects to — going above the
-ceiling, a cylinder that runs dry, a mix too rich for the depth it is breathed at — is listed in
+ceiling, a cylinder that runs dry, a mix too rich or too lean for the depth it is breathed at — is listed in
 red with the minute it happened at, and the ceiling itself is drawn over the graph with the water
 above it shaded. Its own NDL and clocks can be chosen on the right-hand axis, each marked *worked
 out* so you can tell them from what your computer recorded.
@@ -269,8 +269,8 @@ therefore two lines: 40 m going down, then 40 m staying for 22:46.
 
 Each line breathes the gas of the line above it, shown in italics, until you choose another.
 Choosing the gas above makes it follow again. **+** adds a line below, and **×** takes one out.
-A gas turns red on a line that takes it deeper than its limit, and a depth turns red on a line
-that takes you above the ceiling.
+A gas turns red on a line that takes it deeper than its limit, or shallower than a hypoxic mix may
+be breathed, and a depth turns red on a line that takes you above the ceiling.
 
 Below your lines, in italics, is the way up Yemoja works out from where you stopped typing: every
 stop, and every gas switch it makes. It changes as you type, and there is nothing to press. If you
@@ -305,7 +305,7 @@ tick to switch it off, what it asks each cylinder to hold, its worst moment, and
 [The decompression model](decompression.md#planning-a-dive) explains both. Then comes anything
 Yemoja objects to, such as going above the ceiling, rising faster than your ascent
 rate, missing the safety stop, a cylinder running dry, a cylinder holding less than its reserve,
-or a mix breathed past its limit. Last is a
+or a mix breathed too deep or too shallow for its oxygen. Last is a
 graph of the whole dive.
 
 To keep a plan, give it a name, *Plan A* unless you choose another, and press **Save as new dive**,
@@ -329,7 +329,7 @@ limit, which starts as your *pO₂ max bottom* from Settings. It is the same dep
 beside a cylinder, and it is rounded down. Beneath it is the **minimum depth**, the shallowest the
 mix may be breathed before its oxygen falls below *pO₂ min*, which starts at 0.16 bar. Only a
 hypoxic mix, one with too little oxygen to breathe at the surface, has one: trimix 10/70 needs about
-6 m. It is rounded up. The dive plan does not yet warn about a hypoxic mix breathed too shallow.
+6 m. It is rounded up. A dive plan warns wherever a mix is breathed shallower than this.
 
 **EAD** is the depth at which air holds as much nitrogen as your mix does at the depth you type,
 which is how a nitrox dive is read against air tables. **END** is the depth at which air is as

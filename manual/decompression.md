@@ -216,7 +216,8 @@ the same thing every time it is read, rather than a schedule quietly rewriting i
 Asked about a plan, the model answers what it answers about any dive: the ceiling throughout, the
 time left before stops become necessary, the gas each cylinder gives up and what its gauge would
 read, the two oxygen clocks, how long before you may fly, and a list of what it objects to — going
-above the ceiling, a cylinder that runs out, a mix too rich for the depth it is breathed at.
+above the ceiling, a cylinder that runs out, a mix too rich for the depth it is breathed at, a mix
+with too little oxygen for it.
 
 **Planning a second dive of the day** means telling the plan which earlier run you are carrying
 gas from. Point it at the plan you intend to follow, and the model carries your tissues across the
