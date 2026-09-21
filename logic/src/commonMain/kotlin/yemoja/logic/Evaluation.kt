@@ -532,7 +532,7 @@ private fun safetyStopFinding(depths: List<Point>, safetyStop: SafetyStop?): Fin
  *
  * Holding means a stretch that begins and ends at that depth, so the rise to it is not counted.
  */
-private fun heldAt(points: List<Pair<Int, Double>>, metres: Double): Int? {
+internal fun heldAt(points: List<Pair<Int, Double>>, metres: Double): Int? {
     val deepest = points.indexOfLast { it.second > metres }
     if (deepest < 0) return null
     var held = 0
@@ -624,29 +624,60 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
     require(lastStop >= 0) { "a last stop should be 0 or deeper, but was $lastStop" }
     val evaluated = evaluate(run)
     if (evaluated is Evaluated.Refused) return Ascended.Refused(evaluated.reason)
-    val model = run.model
     val breathing = breathedBy(run) ?: return Ascended.Refused("nothing says what is breathed")
     val depths = pointsOf(run) ?: return Ascended.Refused("this run holds no depths")
+    val end = depths.last()
+    val climbed = climbed(
+        From((evaluated as Evaluated.Done).surfacing, end.second, end.metres, breathing.keyAt(end.second)),
+        breathing,
+        run,
+        metresAMinute,
+        lastStop,
+        run.depth,
+    ) ?: return Ascended.Refused("this run does not reach the surface within a day")
+    return Ascended.Done(climbed.points, climbed.switches)
+}
+
+/** From is where an ascent begins: the tissues, the moment, the depth, and the source breathed. */
+internal class From(val tissues: Tissues, val second: Int, val metres: Double, val breathed: String)
+
+/** Climbed is an ascent's points and switches, each a second and a value. */
+internal class Climbed(val points: List<Pair<Int, Double>>, val switches: List<Pair<Int, String>>)
+
+/**
+ * The way up from [from], choosing among [breathing]'s sources, under [run]'s model, water, air
+ * and safety stop, or null where it does not surface within a day.
+ *
+ * [before] is the run that led to [from], which says how much of the safety stop is already held.
+ * The ascent a plan is completed with and the one a lost-gas reserve is costed on both come from
+ * here, so they cannot disagree about where a stop goes.
+ */
+internal fun climbed(
+    from: From,
+    breathing: Breathing,
+    run: Run,
+    metresAMinute: Double,
+    lastStop: Double,
+    before: List<Pair<Int, Double>>,
+): Climbed? {
+    val model = run.model
     val density = run.density
     val surface = run.surface
-
-    var tissues = (evaluated as Evaluated.Done).surfacing
-    var second = depths.last().second
-    var metres = depths.last().metres
-    var breathed = breathing.keyAt(second)
+    var tissues = from.tissues
+    var second = from.second
+    var metres = from.metres
+    var breathed = from.breathed
     var firstStop = 0.0
     val points = ArrayList<Pair<Int, Double>>()
     val switches = ArrayList<Pair<Int, String>>()
-    // What the safety stop still needs, counting what the typed run already held at its depth.
+    // What the safety stop still needs, counting what the run already held at its depth.
     val safety = run.safetyStop?.takeIf { it.seconds > 0 && metres >= it.metres }
     var owed = safety?.let { stop ->
-        heldAt(run.depth, stop.metres)?.let { held -> stop.seconds - held } ?: 0
+        heldAt(before, stop.metres)?.let { held -> stop.seconds - held } ?: 0
     } ?: 0
 
     while (metres > 0) {
-        if (second - depths.last().second > LONGEST_ASCENT) {
-            return Ascended.Refused("this run does not reach the surface within a day")
-        }
+        if (second - from.second > LONGEST_ASCENT) return null
         val ambient = ambientAt(metres, density, surface)
         firstStop = firstStopAfter(tissues, firstStop, model, surface)
         val allowed = allowedDepthOf(tissues, firstStop, model, density, surface, lastStop)
@@ -678,7 +709,7 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
             }
         }
     }
-    return Ascended.Done(points, switches)
+    return Climbed(points, switches)
 }
 
 /**
@@ -750,9 +781,9 @@ private fun firstStopAfter(tissues: Tissues, firstStop: Double, model: Model, su
 }
 
 /** Model is how conservative a run is worked out: the two gradient factors. */
-private class Model(val low: Double, val high: Double)
+internal class Model(val low: Double, val high: Double)
 
-private val Run.model: Model get() = Model(gradientFactorLow, gradientFactorHigh)
+internal val Run.model: Model get() = Model(gradientFactorLow, gradientFactorHigh)
 
 /** Point is one depth in a profile: when, and how deep. */
 private class Point(val second: Int, val metres: Double)
@@ -781,7 +812,7 @@ private fun pointsOf(run: Run): List<Point>? =
  *
  * Immutable.
  */
-private class Breathing(
+internal class Breathing(
     val mixes: Map<String, Gas>,
     private val switches: List<Pair<Int, String>>,
     /** Litres a minute at the surface, for the sources that say. */
@@ -808,6 +839,10 @@ private class Breathing(
 
     /** What is in the source breathed at [second], and air where the source does not say. */
     fun mixAt(second: Int): Gas = mixes[keyAt(second)] ?: Gas.AIR
+
+    /** The same sources and switches, with only [keys] open to an ascent's choice. */
+    fun choosing(keys: Set<String>): Breathing =
+        Breathing(mixes, switches, rates, fills, mostOxygen, keys)
 
     /** The oxygen [key] is held to, in bar, and [MOST_OXYGEN] for a source nobody named. */
     fun mostOxygenOf(key: String): Double = mostOxygen[key] ?: MOST_OXYGEN
@@ -840,7 +875,7 @@ private class Breathing(
 }
 
 /** Fill is what a cylinder was filled to, in bar of gauge pressure, and the litres it holds. */
-private class Fill(val gauge: Double, val volume: Double)
+internal class Fill(val gauge: Double, val volume: Double)
 
 /**
  * What [run] breathes from, or null where nothing says.
@@ -849,7 +884,7 @@ private class Fill(val gauge: Double, val volume: Double)
  * ordinary single-cylinder dive is written. A switch naming a source the run does not have is
  * passed over rather than followed.
  */
-private fun breathedBy(run: Run): Breathing? {
+internal fun breathedBy(run: Run): Breathing? {
     if (run.sources.isEmpty()) return null
     val mixes = run.sources.mapValues { (_, source) -> source.gas }
     val rates = run.sources.mapNotNull { (key, source) -> source.sac?.let { key to it } }.toMap()
@@ -944,7 +979,7 @@ private fun seriesOf(seconds: List<Int>, values: List<Double>): Series =
     Series(seconds.toIntArray(), values.map { Element.Usable(it as Any) })
 
 /** Seconds into a run as a reader counts them, minutes and seconds: `24:00`. */
-private fun clockOf(second: Int): String =
+internal fun clockOf(second: Int): String =
     "${second / 60}:${(second % 60).toString().padStart(2, '0')}"
 
 /** A depth as a finding says it, to a tenth of a metre, which is as fine as anyone reads one. */

@@ -481,6 +481,42 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
+- **LOGIC-40 — What gas a plan keeps back for a way up in trouble.** *Settled:* **`gasReserve`,
+  trying every moment of the dive, losing the sources it is told are lost, and costing the way up
+  from there at a panic rate.**
+
+  The rule is the user's: there must be gas to reach the surface safely breathing at a raised
+  rate, for sharing and for stress, with the deco gas lost, at whichever moment of the dive that
+  is worst. So at each point of the run the lost sources are gone, and the way up is worked out
+  from the tissues at that moment by the same code that completes a plan's ascent, holding its
+  stops and its safety stop. Each remaining source is breathed at its own `sac` times the panic
+  factor. The worst moment is the one whose way up costs the most gas altogether, and what that way
+  up takes from each cylinder is its reserve, in litres and in bar on its gauge.
+
+  **Every moment rather than the end of the bottom.** The end of the bottom is usually the worst,
+  and for a single-level dive it always has been in the tests. A deco gas lost just before the
+  switch to it can cost more, and a multi-level plan has no single bottom to name, so trying every
+  point costs about a millisecond and assumes nothing.
+
+  **A bailout is open to that way up.** The plan's own ascent never switches to one, `LOGIC-35`,
+  because it is carried for trouble; this is the trouble. Where the source breathed at the moment
+  is itself lost, the way up starts on the richest remaining one its limit allows at that depth.
+
+  **Whether the plan has enough is judged at every moment too.** A cylinder whose gauge at some
+  moment reads less than the way up from there needs is a shortfall, and the first one is given
+  with its cylinder and time. A cylinder with no size or no fill can be costed in litres and not
+  judged, and the answer says so rather than calling it enough.
+
+  **The panic rate runs the whole way up.** On a dive with stops that is severe: forty metres for
+  twenty-five minutes on air, with its EAN50 lost, needs over six thousand litres at four times
+  twenty litres a minute. That follows from the rule as given. Practices differ, and a plan that
+  applies the raised rate only to the first minutes would be a different rule, not a tuning of
+  this one.
+
+  A cylinder nobody gave a `sac` is refused by name rather than counted as free. Built in
+  `Reserve.kt`, with the ascent's loop shared with `completeAscent` so the two cannot disagree
+  about where a stop goes.
+
 - **LOGIC-39 — What the model answers about a depth rather than a dive.** *Settled:* **a
   table's own figure, `noDecompressionLimit`, and the pressure arithmetic made public.**
 
