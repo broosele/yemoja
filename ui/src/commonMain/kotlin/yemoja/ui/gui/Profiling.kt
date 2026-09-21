@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -1303,7 +1304,9 @@ private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
                                 Scenario.SHARED -> shaping.sharedScenario = it
                             }
                         },
-                        modifier = Modifier.size(DENSE_GLYPH),
+                        // The platform draws its box at one size whatever the slot, so it is
+                        // drawn smaller rather than squeezed into a smaller slot.
+                        modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
                     )
                 }
                 Text(
@@ -1386,6 +1389,9 @@ private val ZONE = 508.dp
 
 /** How thick the line round each part of the form is. */
 private val FRAME = 1.dp
+
+/** How much of its own size a checkbox is drawn at in a dense row: the size of a dense glyph. */
+private const val DENSE_CHECK = 0.8f
 
 /** How tall a line of the runtime box and of the gases is. */
 private val ROW = 26.dp
