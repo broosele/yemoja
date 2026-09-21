@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -220,11 +221,15 @@ internal fun answerSaid(answer: Answer, unit: String): String? = when (answer) {
  * no logbook is open, since a calculation needs none. `GUI-43`.
  */
 @Composable
-internal fun Calculations(working: Working, settings: Settings?) {
+internal fun Calculations(
+    working: Working,
+    settings: Settings?,
+    scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)? = null,
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         Waiver()
         HorizontalDivider()
-        Calculators(working, settings)
+        Calculators(working, settings, scrollbar)
     }
 }
 
@@ -274,7 +279,11 @@ internal const val WAIVER: String =
 
 /** The list of what can be worked out, and the form for the one chosen. */
 @Composable
-private fun Calculators(working: Working, settings: Settings?) {
+private fun Calculators(
+    working: Working,
+    settings: Settings?,
+    scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)?,
+) {
     Row(modifier = Modifier.fillMaxSize()) {
         Selectable {
             Column(modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP)) {
@@ -294,7 +303,7 @@ private fun Calculators(working: Working, settings: Settings?) {
                     when (working.calculation) {
                         Calculation.SAC -> SacForm(working)
                         Calculation.NDL -> NdlForm(working, settings)
-                        Calculation.PLAN -> PlanForm(working.shaping, settings)
+                        Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar)
                     }
                 }
             }

@@ -278,25 +278,44 @@ what you would breathe at the surface, in litres a minute, and the arithmetic is
 uses for the SAC it works out on a recording. An end pressure below nought means the five you typed
 would have emptied the cylinder — the number is left as it is so you can see by how much.
 
-**Dive plan** works out a whole dive: type each level as how long and how deep — the minutes
-counting from when you leave the depth before it, so twenty-five minutes at forty metres includes
-going down — and add levels with **+**. The gradient factors start as the defaults you chose in
-[Settings](settings.md). There is nothing to press: as you type, Yemoja works out the way up and
-shows the stops, how long the whole dive takes, what gas it costs, the oxygen clocks, and anything
-it objects to — a cylinder run dry, a mix too rich for the depth. The plan is not saved anywhere:
-it is a slate, not a logbook entry.
+**Dive plan** works out a whole dive. On the left is the runtime, one line for each part of the
+dive: going down, staying, or coming up. Type a depth, and either how long that part takes or how
+fast you move, and Yemoja works out the other and shows it in italics. Leave both empty and it uses
+the descent or ascent rate from the settings beside it. A line at the same depth as the one before
+it is a stay, and needs a duration. Durations are minutes and seconds, `2:13`, or whole minutes,
+`25`. The number before each line is the minute it ends in. Twenty-five minutes at forty metres is
+therefore two lines: 40 m going down, then 40 m staying for 22:46.
 
-**Add ascent** writes that way up into your levels, so you can take it apart. Each stop becomes a
-level like the ones you typed, on the cylinder Yemoja was breathing at the time, and from then on
-it is yours: lengthen a stop, cut one out, and the figures answer for what you left. The button is
-there whenever the plan does not yet reach the surface, and gone once it does.
+Each line breathes the gas of the line above it, shown in italics, until you choose another.
+Choosing the gas above makes it follow again. **+** adds a line below, and **×** takes one out.
 
-Under the levels are the cylinders. Say what is in each, and your breathing rate, its size and its
-fill if you want the gas worked out; **+** adds another, and each says how deep its mix may be
-breathed. With more than one, every level gains a box naming which cylinder it is breathed on, from
-that level until the next says otherwise, so the first level is what you go in on. A decompression
-gas needs no level of its own: list it and leave it, and the way up switches to the richest mix
-each depth allows.
+Below your lines, in italics, is the way up Yemoja works out from where you stopped typing: every
+stop, and every gas switch it makes. It changes as you type, and there is nothing to press. If you
+type part of the way up yourself, it adds only what is left, and a dive you have typed all the way
+to the surface gets nothing added.
+
+On the right are the plan's settings. They start from what you chose in [Settings](settings.md),
+and a change here is for this plan only. A safety stop of 0 minutes means none. The safety stop is
+held on the way up as a minimum, and a longer decompression stop at the same depth counts towards
+it.
+
+Under the settings are the gases, a line for each cylinder: the mix, its role, its size, what it
+was filled to, and your breathing rate. Yemoja shows how deep the mix may be breathed, and what the
+plan takes from the cylinder and leaves in it. The role says what the cylinder is for:
+
+- **Bottom** is held to *pO₂ max bottom*, and the way up may switch to it.
+- **Deco** is held to *pO₂ max deco*, and the way up switches to it by itself where it is the best
+  mix the depth allows.
+- **Bailout** is held to *pO₂ max bottom*, and the way up never switches to it: it is breathed only
+  where one of your lines names it. If you switch to it yourself, the way up keeps you on it unless
+  a richer mix is allowed or it goes past its own limit.
+
+A cylinder that one of your lines breathes cannot be taken out until you change that line.
+
+Under all that is a line with the oxygen clocks, the no-fly time and the desaturation time. Then
+comes anything Yemoja objects to, such as going above the ceiling, rising faster than your ascent
+rate, missing the safety stop, a cylinder running dry, or a mix breathed past its limit. Last is a
+graph of the whole dive. The plan is not saved anywhere: it is a slate, not a logbook entry.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
 decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts

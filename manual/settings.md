@@ -64,6 +64,16 @@ written in — a settings file declares none:
   to 30. Without a choice, 9.
 - `default_last_stop` — the depth an ascent takes its shallowest stop at, in metres, from 0
   to 12. Without a choice, 3.
+- `default_bottom_po2` — the most oxygen a new dive plan breathes a bottom or bailout gas at, in
+  bar, from 0.5 to 2. Without a choice, 1.4.
+- `default_deco_po2` — the most oxygen a new dive plan breathes a deco gas at, in bar, from 0.5
+  to 2. Without a choice, 1.6.
+- `default_safety_stop_depth` — how deep a new dive plan's safety stop is, in metres, from 1 to
+  12. Without a choice, 6.
+- `default_safety_stop_duration` — how long a new dive plan's safety stop lasts, in minutes, from
+  0 to 15. 0 means no safety stop. Without a choice, 3.
+- `default_water_type` — the water a new dive plan is dived in: `salt` or `fresh`. Without a
+  choice, `salt`.
 
 A value that is not a number, or lies outside its range, is ignored, and the next place in line
 answers instead.

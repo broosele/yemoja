@@ -1,5 +1,7 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
@@ -78,6 +80,9 @@ fun gui(folder: String? = null): Int {
                 ask = ::asked,
                 pick = ::picked,
                 save = ::saved,
+                scrollbar = { state, modifier ->
+                    VerticalScrollbar(rememberScrollbarAdapter(state), modifier)
+                },
                 conversing = { writing, direct ->
                     val open = held
                     val where = at

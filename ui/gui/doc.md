@@ -415,58 +415,71 @@ once and corrected. The numbers stay unused rather than being given to something
   wording in three places cannot drift into a softer claim in one of them, which is why the
   sentence is a constant a test holds against those four claims. `manual/decompression.md`.
 
-  **A dive plan is the third, and belongs to no dive.** Levels in, decompression out: each level is
-  how long and how deep, the minutes counting from leaving the depth before, so a level is travelled
-  to at the descent or ascent rate and held for what is left of them — a level with less time than
-  the travel takes is refused with the arithmetic, as a plan on a dive is. `GUI-41`. What is
-  breathed is a list of cylinders, each with its rate, size and fill where they are known, and the
-  two gradient factors are prefilled from the settings.
+  **A dive plan is the third, and belongs to no dive.** Its top half is two columns: the runtime on
+  the left, the settings and the gases on the right. Below them come the whole dive's clocks on one
+  line, what the model objects to, and the graph a recording is drawn with.
 
-  **A level names the cylinder it is breathed on, and that is the whole of switching.** A chooser
-  appears on a level only where there is more than one cylinder to choose, and the switch is
-  written where that level begins. The first switch is always at nought, whichever cylinder the
-  first level names: a run that says nothing about what it went in on is refused, and rightly.
-  `LOGIC-37`. A level naming a cylinder the reader has since taken out falls back to the one
-  before it rather than refusing, a list being theirs to shorten while they think.
+  **Each line of the runtime is one segment, a change of depth or a stay.** A line is typed as a
+  depth and either a duration or a rate. The other is worked out and shown in italics in its own
+  box, and typing into that box makes it the typed one. Both blank takes the rate from the
+  settings. A line at the depth before it stays, and has a duration and no rate. The arrow and the
+  runtime are worked out, the runtime being the whole minute the line ends in, counted up. A
+  duration is `m:ss` or whole minutes, read as every clock in the application is read.
 
-  **A deco gas is listed and left.** `completeAscent` moves to the richest mix each depth allows,
-  so a reader who adds EAN50 and touches no level gets the switch to it on the way up without
-  saying when. How deep each mix may be breathed is said beside it, from the model's own
-  `maximumOperatingDepth` rather than from a limit of this form's: one figure, in one place, so a
-  reader placing a gas by what they are told here cannot be contradicted by the evaluation.
+  This is not the shape of a plan started on a dive, `GUI-41`, which asks for a depth and a bottom
+  time counting the descent. That form asks a question with one answer. This one is a runtime
+  table, and a line that is either a rise or a stay is what lets a reader type a way up at a rate
+  of their own.
 
-  **The figures are live and the levels are not.** A calculation answers as it is typed, as the
-  other two do, so there is no deed to press: the form completes the ascent, evaluates the levels
-  and the ascent together, and shows the stops depth by depth, the runtime, the gas, the clocks and
-  whatever the model objects to. What a reader wants from a plan is the whole dive rather than the
-  bottom of one. The held minutes at a depth are gathered into one stop, the model writing a point a
-  minute while it holds.
+  **A line breathes the gas of the line above until one is chosen**, and says so in italics. The
+  first line follows the first cylinder. Choosing the gas the line above breathes follows it again,
+  so there is no separate deed for going back. The switches are written where a line changes
+  cylinder, and the first is always at nought: a run that says nothing about what it went in on is
+  refused, and rightly. `LOGIC-37`.
 
-  **Add ascent writes that way up into the levels.** The figures already say what it costs; the
-  deed makes it something a reader can take hold of. Each stretch becomes one level, the rise to a
-  depth and the hold there together, carrying the cylinder the model was breathing when it began,
-  so a deco switch it made for itself survives as a level naming that cylinder. Nothing marks a
-  written level as the model's. It is a level like the ones above it, and the live findings are
-  what say whether the plan is still one the model approves of — a second opinion stored beside it
-  would be a second source of truth, and would have to be thrown away on the first edit anyway.
+  **The way up is always there, in italics and without boxes.** The model completes a valid ascent
+  from the last typed line to the surface, and it is shown beneath, changing as anything above it
+  is typed. A stop the model writes as a point a minute is one line. A rise through several depths
+  is one line too, unless a gas is switched on the way. A reader who types part of the way up
+  shortens what is added, and a dive typed to the surface has nothing added. Nothing turns those
+  lines into typed ones. The deed that did, *Add ascent*, is gone: a reader who wants to shape the
+  way up types it, and the italic part fills in only what they left.
 
-  **The deed is shown only where it would write something.** A plan already ending at the surface
-  has no way up left to add, so the button is not there; one edited to stop short of the surface
-  has again, so it is. That is the whole rule, and it needs no memory of having been pressed.
+  **Twelve lines show, and the box scrolls past that**, with a bar where the platform draws one. The
+  settings and the gases beside it stay where they are however long the dive is.
 
-  Two roundings meet here and the form takes the longer of them. The model and this form work a
-  travel time out to a different second, and a level a second short of its own rise would be
-  refused the moment it was written, so a written level is at least as long as the form will read
-  it as taking. What that adds is held at the stop rather than cut from it. A level that is exactly
-  its own travel is a level, which it had not been before: surfacing from the last stop is a rise
-  and no holding.
+  **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent
+  rate, safety stop depth and duration, last stop and water each start from what the settings
+  hold, `GUI-42`, and are changed here for this plan alone. A safety stop of nought minutes is none,
+  and its depth is greyed. The safety stop is a minimum the ascent holds, with a longer deco stop
+  there counting towards it, and a dive that does not hold it is warned of, typed or not. The water
+  is weighed as a recording made in it would be.
+
+  **A cylinder has a role: bottom, deco or bailout.** The role decides two things. Bottom and
+  bailout are held to *pO₂ max bottom* and deco to *pO₂ max deco*. The way up may switch to a bottom
+  or deco cylinder by itself, and never to a bailout, which is breathed only where a line names it.
+  Any line may name any cylinder. A bailout is held to the bottom limit because it is breathed in
+  trouble, at the effort that brought the trouble on. A cylinder added is a deco cylinder.
+
+  How deep each may go is the model's `maximumOperatingDepth` at that limit, so the table, the
+  ascent's choice and the warning are one figure. What the plan takes from each cylinder and leaves
+  in it are worked out beside it.
+
+  **A cylinder a line breathes stays.** Its × is greyed, and a tooltip says which line breathes it.
+  Taking it out would change the dive behind the reader's back, so they change the line first. A
+  cylinder only the way up breathes can go, and the way up is worked out again without it. The
+  first cylinder can therefore go once the first line names another.
+
+  **What the model objects to is a list under the clocks**, one sentence each, rather than a mark on
+  the line at fault. Some warnings have no line to blame, such as a cylinder running out, and one
+  list holds them all.
 
   **It reaches the model through a `Run` rather than an item**, `LOGIC-37`, so a plan typed here and
   a plan on a dive are answered by one walk and cannot disagree; and the figures are the same list
-  `GUI-40` shows under a recording, the cylinders named by whatever knows their names. **Nothing is
-  stored**: putting a plan from here on to a dive is a later question, and until it is answered a
-  plan typed here is gone when the tab is left. It is kept while the window is open, as anything a
-  tab holds is. `GUI-27`.
+  `GUI-40` shows under a recording, and the graph is the one a recording is drawn with, the
+  cylinders named by whatever knows their names. **Nothing is stored**: putting a plan from here on
+  to a dive is a later question, and until it is answered a plan typed here is gone when the tab is
+  left. It is kept while the window is open, as anything a tab holds is. `GUI-27`.
 
   **The units are the model's own** — litres a minute, metres, minutes, litres, bar — until the
   units a user wants shown are read. `UI-2`.
@@ -474,8 +487,8 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  Six settings are a form rather than a place, so they open in the System box like a download,
-  from a deed of their own, rather than taking a tab. A tab is the answer once there are
+  Eleven settings are still a form rather than a place, so they open in the System box like a
+  download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 
   **Each setting says where its value came from**: *set on this device*, *set in this logbook*,
@@ -488,6 +501,10 @@ once and corrected. The numbers stay unused rather than being given to something
   do is said in the setting's own terms, with its range and unit. An emptied box takes the choice
   away, and what answers is the next layer. Where a save goes is the Universe's rule, not the
   form's: to the logbook's file unless this device's file already holds that setting.
+
+  **The water is chosen from a menu**, being one of a fixed set: `salt` or `fresh`, the words
+  `water_type` uses, so a settings file and a recording say it alike. A word outside the set is
+  ignored when read and refused when chosen, as a number outside its range is.
 
   **The gradient factors are typed as percentages**, as the plan form takes them and for the same
   reason, `GUI-41`, and held as the proportions the file writes. They have no default, and say *not

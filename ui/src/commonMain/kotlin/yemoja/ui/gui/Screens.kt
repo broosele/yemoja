@@ -206,6 +206,11 @@ internal class Platform(
      * list of deeds is what the application is for, not what is built. `GUI-30`.
      */
     val deeds: Map<Deed, () -> Unit> = emptyMap(),
+    /**
+     * A bar beside a box scrolled by [ScrollState] that shows how much more there is, or absent
+     * where the platform scrolls without one, as a touch screen does. `GUI-43`.
+     */
+    val scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)? = null,
 )
 
 /**
@@ -403,7 +408,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 Manuals(platform.manual, platform.open, kept.getValue(tab))
 
                             tab.shape == Shape.CALCULATIONS ->
-                                Calculations(kept.getValue(tab).working, universe?.settings)
+                                Calculations(kept.getValue(tab).working, universe?.settings, platform.scrollbar)
 
                             universe == null -> Unit
                             else -> Subject(

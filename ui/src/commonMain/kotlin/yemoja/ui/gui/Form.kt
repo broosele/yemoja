@@ -38,8 +38,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import yemoja.data.OwnedItemDescription
@@ -345,6 +347,10 @@ private fun SingleEditor(
  *
  * [after] is written after the text, a unit; [hint] is shown in its place while it is empty;
  * [lines] is how many the field is tall for at least, more than one making it multiline.
+ *
+ * A [derived] hint is a value worked out from the other boxes rather than a prompt, so it is shown
+ * in italics in the colour of text: a reader reads it as the answer, and typing over it replaces
+ * it. `GUI-43`.
  */
 @Composable
 internal fun Compact(
@@ -356,6 +362,9 @@ internal fun Compact(
     trailing: (@Composable () -> Unit)? = null,
     /** Added to the field's own, for a caller that reads its keys. */
     modifier: Modifier = Modifier,
+    derived: Boolean = false,
+    /** Whether it can be typed in. One that cannot is greyed rather than hidden. */
+    enabled: Boolean = true,
 ) {
     val ink = MaterialTheme.colorScheme.onSurface
     val style = MaterialTheme.typography.bodyMedium.copy(color = ink)
@@ -365,11 +374,12 @@ internal fun Compact(
         textStyle = style,
         singleLine = lines == 1,
         minLines = lines,
+        enabled = enabled,
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         modifier = Modifier.fillMaxWidth().then(modifier),
         decorationBox = { inner ->
             Row(
-                modifier = Modifier.fillMaxWidth().clip(SHAPE)
+                modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1f else GREYED).clip(SHAPE)
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, SHAPE)
                     .padding(horizontal = GAP, vertical = 6.dp),
@@ -377,7 +387,15 @@ internal fun Compact(
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     if (value.isEmpty() && hint.isNotEmpty()) {
-                        Text(hint, style = style, color = MaterialTheme.colorScheme.outline)
+                        if (derived) {
+                            Text(
+                                text = hint,
+                                style = style.copy(fontStyle = FontStyle.Italic),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            Text(hint, style = style, color = MaterialTheme.colorScheme.outline)
+                        }
                     }
                     inner()
                 }
@@ -393,6 +411,48 @@ internal fun Compact(
             }
         },
     )
+}
+
+/**
+ * One of [options], chosen from a menu that names them, shown as the one [chosen].
+ *
+ * An [italic] choice is one nobody made here: it follows from something else, as a planned line
+ * breathes the gas of the line above until it is told otherwise. `GUI-43`.
+ */
+@Composable
+internal fun Pick(
+    chosen: String,
+    options: List<String>,
+    italic: Boolean = false,
+    onChoose: (Int) -> Unit,
+) {
+    var picking by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { picking = true }) {
+            Text(
+                text = chosen,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+                ),
+            )
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        }
+        Menu(expanded = picking, onDismissRequest = { picking = false }) {
+            for ((index, option) in options.withIndex()) {
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onChoose(index)
+                        picking = false
+                    },
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -632,3 +692,6 @@ private fun keysOf(item: Item, collection: String): List<String> {
 
 /** How many items a reference's drop-down offers at once; typing narrows them. */
 private const val MATCHES = 24
+
+/** How much of a greyed box shows, which is Material's own figure for something disabled. */
+private const val GREYED = 0.38f

@@ -1,258 +1,315 @@
 package yemoja.ui.gui
 
-import yemoja.logic.Ascended
 import yemoja.logic.Evaluated
-import yemoja.logic.completeAscent
-import yemoja.logic.evaluate
+import yemoja.logic.maximumOperatingDepth
+import yemoja.data.Gas
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /*
  * A dive planned in the Calculations tab. See ../../../../../../gui/doc.md — `GUI-43`.
  */
-private const val DESCENT = 18.0
 
-private const val ASCENT = 9.0
-
-/** A form with [levels] typed into it, on air at 20/80. */
-private fun shaping(vararg levels: Pair<String, String>): Shaping {
+/** A plan with [segments] typed into it, starting from the defaults, at gradient factors 20/80. */
+private fun planned(vararg segments: Segment, gases: List<Breathed> = listOf(Breathed())): Shaping {
     val shaping = Shaping()
-    shaping.levels.clear()
-    for ((minutes, depth) in levels) shaping.levels.add(Level(minutes, depth))
+    shaping.prefill(null)
     shaping.gradientLow = "20"
     shaping.gradientHigh = "80"
+    shaping.segments.clear()
+    shaping.segments.addAll(segments)
+    shaping.gases.clear()
+    shaping.gases.addAll(gases)
     return shaping
 }
 
-/** The same, with a second cylinder of [gas] and the last level breathed on it. */
-private fun switching(vararg levels: Pair<String, String>, gas: String = "EAN50"): Shaping {
-    val shaping = shaping(*levels)
-    shaping.gases.add(Breathed(gas = gas))
-    shaping.levels[shaping.levels.lastIndex] = shaping.levels.last().copy(gas = 1)
-    return shaping
-}
+private fun ready(shaping: Shaping): Shaped.Ready = assertIs<Shaped.Ready>(shapedOf(shaping))
 
-private fun shaped(shaping: Shaping): Shaped = shapedOf(shaping, DESCENT, ASCENT)
+private fun done(shaping: Shaping): Worked.Done = assertIs<Worked.Done>(workedOf(ready(shaping)))
 
-class ShapedOfTest {
+/** Twenty-five minutes on the bottom at forty metres, typed as a descent and a stay. */
+private val FORTY = arrayOf(Segment("40"), Segment("40", duration = "22:46"))
+
+class LaidOfTest {
 
     @Test
-    fun `a level is reached at the rate and held for the rest of its minutes`() {
-        val run = assertIs<Shaped.Ready>(shaped(shaping("20" to "30"))).run
-        // Thirty metres at eighteen a minute is a hundred seconds; twenty minutes is 1200.
-        assertEquals(listOf(0 to 0.0, 100 to 30.0, 1200 to 30.0), run.depth)
-        assertEquals(listOf(0 to "g1"), run.switches)
-        assertEquals(0.2, run.gradientFactorLow)
-        assertEquals(0.8, run.gradientFactorHigh)
+    fun `a line that changes depth and says nothing else travels at the rate in the settings`() {
+        val leg = ready(planned(Segment("40"))).legs.single()
+        assertEquals(Direction.DOWN, leg.direction)
+        // Forty metres at eighteen a minute is 133 and a third seconds, taken as 134.
+        assertEquals(134, leg.seconds)
+        assertEquals(18.0, leg.rate, "the rate chosen, not one worked back from the counted-up seconds")
     }
 
     @Test
-    fun `a second level rises at the ascent rate and holds there`() {
-        val run = assertIs<Shaped.Ready>(shaped(shaping("20" to "30", "10" to "21"))).run
-        // Nine metres up at nine a minute is a minute, then nine minutes at twenty-one.
-        assertEquals(listOf(0 to 0.0, 100 to 30.0, 1200 to 30.0, 1260 to 21.0, 1800 to 21.0), run.depth)
+    fun `a duration times a change of depth and the rate is worked out from it`() {
+        val leg = ready(planned(Segment("40", duration = "2:00"))).legs.single()
+        assertEquals(120, leg.seconds)
+        assertEquals(20.0, leg.rate)
     }
 
     @Test
-    fun `a level at the depth before it takes no travelling`() {
-        val run = assertIs<Shaped.Ready>(shaped(shaping("20" to "30", "10" to "30"))).run
-        assertEquals(listOf(0 to 0.0, 100 to 30.0, 1200 to 30.0, 1800 to 30.0), run.depth)
+    fun `a rate times a change of depth and the duration is worked out from it`() {
+        assertEquals(120, ready(planned(Segment("40", rate = "20"))).legs.single().seconds)
     }
 
     @Test
-    fun `a level with less time than the travel takes is refused with the arithmetic`() {
-        val said = assertIs<Shaped.Wrong>(shaped(shaping("1" to "30"))).reason
-        assertTrue("1:40 to reach" in said, said)
+    fun `a line at the depth before it stays, and has a duration and no rate`() {
+        val shaped = ready(planned(*FORTY))
+        val stay = shaped.legs.last()
+        assertEquals(Direction.STAY, stay.direction)
+        assertNull(stay.rate)
+        assertEquals(listOf(0 to 0.0, 134 to 40.0, 1500 to 40.0), shaped.run.depth)
     }
 
     @Test
-    fun `an empty form waits, and an empty row among others is passed over`() {
-        assertEquals(Shaped.Waiting, shaped(shaping("" to "")))
-        val run = assertIs<Shaped.Ready>(shaped(shaping("20" to "30", "" to ""))).run
-        assertEquals(1200, run.depth.last().first)
+    fun `a stay without a duration says so`() {
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment("40"), Segment("40"))))
+        assertEquals("line 2 stays at 40 m, so it needs a duration", wrong.reason)
+        assertEquals(1, wrong.legs.size, "the lines above it are still read")
     }
 
     @Test
-    fun `what will not read says which level it was`() {
-        assertTrue("level 2" in assertIs<Shaped.Wrong>(shaped(shaping("20" to "30", "ten" to "21"))).reason)
-        assertTrue("level 1" in assertIs<Shaped.Wrong>(shaped(shaping("20" to "deep"))).reason)
+    fun `a duration is minutes and seconds or whole minutes`() {
+        assertEquals(133, durationOf("2:13"))
+        assertEquals(1500, durationOf("25"))
+        assertNull(durationOf("0"))
+        assertNull(durationOf("soon"))
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment("40", duration = "soon"))))
+        assertTrue("as 2:13" in wrong.reason, wrong.reason)
     }
 
     @Test
-    fun `the gradient factors are asked for, as a plan on a dive asks for them`() {
-        val without = shaping("20" to "30")
-        without.gradientHigh = ""
-        assertTrue("conservative" in assertIs<Shaped.Wrong>(shaped(without)).reason)
+    fun `a line timed but not placed asks for its depth`() {
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment(duration = "5"))))
+        assertEquals("line 1 needs a depth", wrong.reason)
     }
 
     @Test
-    fun `what is breathed is read as a gas, and the cylinder is taken where it is given`() {
-        val nitrox = shaping("20" to "30")
-        nitrox.gases[0] = Breathed(gas = "EAN32", sac = "18", size = "12", fill = "200")
-        val run = assertIs<Shaped.Ready>(shaped(nitrox)).run
-        assertEquals(32, run.sources.getValue("g1").gas.percentO2)
-        assertEquals(18.0, run.sources.getValue("g1").sac)
-        assertEquals(12.0, run.sources.getValue("g1").volume)
-        assertEquals(200.0, run.sources.getValue("g1").fill)
-        nitrox.gases[0] = Breathed(gas = "nonsense")
-        assertTrue("Gas 1" in assertIs<Shaped.Wrong>(shaped(nitrox)).reason)
-    }
-}
-
-class SwitchesOfTest {
-
-    @Test
-    fun `one cylinder is switched to at the start and never again`() {
-        val run = assertIs<Shaped.Ready>(shaped(shaping("20" to "30", "10" to "20"))).run
-        assertEquals(listOf(0 to "g1"), run.switches)
+    fun `an empty plan waits, and an empty line among others is passed over`() {
+        assertIs<Shaped.Waiting>(shapedOf(planned(Segment())))
+        assertEquals(2, ready(planned(FORTY[0], Segment(), FORTY[1])).legs.size)
     }
 
     @Test
-    fun `a level on another cylinder is switched to where that level begins`() {
-        val run = assertIs<Shaped.Ready>(shaped(switching("20" to "30", "10" to "21"))).run
-        // The first level ends at twenty minutes, which is where the second begins to be reached.
-        assertEquals(listOf(0 to "g1", 1200 to "g2"), run.switches)
-        assertEquals(2, run.sources.size)
-        assertEquals(50, run.sources.getValue("g2").gas.percentO2)
+    fun `a line breathes what the line above breathes until it names another`() {
+        val legs = ready(
+            planned(
+                Segment("40"),
+                Segment("40", duration = "20", gas = 1),
+                Segment("21"),
+                gases = listOf(Breathed(), Breathed("EAN32")),
+            ),
+        ).legs
+        assertEquals(listOf(0, 1, 1), legs.map { it.gas })
+        assertEquals(listOf(true, false, true), legs.map { it.inherited })
     }
 
     @Test
-    fun `the first switch is at nought whichever cylinder the first level names`() {
-        val shaping = shaping("20" to "30")
-        shaping.gases.add(Breathed(gas = "EAN32"))
-        shaping.levels[0] = shaping.levels[0].copy(gas = 1)
-        val run = assertIs<Shaped.Ready>(shaped(shaping)).run
-        assertEquals(listOf(0 to "g2"), run.switches, "a run must say what it goes in on")
+    fun `the first switch is at nought and the next where a line changes cylinder`() {
+        val run = ready(
+            planned(
+                Segment("40"),
+                Segment("40", duration = "20", gas = 1),
+                gases = listOf(Breathed(), Breathed("EAN32")),
+            ),
+        ).run
+        assertEquals(listOf(0 to "g1", 134 to "g2"), run.switches)
     }
 
     @Test
-    fun `a level naming a cylinder that is no longer listed falls back rather than refusing`() {
-        val shaping = switching("20" to "30", "10" to "21")
-        shaping.gases.removeAt(1)
-        val run = assertIs<Shaped.Ready>(shaped(shaping)).run
-        assertEquals(listOf(0 to "g1"), run.switches)
-    }
-
-    @Test
-    fun `a deco gas nobody switched to is switched to on the way up, by the model`() {
-        // Listed and left: the bottom stays on air, and the ascent takes the richer mix where it
-        // may. That is what a reader means by carrying a deco gas.
-        val listed = shaping("25" to "40")
-        listed.gases.add(Breathed(gas = "EAN50"))
-        val run = assertIs<Shaped.Ready>(shaped(listed)).run
-        assertEquals(listOf(0 to "g1"), run.switches, "nothing of theirs switches")
-        val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
-        assertEquals(listOf("g2"), ascended.switches.map { it.second }, "the model switches itself")
-        assertIs<Evaluated.Done>(evaluate(withAscent(run, ascended)))
+    fun `the runtime shown is the whole minute a line ends in, counted up`() {
+        val legs = ready(planned(*FORTY)).legs
+        assertEquals(listOf("3:", "25:"), legs.map { runtimeSaid(it) })
     }
 }
 
-/** The shaping a reader is left with once the deed has written the way up into it. */
-private fun pressed(shaping: Shaping): Shaping {
-    val run = assertIs<Shaped.Ready>(shaped(shaping)).run
-    val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
-    val after = Shaping()
-    after.levels.clear()
-    after.levels.addAll(shaping.levels)
-    after.gases.clear()
-    after.gases.addAll(shaping.gases)
-    after.gradientLow = shaping.gradientLow
-    after.gradientHigh = shaping.gradientHigh
-    after.levels.addAll(ascentLevelsOf(run, ascended, ASCENT, shaping.gases.size))
-    return after
-}
-
-class AscentLevelsOfTest {
+class ConditionsOfTest {
 
     @Test
-    fun `what is written reaches the surface and owes nothing more`() {
-        val after = pressed(shaping("25" to "40"))
-        assertEquals("0", after.levels.last().depth, "the plan ends where the dive does")
-        val run = assertIs<Shaped.Ready>(shaped(after)).run
-        assertIs<Evaluated.Done>(evaluate(run), "and it is a run the model answers for")
-        val again = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
-        assertEquals(emptyList(), stopsOf(again), "there is no way up left to add")
-        assertEquals(emptyList(), ascentLevelsOf(run, again, ASCENT, 1), "so the deed writes nothing")
+    fun `a plan starts from the defaults in the settings`() {
+        val shaping = Shaping()
+        shaping.prefill(null)
+        assertEquals("1.4", shaping.bottomOxygen)
+        assertEquals("1.6", shaping.decoOxygen)
+        assertEquals("6", shaping.safetyDepth)
+        assertEquals("3", shaping.safetyMinutes)
+        assertEquals("salt", shaping.water)
+        assertEquals("", shaping.gradientLow, "no conservatism is chosen for anybody")
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(shaping.also { it.segments[0] = Segment("18") }))
+        assertTrue("low gradient factor" in wrong.reason, wrong.reason)
     }
 
     @Test
-    fun `the whole dive is kept, stop for stop`() {
-        val before = shaping("25" to "40")
-        val run = assertIs<Shaped.Ready>(shaped(before)).run
-        val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
-        val written = assertIs<Shaped.Ready>(shaped(pressed(before))).run
-        // Rounded up to a hundredth of a minute a level, so the plan is never the shorter of the
-        // two: a stop a reader is handed must not be less than the one they were shown.
-        assertTrue(runtimeOf(written) >= ascended.depth.last().first, "$written")
-        assertTrue(runtimeOf(written) <= ascended.depth.last().first + written.depth.size, "rounding is slight")
-        assertEquals(stopsOf(ascended).map { it.metres }, stopsOf(ascended).map { it.metres })
+    fun `the safety stop and the ascent rate go on the run`() {
+        val run = ready(planned(*FORTY)).run
+        assertEquals(6.0, run.safetyStop?.metres)
+        assertEquals(180, run.safetyStop?.seconds)
+        assertEquals(9.0, run.ascentRate)
     }
 
     @Test
-    fun `a switch the model made for itself is written as a level on that cylinder`() {
-        val carrying = shaping("25" to "40")
-        carrying.gases.add(Breathed(gas = "EAN50"))
-        val after = pressed(carrying)
-        val written = after.levels.drop(1)
-        assertTrue(written.any { it.gas == 1 }, "the deco gas the model switched to is kept")
-        assertTrue(written.first().gas == 0, "and the rise from the bottom is still on the bottom mix")
-        val run = assertIs<Shaped.Ready>(shaped(after)).run
-        assertIs<Evaluated.Done>(evaluate(run))
+    fun `a safety stop of nought minutes is none, and its depth is not asked for`() {
+        val shaping = planned(*FORTY)
+        shaping.safetyMinutes = "0"
+        shaping.safetyDepth = ""
+        assertNull(ready(shaping).run.safetyStop)
     }
 
     @Test
-    fun `a level that is exactly its own travel is a level`() {
-        // Surfacing is that level: the last stop to nought is a rise and no holding.
-        val rising = shaping("20" to "30", "1.67" to "15")
-        val run = assertIs<Shaped.Ready>(shaped(rising)).run
-        assertEquals(listOf(0 to 0.0, 100 to 30.0, 1200 to 30.0, 1300 to 15.0), run.depth)
+    fun `the water is weighed as a recording in it would be`() {
+        val shaping = planned(*FORTY)
+        assertEquals(1030.0, ready(shaping).run.density)
+        shaping.water = "fresh"
+        assertEquals(1000.0, ready(shaping).run.density)
     }
 
     @Test
-    fun `a dive that owes no stop is still walked to the surface`() {
-        val after = pressed(shaping("12" to "18"))
-        assertEquals("0", after.levels.last().depth)
-        assertIs<Evaluated.Done>(evaluate(assertIs<Shaped.Ready>(shaped(after)).run))
+    fun `a cylinder's role gives it its limit, and keeps a bailout from the ascent's choice`() {
+        val run = ready(
+            planned(
+                *FORTY,
+                gases = listOf(Breathed(), Breathed("EAN50", Role.DECO), Breathed("EAN32", Role.BAILOUT)),
+            ),
+        ).run
+        assertEquals(1.4, run.sources.getValue("g1").mostOxygen)
+        assertEquals(1.6, run.sources.getValue("g2").mostOxygen)
+        assertEquals(1.4, run.sources.getValue("g3").mostOxygen, "a bailout is breathed at effort")
+        assertEquals(listOf(true, true, false), run.sources.values.map { it.ascentMayChoose })
+    }
+
+    @Test
+    fun `how deep a cylinder may go is the model's figure at its role's limit`() {
+        val shaping = planned(*FORTY)
+        val conditions = assertNotNull(conditionsOf(shaping).first)
+        val deco = maximumOperatingDepth(Gas.parse("EAN50"), most = 1.6, density = 1030.0)!!
+        assertEquals("${rateSaid(deco)} m", deepestSaid(Breathed("EAN50", Role.DECO), conditions))
+        assertTrue(deepestSaid(Breathed("EAN50", Role.DECO), conditions).startsWith("21."))
+        assertTrue(deepestSaid(Breathed("EAN50", Role.BOTTOM), conditions).startsWith("17."), "held to 1.4")
+        assertEquals("", deepestSaid(Breathed("nonsense"), conditions))
     }
 }
 
-class StopsOfTest {
+class GasListTest {
 
     @Test
-    fun `a dive that owes stops is given them, and the runtime counts the way up`() {
-        val run = assertIs<Shaped.Ready>(shaped(shaping("25" to "40"))).run
-        val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
-        val stops = stopsOf(ascended)
-        assertTrue(stops.isNotEmpty(), "twenty-five minutes at forty metres owes stops")
-        assertTrue(stops.map { it.metres } == stops.map { it.metres }.sortedDescending(), "$stops")
-        assertEquals(3.0, stops.last().metres, "the shallowest is where it was asked to be")
-        val whole = withAscent(run, ascended)
-        assertTrue(runtimeOf(whole) > runtimeOf(run), "the way up takes time")
-        assertIs<Evaluated.Done>(evaluate(whole), "and the whole run is one the model answers for")
+    fun `a cylinder added is a deco cylinder, and the lines naming those after it follow them`() {
+        val shaping = planned(Segment("40", gas = 1), gases = listOf(Breathed(), Breathed("EAN50")))
+        shaping.addGas(0)
+        assertEquals(Role.DECO, shaping.gases[1].role)
+        assertEquals(2, shaping.segments[0].gas, "still EAN50")
+        assertEquals("EAN50", shaping.gases[2].gas)
     }
 
     @Test
-    fun `a dive within its limit owes no stop`() {
-        val run = assertIs<Shaped.Ready>(shaped(shaping("12" to "18"))).run
-        val ascended = assertIs<Ascended.Done>(completeAscent(run, ASCENT, 3.0))
-        assertEquals(emptyList(), stopsOf(ascended))
+    fun `a cylinder a line breathes stays, whether the line names it or follows the line above`() {
+        val shaping = planned(*FORTY, gases = listOf(Breathed(), Breathed("EAN50", Role.DECO)))
+        assertNotNull(shaping.keptBecause(0), "breathed by following")
+        shaping.removeGas(0)
+        assertEquals(2, shaping.gases.size)
+        assertNull(shaping.keptBecause(1), "only the ascent would breathe it")
+        shaping.removeGas(1)
+        assertEquals(1, shaping.gases.size)
+        assertNotNull(shaping.keptBecause(0), "and the last always stays")
     }
 
     @Test
-    fun `the minutes a stop is held for are gathered into one stop`() {
-        // What the model writes while it holds: a point a minute at each depth.
-        val ascent = Ascended.Done(
-            depth = listOf(0 to 9.0, 60 to 9.0, 120 to 9.0, 140 to 6.0, 200 to 6.0, 220 to 0.0),
-            switches = emptyList(),
+    fun `the first cylinder can go once the first line names another`() {
+        val shaping = planned(
+            Segment("18", gas = 1),
+            Segment("18", duration = "30"),
+            gases = listOf(Breathed(), Breathed("EAN32")),
         )
-        assertEquals(listOf(Stop(9.0, 120), Stop(6.0, 60)), stopsOf(ascent))
+        assertNull(shaping.keptBecause(0))
+        shaping.removeGas(0)
+        assertEquals("EAN32", shaping.gases.single().gas)
+        assertEquals(0, shaping.segments[0].gas, "renumbered with it")
     }
 
     @Test
-    fun `a stop reads as a depth and a time`() {
-        assertEquals("6 m for 3 min", stopSaid(Stop(6.0, 180)))
-        assertEquals("3 m for 1.5 min", stopSaid(Stop(3.0, 90)))
+    fun `an empty line naming a cylinder taken out follows the line above instead`() {
+        val shaping = planned(Segment("18"), Segment(gas = 1), gases = listOf(Breathed(), Breathed("EAN32")))
+        shaping.removeGas(1)
+        assertNull(shaping.segments[1].gas)
+    }
+
+    @Test
+    fun `a line is added below its own, and the last line stays`() {
+        val shaping = planned(Segment("18"))
+        shaping.addSegment(0)
+        assertEquals(listOf("18", ""), shaping.segments.map { it.depth })
+        shaping.removeSegment(0)
+        shaping.removeSegment(0)
+        assertEquals(1, shaping.segments.size)
+    }
+}
+
+class WorkedOfTest {
+
+    @Test
+    fun `the way up is added from the last typed line to the surface`() {
+        val done = done(planned(*FORTY))
+        assertEquals(0.0, done.tail.last().to)
+        assertTrue(done.tail.any { it.direction == Direction.STAY }, "forty metres for twenty-five minutes owes stops")
+        assertEquals(done.tail.last().ends, done.whole.depth.last().first)
+    }
+
+    @Test
+    fun `a stop is one line, however many minutes the model wrote it as`() {
+        val tail = done(planned(*FORTY)).tail
+        for ((before, after) in tail.zipWithNext()) {
+            assertTrue(
+                !(before.direction == after.direction && before.gas == after.gas),
+                "two lines that should be one: $before, $after",
+            )
+        }
+    }
+
+    @Test
+    fun `a deco cylinder is switched to on the way up, and a bailout never is`() {
+        val deco = done(planned(*FORTY, gases = listOf(Breathed(), Breathed("EAN50", Role.DECO))))
+        assertTrue(deco.tail.any { it.gas == 1 }, "the ascent takes the deco gas")
+        val bailout = done(planned(*FORTY, gases = listOf(Breathed(), Breathed("EAN50", Role.BAILOUT))))
+        assertTrue(bailout.tail.none { it.gas == 1 }, "and leaves the bailout alone")
+    }
+
+    @Test
+    fun `a dive typed all the way up has nothing added`() {
+        val done = done(
+            planned(
+                Segment("18"),
+                Segment("18", duration = "20"),
+                Segment("6"),
+                Segment("6", duration = "3"),
+                Segment("0"),
+            ),
+        )
+        assertEquals(emptyList(), done.tail)
+    }
+
+    @Test
+    fun `the safety stop is held on the way up, and not where there is none`() {
+        val shallow = planned(Segment("18"), Segment("18", duration = "20"))
+        val held = done(shallow).tail.filter { it.direction == Direction.STAY && it.to == 6.0 }
+        assertTrue(held.sumOf { it.seconds } >= 180, "${done(shallow).tail}")
+        shallow.safetyMinutes = "0"
+        assertTrue(done(shallow).tail.none { it.direction == Direction.STAY }, "a dive in its limits owes nothing")
+    }
+
+    @Test
+    fun `a typed way up that skips the safety stop or rises too fast is warned of`() {
+        val skipped = done(planned(Segment("18"), Segment("18", duration = "20"), Segment("0")))
+        assertTrue(skipped.evaluated.findings.any { "safety stop" in it.said }, "${skipped.evaluated.findings}")
+        val fast = done(planned(Segment("18"), Segment("18", duration = "20"), Segment("0", rate = "18")))
+        assertTrue(fast.evaluated.findings.any { "faster than" in it.said }, "${fast.evaluated.findings}")
+    }
+
+    @Test
+    fun `the whole dive is one the model answers for`() {
+        assertIs<Evaluated.Done>(done(planned(*FORTY)).evaluated)
     }
 }

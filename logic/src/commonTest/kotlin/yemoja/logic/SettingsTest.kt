@@ -127,7 +127,7 @@ class SettingsTest {
     }
 
     @Test
-    fun `every setting the form offers is a number, the gradient factors first`() {
+    fun `the numbers the form offers come first, the gradient factors first among them`() {
         assertEquals(
             listOf(
                 "default_gf_low",
@@ -135,8 +135,52 @@ class SettingsTest {
                 "default_descent_rate",
                 "default_ascent_rate",
                 "default_last_stop",
+                "default_bottom_po2",
+                "default_deco_po2",
+                "default_safety_stop_depth",
+                "default_safety_stop_duration",
             ),
             Settings.OFFERED.map { it.name },
         )
+        assertEquals(listOf("default_water_type"), Settings.OFFERED_CHOICES.map { it.name })
+    }
+
+    @Test
+    fun `a new plan starts from the limits, the safety stop and the water a plan usually has`() {
+        val (chosen, _) = settings()
+        assertEquals(1.4, chosen.number(Settings.DEFAULT_BOTTOM_PO2))
+        assertEquals(1.6, chosen.number(Settings.DEFAULT_DECO_PO2))
+        assertEquals(6.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DEPTH))
+        assertEquals(3.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
+        assertEquals("salt", chosen.choice(Settings.DEFAULT_WATER_TYPE))
+    }
+
+    @Test
+    fun `a safety stop of nought minutes is a choice, being no safety stop`() {
+        val (chosen, _) = settings()
+        assertIs<Outcome.Done>(chosen.choose(Settings.DEFAULT_SAFETY_STOP_DURATION, 0.0))
+        assertEquals(0.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
+    }
+
+    @Test
+    fun `a word of the set is answered from the first layer holding one`() {
+        val (chosen, _) = settings(
+            "settings.local.json" to """{"default_water_type": "brackish"}""",
+            "settings.json" to """{"default_water_type": "fresh"}""",
+        )
+        assertEquals("fresh", chosen.choice(Settings.DEFAULT_WATER_TYPE), "a word outside the set is passed over")
+        assertEquals(SettingsFile.LOGBOOK, chosen.answeredBy(Settings.DEFAULT_WATER_TYPE))
+    }
+
+    @Test
+    fun `a word outside the set is refused rather than written`() {
+        val (chosen, store) = settings()
+        val refused = assertIs<Outcome.Refused>(chosen.choose(Settings.DEFAULT_WATER_TYPE, "en13319"))
+        assertTrue("Water should be one of salt, fresh, but was en13319" in refused.reason, refused.reason)
+        assertTrue(!store.isFile("settings.json"))
+        assertIs<Outcome.Done>(chosen.choose(Settings.DEFAULT_WATER_TYPE, "fresh"))
+        assertEquals("fresh", chosen.choice(Settings.DEFAULT_WATER_TYPE))
+        chosen.choose(Settings.DEFAULT_WATER_TYPE, null)
+        assertEquals("salt", chosen.choice(Settings.DEFAULT_WATER_TYPE), "taken away, the default answers")
     }
 }

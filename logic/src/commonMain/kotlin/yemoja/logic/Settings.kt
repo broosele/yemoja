@@ -59,6 +59,28 @@ class TextSetting internal constructor(name: String, label: String, onlyHere: Bo
     Setting(name, label, onlyHere)
 
 /**
+ * ChoiceSetting is a setting holding one of a fixed set of words, and a default among them.
+ *
+ * The words are what a settings file holds, so they follow the vocabulary of the data field the
+ * setting feeds rather than how a front end shows them.
+ *
+ * Immutable.
+ */
+class ChoiceSetting internal constructor(
+    name: String,
+    label: String,
+    /** Every word the setting may hold, in the order a front end offers them. */
+    val choices: List<String>,
+    /** What holds where nobody chose, which is always one of [choices]. */
+    val default: String,
+) : Setting(name, label, onlyHere = false) {
+
+    init {
+        require(default in choices) { "the default should be one of $choices, but was $default" }
+    }
+}
+
+/**
  * Settings are what a logbook's user chose, asked for by name and answered from the first layer
  * that has an answer.
  *
@@ -98,11 +120,20 @@ class Settings internal constructor(private val store: FileStore) {
         return null
     }
 
+    /** What [setting] holds, from the first layer that answers with one of its words. */
+    fun choice(setting: ChoiceSetting): String {
+        for (file in layersOf(setting)) {
+            readable(setting, file)?.let { return it }
+        }
+        return setting.default
+    }
+
     /** The file [setting] is answered from, or absent where its default answers. */
     fun answeredBy(setting: Setting): SettingsFile? = layersOf(setting).firstOrNull { file ->
         when (setting) {
             is NumberSetting -> readable(setting, file) != null
             is TextSetting -> readable(setting, file) != null
+            is ChoiceSetting -> readable(setting, file) != null
         }
     }
 
@@ -129,6 +160,18 @@ class Settings internal constructor(private val store: FileStore) {
     /** Chooses [value] for [setting], or takes the choice away where it is absent or blank. */
     fun choose(setting: TextSetting, value: String?): Outcome {
         write(setting, value?.trim()?.ifEmpty { null }?.let { Stored.Leaf(it) })
+        return Outcome.Done()
+    }
+
+    /** Chooses [value] for [setting], or takes the choice away where it is absent. */
+    fun choose(setting: ChoiceSetting, value: String?): Outcome {
+        if (value != null && value !in setting.choices) {
+            return Outcome.Refused(
+                "${setting.label} should be one of ${setting.choices.joinToString(", ")}, " +
+                    "but was $value",
+            )
+        }
+        write(setting, value?.let { Stored.Leaf(it) })
         return Outcome.Done()
     }
 
@@ -163,6 +206,10 @@ class Settings internal constructor(private val store: FileStore) {
     private fun readable(setting: TextSetting, file: SettingsFile): String? =
         ((of(file)[setting.name] as? Stored.Leaf)?.value as? String)?.takeIf { it.isNotBlank() }
 
+    /** What [file] says [setting] is, where it says one of the setting's words. */
+    private fun readable(setting: ChoiceSetting, file: SettingsFile): String? =
+        ((of(file)[setting.name] as? Stored.Leaf)?.value as? String)?.takeIf { it in setting.choices }
+
     /** Every setting [file] holds, read once and again after it is written. */
     private fun of(file: SettingsFile): Map<String, Stored> =
         held.getOrPut(file) { SettingsFiles.read(store, file) }
@@ -186,6 +233,26 @@ class Settings internal constructor(private val store: FileStore) {
         /** How deep an ascent takes its shallowest stop, in metres. */
         val DEFAULT_LAST_STOP = NumberSetting("default_last_stop", "Last stop", "m", 3.0, 0.0..12.0)
 
+        /** The most oxygen a new plan breathes a bottom gas at, in bar. */
+        val DEFAULT_BOTTOM_PO2 =
+            NumberSetting("default_bottom_po2", "pO₂ max bottom", "bar", 1.4, 0.5..2.0)
+
+        /** The most oxygen a new plan breathes a deco gas at, in bar. */
+        val DEFAULT_DECO_PO2 =
+            NumberSetting("default_deco_po2", "pO₂ max deco", "bar", 1.6, 0.5..2.0)
+
+        /** How deep a new plan's safety stop is, in metres. */
+        val DEFAULT_SAFETY_STOP_DEPTH =
+            NumberSetting("default_safety_stop_depth", "Safety stop depth", "m", 6.0, 1.0..12.0)
+
+        /** How long a new plan's safety stop lasts, in minutes. Nought is no safety stop. */
+        val DEFAULT_SAFETY_STOP_DURATION =
+            NumberSetting("default_safety_stop_duration", "Safety stop duration", "min", 3.0, 0.0..15.0)
+
+        /** The water a new plan is dived in, in the words `water_type` uses. */
+        val DEFAULT_WATER_TYPE =
+            ChoiceSetting("default_water_type", "Water", listOf("salt", "fresh"), "salt")
+
         /**
          * The command that starts the user's agent, as it was last started.
          *
@@ -207,6 +274,13 @@ class Settings internal constructor(private val store: FileStore) {
             DEFAULT_DESCENT_RATE,
             DEFAULT_ASCENT_RATE,
             DEFAULT_LAST_STOP,
+            DEFAULT_BOTTOM_PO2,
+            DEFAULT_DECO_PO2,
+            DEFAULT_SAFETY_STOP_DEPTH,
+            DEFAULT_SAFETY_STOP_DURATION,
         )
+
+        /** Every setting holding one of a set of words that the settings form offers, after the numbers. */
+        val OFFERED_CHOICES: List<ChoiceSetting> = listOf(DEFAULT_WATER_TYPE)
     }
 }

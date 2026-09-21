@@ -74,9 +74,11 @@ them.
   they are about: the ceiling over its graph, the figures and the findings under its fields, and
   on a plan a button that writes its ascent in. `GUI-40`.
 
-  A plan is started from the home screen at one depth with one gas, and given its ascent at once
-  (`GUI-41`), from the gradient factors and rates the user chose in the settings (`GUI-42`). What
-  is owed is a plan of several levels, which is still written by hand.
+  A plan is started from the Dives tab at one depth with one gas, and given its ascent at once
+  (`GUI-41`), from the gradient factors and rates the user chose in the settings (`GUI-42`). A
+  dive of several segments and cylinders is planned in the Calculations tab, where the way up is
+  worked out as it is typed, each cylinder has a role, and a safety stop is held (`GUI-43`). What
+  is owed is putting such a plan on to a dive, which nothing does yet.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
   — the dive and its recording — and how far it goes is under *What is built* in

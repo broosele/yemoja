@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import yemoja.data.json.SettingsFile
+import yemoja.logic.ChoiceSetting
 import yemoja.logic.Outcome
 import yemoja.logic.NumberSetting
 import yemoja.logic.Setting
@@ -49,8 +50,8 @@ internal class Choosing {
 /**
  * The settings, each with what it holds and where that came from, and a deed to save what changed.
  *
- * In the home screen's System box, opened by its own deed, as a download is: a settings list of
- * six is a form rather than a place. Each says whether this device, this logbook or the
+ * In the home screen's System box, opened by its own deed, as a download is: a short settings
+ * list is a form rather than a place. Each says whether this device, this logbook or the
  * application answered it, since a choice kept on this device is one a reader may otherwise look
  * for in vain on another. `GUI-42`.
  */
@@ -61,6 +62,9 @@ internal fun Chooser(universe: Universe?, choosing: Choosing, onChanged: () -> U
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
         for (setting in Settings.OFFERED) {
             SettingRow(setting, BOX, unitOf(setting), answeredSaid(settings.answeredBy(setting), setting), choosing)
+        }
+        for (setting in Settings.OFFERED_CHOICES) {
+            ChoiceRow(setting, answeredSaid(settings.answeredBy(setting), setting), choosing)
         }
         val agent = Settings.AGENT_COMMAND
         SettingRow(agent, COMMAND, "", answeredSaid(settings.answeredBy(agent), agent), choosing)
@@ -114,10 +118,47 @@ private fun SettingRow(setting: Setting, wide: Dp, after: String, answered: Stri
     }
 }
 
+/** One setting of a fixed set: what it is called, a menu of its words, and where it came from. */
+@Composable
+private fun ChoiceRow(setting: ChoiceSetting, answered: String, choosing: Choosing) {
+    Row(
+        modifier = Modifier.padding(vertical = HALF),
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = setting.label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(LABEL),
+        )
+        Box(modifier = Modifier.width(BOX)) {
+            val held = choosing.typed[setting.name] ?: setting.default
+            Pick(
+                chosen = wordSaid(held),
+                options = setting.choices.map { wordSaid(it) },
+            ) { index ->
+                choosing.typed[setting.name] = setting.choices[index]
+                choosing.said = null
+            }
+        }
+        Text(
+            text = answered,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
+/** A setting's word as a menu shows it: `salt` as *Salt*. */
+internal fun wordSaid(word: String): String = word.replaceFirstChar { it.uppercase() }
+
 /** Fills the form with what each setting holds now, as it is shown. */
 internal fun Choosing.fill(settings: Settings) {
     typed.clear()
     for (setting in Settings.OFFERED) typed[setting.name] = shownOf(setting, settings.number(setting))
+    for (setting in Settings.OFFERED_CHOICES) typed[setting.name] = settings.choice(setting)
     typed[Settings.AGENT_COMMAND.name] = settings.text(Settings.AGENT_COMMAND).orEmpty()
     said = null
 }
@@ -153,10 +194,19 @@ private fun saved(settings: Settings, choosing: Choosing): String {
             is Entered.Value -> chosen[setting] = read.value
         }
     }
+    val picked = LinkedHashMap<ChoiceSetting, String>()
+    for (setting in Settings.OFFERED_CHOICES) {
+        val typed = choosing.typed[setting.name] ?: continue
+        if (typed != settings.choice(setting)) picked[setting] = typed
+    }
     val command = choosing.typed[Settings.AGENT_COMMAND.name].orEmpty().trim()
     val commandMoved = command != settings.text(Settings.AGENT_COMMAND).orEmpty()
-    if (chosen.isEmpty() && !commandMoved) return "Nothing was changed."
+    if (chosen.isEmpty() && picked.isEmpty() && !commandMoved) return "Nothing was changed."
     for ((setting, value) in chosen) {
+        val outcome = settings.choose(setting, value)
+        if (outcome is Outcome.Refused) return outcome.reason
+    }
+    for ((setting, value) in picked) {
         val outcome = settings.choose(setting, value)
         if (outcome is Outcome.Refused) return outcome.reason
     }
