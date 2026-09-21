@@ -370,7 +370,8 @@ class ReserveTest {
         val reserve = reserve(planned(*FORTY, gases = BOTTOM_AND_DECO))
 
         assertEquals(setOf("g1"), reserve.needed.keys, "the deco gas is lost")
-        assertTrue(reserveSaid(reserve).matches(Regex("Gas 1: [0-9]+ bar")), reserveSaid(reserve))
+        assertTrue(minimumSaid(reserve, "g1").matches(Regex("[0-9]+ bar")), minimumSaid(reserve, "g1"))
+        assertEquals("", minimumSaid(reserve, "g2"), "a lost cylinder keeps nothing back")
         assertEquals("25:00 at 40 m", worstSaid(reserve))
     }
 
@@ -418,7 +419,7 @@ class ReserveTest {
         val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", sac = "20")))
         val reserve = reserve(shaping)
 
-        assertTrue(reserveSaid(reserve).endsWith(" L"), reserveSaid(reserve))
+        assertTrue(minimumSaid(reserve, "g1").endsWith(" L"), minimumSaid(reserve, "g1"))
         assertTrue(uncheckedSaid(reserve, shaping)!!.startsWith("Gas 1 needs a volume"))
     }
 

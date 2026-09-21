@@ -473,9 +473,11 @@ once and corrected. The numbers stay unused rather than being given to something
   ascent's choice and the warning are one figure. What the plan takes from each cylinder and leaves
   in it are worked out beside it.
 
-  **The gas reserve is under the clocks, on a line of its own.** It says what each cylinder must
-  still hold at the dive's worst moment, and when that moment is, `LOGIC-40`. A cylinder that falls
-  short at any moment is a warning in the list beneath, in the same words and the same names as the
+  **The gas reserve is beside each cylinder, and its moment under the clocks.** What each cylinder
+  must still hold at the dive's worst moment is a column of the gases, *Minimum*, red on the
+  cylinder that falls short. When that moment is belongs to the dive rather than to a cylinder, so
+  it is on a line of its own under the clocks, `LOGIC-40`. A cylinder that falls short at any moment
+  is also a warning in the list beneath, in the same words and the same names as the
   model's own warnings, so *Gas 1 runs out* and *Gas 1 is empty* read as one cylinder. Which
   cylinders the reserve takes as lost is a tick of its own in the gases, *Lost*, rather than a
   fourth role: a deco cylinder is lost until the tick says otherwise, and the others are kept, but

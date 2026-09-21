@@ -318,9 +318,11 @@ would cost.
 
 A cylinder that one of your lines breathes cannot be taken out until you change that line.
 
+Beside each cylinder, *Minimum* is its share of the gas reserve: what it must still hold at the
+worst moment of the dive. It is red on a cylinder that falls short.
+
 Under all that is a line with the oxygen clocks, the no-fly time and the desaturation time. Below
-it is the gas reserve: what each cylinder you still have must hold at the worst moment of the dive,
-and when that moment is. [The decompression model](decompression.md#planning-a-dive) explains the
+it is when the worst moment is. [The decompression model](decompression.md#planning-a-dive) explains the
 rule it follows, and the *panic stress factor* in the settings is how many times your usual rate
 it breathes at. Then comes anything Yemoja objects to, such as going above the ceiling, rising faster than your ascent
 rate, missing the safety stop, a cylinder running dry, a cylinder holding less than its reserve,

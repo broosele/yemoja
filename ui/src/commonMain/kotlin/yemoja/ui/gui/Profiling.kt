@@ -580,18 +580,14 @@ internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditi
 }
 
 /**
- * What each cylinder must still hold at the worst moment: in bar, rounded up, or in litres where
- * nobody said how big it is.
- *
- * Named as the warnings beneath name them, so a shortfall and the reserve it falls short of read
- * as one cylinder.
+ * What the cylinder under [key] must still hold at the worst moment: in bar, rounded up, or in
+ * litres where nobody said how big it is. Nothing for a cylinder the reserve takes as lost, or one
+ * the way up in trouble does not breathe.
  */
-internal fun reserveSaid(reserve: Reserve.Done): String =
-    reserve.needed.keys.joinToString(", ") { key ->
-        val held = reserve.reserve[key]?.let { "${ceil(it).toInt()} bar" }
-            ?: "${ceil(reserve.needed.getValue(key)).toInt()} L"
-        "${gasLabelOf(gasIndexOf(key))}: $held"
-    }.ifEmpty { "none" }
+internal fun minimumSaid(reserve: Reserve.Done, key: String): String {
+    reserve.reserve[key]?.let { return "${ceil(it).toInt()} bar" }
+    return reserve.needed[key]?.let { "${ceil(it).toInt()} L" }.orEmpty()
+}
 
 /** When the worst moment is, and how deep. */
 internal fun worstSaid(reserve: Reserve.Done): String =
@@ -750,6 +746,7 @@ internal fun PlanForm(
     val worked = (shaped as? Shaped.Ready)?.let { workedOf(it) }
     val done = worked as? Worked.Done
     val conditions = conditionsOf(shaping).first
+    val reckoned = if (done != null && conditions != null) reckonedOf(shaping, done, conditions) else null
     Heading("Dive plan")
     // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
     // two columns end on one line however many cylinders there are.
@@ -770,12 +767,11 @@ internal fun PlanForm(
             Column(modifier = Modifier.weight(1f).fillMaxWidth().framed().padding(HALF)) {
                 CylinderHeadings()
                 Scrolling(Modifier.weight(1f).fillMaxWidth(), scrollbar) {
-                    Cylinders(shaping, conditions, done)
+                    Cylinders(shaping, conditions, done, (reckoned as? Reckoned.Done)?.reserve)
                 }
             }
         }
     }
-    val reckoned = if (done != null && conditions != null) reckonedOf(shaping, done, conditions) else null
     if (done != null) Figures(done.evaluated)
     if (reckoned != null) ReserveFigures(reckoned, shaping)
     when {
@@ -1081,7 +1077,7 @@ private fun Labelled(label: String, content: @Composable () -> Unit) {
  * choice and with the warning. `LOGIC-39`.
  */
 @Composable
-private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?) {
+private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?, reserve: Reserve.Done?) {
     for ((index, breathed) in shaping.gases.withIndex()) {
         val key = gasKeyOf(index)
         Row(
@@ -1124,6 +1120,14 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
             Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked)
             Cell(done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(), FIGURED, TextAlign.End, worked)
             Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
+            // Red where this is the cylinder that falls short, as a line too deep for its gas is.
+            val short = reserve?.shortfall?.source == key
+            Cell(
+                reserve?.let { minimumSaid(it, key) }.orEmpty(),
+                FIGURED,
+                TextAlign.End,
+                if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked,
+            )
             IconButton(onClick = { shaping.addGas(index) }, modifier = Modifier.size(BUTTON)) {
                 Icon(Icons.Filled.Add, contentDescription = "Add a gas below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
             }
@@ -1176,10 +1180,9 @@ private fun ReserveFigures(reckoned: Reckoned, shaping: Shaping) {
         horizontalArrangement = Arrangement.spacedBy(GAP * 3),
     ) {
         when (reckoned) {
-            is Reckoned.Done -> {
-                Figure("Reserve", reserveSaid(reckoned.reserve))
-                Figure("Worst moment", worstSaid(reckoned.reserve))
-            }
+            // What each cylinder must hold is beside it, in the gases; the moment it is held for
+            // belongs to the dive.
+            is Reckoned.Done -> Figure("Worst moment", worstSaid(reckoned.reserve))
             is Reckoned.Wrong -> Figure("Reserve", reckoned.reason)
         }
     }
@@ -1259,7 +1262,7 @@ private val SETTING = 104.dp
 
 private val INDEX = 16.dp
 private val MIX = 76.dp
-private val ROLE = 104.dp
+private val ROLE = 84.dp
 private val VOLUME = 64.dp
 private val PRESSURE = 76.dp
 private val SAC = 88.dp
@@ -1278,4 +1281,5 @@ private val CYLINDER_COLUMNS: List<Pair<String, Dp>> = listOf(
     "MOD" to FIGURED,
     "Used" to FIGURED,
     "End" to FIGURED,
+    "Minimum" to FIGURED,
 )
