@@ -72,8 +72,9 @@ written in — a settings file declares none:
   12. Without a choice, 6.
 - `default_safety_stop_duration` — how long a new dive plan's safety stop lasts, in minutes, from
   0 to 15. 0 means no safety stop. Without a choice, 3.
-- `default_panic_factor` — how many times its usual SAC a new dive plan's gas reserve breathes
-  each cylinder at, for sharing gas and for stress, from 1 to 10. Without a choice, 4.
+- `default_panic_factor` — how many times their usual SAC each of two divers sharing gas breathes
+  at, in a new dive plan's gas reserve, from 1 to 10. It is stress alone: the second diver is
+  counted separately. Without a choice, 2.
 - `default_water_type` — the water a new dive plan is dived in: `salt` or `fresh`. Without a
   choice, `salt`.
 

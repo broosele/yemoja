@@ -250,11 +250,11 @@ class Settings internal constructor(private val store: FileStore) {
             NumberSetting("default_safety_stop_duration", "Safety stop duration", "min", 3.0, 0.0..15.0)
 
         /**
-         * How many times its usual rate a new plan's reserve breathes each cylinder at, for sharing
-         * gas and for stress. `LOGIC-40`.
+         * How many times their usual rate each of two divers sharing gas breathes at, in a new
+         * plan's reserve. Stress alone: the second diver is counted apart. `LOGIC-40`.
          */
         val DEFAULT_PANIC_FACTOR =
-            NumberSetting("default_panic_factor", "Panic stress factor", "× SAC", 4.0, 1.0..10.0)
+            NumberSetting("default_panic_factor", "Panic stress factor", "× SAC", 2.0, 1.0..10.0)
 
         /** The water a new plan is dived in, in the words `water_type` uses. */
         val DEFAULT_WATER_TYPE =

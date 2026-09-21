@@ -473,17 +473,23 @@ once and corrected. The numbers stay unused rather than being given to something
   ascent's choice and the warning are one figure. What the plan takes from each cylinder and leaves
   in it are worked out beside it.
 
-  **The gas reserve is beside each cylinder, and its moment under the clocks.** What each cylinder
-  must still hold at the dive's worst moment is a column of the gases, *Minimum*, red on the
-  cylinder that falls short. When that moment is belongs to the dive rather than to a cylinder, so
-  it is on a line of its own under the clocks, `LOGIC-40`. A cylinder that falls short at any moment
-  is also a warning in the list beneath, in the same words and the same names as the
-  model's own warnings, so *Gas 1 runs out* and *Gas 1 is empty* read as one cylinder. Which
-  cylinders the reserve takes as lost is a tick of its own in the gases, *Lost*, rather than a
-  fourth role: a deco cylinder is lost until the tick says otherwise, and the others are kept, but
-  losing a bottom gas is a scenario a reader may want to try without changing what the cylinder is
-  for. The panic stress factor is read apart from the other settings, so a factor typed wrong
-  leaves the reserve unsaid and the decompression still answered.
+  **The gas reserve is beside each cylinder, and its scenarios under the clocks.** What each
+  cylinder must still hold is a column of the gases, *Minimum*: the most any scenario switched on
+  asks of it, red on a cylinder that falls short in any of them. Under the clocks is a line for
+  each scenario, `LOGIC-40`, with a tick before it that switches it off: what it asks each cylinder
+  to hold, its own worst moment, and what it assumes in a phrase, such as *two divers sharing up to
+  21.6 m, each at 2 × SAC*. The lines are where a reader sees which scenario set a minimum, and the
+  phrase is the rule said once, where it applies, rather than in a paragraph they would have to go
+  looking for. Both start ticked, since a reserve nobody asked for protects nobody.
+
+  A cylinder that falls short is also a warning in the list beneath, saying which scenario it falls
+  short in and in the names the model's own warnings use, so *Gas 1 runs out* and *Gas 1 is empty*
+  read as one cylinder. Which cylinders the lost-gas scenario takes as lost is a tick of its own in
+  the gases, *Lost*, rather than a fourth role: a deco cylinder is lost until the tick says
+  otherwise, and the others are kept, but losing a bottom gas is a scenario a reader may want to
+  try without changing what the cylinder is for. The tick is greyed while that scenario is off. The
+  panic stress factor is read apart from the other settings, so a factor typed wrong leaves the
+  sharing scenario unsaid and everything else answered.
 
   **A cylinder a line breathes stays.** Its × is greyed, and a tooltip says which line breathes it.
   Taking it out would change the dive behind the reader's back, so they change the line first. A

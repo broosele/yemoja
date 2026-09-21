@@ -346,14 +346,26 @@ private fun reckoned(shaping: Shaping): Reckoned {
     return reckonedOf(shaping, done, assertNotNull(conditionsOf(shaping).first))
 }
 
-private fun reserve(shaping: Shaping): yemoja.logic.Reserve.Done =
-    assertIs<Reckoned.Done>(reckoned(shaping)).reserve
+private fun scenario(shaping: Shaping, scenario: Scenario): yemoja.logic.Reserve.Done =
+    assertIs<Reckoning.Done>(reckoned(shaping).scenarios[scenario]).reserve
 
 class ReserveTest {
 
     @Test
-    fun `a new plan's reserve breathes at four times the usual rate`() {
-        assertEquals("4", planned().panicFactor)
+    fun `a new plan's divers sharing gas breathe at twice their usual rate`() {
+        assertEquals("2", planned().panicFactor)
+    }
+
+    @Test
+    fun `both scenarios are tried until one is switched off`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        assertEquals(setOf(Scenario.LOST_GAS, Scenario.SHARED), reckoned(shaping).done.keys)
+
+        shaping.sharedScenario = false
+        assertNull(reckoned(shaping).scenarios[Scenario.SHARED], "a buddy is not assumed on a solo dive")
+        shaping.lostGasScenario = false
+        assertTrue(reckoned(shaping).done.isEmpty())
+        assertEquals("", minimumSaid(reckoned(shaping), "g1"), "nothing kept back for nothing tried")
     }
 
     @Test
@@ -366,22 +378,58 @@ class ReserveTest {
     }
 
     @Test
-    fun `a deco plan's reserve is bottom gas, in bar, at the end of the bottom`() {
-        val reserve = reserve(planned(*FORTY, gases = BOTTOM_AND_DECO))
+    fun `losing the deco gas costs bottom gas, in bar, at the end of the bottom`() {
+        val reserve = scenario(planned(*FORTY, gases = BOTTOM_AND_DECO), Scenario.LOST_GAS)
 
         assertEquals(setOf("g1"), reserve.needed.keys, "the deco gas is lost")
-        assertTrue(minimumSaid(reserve, "g1").matches(Regex("[0-9]+ bar")), minimumSaid(reserve, "g1"))
-        assertEquals("", minimumSaid(reserve, "g2"), "a lost cylinder keeps nothing back")
+        assertTrue(scenarioReserveSaid(reserve).matches(Regex("Gas 1: [0-9]+ bar")), scenarioReserveSaid(reserve))
         assertEquals("25:00 at 40 m", worstSaid(reserve))
     }
 
     @Test
-    fun `a plan short of its reserve says which cylinder and when`() {
+    fun `a buddy shares bottom gas only as far as the deco gas`() {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
-        val said = assertNotNull(shortfallSaid(reserve(shaping)))
+        val reserve = scenario(shaping, Scenario.SHARED)
+        val said = assumedSaid(Scenario.SHARED, reserve, shaping.panicFactor)
 
-        assertTrue(said.startsWith("At ") && "Gas 1 " in said, said)
-        assertTrue("-" !in said, "a gauge run dry is empty, not below nought: $said")
+        assertTrue(reserve.upTo > 20, "EAN50 may be breathed from about 22 m: ${reserve.upTo}")
+        assertTrue(said.startsWith("two divers sharing up to ") && said.endsWith("each at 2 × SAC"), said)
+        assertTrue(Regex("up to [0-9]+([.][0-9])? m,").containsMatchIn(said), "to a tenth, as the MOD is: $said")
+        assertTrue(
+            reserve.needed.getValue("g1") < scenario(shaping, Scenario.LOST_GAS).needed.getValue("g1"),
+            "a short share to the deco gas costs less than every stop on bottom gas",
+        )
+    }
+
+    @Test
+    fun `a cylinder's minimum is the most any scenario asks of it`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        val both = reckoned(shaping)
+        val most = both.done.values.maxOf { kotlin.math.ceil(it.reserve.getValue("g1")).toInt() }
+
+        assertEquals("$most bar", minimumSaid(both, "g1"))
+        assertEquals("", minimumSaid(both, "g2"), "no scenario breathes the deco gas")
+    }
+
+    @Test
+    fun `a shortfall says which cylinder, when, and in which scenario`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        val reckoned = reckoned(shaping)
+        val lost = assertNotNull(shortfallSaid(Scenario.LOST_GAS, reckoned.done.getValue(Scenario.LOST_GAS)))
+
+        assertTrue(lost.startsWith("At ") && "Gas 1 " in lost && "without the lost gas" in lost, lost)
+        assertTrue("-" !in lost, "a gauge run dry is empty, not below nought: $lost")
+        assertTrue(isShort(reckoned, "g1"))
+        assertTrue(!isShort(reckoned, "g2"))
+    }
+
+    @Test
+    fun `sharing that falls short says how far the sharing went`() {
+        val small = listOf(BOTTOM_AND_DECO[0].copy(size = "3"), BOTTOM_AND_DECO[1])
+        val reserve = scenario(planned(*FORTY, gases = small), Scenario.SHARED)
+        val said = assertNotNull(shortfallSaid(Scenario.SHARED, reserve))
+
+        assertTrue("two divers sharing it up to " in said, said)
     }
 
     @Test
@@ -391,25 +439,27 @@ class ReserveTest {
             Segment("18", duration = "15"),
             gases = listOf(Breathed(gas = "air", size = "24", fill = "232", sac = "20")),
         )
+        val reckoned = reckoned(shaping)
 
-        assertNull(shortfallSaid(reserve(shaping)))
-        assertNull(uncheckedSaid(reserve(shaping), shaping))
+        for ((scenario, reserve) in reckoned.done) assertNull(shortfallSaid(scenario, reserve), "$scenario")
+        assertNull(uncheckedSaid(reckoned, shaping))
     }
 
     @Test
-    fun `a panic factor typed wrong leaves the decompression answered`() {
+    fun `a panic factor typed wrong leaves the rest answered`() {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
         shaping.panicFactor = "0.5"
 
         assertIs<Worked.Done>(workedOf(ready(shaping)), "the plan is still worked out")
-        val wrong = assertIs<Reckoned.Wrong>(reckoned(shaping))
+        val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[Scenario.SHARED])
         assertTrue("\"0.5\"" in wrong.reason, wrong.reason)
+        assertIs<Reckoning.Done>(reckoned(shaping).scenarios[Scenario.LOST_GAS], "which needs no factor")
     }
 
     @Test
     fun `a cylinder with no SAC is named where the reserve would be`() {
         val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", size = "12", fill = "200")))
-        val wrong = assertIs<Reckoned.Wrong>(reckoned(shaping))
+        val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[Scenario.LOST_GAS])
 
         assertTrue(wrong.reason.startsWith("Gas 1: "), wrong.reason)
     }
@@ -417,18 +467,28 @@ class ReserveTest {
     @Test
     fun `a cylinder with no size is given in litres and said to be unchecked`() {
         val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", sac = "20")))
-        val reserve = reserve(shaping)
+        val reckoned = reckoned(shaping)
 
-        assertTrue(minimumSaid(reserve, "g1").endsWith(" L"), minimumSaid(reserve, "g1"))
-        assertTrue(uncheckedSaid(reserve, shaping)!!.startsWith("Gas 1 needs a volume"))
+        assertTrue(minimumSaid(reckoned, "g1").endsWith(" L"), minimumSaid(reckoned, "g1"))
+        assertTrue(uncheckedSaid(reckoned, shaping)!!.startsWith("Gas 1 needs a volume"))
     }
 
     @Test
     fun `a deco gas ticked as kept is breathed on the way up in trouble`() {
         val kept = BOTTOM_AND_DECO.mapIndexed { index, it -> if (index == 1) it.copy(lost = false) else it }
-        val reserve = reserve(planned(*FORTY, gases = kept))
+        val reserve = scenario(planned(*FORTY, gases = kept), Scenario.LOST_GAS)
 
         assertTrue("g2" in reserve.needed.keys, "${reserve.needed}")
+    }
+
+    @Test
+    fun `the lost tick is read by the lost-gas scenario alone`() {
+        val ticked = BOTTOM_AND_DECO.mapIndexed { index, it -> if (index == 1) it.copy(lost = false) else it }
+
+        assertEquals(
+            scenario(planned(*FORTY, gases = BOTTOM_AND_DECO), Scenario.SHARED).needed,
+            scenario(planned(*FORTY, gases = ticked), Scenario.SHARED).needed,
+        )
     }
 }
 

@@ -157,9 +157,9 @@ class SettingsTest {
     }
 
     @Test
-    fun `a new plan's reserve breathes at four times the usual rate`() {
+    fun `a new plan's divers sharing gas breathe at twice their usual rate`() {
         val (chosen, _) = settings()
-        assertEquals(4.0, chosen.number(Settings.DEFAULT_PANIC_FACTOR))
+        assertEquals(2.0, chosen.number(Settings.DEFAULT_PANIC_FACTOR))
     }
 
     @Test

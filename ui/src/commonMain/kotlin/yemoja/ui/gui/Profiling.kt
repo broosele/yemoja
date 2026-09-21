@@ -52,7 +52,8 @@ import yemoja.logic.Source
 import yemoja.logic.completeAscent
 import yemoja.logic.densityOfWater
 import yemoja.logic.evaluate
-import yemoja.logic.gasReserve
+import yemoja.logic.lostGasReserve
+import yemoja.logic.sharedGasReserve
 import yemoja.logic.maximumOperatingDepth
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -150,6 +151,12 @@ internal class Shaping {
     var safetyMinutes: String by mutableStateOf("")
     var lastStop: String by mutableStateOf("")
     var panicFactor: String by mutableStateOf("")
+
+    /** Whether the gas reserve tries losing the cylinders ticked *Lost*. */
+    var lostGasScenario: Boolean by mutableStateOf(true)
+
+    /** Whether the gas reserve tries a buddy out of gas, sharing this diver's. */
+    var sharedScenario: Boolean by mutableStateOf(true)
 
     /** In the words `water_type` uses. */
     var water: String by mutableStateOf(Settings.DEFAULT_WATER_TYPE.default)
@@ -550,64 +557,131 @@ internal fun workedOf(ready: Shaped.Ready): Worked {
 /** Whether the gas reserve takes [breathed] as lost: as ticked, or a deco gas where nobody ticked. */
 internal fun isLost(breathed: Breathed): Boolean = breathed.lost ?: (breathed.role == Role.DECO)
 
-/** Reckoned is the gas reserve a plan keeps back, or why there is none to show. */
-internal sealed class Reckoned {
+/** Scenario is one way a dive can go wrong that the gas reserve is kept back for. `LOGIC-40`. */
+internal enum class Scenario(val label: String) {
 
-    class Done(val reserve: Reserve.Done) : Reckoned()
+    /** The cylinders ticked *Lost* are gone, and the way up is to the surface at the usual rate. */
+    LOST_GAS("Lost gas"),
 
-    class Wrong(val reason: String) : Reckoned()
+    /** A buddy has lost their bottom gas, and the two share this diver's up to a deco gas. */
+    SHARED("Buddy out of gas"),
+}
+
+/** Reckoning is what one scenario of the gas reserve came to, or why it came to nothing. */
+internal sealed class Reckoning {
+
+    class Done(val reserve: Reserve.Done) : Reckoning()
+
+    class Wrong(val reason: String) : Reckoning()
 }
 
 /**
- * The gas [done] must keep back to reach the surface with [shaping]'s lost cylinders gone, each
- * breathed at the plan's panic stress factor.
+ * Reckoned is what each scenario of the gas reserve came to, with null for one switched off.
  *
- * The factor is read apart from the other settings, so one typed wrong leaves the reserve unsaid
- * and the decompression still answered. `LOGIC-40`.
+ * Immutable.
+ */
+internal class Reckoned(val scenarios: Map<Scenario, Reckoning?>) {
+
+    /** The scenarios that were worked out, each with its reserve. */
+    val done: Map<Scenario, Reserve.Done>
+        get() = scenarios.mapNotNull { (scenario, it) -> (it as? Reckoning.Done)?.let { scenario to it.reserve } }.toMap()
+}
+
+/**
+ * The gas [done] must keep back in each scenario [shaping] has switched on.
+ *
+ * The stress factor is read apart from the other settings, so one typed wrong leaves the shared
+ * scenario unsaid and everything else answered. `LOGIC-40`.
  */
 internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditions): Reckoned {
-    val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
-        ?: return Reckoned.Wrong(
-            "the panic stress factor is a multiple of SAC, 1 or more, and ${said(shaping.panicFactor)} is not",
-        )
-    val lost = shaping.gases.indices.filter { isLost(shaping.gases[it]) }.map { gasKeyOf(it) }.toSet()
-    return when (val reserve = gasReserve(done.whole, factor, lost, conditions.ascentRate, conditions.lastStop)) {
-        is Reserve.Done -> Reckoned.Done(reserve)
-        is Reserve.Refused -> Reckoned.Wrong(
+    fun reckoning(reserve: Reserve): Reckoning = when (reserve) {
+        is Reserve.Done -> Reckoning.Done(reserve)
+        is Reserve.Refused -> Reckoning.Wrong(
             reserve.source?.let { "${gasLabelOf(gasIndexOf(it))}: ${reserve.reason}" } ?: reserve.reason,
         )
     }
+    val keys = shaping.gases.indices
+    val lostGas = if (shaping.lostGasScenario) {
+        val lost = keys.filter { isLost(shaping.gases[it]) }.map { gasKeyOf(it) }.toSet()
+        reckoning(lostGasReserve(done.whole, lost, conditions.ascentRate, conditions.lastStop))
+    } else {
+        null
+    }
+    val shared = if (shaping.sharedScenario) {
+        val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
+        if (factor == null) {
+            Reckoning.Wrong(
+                "the panic stress factor is a multiple of SAC, 1 or more, and ${said(shaping.panicFactor)} is not",
+            )
+        } else {
+            val deco = keys.filter { shaping.gases[it].role == Role.DECO }.map { gasKeyOf(it) }.toSet()
+            reckoning(sharedGasReserve(done.whole, deco, factor, conditions.ascentRate, conditions.lastStop))
+        }
+    } else {
+        null
+    }
+    return Reckoned(mapOf(Scenario.LOST_GAS to lostGas, Scenario.SHARED to shared))
 }
 
 /**
- * What the cylinder under [key] must still hold at the worst moment: in bar, rounded up, or in
- * litres where nobody said how big it is. Nothing for a cylinder the reserve takes as lost, or one
- * the way up in trouble does not breathe.
+ * What the cylinder under [key] must still hold: the most any scenario switched on asks of it at
+ * its own worst moment, since the cylinder has to meet each of them.
+ *
+ * In bar, rounded up, or in litres where nobody said how big it is. Nothing for a cylinder no
+ * scenario breathes from.
  */
-internal fun minimumSaid(reserve: Reserve.Done, key: String): String {
-    reserve.reserve[key]?.let { return "${ceil(it).toInt()} bar" }
-    return reserve.needed[key]?.let { "${ceil(it).toInt()} L" }.orEmpty()
+internal fun minimumSaid(reckoned: Reckoned, key: String): String {
+    val done = reckoned.done.values
+    done.mapNotNull { it.reserve[key] }.maxOrNull()?.let { return "${ceil(it).toInt()} bar" }
+    return done.mapNotNull { it.needed[key] }.maxOrNull()?.let { "${ceil(it).toInt()} L" }.orEmpty()
 }
 
-/** When the worst moment is, and how deep. */
+/** Whether the cylinder under [key] falls short in any scenario switched on. */
+internal fun isShort(reckoned: Reckoned, key: String): Boolean =
+    reckoned.done.values.any { it.shortfall?.source == key }
+
+/** When a scenario's worst moment is, and how deep. */
 internal fun worstSaid(reserve: Reserve.Done): String =
     "${clockOf(reserve.worst)} at ${plain(reserve.worstMetres)} m"
 
-/** Where a cylinder first holds less than the way up from there needs, or null where none does. */
-internal fun shortfallSaid(reserve: Reserve.Done): String? = reserve.shortfall?.let {
-    // A gauge the plan has already run below nought is empty, not a negative pressure.
-    val held = if (it.left <= 0) "is empty" else "holds ${floor(it.left).toInt()} bar"
-    "At ${clockOf(it.second)}: ${gasLabelOf(gasIndexOf(it.source))} $held, and the way up from " +
-        "there with the lost gas gone needs ${ceil(it.needed).toInt()} bar"
+/** What each cylinder must hold in one scenario, in the words of the minimum beside it. */
+internal fun scenarioReserveSaid(reserve: Reserve.Done): String =
+    reserve.needed.keys.joinToString(", ") { key ->
+        val held = reserve.reserve[key]?.let { "${ceil(it).toInt()} bar" }
+            ?: "${ceil(reserve.needed.getValue(key)).toInt()} L"
+        "${gasLabelOf(gasIndexOf(key))}: $held"
+    }.ifEmpty { "nothing" }
+
+/** What a scenario assumes, in a phrase, with [reserve] saying how far the sharing goes. */
+internal fun assumedSaid(scenario: Scenario, reserve: Reserve.Done?, factor: String): String = when (scenario) {
+    Scenario.LOST_GAS -> "to the surface without the gas ticked Lost, at your usual SAC"
+    Scenario.SHARED -> "two divers sharing ${upToSaid(reserve?.upTo)}, each at ${factor.trim()} × SAC"
 }
 
-/** The cylinders a way up breathes that have no size or no start pressure, so cannot be checked. */
-internal fun uncheckedSaid(reserve: Reserve.Done, shaping: Shaping): String? {
-    if (reserve.judged) return null
-    val unchecked = reserve.needed.keys.map { gasIndexOf(it) }.filter {
-        val breathed = shaping.gases[it]
-        breathed.size.trim().toDoubleOrNull() == null || breathed.fill.trim().toDoubleOrNull() == null
+// To a tenth, as the MOD beside the deco gas is, so the two read as the same depth.
+private fun upToSaid(metres: Double?): String =
+    if (metres == null || metres <= 0) "to the surface" else "up to ${plain((metres * 10).roundToInt() / 10.0)} m"
+
+/** Where a cylinder first holds less than [scenario] needs from there, or null where none does. */
+internal fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? = reserve.shortfall?.let {
+    // A gauge the plan has already run below nought is empty, not a negative pressure.
+    val held = if (it.left <= 0) "is empty" else "holds ${floor(it.left).toInt()} bar"
+    val needs = ceil(it.needed).toInt()
+    val why = when (scenario) {
+        Scenario.LOST_GAS -> "the way up from there without the lost gas needs $needs bar"
+        Scenario.SHARED -> "two divers sharing it ${upToSaid(it.upTo)} need $needs bar"
     }
+    "At ${clockOf(it.second)}: ${gasLabelOf(gasIndexOf(it.source))} $held, and $why"
+}
+
+/** The cylinders a reserve breathes that have no size or no start pressure, so cannot be checked. */
+internal fun uncheckedSaid(reckoned: Reckoned, shaping: Shaping): String? {
+    val unchecked = reckoned.done.values.filter { !it.judged }.flatMap { it.needed.keys }
+        .map { gasIndexOf(it) }.distinct().sorted().filter {
+            val breathed = shaping.gases[it]
+            breathed.size.trim().toDoubleOrNull() == null || breathed.fill.trim().toDoubleOrNull() == null
+        }
+    if (unchecked.isEmpty()) return null
     return unchecked.joinToString(", ") { gasLabelOf(it) } +
         " needs a volume and a start pressure before the reserve can be checked against it"
 }
@@ -767,13 +841,13 @@ internal fun PlanForm(
             Column(modifier = Modifier.weight(1f).fillMaxWidth().framed().padding(HALF)) {
                 CylinderHeadings()
                 Scrolling(Modifier.weight(1f).fillMaxWidth(), scrollbar) {
-                    Cylinders(shaping, conditions, done, (reckoned as? Reckoned.Done)?.reserve)
+                    Cylinders(shaping, conditions, done, reckoned)
                 }
             }
         }
     }
     if (done != null) Figures(done.evaluated)
-    if (reckoned != null) ReserveFigures(reckoned, shaping)
+    if (reckoned != null) Scenarios(reckoned, shaping)
     when {
         shaped is Shaped.Wrong -> Refused(shaped.reason)
         worked is Worked.Refused -> Refused(worked.reason)
@@ -781,9 +855,10 @@ internal fun PlanForm(
             for (finding in findingsSaidOf(done.evaluated, tanksOf(shaping))) {
                 Warning("${finding.label}: ${finding.parts.joinToString("") { it.text }}", finding.wrong)
             }
-            val reserve = (reckoned as? Reckoned.Done)?.reserve
-            reserve?.let { shortfallSaid(it) }?.let { Warning(it, wrong = true) }
-            reserve?.let { uncheckedSaid(it, shaping) }?.let { Warning(it, wrong = false) }
+            for ((scenario, reserve) in reckoned?.done.orEmpty()) {
+                shortfallSaid(scenario, reserve)?.let { Warning(it, wrong = true) }
+            }
+            reckoned?.let { uncheckedSaid(it, shaping) }?.let { Warning(it, wrong = false) }
         }
     }
     if (done != null) Graph(done, shaping)
@@ -1077,7 +1152,7 @@ private fun Labelled(label: String, content: @Composable () -> Unit) {
  * choice and with the warning. `LOGIC-39`.
  */
 @Composable
-private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?, reserve: Reserve.Done?) {
+private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?, reckoned: Reckoned?) {
     for ((index, breathed) in shaping.gases.withIndex()) {
         val key = gasKeyOf(index)
         Row(
@@ -1111,6 +1186,8 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                         Checkbox(
                             checked = isLost(breathed),
                             onCheckedChange = { shaping.gases[index] = breathed.copy(lost = it) },
+                            // Only the lost-gas scenario reads it.
+                            enabled = shaping.lostGasScenario,
                             modifier = Modifier.size(DENSE_GLYPH),
                         )
                     }
@@ -1121,9 +1198,9 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
             Cell(done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(), FIGURED, TextAlign.End, worked)
             Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
             // Red where this is the cylinder that falls short, as a line too deep for its gas is.
-            val short = reserve?.shortfall?.source == key
+            val short = reckoned != null && isShort(reckoned, key)
             Cell(
-                reserve?.let { minimumSaid(it, key) }.orEmpty(),
+                reckoned?.let { minimumSaid(it, key) }.orEmpty(),
                 FIGURED,
                 TextAlign.End,
                 if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked,
@@ -1170,20 +1247,57 @@ private fun Figures(evaluated: Evaluated.Done) {
 }
 
 /**
- * The gas reserve on a line of its own: what each cylinder must hold at the worst moment, and when
- * that is, or why it cannot be said. `LOGIC-40`.
+ * The gas reserve's scenarios, a line each: a tick that switches it on, what it asks each cylinder
+ * to hold, when its worst moment is, and what it assumes. `LOGIC-40`.
+ *
+ * The cylinder's own *Minimum* is the most any of them asks, so these lines are where a reader sees
+ * which scenario set it.
  */
 @Composable
-private fun ReserveFigures(reckoned: Reckoned, shaping: Shaping) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
-        horizontalArrangement = Arrangement.spacedBy(GAP * 3),
-    ) {
-        when (reckoned) {
-            // What each cylinder must hold is beside it, in the gases; the moment it is held for
-            // belongs to the dive.
-            is Reckoned.Done -> Figure("Worst moment", worstSaid(reckoned.reserve))
-            is Reckoned.Wrong -> Figure("Reserve", reckoned.reason)
+private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = GAP)) {
+        for ((scenario, reckoning) in reckoned.scenarios) {
+            Row(
+                modifier = Modifier.height(ROW),
+                horizontalArrangement = Arrangement.spacedBy(GAP),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val on = when (scenario) {
+                    Scenario.LOST_GAS -> shaping.lostGasScenario
+                    Scenario.SHARED -> shaping.sharedScenario
+                }
+                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                    Checkbox(
+                        checked = on,
+                        onCheckedChange = {
+                            when (scenario) {
+                                Scenario.LOST_GAS -> shaping.lostGasScenario = it
+                                Scenario.SHARED -> shaping.sharedScenario = it
+                            }
+                        },
+                        modifier = Modifier.size(DENSE_GLYPH),
+                    )
+                }
+                Text(
+                    scenario.label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.width(SCENARIO),
+                )
+                val quiet = MaterialTheme.colorScheme.outline
+                when (reckoning) {
+                    null -> Text("off", style = MaterialTheme.typography.bodyMedium, color = quiet)
+                    is Reckoning.Wrong -> Text(reckoning.reason, style = MaterialTheme.typography.bodyMedium, color = quiet)
+                    is Reckoning.Done -> {
+                        Figure("Reserve", scenarioReserveSaid(reckoning.reserve))
+                        Figure("Worst moment", worstSaid(reckoning.reserve))
+                        Text(
+                            assumedSaid(scenario, reckoning.reserve, shaping.panicFactor),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = quiet,
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -1268,6 +1382,9 @@ private val PRESSURE = 76.dp
 private val SAC = 88.dp
 private val FIGURED = 60.dp
 private val LOST = 28.dp
+
+/** How wide a scenario's name is, so what follows it lines up. */
+private val SCENARIO = 130.dp
 
 /** The cylinders' columns, headed, as wide as what sits under them. */
 private val CYLINDER_COLUMNS: List<Pair<String, Dp>> = listOf(

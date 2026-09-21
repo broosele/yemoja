@@ -481,37 +481,47 @@ To settle when we discuss architecture and features:
 
 ## Settled
 
-- **LOGIC-40 — What gas a plan keeps back for a way up in trouble.** *Settled:* **`gasReserve`,
-  trying every moment of the dive, losing the sources it is told are lost, and costing the way up
-  from there at a panic rate.**
+- **LOGIC-40 — What gas a plan keeps back for a way up in trouble.** *Settled:* **two scenarios,
+  `lostGasReserve` and `sharedGasReserve`, each trying every moment of the dive; a cylinder keeps
+  back the most either asks of it.**
 
-  The rule is the user's: there must be gas to reach the surface safely breathing at a raised
-  rate, for sharing and for stress, with the deco gas lost, at whichever moment of the dive that
-  is worst. So at each point of the run the lost sources are gone, and the way up is worked out
-  from the tissues at that moment by the same code that completes a plan's ascent, holding its
-  stops and its safety stop. Each remaining source is breathed at its own `sac` times the panic
-  factor. The worst moment is the one whose way up costs the most gas altogether, and what that way
-  up takes from each cylinder is its reserve, in litres and in bar on its gauge.
+  One scenario at a panic rate the whole way up was tried first, and on a dive with stops it asked
+  for more than any cylinder holds: forty metres for twenty-five minutes on air with its EAN50 lost
+  needed over six thousand litres at four times twenty litres a minute. The user replaced it with
+  two scenarios that are each reasonable, and the worse of them is what a cylinder must hold.
 
-  **Every moment rather than the end of the bottom.** The end of the bottom is usually the worst,
-  and for a single-level dive it always has been in the tests. A deco gas lost just before the
-  switch to it can cost more, and a multi-level plan has no single bottom to name, so trying every
-  point costs about a millisecond and assumes nothing.
+  **Lost gas.** The cylinders marked lost are gone, the deco gas unless the user says otherwise, and
+  the way up is to the surface on what is left at the usual `sac`. Its stops and its safety stop
+  are worked out from the tissues at that moment by the same code that completes a plan's ascent.
 
-  **A bailout is open to that way up.** The plan's own ascent never switches to one, `LOGIC-35`,
-  because it is carried for trouble; this is the trouble. Where the source breathed at the moment
-  is itself lost, the way up starts on the richest remaining one its limit allows at that depth.
+  **Buddy out of gas.** A buddy has lost their bottom gas, and the two breathe from the source this
+  diver is on until either of them can go on to a deco gas: twice this diver's `sac`, times a
+  stress factor, which defaults to two. The buddy is assumed to breathe at the same rate, to carry
+  the same deco gas and none of the bailouts. The sharing ends where the way up passes the deepest
+  depth a deco gas may be breathed at, part-way along a rise as often as at a stop, since a way up
+  owing no stop rises straight through it. Any stop deeper than that is shared too. With no deco
+  gas the two share to the surface, which is the rule divers call rock bottom. A moment already
+  within reach of a deco gas costs nothing.
+
+  **Each can be switched off**, for a solo dive or a plan with no deco gas to lose, and a cylinder
+  then keeps back what the others ask. The two are separate functions rather than one with a mode,
+  since they take different inputs: the lost cylinders for one, the deco gases and the stress for
+  the other.
+
+  **Every moment rather than the end of the bottom.** The end of the bottom is usually the worst.
+  A deco gas lost just before the switch to it can cost more, and a multi-level plan has no single
+  bottom to name, so every point is tried, which costs about a millisecond. A tie goes to the later
+  moment, since the cylinder holds least then: from anywhere on a flat bottom the way up to a deco
+  gas can cost the same.
+
+  **A bailout is open to the lost-gas way up.** The plan's own ascent never switches to one,
+  `LOGIC-35`, because it is carried for trouble; this is the trouble. Where the source breathed at
+  the moment is itself lost, the way up starts on the richest remaining one its limit allows there.
 
   **Whether the plan has enough is judged at every moment too.** A cylinder whose gauge at some
   moment reads less than the way up from there needs is a shortfall, and the first one is given
-  with its cylinder and time. A cylinder with no size or no fill can be costed in litres and not
-  judged, and the answer says so rather than calling it enough.
-
-  **The panic rate runs the whole way up.** On a dive with stops that is severe: forty metres for
-  twenty-five minutes on air, with its EAN50 lost, needs over six thousand litres at four times
-  twenty litres a minute. That follows from the rule as given. Practices differ, and a plan that
-  applies the raised rate only to the first minutes would be a different rule, not a tuning of
-  this one.
+  with its cylinder, its time, and how far that way up was costed. A cylinder with no size or no
+  fill can be costed in litres and not judged, and the answer says so rather than calling it enough.
 
   A cylinder nobody gave a `sac` is refused by name rather than counted as free. Built in
   `Reserve.kt`, with the ascent's loop shared with `completeAscent` so the two cannot disagree

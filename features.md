@@ -70,9 +70,9 @@ them.
   *Built:* Bühlmann ZH-L16C (`LOGIC-3`), the profile fields a plan needs, and two operations over
   them. `evaluate` says what a run costs — the ceiling, the time left, the gas each cylinder gives
   up, the oxygen clocks, how long before flying, and what it objects to (`LOGIC-37`, `LOGIC-38`).
-  `completeAscent` writes the way out of one (`LOGIC-35`). `gasReserve` says what gas a plan must
-  keep back to reach the surface with its deco gas lost, breathing at a panic rate, at the dive's
-  worst moment (`LOGIC-40`). In the window, both sit under the run
+  `completeAscent` writes the way out of one (`LOGIC-35`). `lostGasReserve` and `sharedGasReserve` say
+  what gas a plan must keep back at the dive's worst moment, with gas lost or a buddy sharing it
+  (`LOGIC-40`). In the window, both sit under the run
   they are about: the ceiling over its graph, the figures and the findings under its fields, and
   on a plan a button that writes its ascent in. `GUI-40`.
 
