@@ -1377,10 +1377,10 @@ private val SETTING = 104.dp
 private val INDEX = 16.dp
 private val MIX = 76.dp
 private val ROLE = 84.dp
-private val VOLUME = 64.dp
-private val PRESSURE = 76.dp
-private val SAC = 88.dp
-private val FIGURED = 60.dp
+private val VOLUME = 56.dp
+private val PRESSURE = 72.dp
+private val SAC = 84.dp
+private val FIGURED = 56.dp
 private val LOST = 28.dp
 
 /** How wide a scenario's name is, so what follows it lines up. */
