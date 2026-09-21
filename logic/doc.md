@@ -542,8 +542,14 @@ To settle when we discuss architecture and features:
 
   **Stops go on the threes a diver counts in**, and a run owing any takes its shallowest where it
   was asked to. The gas at each depth is the richest of the run's own sources whose oxygen stays
-  within 1.6 bar, which is what a deco cylinder is carried for and what a planner is expected to
-  do without being told twice.
+  within that source's own limit, which is what a deco cylinder is carried for and what a planner
+  is expected to do without being told twice.
+
+  **A bailout is never chosen.** A source can say the ascent may not switch to it, and is then
+  breathed only where a switch names it, since a bailout is carried for the dive going wrong rather
+  than to shorten one going right. An ascent that begins on one leaves it only for a richer mix:
+  switching a user who has gone to their bailout back to a leaner gas would undo their decision for
+  nothing.
 
   **A rise takes whole seconds, rounded up.** Rounded down, nineteen metres at nine a minute took
   126 seconds, a shade faster than the rate asked for, and the plan form timing the same rise by
@@ -642,6 +648,10 @@ To settle when we discuss architecture and features:
 
   **Oxygen is checked against 1.6 bar**, the figure agencies teach for a stop and the one a gas is
   chosen against. Over it is a finding rather than a refusal, once per crossing like the ceiling.
+  A source may hold itself to less, which is how a planner keeps a bottom gas to 1.4 and a deco gas
+  to 1.6. The warning and the ascent's choice then both read that source's figure, so the depth a
+  form shows beside a gas and the depth the model objects at are the same. A recording names no
+  limit and is judged against 1.6 as before.
 
   **The figure and the depth it allows are public**, `MOST_OXYGEN` and `maximumOperatingDepth`, so
   a form offering a gas switch chooses the depth by the same rule the run is judged by afterwards.

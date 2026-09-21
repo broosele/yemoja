@@ -192,6 +192,11 @@ class Run(
  * Only the gas is needed. Without a rate it costs nothing that can be counted; without a size and
  * a fill it has no gauge to read.
  *
+ * [mostOxygen] is the partial pressure this cylinder is held to, in bar, and is what a warning
+ * about its oxygen and the ascent's choice of it are both read against. A cylinder the ascent may
+ * not choose is breathed only where a switch names it, which is how a bailout is carried. A
+ * recording sets neither, and is judged as it always was. `LOGIC-37`.
+ *
  * Immutable.
  */
 class Source(
@@ -199,7 +204,14 @@ class Source(
     val sac: Double? = null,
     val volume: Double? = null,
     val fill: Double? = null,
-)
+    val mostOxygen: Double = MOST_OXYGEN,
+    val ascentMayChoose: Boolean = true,
+) {
+
+    init {
+        require(mostOxygen > 0) { "an oxygen limit should be more than nought, but was $mostOxygen" }
+    }
+}
 
 /**
  * What the model makes of [profile], which may be a recording or a plan.
@@ -403,16 +415,17 @@ private fun walked(
         }
         above = point.metres < allowed
         val oxygen = breathing.mixAt(point.second).fractionO2 * ambient
-        if (oxygen > MOST_OXYGEN && !rich) {
+        val most = breathing.mostOxygenOf(breathing.keyAt(point.second))
+        if (oxygen > most && !rich) {
             findings += Finding(
                 point.second,
                 Severity.WARNING,
                 "the oxygen in ${breathing.mixAt(point.second)} is at ${bar(oxygen)} here," +
-                    " over the ${bar(MOST_OXYGEN)} a diver plans to",
+                    " over the ${bar(most)} a diver plans to",
                 breathing.keyAt(point.second),
             )
         }
-        rich = oxygen > MOST_OXYGEN
+        rich = oxygen > most
     }
 
     return Evaluated.Done(
@@ -490,8 +503,9 @@ sealed class Ascended {
  * afterwards and the stops do not move, which evaluating the plan says at once. `LOGIC-35`.
  *
  * Stops go on the threes a diver counts in, and a run that owes any takes its shallowest at
- * [lastStop]. The gas is chosen at each depth: the richest of the run's own sources whose oxygen
- * stays within what a diver plans to, which is what a deco cylinder is carried for.
+ * [lastStop]. The gas is chosen at each depth: the richest of the run's own sources the ascent may
+ * choose whose oxygen stays within that source's own limit, which is what a deco cylinder is
+ * carried for. A bailout is never chosen, and one already breathed is left only for a richer mix.
  *
  * Refused for whatever [evaluate] refuses, and for a run that will not surface within a day.
  */
@@ -545,8 +559,9 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
         second += seconds
         metres = target
         points += second to metres
-        breathing.richestAt(ambientAt(metres, density, surface))?.let { richest ->
-            if (richest != breathed) {
+        val arrived = ambientAt(metres, density, surface)
+        breathing.richestAt(arrived)?.let { richest ->
+            if (richest != breathed && breathing.worthSwitching(breathed, richest, arrived)) {
                 switches += second to richest
                 breathed = richest
             }
@@ -662,6 +677,10 @@ private class Breathing(
     val rates: Map<String, Double>,
     /** What each source was filled to and how big it is, for the sources that say both. */
     val fills: Map<String, Fill>,
+    /** The oxygen each source is held to, in bar. */
+    private val mostOxygen: Map<String, Double>,
+    /** The sources an ascent may switch to without being told. */
+    private val choosable: Set<String>,
 ) {
 
     /** When the first switch says what is breathed, in seconds; nothing says before it. */
@@ -679,18 +698,34 @@ private class Breathing(
     /** What is in the source breathed at [second], and air where the source does not say. */
     fun mixAt(second: Int): Gas = mixes[keyAt(second)] ?: Gas.AIR
 
+    /** The oxygen [key] is held to, in bar, and [MOST_OXYGEN] for a source nobody named. */
+    fun mostOxygenOf(key: String): Double = mostOxygen[key] ?: MOST_OXYGEN
+
     /**
-     * The source worth breathing at [ambient] bar: the richest whose oxygen stays within what a
-     * diver plans to, or null where none of them does.
+     * The source worth breathing at [ambient] bar: the richest the ascent may choose whose oxygen
+     * stays within its own limit, or null where none of them does.
      *
      * Richest rather than nearest, because that is what a deco gas is carried for. Helium breaks
      * no tie: two mixes of one oxygen fraction are as good as each other here, and the one written
      * first is taken.
      */
     fun richestAt(ambient: Double): String? = mixes.entries
-        .filter { it.value.fractionO2 * ambient <= MOST_OXYGEN }
+        .filter { it.key in choosable && it.value.fractionO2 * ambient <= mostOxygenOf(it.key) }
         .maxByOrNull { it.value.fractionO2 }
         ?.key
+
+    /**
+     * Whether an ascent breathing [breathed] should move to [richest] on arriving at [ambient] bar.
+     *
+     * Only for a richer mix, or to leave one already over its own limit. Otherwise a run the user
+     * switched to a bailout richer than anything the ascent may choose would be switched straight
+     * back to a leaner mix.
+     */
+    fun worthSwitching(breathed: String, richest: String, ambient: Double): Boolean {
+        val now = mixes[breathed] ?: return true
+        val next = mixes[richest] ?: return false
+        return next.fractionO2 > now.fractionO2 || now.fractionO2 * ambient > mostOxygenOf(breathed)
+    }
 }
 
 /** Fill is what a cylinder was filled to, in bar of gauge pressure, and the litres it holds. */
@@ -712,12 +747,14 @@ private fun breathedBy(run: Run): Breathing? {
         val volume = source.volume
         if (gauge == null || volume == null || volume <= 0) null else key to Fill(gauge, volume)
     }.toMap()
+    val most = run.sources.mapValues { (_, source) -> source.mostOxygen }
+    val choosable = run.sources.filterValues { it.ascentMayChoose }.keys
     val written = run.switches.filter { (_, key) -> key in run.sources }
     if (written.isEmpty()) {
         val only = run.sources.keys.singleOrNull() ?: return null
-        return Breathing(mixes, listOf(0 to only), rates, fills)
+        return Breathing(mixes, listOf(0 to only), rates, fills, most, choosable)
     }
-    return Breathing(mixes, written, rates, fills)
+    return Breathing(mixes, written, rates, fills, most, choosable)
 }
 
 /**

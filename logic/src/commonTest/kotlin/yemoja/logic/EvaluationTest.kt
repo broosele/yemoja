@@ -572,6 +572,74 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a cylinder held to less oxygen is warned about at less`() {
+        // EAN32 at thirty-five metres of sea water is 1.44 bar: within 1.6, over 1.4.
+        fun oxygenFindings(most: Double): List<Finding> = assertIs<Evaluated.Done>(
+            evaluate(
+                Run(
+                    depth = listOf(0 to 0.0, 120 to 35.0, 900 to 35.0),
+                    sources = mapOf("g1" to Source(Gas.parse("EAN32"), mostOxygen = most)),
+                    gradientFactorLow = 1.0,
+                    gradientFactorHigh = 1.0,
+                ),
+            ),
+        ).findings.filter { "oxygen" in it.said }
+
+        assertTrue(oxygenFindings(MOST_OXYGEN).isEmpty(), "${oxygenFindings(MOST_OXYGEN)}")
+        val held = oxygenFindings(1.4).single()
+        assertTrue("1.40" in held.said, held.said)
+        assertEquals("g1", held.source)
+    }
+
+    @Test
+    fun `an ascent takes a deco gas no deeper than its own limit allows`() {
+        fun switchedAt(most: Double): Pair<Double, Double> {
+            val run = decoRun(Source(Gas.parse("EAN50"), mostOxygen = most))
+            val ascent = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+            val second = ascent.switches.single { it.second == "g2" }.first
+            val metres = ascent.depth.single { it.first == second }.second
+            return metres to 0.5 * ambientAt(metres, run.density, run.surface)
+        }
+
+        val (usual, _) = switchedAt(MOST_OXYGEN)
+        val (held, oxygen) = switchedAt(1.4)
+        assertTrue(held < usual, "held to 1.4 it is taken shallower: $held against $usual")
+        assertTrue(oxygen <= 1.4, "and breathed within it: $oxygen bar at $held m")
+    }
+
+    @Test
+    fun `an ascent never chooses a bailout`() {
+        val chosen = assertIs<Ascended.Done>(
+            completeAscent(decoRun(Source(Gas.parse("EAN50"))), 9.0, 3.0),
+        )
+        val bailout = assertIs<Ascended.Done>(
+            completeAscent(decoRun(Source(Gas.parse("EAN50"), ascentMayChoose = false)), 9.0, 3.0),
+        )
+
+        assertTrue(chosen.switches.any { it.second == "g2" }, "a deco gas is taken")
+        assertTrue(bailout.switches.isEmpty(), "a bailout is not: ${bailout.switches}")
+    }
+
+    @Test
+    fun `an ascent begun on a bailout is not switched to a leaner mix`() {
+        // The user has gone to the bailout at twenty-one metres. Air is the only gas the ascent may
+        // choose, and moving to it would take a diver off the richer mix for nothing.
+        val run = Run(
+            depth = listOf(0 to 0.0, 134 to 40.0, 1500 to 40.0, 1627 to 21.0),
+            sources = mapOf(
+                "g1" to Source(Gas.AIR),
+                "g2" to Source(Gas.parse("EAN50"), ascentMayChoose = false),
+            ),
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1", 1627 to "g2"),
+        )
+        val ascent = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+
+        assertTrue(ascent.switches.isEmpty(), "${ascent.switches}")
+    }
+
+    @Test
     fun `a finding about the dive rather than a cylinder names none`() {
         val ceiling = done(planned(DEEP)).findings.single { "ceiling" in it.said }
 
@@ -662,4 +730,13 @@ private fun chained(carrying: String): ItemSet = logbook(
         "gas_sources": {"g1": {"gas_type": "AIR"}},
         "profiles": {"a": {"water_type": "fresh", "gradient_factor_low": 1.0,
             "gradient_factor_high": 1.0, $carrying $DEEP}}}""",
+)
+
+/** Twenty-five minutes at forty metres on air, carrying [deco] as its second source. */
+private fun decoRun(deco: Source): Run = Run(
+    depth = listOf(0 to 0.0, 134 to 40.0, 1500 to 40.0),
+    sources = mapOf("g1" to Source(Gas.AIR), "g2" to deco),
+    gradientFactorLow = 0.3,
+    gradientFactorHigh = 0.7,
+    switches = listOf(0 to "g1"),
 )
