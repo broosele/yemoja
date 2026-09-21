@@ -447,7 +447,9 @@ once and corrected. The numbers stay unused rather than being given to something
   way up types it, and the italic part fills in only what they left.
 
   **Twelve lines show, and the box scrolls past that**, with a bar where the platform draws one. The
-  settings and the gases beside it stay where they are however long the dive is.
+  settings and the gases beside it stay where they are however long the dive is. The gases take
+  what the settings leave of the same height, so the two columns end on one line, and they scroll
+  in the same way once there are more than fit, their headings staying above them.
 
   **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent
   rate, safety stop depth and duration, last stop and water each start from what the settings

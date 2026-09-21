@@ -615,15 +615,28 @@ internal fun PlanForm(
     val done = worked as? Worked.Done
     val conditions = conditionsOf(shaping).first
     Heading("Dive plan")
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP * 2)) {
-        Column(modifier = Modifier.width(RUNTIME_BOX)) {
-            Runtime(shaping, shaped, done, scrollbar)
+    // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
+    // two columns end on one line however many cylinders there are.
+    Row(
+        modifier = Modifier.fillMaxWidth().height(ROW * LINES_SHOWN + CAPTION),
+        horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+    ) {
+        Column(modifier = Modifier.width(RUNTIME_BOX).fillMaxHeight()) {
+            Caption("Runtime")
+            Scrolling(Modifier.weight(1f).fillMaxWidth().framed().padding(HALF), scrollbar) {
+                RuntimeLines(shaping, shaped, done)
+            }
         }
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Caption("Settings")
             Framed { Conditions(shaping) }
             Caption("Gases")
-            Framed { Cylinders(shaping, conditions, done) }
+            Column(modifier = Modifier.weight(1f).fillMaxWidth().framed().padding(HALF)) {
+                CylinderHeadings()
+                Scrolling(Modifier.weight(1f).fillMaxWidth(), scrollbar) {
+                    Cylinders(shaping, conditions, done)
+                }
+            }
         }
     }
     if (done != null) Figures(done.evaluated)
@@ -647,31 +660,31 @@ private fun tanksOf(shaping: Shaping): Map<String, String> =
     shaping.gases.indices.associate { gasKeyOf(it) to gasLabelOf(it) }
 
 /**
- * The runtime box: the typed lines, then the way up the model adds, in italics and without boxes.
- *
- * About twelve lines tall, scrolling past that, so the settings and the cylinders beside it stay
- * where they are however long the dive.
+ * The runtime's lines: the typed ones, then the way up the model adds, in italics and without
+ * boxes.
  */
 @Composable
-private fun Runtime(
-    shaping: Shaping,
-    shaped: Shaped,
-    done: Worked.Done?,
+private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?) {
+    for ((index, segment) in shaping.segments.withIndex()) {
+        val leg = shaped.legs.firstOrNull { it.index == index }
+        TypedLine(shaping, index, segment, leg)
+    }
+    for (leg in done?.tail.orEmpty()) WorkedLine(leg)
+}
+
+/**
+ * [content] scrolled within [modifier]'s bounds, with the platform's bar beside it where it draws
+ * one, so what does not fit is reached without the part beside it moving.
+ */
+@Composable
+private fun Scrolling(
+    modifier: Modifier,
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)?,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    Caption("Runtime")
     val scrolled = rememberScrollState()
-    Box(
-        modifier = Modifier.fillMaxWidth().height(ROW * LINES_SHOWN)
-            .border(FRAME, MaterialTheme.colorScheme.outlineVariant, SHAPE),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().verticalScroll(scrolled).padding(HALF)) {
-            for ((index, segment) in shaping.segments.withIndex()) {
-                val leg = shaped.legs.firstOrNull { it.index == index }
-                TypedLine(shaping, index, segment, leg)
-            }
-            for (leg in done?.tail.orEmpty()) WorkedLine(leg)
-        }
+    Box(modifier = modifier) {
+        Column(modifier = Modifier.fillMaxWidth().verticalScroll(scrolled), content = content)
         scrollbar?.invoke(scrolled, Modifier.align(Alignment.CenterEnd).fillMaxHeight())
     }
 }
@@ -782,12 +795,12 @@ private fun Cell(
 /** One part of the form in a box of its own, as the runtime is. */
 @Composable
 private fun Framed(content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth().border(FRAME, MaterialTheme.colorScheme.outlineVariant, SHAPE)
-            .padding(HALF),
-        content = content,
-    )
+    Column(modifier = Modifier.fillMaxWidth().framed().padding(HALF), content = content)
 }
+
+/** The line round each part of the form. */
+@Composable
+private fun Modifier.framed(): Modifier = border(FRAME, MaterialTheme.colorScheme.outlineVariant, SHAPE)
 
 /** A small heading over one part of the form. */
 @Composable
@@ -881,11 +894,6 @@ private fun Labelled(label: String, content: @Composable () -> Unit) {
  */
 @Composable
 private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?) {
-    Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
-        for ((heading, width) in CYLINDER_COLUMNS) {
-            Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.outline))
-        }
-    }
     for ((index, breathed) in shaping.gases.withIndex()) {
         val key = gasKeyOf(index)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HALF)) {
@@ -925,6 +933,16 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     Icon(Icons.Filled.Close, contentDescription = "Take out ${gasLabelOf(index)}")
                 }
             }
+        }
+    }
+}
+
+/** What each column of the cylinders is, kept above them while they scroll. */
+@Composable
+private fun CylinderHeadings() {
+    Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
+        for ((heading, width) in CYLINDER_COLUMNS) {
+            Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.outline))
         }
     }
 }
@@ -996,6 +1014,9 @@ private const val LINES_SHOWN = 12
 
 /** How thick the line round each part of the form is. */
 private val FRAME = 1.dp
+
+/** How tall a caption over a part of the form is, with its padding. */
+private val CAPTION = 28.dp
 
 /** How tall a line of the runtime box is. */
 private val ROW = 40.dp
