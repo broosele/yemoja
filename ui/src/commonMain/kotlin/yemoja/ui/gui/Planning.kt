@@ -139,7 +139,7 @@ internal fun findingsSaidOf(
     tanks: Map<String, String> = emptyMap(),
 ): List<Shown> =
     evaluated.findings.map { finding ->
-        val named = finding.source?.let { "${tanks[it] ?: it} " }.orEmpty()
+        val named = finding.source?.let { "${tanks[it] ?: it}: " }.orEmpty()
         Shown(
             atSaid(finding.second),
             listOf(Part(named + finding.said)),
@@ -174,7 +174,7 @@ private fun worked(label: String, said: String): Shown =
 
 /** Where a finding sits in the run, as a reader counts: minutes and seconds from the start. */
 private fun atSaid(second: Int): String =
-    "At ${second / 60}:${(second % 60).toString().padStart(2, '0')}"
+    "${second / 60}:${(second % 60).toString().padStart(2, '0')}"
 
 /** A depth to a tenth of a metre, which is as fine as a stop is ever read. */
 private fun metresSaid(depth: Double): String {

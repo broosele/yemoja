@@ -425,8 +425,7 @@ private fun walked(
                     findings += Finding(
                         before.second,
                         Severity.WARNING,
-                        "rising at ${metres(rate)} a minute here, faster than the " +
-                            "${metres(ascentRate)} a minute planned",
+                        "Ascent ${metres(rate)}/min should be at most ${metres(ascentRate)}/min",
                     )
                 }
                 hurried = rate > ascentRate
@@ -452,7 +451,12 @@ private fun walked(
             val left = fill.gauge - (used[key] ?: 0.0) / fill.volume
             gauges.getValue(key) += left
             if (left <= 0 && dry.add(key)) {
-                findings += Finding(point.second, Severity.WARNING, "runs out of gas by here", key)
+                findings += Finding(
+                    point.second,
+                    Severity.WARNING,
+                    "empty, it needs more volume, a higher start pressure or a lower SAC",
+                    key,
+                )
             }
         }
         breathedCns += oxygen.percentCns
@@ -461,7 +465,7 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "the whole of the oxygen clock is spent by here",
+                "CNS should stay below 100 %",
             )
             burnt = true
         }
@@ -471,8 +475,7 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "above the ceiling: ${metres(allowed)} was allowed" +
-                    " and ${metres(point.metres)} was taken",
+                "Depth ${metres(point.metres)} should be at least ${metres(allowed)}, the ceiling",
             )
         }
         above = point.metres < allowed
@@ -482,8 +485,7 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "the oxygen in ${breathing.mixAt(point.second)} is at ${bar(oxygen)} here," +
-                    " over the ${bar(most)} a diver plans to",
+                "pO₂ ${bar(oxygen)} should be at most ${bar(most)}",
                 breathing.keyAt(point.second),
             )
         }
@@ -493,8 +495,7 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "the oxygen in ${breathing.mixAt(point.second)} is at ${bar(oxygen)} here," +
-                    " under the ${bar(LEAST_OXYGEN)} a diver needs",
+                "pO₂ ${bar(oxygen)} should be at least ${bar(LEAST_OXYGEN)}",
                 breathing.keyAt(point.second),
             )
         }
@@ -533,8 +534,8 @@ private fun safetyStopFinding(depths: List<Point>, safetyStop: SafetyStop?): Fin
     return Finding(
         left.second,
         Severity.WARNING,
-        "the safety stop at ${metres(safetyStop.metres)} is held for ${clockOf(held)} of the " +
-            "${clockOf(safetyStop.seconds)} planned",
+        "Safety stop at ${metres(safetyStop.metres)} should last ${clockOf(safetyStop.seconds)}, " +
+            "not ${clockOf(held)}",
     )
 }
 
@@ -668,7 +669,7 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
         metresAMinute,
         lastStop,
         run.depth,
-    ) ?: return Ascended.Refused("this run does not reach the surface within a day")
+    ) ?: return Ascended.Refused("No way up within 24 hours: check the depths and gases")
     return Ascended.Done(climbed.points, climbed.switches)
 }
 
@@ -1016,10 +1017,13 @@ private fun seriesOf(seconds: List<Int>, values: List<Double>): Series =
 internal fun clockOf(second: Int): String =
     "${second / 60}:${(second % 60).toString().padStart(2, '0')}"
 
-/** A depth as a finding says it, to a tenth of a metre, which is as fine as anyone reads one. */
+/**
+ * A depth as a finding says it, to a tenth of a metre, which is as fine as anyone reads one, and
+ * without a tenth where there is none: `9 m`, `8.4 m`.
+ */
 private fun metres(depth: Double): String {
     val tenths = (depth * 10).toLong()
-    return "${tenths / 10}.${tenths % 10} m"
+    return if (tenths % 10 == 0L) "${tenths / 10} m" else "${tenths / 10}.${tenths % 10} m"
 }
 
 /** A pressure as a finding says it, to a hundredth of a bar. */

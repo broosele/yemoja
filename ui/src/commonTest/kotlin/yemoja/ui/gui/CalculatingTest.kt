@@ -52,7 +52,7 @@ class SacSolvedTest {
     @Test
     fun `what is not a number is said by its name`() {
         val said = assertIs<Answer.Wrong>(sacSolved(dive + (Figure.SIZE to "twelve"), Figure.SAC, ::ambient, ::depthOf))
-        assertEquals("Cylinder size should be a number, but was \"twelve\"", said.reason)
+        assertEquals("Cylinder size should be a number, not \"twelve\"", said.reason)
     }
 
     @Test
@@ -60,6 +60,24 @@ class SacSolvedTest {
         assertIs<Answer.Wrong>(sacSolved(dive + (Figure.DURATION to "0"), Figure.SAC, ::ambient, ::depthOf))
         assertIs<Answer.Wrong>(sacSolved(dive + (Figure.SAC to "0"), Figure.DURATION, ::ambient, ::depthOf))
         assertIs<Answer.Wrong>(sacSolved(dive + (Figure.SIZE to "0"), Figure.END, ::ambient, ::depthOf))
+    }
+
+    @Test
+    fun `too little gas for any depth says how much the surface alone would have taken`() {
+        // Twenty litres a minute for thirty minutes is 600 L even at the surface, and 10 L from
+        // 200 to 160 bar is 400 L, so the average depth would be above the water.
+        val said = assertIs<Answer.Wrong>(
+            sacSolved(
+                typed(
+                    Figure.SAC to "20", Figure.DURATION to "30", Figure.SIZE to "10",
+                    Figure.START to "200", Figure.END to "160",
+                ),
+                Figure.DEPTH,
+                ::ambient,
+                ::depthOf,
+            ),
+        )
+        assertEquals("Gas used should be at least 600 L: 20 L/min for 30 min, even at the surface (now 400 L)", said.reason)
     }
 
     @Test
@@ -97,14 +115,14 @@ class NdlAskedTest {
 
     @Test
     fun `a factor is a percentage, and a gas is a gas`() {
-        assertTrue("percentage" in assertIs<Answer.Wrong>(asked("30", high = "0.85")).reason)
+        assertTrue("1 to 100 %" in assertIs<Answer.Wrong>(asked("30", high = "0.85")).reason)
         assertIs<Answer.Wrong>(asked("30", gas = "helium and hope"))
         assertIs<Answer.Wrong>(asked("deep"))
     }
 
     @Test
     fun `a depth with no limit says so in words`() {
-        assertTrue("no limit" in assertIs<Answer.Wrong>(asked("3")).reason)
+        assertEquals(Answer.Said("No limit"), asked("3"))
     }
 }
 
@@ -236,7 +254,7 @@ class MinimumAskedTest {
         // A maximum below the minimum: 0.15 bar is reached at about 20 m, and 0.16 not until 22 m.
         val deepest = modAsked("TMX5/85", "0.15")
 
-        assertTrue(rangeWrong("TMX5/85", shallowest, deepest)!!.startsWith("TMX5/85 may be breathed at no depth"))
+        assertTrue(rangeWrong("TMX5/85", shallowest, deepest)!!.startsWith("TMX5/85 has no usable depth"))
         assertEquals(null, rangeWrong("TMX10/70", minimumAsked("TMX10/70", "0.16"), modAsked("TMX10/70", "1.4")))
     }
 }

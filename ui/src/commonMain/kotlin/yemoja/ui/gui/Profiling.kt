@@ -267,9 +267,19 @@ internal fun Shaping.breathed(): Set<Int> {
  * ascent is worked out again without it.
  */
 internal fun Shaping.keptBecause(index: Int): String? = when {
-    gases.size == 1 -> "A plan breathes something, so its last cylinder stays."
-    index in breathed() -> "${gasLabelOf(index)} is breathed by a line. Change that line first."
+    gases.size == 1 -> "The last gas cannot be removed"
+    index in breathed() -> "${gasLabelOf(index)} cannot be removed: line ${firstLineOn(index) + 1} uses it"
     else -> null
+}
+
+/** Where in the list the first typed line breathing the cylinder at [index] is. */
+private fun Shaping.firstLineOn(index: Int): Int {
+    var gas = 0
+    for ((at, segment) in segments.withIndex()) {
+        gas = segment.gas ?: gas
+        if (!isBlank(segment) && gas == index) return at
+    }
+    return 0
 }
 
 /** Takes out the cylinder at [index] where nothing keeps it, renumbering the lines after it. */
@@ -377,23 +387,23 @@ internal fun laidOf(
             segment.gas?.takeIf { it in 0..<gases }?.let { gas = it }
             continue
         }
-        val line = "line ${index + 1}"
+        val line = "Line ${index + 1}"
         val to = segment.depth.trim().toDoubleOrNull()?.takeIf { it >= 0 }
             ?: return legs to if (segment.depth.isBlank()) {
                 "$line needs a depth"
             } else {
-                "$line: a depth is metres, nought or more, and ${said(segment.depth)} is not"
+                "$line depth should be 0 m or more, not ${said(segment.depth)}"
             }
         var timedBy: Double? = null
         val seconds = if (to == from) {
-            if (segment.duration.isBlank()) return legs to "$line stays at ${plain(to)} m, so it needs a duration"
+            if (segment.duration.isBlank()) return legs to "$line needs a duration, because it stays at ${plain(to)} m"
             durationOf(segment.duration) ?: return legs to durationWrong(line, segment.duration)
         } else if (segment.duration.isNotBlank()) {
             durationOf(segment.duration) ?: return legs to durationWrong(line, segment.duration)
         } else {
             val rate = if (segment.rate.isNotBlank()) {
                 segment.rate.trim().toDoubleOrNull()?.takeIf { it > 0 }
-                    ?: return legs to "$line: a rate is metres a minute, more than nought, and ${said(segment.rate)} is not"
+                    ?: return legs to "$line rate should be more than 0 m/min, not ${said(segment.rate)}"
             } else {
                 (if (to > from) descentRate else ascentRate) ?: return legs to null
             }
@@ -416,7 +426,7 @@ internal fun laidOf(
 internal fun durationOf(typed: String): Int? = secondsOf(typed.trim())?.takeIf { it > 0 }?.toInt()
 
 private fun durationWrong(line: String, typed: String): String =
-    "$line: a duration is minutes and seconds, as 2:13, or minutes, as 25, and ${said(typed)} is not"
+    "$line duration should be m:ss or minutes, such as 2:13 or 25, not ${said(typed)}"
 
 /**
  * Conditions are the plan's settings once read.
@@ -442,27 +452,27 @@ internal class Conditions(
 internal fun conditionsOf(shaping: Shaping): Pair<Conditions?, String?> {
     val low = percentageOf(shaping.gradientLow) ?: return null to factorWrong("low", shaping.gradientLow)
     val high = percentageOf(shaping.gradientHigh) ?: return null to factorWrong("high", shaping.gradientHigh)
-    if (low > high) return null to "the low gradient factor should not be above the high one"
+    if (low > high) return null to "GF low should not be higher than GF high"
     val bottom = positiveOf(shaping.bottomOxygen)
-        ?: return null to numberWrong("pO₂ max bottom", "bar", shaping.bottomOxygen)
+        ?: return null to numberWrong("pO₂ max bottom", "more than 0 bar", shaping.bottomOxygen)
     val deco = positiveOf(shaping.decoOxygen)
-        ?: return null to numberWrong("pO₂ max deco", "bar", shaping.decoOxygen)
+        ?: return null to numberWrong("pO₂ max deco", "more than 0 bar", shaping.decoOxygen)
     val descent = positiveOf(shaping.descentRate)
-        ?: return null to numberWrong("the descent rate", "metres a minute", shaping.descentRate)
+        ?: return null to numberWrong("Descent rate", "more than 0 m/min", shaping.descentRate)
     val ascent = positiveOf(shaping.ascentRate)
-        ?: return null to numberWrong("the ascent rate", "metres a minute", shaping.ascentRate)
+        ?: return null to numberWrong("Ascent rate", "more than 0 m/min", shaping.ascentRate)
     val minutes = shaping.safetyMinutes.trim().toDoubleOrNull()?.takeIf { it >= 0 }
-        ?: return null to "the safety stop lasts minutes, nought or more, and ${said(shaping.safetyMinutes)} is not"
+        ?: return null to numberWrong("Safety stop duration", "0 min or more", shaping.safetyMinutes)
     val safety = if (minutes == 0.0) {
         0.0
     } else {
         positiveOf(shaping.safetyDepth)
-            ?: return null to numberWrong("the safety stop's depth", "metres", shaping.safetyDepth)
+            ?: return null to numberWrong("Safety stop depth", "more than 0 m", shaping.safetyDepth)
     }
     val last = shaping.lastStop.trim().toDoubleOrNull()?.takeIf { it >= 0 }
-        ?: return null to "the last stop is metres, nought or more, and ${said(shaping.lastStop)} is not"
+        ?: return null to numberWrong("Last stop", "0 m or more", shaping.lastStop)
     val density = densityOfWater(shaping.water)
-        ?: return null to "${said(shaping.water)} is not a water this knows the weight of"
+        ?: return null to "Water should be salt or fresh"
     return Conditions(
         gradientLow = low,
         gradientHigh = high,
@@ -526,7 +536,14 @@ internal fun shapedOf(shaping: Shaping): Shaped {
     if (legs.isEmpty()) return Shaped.Waiting(legs)
     val sources = LinkedHashMap<String, Source>()
     for ((index, breathed) in shaping.gases.withIndex()) {
-        val gas = gasOf(breathed.gas) ?: return Shaped.Wrong("${gasLabelOf(index)}: ${said(breathed.gas)} is not a gas", legs)
+        val gas = gasOf(breathed.gas) ?: return Shaped.Wrong(
+            if (breathed.gas.isBlank()) {
+                "${gasLabelOf(index)} is missing its mix"
+            } else {
+                "${gasLabelOf(index)} should be a mix such as AIR, EAN32 or TMX18/45, not ${said(breathed.gas)}"
+            },
+            legs,
+        )
         sources[gasKeyOf(index)] = sourceOf(breathed, gas, conditions)
     }
     val points = listOf(0 to 0.0) + legs.map { it.ends to it.to }
@@ -623,15 +640,17 @@ internal class Reckoned(val scenarios: Map<Scenario, Reckoning?>) {
 internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditions): Reckoned {
     fun reckoning(reserve: Reserve): Reckoning = when (reserve) {
         is Reserve.Done -> Reckoning.Done(reserve)
+        // A cylinder named is one whose rate is missing: said with everything else it lacks, and
+        // for every cylinder lacking a rate, so one fix is not followed by the next complaint.
         is Reserve.Refused -> Reckoning.Wrong(
-            reserve.source?.let { "${gasLabelOf(gasIndexOf(it))}: ${reserve.reason}" } ?: reserve.reason,
+            if (reserve.source == null) reserve.reason else missingSaid(shaping) ?: reserve.reason,
         )
     }
     val keys = shaping.gases.indices
     val lostGas = if (shaping.lostGasScenario) {
         val lost = shaping.lostIndex()
         if (lost == null) {
-            Reckoning.Wrong("there is no deco gas to lose, so choose which gas is lost")
+            Reckoning.Wrong("Choose which gas is lost")
         } else {
             reckoning(lostGasReserve(done.whole, setOf(gasKeyOf(lost)), conditions.ascentRate, conditions.lastStop))
         }
@@ -641,9 +660,7 @@ internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditi
     val shared = if (shaping.sharedScenario) {
         val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
         if (factor == null) {
-            Reckoning.Wrong(
-                "the panic stress factor is a multiple of SAC, 1 or more, and ${said(shaping.panicFactor)} is not",
-            )
+            Reckoning.Wrong(numberWrong("Panic stress factor", "1 or more", shaping.panicFactor))
         } else {
             val deco = keys.filter { shaping.gases[it].role == Role.DECO }.map { gasKeyOf(it) }.toSet()
             reckoning(sharedGasReserve(done.whole, deco, factor, conditions.ascentRate, conditions.lastStop))
@@ -673,37 +690,84 @@ internal fun isShort(reckoned: Reckoned, key: String): Boolean =
 
 /** When a scenario's worst moment is, and how deep. */
 internal fun worstSaid(reserve: Reserve.Done): String =
-    "${clockOf(reserve.worst)} at ${plain(reserve.worstMetres)} m"
+    "${clockOf(reserve.worst)} (${plain(reserve.worstMetres)} m)"
 
-/** What each cylinder must hold in one scenario, in the words of the minimum beside it. */
-internal fun scenarioReserveSaid(reserve: Reserve.Done): String =
-    reserve.needed.keys.joinToString(", ") { key ->
+/**
+ * Why no reserve can be worked out: every cylinder the reserve may breathe that has no rate, each
+ * with everything it lacks. Null where none lacks a rate.
+ *
+ * Example: `Cannot be calculated (missing for Gas 1: SAC, volume, start pressure)`.
+ */
+internal fun missingSaid(shaping: Shaping): String? {
+    val lost = if (shaping.lostGasScenario) shaping.lostIndex() else null
+    val missing = shaping.gases.withIndex().filter { (index, breathed) ->
+        index != lost && breathed.sac.trim().toDoubleOrNull() == null
+    }.map { (index, breathed) -> "${gasLabelOf(index)}: ${lackedBy(breathed).joinToString(", ")}" }
+    if (missing.isEmpty()) return null
+    return "Cannot be calculated (missing for ${missing.joinToString("; ")})"
+}
+
+/** What of its rate, its volume and its start pressure [breathed] does not say. */
+private fun lackedBy(breathed: Breathed): List<String> = listOfNotNull(
+    "SAC".takeIf { breathed.sac.trim().toDoubleOrNull() == null },
+    "volume".takeIf { breathed.size.trim().toDoubleOrNull() == null },
+    "start pressure".takeIf { breathed.fill.trim().toDoubleOrNull() == null },
+)
+
+/**
+ * What one scenario came to, in a sentence: what each cylinder needs, when, and what it assumes.
+ *
+ * A scenario that needs nothing says so, and why where the reason is a deco gas the buddy can go
+ * to at once, rather than a worst moment at the surface that means nothing.
+ *
+ * Example: `Gas 1 needs 54 bar at 25:00 (40 m), surfacing without Gas 2 at normal SAC`.
+ */
+internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Shaping): String {
+    val needs = reserve.needed.filterValues { it > 0 }.keys.map { key ->
         val held = reserve.reserve[key]?.let { "${ceil(it).toInt()} bar" }
             ?: "${ceil(reserve.needed.getValue(key)).toInt()} L"
-        "${gasLabelOf(gasIndexOf(key))}: $held"
-    }.ifEmpty { "nothing" }
+        "${gasLabelOf(gasIndexOf(key))} needs $held"
+    }
+    if (needs.isEmpty()) {
+        return when (scenario) {
+            Scenario.LOST_GAS -> "No reserve needed"
+            Scenario.SHARED -> decoReachedSaid(shaping)
+                ?.let { "No sharing needed: each diver switches to $it at once" } ?: "No sharing needed"
+        }
+    }
+    val assumed = when (scenario) {
+        Scenario.LOST_GAS ->
+            "surfacing without ${shaping.lostIndex()?.let { gasLabelOf(it) } ?: "the lost gas"} at normal SAC"
+        Scenario.SHARED -> "two divers sharing ${upToSaid(reserve.upTo)} at ${shaping.panicFactor.trim()} × SAC"
+    }
+    return "${needs.joinToString(" and ")} at ${worstSaid(reserve)}, $assumed"
+}
 
-/** What a scenario assumes, in a phrase, with [reserve] saying how far the sharing goes. */
-internal fun assumedSaid(scenario: Scenario, reserve: Reserve.Done?, shaping: Shaping): String = when (scenario) {
-    Scenario.LOST_GAS ->
-        "to the surface without ${shaping.lostIndex()?.let { gasLabelOf(it) } ?: "it"}, at your usual SAC"
-    Scenario.SHARED -> "two divers sharing ${upToSaid(reserve?.upTo)}, each at ${shaping.panicFactor.trim()} × SAC"
+/** The deco cylinder a buddy goes to first, being the one breathable deepest, as its line names it. */
+private fun decoReachedSaid(shaping: Shaping): String? {
+    val conditions = conditionsOf(shaping).first ?: return null
+    return shaping.gases.withIndex().filter { it.value.role == Role.DECO }
+        .maxByOrNull { (_, breathed) ->
+            gasOf(breathed.gas)?.let {
+                maximumOperatingDepth(it, most = conditions.decoOxygen, density = conditions.density)
+            } ?: -1.0
+        }?.let { gasChoiceOf(shaping, it.index) }
 }
 
 // To a tenth, as the MOD beside the deco gas is, so the two read as the same depth.
 private fun upToSaid(metres: Double?): String =
-    if (metres == null || metres <= 0) "to the surface" else "up to ${plain((metres * 10).roundToInt() / 10.0)} m"
+    if (metres == null || metres <= 0) "to the surface" else "to ${plain((metres * 10).roundToInt() / 10.0)} m"
 
 /** Where a cylinder first holds less than [scenario] needs from there, or null where none does. */
 internal fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? = reserve.shortfall?.let {
     // A gauge the plan has already run below nought is empty, not a negative pressure.
-    val held = if (it.left <= 0) "is empty" else "holds ${floor(it.left).toInt()} bar"
+    val held = floor(it.left).toInt().coerceAtLeast(0)
     val needs = ceil(it.needed).toInt()
     val why = when (scenario) {
-        Scenario.LOST_GAS -> "the way up from there without the lost gas needs $needs bar"
-        Scenario.SHARED -> "two divers sharing it ${upToSaid(it.upTo)} need $needs bar"
+        Scenario.LOST_GAS -> "surfacing without the lost gas"
+        Scenario.SHARED -> "two divers sharing ${upToSaid(it.upTo)}"
     }
-    "At ${clockOf(it.second)}: ${gasLabelOf(gasIndexOf(it.source))} $held, and $why"
+    "${clockOf(it.second)} ${gasLabelOf(gasIndexOf(it.source))}: $held bar should be at least $needs bar ($why)"
 }
 
 /** The cylinders a reserve breathes that have no size or no start pressure, so cannot be checked. */
@@ -714,8 +778,10 @@ internal fun uncheckedSaid(reckoned: Reckoned, shaping: Shaping): String? {
             breathed.size.trim().toDoubleOrNull() == null || breathed.fill.trim().toDoubleOrNull() == null
         }
     if (unchecked.isEmpty()) return null
-    return unchecked.joinToString(", ") { gasLabelOf(it) } +
-        " needs a volume and a start pressure before the reserve can be checked against it"
+    return unchecked.joinToString("; ") { index ->
+        val lacked = lackedBy(shaping.gases[index]).filter { it != "SAC" }
+        "${gasLabelOf(index)}: reserve in litres only (missing: ${lacked.joinToString(", ")})"
+    }
 }
 
 /** [run] with [ascent] on the end of it, and nothing else about it changed. */
@@ -903,8 +969,8 @@ internal fun PlanForm(
         shaped is Shaped.Wrong -> Refused(shaped.reason)
         worked is Worked.Refused -> Refused(worked.reason)
         done != null -> {
-            for (finding in findingsSaidOf(done.evaluated, tanksOf(shaping))) {
-                Warning("${finding.label}: ${finding.parts.joinToString("") { it.text }}", finding.wrong)
+            for (finding in findingsSaidOf(done.evaluated, mixedTanksOf(shaping))) {
+                Warning("${finding.label} ${finding.parts.joinToString("") { it.text }}", finding.wrong)
             }
             for ((scenario, reserve) in reckoned?.done.orEmpty()) {
                 shortfallSaid(scenario, reserve)?.let { Warning(it, wrong = true) }
@@ -925,6 +991,13 @@ private fun Warning(text: String, wrong: Boolean) {
         modifier = Modifier.padding(horizontal = GAP, vertical = 2.dp),
     )
 }
+
+/** What each cylinder is called where the model warns of it, its mix beside its name: `Gas 2 (EAN50)`. */
+private fun mixedTanksOf(shaping: Shaping): Map<String, String> =
+    shaping.gases.indices.associate { index ->
+        val mix = gasChoiceOf(shaping, index).substringAfter(": ", "")
+        gasKeyOf(index) to if (mix.isEmpty()) gasLabelOf(index) else "${gasLabelOf(index)} ($mix)"
+    }
 
 /** What each cylinder is called, under the key the run holds it by. */
 private fun tanksOf(shaping: Shaping): Map<String, String> =
@@ -1336,15 +1409,10 @@ private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
                 when (reckoning) {
                     null -> Text("off", style = MaterialTheme.typography.bodyMedium, color = quiet)
                     is Reckoning.Wrong -> Text(reckoning.reason, style = MaterialTheme.typography.bodyMedium, color = quiet)
-                    is Reckoning.Done -> {
-                        Figure("Reserve", scenarioReserveSaid(reckoning.reserve))
-                        Figure("Worst moment", worstSaid(reckoning.reserve))
-                        Text(
-                            assumedSaid(scenario, reckoning.reserve, shaping),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = quiet,
-                        )
-                    }
+                    is Reckoning.Done -> Text(
+                        scenarioSaid(scenario, reckoning.reserve, shaping),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
             }
         }
@@ -1383,14 +1451,11 @@ private fun percentageOf(typed: String): Double? =
 private fun positiveOf(typed: String): Double? = typed.trim().toDoubleOrNull()?.takeIf { it > 0 }
 
 /** What to say of a gradient factor that will not do. */
-private fun factorWrong(which: String, typed: String): String = if (typed.isBlank()) {
-    "a plan needs its $which gradient factor, which says how conservative it is"
-} else {
-    "the $which gradient factor is a percentage from 1 to 100, and ${said(typed)} is not"
-}
+private fun factorWrong(which: String, typed: String): String = numberWrong("GF $which", "1 to 100 %", typed)
 
-private fun numberWrong(what: String, unit: String, typed: String): String =
-    "$what is $unit, more than nought, and ${said(typed)} is not"
+/** What to say of a setting that will not do: that it is missing, or what it should be instead. */
+private fun numberWrong(what: String, rule: String, typed: String): String =
+    if (typed.isBlank()) "$what is missing" else "$what should be $rule, not ${said(typed)}"
 
 /** Something typed, quoted, or *nothing* where nothing was. */
 private fun said(typed: String): String = if (typed.isBlank()) "nothing" else "\"${typed.trim()}\""

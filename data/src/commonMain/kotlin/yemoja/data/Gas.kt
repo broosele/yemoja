@@ -81,9 +81,7 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
                 val (oxygen, helium, nitrogen) = match.destructured
                 val gas = mix(text, oxygen.toInt(), helium.toInt())
                 if (nitrogen.isNotEmpty() && nitrogen.toInt() != gas.percentN2) {
-                    throw ValueFormatException(
-                        "$text gives ${gas.percentN2}% nitrogen, not $nitrogen%"
-                    )
+                    throw ValueFormatException("$text: the nitrogen should be ${gas.percentN2} %")
                 }
                 return gas
             }
@@ -92,7 +90,7 @@ data class Gas(val percentO2: Int, val percentHe: Int) {
             NITROX.matchEntire(written)?.let { match ->
                 if (!written.all { it.isDigit() }) return mix(text, match.groupValues[1].toInt(), 0)
             }
-            throw ValueFormatException("$text is not a mix")
+            throw ValueFormatException("Gas should be a mix such as AIR, EAN32 or TMX18/45, not \"${text.trim()}\"")
         }
 
         /**

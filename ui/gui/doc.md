@@ -376,6 +376,23 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-45 — How the Calculations tab words what it says.** *Settled:* **the subject first, then
+  what is correct.**
+
+  A reader who gets something wrong wants to know what right looks like, not why the application
+  cannot proceed. So an error says what the value should be and what it is: *GF low should not be
+  higher than GF high*, *Line 2 duration should be m:ss or minutes, such as 2:13 or 25, not
+  "soon"*. A value left empty is *missing* rather than wrong. The model's warnings put the time
+  first and what they are about after it, then the value against its limit: *25:00 Gas 2 (EAN50):
+  pO₂ 2.52 bar should be at most 1.60 bar*. What cannot be worked out says so and lists every input
+  missing, for every cylinder at once, so one fix is not followed by the next complaint: *Cannot be
+  calculated (missing for Gas 1: SAC, volume, start pressure)*. Explanations are short facts, *Salt
+  water, sea level, rounded up to 0.1 m*, and the reasons behind them belong in the manual.
+
+  The model's warnings are the same sentences under a recording in the Dives tab, so they read this
+  way there too. An error here says *not "x"* where a field's assertion elsewhere says *but was x*;
+  both give what was expected and what arrived.
+
 - **GUI-44 — How a plan is kept.** *Settled:* **the Calculations tab's planner saves a plan, as a
   new dive or on to one already there, and the Dives tab only opens it there.**
 
@@ -522,8 +539,10 @@ once and corrected. The numbers stay unused rather than being given to something
   cylinder must still hold is a column of the gases, *Minimum*: the most any scenario switched on
   asks of it, red on a cylinder that falls short in any of them. Under the clocks is a line for
   each scenario, `LOGIC-40`, with a tick before it that switches it off: what it asks each cylinder
-  to hold, its own worst moment, and what it assumes in a phrase, such as *two divers sharing up to
-  21.6 m, each at 2 × SAC*. The lines are where a reader sees which scenario set a minimum, and the
+  to hold, its own worst moment, and what it assumes, in one sentence: *Gas 1 needs 28 bar at 25:00
+  (40 m), two divers sharing to 21.6 m at 2 × SAC*. A scenario that asks nothing says why, as *No
+  sharing needed: each diver switches to 2: EAN50 at once*, rather than a worst moment at the
+  surface that would mean nothing. The lines are where a reader sees which scenario set a minimum, and the
   phrase is the rule said once, where it applies, rather than in a paragraph they would have to go
   looking for. Both start ticked, since a reserve nobody asked for protects nobody.
 

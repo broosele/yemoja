@@ -124,7 +124,7 @@ class EvaluationTest {
         val finding = evaluated.findings.first()
         assertEquals(1900, finding.second)
         assertEquals(Severity.WARNING, finding.severity)
-        assertTrue("above the ceiling" in finding.said, finding.said)
+        assertTrue("the ceiling" in finding.said, finding.said)
     }
 
     @Test
@@ -227,7 +227,7 @@ class EvaluationTest {
                     "start_pressure": 200}""",
             ),
         )
-        val empty = evaluated.findings.single { "runs out" in it.said }
+        val empty = evaluated.findings.single { "empty" in it.said }
 
         assertEquals(600, empty.second)
         assertEquals(Severity.WARNING, empty.severity)
@@ -251,7 +251,7 @@ class EvaluationTest {
                 sources = """"g1": {"gas_type": "EAN50"}""",
             ),
         )
-        val rich = evaluated.findings.single { "oxygen" in it.said }
+        val rich = evaluated.findings.single { "at most" in it.said }
 
         assertEquals(Severity.WARNING, rich.severity)
         assertTrue("2.4" in rich.said || "2.5" in rich.said, rich.said)
@@ -473,8 +473,8 @@ class EvaluationTest {
                     "start_pressure": 100}""",
             ),
         )
-        val dry = evaluated.findings.single { "runs out" in it.said }
-        val rich = evaluated.findings.single { "oxygen" in it.said }
+        val dry = evaluated.findings.single { "empty" in it.said }
+        val rich = evaluated.findings.single { "at most" in it.said }
 
         assertEquals("g1", dry.source, "which cylinder, for whatever names cylinders")
         assertEquals("g1", rich.source)
@@ -510,7 +510,7 @@ class EvaluationTest {
             ),
         )
 
-        assertTrue(evaluated.findings.none { "oxygen" in it.said }, "${evaluated.findings}")
+        assertTrue(evaluated.findings.none { "pO₂" in it.said }, "${evaluated.findings}")
     }
 
     @Test
@@ -584,7 +584,7 @@ class EvaluationTest {
                     gradientFactorHigh = 1.0,
                 ),
             ),
-        ).findings.filter { "oxygen" in it.said }
+        ).findings.filter { "at most" in it.said }
 
         assertTrue(oxygenFindings(MOST_OXYGEN).isEmpty(), "${oxygenFindings(MOST_OXYGEN)}")
         val held = oxygenFindings(1.4).single()
@@ -690,10 +690,10 @@ class EvaluationTest {
             end = listOf(1280 to 6.0, 1340 to 6.0, 1380 to 0.0),
         ).withSafetyStop(6.0, 180)
 
-        val none = done(skipped).findings.single { "safety stop" in it.said }
-        assertTrue("0:00 of the 3:00" in none.said, none.said)
-        val partly = done(short).findings.single { "safety stop" in it.said }
-        assertTrue("1:00 of the 3:00" in partly.said, partly.said)
+        val none = done(skipped).findings.single { "Safety stop" in it.said }
+        assertTrue("should last 3:00, not 0:00" in none.said, none.said)
+        val partly = done(short).findings.single { "Safety stop" in it.said }
+        assertTrue("should last 3:00, not 1:00" in partly.said, partly.said)
         assertEquals(1340, partly.second, "said where the stop is left")
     }
 
@@ -724,12 +724,12 @@ class EvaluationTest {
             gradientFactorHigh = 1.0,
             ascentRate = 9.0,
         )
-        val fast = done(hurried).findings.single { "rising" in it.said }
+        val fast = done(hurried).findings.single { "Ascent" in it.said }
 
         assertEquals(1200, fast.second)
-        assertTrue("18.0 m a minute" in fast.said && "9.0 m a minute" in fast.said, fast.said)
+        assertTrue("18 m/min" in fast.said && "at most 9 m/min" in fast.said, fast.said)
         assertTrue(
-            done(hurried.withRate(null)).findings.none { "rising" in it.said },
+            done(hurried.withRate(null)).findings.none { "Ascent" in it.said },
             "a run that names no rate is not judged by one",
         )
     }
@@ -740,7 +740,7 @@ class EvaluationTest {
         val ascent = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
         val whole = run.withDepth(run.depth + ascent.depth, run.switches + ascent.switches)
 
-        assertTrue(done(whole).findings.none { "rising" in it.said }, "${done(whole).findings}")
+        assertTrue(done(whole).findings.none { "Ascent" in it.said }, "${done(whole).findings}")
     }
 
     @Test
@@ -756,7 +756,7 @@ class EvaluationTest {
                     switches = switches,
                 ),
             ),
-        ).findings.filter { "under the" in it.said }
+        ).findings.filter { "at least" in it.said }
 
         val atTheSurface = leanFindings(listOf(0 to "g2")).single()
         assertEquals(0, atTheSurface.second)
@@ -817,7 +817,7 @@ class EvaluationTest {
         )
         val evaluated = done(profile(set["d#0"]!!, "p1"))
 
-        assertTrue(evaluated.findings.none { "oxygen" in it.said }, "${evaluated.findings}")
+        assertTrue(evaluated.findings.none { "pO₂" in it.said }, "${evaluated.findings}")
     }
 
     @Test

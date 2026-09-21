@@ -155,6 +155,9 @@ internal sealed class Answer {
     object Waiting : Answer()
 
     data class Wrong(val reason: String) : Answer()
+
+    /** A result that is words rather than a number, shown where a number would be: *No limit*. */
+    data class Said(val text: String) : Answer()
 }
 
 /**
@@ -178,35 +181,43 @@ internal fun sacSolved(
         val text = typed[figure].orEmpty().trim()
         if (text.isEmpty()) return Answer.Waiting
         val number = text.toDoubleOrNull()
-            ?: return Answer.Wrong("${figure.label} should be a number, but was \"$text\"")
-        if (number < 0) return Answer.Wrong("${figure.label} should not be below nought, but was $text")
+            ?: return Answer.Wrong("${figure.label} should be a number, not \"$text\"")
+        if (number < 0) return Answer.Wrong("${figure.label} should be 0 or more, not $text")
         known[figure] = number
     }
     fun at(figure: Figure): Double = known.getValue(figure)
     val value = when (unknown) {
         Figure.SAC -> {
-            if (at(Figure.DURATION) == 0.0) return Answer.Wrong("a duration of nought gives no rate")
+            if (at(Figure.DURATION) == 0.0) return Answer.Wrong("Duration should be more than 0 min")
             at(Figure.SIZE) * (at(Figure.START) - at(Figure.END)) /
                 (at(Figure.DURATION) * ambient(at(Figure.DEPTH)))
         }
         Figure.DEPTH -> {
             val used = at(Figure.SIZE) * (at(Figure.START) - at(Figure.END))
             if (at(Figure.SAC) == 0.0 || at(Figure.DURATION) == 0.0) {
-                return Answer.Wrong("a rate or a duration of nought breathes no gas at any depth")
+                return Answer.Wrong("SAC and duration should both be more than 0")
             }
             val pressure = used / (at(Figure.SAC) * at(Figure.DURATION))
             val depth = depthOf(pressure)
-            if (depth < 0) return Answer.Wrong("less gas than a minute at the surface would take")
+            if (depth < 0) {
+                // Breathing at the surface is the least a dive can use, so less than that puts the
+                // average depth above the water.
+                val least = at(Figure.SAC) * at(Figure.DURATION) * ambient(0.0)
+                return Answer.Wrong(
+                    "Gas used should be at least ${least.roundToLong()} L: ${plain(at(Figure.SAC))} L/min for " +
+                        "${plain(at(Figure.DURATION))} min, even at the surface (now ${used.roundToLong()} L)",
+                )
+            }
             depth
         }
         Figure.DURATION -> {
-            if (at(Figure.SAC) == 0.0) return Answer.Wrong("a rate of nought breathes for ever")
+            if (at(Figure.SAC) == 0.0) return Answer.Wrong("SAC should be more than 0 L/min")
             at(Figure.SIZE) * (at(Figure.START) - at(Figure.END)) /
                 (at(Figure.SAC) * ambient(at(Figure.DEPTH)))
         }
         Figure.SIZE -> {
             val drop = at(Figure.START) - at(Figure.END)
-            if (drop == 0.0) return Answer.Wrong("a pressure that did not drop says nothing of the size")
+            if (drop <= 0.0) return Answer.Wrong("End pressure should be lower than start pressure")
             at(Figure.SAC) * at(Figure.DURATION) * ambient(at(Figure.DEPTH)) / drop
         }
         Figure.START -> {
@@ -218,8 +229,8 @@ internal fun sacSolved(
             at(Figure.START) - at(Figure.SAC) * at(Figure.DURATION) * ambient(at(Figure.DEPTH)) / at(Figure.SIZE)
         }
     }
-    if (value.isNaN() || value.isInfinite()) return Answer.Wrong("the five do not give a number")
-    if (unknown != Figure.END && value < 0) return Answer.Wrong("the five give a number below nought")
+    if (value.isNaN() || value.isInfinite()) return Answer.Wrong("These five values give no result: check for zeros")
+    if (unknown != Figure.END && value < 0) return Answer.Wrong("These five values give a negative result: check them")
     return Answer.Value(value)
 }
 
@@ -227,22 +238,22 @@ internal fun sacSolved(
 internal fun ndlAsked(depth: String, gas: String, gradientHigh: String, descentRate: Double): Answer {
     if (depth.isBlank() || gas.isBlank() || gradientHigh.isBlank()) return Answer.Waiting
     val metres = depth.trim().toDoubleOrNull()
-        ?: return Answer.Wrong("Depth should be a number, but was \"${depth.trim()}\"")
-    if (metres <= 0) return Answer.Wrong("Depth should be more than nought, but was ${depth.trim()}")
+        ?: return Answer.Wrong("Depth should be a number, not \"${depth.trim()}\"")
+    if (metres <= 0) return Answer.Wrong("Depth should be more than 0 m, not ${depth.trim()}")
     val breathed = try {
         Gas.parse(gas)
     } catch (refused: ValueFormatException) {
-        return Answer.Wrong(refused.message ?: "\"$gas\" is not a gas")
+        return Answer.Wrong(refused.message ?: gasWrong(gas))
     } catch (refused: IllegalArgumentException) {
-        return Answer.Wrong(refused.message ?: "\"$gas\" is not a gas")
+        return Answer.Wrong(refused.message ?: gasWrong(gas))
     }
     val high = gradientHigh.trim().removeSuffix("%").trim().toDoubleOrNull()
         ?.takeIf { it >= 1 && it <= PERCENT }
-        ?: return Answer.Wrong("GF high is a percentage from 1 to 100, but was \"${gradientHigh.trim()}\"")
+        ?: return Answer.Wrong("GF high should be 1 to 100 %, not \"${gradientHigh.trim()}\"")
     // The high factor alone: a limit is the moment a stop becomes owed, which is the high
     // factor's question, and the low one only says how deep a first stop is taken. `LOGIC-37`.
     val seconds = noDecompressionLimit(metres, breathed, high / PERCENT, descentRate)
-        ?: return Answer.Wrong("no limit within a day: this depth owes no stop however long it is stayed at")
+        ?: return Answer.Said("No limit")
     return Answer.Value(seconds / SECONDS_IN_MINUTE)
 }
 
@@ -259,12 +270,13 @@ internal fun modAsked(gas: String, mostOxygen: String): Answer {
         is Mixed.Wrong -> return Answer.Wrong(read.reason)
     }
     val most = mostOxygen.trim().toDoubleOrNull()?.takeIf { it > 0 }
-        ?: return Answer.Wrong("pO₂ max should be more than nought, but was \"${mostOxygen.trim()}\"")
+        ?: return Answer.Wrong("pO₂ max should be more than 0 bar, not \"${mostOxygen.trim()}\"")
     if (mix.fractionO2 * SEA_LEVEL > most) {
-        return Answer.Wrong("$mix is over $most bar of oxygen at the surface already")
+        val surface = ceil(mix.fractionO2 * SEA_LEVEL * HUNDREDTHS) / HUNDREDTHS
+        return Answer.Wrong("pO₂ max should be at least ${plain(surface)} bar for $mix, its pO₂ at the surface")
     }
     val deepest = maximumOperatingDepth(mix, most, NOMINAL_DENSITY, SEA_LEVEL)
-        ?: return Answer.Wrong("$mix holds no oxygen, so it may be breathed at no depth")
+        ?: return Answer.Wrong("Gas should contain oxygen")
     return Answer.Value(floor(deepest * TENTHS) / TENTHS)
 }
 
@@ -281,9 +293,9 @@ internal fun minimumAsked(gas: String, leastOxygen: String): Answer {
         is Mixed.Wrong -> return Answer.Wrong(read.reason)
     }
     val least = leastOxygen.trim().toDoubleOrNull()?.takeIf { it > 0 }
-        ?: return Answer.Wrong("pO₂ min should be more than nought, but was \"${leastOxygen.trim()}\"")
+        ?: return Answer.Wrong("pO₂ min should be more than 0 bar, not \"${leastOxygen.trim()}\"")
     val shallowest = minimumOperatingDepth(mix, least, NOMINAL_DENSITY, SEA_LEVEL)
-        ?: return Answer.Wrong("$mix holds no oxygen, so it may be breathed at no depth")
+        ?: return Answer.Wrong("Gas should contain oxygen")
     return Answer.Value(ceil(shallowest * TENTHS) / TENTHS)
 }
 
@@ -294,7 +306,8 @@ internal fun minimumAsked(gas: String, leastOxygen: String): Answer {
 internal fun rangeWrong(gas: String, shallowest: Answer, deepest: Answer): String? {
     if (shallowest !is Answer.Value || deepest !is Answer.Value) return null
     if (shallowest.value <= deepest.value) return null
-    return "${gas.trim()} may be breathed at no depth: its oxygen reaches the minimum deeper than it passes the maximum"
+    return "${gas.trim()} has no usable depth: its minimum depth, ${plain(shallowest.value)} m, should be " +
+        "shallower than its MOD, ${plain(deepest.value)} m"
 }
 
 /**
@@ -317,8 +330,8 @@ internal fun endAsked(depth: String, gas: String, oxygenNarcotic: Boolean): Answ
 private fun equivalentAsked(depth: String, gas: String, equivalent: (Double, Gas) -> Double): Answer {
     if (depth.isBlank() || gas.isBlank()) return Answer.Waiting
     val metres = depth.trim().toDoubleOrNull()
-        ?: return Answer.Wrong("Depth should be a number, but was \"${depth.trim()}\"")
-    if (metres < 0) return Answer.Wrong("Depth should be nought or more, but was ${depth.trim()}")
+        ?: return Answer.Wrong("Depth should be a number, not \"${depth.trim()}\"")
+    if (metres < 0) return Answer.Wrong("Depth should be 0 m or more, not ${depth.trim()}")
     val mix = when (val read = mixRead(gas)) {
         is Mixed.Read -> read.gas
         is Mixed.Wrong -> return Answer.Wrong(read.reason)
@@ -335,16 +348,21 @@ private sealed class Mixed {
 private fun mixRead(typed: String): Mixed = try {
     Mixed.Read(Gas.parse(typed))
 } catch (refused: ValueFormatException) {
-    Mixed.Wrong(refused.message ?: "\"$typed\" is not a gas")
+    Mixed.Wrong(refused.message ?: gasWrong(typed))
 } catch (refused: IllegalArgumentException) {
-    Mixed.Wrong(refused.message ?: "\"$typed\" is not a gas")
+    Mixed.Wrong(refused.message ?: gasWrong(typed))
 }
+
+/** What to say of a box that names no gas. */
+internal fun gasWrong(typed: String): String =
+    "Gas should be a mix such as AIR, EAN32 or TMX18/45, not \"${typed.trim()}\""
 
 /** An answer as the form shows it under the boxes. */
 internal fun answerSaid(answer: Answer, unit: String): String? = when (answer) {
     is Answer.Value -> "${plain((answer.value * 10).roundToLong() / 10.0)} $unit".trim()
     Answer.Waiting -> null
     is Answer.Wrong -> answer.reason
+    is Answer.Said -> answer.text
 }
 
 /**
@@ -507,7 +525,7 @@ private fun NdlForm(working: Working, settings: Settings?) {
     }
     val descent = settings?.number(Settings.DEFAULT_DESCENT_RATE) ?: FALLBACK_DESCENT_RATE
     Heading("NDL")
-    Aside("How long a depth may be stayed at, from leaving the surface, before a stop is owed.")
+    Aside("Time at a depth, from leaving the surface, before a stop is needed.")
     // The high factor alone. A limit is the moment a stop becomes owed, which is the high
     // factor's question; the low one says how deep a first stop is taken and nothing about
     // whether there is one, so a box for it would ask for a number that changes no answer.
@@ -517,7 +535,7 @@ private fun NdlForm(working: Working, settings: Settings?) {
     Field("Depth", working.depth, "m") { working.depth = it }
     val answer = ndlAsked(working.depth, working.gas, working.gradientHigh, descent)
     when (answer) {
-        is Answer.Value -> Row(
+        is Answer.Value, is Answer.Said -> Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(GAP),
@@ -534,7 +552,7 @@ private fun NdlForm(working: Working, settings: Settings?) {
         is Answer.Wrong -> Refused(answer.reason)
         Answer.Waiting -> Unit
     }
-    Aside("Descending at ${plain(descent)} m a minute, in salt water at sea level.")
+    Aside("Descent ${plain(descent)} m/min, salt water, sea level.")
 }
 
 /** A mix and an oxygen limit, and how deep the mix may be breathed. */
@@ -551,8 +569,8 @@ private fun ModForm(working: Working, settings: Settings?) {
     }
     Heading("MOD")
     Aside(
-        "The deepest a mix may be breathed before its oxygen passes the maximum, and the shallowest " +
-            "before it falls below the minimum. Only a hypoxic mix has a minimum depth.",
+        "MOD: the deepest depth at pO₂ max. Minimum depth: the shallowest at pO₂ min, for hypoxic " +
+            "mixes only.",
     )
     Field("Gas", working.mix, "") { working.mix = it }
     Field("pO₂ max", working.mostOxygen, "bar") { working.mostOxygen = it }
@@ -563,8 +581,7 @@ private fun ModForm(working: Working, settings: Settings?) {
     Answered("Minimum depth", shallowest, "m")
     rangeWrong(working.mix, shallowest, deepest)?.let { Refused(it) }
     Aside(
-        "In salt water at sea level. The MOD is rounded down and the minimum depth up, to a tenth of " +
-            "a metre.",
+        "Salt water, sea level. MOD rounded down, minimum depth up, to 0.1 m.",
     )
 }
 
@@ -572,18 +589,18 @@ private fun ModForm(working: Working, settings: Settings?) {
 @Composable
 private fun EadForm(working: Working) {
     Heading("EAD")
-    Aside("The depth at which air holds as much nitrogen as the mix does, which is how a nitrox dive is read against air tables.")
+    Aside("The depth at which air has the same nitrogen as the mix. Use it to read air tables for nitrox.")
     Field("Gas", working.mix, "") { working.mix = it }
     Field("Depth", working.mixDepth, "m") { working.mixDepth = it }
     Answered("EAD", eadAsked(working.mixDepth, working.mix), "m")
-    Aside("In salt water at sea level, rounded up to a tenth of a metre.")
+    Aside("Salt water, sea level, rounded up to 0.1 m.")
 }
 
 /** A mix and a depth, and the depth of air as narcotic. */
 @Composable
 private fun EndForm(working: Working) {
     Heading("END")
-    Aside("The depth at which air is as narcotic as the mix is. Helium is not narcotic.")
+    Aside("The depth at which air is as narcotic as the mix. Helium counts as not narcotic.")
     Field("Gas", working.mix, "") { working.mix = it }
     Field("Depth", working.mixDepth, "m") { working.mixDepth = it }
     Row(
@@ -601,8 +618,8 @@ private fun EndForm(working: Working) {
     }
     Answered("END", endAsked(working.mixDepth, working.mix, working.oxygenNarcotic), "m")
     Aside(
-        "Agencies differ on whether oxygen is narcotic. Counting it gives the deeper, more cautious " +
-            "depth. In salt water at sea level, rounded up to a tenth of a metre.",
+        "Agencies differ on oxygen. Counting it gives the deeper, more cautious END. Salt water, sea " +
+            "level, rounded up to 0.1 m.",
     )
 }
 
@@ -610,7 +627,7 @@ private fun EndForm(working: Working) {
 @Composable
 private fun Answered(label: String, answer: Answer, unit: String) {
     when (answer) {
-        is Answer.Value -> Row(
+        is Answer.Value, is Answer.Said -> Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(GAP),
@@ -686,3 +703,6 @@ internal val FIGURE = 140.dp
 
 /** How big the mark beside the waiver is, which is a body line's own height. */
 private val ICON = 18.dp
+
+/** Hundredths in one, for a pressure given to a hundredth of a bar. */
+private const val HUNDREDTHS = 100.0

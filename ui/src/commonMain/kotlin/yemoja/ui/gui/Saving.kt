@@ -293,7 +293,7 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
     val done = ready?.let { workedOf(it) as? Worked.Done }
     val unsaved = when {
         universe == null -> "Open a logbook to save a plan into it."
-        done == null -> "The plan needs to be one the model can work out before it is saved."
+        done == null -> "Fix the plan's errors before saving"
         else -> null
     }
     fun save(target: Bound?) {
@@ -313,10 +313,10 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
         }
     }
     val nameWrong = when {
-        planKeyOf(saving.name).isEmpty() -> "A saved plan needs a name."
+        planKeyOf(saving.name).isEmpty() -> "Name is missing"
         bound is Bound.Adding && dive != null &&
             keyedEntriesOf(dive, "profiles").any { (key, _) -> key == planKeyOf(saving.name) } ->
-            "That dive already holds ${saving.name.trim()}."
+            "Name should be new on this dive: ${saving.name.trim()} exists"
         else -> null
     }
     Row(

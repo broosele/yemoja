@@ -73,7 +73,7 @@ fun lostGasReserve(run: Run, lost: Set<String>, metresAMinute: Double, lastStop:
     checkAscent(metresAMinute, lastStop)
     val breathing = breathedBy(run) ?: return Reserve.Refused("nothing says what is breathed")
     val kept = run.sources.keys - lost
-    if (kept.isEmpty()) return Reserve.Refused("every cylinder is lost, so nothing is left to breathe")
+    if (kept.isEmpty()) return Reserve.Refused("At least one gas should remain")
     val emergency = breathing.choosing(kept)
     return reserveOver(run, breathing) { index, second, metres, tissues ->
         val ambient = ambientAt(metres, run.density, run.surface)
@@ -180,11 +180,11 @@ private fun reserveOver(
         val litres = when (val answer = cost(index, second, metres, tissues)) {
             is Cost.Litres -> answer
             is Cost.Unknown -> return Reserve.Refused(
-                "nothing says how fast this cylinder is breathed, so its reserve cannot be counted",
+                "Cannot be calculated: SAC missing",
                 answer.source,
             )
             Cost.Stuck -> return Reserve.Refused(
-                "the way up from ${clockOf(second)} does not reach the surface within a day",
+                "No way up from ${clockOf(second)} within 24 hours",
             )
         }
         // A tie goes to the later moment, since the cylinder holds least then: from anywhere on a

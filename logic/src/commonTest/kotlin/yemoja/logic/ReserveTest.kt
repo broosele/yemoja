@@ -149,7 +149,7 @@ class LostGasReserveTest {
         )
 
         assertEquals("g1", refused.source)
-        assertTrue("how fast" in refused.reason, refused.reason)
+        assertTrue("SAC missing" in refused.reason, refused.reason)
     }
 
     @Test
@@ -158,7 +158,7 @@ class LostGasReserveTest {
             lostGasReserve(whole(18.0, 20, AIR_ONLY), setOf("g1"), 9.0, 3.0),
         )
 
-        assertTrue("nothing is left" in refused.reason, refused.reason)
+        assertTrue("At least one gas should remain" in refused.reason, refused.reason)
     }
 
     @Test
