@@ -16,7 +16,7 @@ class PlannerTipsTest {
     fun `a tip opens as a label would, with no full stop`() {
         val tips = listOf(
             PlannerTips.RUNTIME, PlannerTips.DIRECTION, PlannerTips.DEPTH, PlannerTips.DURATION, PlannerTips.RATE,
-            PlannerTips.GAS, PlannerTips.WORKED, PlannerTips.GF_LOW, PlannerTips.GF_HIGH, PlannerTips.BOTTOM_OXYGEN,
+            PlannerTips.GAS, PlannerTips.WORKED, PlannerTips.MODEL, PlannerTips.GF_LOW, PlannerTips.GF_HIGH, PlannerTips.BOTTOM_OXYGEN,
             PlannerTips.DECO_OXYGEN, PlannerTips.LEAST_OXYGEN, PlannerTips.DESCENT_RATE, PlannerTips.ASCENT_RATE, PlannerTips.SAFETY_DEPTH,
             PlannerTips.SAFETY_DURATION, PlannerTips.LAST_STOP, PlannerTips.WATER, PlannerTips.PANIC_FACTOR,
             PlannerTips.GAS_LOST, PlannerTips.PROBLEM_SOLVING, PlannerTips.NUMBER, PlannerTips.MIX, PlannerTips.ROLE,

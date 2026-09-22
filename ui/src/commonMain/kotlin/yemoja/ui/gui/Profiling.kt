@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -1236,65 +1237,73 @@ private fun Caption(text: String) {
 }
 
 /**
- * The plan's settings, in two columns, each starting from what the settings hold and belonging to
- * this plan alone. A safety stop of nought minutes greys its depth, there being no stop to place.
+ * The plan's settings, in titled sections stacked in two columns, each starting from what the
+ * settings hold and belonging to this plan alone. A safety stop of nought minutes greys its depth,
+ * there being no stop to place.
  */
 @Composable
 private fun Conditions(shaping: Shaping) {
     val none = shaping.safetyMinutes.trim().toDoubleOrNull() == 0.0
-    Paired(
-        first = { Setting("GF low", PlannerTips.GF_LOW, shaping.gradientLow, "%") { shaping.gradientLow = it } },
-        second = { Setting("GF high", PlannerTips.GF_HIGH, shaping.gradientHigh, "%") { shaping.gradientHigh = it } },
-    )
-    Paired(
-        first = { Setting("pO₂ max bottom", PlannerTips.BOTTOM_OXYGEN, shaping.bottomOxygen, "bar") { shaping.bottomOxygen = it } },
-        second = { Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it } },
-    )
-    Paired(
-        first = { Setting("Descent rate", PlannerTips.DESCENT_RATE, shaping.descentRate, "m/min") { shaping.descentRate = it } },
-        second = { Setting("Ascent rate", PlannerTips.ASCENT_RATE, shaping.ascentRate, "m/min") { shaping.ascentRate = it } },
-    )
-    Paired(
-        first = { Setting("Safety stop depth", PlannerTips.SAFETY_DEPTH, shaping.safetyDepth, "m", enabled = !none) { shaping.safetyDepth = it } },
-        second = { Setting("Safety stop duration", PlannerTips.SAFETY_DURATION, shaping.safetyMinutes, "min") { shaping.safetyMinutes = it } },
-    )
-    Paired(
-        first = { Setting("Last stop", PlannerTips.LAST_STOP, shaping.lastStop, "m") { shaping.lastStop = it } },
-        second = {
-            Labelled("Water", PlannerTips.WATER) {
-                Pick(
-                    dense = true,
-                    chosen = wordSaid(shaping.water),
-                    options = Settings.DEFAULT_WATER_TYPE.choices.map { wordSaid(it) },
-                ) { shaping.water = Settings.DEFAULT_WATER_TYPE.choices[it] }
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GAP)) {
+            Section("General") {
+                Setting("Descent rate", PlannerTips.DESCENT_RATE, shaping.descentRate, "m/min") { shaping.descentRate = it }
+                Setting("Ascent rate", PlannerTips.ASCENT_RATE, shaping.ascentRate, "m/min") { shaping.ascentRate = it }
+                Labelled("Water", PlannerTips.WATER) {
+                    Pick(
+                        dense = true,
+                        chosen = wordSaid(shaping.water),
+                        options = Settings.DEFAULT_WATER_TYPE.choices.map { wordSaid(it) },
+                    ) { shaping.water = Settings.DEFAULT_WATER_TYPE.choices[it] }
+                }
             }
-        },
-    )
-    Paired(
-        first = { Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it } },
-        second = {
-            // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen.
-            Labelled("Gas lost", PlannerTips.GAS_LOST) {
-                Pick(
-                    dense = true,
-                    chosen = shaping.lostIndex()?.let { gasChoiceOf(shaping, it) } ?: "none",
-                    options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
-                ) { shaping.lostGas = it }
+            Section("Contingency") {
+                // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen.
+                Labelled("Gas lost", PlannerTips.GAS_LOST) {
+                    Pick(
+                        dense = true,
+                        chosen = shaping.lostIndex()?.let { gasChoiceOf(shaping, it) } ?: "none",
+                        options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                    ) { shaping.lostGas = it }
+                }
+                Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it }
+                Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it }
             }
-        },
-    )
-    Paired(
-        first = { Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it } },
-        second = { Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it } },
-    )
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GAP)) {
+            Section("Algorithm") {
+                // Bühlmann is the only model until another can be chosen here.
+                Labelled("Model", PlannerTips.MODEL) {
+                    Text("Bühlmann", style = MaterialTheme.typography.bodySmall)
+                }
+                Setting("GF low", PlannerTips.GF_LOW, shaping.gradientLow, "%") { shaping.gradientLow = it }
+                Setting("GF high", PlannerTips.GF_HIGH, shaping.gradientHigh, "%") { shaping.gradientHigh = it }
+            }
+            Section("Stops") {
+                Setting("Last stop", PlannerTips.LAST_STOP, shaping.lastStop, "m") { shaping.lastStop = it }
+                Setting("Safety stop depth", PlannerTips.SAFETY_DEPTH, shaping.safetyDepth, "m", enabled = !none) { shaping.safetyDepth = it }
+                Setting("Safety stop duration", PlannerTips.SAFETY_DURATION, shaping.safetyMinutes, "min") { shaping.safetyMinutes = it }
+            }
+            Section("Gas") {
+                Setting("pO₂ max bottom", PlannerTips.BOTTOM_OXYGEN, shaping.bottomOxygen, "bar") { shaping.bottomOxygen = it }
+                Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it }
+                Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it }
+            }
+        }
+    }
 }
 
-/** Two settings side by side, each taking half the width. */
+/** A group of settings under a small title of its own. */
 @Composable
-private fun Paired(first: @Composable () -> Unit, second: @Composable () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
-        Box(modifier = Modifier.weight(1f)) { first() }
-        Box(modifier = Modifier.weight(1f)) { second() }
+private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.outline,
+        )
+        content()
     }
 }
 

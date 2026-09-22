@@ -519,7 +519,7 @@ once and corrected. The numbers stay unused rather than being given to something
   dive is. The gases take what the settings leave of the same height, so the two columns end on one
   line, and they scroll in the same way once there are more than fit, their headings staying above
   them. The lines of all three parts are dense, in smaller type than a form's, so about eighteen
-  lines of the runtime and about nine cylinders show before either scrolls.
+  lines of the runtime and about four cylinders show before either scrolls.
 
   **Every box, column and figure of the plan says what it is when pointed at.** The lines are too
   dense for a label beside each box, and the runtime has no headings at all, so a tooltip stands in
@@ -527,9 +527,13 @@ once and corrected. The numbers stay unused rather than being given to something
   name leaves that unclear. The words live together in `PlannerTips`, the one place to
   read them over. A cross on a gas that a line breathes says why it cannot be taken out instead.
 
-  **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent
-  rate, safety stop depth and duration, last stop, water, panic stress factor and problem-solving time each start from
-  what the settings hold, `GUI-42`, and are changed here for this plan alone. A safety stop of nought minutes is none,
+  **The settings are the plan's own.** They sit in titled sections, each a single column, the
+  sections stacked in two columns with space between them. On the left, *General* holds descent
+  and ascent rate and water, and *Contingency* the gas lost, panic stress factor and problem-solving
+  time. On the right, *Algorithm* names the model, Bühlmann, as a value that is shown rather than
+  chosen until there is a second model, above GF low and high. *Stops* holds the last stop and the
+  safety stop's depth and duration, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. Each starts
+  from what the settings hold, `GUI-42`, and is changed here for this plan alone. A safety stop of nought minutes is none,
   and its depth is greyed. The safety stop is a minimum the ascent holds, with a longer deco stop
   there counting towards it, and a dive that does not hold it is warned of, typed or not. The water
   is weighed as a recording made in it would be.

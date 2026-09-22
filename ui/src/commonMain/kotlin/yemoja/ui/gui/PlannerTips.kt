@@ -21,6 +21,7 @@ internal object PlannerTips {
     const val WORKED = "Ascent calculated by the planner; lines you type yourself shorten it"
 
     // The settings.
+    const val MODEL = "Decompression model, Bühlmann ZH-L16C; the only one for now"
     const val GF_LOW = "Gradient factor at the deepest stop; lower means deeper first stops"
     const val GF_HIGH = "Gradient factor at the surface; lower means longer shallow stops"
     const val BOTTOM_OXYGEN = "Oxygen pressure limit for bottom and bailout gases; sets their MOD"
