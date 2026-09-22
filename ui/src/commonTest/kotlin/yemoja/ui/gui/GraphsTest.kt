@@ -48,6 +48,29 @@ class GraphsTest {
     }
 
     @Test
+    fun `a dive's profiles reach as far as the longest, deepest and widest of them`() {
+        val longer = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive/2026-06-21#0.json" to """{"profiles": {
+                        "a": {"depth": [[0, 0], [60, 12.0], [120, 0]], "temperature": [[0, 20.0], [120, 18.0]]},
+                        "b": {"depth": [[0, 0], [90, 30.0], [300, 0]], "temperature": [[0, 16.0], [300, 17.0]]}
+                    }}""",
+                ),
+            ),
+            Types.ALL,
+        )["2026-06-21#0"]!!
+
+        @Suppress("UNCHECKED_CAST")
+        val profiles = ((longer.read("profiles") as Result.Usable<*>).value as Map<String, Element<Any>>)
+            .values.map { (it as Element.Usable).value as OwnedItem }
+        val reach = reachOf(longer, profiles)
+        assertEquals(5.0, reach.minutes, "b's 300 seconds")
+        assertEquals(30.0, reach.deepest, "b's thirty metres")
+        assertEquals(listOf(16.0, 20.0), reach.readings.getValue("Temperature"), "both profiles' temperatures")
+    }
+
+    @Test
     fun `the depth side is the depth, to be read, and the deco stops stepped across it`() {
         val lines = depthLinesOf(profile("a"))
         assertEquals(listOf("Depth", "Deco stop"), lines.map { it.label })

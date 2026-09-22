@@ -203,6 +203,47 @@ internal fun rangeOf(values: List<Double>): ClosedFloatingPointRange<Double> {
 }
 
 /**
+ * Reach is how far a set of graphs reaches, so that graphs of one dive drawn one after another read
+ * against one scale: the longest of them, the deepest, and the lowest and highest of each reading.
+ *
+ * Immutable.
+ */
+internal class Reach(
+    val minutes: Double,
+    val deepest: Double,
+    /** Each reading's lowest and highest value, under the title its overlay is given. */
+    val readings: Map<String, List<Double>>,
+)
+
+/**
+ * How far the recordings [profiles] of [dive] reach between them.
+ *
+ * Only what they recorded: what the model works out is worked out for the one on show, and a
+ * reading only one profile has is scaled as that profile alone would scale it.
+ */
+internal fun reachOf(dive: Item, profiles: List<Item>): Reach {
+    var minutes = 0.0
+    var deepest = 0.0
+    val readings = LinkedHashMap<String, MutableList<Double>>()
+    for (profile in profiles) {
+        for (line in depthLinesOf(profile)) {
+            for (point in line.points) {
+                minutes = maxOf(minutes, point.minute)
+                if (line.main) deepest = maxOf(deepest, point.value)
+            }
+        }
+        for (overlay in overlaysOf(dive, profile)) {
+            val values = overlay.lines.flatMap { it.points }
+            if (values.isEmpty()) continue
+            minutes = maxOf(minutes, values.maxOf { it.minute })
+            val held = readings.getOrPut(overlay.title) { mutableListOf() }
+            held += listOf(values.minOf { it.value }, values.maxOf { it.value })
+        }
+    }
+    return Reach(minutes, deepest, readings.mapValues { (_, it) -> listOf(it.min(), it.max()) })
+}
+
+/**
  * Where to put the marks along an axis from [low] to [high], about [wanted] of them, at values
  * a reader would choose: steps of one, two or five times a power of ten.
  */

@@ -95,6 +95,7 @@ What you choose is shown on a card, titled with its name.
 
 Something an item holds several of, such as a dive's recordings or a person's courses, is a box
 with a small tab for each. The recording a dive is worked from comes first, marked with a star.
+A dive's recordings are all drawn to the same scale, so a shorter or shallower one looks it.
 
 A planned dive counts nowhere: not in the greeting, not in the statistics, and not in the
 number a year carries. Clicking a year chooses the dives you made in it. If you tick a plan

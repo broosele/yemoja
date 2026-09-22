@@ -2512,7 +2512,14 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
             val edition = LocalChanger.current.edition
             remember(entry, edition) { evaluate(entry) }
         }
-        if (drawn) ProfileGraph(item, entry, evaluated as? Evaluated.Done)
+        // A dive's profiles are drawn to one scale, so a shorter or shallower one looks it.
+        val span = if (dive != null && entries.size > 1) {
+            val edition = LocalChanger.current.edition
+            remember(item, edition) { reachOf(item, entries.map { it.second }) }
+        } else {
+            null
+        }
+        if (drawn) ProfileGraph(item, entry, evaluated as? Evaluated.Done, span)
         Fields(entry, onFollow)
         if (evaluated != null) WorkedOut(item, entry, evaluated, onFollow)
         if (dive != null && opener != null && isPlanned(entry)) {
@@ -2754,7 +2761,7 @@ internal val FALLBACK_DESCENT_RATE: Double = Settings.DEFAULT_DESCENT_RATE.defau
  * a box of what it wrote.
  */
 @Composable
-private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?) {
+private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?, span: Reach? = null) {
     // The ceiling is a depth, so it goes on the depth axis: the gap between it and the line a
     // diver swam is what a reader is looking at. `GUI-40`.
     val depth = remember(profile, evaluated) {
@@ -2766,7 +2773,7 @@ private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?) 
             evaluated?.let { workedOverlaysOf(dive, profile, it) }.orEmpty()
     }
     val events = remember(dive, profile) { eventsOf(dive, profile) }
-    Graphed(depth, overlays, events, planned, chosenFor = profile)
+    Graphed(depth, overlays, events, planned, chosenFor = profile, span = span)
 }
 
 /**
@@ -2783,12 +2790,14 @@ internal fun Graphed(
     events: List<Event>,
     planned: Boolean,
     chosenFor: Any?,
+    /** How far other graphs set beside this one reach, so that all are drawn to one scale. */
+    span: Reach? = null,
 ) {
     var picked by remember(chosenFor) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }
     val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
     Box(modifier = Modifier.fillMaxWidth()) {
-        Chart(depth, overlay, events, planned)
+        Chart(depth, overlay, events, planned, span)
         // The right axis's title is the box that chooses it: the label says what the red line
         // is, and clicking it says what else it could be.
         if (overlay != null) {
@@ -2845,6 +2854,8 @@ private fun Chart(
     events: List<Event>,
     /** Whether the recording is a plan, which is drawn as a dashed line: it has not happened. */
     planned: Boolean = false,
+    /** How far to draw the axes at least, where this graph is one of several read side by side. */
+    span: Reach? = null,
 ) {
     val ink = MaterialTheme.colorScheme.primary
     val stop = MaterialTheme.colorScheme.tertiary
@@ -2869,14 +2880,14 @@ private fun Chart(
             val top = HEAD.toPx()
             val all = depth.flatMap { it.points } +
                 overlay?.lines?.flatMap { it.points }.orEmpty()
-            val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, 1.0)
-            val deepest = depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0
+            val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, span?.minutes ?: 0.0, 1.0)
+            val deepest = maxOf(depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0, span?.deepest ?: 0.0)
             val depthHigh = maxOf(deepest * (1.0 + AXIS_ROOM), 1.0)
             fun x(minute: Double): Float = (left + (right - left) * (minute / lastMinute)).toFloat()
             fun yDepth(value: Double): Float =
                 (top + (bottom - top) * (value / depthHigh)).toFloat()
             val overPoints = overlay?.lines?.flatMap { it.points }.orEmpty()
-            val over = rangeOf(overPoints.map { it.value })
+            val over = rangeOf(overPoints.map { it.value } + overlay?.let { span?.readings?.get(it.title) }.orEmpty())
             val overLow = over.start
             val overHigh = over.endInclusive
             fun yOver(value: Double): Float {

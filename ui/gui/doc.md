@@ -1323,7 +1323,12 @@ once and corrected. The numbers stay unused rather than being given to something
   limit and is a reading nobody took. On the depth line itself, every gas switch is a dot named for
   the source switched to and every alarm a triangle named as the computer gave it, so the
   events of a dive sit where they happened. Each recording of a dive has its own
-  graph and shows only its own data, which is what a tab is for. Marks fall on values a reader
+  graph and shows only its own data, which is what a tab is for, **but all of a dive's graphs
+  share one scale**: time and depth reach as far as the longest and deepest of them, and a
+  reading two recordings both hold, such as the temperature, spans both. Moving between tabs then
+  shows how the recordings differ rather than redrawing each to fill the box, where a shorter
+  or shallower one would look the same size. What the model works out is worked out for the
+  tab on show only, so its axis is that recording's own. Marks fall on values a reader
   would choose, steps of one, two or five, and the unit sits in each axis's title. An axis
   leaves room beyond the readings it covers, since a reading that hardly changes drawn on the
   plot's edge reads as a border rather than as a line: a dive in water of six degrees
