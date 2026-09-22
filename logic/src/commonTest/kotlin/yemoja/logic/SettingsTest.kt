@@ -140,6 +140,7 @@ class SettingsTest {
                 "default_safety_stop_depth",
                 "default_safety_stop_duration",
                 "default_panic_factor",
+                "default_problem_solving_time",
             ),
             Settings.OFFERED.map { it.name },
         )
@@ -154,6 +155,12 @@ class SettingsTest {
         assertEquals(6.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DEPTH))
         assertEquals(3.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
         assertEquals("salt", chosen.choice(Settings.DEFAULT_WATER_TYPE))
+    }
+
+    @Test
+    fun `a new plan's reserve spends a minute at depth before the way up`() {
+        val (chosen, _) = settings()
+        assertEquals(1.0, chosen.number(Settings.DEFAULT_PROBLEM_SOLVING_TIME))
     }
 
     @Test

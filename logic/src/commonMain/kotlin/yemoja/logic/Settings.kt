@@ -256,6 +256,13 @@ class Settings internal constructor(private val store: FileStore) {
         val DEFAULT_PANIC_FACTOR =
             NumberSetting("default_panic_factor", "Panic stress factor", "× SAC", 2.0, 1.0..10.0)
 
+        /**
+         * How long a new plan's reserve spends at the depth trouble starts before the way up
+         * begins, in minutes, for finding the problem and a buddy. Nought is none. `LOGIC-40`.
+         */
+        val DEFAULT_PROBLEM_SOLVING_TIME =
+            NumberSetting("default_problem_solving_time", "Problem solving time", "min", 1.0, 0.0..10.0)
+
         /** The water a new plan is dived in, in the words `water_type` uses. */
         val DEFAULT_WATER_TYPE =
             ChoiceSetting("default_water_type", "Water", listOf("salt", "fresh"), "salt")
@@ -286,6 +293,7 @@ class Settings internal constructor(private val store: FileStore) {
             DEFAULT_SAFETY_STOP_DEPTH,
             DEFAULT_SAFETY_STOP_DURATION,
             DEFAULT_PANIC_FACTOR,
+            DEFAULT_PROBLEM_SOLVING_TIME,
         )
 
         /** Every setting holding one of a set of words that the settings form offers, after the numbers. */

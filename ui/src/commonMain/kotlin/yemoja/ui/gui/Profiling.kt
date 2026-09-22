@@ -153,6 +153,9 @@ internal class Shaping {
     var lastStop: String by mutableStateOf("")
     var panicFactor: String by mutableStateOf("")
 
+    /** Minutes the gas reserve spends at the depth trouble starts before the way up begins. */
+    var problemMinutes: String by mutableStateOf("")
+
     /** Whether the gas reserve tries losing the cylinder [lostGas] names. */
     var lostGasScenario: Boolean by mutableStateOf(true)
 
@@ -186,6 +189,7 @@ internal fun Shaping.prefill(settings: Settings?) {
     safetyMinutes = shown(Settings.DEFAULT_SAFETY_STOP_DURATION)
     lastStop = shown(Settings.DEFAULT_LAST_STOP)
     panicFactor = shown(Settings.DEFAULT_PANIC_FACTOR)
+    problemMinutes = shown(Settings.DEFAULT_PROBLEM_SOLVING_TIME)
     water = settings?.choice(Settings.DEFAULT_WATER_TYPE) ?: Settings.DEFAULT_WATER_TYPE.default
     prefilled = true
 }
@@ -647,12 +651,25 @@ internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditi
         )
     }
     val keys = shaping.gases.indices
+    // Both scenarios begin with it, so one typed wrong leaves both unsaid.
+    val problem = problemSecondsOf(shaping)
+    if (problem == null) {
+        val wrong = Reckoning.Wrong(numberWrong("Problem solving time", "0 minutes or more", shaping.problemMinutes))
+        return Reckoned(
+            mapOf(
+                Scenario.LOST_GAS to wrong.takeIf { shaping.lostGasScenario },
+                Scenario.SHARED to wrong.takeIf { shaping.sharedScenario },
+            ),
+        )
+    }
     val lostGas = if (shaping.lostGasScenario) {
         val lost = shaping.lostIndex()
         if (lost == null) {
             Reckoning.Wrong("Choose which gas is lost")
         } else {
-            reckoning(lostGasReserve(done.whole, setOf(gasKeyOf(lost)), conditions.ascentRate, conditions.lastStop))
+            reckoning(
+                lostGasReserve(done.whole, setOf(gasKeyOf(lost)), conditions.ascentRate, conditions.lastStop, problem),
+            )
         }
     } else {
         null
@@ -663,7 +680,7 @@ internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditi
             Reckoning.Wrong(numberWrong("Panic stress factor", "1 or more", shaping.panicFactor))
         } else {
             val deco = keys.filter { shaping.gases[it].role == Role.DECO }.map { gasKeyOf(it) }.toSet()
-            reckoning(sharedGasReserve(done.whole, deco, factor, conditions.ascentRate, conditions.lastStop))
+            reckoning(sharedGasReserve(done.whole, deco, factor, conditions.ascentRate, conditions.lastStop, problem))
         }
     } else {
         null
@@ -735,13 +752,21 @@ internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Sh
                 ?.let { "No sharing needed: each diver switches to $it at once" } ?: "No sharing needed"
         }
     }
+    val held = problemSecondsOf(shaping)?.takeIf { it > 0 }?.let { clockOf(it) }
     val assumed = when (scenario) {
-        Scenario.LOST_GAS ->
-            "surfacing without ${shaping.lostIndex()?.let { gasLabelOf(it) } ?: "the lost gas"} at normal SAC"
-        Scenario.SHARED -> "two divers sharing ${upToSaid(reserve.upTo)} at ${shaping.panicFactor.trim()} × SAC"
+        Scenario.LOST_GAS -> {
+            val lost = shaping.lostIndex()?.let { gasLabelOf(it) } ?: "the lost gas"
+            (held?.let { "$it at depth, then " } ?: "") + "surfacing without $lost at normal SAC"
+        }
+        Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
+            "${upToSaid(reserve.upTo)} at ${shaping.panicFactor.trim()} × SAC"
     }
     return "${needs.joinToString(" and ")} at ${worstSaid(reserve)}, $assumed"
 }
+
+/** The problem-solving time [shaping] asks for, in whole seconds, or null where it will not read. */
+internal fun problemSecondsOf(shaping: Shaping): Int? =
+    shaping.problemMinutes.trim().toDoubleOrNull()?.takeIf { it >= 0 }?.let { (it * SECONDS_IN_MINUTE).roundToInt() }
 
 /** The deco cylinder a buddy goes to first, being the one breathable deepest, as its line names it. */
 private fun decoReachedSaid(shaping: Shaping): String? {
@@ -1239,6 +1264,10 @@ private fun Conditions(shaping: Shaping) {
             }
         },
     )
+    Paired(
+        first = { Setting("Problem solving time", shaping.problemMinutes, "min") { shaping.problemMinutes = it } },
+        second = {},
+    )
 }
 
 /** Two settings side by side, each taking half the width. */
@@ -1465,7 +1494,7 @@ private const val SECONDS_IN_MINUTE = 60.0
 private const val PERCENT = 100.0
 
 /**
- * How tall the top of the plan is: about eighteen lines of the runtime, and about ten cylinders
+ * How tall the top of the plan is: about eighteen lines of the runtime, and about nine cylinders
  * under the settings, before either scrolls.
  */
 private val ZONE = 508.dp

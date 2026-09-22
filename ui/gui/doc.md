@@ -518,10 +518,10 @@ once and corrected. The numbers stay unused rather than being given to something
   dive is. The gases take what the settings leave of the same height, so the two columns end on one
   line, and they scroll in the same way once there are more than fit, their headings staying above
   them. The lines of all three parts are dense, in smaller type than a form's, so about eighteen
-  lines of the runtime and about ten cylinders show before either scrolls.
+  lines of the runtime and about nine cylinders show before either scrolls.
 
   **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent
-  rate, safety stop depth and duration, last stop, water and panic stress factor each start from
+  rate, safety stop depth and duration, last stop, water, panic stress factor and problem-solving time each start from
   what the settings hold, `GUI-42`, and are changed here for this plan alone. A safety stop of nought minutes is none,
   and its depth is greyed. The safety stop is a minimum the ascent holds, with a longer deco stop
   there counting towards it, and a dive that does not hold it is warned of, typed or not. The water
@@ -558,7 +558,9 @@ once and corrected. The numbers stay unused rather than being given to something
   a setting rather than a fourth role, since losing a bottom gas is a scenario a reader may want to
   try without changing what the cylinder is for. The panic stress factor is read apart from the
   other settings, so a factor typed wrong leaves the sharing scenario unsaid and everything else
-  answered.
+  answered. The problem-solving time is read the same way, and being where both scenarios begin, a
+  time typed wrong leaves both unsaid. The scenario's sentence names the hold, as *1:00 at depth,
+  then …*, so the figure beside a cylinder says what it allows for.
 
   **A cylinder a line breathes stays.** Its × is greyed, and a tooltip says which line breathes it.
   Taking it out would change the dive behind the reader's back, so they change the line first. A
@@ -588,7 +590,7 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  Twelve settings are still a form rather than a place, so they open in the System box like a
+  Thirteen settings are still a form rather than a place, so they open in the System box like a
   download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 

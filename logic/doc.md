@@ -526,6 +526,14 @@ To settle when we discuss architecture and features:
   gas the two share to the surface, which is the rule divers call rock bottom. A moment already
   within reach of a deco gas costs nothing.
 
+  **Both begin with problem-solving time**, a hold at the moment's depth before the way up starts,
+  for noticing the trouble and, in the second, finding the buddy and getting the gas going. Other
+  planners allow for it, and leaving it out undercounts the dearest gas of the whole way up. The
+  hold is breathed at the scenario's own rate and **loads the tissues as well**, so a minute more
+  at forty metres can owe a stop more; most planners add only its gas. It counts towards a safety
+  stop where the trouble starts at its depth. A moment already within reach of a deco gas holds
+  nothing in the second scenario, the buddy switching at once.
+
   **Each can be switched off**, for a solo dive or a plan with no deco gas to lose, and a cylinder
   then keeps back what the others ask. The two are separate functions rather than one with a mode,
   since they take different inputs: the lost cylinders for one, the deco gases and the stress for

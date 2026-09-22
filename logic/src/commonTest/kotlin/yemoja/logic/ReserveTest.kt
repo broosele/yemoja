@@ -262,3 +262,50 @@ class SharedGasReserveTest {
         assertEquals(0.0, shared(whole(30.0, 20, AIR_ONLY), deco = setOf("g9")).upTo)
     }
 }
+
+class ProblemSolvingTest {
+
+    private val run = whole(40.0, 25, BOTTOM_AND_DECO)
+    private val atForty = ambientAt(40.0, NOMINAL_DENSITY, SEA_LEVEL)
+
+    @Test
+    fun `a minute sharing at the bottom costs two divers' stressed rate there, at least`() {
+        val prompt = assertIs<Reserve.Done>(sharedGasReserve(run, setOf("g2"), 2.0, 9.0, 3.0))
+        val held = assertIs<Reserve.Done>(sharedGasReserve(run, setOf("g2"), 2.0, 9.0, 3.0, problemSolvingSeconds = 60))
+        val minute = 20.0 * 2 * 2 * atForty
+
+        assertTrue(
+            held.needed.getValue("g1") >= prompt.needed.getValue("g1") + minute - 1e-6,
+            "${held.needed} against ${prompt.needed} and a minute of $minute",
+        )
+    }
+
+    @Test
+    fun `a minute at depth with the deco gas lost owes stops as well as gas`() {
+        val prompt = assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0))
+        val held = assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, problemSolvingSeconds = 60))
+        val minute = 20.0 * atForty
+
+        assertTrue(
+            held.needed.getValue("g1") > prompt.needed.getValue("g1") + minute,
+            "a minute more on the bottom loads the tissues: ${held.needed} against ${prompt.needed}",
+        )
+    }
+
+    @Test
+    fun `nothing is held where nothing is shared`() {
+        val shallow = whole(18.0, 30, BOTTOM_AND_DECO)
+        val held = assertIs<Reserve.Done>(sharedGasReserve(shallow, setOf("g2"), 2.0, 9.0, 3.0, problemSolvingSeconds = 120))
+
+        assertEquals(0.0, held.needed.values.sum(), "the buddy goes on to their own deco gas at once")
+    }
+
+    @Test
+    fun `no problem-solving time is the way up as it was`() {
+        val prompt = assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0))
+        val none = assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, problemSolvingSeconds = 0))
+
+        assertEquals(prompt.needed, none.needed)
+    }
+}
+

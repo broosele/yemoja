@@ -67,10 +67,17 @@ class Shortfall(val second: Int, val source: String, val left: Double, val neede
  * allows at that depth, or the leanest where none is allowed.
  *
  * [run] should be the whole dive with its ascent, since losing a deco gas just before switching to
- * it can be the worst moment of all. `LOGIC-40`.
+ * it can be the worst moment of all. The way up begins after [problemSolvingSeconds] at the
+ * moment's depth, as [sharedGasReserve]'s does. `LOGIC-40`.
  */
-fun lostGasReserve(run: Run, lost: Set<String>, metresAMinute: Double, lastStop: Double): Reserve {
-    checkAscent(metresAMinute, lastStop)
+fun lostGasReserve(
+    run: Run,
+    lost: Set<String>,
+    metresAMinute: Double,
+    lastStop: Double,
+    problemSolvingSeconds: Int = 0,
+): Reserve {
+    checkAscent(metresAMinute, lastStop, problemSolvingSeconds)
     val breathing = breathedBy(run) ?: return Reserve.Refused("nothing says what is breathed")
     val kept = run.sources.keys - lost
     if (kept.isEmpty()) return Reserve.Refused("At least one gas should remain")
@@ -80,15 +87,18 @@ fun lostGasReserve(run: Run, lost: Set<String>, metresAMinute: Double, lastStop:
         val breathed = breathing.keyAt(second).takeIf { it in kept }
             ?: emergency.richestAt(ambient)
             ?: kept.minBy { breathing.mixes.getValue(it).fractionO2 }
-        val climbed = climbed(
-            From(tissues, second, metres, breathed),
+        heldThenClimbed(
+            second,
+            metres,
+            index,
+            tissues,
+            breathed,
             emergency,
             run,
-            metresAMinute,
-            lastStop,
-            run.depth.subList(0, index + 1),
-        ) ?: return@reserveOver Cost.Stuck
-        costOf(second to metres, breathed, climbed, run, 1.0, handoff = 0.0)
+            Ascending(metresAMinute, lastStop, problemSolvingSeconds),
+            factor = 1.0,
+            handoff = 0.0,
+        )
     }
 }
 
@@ -105,6 +115,10 @@ fun lostGasReserve(run: Run, lost: Set<String>, metresAMinute: Double, lastStop:
  * rises at [metresAMinute] with the last stop at [lastStop]. With no deco gas at all the two share
  * to the surface, safety stop included.
  *
+ * **The two stay where they are for [problemSolvingSeconds] first**, sharing already: finding each
+ * other and getting the gas going takes time at the depth it happened, and it is the dearest gas
+ * of the whole way up.
+ *
  * A moment already within reach of a deco gas costs nothing, the buddy switching at once. Every
  * moment is tried, as [lostGasReserve] tries them. `LOGIC-40`.
  */
@@ -114,9 +128,10 @@ fun sharedGasReserve(
     stressFactor: Double,
     metresAMinute: Double,
     lastStop: Double,
+    problemSolvingSeconds: Int = 0,
 ): Reserve {
     require(stressFactor > 0) { "a stress factor should be more than nought, but was $stressFactor" }
-    checkAscent(metresAMinute, lastStop)
+    checkAscent(metresAMinute, lastStop, problemSolvingSeconds)
     val breathing = breathedBy(run) ?: return Reserve.Refused("nothing says what is breathed")
     // Where each diver can go on to their own deco gas, and the surface where there is none.
     val handoff = deco.mapNotNull { key ->
@@ -125,22 +140,76 @@ fun sharedGasReserve(
     return reserveOver(run, breathing) { index, second, metres, tissues ->
         if (metres <= handoff) return@reserveOver Cost.Litres(emptyMap(), metres)
         val shared = breathing.keyAt(second)
-        val climbed = climbed(
-            From(tissues, second, metres, shared),
+        heldThenClimbed(
+            second,
+            metres,
+            index,
+            tissues,
+            shared,
             breathing.choosing(setOf(shared)),
             run,
-            metresAMinute,
-            lastStop,
-            run.depth.subList(0, index + 1),
-        ) ?: return@reserveOver Cost.Stuck
-        costOf(second to metres, shared, climbed, run, SHARING * stressFactor, handoff)
+            Ascending(metresAMinute, lastStop, problemSolvingSeconds),
+            factor = SHARING * stressFactor,
+            handoff = handoff,
+        )
     }
+}
+
+/** Ascending is how a way up in trouble is made: how fast, how shallow the last stop, how long first. */
+private class Ascending(val metresAMinute: Double, val lastStop: Double, val problemSolvingSeconds: Int)
+
+/**
+ * What the way up from [metres] at [second] costs when it begins with the problem-solving time there.
+ *
+ * The time is breathed from [breathed] at [factor] times its rate and loads the tissues as it goes,
+ * so a minute more at forty metres can owe a stop more. The climb is worked out from where it leaves
+ * them, choosing among [choosing]'s sources, and costed to [handoff]. [index] is the moment's place
+ * in [run], which says how much of a safety stop is already held; the time itself counts towards
+ * one where the problem happens at its depth.
+ */
+private fun heldThenClimbed(
+    second: Int,
+    metres: Double,
+    index: Int,
+    tissues: Tissues,
+    breathed: String,
+    choosing: Breathing,
+    run: Run,
+    ascending: Ascending,
+    factor: Double,
+    handoff: Double,
+): Cost {
+    val ambient = ambientAt(metres, run.density, run.surface)
+    val held = if (metres > 0) ascending.problemSolvingSeconds else 0
+    val loaded = if (held > 0) {
+        tissues.breathing(choosing.mixes.getValue(breathed), ambient, ambient, held.toDouble())
+    } else {
+        tissues
+    }
+    val before = run.depth.subList(0, index + 1) + if (held > 0) listOf(second + held to metres) else emptyList()
+    val climbed = climbed(
+        From(loaded, second + held, metres, breathed),
+        choosing,
+        run,
+        ascending.metresAMinute,
+        ascending.lastStop,
+        before,
+    ) ?: return Cost.Stuck
+    val up = costOf((second + held) to metres, breathed, climbed, run, factor, handoff)
+    if (up !is Cost.Litres || held == 0) return up
+    val rate = run.sources.getValue(breathed).sac ?: return Cost.Unknown(breathed)
+    val litres = LinkedHashMap(up.litres)
+    litres[breathed] = (litres[breathed] ?: 0.0) + rate * factor * held / SECONDS_IN_MINUTE * ambient
+    return Cost.Litres(litres, up.upTo)
 }
 
 /** How many divers breathe from one cylinder while it is shared. */
 private const val SHARING = 2.0
 
-private fun checkAscent(metresAMinute: Double, lastStop: Double) {
+private fun checkAscent(metresAMinute: Double, lastStop: Double, problemSolvingSeconds: Int) {
+    require(problemSolvingSeconds >= 0) {
+        "problem-solving time should be 0 seconds or more, but was $problemSolvingSeconds"
+    }
     require(metresAMinute > 0) {
         "an ascent rate should be more than nought, but was $metresAMinute"
     }

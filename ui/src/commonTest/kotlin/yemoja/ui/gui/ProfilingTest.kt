@@ -418,7 +418,7 @@ class ReserveTest {
         assertEquals(setOf("g1"), reserve.needed.keys, "the deco gas is lost")
         val said = scenarioSaid(Scenario.LOST_GAS, reserve, shaping)
         assertTrue(
-            said.matches(Regex("Gas 1 needs [0-9]+ bar at 25:00 \\(40 m\\), surfacing without Gas 2 at normal SAC")),
+            said.matches(Regex("Gas 1 needs [0-9]+ bar at 25:00 \\(40 m\\), 1:00 at depth, then surfacing without Gas 2 at normal SAC")),
             said,
         )
         assertEquals("25:00 (40 m)", worstSaid(reserve))
@@ -432,11 +432,35 @@ class ReserveTest {
 
         assertTrue(reserve.upTo > 20, "EAN50 may be breathed from about 22 m: ${reserve.upTo}")
         assertTrue(said.startsWith("Gas 1 needs ") && said.endsWith("at 2 × SAC"), said)
-        assertTrue(Regex("sharing to [0-9]+([.][0-9])? m at").containsMatchIn(said), "to a tenth, as the MOD is: $said")
+        assertTrue(Regex("sharing 1:00 at depth, then to [0-9]+([.][0-9])? m at").containsMatchIn(said), "to a tenth, as the MOD is: $said")
         assertTrue(
             reserve.needed.getValue("g1") < scenario(shaping, Scenario.LOST_GAS).needed.getValue("g1"),
             "a short share to the deco gas costs less than every stop on bottom gas",
         )
+    }
+
+    @Test
+    fun `a new plan's reserve begins with a minute at depth, and none is no hold`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        assertEquals("1", shaping.problemMinutes)
+        val held = scenario(shaping, Scenario.SHARED).needed.getValue("g1")
+
+        shaping.problemMinutes = "0"
+        val prompt = scenario(shaping, Scenario.SHARED)
+        assertTrue(prompt.needed.getValue("g1") < held, "a minute sharing at 40 m costs gas")
+        assertTrue("at depth" !in scenarioSaid(Scenario.SHARED, prompt, shaping))
+    }
+
+    @Test
+    fun `a problem-solving time typed wrong leaves both scenarios unsaid, and the plan answered`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        shaping.problemMinutes = "soon"
+
+        assertIs<Worked.Done>(workedOf(ready(shaping)))
+        for (scenario in Scenario.entries) {
+            val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[scenario])
+            assertTrue(wrong.reason.startsWith("Problem solving time should be"), wrong.reason)
+        }
     }
 
     @Test
