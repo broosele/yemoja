@@ -440,7 +440,7 @@ private fun Calculators(
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         Selectable {
-            Column(modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP)) {
+            Column(modifier = Modifier.width(CALCULATIONS).fillMaxHeight().padding(GAP)) {
                 for (calculation in Calculation.entries) {
                     Line(
                         text = calculation.label,
@@ -706,3 +706,6 @@ private val ICON = 18.dp
 
 /** Hundredths in one, for a pressure given to a hundredth of a bar. */
 private const val HUNDREDTHS = 100.0
+
+/** How wide the list of calculations is: its names are short, and the forms beside it are wide. */
+private val CALCULATIONS = 150.dp
