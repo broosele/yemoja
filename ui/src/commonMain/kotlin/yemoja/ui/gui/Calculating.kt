@@ -559,11 +559,13 @@ private fun NdlForm(working: Working, settings: Settings?) {
 /** A mix and an oxygen limit, and how deep the mix may be breathed. */
 @Composable
 private fun ModForm(working: Working, settings: Settings?) {
-    // The limit the user chose for a bottom gas, the first time the form opens.
+    // The limits the user chose, for a bottom gas and for any gas, the first time the form opens.
     remember(working, settings) {
         if (!working.mixPrefilled) {
             val chosen = settings?.number(Settings.DEFAULT_BOTTOM_PO2) ?: Settings.DEFAULT_BOTTOM_PO2.default
             working.mostOxygen = shownOf(Settings.DEFAULT_BOTTOM_PO2, chosen)
+            val least = settings?.number(Settings.DEFAULT_MIN_PO2) ?: Settings.DEFAULT_MIN_PO2.default
+            working.leastOxygen = shownOf(Settings.DEFAULT_MIN_PO2, least)
             working.mixPrefilled = true
         }
         working

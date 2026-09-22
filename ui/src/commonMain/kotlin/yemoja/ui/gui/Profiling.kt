@@ -55,7 +55,6 @@ import yemoja.logic.densityOfWater
 import yemoja.logic.evaluate
 import yemoja.logic.lostGasReserve
 import yemoja.logic.sharedGasReserve
-import yemoja.logic.LEAST_OXYGEN
 import yemoja.logic.maximumOperatingDepth
 import yemoja.logic.minimumOperatingDepth
 import kotlin.math.abs
@@ -146,6 +145,7 @@ internal class Shaping {
     var gradientHigh: String by mutableStateOf("")
     var bottomOxygen: String by mutableStateOf("")
     var decoOxygen: String by mutableStateOf("")
+    var leastOxygen: String by mutableStateOf("")
     var descentRate: String by mutableStateOf("")
     var ascentRate: String by mutableStateOf("")
     var safetyDepth: String by mutableStateOf("")
@@ -183,6 +183,7 @@ internal fun Shaping.prefill(settings: Settings?) {
     gradientHigh = shown(Settings.DEFAULT_GF_HIGH)
     bottomOxygen = shown(Settings.DEFAULT_BOTTOM_PO2)
     decoOxygen = shown(Settings.DEFAULT_DECO_PO2)
+    leastOxygen = shown(Settings.DEFAULT_MIN_PO2)
     descentRate = shown(Settings.DEFAULT_DESCENT_RATE)
     ascentRate = shown(Settings.DEFAULT_ASCENT_RATE)
     safetyDepth = shown(Settings.DEFAULT_SAFETY_STOP_DEPTH)
@@ -442,6 +443,8 @@ internal class Conditions(
     val gradientHigh: Double,
     val bottomOxygen: Double,
     val decoOxygen: Double,
+    /** The least oxygen any cylinder is breathed at, in bar. */
+    val leastOxygen: Double,
     val descentRate: Double,
     val ascentRate: Double,
     val safetyDepth: Double,
@@ -461,6 +464,8 @@ internal fun conditionsOf(shaping: Shaping): Pair<Conditions?, String?> {
         ?: return null to numberWrong("pO₂ max bottom", "more than 0 bar", shaping.bottomOxygen)
     val deco = positiveOf(shaping.decoOxygen)
         ?: return null to numberWrong("pO₂ max deco", "more than 0 bar", shaping.decoOxygen)
+    val least = positiveOf(shaping.leastOxygen)
+        ?: return null to numberWrong("pO₂ min", "more than 0 bar", shaping.leastOxygen)
     val descent = positiveOf(shaping.descentRate)
         ?: return null to numberWrong("Descent rate", "more than 0 m/min", shaping.descentRate)
     val ascent = positiveOf(shaping.ascentRate)
@@ -482,6 +487,7 @@ internal fun conditionsOf(shaping: Shaping): Pair<Conditions?, String?> {
         gradientHigh = high,
         bottomOxygen = bottom,
         decoOxygen = deco,
+        leastOxygen = least,
         descentRate = descent,
         ascentRate = ascent,
         safetyDepth = safety,
@@ -499,6 +505,7 @@ internal fun sourceOf(breathed: Breathed, gas: Gas, conditions: Conditions): Sou
     fill = breathed.fill.trim().toDoubleOrNull(),
     mostOxygen = limitOf(breathed.role, conditions),
     ascentMayChoose = breathed.role != Role.BAILOUT,
+    leastOxygen = conditions.leastOxygen,
 )
 
 /** The most oxygen a cylinder of [role] is breathed at under [conditions], in bar. */
@@ -869,13 +876,13 @@ internal fun tooDeepFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Bo
 
 /**
  * Whether [leg] comes shallower than its cylinder may be breathed, where the mix is hypoxic and its
- * oxygen falls below [LEAST_OXYGEN]. A mix with no oxygen is caught by [tooDeepFor] already.
+ * oxygen falls below the plan's *pO₂ min*. A mix with no oxygen is caught by [tooDeepFor] already.
  */
 internal fun tooShallowFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Boolean {
     if (conditions == null) return false
     val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
     val gas = gasOf(breathed.gas) ?: return false
-    val shallowest = minimumOperatingDepth(gas, density = conditions.density) ?: return false
+    val shallowest = minimumOperatingDepth(gas, least = conditions.leastOxygen, density = conditions.density) ?: return false
     return minOf(leg.from, leg.to) < shallowest
 }
 
@@ -1278,7 +1285,7 @@ private fun Conditions(shaping: Shaping) {
     )
     Paired(
         first = { Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it } },
-        second = {},
+        second = { Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it } },
     )
 }
 

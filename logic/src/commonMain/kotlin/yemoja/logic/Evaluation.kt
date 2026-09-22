@@ -229,9 +229,10 @@ class SafetyStop(val metres: Double, val seconds: Int) {
  * a fill it has no gauge to read.
  *
  * [mostOxygen] is the partial pressure this cylinder is held to, in bar, and is what a warning
- * about its oxygen and the ascent's choice of it are both read against. A cylinder the ascent may
- * not choose is breathed only where a switch names it, which is how a bailout is carried. A
- * recording sets neither, and is judged as it always was. `LOGIC-37`.
+ * about its oxygen and the ascent's choice of it are both read against. [leastOxygen] is the least
+ * it may be breathed at, which a warning about a hypoxic mix breathed too shallow reads. A cylinder
+ * the ascent may not choose is breathed only where a switch names it, which is how a bailout is
+ * carried. A recording sets none of them, and is judged against the defaults. `LOGIC-37`.
  *
  * Immutable.
  */
@@ -242,10 +243,12 @@ class Source(
     val fill: Double? = null,
     val mostOxygen: Double = MOST_OXYGEN,
     val ascentMayChoose: Boolean = true,
+    val leastOxygen: Double = LEAST_OXYGEN,
 ) {
 
     init {
         require(mostOxygen > 0) { "an oxygen limit should be more than nought, but was $mostOxygen" }
+        require(leastOxygen > 0) { "an oxygen minimum should be more than nought, but was $leastOxygen" }
     }
 }
 
@@ -491,15 +494,16 @@ private fun walked(
         }
         rich = oxygen > most
         // A hypoxic mix breathed too shallow, once a crossing as a rich one breathed too deep is.
-        if (oxygen < LEAST_OXYGEN && !lean) {
+        val least = breathing.leastOxygenOf(breathing.keyAt(point.second))
+        if (oxygen < least && !lean) {
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "pO₂ ${bar(oxygen)} should be at least ${bar(LEAST_OXYGEN)}",
+                "pO₂ ${bar(oxygen)} should be at least ${bar(least)}",
                 breathing.keyAt(point.second),
             )
         }
-        lean = oxygen < LEAST_OXYGEN
+        lean = oxygen < least
     }
     safetyStopFinding(depths, safetyStop)?.let { findings += it }
 
@@ -858,6 +862,8 @@ internal class Breathing(
     private val mostOxygen: Map<String, Double>,
     /** The sources an ascent may switch to without being told. */
     private val choosable: Set<String>,
+    /** The least oxygen each source may be breathed at, in bar. */
+    private val leastOxygen: Map<String, Double>,
 ) {
 
     /** When the first switch says what is breathed, in seconds; nothing says before it. */
@@ -877,10 +883,13 @@ internal class Breathing(
 
     /** The same sources and switches, with only [keys] open to an ascent's choice. */
     fun choosing(keys: Set<String>): Breathing =
-        Breathing(mixes, switches, rates, fills, mostOxygen, keys)
+        Breathing(mixes, switches, rates, fills, mostOxygen, keys, leastOxygen)
 
     /** The oxygen [key] is held to, in bar, and [MOST_OXYGEN] for a source nobody named. */
     fun mostOxygenOf(key: String): Double = mostOxygen[key] ?: MOST_OXYGEN
+
+    /** The least oxygen [key] may be breathed at, in bar, and [LEAST_OXYGEN] for one nobody named. */
+    fun leastOxygenOf(key: String): Double = leastOxygen[key] ?: LEAST_OXYGEN
 
     /**
      * The source worth breathing at [ambient] bar: the richest the ascent may choose whose oxygen
@@ -929,13 +938,14 @@ internal fun breathedBy(run: Run): Breathing? {
         if (gauge == null || volume == null || volume <= 0) null else key to Fill(gauge, volume)
     }.toMap()
     val most = run.sources.mapValues { (_, source) -> source.mostOxygen }
+    val least = run.sources.mapValues { (_, source) -> source.leastOxygen }
     val choosable = run.sources.filterValues { it.ascentMayChoose }.keys
     val written = run.switches.filter { (_, key) -> key in run.sources }
     if (written.isEmpty()) {
         val only = run.sources.keys.singleOrNull() ?: return null
-        return Breathing(mixes, listOf(0 to only), rates, fills, most, choosable)
+        return Breathing(mixes, listOf(0 to only), rates, fills, most, choosable, least)
     }
-    return Breathing(mixes, written, rates, fills, most, choosable)
+    return Breathing(mixes, written, rates, fills, most, choosable, least)
 }
 
 /**

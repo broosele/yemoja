@@ -241,6 +241,10 @@ class Settings internal constructor(private val store: FileStore) {
         val DEFAULT_DECO_PO2 =
             NumberSetting("default_deco_po2", "pO₂ max deco", "bar", 1.6, 0.5..2.0)
 
+        /** The least oxygen a new plan breathes any gas at, in bar. `LOGIC-37`. */
+        val DEFAULT_MIN_PO2 =
+            NumberSetting("default_min_po2", "pO₂ min", "bar", LEAST_OXYGEN, 0.1..0.5)
+
         /** How deep a new plan's safety stop is, in metres. */
         val DEFAULT_SAFETY_STOP_DEPTH =
             NumberSetting("default_safety_stop_depth", "Safety stop depth", "m", 6.0, 1.0..12.0)
@@ -290,6 +294,7 @@ class Settings internal constructor(private val store: FileStore) {
             DEFAULT_LAST_STOP,
             DEFAULT_BOTTOM_PO2,
             DEFAULT_DECO_PO2,
+            DEFAULT_MIN_PO2,
             DEFAULT_SAFETY_STOP_DEPTH,
             DEFAULT_SAFETY_STOP_DURATION,
             DEFAULT_PANIC_FACTOR,

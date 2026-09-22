@@ -137,6 +137,7 @@ class SettingsTest {
                 "default_last_stop",
                 "default_bottom_po2",
                 "default_deco_po2",
+                "default_min_po2",
                 "default_safety_stop_depth",
                 "default_safety_stop_duration",
                 "default_panic_factor",
@@ -152,6 +153,7 @@ class SettingsTest {
         val (chosen, _) = settings()
         assertEquals(1.4, chosen.number(Settings.DEFAULT_BOTTOM_PO2))
         assertEquals(1.6, chosen.number(Settings.DEFAULT_DECO_PO2))
+        assertEquals(0.18, chosen.number(Settings.DEFAULT_MIN_PO2))
         assertEquals(6.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DEPTH))
         assertEquals(3.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
         assertEquals("salt", chosen.choice(Settings.DEFAULT_WATER_TYPE))

@@ -596,6 +596,25 @@ class WarnedLinesTest {
     }
 
     @Test
+    fun `the plan's own minimum decides what is too shallow`() {
+        val shaping = planned(
+            Segment("3", gas = 1),
+            Segment("40"),
+            Segment("40", duration = "10"),
+            gases = listOf(Breathed(gas = "air"), Breathed(gas = "TMX10/70")),
+        )
+        assertEquals("0.18", shaping.leastOxygen, "starting from the setting")
+        val first = ready(shaping).legs[0]
+        assertTrue(tooShallowFor(first, shaping, assertNotNull(conditionsOf(shaping).first)))
+
+        shaping.leastOxygen = "0.1"
+        assertTrue(!tooShallowFor(first, shaping, assertNotNull(conditionsOf(shaping).first)), "10/70 is 0.10 bar at the surface")
+
+        shaping.leastOxygen = ""
+        assertEquals("pO₂ min is missing", conditionsOf(shaping).second)
+    }
+
+    @Test
     fun `a mix breathable at the surface is never too shallow`() {
         val shaping = planned(Segment("10"), Segment("10", duration = "10"))
         val conditions = assertNotNull(conditionsOf(shaping).first)

@@ -748,8 +748,10 @@ To settle when we discuss architecture and features:
   of what agencies teach, 0.16 being the figure most often given for a diver at work.
   Nought for a mix breathable at the surface. **The walk warns of a mix breathed shallower than
   that**, once a crossing and naming the source, as it warns of one breathed deeper than its
-  maximum: a hypoxic mix at the surface is as dangerous as a rich one too deep. The minimum is the
-  one figure for every source, since no plan setting asks for another. It is public for the MOD
+  maximum: a hypoxic mix at the surface is as dangerous as a rich one too deep. A source carries its
+  own minimum, `leastOxygen`, as it carries its maximum, and a plan gives every cylinder the one
+  from its *pO₂ min*, which starts from the setting `default_min_po2`. A recording names none and is
+  judged against `LEAST_OXYGEN`. It is public for the MOD
   calculation too, `GUI-43`.
 
   **A plan's own promises are checked as well.** A run that names a safety stop and reaches the

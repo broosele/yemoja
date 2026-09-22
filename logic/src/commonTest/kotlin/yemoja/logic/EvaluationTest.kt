@@ -766,6 +766,25 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a cylinder held to a lower minimum is warned of only below it`() {
+        // Trimix 10/70 at the surface is 0.10 bar: under the 0.18 default, over a minimum of 0.08.
+        fun leanAtTheSurface(least: Double): List<Finding> = assertIs<Evaluated.Done>(
+            evaluate(
+                Run(
+                    depth = listOf(0 to 0.0, 60 to 3.0, 120 to 20.0, 600 to 20.0),
+                    sources = mapOf("g1" to Source(Gas.parse("TMX10/70"), leastOxygen = least)),
+                    gradientFactorLow = 1.0,
+                    gradientFactorHigh = 1.0,
+                ),
+            ),
+        ).findings.filter { "should be at least" in it.said }
+
+        assertEquals(1, leanAtTheSurface(LEAST_OXYGEN).size)
+        assertTrue(leanAtTheSurface(0.08).isEmpty(), "${leanAtTheSurface(0.08)}")
+        assertTrue("0.08" !in leanAtTheSurface(LEAST_OXYGEN).single().said)
+    }
+
+    @Test
     fun `a finding about the dive rather than a cylinder names none`() {
         val ceiling = done(planned(DEEP)).findings.single { "ceiling" in it.said }
 

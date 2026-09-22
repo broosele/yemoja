@@ -25,6 +25,7 @@ internal object PlannerTips {
     const val GF_HIGH = "Gradient factor at the surface; lower means longer shallow stops"
     const val BOTTOM_OXYGEN = "Oxygen pressure limit for bottom and bailout gases; sets their MOD"
     const val DECO_OXYGEN = "Oxygen pressure limit for deco gases; sets the depth each is switched to"
+    const val LEAST_OXYGEN = "Least oxygen pressure any gas may be breathed at; a hypoxic gas is warned of above its minimum depth"
     const val DESCENT_RATE = "Descent rate for lines given no duration or rate"
     const val ASCENT_RATE = "Ascent rate for the worked-out ascent, and for lines given no duration or rate"
     const val SAFETY_DEPTH = "Depth of the safety stop"
