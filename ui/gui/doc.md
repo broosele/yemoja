@@ -521,8 +521,9 @@ once and corrected. The numbers stay unused rather than being given to something
   lines of the runtime and about nine cylinders show before either scrolls.
 
   **Every box, column and figure of the plan says what it is when pointed at.** The lines are too
-  dense for a label beside each box, and the runtime has no headings at all, so a tooltip in one or
-  two short sentences stands in for them. The words live together in `PlannerTips`, the one place to
+  dense for a label beside each box, and the runtime has no headings at all, so a tooltip stands in
+  for them: a phrase naming the field as a label would, then what it does to the plan where the
+  name leaves that unclear. The words live together in `PlannerTips`, the one place to
   read them over. A cross on a gas that a line breathes says why it cannot be taken out instead.
 
   **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent

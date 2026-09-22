@@ -6,14 +6,14 @@ import kotlin.test.assertTrue
 class PlannerTipsTest {
 
     @Test
-    fun `every reserve scenario says what it checks`() {
+    fun `every reserve scenario is named as a reserve`() {
         for (scenario in Scenario.entries) {
-            assertTrue(scenario.tip.startsWith("Check that"), "${scenario.label}: ${scenario.tip}")
+            assertTrue(scenario.tip.startsWith("Reserve for "), "${scenario.label}: ${scenario.tip}")
         }
     }
 
     @Test
-    fun `a tip is a sentence or two, ending on a full stop`() {
+    fun `a tip opens as a label would, with no full stop`() {
         val tips = listOf(
             PlannerTips.RUNTIME, PlannerTips.DIRECTION, PlannerTips.DEPTH, PlannerTips.DURATION, PlannerTips.RATE,
             PlannerTips.GAS, PlannerTips.WORKED, PlannerTips.GF_LOW, PlannerTips.GF_HIGH, PlannerTips.BOTTOM_OXYGEN,
@@ -25,8 +25,8 @@ class PlannerTipsTest {
             PlannerTips.LOST_GAS, PlannerTips.SHARED,
         )
         for (tip in tips) {
-            assertTrue(tip.endsWith("."), tip)
-            assertTrue(tip.count { it == '.' } <= 2, "at most two sentences: $tip")
+            assertTrue(tip.first().isUpperCase() && !tip.endsWith("."), tip)
+            assertTrue('.' !in tip, "one phrase, not sentences: $tip")
             assertTrue(tip.length <= 130, "short enough to read at a glance, but was ${tip.length}: $tip")
         }
     }

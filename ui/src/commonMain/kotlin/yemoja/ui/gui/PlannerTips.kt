@@ -3,57 +3,59 @@ package yemoja.ui.gui
 /**
  * PlannerTips is what the dive planner says of each of its fields while the pointer rests on one.
  *
- * One sentence or two, in the words the manual uses, so a reader who has not opened the manual can
- * still fill the form in.
+ * Each opens with a phrase naming what the field is, as a label would, with no full stop. What
+ * follows a semicolon is what the field does to the plan, where that is not plain from the name.
+ *
+ * Examples: `Depth at the end of this line`, `Minimum duration of the safety stop; 0 means none`.
  */
 internal object PlannerTips {
     // The runtime, a line each.
-    const val RUNTIME = "Minutes from the start of the dive to the end of this line, rounded up."
-    const val DIRECTION = "Whether this line goes down, stays level or goes up."
-    const val DEPTH = "The depth this line ends at."
-    const val DURATION = "How long this line takes. Give this or the rate, and the other is worked out."
-    const val RATE = "How fast this line goes down or up. Give this or the duration, and the other is worked out."
-    const val GAS = "The gas breathed on this line. In italics, it is the gas of the line above."
-    const val ADD_LINE = "Add a line below."
-    const val REMOVE_LINE = "Take out this line."
-    const val WORKED = "The way up, worked out by the planner. Type lines of your own to shorten it."
+    const val RUNTIME = "Runtime at the end of this line, in whole minutes rounded up"
+    const val DIRECTION = "Direction of this line: down, level or up"
+    const val DEPTH = "Depth at the end of this line"
+    const val DURATION = "Duration of this line; give it or the rate, and the other is worked out"
+    const val RATE = "Descent or ascent rate of this line; give it or the duration, and the other is worked out"
+    const val GAS = "Gas source breathed on this line; in italics when it follows the line above"
+    const val ADD_LINE = "Add a line below"
+    const val REMOVE_LINE = "Take out this line"
+    const val WORKED = "Ascent worked out by the planner; lines you type yourself shorten it"
 
     // The settings.
-    const val GF_LOW = "Gradient factor for the deepest stop. Lower starts the stops deeper."
-    const val GF_HIGH = "Gradient factor for surfacing. Lower makes the shallow stops longer."
-    const val BOTTOM_OXYGEN = "The highest oxygen pressure for bottom and bailout gases. It sets their MOD."
-    const val DECO_OXYGEN = "The highest oxygen pressure for deco gases. It sets how deep each can be switched to."
-    const val DESCENT_RATE = "The speed of a line going down that has no duration or rate of its own."
-    const val ASCENT_RATE = "The speed of the way up, and of a line going up that has no duration or rate of its own."
-    const val SAFETY_DEPTH = "The depth of the safety stop."
-    const val SAFETY_DURATION = "The shortest the safety stop may be. 0 means no safety stop."
-    const val LAST_STOP = "The depth of the shallowest deco stop."
-    const val WATER = "Salt or fresh water. Salt water weighs more, so a depth in it is a higher pressure."
-    const val PANIC_FACTOR = "How much faster than usual two divers sharing gas breathe, for the buddy out of gas reserve."
-    const val GAS_LOST = "The gas that is gone in the lost gas reserve."
-    const val PROBLEM_SOLVING = "How long you stay at depth sorting out the trouble before the way up, in both reserve scenarios. 0 means none."
+    const val GF_LOW = "Gradient factor at the deepest stop; lower means deeper first stops"
+    const val GF_HIGH = "Gradient factor at the surface; lower means longer shallow stops"
+    const val BOTTOM_OXYGEN = "Oxygen pressure limit for bottom and bailout gases; sets their MOD"
+    const val DECO_OXYGEN = "Oxygen pressure limit for deco gases; sets the depth each is switched to"
+    const val DESCENT_RATE = "Descent rate for lines given no duration or rate"
+    const val ASCENT_RATE = "Ascent rate for the worked-out ascent, and for lines given no duration or rate"
+    const val SAFETY_DEPTH = "Depth of the safety stop"
+    const val SAFETY_DURATION = "Minimum duration of the safety stop; 0 means none"
+    const val LAST_STOP = "Depth of the shallowest deco stop"
+    const val WATER = "Salt or fresh water; salt water is denser, so the same depth is a higher pressure"
+    const val PANIC_FACTOR = "Breathing rate multiplier for two divers sharing gas, in the buddy out of gas reserve"
+    const val GAS_LOST = "Gas source missing in the lost gas reserve"
+    const val PROBLEM_SOLVING = "Time at depth solving the problem before the ascent, in both reserves; 0 means none"
 
     // The gases, a column each.
-    const val NUMBER = "The number that chooses this gas in the runtime."
-    const val MIX = "The mix, such as AIR, EAN32 or TMX18/45."
-    const val ROLE = "Bottom and deco gases are chosen by the planner for the way up. A bailout gas is breathed only on a line that names it."
-    const val VOLUME = "The cylinder's size, as the water it holds, in litres."
-    const val START = "The pressure the cylinder starts the dive at."
-    const val SAC = "Your breathing rate on this gas at the surface, in litres a minute."
-    const val MOD = "The deepest this gas may be breathed, at the oxygen limit for its role."
-    const val USED = "The gas this plan takes from the cylinder, in litres at the surface."
-    const val END = "The pressure left in the cylinder at the end of the dive."
-    const val MINIMUM = "The pressure the cylinder must still hold at the reserve's worst moment. In red where the plan leaves less."
-    const val ADD_GAS = "Add a gas below."
-    const val REMOVE_GAS = "Take out this gas."
+    const val NUMBER = "Number identifying the gas source"
+    const val MIX = "Gas mix, such as AIR, EAN32 or TMX18/45"
+    const val ROLE = "Role of the gas source; the planner switches to bottom and deco gases, and to bailout only where a line names it"
+    const val VOLUME = "Water volume of the cylinder, in litres"
+    const val START = "Cylinder pressure at the start of the dive"
+    const val SAC = "Surface breathing rate on this gas, in litres a minute"
+    const val MOD = "Maximum operating depth, at the oxygen limit for this gas's role"
+    const val USED = "Gas used by the plan, in litres at the surface"
+    const val END = "Cylinder pressure at the end of the dive"
+    const val MINIMUM = "Pressure the cylinder must still hold at the reserve's worst moment; red where the plan leaves less"
+    const val ADD_GAS = "Add a gas source below"
+    const val REMOVE_GAS = "Take out this gas source"
 
     // What the whole dive comes to.
-    const val CNS = "Oxygen exposure of the brain and nerves, as a share of the limit."
-    const val OTU = "Oxygen exposure of the lungs, in oxygen toxicity units."
-    const val NO_FLY = "How long to wait after the dive before flying."
-    const val DESATURATION = "How long until the model counts every tissue as clear of the dive."
+    const val CNS = "Oxygen exposure of the central nervous system, as a share of the limit"
+    const val OTU = "Oxygen exposure of the lungs, in oxygen toxicity units"
+    const val NO_FLY = "Waiting time after the dive before flying"
+    const val DESATURATION = "Time until the model counts every tissue as clear of the dive"
 
     // The reserve.
-    const val LOST_GAS = "Check that the other gases bring you up if the gas lost is gone at the worst moment."
-    const val SHARED = "Check that your gas brings two divers up from the worst moment, sharing until a deco gas."
+    const val LOST_GAS = "Reserve for losing the gas source chosen as lost, at the worst moment"
+    const val SHARED = "Reserve for sharing your gas with a buddy from the worst moment until a deco gas"
 }
