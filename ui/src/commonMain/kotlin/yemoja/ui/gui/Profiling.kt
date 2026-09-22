@@ -1274,7 +1274,7 @@ private fun Conditions(shaping: Shaping) {
             Section("Algorithm") {
                 // Bühlmann is the only model until another can be chosen here.
                 Labelled("Model", PlannerTips.MODEL) {
-                    Text("Bühlmann", style = MaterialTheme.typography.bodySmall)
+                    Text("Bühlmann ZH-L16C", style = MaterialTheme.typography.bodySmall)
                 }
                 Setting("GF low", PlannerTips.GF_LOW, shaping.gradientLow, "%") { shaping.gradientLow = it }
                 Setting("GF high", PlannerTips.GF_HIGH, shaping.gradientHigh, "%") { shaping.gradientHigh = it }

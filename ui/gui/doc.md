@@ -530,7 +530,7 @@ once and corrected. The numbers stay unused rather than being given to something
   **The settings are the plan's own.** They sit in titled sections, each a single column, the
   sections stacked in two columns with space between them. On the left, *General* holds descent
   and ascent rate and water, and *Contingency* the gas lost, panic stress factor and problem-solving
-  time. On the right, *Algorithm* names the model, Bühlmann, as a value that is shown rather than
+  time. On the right, *Algorithm* names the model, Bühlmann ZH-L16C, as a value that is shown rather than
   chosen until there is a second model, above GF low and high. *Stops* holds the last stop and the
   safety stop's depth and duration, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. Each starts
   from what the settings hold, `GUI-42`, and is changed here for this plan alone. A safety stop of nought minutes is none,
