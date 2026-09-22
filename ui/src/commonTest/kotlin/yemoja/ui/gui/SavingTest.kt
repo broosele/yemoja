@@ -251,6 +251,24 @@ class OpeningTest {
     }
 
     @Test
+    fun `every saved plan is listed by its dive and its name, and only plans`() {
+        val logbook = chosen()
+        val recorded = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                yemoja.logic.Change.Add(
+                    Types.DIVE,
+                    mapOf("profiles" to Stored.Members(mapOf("p1" to Stored.Members(mapOf("start_date" to Stored.Leaf("2026-05-01")))))),
+                ),
+            ),
+        ).added.single()
+        val planned = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray())).added.single()
+        val plans = plansIn(logbook)
+        assertEquals(listOf("$planned: Plan A"), plans.map { it.second }, "the recording on $recorded is not a plan")
+        assertEquals(Bound.Editing(planned, "Plan_A"), plans.single().first)
+    }
+
+    @Test
     fun `editing a plan loads it, under its own name`() {
         val logbook = chosen()
         val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))

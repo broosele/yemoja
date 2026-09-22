@@ -151,6 +151,17 @@ internal fun attachedKeyOf(dive: Item, name: String): String {
     return if (typed.isNotEmpty() && typed !in taken) typed else planKeyOf(planNameOn(dive))
 }
 
+/**
+ * Every plan saved in [universe], each with what it is called in a list of them: the dive's id and
+ * the plan's name, as `2026-03-01#1: Plan A`. Newest dive first.
+ */
+internal fun plansIn(universe: Universe): List<Pair<Bound.Editing, String>> =
+    universe.logbook.allOf(Types.DIVE).flatMap { dive ->
+        val id = universe.logbook.idOf(dive) ?: return@flatMap emptyList()
+        keyedEntriesOf(dive, "profiles").filter { (_, profile) -> isPlanned(profile) }
+            .map { (key, _) -> Bound.Editing(id, key) to "$id: ${prettyOf(key)}" }
+    }.sortedByDescending { it.second }
+
 /** The changes that make a new dive holding only the plan [fields], under [key]. */
 internal fun newDiveOf(key: String, fields: Map<String, Stored>): List<Change> = listOf(
     Change.Add(
@@ -360,6 +371,7 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
                 }
             }
         }
+        OpenPlan(universe) { chosen -> saving.open(chosen, universe, shaping) }
         if (bound != null) {
             TextButton(
                 onClick = { saving.bound = null; saving.said = null },
@@ -388,6 +400,30 @@ private fun SmallButton(label: String, enabled: Boolean, quiet: Boolean = false,
         OutlinedButton(onClick, Modifier.height(SMALL), enabled = enabled, contentPadding = padding) { text() }
     } else {
         Button(onClick, Modifier.height(SMALL), enabled = enabled, contentPadding = padding) { text() }
+    }
+}
+
+/** The deed that opens a plan saved before: a menu of them, the one chosen loaded to be changed. */
+@Composable
+private fun OpenPlan(universe: Universe?, onChoose: (Bound.Editing) -> Unit) {
+    var choosing by remember { mutableStateOf(false) }
+    Box {
+        SmallButton("Open plan", universe != null, quiet = true) { choosing = true }
+        Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
+            val plans = universe?.let { plansIn(it) }.orEmpty()
+            if (plans.isEmpty()) {
+                DropdownMenuItem(text = { Text("No saved plans") }, onClick = { choosing = false }, enabled = false)
+            }
+            for ((bound, said) in plans) {
+                DropdownMenuItem(
+                    text = { Text(said) },
+                    onClick = {
+                        choosing = false
+                        onChoose(bound)
+                    },
+                )
+            }
+        }
     }
 }
 

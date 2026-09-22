@@ -404,7 +404,9 @@ once and corrected. The numbers stay unused rather than being given to something
   saving goes back there. *Save as new dive* is always offered as well, and so is *Attach to
   existing dive*, a menu of the logbook's dives, newest first. Attaching always adds a plan: it
   takes the name typed where that dive holds no plan of the name, and the next free letter where it
-  does, so it never saves over one. No date or time is asked
+  does, so it never saves over one. *Open plan* is a menu of every saved plan, named by its dive's id
+  and its own name, as `2026-03-01#1: Plan A`, and opens the chosen one as *Edit plan* would, so a
+  plan can be found without first finding its dive. No date or time is asked
   yet, so a plan saved as a new dive has none, which a dive may lack: nothing is required.
 
   **One way.** What is saved is the run with its way up, as points, `LOGIC-35`; its cylinders, each

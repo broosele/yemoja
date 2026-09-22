@@ -312,7 +312,8 @@ graph of the whole dive.
 To keep a plan, give it a name, *Plan A* unless you choose another, and press **Save as new dive**,
 or **Attach to existing dive** and choose the dive from the list. Attaching always adds a new plan:
 if the dive already has one by that name, the plan takes the next free letter. If you opened the
-planner from a dive, with **Add plan** or **Edit plan**, you can also save it back to that dive. What is saved is the dive itself: every depth and gas switch, the way up included,
+planner from a dive, with **Add plan** or **Edit plan**, you can also save it back to that dive. **Open plan** lists every plan you have saved, by its
+dive and its name, and opens the one you choose the same way. What is saved is the dive itself: every depth and gas switch, the way up included,
 the cylinders, the gradient factors and the water. The planner's other settings, such as the
 oxygen limits, the safety stop and the reserve, are not saved, so a plan you open again starts
 from your defaults for those. A plan saved as a new dive has no date yet.
