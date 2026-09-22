@@ -77,7 +77,7 @@ written in — a settings file declares none:
   counted separately. Without a choice, 2.
 - `default_problem_solving_time` — how long a new dive plan's gas reserve spends at the depth
   trouble starts before the way up begins, in minutes, from 0 to 10: the time to notice the problem
-  and, when sharing, to find your buddy and get the gas going. 0 means none. Without a choice, 1.
+  and, when sharing, to find your buddy and get the gas going. 0 means none. Without a choice, 2.
 - `default_water_type` — the water a new dive plan is dived in: `salt` or `fresh`. Without a
   choice, `salt`.
 

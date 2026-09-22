@@ -242,9 +242,9 @@ Yemoja answers it with two things that can go wrong, and keeps back enough for t
   the *panic stress factor*, which is 2 unless you change it. Any stop deeper than your deco gas's
   depth is shared too. With no deco gas planned you share all the way to the surface.
 
-Both scenarios begin with **problem-solving time**, a minute unless you change it: you stay at the
+Both scenarios begin with **problem-solving time**, two minutes unless you change it: you stay at the
 depth where it happened while you notice the problem and, when sharing, find your buddy and get the
-gas going. That minute is breathed at the scenario's rate and loads your tissues too, so it can add
+gas going. That time is breathed at the scenario's rate and loads your tissues too, so it can add
 a stop to the way up as well as the gas for itself.
 
 The second scenario assumes your buddy breathes as fast as you, carries the same deco gas, and

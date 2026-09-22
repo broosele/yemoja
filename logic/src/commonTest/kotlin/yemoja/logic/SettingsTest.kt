@@ -158,9 +158,9 @@ class SettingsTest {
     }
 
     @Test
-    fun `a new plan's reserve spends a minute at depth before the way up`() {
+    fun `a new plan's reserve spends two minutes at depth before the way up`() {
         val (chosen, _) = settings()
-        assertEquals(1.0, chosen.number(Settings.DEFAULT_PROBLEM_SOLVING_TIME))
+        assertEquals(2.0, chosen.number(Settings.DEFAULT_PROBLEM_SOLVING_TIME))
     }
 
     @Test

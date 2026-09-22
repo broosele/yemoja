@@ -261,7 +261,7 @@ class Settings internal constructor(private val store: FileStore) {
          * begins, in minutes, for finding the problem and a buddy. Nought is none. `LOGIC-40`.
          */
         val DEFAULT_PROBLEM_SOLVING_TIME =
-            NumberSetting("default_problem_solving_time", "Problem solving time", "min", 1.0, 0.0..10.0)
+            NumberSetting("default_problem_solving_time", "Problem solving time", "min", 2.0, 0.0..10.0)
 
         /** The water a new plan is dived in, in the words `water_type` uses. */
         val DEFAULT_WATER_TYPE =
