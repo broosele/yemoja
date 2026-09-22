@@ -186,13 +186,24 @@ class Universe(
                 is Change.Delete -> Unit
             }
         }
+        // A dive given its second profile names the one it had as primary, in the same change.
+        // Added to what the change did rather than done beside it, so a journal records it too.
+        val done = ArrayList<Change>(changes.asList())
+        val written = writes.map { (change, _) -> change.item to change.field }.toSet()
+        for ((change, made) in writes.toList()) {
+            val kept = primaryKeptBy(change, made, written) ?: continue
+            val keptMade = kept.item.prepared(kept.field, kept.given, Units.DEFAULT)
+            if (keptMade is Result.Unusable) return Outcome.Refused(keptMade.reason)
+            writes += kept to keptMade
+            done += kept
+        }
 
         for ((change, made) in writes) change.item.apply(change.field, made)
         for ((id, item) in adds) logbook.add(id, item)
 
         val touched = LinkedHashSet<Pair<ItemDescription, String>>()
         for ((id, item) in adds) touched += item.description to id
-        for (change in changes) {
+        for (change in done) {
             when (change) {
                 is Change.Write -> {
                     val owner = ownerOf(change.item) as ReferenceableItem

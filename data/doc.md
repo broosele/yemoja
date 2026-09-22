@@ -692,7 +692,8 @@ singular one is how a set of related fields is grouped.
 One of a list may be **primary**. A dive can carry several profiles, and the primary one
 is what its times, duration, depth and temperatures are derived from. The dive says which
 by naming its key — not by a flag on the profile, which could end up set on two of them
-at once, and not by position, which changes.
+at once, and not by position, which changes. A dive gaining its second profile has its first named
+for it, `DATA-120`.
 
 An owned item also knows its **parent**. That link is not stored — it would be
 circular on disk and says nothing the file structure does not already — and is set
@@ -2180,6 +2181,23 @@ Kept with their identifiers so earlier discussion still resolves.
 
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
+
+- **DATA-120 — What a dive's primary profile is when nobody named one.** *Settled:* **nothing,
+  and it is named for them the moment it would be needed.** A dive with one profile is worked from
+  it and names none. A dive with several and none named is worked from none of them, and says so,
+  rather than taking the first: order in a keyed collection carries no meaning, `JSON-20`, and a
+  primary chosen by position would move when a file was reordered by hand or by a merge.
+
+  So the gap is closed where it opens. **A change that gives a dive its second profile also names
+  the first as primary**, unless the dive or the same change already names one. The first is the
+  recording the dive was worked from until then, and adding a plan or a second computer should not
+  change what the dive says about itself. The rule sits where every change passes, the Universe's
+  `change`, so a plan attached from the planner, a download merged into a dive, an import and an
+  edit by hand all obey it, and the write is part of the change rather than beside it, so a journal
+  records it with the rest.
+
+  Briefly the other way round: a dive naming none was worked from its first, for a day. The user
+  reversed it for the reason above.
 
 - **DATA-119 — Which fields hold a person's private details.** *Settled, then reversed:* **no
   field says, because nothing asks any more.** `FieldDescription` carried `personal`, and a person
