@@ -249,7 +249,7 @@ Six things can be worked out: SAC, NDL, MOD, EAD, END, and a dive plan. None nee
 and what you type stays while you look at another tab.
 
 **A line at the top of the tab says what these figures are not**, and it is worth reading once:
-they are one model's arithmetic, not a dive computer, and you use them at your own risk. It says
+they come from a model, not a dive computer, they may be wrong, and you use them at your own risk. It says
 the same as [app-info.md](app-info.md) and [decompression.md](decompression.md), where the whole
 of it is set out.
 

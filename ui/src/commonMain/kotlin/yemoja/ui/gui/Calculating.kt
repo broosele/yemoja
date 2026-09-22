@@ -424,11 +424,12 @@ private fun Waiver() {
  * makes. `manual/decompression.md`, `manual/app-info.md`.
  */
 internal const val WAIVER: String =
-    "These are one model's arithmetic, not a dive computer: neither certified nor validated as " +
-        "one, nor as planning software. They may be wrong. You use them entirely at your own " +
-        "risk, and nobody involved in making Yemoja accepts responsibility for a dive planned, " +
-        "made or judged with their help. Check them against your training and your tables, and " +
-        "let nothing here override your computer or your own judgement."
+    "These figures come from a model, not a dive computer, and they may be wrong. The model has " +
+        "been neither certified nor validated as a dive computer or as planning software. You use " +
+        "its figures entirely at your own risk, and nobody involved in making Yemoja accepts " +
+        "responsibility for a dive planned, made or judged with their help. Check them against " +
+        "your training and your tables, and never let them override your dive computer or your " +
+        "own judgement."
 
 /** The list of what can be worked out, and the form for the one chosen. */
 @Composable
