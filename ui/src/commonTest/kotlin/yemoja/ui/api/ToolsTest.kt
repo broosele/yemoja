@@ -88,7 +88,7 @@ class DescribeTest {
         assertEquals("number", depth.leaf("kind"))
         assertEquals("m", depth.leaf("unit"))
         assertEquals("one", depth.leaf("holds"))
-        assertEquals("worked out, and correctable", depth.leaf("role"))
+        assertEquals("derived, and correctable", depth.leaf("role"))
     }
 
     @Test
@@ -120,7 +120,7 @@ class BriefingTest {
         assertTrue(INSTRUCTIONS.trim() in briefing, "the rules come first")
         val types = Types.ALL.map { "\n### ${it.name}\n" }
         assertTrue(types.all { it in briefing }, "each type has a heading")
-        assertTrue("- `max_depth`: number in m; worked out unless written" in briefing)
+        assertTrue("- `max_depth`: number in m; derived unless written" in briefing)
         assertTrue("- `buddies`: reference, list to a person" in briefing, "how many, and of what")
     }
 
@@ -128,7 +128,7 @@ class BriefingTest {
     fun `a block's fields are indented under it, and a worked out field says so`() {
         assertTrue("- `medical`: owned item\n  - `last_medical_check`: date\n" in briefing)
         assertTrue("  - `body_mass`: number in kg\n" in briefing)
-        assertTrue("- `sac`: number, series in l/min; worked out, never written" in briefing)
+        assertTrue("- `sac`: number, series in l/min; derived, never written" in briefing)
     }
 }
 

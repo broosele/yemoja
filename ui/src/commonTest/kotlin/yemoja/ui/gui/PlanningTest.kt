@@ -76,7 +76,7 @@ class PlanningTest {
         val dive = planned(DEEP)
         val titles = workedOverlaysOf(dive, profile(dive), done(dive)).map { it.title }
 
-        assertTrue(titles.all { "worked out" in it }, "$titles")
+        assertTrue(titles.all { "calculated" in it }, "$titles")
         assertTrue(titles.any { it.startsWith("CNS") } && titles.any { it.startsWith("OTU") })
         assertTrue(titles.any { it.startsWith("NDL") }, "$titles")
     }

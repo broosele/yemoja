@@ -431,7 +431,7 @@ the one that counts.
    read. Most editors will point these out.
 3. **Do not invent fields.** Anything Yemoja does not recognise is kept but ignored.
    The fields each item may hold are listed in [data-fields.md](data-fields.md).
-4. **Do not store anything the application works out for itself**, such as totals or
+4. **Do not store anything the application calculates for itself**, such as totals or
    averages. These are recalculated, and a value you write is kept in the file but never
    used. Which calculated values may be corrected is said in
    [data-fields.md](data-fields.md).
@@ -484,7 +484,7 @@ Notice what is **not** in the file. There is no `name`, no `end_date`, no `durat
 no `buddy_count`: Yemoja works all of those out. Writing them in would only be worth doing
 to correct one of them.
 
-`max_depth` is here because this dive has no profile. With one, it would be worked out
+`max_depth` is here because this dive has no profile. With one, it would be calculated
 too, and worth writing only if the computer's own figure were better.
 
 `deco` is missing for a different reason. Without a profile there is nothing to work it

@@ -689,7 +689,7 @@ once and corrected. The numbers stay unused rather than being given to something
   **Everything else the model works out is a right-axis overlay, and each says it was worked
   out.** A recording may carry its computer's own beside it, and the two disagree on purpose:
   `manual/decompression.md` tells a reader the device decided at the time with settings this
-  cannot reproduce. *NDL worked out* beside *NDL* is the difference stated where it is read.
+  cannot reproduce. *NDL calculated* beside *NDL* is the difference stated where it is read.
 
   **The figures and the findings read as fields.** What a run costs, the clocks and the two waits
   are shown as worked-out values under the run's own fields, and each finding is a line labelled

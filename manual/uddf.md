@@ -119,7 +119,7 @@ conversion.
 
 So an imported recording has depths but nothing to say what they were made with. Yemoja
 will not guess: it says so, and asks. Until you answer, the depths can be read and drawn
-but nothing can be worked out from them. Where a file came from your own export, set it
+but nothing can be calculated from them. Where a file came from your own export, set it
 back to what it was.
 
 **A second computer.** If you dive two computers, your logbook keeps both recordings and
@@ -164,7 +164,7 @@ the question does not arise in that direction.
 mix — a pair of stages, or twins you switched between — the file cannot say which one you
 went to, and reading it back cannot recover it.
 
-**Lost on import.** Gas consumption rate, which Yemoja works out for itself from the
+**Lost on import.** Gas consumption rate, which Yemoja calculates for itself from the
 pressures, and the figures a file may carry that follow from the mix anyway — equivalent air
 depth, maximum operating depth, maximum partial pressure. Nothing is lost that cannot be worked
 out again.

@@ -69,8 +69,8 @@ you made each month, widening the bars where there would be too many to read.
 - **Locations** holds the regions of the world as a tree, the sites and wrecks in the one chosen,
   and a map of it with your sites marked. **Hide unused**, which is on to begin with, leaves out
   the sites none of your dives were at, and the regions left with nothing in them.
-- **Calculations** works out a number from figures you type, with no dive to read them from.
-  Choose what to work out on the left; the form is on the right. See
+- **Calculations** gives a number from figures you type, with no dive to read them from.
+  Choose what to calculate on the left; the form is on the right. See
   [Calculations](getting-started.md#calculations) below.
 - **Manuals** is this manual.
 
@@ -87,7 +87,7 @@ What you choose is shown on a card, titled with its name.
 
 - A value that points at something else is a **link**. Following it goes to that item, on
   whichever tab holds it.
-- A value **in grey** was worked out by Yemoja rather than written by you.
+- A value **in grey** was calculated by Yemoja rather than written by you.
 - A value **in red** could not be read, and says why in its place.
 - A rating shows as **stars**, two points to a star.
 - A person, a piece of gear, a dive site or an operator lists its **dives** in a box at the
@@ -109,7 +109,7 @@ chosen from its title: the temperature, a cylinder's pressure,
 the no-decompression time as **NDL**, and oxygen loading as CNS and OTU. Gas switches are marked
 with the gas moved to, and alarms with red triangles.
 
-**What Yemoja's own model makes of it sits under the graph**, where it can be worked out: how deep
+**What Yemoja's own model makes of it sits under the graph**, where it can be calculated: how deep
 the stops would start, what each cylinder gives up and ends at, the oxygen clocks, how long before
 you may fly, and how long before it is out of you. Anything it objects to — going above the
 ceiling, a cylinder that runs dry, a mix too rich or too lean for the depth it is breathed at — is listed in
@@ -135,7 +135,7 @@ saved says why, in red, above the fields, and a field that will not read says so
 you type.
 
 - A worked-out value can be **overridden** with a value of your own, and **reverted** to what
-  is worked out.
+  is calculated.
 - A field with usual answers offers them from its arrow, and anything else may still be typed.
   A field with a fixed list offers only that list.
 - A field pointing at another item finds it as you type its name. A plain name is kept where
@@ -151,7 +151,7 @@ anything that is not a cylinder. They are there under **more fields** when you n
 happens at once rather than waiting for Save.
 
 **The + on a card** makes another item of the same kind, and opens it as a form. Nothing is
-made until you save, and the item's id is worked out then, from what you typed. Where nothing
+made until you save, and the item's id is derived then, from what you typed. Where nothing
 is chosen, the middle of the screen offers to add one.
 
 On the Gear tab you can also click a category or a kind in the tree, which chooses it — the
@@ -245,7 +245,7 @@ you and its provider.
 
 ## Calculations
 
-Six things can be worked out: a dive plan, SAC, NDL, MOD, EAD and END. The dive plan is shown
+Six things can be calculated: a dive plan, SAC, NDL, MOD, EAD and END. The dive plan is shown
 first. None needs a logbook open,
 and what you type stays while you look at another tab.
 
@@ -256,14 +256,14 @@ of it is set out.
 
 **SAC** is six figures under each other: your breathing rate, the average depth, the duration,
 the cylinder's size, and the pressure it started and ended at. Click the bullet before the one you
-want worked out and type the other five; the answer appears in its place as you type. The rate is
+want calculated and type the other five; the answer appears in its place as you type. The rate is
 what you would breathe at the surface, in litres a minute, and the arithmetic is the same Yemoja
-uses for the SAC it works out on a recording. An end pressure below nought means the five you typed
+uses for the SAC it calculates on a recording. An end pressure below nought means the five you typed
 would have emptied the cylinder — the number is left as it is so you can see by how much.
 
-**Dive plan** works out a whole dive. On the left is the runtime, one line for each part of the
+**Dive plan** calculates a whole dive. On the left is the runtime, one line for each part of the
 dive: going down, staying, or coming up. Type a depth, and either how long that part takes or how
-fast you move, and Yemoja works out the other and shows it in italics. Leave both empty and it uses
+fast you move, and Yemoja calculates the other and shows it in italics. Leave both empty and it uses
 the descent or ascent rate from the settings beside it. A line at the same depth as the one before
 it is a stay, and needs a duration. Durations are minutes and seconds, `2:13`, or whole minutes,
 `25`. The number before each line is the minute it ends in. Twenty-five minutes at forty metres is
@@ -274,7 +274,7 @@ Choosing the gas above makes it follow again. **+** adds a line below, and **×*
 A gas turns red on a line that takes it deeper than its limit, or shallower than a hypoxic mix may
 be breathed, and a depth turns red on a line that takes you above the ceiling.
 
-Below your lines, in italics, is the way up Yemoja works out from where you stopped typing: every
+Below your lines, in italics, is the way up Yemoja calculates from where you stopped typing: every
 stop, and every gas switch it makes. It changes as you type, and there is nothing to press. If you
 type part of the way up yourself, it adds only what is left, and a dive you have typed all the way
 to the surface gets nothing added.

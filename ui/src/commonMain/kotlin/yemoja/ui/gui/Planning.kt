@@ -58,17 +58,17 @@ internal fun runOverlaysOf(evaluated: Evaluated.Done, tanks: Map<String, String>
     val limits = pointsOf(evaluated.noDecompressionTime, 1.0 / 60.0)
     if (limits.isNotEmpty()) {
         overlays += Overlay(
-            "NDL worked out",
+            "NDL calculated",
             "min",
-            Line("NDL worked out", limits.map { Point(it.minute, minOf(it.value, NO_DECO_CAP)) }),
+            Line("NDL calculated", limits.map { Point(it.minute, minOf(it.value, NO_DECO_CAP)) }),
         )
     }
     for ((key, series) in evaluated.pressures) {
         val tank = tanks[key] ?: key
-        overlays += Overlay("$tank worked out", "bar", Line(tank, pointsOf(series)))
+        overlays += Overlay("$tank calculated", "bar", Line(tank, pointsOf(series)))
     }
-    overlays += Overlay("CNS worked out", "%", Line("CNS", pointsOf(evaluated.cns)))
-    overlays += Overlay("OTU worked out", "", Line("OTU", pointsOf(evaluated.otu)))
+    overlays += Overlay("CNS calculated", "%", Line("CNS", pointsOf(evaluated.cns)))
+    overlays += Overlay("OTU calculated", "", Line("OTU", pointsOf(evaluated.otu)))
     return overlays
 }
 

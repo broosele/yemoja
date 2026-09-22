@@ -331,7 +331,7 @@ private fun runOf(profile: Item, seen: Set<Item>): Read {
     // would put a number into a decompression answer that nobody chose.
     if (low == null || high == null) {
         return Read.Refused(
-            "nothing says what model this run was worked out with, or how conservative it was",
+            "nothing says what model this run was calculated with, or how conservative it was",
             Refusal.UNASKED,
         )
     }

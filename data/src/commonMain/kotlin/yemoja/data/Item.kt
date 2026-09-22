@@ -131,7 +131,7 @@ sealed class Item(
     fun prepared(name: String, given: Any?, units: Units): Result<Any> {
         val field = fieldDescription(name)
         require(field.role !is Role.Derived) {
-            "$name is worked out, and writing it would be writing to nothing"
+            "$name is derived, and writing it would be writing to nothing"
         }
         if (given == null) return Result.Absent
         // A value already made travels as a leaf, which is what a source hands over for one. A

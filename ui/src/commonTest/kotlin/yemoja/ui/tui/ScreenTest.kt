@@ -798,7 +798,7 @@ class OpenFieldTest {
         repeat(2) { screen.press(Key.DOWN) }
         assertEquals("colour", screen.field?.name)
         screen.press(Key.OPEN)
-        assertTrue("What it holds (worked out)" in opened(screen), opened(screen).toString())
+        assertTrue("What it holds (derived)" in opened(screen), opened(screen).toString())
     }
 
     @Test

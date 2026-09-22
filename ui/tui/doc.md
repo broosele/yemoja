@@ -306,7 +306,7 @@ item shows what is in it rather than the value it has none of, without naming th
 second time — the heading above has done that.
 
  **How it came to hold
-it goes in brackets beside that heading** — `What it holds (worked out)` — rather than on a row
+it goes in brackets beside that heading** — `What it holds (derived)` — rather than on a row
 of its own, since it is one word about the whole of what follows and a reader would otherwise
 count it among the values. A field holding nothing says so there and adds nothing under it. A
 value that could not be read shows both the reason and what was written, the two together being

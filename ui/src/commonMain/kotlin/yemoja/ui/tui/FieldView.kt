@@ -113,8 +113,8 @@ private fun holding(cardinality: Cardinality): String = when (cardinality) {
 
 private fun roleOf(role: Role): String = when (role) {
     is Role.Primary -> "recorded"
-    is Role.Derived -> "worked out, and never written"
-    is Role.Overrideable -> "worked out, unless something is written"
+    is Role.Derived -> "derived, and never written"
+    is Role.Overrideable -> "derived, unless something is written"
 }
 
 /** What only this kind of field has to say. Empty for the kinds that have nothing. */
@@ -333,8 +333,8 @@ private fun marked(
 
 private fun originOf(origin: Result.Origin): String = when (origin) {
     Result.Origin.STORED -> "written"
-    Result.Origin.DERIVED -> "worked out"
-    Result.Origin.OVERRIDDEN -> "written over what would have been worked out"
+    Result.Origin.DERIVED -> "derived"
+    Result.Origin.OVERRIDDEN -> "written over what would have been derived"
 }
 
 /**

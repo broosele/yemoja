@@ -27,8 +27,8 @@ questions.
 
 ## What this is, and what it is not
 
-A model's figures are arithmetic. On a recording they are worked out after the fact; on a plan
-they are worked out from assumptions you supplied about a dive that has not happened.
+A model's figures are arithmetic. On a recording they are calculated after the fact; on a plan
+they are calculated from assumptions you supplied about a dive that has not happened.
 
 **It is not a dive computer, and it has been neither certified nor validated as one, nor as
 planning software.** The figures are one model's estimate. They will disagree with what a dive
@@ -42,7 +42,7 @@ into the water as the thing you follow: your dive computer and your own judgemen
 and nothing here overrides either, or your training, or your tables.
 
 Nothing the model computes is stored in your logbook. A plan keeps what you entered and never the
-answer, which is worked out again whenever you look, so a later version of Yemoja that calculates
+answer, which is calculated again whenever you look, so a later version of Yemoja that calculates
 differently will change what you see — for a plan as much as for a recording. That is deliberate:
 what you recorded or entered is the fact, and the model is only an opinion about it.
 
@@ -227,7 +227,7 @@ chain of dives you actually made.
 
 **What it costs in gas** comes from the SAC rate you write on each cylinder: how fast you breathe,
 in litres a minute at the surface. That is a guess about yourself, and the better your guess the
-better the answer. Your own past dives are where to get it, since Yemoja works one out from every
+better the answer. Your own past dives are where to get it, since Yemoja calculates one from every
 recording that has cylinder pressures in it.
 
 **Whether you carry enough gas for trouble** is a different question from what the dive costs.

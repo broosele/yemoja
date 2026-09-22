@@ -34,7 +34,7 @@ to planning dives you have not. It is not a dive computer, and it has been neith
 certified nor validated as one, nor as planning software.
 
 Its decompression figures are of two kinds, and both may be wrong. What your
-computer recorded is what that device said at the time. What Yemoja works out is
+computer recorded is what that device said at the time. What Yemoja calculates is
 one model's estimate, computed from a recording after the fact or from the
 assumptions a plan was given, and it will differ from what a dive computer says.
 

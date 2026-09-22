@@ -377,8 +377,8 @@ class Tools(
             else -> Unit
         }
         when (field.role) {
-            is Role.Derived -> said.append("; worked out, never written")
-            is Role.Overrideable -> said.append("; worked out unless written")
+            is Role.Derived -> said.append("; derived, never written")
+            is Role.Overrideable -> said.append("; derived unless written")
             is Role.Primary -> Unit
         }
         said.append("\n")
@@ -410,8 +410,8 @@ class Tools(
             "role" to Stored.Leaf(
                 when (field.role) {
                     is Role.Primary -> "recorded"
-                    is Role.Derived -> "worked out"
-                    is Role.Overrideable -> "worked out, and correctable"
+                    is Role.Derived -> "derived"
+                    is Role.Overrideable -> "derived, and correctable"
                 },
             ),
         )

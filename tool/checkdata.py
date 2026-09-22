@@ -156,19 +156,19 @@ def manual_order():
     way rather than by whether they are recorded, so that one order serves both.
     """
     text = io.open(MANUAL, encoding='utf-8').read()
-    order, worked, current = {}, {}, None
+    order, derived, current = {}, {}, None
     for line in text.split('\n'):
         heading = re.match(r'^#{3,5} (.+)$', line)
         if heading:
             current = heading.group(1)
-            order[current], worked[current] = [], set()
-        item = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(, worked out)?\)', line)
+            order[current], derived[current] = [], set()
+        item = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(, derived)?\)', line)
         if item and current:
             names = re.findall(r'`([a-z_]+)`', item.group(1))
             order[current].extend(names)
             if item.group(3):
-                worked[current] |= set(names)
-    return order, worked
+                derived[current] |= set(names)
+    return order, derived
 
 
 def described_roles():
@@ -301,7 +301,7 @@ def check_sections():
 
 
 def check_order():
-    """The manual against the descriptions, on order and on what is worked out."""
+    """The manual against the descriptions, on order and on what is derived."""
     problems = []
     order, marked = manual_order()
     roles = described_roles()
@@ -316,9 +316,9 @@ def check_order():
             says = field in marked[heading]
             does = field in roles.get(storage, set())
             if says and not does:
-                problems.append('%s.%s is marked worked out and has no role' % (storage, field))
+                problems.append('%s.%s is marked derived and has no role' % (storage, field))
             if does and not says:
-                problems.append('%s.%s has a role and is not marked worked out'
+                problems.append('%s.%s has a role and is not marked derived'
                                 % (storage, field))
     return problems
 
@@ -336,7 +336,7 @@ def manual_kinds():
         if heading:
             current = heading.group(1)
         bullet = re.match(
-            r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(?:, worked out)?\)', line)
+            r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(?:, derived)?\)', line)
         if bullet and current:
             for name in re.findall(r'`([a-z_]+)`', bullet.group(1)):
                 kinds[(current, name)] = bullet.group(2)
