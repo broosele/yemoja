@@ -65,6 +65,9 @@ import kotlin.math.roundToLong
  * In the order offered.
  */
 internal enum class Calculation(val label: String) {
+    /** A whole dive, level by level, and the way up it owes. `GUI-43`. */
+    PLAN("Dive plan"),
+
     /** Breathing rate against gas used, any one of six from the other five. */
     SAC("SAC"),
 
@@ -79,9 +82,6 @@ internal enum class Calculation(val label: String) {
 
     /** The depth of air as narcotic as a mix is at a depth. `LOGIC-41`. */
     END("END"),
-
-    /** A whole dive, level by level, and the way up it owes. `GUI-43`. */
-    PLAN("Dive plan"),
 }
 
 /**
@@ -107,7 +107,7 @@ internal enum class Figure(val label: String, val unit: String) {
  * Not immutable.
  */
 internal class Working {
-    var calculation: Calculation by mutableStateOf(Calculation.SAC)
+    var calculation: Calculation by mutableStateOf(Calculation.PLAN)
 
     /** The SAC form's six boxes, by figure. */
     val figures = mutableStateMapOf<Figure, String>()

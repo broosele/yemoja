@@ -140,6 +140,15 @@ class AnswerSaidTest {
 /*
  * The waiver over the tab. `GUI-43`.
  */
+class CalculationListTest {
+
+    @Test
+    fun `the dive plan heads the list and is chosen on the first visit`() {
+        assertEquals(Calculation.PLAN, Calculation.entries.first())
+        assertEquals(Calculation.PLAN, Working().calculation)
+    }
+}
+
 class WaiverTest {
 
     @Test

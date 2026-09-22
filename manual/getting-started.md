@@ -245,7 +245,8 @@ you and its provider.
 
 ## Calculations
 
-Six things can be worked out: SAC, NDL, MOD, EAD, END, and a dive plan. None needs a logbook open,
+Six things can be worked out: a dive plan, SAC, NDL, MOD, EAD and END. The dive plan is shown
+first. None needs a logbook open,
 and what you type stays while you look at another tab.
 
 **A line at the top of the tab says what these figures are not**, and it is worth reading once:

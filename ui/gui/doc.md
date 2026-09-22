@@ -425,14 +425,15 @@ once and corrected. The numbers stay unused rather than being given to something
   the recording, and the plan sits beside it for comparing.
 
 - **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
-  the form for the one chosen on the right: SAC, NDL, MOD, EAD, END, and a dive plan.**
+  the form for the one chosen on the right: a dive plan, SAC, NDL, MOD, EAD and END.**
 
   A calculation reads no dive: a diver on a boat wants a number from figures they have in their
   head, and the logbook is neither here nor there. So it is a tab of its own rather than a box
   under a dive, it needs no logbook to be open, and its shape is the shape a subject with a short
   list has — the list on the left, as Manuals lists its chapters, and the one chosen on the right.
   What is typed and which calculation is chosen are kept between visits, as anything a tab holds
-  is. `GUI-27`.
+  is. `GUI-27`. The dive plan heads the list and is the one chosen on the first visit, being what
+  the tab is most often opened for.
 
   **SAC is six boxes, one of them worked out.** SAC, average depth, duration, cylinder size, start
   pressure and end pressure sit under each other, each with a bullet before it; the bullet chooses
@@ -477,7 +478,7 @@ once and corrected. The numbers stay unused rather than being given to something
   wording in three places cannot drift into a softer claim in one of them, which is why the
   sentence is a constant a test holds against those four claims. `manual/decompression.md`.
 
-  **A dive plan is the third, and belongs to no dive.** Its top half is two columns: the runtime on
+  **A dive plan belongs to no dive.** Its top half is two columns: the runtime on
   the left, the settings and the gases on the right, each of the three in a box of its own. Below
   them come the whole dive's clocks on one line, what the model objects to, and the graph a
   recording is drawn with.
