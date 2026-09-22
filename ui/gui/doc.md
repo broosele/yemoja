@@ -458,7 +458,7 @@ once and corrected. The numbers stay unused rather than being given to something
   **MOD, EAD and END are a mix and one more figure each, and give a depth.** MOD takes an oxygen
   limit, prefilled from *pO₂ max bottom* the first time it opens, and is the model's own
   `maximumOperatingDepth`, so it is the figure the plan's gas table shows beside a cylinder. It
-  gives the minimum depth too, from a least oxygen that starts at 0.18 bar, since a hypoxic mix is
+  gives the minimum depth too, from a least oxygen prefilled from *pO₂ min*, since a hypoxic mix is
   as dangerous too shallow as a rich one is too deep; a range with its minimum below its maximum
   says the mix is breathable nowhere rather than showing two depths that contradict. EAD and
   END take a depth, `LOGIC-41`, and END has a tick for whether oxygen is narcotic, on unless the
@@ -597,7 +597,7 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  Thirteen settings are still a form rather than a place, so they open in the System box like a
+  Fourteen settings are still a form rather than a place, so they open in the System box like a
   download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 

@@ -68,6 +68,8 @@ written in — a settings file declares none:
   bar, from 0.5 to 2. Without a choice, 1.4.
 - `default_deco_po2` — the most oxygen a new dive plan breathes a deco gas at, in bar, from 0.5
   to 2. Without a choice, 1.6.
+- `default_min_po2` — the least oxygen a new dive plan breathes any gas at, in bar, from 0.1 to
+  0.5. A hypoxic gas breathed shallower than this is warned of. Without a choice, 0.18.
 - `default_safety_stop_depth` — how deep a new dive plan's safety stop is, in metres, from 1 to
   12. Without a choice, 6.
 - `default_safety_stop_duration` — how long a new dive plan's safety stop lasts, in minutes, from
