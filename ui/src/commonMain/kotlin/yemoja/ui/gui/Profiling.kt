@@ -606,13 +606,13 @@ internal fun Shaping.lostIndex(): Int? =
     lostGas?.takeIf { it in gases.indices } ?: gases.indexOfFirst { it.role == Role.DECO }.takeIf { it >= 0 }
 
 /** Scenario is one way a dive can go wrong that the gas reserve is kept back for. `LOGIC-40`. */
-internal enum class Scenario(val label: String) {
+internal enum class Scenario(val label: String, val tip: String) {
 
     /** The cylinders ticked *Lost* are gone, and the way up is to the surface at the usual rate. */
-    LOST_GAS("Lost gas"),
+    LOST_GAS("Lost gas", PlannerTips.LOST_GAS),
 
     /** A buddy has lost their bottom gas, and the two share this diver's up to a deco gas. */
-    SHARED("Buddy out of gas"),
+    SHARED("Buddy out of gas", PlannerTips.SHARED),
 }
 
 /** Reckoning is what one scenario of the gas reserve came to, or why it came to nothing. */
@@ -1094,9 +1094,9 @@ private fun TypedLine(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        Cell(leg?.let { runtimeSaid(it) }.orEmpty(), RUNTIME, TextAlign.End)
-        Cell(leg?.direction?.arrow.orEmpty(), ARROW, TextAlign.Center)
-        Box(modifier = Modifier.width(DEPTH)) {
+        Explained(PlannerTips.RUNTIME) { Cell(leg?.let { runtimeSaid(it) }.orEmpty(), RUNTIME, TextAlign.End) }
+        Explained(PlannerTips.DIRECTION) { Cell(leg?.direction?.arrow.orEmpty(), ARROW, TextAlign.Center) }
+        Tipped(PlannerTips.DEPTH, DEPTH) {
             Compact(
                 dense = true,
                 value = segment.depth,
@@ -1105,7 +1105,7 @@ private fun TypedLine(
                 wrong = ceilingBroken,
             )
         }
-        Box(modifier = Modifier.width(DURATION)) {
+        Tipped(PlannerTips.DURATION, DURATION) {
             Compact(
                 dense = true,
                 value = segment.duration,
@@ -1114,7 +1114,7 @@ private fun TypedLine(
                 derived = true,
             )
         }
-        Box(modifier = Modifier.width(RATE)) {
+        Tipped(PlannerTips.RATE, RATE) {
             Compact(
                 dense = true,
                 value = if (staying) "" else segment.rate,
@@ -1127,7 +1127,7 @@ private fun TypedLine(
         }
         val above = gasAbove(shaping, index)
         val shown = segment.gas?.takeIf { it in shaping.gases.indices } ?: above
-        Box(modifier = Modifier.width(GAS)) {
+        Tipped(PlannerTips.GAS, GAS) {
             Pick(
                 dense = true,
                 chosen = gasChoiceOf(shaping, shown),
@@ -1139,12 +1139,16 @@ private fun TypedLine(
                 shaping.segments[index] = segment.copy(gas = if (chose == above) null else chose)
             }
         }
-        IconButton(onClick = { shaping.addSegment(index) }, modifier = Modifier.size(BUTTON)) {
-            Icon(Icons.Filled.Add, contentDescription = "Add a line below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+        Explained(PlannerTips.ADD_LINE) {
+            IconButton(onClick = { shaping.addSegment(index) }, modifier = Modifier.size(BUTTON)) {
+                Icon(Icons.Filled.Add, contentDescription = "Add a line below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+            }
         }
         if (shaping.segments.size > 1) {
-            IconButton(onClick = { shaping.removeSegment(index) }, modifier = Modifier.size(BUTTON)) {
-                Icon(Icons.Filled.Close, contentDescription = "Take out this line", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+            Explained(PlannerTips.REMOVE_LINE) {
+                IconButton(onClick = { shaping.removeSegment(index) }, modifier = Modifier.size(BUTTON)) {
+                    Icon(Icons.Filled.Close, contentDescription = "Take out this line", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+                }
             }
         }
     }
@@ -1162,20 +1166,28 @@ internal fun gasAbove(shaping: Shaping, index: Int): Int {
 /** One line of the way up the model adds: all of it worked out, so all of it in italics. */
 @Composable
 private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBroken: Boolean) {
-    Row(
-        modifier = Modifier.height(ROW),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(HALF),
-    ) {
-        val italic = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)
-        Cell(runtimeSaid(leg), RUNTIME, TextAlign.End, italic)
-        Cell(leg.direction.arrow, ARROW, TextAlign.Center, italic)
-        val error = italic.copy(color = MaterialTheme.colorScheme.error)
-        Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, if (ceilingBroken) error else italic)
-        Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
-        Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
-        Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, if (gasWrong) error else italic, padding = GAP)
+    Explained(PlannerTips.WORKED) {
+        Row(
+            modifier = Modifier.height(ROW),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(HALF),
+        ) {
+            val italic = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)
+            Cell(runtimeSaid(leg), RUNTIME, TextAlign.End, italic)
+            Cell(leg.direction.arrow, ARROW, TextAlign.Center, italic)
+            val error = italic.copy(color = MaterialTheme.colorScheme.error)
+            Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, if (ceilingBroken) error else italic)
+            Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
+            Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
+            Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, if (gasWrong) error else italic, padding = GAP)
+        }
     }
+}
+
+/** A box in a column of the runtime or the cylinders, as wide as the column, saying [tip] while pointed at. */
+@Composable
+private fun Tipped(tip: String, width: Dp, content: @Composable () -> Unit) {
+    Box(modifier = Modifier.width(width)) { Explained(tip, content) }
 }
 
 /** A word in a column of the runtime box or the cylinders, as wide as the column. */
@@ -1224,25 +1236,25 @@ private fun Caption(text: String) {
 private fun Conditions(shaping: Shaping) {
     val none = shaping.safetyMinutes.trim().toDoubleOrNull() == 0.0
     Paired(
-        first = { Setting("GF low", shaping.gradientLow, "%") { shaping.gradientLow = it } },
-        second = { Setting("GF high", shaping.gradientHigh, "%") { shaping.gradientHigh = it } },
+        first = { Setting("GF low", PlannerTips.GF_LOW, shaping.gradientLow, "%") { shaping.gradientLow = it } },
+        second = { Setting("GF high", PlannerTips.GF_HIGH, shaping.gradientHigh, "%") { shaping.gradientHigh = it } },
     )
     Paired(
-        first = { Setting("pO₂ max bottom", shaping.bottomOxygen, "bar") { shaping.bottomOxygen = it } },
-        second = { Setting("pO₂ max deco", shaping.decoOxygen, "bar") { shaping.decoOxygen = it } },
+        first = { Setting("pO₂ max bottom", PlannerTips.BOTTOM_OXYGEN, shaping.bottomOxygen, "bar") { shaping.bottomOxygen = it } },
+        second = { Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it } },
     )
     Paired(
-        first = { Setting("Descent rate", shaping.descentRate, "m/min") { shaping.descentRate = it } },
-        second = { Setting("Ascent rate", shaping.ascentRate, "m/min") { shaping.ascentRate = it } },
+        first = { Setting("Descent rate", PlannerTips.DESCENT_RATE, shaping.descentRate, "m/min") { shaping.descentRate = it } },
+        second = { Setting("Ascent rate", PlannerTips.ASCENT_RATE, shaping.ascentRate, "m/min") { shaping.ascentRate = it } },
     )
     Paired(
-        first = { Setting("Safety stop depth", shaping.safetyDepth, "m", enabled = !none) { shaping.safetyDepth = it } },
-        second = { Setting("Safety stop duration", shaping.safetyMinutes, "min") { shaping.safetyMinutes = it } },
+        first = { Setting("Safety stop depth", PlannerTips.SAFETY_DEPTH, shaping.safetyDepth, "m", enabled = !none) { shaping.safetyDepth = it } },
+        second = { Setting("Safety stop duration", PlannerTips.SAFETY_DURATION, shaping.safetyMinutes, "min") { shaping.safetyMinutes = it } },
     )
     Paired(
-        first = { Setting("Last stop", shaping.lastStop, "m") { shaping.lastStop = it } },
+        first = { Setting("Last stop", PlannerTips.LAST_STOP, shaping.lastStop, "m") { shaping.lastStop = it } },
         second = {
-            Labelled("Water") {
+            Labelled("Water", PlannerTips.WATER) {
                 Pick(
                     dense = true,
                     chosen = wordSaid(shaping.water),
@@ -1252,10 +1264,10 @@ private fun Conditions(shaping: Shaping) {
         },
     )
     Paired(
-        first = { Setting("Panic stress factor", shaping.panicFactor, "× SAC") { shaping.panicFactor = it } },
+        first = { Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it } },
         second = {
             // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen.
-            Labelled("Gas lost") {
+            Labelled("Gas lost", PlannerTips.GAS_LOST) {
                 Pick(
                     dense = true,
                     chosen = shaping.lostIndex()?.let { gasChoiceOf(shaping, it) } ?: "none",
@@ -1265,7 +1277,7 @@ private fun Conditions(shaping: Shaping) {
         },
     )
     Paired(
-        first = { Setting("Problem solving time", shaping.problemMinutes, "min") { shaping.problemMinutes = it } },
+        first = { Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it } },
         second = {},
     )
 }
@@ -1280,8 +1292,8 @@ private fun Paired(first: @Composable () -> Unit, second: @Composable () -> Unit
 }
 
 @Composable
-private fun Setting(label: String, value: String, after: String, enabled: Boolean = true, onChange: (String) -> Unit) {
-    Labelled(label) {
+private fun Setting(label: String, tip: String, value: String, after: String, enabled: Boolean = true, onChange: (String) -> Unit) {
+    Labelled(label, tip) {
         Box(modifier = Modifier.width(SETTING)) {
             Compact(value = value, onChange = onChange, after = after, enabled = enabled, dense = true)
         }
@@ -1289,20 +1301,22 @@ private fun Setting(label: String, value: String, after: String, enabled: Boolea
 }
 
 @Composable
-private fun Labelled(label: String, content: @Composable () -> Unit) {
-    Row(
-        modifier = Modifier.height(ROW),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(GAP),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(SETTING_LABEL),
-        )
-        content()
+private fun Labelled(label: String, tip: String, content: @Composable () -> Unit) {
+    Explained(tip) {
+        Row(
+            modifier = Modifier.height(ROW),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(GAP),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                textAlign = TextAlign.End,
+                modifier = Modifier.width(SETTING_LABEL),
+            )
+            content()
+        }
     }
 }
 
@@ -1322,43 +1336,52 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HALF),
         ) {
-            Cell("${index + 1}", INDEX, TextAlign.End)
-            Box(modifier = Modifier.width(MIX)) {
+            Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX, TextAlign.End) }
+            Tipped(PlannerTips.MIX, MIX) {
                 Compact(dense = true, value = breathed.gas, onChange = { shaping.gases[index] = breathed.copy(gas = prettyGasOf(it)) })
             }
-            Box(modifier = Modifier.width(ROLE)) {
+            Tipped(PlannerTips.ROLE, ROLE) {
                 Pick(
                     dense = true,
                     chosen = breathed.role.label,
                     options = Role.entries.map { it.label },
                 ) { shaping.gases[index] = breathed.copy(role = Role.entries[it]) }
             }
-            Box(modifier = Modifier.width(VOLUME)) {
+            Tipped(PlannerTips.VOLUME, VOLUME) {
                 Compact(dense = true, value = breathed.size, onChange = { shaping.gases[index] = breathed.copy(size = it) }, after = "L")
             }
-            Box(modifier = Modifier.width(PRESSURE)) {
+            Tipped(PlannerTips.START, PRESSURE) {
                 Compact(dense = true, value = breathed.fill, onChange = { shaping.gases[index] = breathed.copy(fill = it) }, after = "bar")
             }
-            Box(modifier = Modifier.width(SAC)) {
+            Tipped(PlannerTips.SAC, SAC) {
                 Compact(dense = true, value = breathed.sac, onChange = { shaping.gases[index] = breathed.copy(sac = it) }, after = "L/min")
             }
             val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
-            Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked)
-            Cell(done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(), FIGURED, TextAlign.End, worked)
-            Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
+            Explained(PlannerTips.MOD) { Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked) }
+            Explained(PlannerTips.USED) {
+                Cell(done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(), FIGURED, TextAlign.End, worked)
+            }
+            Explained(PlannerTips.END) {
+                Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
+            }
             // Red where this is the cylinder that falls short, as a line too deep for its gas is.
             val short = reckoned != null && isShort(reckoned, key)
-            Cell(
-                reckoned?.let { minimumSaid(it, key) }.orEmpty(),
-                FIGURED,
-                TextAlign.End,
-                if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked,
-            )
-            IconButton(onClick = { shaping.addGas(index) }, modifier = Modifier.size(BUTTON)) {
-                Icon(Icons.Filled.Add, contentDescription = "Add a gas below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+            Explained(PlannerTips.MINIMUM) {
+                Cell(
+                    reckoned?.let { minimumSaid(it, key) }.orEmpty(),
+                    FIGURED,
+                    TextAlign.End,
+                    if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked,
+                )
             }
+            Explained(PlannerTips.ADD_GAS) {
+                IconButton(onClick = { shaping.addGas(index) }, modifier = Modifier.size(BUTTON)) {
+                    Icon(Icons.Filled.Add, contentDescription = "Add a gas below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+                }
+            }
+            // Why a gas cannot be taken out, where a line breathes it.
             val kept = shaping.keptBecause(index)
-            Explained(kept) {
+            Explained(kept ?: PlannerTips.REMOVE_GAS) {
                 IconButton(
                     onClick = { shaping.removeGas(index) },
                     enabled = kept == null,
@@ -1375,8 +1398,10 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
 @Composable
 private fun CylinderHeadings() {
     Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
-        for ((heading, width) in CYLINDER_COLUMNS) {
-            Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.outline))
+        for ((heading, width, tip) in CYLINDER_COLUMNS) {
+            Explained(tip) {
+                Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.outline))
+            }
         }
     }
 }
@@ -1388,10 +1413,10 @@ private fun Figures(evaluated: Evaluated.Done) {
         modifier = Modifier.fillMaxWidth().padding(vertical = GAP),
         horizontalArrangement = Arrangement.spacedBy(GAP * 3),
     ) {
-        Figure("CNS", "${evaluated.oxygen.percentCns.toInt()}%")
-        Figure("OTU", "${evaluated.oxygen.otu.toInt()}")
-        Figure("No-fly time", evaluated.noFlight?.let { waitSaid(it) } ?: "more than a day")
-        Figure("Desaturation time", evaluated.desaturation?.let { waitSaid(it) } ?: "more than a day")
+        Figure("CNS", "${evaluated.oxygen.percentCns.toInt()}%", PlannerTips.CNS)
+        Figure("OTU", "${evaluated.oxygen.otu.toInt()}", PlannerTips.OTU)
+        Figure("No-fly time", evaluated.noFlight?.let { waitSaid(it) } ?: "more than a day", PlannerTips.NO_FLY)
+        Figure("Desaturation time", evaluated.desaturation?.let { waitSaid(it) } ?: "more than a day", PlannerTips.DESATURATION)
     }
 }
 
@@ -1429,11 +1454,13 @@ private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
                         modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
                     )
                 }
-                Text(
-                    scenario.label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.width(SCENARIO),
-                )
+                Explained(scenario.tip) {
+                    Text(
+                        scenario.label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.width(SCENARIO),
+                    )
+                }
                 val quiet = MaterialTheme.colorScheme.outline
                 when (reckoning) {
                     null -> Text("off", style = MaterialTheme.typography.bodyMedium, color = quiet)
@@ -1449,10 +1476,12 @@ private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
 }
 
 @Composable
-private fun Figure(label: String, said: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-        Text(said, style = MaterialTheme.typography.bodyMedium)
+private fun Figure(label: String, said: String, tip: String) {
+    Explained(tip) {
+        Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+            Text(said, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 
@@ -1532,15 +1561,15 @@ private val FIGURED = 56.dp
 private val SCENARIO = 130.dp
 
 /** The cylinders' columns, headed, as wide as what sits under them. */
-private val CYLINDER_COLUMNS: List<Pair<String, Dp>> = listOf(
-    "" to INDEX,
-    "Gas" to MIX,
-    "Role" to ROLE,
-    "Volume" to VOLUME,
-    "Start" to PRESSURE,
-    "SAC" to SAC,
-    "MOD" to FIGURED,
-    "Used" to FIGURED,
-    "End" to FIGURED,
-    "Minimum" to FIGURED,
+private val CYLINDER_COLUMNS: List<Triple<String, Dp, String>> = listOf(
+    Triple("", INDEX, PlannerTips.NUMBER),
+    Triple("Gas", MIX, PlannerTips.MIX),
+    Triple("Role", ROLE, PlannerTips.ROLE),
+    Triple("Volume", VOLUME, PlannerTips.VOLUME),
+    Triple("Start", PRESSURE, PlannerTips.START),
+    Triple("SAC", SAC, PlannerTips.SAC),
+    Triple("MOD", FIGURED, PlannerTips.MOD),
+    Triple("Used", FIGURED, PlannerTips.USED),
+    Triple("End", FIGURED, PlannerTips.END),
+    Triple("Minimum", FIGURED, PlannerTips.MINIMUM),
 )

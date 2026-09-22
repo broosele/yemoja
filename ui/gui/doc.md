@@ -520,6 +520,11 @@ once and corrected. The numbers stay unused rather than being given to something
   them. The lines of all three parts are dense, in smaller type than a form's, so about eighteen
   lines of the runtime and about nine cylinders show before either scrolls.
 
+  **Every box, column and figure of the plan says what it is when pointed at.** The lines are too
+  dense for a label beside each box, and the runtime has no headings at all, so a tooltip in one or
+  two short sentences stands in for them. The words live together in `PlannerTips`, the one place to
+  read them over. A cross on a gas that a line breathes says why it cannot be taken out instead.
+
   **The settings are the plan's own.** GF low and high, pO₂ max bottom and deco, descent and ascent
   rate, safety stop depth and duration, last stop, water, panic stress factor and problem-solving time each start from
   what the settings hold, `GUI-42`, and are changed here for this plan alone. A safety stop of nought minutes is none,

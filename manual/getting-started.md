@@ -278,6 +278,8 @@ stop, and every gas switch it makes. It changes as you type, and there is nothin
 type part of the way up yourself, it adds only what is left, and a dive you have typed all the way
 to the surface gets nothing added.
 
+Rest the pointer on any box, column or figure in the planner and it says in a line what it is.
+
 On the right are the plan's settings. They start from what you chose in [Settings](settings.md),
 and a change here is for this plan only. A safety stop of 0 minutes means none. The safety stop is
 held on the way up as a minimum, and a longer decompression stop at the same depth counts towards
