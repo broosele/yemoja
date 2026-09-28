@@ -104,7 +104,7 @@ class RoundTripTest {
           "dive_site": "@lantern_reef",
           "buddies": ["@jacques_cousteau"],
           "rating": 8,
-          "details": {"tags": ["reef", "photo"], "dive_trip": "@provence_week"},
+          "tags": ["reef", "photo"], "dive_trip": "@provence_week",
           "environment": {"visibility": 18, "remarks": "Flat calm.\nSand at twelve."},
           "profiles": {
             "p1": {

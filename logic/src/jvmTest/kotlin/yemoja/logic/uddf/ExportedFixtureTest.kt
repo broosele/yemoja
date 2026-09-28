@@ -85,10 +85,10 @@ class ExportedFixtureTest {
         }
     }
 
-    /** When each dive in [set] naming [trip] on its details was made. */
+    /** When each dive in [set] naming [trip] was made. */
     private fun namingTrip(set: ItemSet, trip: Item): Set<String> =
         set.allOf(Types.DIVE).filter { dive ->
-            val named = owned(dive, "details")?.single<Reference>("dive_trip")
+            val named = dive.single<Reference>("dive_trip")
             val id = ((named as? Result.Usable)?.value as? Reference.Identified)?.id
             id != null && set[id] === trip
         }.map { said(it, "start_date") + " " + said(it, "start_time") }.toSet()
@@ -105,11 +105,9 @@ class ExportedFixtureTest {
             assertEquals(pointed(dive, "dive_site", logbook), pointed(again, "dive_site", back))
             // A person's name is written in parts there, so what a name overrode stays behind.
             assertEquals(people(dive, logbook), people(again, back), "buddies on $where")
-            val details = owned(dive, "details")
-            val detailsAgain = owned(again, "details")
             assertEquals(
-                details?.let { pointed(it, "operator", logbook) },
-                detailsAgain?.let { pointed(it, "operator", back) },
+                pointed(dive, "operator", logbook),
+                pointed(again, "operator", back),
                 "operator on $where",
             )
             val gear = owned(dive, "gear")

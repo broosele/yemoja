@@ -165,8 +165,7 @@ object Uddf {
         }
         environmentOf(dive, said)?.let { fields["environment"] = it }
         gearOf(dive, said, ours)?.let { fields["gear"] = it }
-        detailsOf(dive, trips, linked[Types.OPERATOR]?.firstOrNull())
-            ?.let { fields["details"] = it }
+        detailsOf(dive, fields, trips, linked[Types.OPERATOR]?.firstOrNull())
         profileOf(dive, keysOf(dive, mixes.keys), tanksOf(dive))?.let { fields["profiles"] = it }
         gasesOf(dive, ours, mixes)?.let { fields["gas_sources"] = it }
         return fields
@@ -294,14 +293,13 @@ object Uddf {
     /** A dive's notes, its trip and who ran it, which this model keeps together. */
     private fun detailsOf(
         dive: Tag,
+        fields: MutableMap<String, Stored>,
         trips: Map<String, String>,
         operator: String?,
-    ): Stored.Members? {
-        val fields = LinkedHashMap<String, Stored>()
+    ) {
         fields.put("remarks", dive.prose("notes"))
         fields.put("dive_trip", dive.attributes["id"]?.let { trips[it] }?.let { "@$it" })
         fields.put("operator", operator?.let { "@$it" })
-        return fields.ifEmpty { null }?.let { Stored.Members(it) }
     }
 
     /**

@@ -12,13 +12,11 @@
   "rating": 9,
   "max_depth": 24.6,
   "deco": false,
-  "details": {
-    "tags": [
-      "reef"
-    ],
-    "dive_trip": "@provence_week_calanques",
-    "operator": "@calanque_plongee"
-  },
+  "tags": [
+    "reef"
+  ],
+  "dive_trip": "@provence_week_calanques",
+  "operator": "@calanque_plongee",
   "environment": {
     "current": "none",
     "waves": "none",

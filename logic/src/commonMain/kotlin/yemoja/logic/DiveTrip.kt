@@ -105,11 +105,8 @@ private fun tripsDives(trip: Item): Result<Any> {
     return Result.Usable(found, Result.Origin.DERIVED)
 }
 
-/** Which trip a dive says it was on, which sits on its details rather than on the dive. */
-private fun tripOf(dive: Item): String? {
-    val details = (dive.single<OwnedItem>("details") as? Result.Usable)?.value ?: return null
-    return namesIn(details, "dive_trip").firstOrNull()
-}
+/** Which trip a dive says it was on. */
+private fun tripOf(dive: Item): String? = namesIn(dive, "dive_trip").firstOrNull()
 
 /** When a trip ran, taken from the dives on it. */
 private fun tripsStartDate(trip: Item): Result<Any> = spanOf(trip) { it.min() }

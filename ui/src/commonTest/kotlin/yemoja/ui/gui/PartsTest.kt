@@ -232,12 +232,22 @@ class ArrangedTest {
     fun `an item view flows the plain fields and sets each owned item in an inset, in order`() {
         val dive = arrangedOf(Types.DIVE)
         assertEquals(
-            listOf("details", "environment", "gear", "profiles", "gas_sources"),
+            listOf("environment", "gear", "profiles", "gas_sources"),
             dive.insets.map { it.name },
         )
         assertEquals(false, dive.plain.any { it.name in dive.insets.map { i -> i.name } })
         val kept = Types.DIVE.fields.count { it.housekeeping }
-        assertEquals(Types.DIVE.fields.size - kept, dive.plain.size + dive.insets.size)
+        assertEquals(Types.DIVE.fields.size - kept, dive.flowing.size + dive.insets.size)
+    }
+
+    @Test
+    fun `a section gathers its fields, and takes them out of the flow`() {
+        val dive = arrangedOf(Types.DIVE)
+        val details = dive.sections.single()
+        assertEquals("details", details.section.name)
+        assertEquals(listOf("dive_trip", "operator", "tags"), details.fields.map { it.name })
+        assertEquals(false, dive.plain.any { it.name in details.fields.map { field -> field.name } })
+        assertEquals(true, dive.flowing.any { it.name == "operator" }, "still a field of the dive")
     }
 
     @Test

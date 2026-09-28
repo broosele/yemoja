@@ -18,7 +18,7 @@ private fun logbook(vararg files: Pair<String, String>) =
 
 private fun dive(day: Int, trip: String? = null, site: String? = null, number: Int = day) =
     """{"dive_number": $number""" +
-        (trip?.let { ""","details": {"dive_trip": "@$it"}""" } ?: "") +
+        (trip?.let { ""","dive_trip": "@$it"""" } ?: "") +
         (site?.let { ""","dive_site": "@$it"""" } ?: "") +
         ""","profiles": {"p1": {"start_date": "2026-06-${"%02d".format(day)}",
         "start_time": "10:00:00", "depth": [[0, 0], [60, 12.0]]}}}"""

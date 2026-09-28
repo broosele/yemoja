@@ -371,9 +371,7 @@ internal class Writer(private val set: ItemSet) {
         tag("informationbeforedive") {
             pointed(dive, "dive_site")?.let { link(nameOf(it)) }
             for (buddy in pointedAll(dive, "buddies")) link(nameOf(buddy))
-            owned(dive, "details")?.let { details ->
-                pointed(details, "operator")?.let { link(nameOf(it)) }
-            }
+            pointed(dive, "operator")?.let { link(nameOf(it)) }
             say("divenumber", said(dive, "dive_number"))
             owned(dive, "environment")?.let { say("airtemperature", number(it, "air_temperature")) }
             val date = said(dive, "start_date")
@@ -427,9 +425,7 @@ internal class Writer(private val set: ItemSet) {
                 say("desaturationtime", number(profile, "desaturation_time"))
                 say("noflighttime", number(profile, "no_flight_time"))
             }
-            val details = owned(dive, "details")
-            notes(listOfNotNull(text(dive, "remarks"), details?.let { text(it, "remarks") })
-                .joinToString("\n").ifEmpty { null })
+            notes(text(dive, "remarks"))
             rated(said(dive, "rating"))
         }
     }
@@ -593,11 +589,9 @@ internal class Writer(private val set: ItemSet) {
     /** How many dives were left where they are, being intended rather than made. */
     val plans: Int get() = set.allOf(Types.DIVE).size - made().size
 
-    /** The dives naming [trip] on their details, the ones made. */
+    /** The dives naming [trip], the ones made. */
     private fun divesOn(trip: ReferenceableItem): List<ReferenceableItem> =
-        made().filter { dive ->
-            owned(dive, "details")?.let { pointed(it, "dive_trip") } === trip
-        }
+        made().filter { dive -> pointed(dive, "dive_trip") === trip }
 
     /** The `mix` [gas] is defined as, defining it the first time. */
     private fun mixOf(gas: Gas): String {

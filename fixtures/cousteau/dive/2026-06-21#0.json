@@ -9,14 +9,12 @@
   ],
   "rating": 10,
   "max_depth": 52.4,
-  "details": {
-    "tags": [
-      "deep",
-      "wall",
-      "trimix"
-    ],
-    "operator": "@calanque_plongee"
-  },
+  "tags": [
+    "deep",
+    "wall",
+    "trimix"
+  ],
+  "operator": "@calanque_plongee",
   "environment": {
     "current": "none",
     "waves": "none",

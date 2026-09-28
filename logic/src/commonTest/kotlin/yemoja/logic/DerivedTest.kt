@@ -174,9 +174,9 @@ class PlannedTest {
             "dive_trip.json" to """{"october": {"name": "October"}}""",
             "operator.json" to """{"harbour": {"name": "Harbour Divers"}}""",
             "dive/made#0.json" to """{"dive_site": "@kelp_wall", "buddies": ["@anna"],
-                "details": {"dive_trip": "@october", "operator": "@harbour"}}""",
+                "dive_trip": "@october", "operator": "@harbour"}""",
             "dive/ahead#0.json" to """{"dive_site": "@kelp_wall", "buddies": ["@anna"],
-                "details": {"dive_trip": "@october", "operator": "@harbour"},
+                "dive_trip": "@october", "operator": "@harbour",
                 "profiles": {"a": {"planned": true}}}""",
         )
 

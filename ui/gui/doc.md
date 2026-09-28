@@ -429,6 +429,18 @@ once and corrected. The numbers stay unused rather than being given to something
   A dive with no profile before takes the plan as its primary one; a dive with a recording keeps
   the recording, and the plan sits beside it for comparing.
 
+- **GUI-46 — What the window does with a section.** *Settled:* **a section in the flow gets its
+  label over its fields; a section drawn as a box gets the frame an owned item gets.**
+
+  The fields of a type flow two to a row, `GUI-16`, and a section is a run of them under a heading
+  rather than a new kind of thing. A section marked *box* is drawn exactly as an owned item is, so
+  a dive's *Details* looks as it did before `DATA-122` moved its three fields onto the dive.
+
+  **The edit form ignores sections for now.** It has its own arrangement — what follows from a
+  category comes forward, the rest folds away, `GUI-29` — and a grouping laid over that is a
+  second thing deciding where a field sits. A section there is worth doing once the form is next
+  opened up.
+
 - **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
   the form for the one chosen on the right: a dive plan, SAC, NDL, MOD, EAD and END.**
 

@@ -37,7 +37,7 @@ class BackLinkTest {
                 "gear.json" to """{"wing": {"name": "Wing"}, "twelve": {"name": "Twelve"}}""",
                 "dive/2026-06-01#0.json" to """{
                     "dive_site": "@blue_hole", "buddies": ["@anna"],
-                    "details": {"operator": "@rse"}, "gear": {"items": ["@wing", "@twelve"]}
+                    "operator": "@rse", "gear": {"items": ["@wing", "@twelve"]}
                 }""",
                 "dive/2026-06-02#0.json" to """{
                     "dive_site": "@blue_hole", "buddies": ["@anna", "@bram"],
@@ -72,7 +72,7 @@ class BackLinkTest {
     }
 
     @Test
-    fun `an operator holds the dives and the trips naming it, the dive doing so on its details`() {
+    fun `an operator holds the dives and the trips naming it`() {
         assertEquals(listOf("2026-06-01#0"), named(set["rse"]!!, "dives"))
         assertEquals(listOf("egypt_2026"), named(set["rse"]!!, "dive_trips"))
     }

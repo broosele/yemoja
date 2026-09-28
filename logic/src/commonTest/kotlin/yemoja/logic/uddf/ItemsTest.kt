@@ -280,8 +280,7 @@ class ReadTripTest {
     fun `relateddives points the other way here, so the dive names the trip`() {
         val set = document(tripped)
         val dive = one(set, Types.DIVE)
-        val details = (dive.single<OwnedItem>("details") as Result.Usable).value
-        assertEquals("calanques", named(details, "dive_trip"))
+        assertEquals("calanques", named(dive, "dive_trip"))
     }
 }
 
@@ -329,8 +328,7 @@ class ReadDiveLinksTest {
         val buddies = dive.list<Reference>("buddies") as Result.Usable
         val buddy = (buddies.value.single() as Element.Usable).value as Reference.Identified
         assertEquals("tom", buddy.id)
-        val details = (dive.single<OwnedItem>("details") as Result.Usable).value
-        assertEquals("northshore", named(details, "operator"))
+        assertEquals("northshore", named(dive, "operator"))
     }
 
     @Test

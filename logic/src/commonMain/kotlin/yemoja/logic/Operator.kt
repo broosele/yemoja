@@ -60,9 +60,9 @@ internal val OPERATOR: ItemDescription = ItemDescription(
     proposedId = ::namedById,
 )
 
-/** The dives whose details name [operator]. */
+/** The dives naming [operator]. */
 private fun operatorsDives(operator: Item): Result<Any> =
-    divesPointingAt(operator, Naming("operator", inside = "details"))
+    divesPointingAt(operator, Naming("operator"))
 
 /** The trips naming [operator]. */
 private fun operatorsTrips(operator: Item): Result<Any> =

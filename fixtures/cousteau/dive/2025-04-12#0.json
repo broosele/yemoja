@@ -10,14 +10,12 @@
   "rating": 9,
   "max_depth": 33.8,
   "deco": true,
-  "details": {
-    "tags": [
-      "wreck",
-      "deep"
-    ],
-    "dive_trip": "@spring_north_sea",
-    "operator": "@deep_current_charters"
-  },
+  "tags": [
+    "wreck",
+    "deep"
+  ],
+  "dive_trip": "@spring_north_sea",
+  "operator": "@deep_current_charters",
   "environment": {
     "current": "moderate",
     "waves": "mild",

@@ -11,13 +11,11 @@
   "rating": 5,
   "max_depth": 8.4,
   "deco": false,
-  "details": {
-    "tags": [
-      "training",
-      "rescue"
-    ],
-    "operator": "@northshore_diving"
-  },
+  "tags": [
+    "training",
+    "rescue"
+  ],
+  "operator": "@northshore_diving",
   "environment": {
     "current": "none",
     "waves": "none",

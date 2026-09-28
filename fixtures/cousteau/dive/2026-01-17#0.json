@@ -10,12 +10,10 @@
   "rating": 3,
   "max_depth": 13.5,
   "deco": false,
-  "details": {
-    "tags": [
-      "training"
-    ],
-    "operator": "@ravensgate_quarry_desk"
-  },
+  "tags": [
+    "training"
+  ],
+  "operator": "@ravensgate_quarry_desk",
   "environment": {
     "current": "none",
     "waves": "none",

@@ -10,12 +10,10 @@
   "rating": 8,
   "max_depth": 9.1,
   "deco": false,
-  "details": {
-    "tags": [
-      "shore",
-      "photo"
-    ]
-  },
+  "tags": [
+    "shore",
+    "photo"
+  ],
   "environment": {
     "current": "mild",
     "waves": "very mild",

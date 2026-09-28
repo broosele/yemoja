@@ -12,13 +12,11 @@
   "rating": 6,
   "max_depth": 11.8,
   "deco": false,
-  "details": {
-    "tags": [
-      "training"
-    ],
-    "dive_trip": "@quarry_training_weekend",
-    "operator": "@ravensgate_quarry_desk"
-  },
+  "tags": [
+    "training"
+  ],
+  "dive_trip": "@quarry_training_weekend",
+  "operator": "@ravensgate_quarry_desk",
   "environment": {
     "current": "none",
     "waves": "none",

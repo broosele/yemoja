@@ -12,6 +12,7 @@ import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.KeyReference
 import yemoja.data.KeyReferenceDescription
+import yemoja.data.Layout
 import yemoja.data.Moment
 import yemoja.data.NumberDescription
 import yemoja.data.Ordering
@@ -22,6 +23,7 @@ import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Role
+import yemoja.data.Section
 import yemoja.data.Series
 import yemoja.data.TextDescription
 import yemoja.data.Time
@@ -40,16 +42,6 @@ import yemoja.data.WholeNumberDescription
  */
 
 /** Details is the labels on a dive, and which trip and operator it belonged to. */
-private val DETAILS = ItemDescription(
-    "details",
-    listOf(
-        ReferenceDescription("dive_trip", targetType = "dive_trip"),
-        ReferenceDescription("operator", targetType = "operator"),
-        TextDescription("tags", cardinality = Cardinality.LIST),
-        REMARKS,
-    ),
-)
-
 /** Closed: six steps, for a current and for the state of the surface alike. */
 private val STRENGTHS = setOf("none", "very mild", "mild", "moderate", "hard", "very hard")
 
@@ -594,7 +586,9 @@ internal val DIVE: ItemDescription = ItemDescription(
         // Which of `profiles` to work from. Leaving it out where there is one is the
         // ordinary case.
         KeyReferenceDescription("primary_profile", collection = "profiles", housekeeping = true),
-        OwnedItemDescription("details", DETAILS),
+        ReferenceDescription("dive_trip", targetType = "dive_trip"),
+        ReferenceDescription("operator", targetType = "operator"),
+        TextDescription("tags", cardinality = Cardinality.LIST),
         OwnedItemDescription("environment", ENVIRONMENT),
         OwnedItemDescription("gear", DIVE_GEAR),
         OwnedItemDescription("profiles", PROFILE, cardinality = Cardinality.KEYED),
@@ -606,6 +600,8 @@ internal val DIVE: ItemDescription = ItemDescription(
         Ordering("start_time", Direction.DESCENDING),
     ),
     proposedId = ::divesProposedId,
+    // How the dive was arranged, which is one thing to read and three fields to hold. `DATA-122`.
+    sections = listOf(Section("details", listOf("dive_trip", "operator", "tags"), layout = Layout.BOX)),
 )
 
 /**

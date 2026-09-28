@@ -9,11 +9,9 @@
     "@jacques_cousteau"
   ],
   "rating": 8,
-  "details": {
-    "tags": ["reef", "photo"],
-    "dive_trip": "@provence_week_calanques",
-    "operator": "@calanque_plongee"
-  },
+  "tags": ["reef", "photo"],
+  "dive_trip": "@provence_week_calanques",
+  "operator": "@calanque_plongee",
   "environment": {
     "current": "none",
     "waves": "none",

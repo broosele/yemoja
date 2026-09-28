@@ -94,7 +94,7 @@ class EveryTypeTest {
         // Owned items included. The manual gives one to every kind of item, and an owned item
         // is a kind of item: a note about a medical has nowhere else to go.
         val types = everyType()
-        assertEquals(20, types.size, "nine stored types and eleven owned")
+        assertEquals(19, types.size, "nine stored types and ten owned")
         for (type in types) {
             assertIs<MultilineTextDescription>(type["remarks"], type.name)
         }

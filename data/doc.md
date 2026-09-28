@@ -769,6 +769,10 @@ This is a statement about **structure, not about presentation**. Nesting says th
 fields belong together and that a group is subordinate to the item holding it. It
 does not say how large anything should be drawn, or whether it is shown at all.
 
+**A group that is only a group is a section**, which a type declares beside its fields and
+which changes nothing about how they are stored. `DATA-121`. An owned item is what to reach
+for when a group needs its own field names, its own remarks, or its own absence.
+
 Interfaces are expected to read the structure — it is there precisely so they have
 something to read — but they are not bound by it. What appears in a view, and how
 prominently, is decided by the interface, per item type. The data layer supplies the
@@ -2197,6 +2201,42 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-122 — Whether a dive's `details` stays an owned item.** *Settled:* **no: `dive_trip`,
+  `operator` and `tags` are the dive's own fields, gathered by a section called *Details*.**
+
+  It was an owned item for grouping alone. Nothing about it needed a namespace: its three fields
+  are named nowhere else on a dive, nothing repeats its shape, and its remarks said the same kind
+  of thing the dive's own remarks say. With `DATA-121` a section groups them for a reader, so the
+  nesting was buying nothing and costing a level in every file, every path and every walk.
+
+  **What the other six keep.** `environment` and `gear` carry remarks of their own about a
+  different subject; `medical` and `insurance` repeat field names — an insurance has a `name`, and
+  the person has one too; `tolerances` names the very series it measures, `depth` against `depth`;
+  `gas_source` is one shape used on a dive and on a profile. Each of those is a namespace doing
+  work, which a section cannot do.
+
+  **The cost, paid once.** A file written before this holds `details`, and reading one now fails on
+  a field the dive does not have. `tool/liftdetails.py` lifts the block line by line, leaving the
+  rest of a file as it was written, and says which files held remarks inside it, those having to be
+  folded into the dive's by hand. Nothing is released, so no logbook but the author's and the
+  fixtures had to be moved.
+
+- **DATA-121 — How a type says which fields belong together, without nesting them.** *Settled:*
+  **a type declares sections, each naming the fields it gathers, and a section is never stored.**
+
+  An interface wants more grouping than the structure gives it: three fields about how a dive was
+  arranged sit among twenty about the dive itself, and nesting them to say so moves data. A
+  `Section` says the same thing as a hint — a name, a label, the fields it gathers, and a `Layout`
+  of *flow* or *box* — and a field inside one is written, addressed and read exactly as a field
+  outside one is.
+
+  **The fields name the section, not the other way round**, so a field description gains nothing
+  and the ordinary case stays one list of fields. A section naming a field the type does not have
+  is refused where it is built, and a field in two sections likewise: both are faults in the code.
+
+  It joins `housekeeping` and `source`, `DATA-115`, which are hints of the same kind: what an
+  interface does with a field rather than what the field is.
+
 - **DATA-120 — What a dive's primary profile is when nobody named one.** *Settled:* **nothing,
   and it is named for them the moment it would be needed.** A dive with one profile is worked from
   it and names none. A dive with several and none named is worked from none of them, and says so,
@@ -2249,8 +2289,8 @@ Kept with their identifiers so earlier discussion still resolves.
 
   `Change.Delete` can clear the references to what is going, and it walked an item's own
   reference fields only. That is the smaller half: most of a dive's references are not the
-  dive's fields at all — the trip and the operator are in `details`, the equipment in `gear`,
-  the cylinder in a gas source, the computer in a profile. Clearing the top level and calling it
+  dive's fields at all — the equipment is in `gear`, the cylinder in a gas source, the computer
+  in a profile. Clearing the top level and calling it
   done left most of the references pointing where they had, which is worse than not offering to
   clear, because it looks as though it worked.
 

@@ -11,13 +11,11 @@
   "rating": 6,
   "max_depth": 16.0,
   "deco": false,
-  "details": {
-    "tags": [
-      "altitude"
-    ],
-    "dive_trip": "@altitude_trial",
-    "operator": "@lakeside_dive_club"
-  },
+  "tags": [
+    "altitude"
+  ],
+  "dive_trip": "@altitude_trial",
+  "operator": "@lakeside_dive_club",
   "environment": {
     "current": "none",
     "waves": "none",

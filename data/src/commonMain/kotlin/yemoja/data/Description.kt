@@ -732,8 +732,48 @@ class OwnedItemDescription(
 }
 
 /**
+ * Layout is how an interface arranges the fields of one section.
+ *
+ * A hint, not a rule: a front end with no frames to draw ignores it. `DATA-121`.
+ */
+enum class Layout {
+
+    /** With the type's own fields, under the section's label. */
+    FLOW,
+
+    /** In a frame of its own, as an owned item is drawn. */
+    BOX,
+}
+
+/**
+ * Section is a group of a type's fields, named so that an interface can show them together.
+ *
+ * It says nothing about storage: a section is never written, and a field inside one is written
+ * and addressed exactly as a field outside one is. `DATA-121`.
+ *
+ * Immutable.
+ */
+class Section(
+    val name: String,
+    /** The fields it gathers, in the order they are shown. */
+    fields: List<String>,
+    label: String? = null,
+    val layout: Layout = Layout.FLOW,
+) {
+    val fields: List<String> = fields.toList()
+
+    /** Used in the UI. */
+    val label: String = label ?: name.replace('_', ' ').replaceFirstChar { it.uppercase() }
+}
+
+/** [name] among [fields], or absent where none is called that. */
+private fun byNameOf(fields: List<FieldDescription>, name: String): FieldDescription? =
+    fields.firstOrNull { it.name == name }
+
+/**
  * ItemDescription is one item type: its name, its fields in the order an interface offers them,
- * the order its items are listed in, and what a new one of it should be called.
+ * the sections it groups them into, the order its items are listed in, and what a new one of it
+ * should be called.
  *
  * Immutable.
  */
@@ -742,10 +782,32 @@ class ItemDescription(
     fields: List<FieldDescription>,
     orderedBy: List<Ordering> = emptyList(),
     val proposedId: ((Item) -> String)? = null,
+    sections: List<Section> = emptyList(),
 ) {
 
     // Copied. A List is read-only, not immutable.
     val fields: List<FieldDescription> = fields.toList()
+
+    /**
+     * How an interface groups these fields, in the order it shows the groups, or empty where a
+     * type is one run of fields.
+     *
+     * A field named by no section is shown before them all, in its own order. `DATA-121`.
+     */
+    val sections: List<Section> = sections.toList()
+
+    init {
+        val named = ArrayList<String>()
+        for (section in this.sections) {
+            for (field in section.fields) {
+                require(byNameOf(this.fields, field) != null) {
+                    "${section.name} of $name names $field, which is not a field of it"
+                }
+                require(field !in named) { "$field of $name is in two sections" }
+                named += field
+            }
+        }
+    }
 
     /**
      * How to sort items of this type, most significant first, or empty to leave them as read.

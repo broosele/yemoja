@@ -387,11 +387,11 @@ class TripDivesTest {
             "leg_two": {"name": "Leg two", "parent": "@leg_one"},
             "elsewhere": {"name": "Elsewhere"}
         }""",
-        "dive/a#0.json" to """{"details": {"dive_trip": "@leg_one"},
+        "dive/a#0.json" to """{"dive_trip": "@leg_one",
             "profiles": {"p1": {"start_date": "2026-06-21", "depth": [[0, 0], [60, 5]]}}}""",
-        "dive/b#0.json" to """{"details": {"dive_trip": "@leg_two"},
+        "dive/b#0.json" to """{"dive_trip": "@leg_two",
             "profiles": {"p1": {"start_date": "2026-06-25", "depth": [[0, 0], [60, 5]]}}}""",
-        "dive/c#0.json" to """{"details": {"dive_trip": "@elsewhere"},
+        "dive/c#0.json" to """{"dive_trip": "@elsewhere",
             "profiles": {"p1": {"start_date": "2026-07-01", "depth": [[0, 0], [60, 5]]}}}""",
     )
 

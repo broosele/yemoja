@@ -457,11 +457,9 @@ Stored as `dive/2026-02-23#0.json`. The file is the dive itself.
   "buddies": ["@anna_de_vries", "john"],
   "rating": 8,
   "max_depth": 31.4,
-  "details": {
-    "tags": ["training"],
-    "dive_trip": "@spring_weekend",
-    "operator": "@northshore_diving"
-  },
+  "tags": ["training"],
+  "dive_trip": "@spring_weekend",
+  "operator": "@northshore_diving",
   "environment": {
     "current": "none",
     "waves": "none",

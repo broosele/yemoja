@@ -160,13 +160,12 @@ class ChangedLogbookTest {
             "gear.json" to """{"fins": {"name": "Fins"}}""",
             "person.json" to """{"anna": {}}""",
             "dive/2026-01-01#0.json" to """{"buddies": ["@anna"],
-                "details": {"operator": "@shop"}, "gear": {"items": ["@fins"]}}""",
+                "operator": "@shop", "gear": {"items": ["@fins"]}}""",
         )
         universe.change(Operation.EDIT, Change.Delete("shop", alsoReferences = true))
         universe.change(Operation.EDIT, Change.Delete("fins", alsoReferences = true))
         val dive = saved(store).logbook["2026-01-01#0"]!!
-        val details = (dive.read("details") as? Result.Usable)?.value as? Item
-        assertEquals(Result.Absent, details?.read("operator") ?: Result.Absent, "in an owned item")
+        assertEquals(Result.Absent, dive.read("operator"), "on the dive")
         val gear = (dive.read("gear") as? Result.Usable)?.value as? Item
         val items = (gear?.read("items") as? Result.Usable)?.value as? List<*>
         assertTrue(items.isNullOrEmpty(), "and out of a list inside one: $items")

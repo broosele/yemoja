@@ -5,11 +5,9 @@
   ],
   "previous_dive": "@2026-10-03#0",
   "primary_profile": "*a",
-  "details": {
-    "tags": [
-      "planned"
-    ]
-  },
+  "tags": [
+    "planned"
+  ],
   "environment": {
     "atmospheric_pressure": 1.013
   },

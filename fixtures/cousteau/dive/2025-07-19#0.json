@@ -10,14 +10,12 @@
   "rating": 8,
   "max_depth": 21.3,
   "deco": false,
-  "details": {
-    "tags": [
-      "altitude",
-      "fresh water"
-    ],
-    "dive_trip": "@altitude_trial",
-    "operator": "@lakeside_dive_club"
-  },
+  "tags": [
+    "altitude",
+    "fresh water"
+  ],
+  "dive_trip": "@altitude_trial",
+  "operator": "@lakeside_dive_club",
   "environment": {
     "current": "none",
     "waves": "none",

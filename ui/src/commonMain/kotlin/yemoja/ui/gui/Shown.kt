@@ -15,6 +15,7 @@ import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
+import yemoja.data.Section
 import yemoja.data.Series
 import yemoja.data.TextDescription
 import yemoja.data.Units
@@ -175,7 +176,15 @@ internal class Arranged(
     val plain: List<FieldDescription>,
     val insets: List<OwnedItemDescription>,
     val foot: List<FieldDescription> = emptyList(),
-)
+    /** The type's sections, each with the fields it gathers, in the order they are shown. */
+    val sections: List<Sectioned> = emptyList(),
+) {
+    /** Every field that is not an inset or at the foot, sections included, in their order. */
+    val flowing: List<FieldDescription> get() = plain + sections.flatMap { it.fields }
+}
+
+/** One section of a type, with the fields it gathers in hand. */
+internal class Sectioned(val section: Section, val fields: List<FieldDescription>)
 
 /**
  * The fields of [type] as an item view lays them out, or as the edit form does.
@@ -187,10 +196,15 @@ internal class Arranged(
 internal fun arrangedOf(type: ItemDescription, editing: Boolean = false): Arranged {
     val shown = fieldsShownOf(type, editing).filter { it.cardinality !in SERIES }
     val footed = if (editing) emptySet() else AT_FOOT[type.name].orEmpty()
+    val sections = type.sections.map { section ->
+        Sectioned(section, section.fields.mapNotNull { name -> shown.firstOrNull { it.name == name } })
+    }.filter { it.fields.isNotEmpty() }
+    val sectioned = sections.flatMap { it.fields }.toSet()
     return Arranged(
-        plain = shown.filter { it !is OwnedItemDescription && it.name !in footed },
+        plain = shown.filter { it !is OwnedItemDescription && it.name !in footed && it !in sectioned },
         insets = shown.filterIsInstance<OwnedItemDescription>(),
         foot = shown.filter { it.name in footed },
+        sections = sections,
     )
 }
 

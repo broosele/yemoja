@@ -138,11 +138,9 @@ private fun runsIn(rows: List<DiveRow>): List<DiveRow> {
 
 private fun DiveRow.copy(run: Int) = DiveRow(dive, trip, number, date, site, run, planned)
 
-/** The trip a dive was made on, which sits inside the item it owns rather than on the dive. */
+/** The trip a dive was made on. */
 private fun tripOf(set: ItemSet, dive: Item): Chosen? {
-    val details = (dive.single<yemoja.data.OwnedItem>("details") as? Result.Usable)?.value
-        ?: return null
-    val id = pointedAt(details, "dive_trip") ?: return null
+    val id = pointedAt(dive, "dive_trip") ?: return null
     val trip = set[id] ?: return null
     return Chosen(id, titleOf(trip), trip)
 }

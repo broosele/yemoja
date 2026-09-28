@@ -4,12 +4,10 @@
     "@jacques_cousteau"
   ],
   "primary_profile": "*a",
-  "details": {
-    "tags": [
-      "wreck",
-      "planned"
-    ]
-  },
+  "tags": [
+    "wreck",
+    "planned"
+  ],
   "environment": {
     "atmospheric_pressure": 1.013
   },

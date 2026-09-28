@@ -13,13 +13,11 @@
   "max_depth": 19.7,
   "surface_interval": 7200,
   "deco": false,
-  "details": {
-    "tags": [
-      "reef",
-      "photo"
-    ],
-    "operator": "@calanque_plongee"
-  },
+  "tags": [
+    "reef",
+    "photo"
+  ],
+  "operator": "@calanque_plongee",
   "environment": {
     "current": "none",
     "waves": "none",

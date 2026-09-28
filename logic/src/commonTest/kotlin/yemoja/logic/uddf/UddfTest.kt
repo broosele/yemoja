@@ -106,8 +106,7 @@ class ReadDiveTest {
     fun `notes become remarks, paragraph by paragraph`() {
         val notes = "<notes><para>Cold.</para><para>And grey.</para></notes>"
         val dive = oneDive(dived(after = notes))
-        val details = (dive.single<OwnedItem>("details") as Result.Usable).value
-        assertEquals("Cold.\nAnd grey.", (details.single<String>("remarks") as Result.Usable).value)
+        assertEquals("Cold.\nAnd grey.", (dive.single<String>("remarks") as Result.Usable).value)
     }
 
     @Test
@@ -328,8 +327,7 @@ class ReadTagsTest {
     fun `an entity and a CDATA section both come through`() {
         val notes = "<notes><para>cold &amp; grey<![CDATA[, really]]></para></notes>"
         val dive = oneDive(dived(after = notes))
-        val details = (dive.single<OwnedItem>("details") as Result.Usable).value
-        val remarks = details.single<String>("remarks") as Result.Usable
+        val remarks = dive.single<String>("remarks") as Result.Usable
         assertEquals("cold & grey, really", remarks.value)
     }
 }

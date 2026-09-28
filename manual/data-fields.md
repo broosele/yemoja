@@ -225,8 +225,11 @@ All five can be corrected where the calculation is wrong.
   calculate rather than guessed at. That happens only to a file edited by hand: when Yemoja
   adds a second profile to a dive, a plan or another computer's recording, it names the one
   the dive already had as primary, so the dive goes on saying what it said.
-- `details` (owned item) — tags, and which trip and operator the dive belonged to.
-  Described under *Details* below.
+- `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
+  the leg: a trip's list of dives gathers its own and those of everything beneath it.
+- `operator` (reference) — who you dived with.
+- `tags` (list of text) — your own labels. Anything you like; `solo` and `wreck` are
+  examples.
 - `environment` (owned item) — the conditions you found.
 - `gear` (owned item) — what you took, and how it performed. Described under *Dive gear*
   below.
@@ -235,18 +238,6 @@ All five can be corrected where the calculation is wrong.
 - `gas_sources` (keyed owned items) — what you breathed from.
 - `remarks` (multiline text) — how the dive went. The seal that flooded, the shoal
   that came past, why you turned round early.
-
-#### Details
-
-One per dive.
-
-- `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
-  the leg: a trip's list of dives gathers its own and those of everything beneath it.
-- `operator` (reference) — who you dived with.
-- `tags` (list of text) — your own labels. Anything you like; `solo` and `wreck` are
-  examples.
-- `remarks` (multiline text) — anything about how the dive was arranged that the
-  tags and the trip do not carry.
 
 #### Environment
 
@@ -938,7 +929,7 @@ centre, a club, a resort, a boat.
   `liveaboard operator`.
 - `rating` (whole number) — what you make of them, as a whole number from 1 to 10.
 - `dives` (list of references, derived) — the dives made with them, which follows from
-  the `operator` on each dive's details.
+  the `operator` on each dive.
 - `dive_trips` (list of references, derived) — the trips they ran, which follows from
   each trip's `operator`.
 - `remarks` (multiline text) — what they were like to dive with.

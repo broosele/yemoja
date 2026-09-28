@@ -121,6 +121,7 @@ import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
+import yemoja.data.Layout
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
@@ -2451,17 +2452,20 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
     val shown = arranged.plain.mapNotNull { shownOf(it, item) }
     val insets = arranged.insets.filter { item.read(it.name) is Result.Usable }
     val foot = arranged.foot.mapNotNull { shownOf(it, item) }
-    if (shown.isEmpty() && insets.isEmpty() && foot.isEmpty()) {
+    val sections = arranged.sections.map { it.section to it.fields.mapNotNull { field -> shownOf(field, item) } }
+        .filter { (_, shown) -> shown.isNotEmpty() }
+    if (shown.isEmpty() && insets.isEmpty() && foot.isEmpty() && sections.isEmpty()) {
         Aside("No values")
         return
     }
-    for (pair in shown.chunked(COLUMNS)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
-        ) {
-            for (field in pair) Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
-            repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
+    Flowing(shown, onFollow)
+    for ((section, held) in sections) {
+        when (section.layout) {
+            Layout.BOX -> Inset(section.label) { Flowing(held, onFollow) }
+            Layout.FLOW -> {
+                Caption(section.label)
+                Flowing(held, onFollow)
+            }
         }
     }
     val opener = LocalPlanOpener.current
@@ -2480,6 +2484,31 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
         }
     }
     for (footing in foot) Inset(footing.label) { Said(footing, onFollow) }
+}
+
+/** Fields in the flow of a card, two to a row. */
+@Composable
+private fun Flowing(shown: List<Shown>, onFollow: (String) -> Unit) {
+    for (pair in shown.chunked(COLUMNS)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+        ) {
+            for (field in pair) Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
+            repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
+        }
+    }
+}
+
+/** A section's name, over the fields it gathers. */
+@Composable
+private fun Caption(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.outline,
+        modifier = Modifier.padding(top = GAP, bottom = HALF),
+    )
 }
 
 /** A keyed owned item as an inset with a tab per entry, the first open. */

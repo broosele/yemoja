@@ -96,7 +96,7 @@ internal fun EditFields(item: Item, draft: Draft) {
     // What the form says rather than what the item holds: a category typed a moment ago decides
     // where the fields that follow from it sit, without waiting for Save. `GUI-29`.
     val saying = draft.shownOf(item, "category") as? String
-    val forward = arranged.plain.filter { forwardOf(it, item, saying) }
+    val forward = arranged.flowing.filter { forwardOf(it, item, saying) }
     for (pair in forward.chunked(COLUMNS)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -106,7 +106,7 @@ internal fun EditFields(item: Item, draft: Draft) {
             repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
-    Folded(arranged.plain.filterNot { forwardOf(it, item, saying) }, item, draft)
+    Folded(arranged.flowing.filterNot { forwardOf(it, item, saying) }, item, draft)
     for (inset in arranged.insets) {
         when (inset.cardinality) {
             Cardinality.KEYED -> KeyedEditor(inset.label, inset.name, item, draft)

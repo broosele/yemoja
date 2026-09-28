@@ -36,7 +36,7 @@ import kotlin.math.roundToInt
  */
 internal fun statisticsOf(items: List<Item>): List<Shown> {
     val type = items.firstOrNull()?.description ?: return emptyList()
-    return arrangedOf(type).plain
+    return arrangedOf(type).flowing
         .filter { it.name != TITLE }
         .mapNotNull { field -> statisticOf(field, items) }
 }

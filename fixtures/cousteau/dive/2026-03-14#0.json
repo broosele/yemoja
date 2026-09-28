@@ -13,12 +13,10 @@
   "rating": 7,
   "max_depth": 92,
   "deco": false,
-  "details": {
-    "tags": [
-      "wreck"
-    ],
-    "operator": "@deep_current_charters"
-  },
+  "tags": [
+    "wreck"
+  ],
+  "operator": "@deep_current_charters",
   "environment": {
     "current": "very hard",
     "waves": "none",
