@@ -249,8 +249,9 @@ gas going. That time is breathed at the scenario's rate and loads your tissues t
 a stop to the way up as well as the gas for itself.
 
 The second scenario assumes your buddy breathes as fast as you, carries the same deco gas, and
-cannot use your bailout. Switch either scenario off where it does not apply: the second on a solo
-dive, the first where losing your deco gas is not something you plan for.
+cannot use your bailout. Leave either scenario out where it does not apply: the second on a solo
+dive, by unticking it, and the first where losing your deco gas is not something you plan for, by
+choosing *None* as the gas lost.
 
 Every moment of the plan is tried, in each scenario, and the worst is reported: when it is, how
 deep you are, and how much each cylinder must still hold then, in bar. A cylinder's reserve is the

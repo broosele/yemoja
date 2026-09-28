@@ -158,7 +158,7 @@ internal class Shaping {
     /** Minutes the gas reserve spends at the depth trouble starts before the way up begins. */
     var problemMinutes: String by mutableStateOf("")
 
-    /** Whether the gas reserve tries losing the cylinder [lostGas] names. */
+    /** Whether the gas reserve tries losing a cylinder: false where *Gas lost* says *None*. */
     var lostGasScenario: Boolean by mutableStateOf(true)
 
     /**
@@ -614,6 +614,12 @@ internal fun workedOf(ready: Shaped.Ready): Worked {
 internal fun Shaping.lostIndex(): Int? =
     lostGas?.takeIf { it in gases.indices } ?: gases.indexOfFirst { it.role == Role.DECO }.takeIf { it >= 0 }
 
+/**
+ * Whether the lost-gas scenario is tried: a cylinder is lost, and *None* was not chosen. A plan with
+ * no deco gas and nothing chosen loses none, so its reserve has no lost-gas scenario to try.
+ */
+internal fun Shaping.lostGasTried(): Boolean = lostGasScenario && lostIndex() != null
+
 /** Scenario is one way a dive can go wrong that the gas reserve is kept back for. `LOGIC-40`. */
 internal enum class Scenario(val label: String, val tip: String) {
 
@@ -666,22 +672,14 @@ internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditi
         val wrong = Reckoning.Wrong(numberWrong("Problem solving time", "0 minutes or more", shaping.problemMinutes))
         return Reckoned(
             mapOf(
-                Scenario.LOST_GAS to wrong.takeIf { shaping.lostGasScenario },
+                Scenario.LOST_GAS to wrong.takeIf { shaping.lostGasTried() },
                 Scenario.SHARED to wrong.takeIf { shaping.sharedScenario },
             ),
         )
     }
-    val lostGas = if (shaping.lostGasScenario) {
-        val lost = shaping.lostIndex()
-        if (lost == null) {
-            Reckoning.Wrong("Choose which gas is lost")
-        } else {
-            reckoning(
-                lostGasReserve(done.whole, setOf(gasKeyOf(lost)), conditions.ascentRate, conditions.lastStop, problem),
-            )
-        }
-    } else {
-        null
+    val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
+    val lostGas = lost?.let {
+        reckoning(lostGasReserve(done.whole, setOf(gasKeyOf(it)), conditions.ascentRate, conditions.lastStop, problem))
     }
     val shared = if (shaping.sharedScenario) {
         val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
@@ -725,7 +723,7 @@ internal fun worstSaid(reserve: Reserve.Done): String =
  * Example: `Cannot be calculated (missing for Gas 1: SAC, volume, start pressure)`.
  */
 internal fun missingSaid(shaping: Shaping): String? {
-    val lost = if (shaping.lostGasScenario) shaping.lostIndex() else null
+    val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
     val missing = shaping.gases.withIndex().filter { (index, breathed) ->
         index != lost && breathed.sac.trim().toDoubleOrNull() == null
     }.map { (index, breathed) -> "${gasLabelOf(index)}: ${lackedBy(breathed).joinToString(", ")}" }
@@ -1293,13 +1291,17 @@ private fun Conditions(shaping: Shaping) {
 private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
         Column {
-            // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen.
+            // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen,
+            // and None for no lost-gas scenario at all: the choice is the scenario's switch.
             Labelled("Gas lost", PlannerTips.GAS_LOST) {
                 Pick(
                     dense = true,
-                    chosen = shaping.lostIndex()?.let { gasChoiceOf(shaping, it) } ?: "none",
-                    options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
-                ) { shaping.lostGas = it }
+                    chosen = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }?.let { gasChoiceOf(shaping, it) } ?: NO_GAS_LOST,
+                    options = listOf(NO_GAS_LOST) + shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                ) { chosen ->
+                    shaping.lostGasScenario = chosen > 0
+                    if (chosen > 0) shaping.lostGas = chosen - 1
+                }
             }
             Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it }
             Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it }
@@ -1468,23 +1470,19 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                 horizontalArrangement = Arrangement.spacedBy(GAP),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val on = when (scenario) {
-                    Scenario.LOST_GAS -> shaping.lostGasScenario
-                    Scenario.SHARED -> shaping.sharedScenario
-                }
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-                    Checkbox(
-                        checked = on,
-                        onCheckedChange = {
-                            when (scenario) {
-                                Scenario.LOST_GAS -> shaping.lostGasScenario = it
-                                Scenario.SHARED -> shaping.sharedScenario = it
-                            }
-                        },
-                        // The platform draws its box at one size whatever the slot, so it is
-                        // drawn smaller rather than squeezed into a smaller slot.
-                        modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
-                    )
+                if (scenario == Scenario.SHARED) {
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        Checkbox(
+                            checked = shaping.sharedScenario,
+                            onCheckedChange = { shaping.sharedScenario = it },
+                            // The platform draws its box at one size whatever the slot, so it is
+                            // drawn smaller rather than squeezed into a smaller slot.
+                            modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
+                        )
+                    }
+                } else {
+                    // Switched by *Gas lost* instead, and kept in line with the one that has a tick.
+                    Box(modifier = Modifier.size(DENSE_GLYPH))
                 }
                 Explained(scenario.tip) {
                     Text(
@@ -1596,6 +1594,9 @@ private val FIGURED = 56.dp
 
 /** How wide a scenario's name is, so what follows it lines up. */
 private val SCENARIO = 110.dp
+
+/** What *Gas lost* offers for losing no gas, which is no lost-gas scenario. */
+private const val NO_GAS_LOST = "None"
 
 /** The cylinders' columns, headed, as wide as what sits under them. */
 private val CYLINDER_COLUMNS: List<Triple<String, Dp, String>> = listOf(

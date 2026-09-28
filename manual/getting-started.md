@@ -290,8 +290,9 @@ it.
 Under the settings is **Contingency**, the gas reserve: what you must keep back in case something
 goes wrong. On its left are its settings, the gas lost, the panic stress factor and the
 problem-solving time, which also start from your Settings. Beside them is a line for each
-scenario, *Lost gas* and *Buddy out of gas*, each with a tick to switch it off, what it asks each
-cylinder to hold, its worst moment, and what it assumes. Change a setting and the lines change
+scenario, *Lost gas* and *Buddy out of gas*, saying what it asks each cylinder to hold, its worst
+moment, and what it assumes. Choose *None* under *Gas lost* to leave the first scenario out, and
+untick *Buddy out of gas* to leave the second out. Change a setting and the lines change
 with it. [The decompression model](decompression.md#planning-a-dive) explains both scenarios.
 
 Under that are the gases, a line for each cylinder: the mix, its role, its size, what it

@@ -560,14 +560,15 @@ once and corrected. The numbers stay unused rather than being given to something
   together, so a reader changing one sees the other move; the user moved them out of the settings
   and from under the clocks for that. What each cylinder must still hold is also a column of the
   gases, *Minimum*: the most any scenario switched on asks of it, red on a cylinder that falls short
-  in any of them. Each scenario's line has a tick before it that switches it off, shown before the
-  plan can be worked out as well, and says what it asks each cylinder
+  in any of them. The sharing scenario's line has a tick before it that switches it off, shown
+  before the plan can be worked out as well; the lost-gas scenario is switched by *Gas lost*
+  instead, below. Each line says what it asks each cylinder
   to hold, its own worst moment, and what it assumes, in one sentence: *Gas 1 needs 28 bar at 25:00
   (40 m), two divers sharing to 21.6 m at 2 × SAC*. A scenario that asks nothing says why, as *No
   sharing needed: each diver switches to 2: EAN50 at once*, rather than a worst moment at the
   surface that would mean nothing. The lines are where a reader sees which scenario set a minimum, and the
   phrase is the rule said once, where it applies, rather than in a paragraph they would have to go
-  looking for. Both start ticked, since a reserve nobody asked for protects nobody.
+  looking for. Both start on, since a reserve nobody asked for protects nobody.
 
   A cylinder that falls short is also a warning in the list beneath, saying which scenario it falls
   short in and in the names the model's own warnings use, so *Gas 1 runs out* and *Gas 1 is empty*
@@ -575,7 +576,10 @@ once and corrected. The numbers stay unused rather than being given to something
   lost*, a choice of one cylinder beside the panic stress factor. One, because losing two at once is
   not a scenario anybody plans for; the user replaced a tick on each cylinder with it for that
   reason. It is the first deco cylinder until another is chosen, follows its cylinder when others
-  are added or taken out, and goes back to the first deco cylinder when its own is taken out. It is
+  are added or taken out, and goes back to the first deco cylinder when its own is taken out. **Its
+  first choice is *None*, which leaves the lost-gas scenario out**: the choice of what is lost and
+  whether anything is lost are one decision, so the user merged the scenario's tick into it. A plan
+  with no deco gas and nothing chosen shows *None* too, rather than asking for a choice. It is
   a setting rather than a fourth role, since losing a bottom gas is a scenario a reader may want to
   try without changing what the cylinder is for. The panic stress factor is read apart from the
   other settings, so a factor typed wrong leaves the sharing scenario unsaid and everything else

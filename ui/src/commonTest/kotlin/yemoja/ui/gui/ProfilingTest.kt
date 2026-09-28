@@ -390,12 +390,26 @@ class ReserveTest {
     }
 
     @Test
-    fun `a plan with no deco gas has nothing lost until one is chosen`() {
+    fun `a plan with no deco gas loses none until one is chosen`() {
         val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", size = "24", fill = "232", sac = "20")))
 
         assertNull(shaping.lostIndex())
-        val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[Scenario.LOST_GAS])
-        assertEquals("Choose which gas is lost", wrong.reason)
+        assertTrue(!shaping.lostGasTried())
+        assertNull(reckoned(shaping).scenarios[Scenario.LOST_GAS], "no lost-gas scenario, rather than a complaint")
+    }
+
+    @Test
+    fun `choosing None leaves the lost-gas scenario out, and choosing a gas brings it back`() {
+        val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
+        shaping.lostGasScenario = false
+
+        assertTrue(!shaping.lostGasTried())
+        assertNull(reckoned(shaping).scenarios[Scenario.LOST_GAS])
+        assertIs<Reckoning.Done>(reckoned(shaping).scenarios[Scenario.SHARED], "the other goes on")
+
+        shaping.lostGasScenario = true
+        shaping.lostGas = 1
+        assertIs<Reckoning.Done>(reckoned(shaping).scenarios[Scenario.LOST_GAS])
     }
 
     @Test
