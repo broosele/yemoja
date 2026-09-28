@@ -40,8 +40,10 @@ A line also says when a dive was merged from several recordings, because the com
 cut it in two, and when it is a dive this logbook already holds.
 
 **Where a dive recorded a position**, the line asks where it was: the three nearest of your dive
-sites, **No site**, or a new site you name there and press **Create site**. A dive left unanswered
-goes in with no site.
+sites, **No site**, or a new site you name in the box. Pressing **Create site** makes it straight
+away, and importing the dive makes it too, so a name typed and left is not lost. The new site takes
+its name as its id and keeps the position the computer recorded. A dive left unanswered goes in
+with no site.
 
 **Import all** takes every line as it stands. **Close** closes the list without taking in what is
 left, which stays waiting to be reviewed later.

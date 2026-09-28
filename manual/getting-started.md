@@ -138,8 +138,12 @@ you type.
   is calculated.
 - A field with usual answers offers them from its arrow, and anything else may still be typed.
   A field with a fixed list offers only that list.
-- A field pointing at another item finds it as you type its name. A plain name is kept where
-  one is allowed: a buddy, an emergency contact, or a dive computer you keep no item for.
+- A field pointing at another item finds it as you type its name, and offers to **make one**
+  where nothing answers to what you typed: a name nothing matches shows *New dive site: "Blue
+  Hole"* at the foot of the list, which makes the site and points the field at it. The new item
+  is made straight away, so cancelling the form leaves it behind. Every type but a dive can be
+  made this way, a dive being named for the day it was made on. A plain name is kept instead
+  where one is allowed: a buddy, an emergency contact, or a dive computer you keep no item for.
 - A list has **+ add** and a cross beside each entry.
 - A time is typed as minutes and seconds, `42:30`, or as minutes alone.
 

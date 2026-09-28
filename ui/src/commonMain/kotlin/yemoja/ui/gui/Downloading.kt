@@ -308,6 +308,12 @@ internal fun takeIn(import: Import, arriving: Arriving, onto: String?): Outcome 
         } else {
             val done = import.insert(site)
             if (done is Outcome.Refused) return done
+            // A named site lands under the id its name proposes rather than the one it was
+            // staged under, so the dive is pointed at where it went. `LOGIC-18`.
+            (done as? Outcome.Done)?.added?.firstOrNull()?.takeIf { it != site }?.let { landed ->
+                val refused = answered(import, arriving, landed)
+                if (refused is Outcome.Refused) return refused
+            }
         }
     }
     if (onto == null) {

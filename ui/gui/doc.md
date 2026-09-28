@@ -1475,7 +1475,25 @@ once and corrected. The numbers stay unused rather than being given to something
   is keyed as its type proposes for one holding nothing, the first free taken. **A reference
   offers the items it may name**: those of its type, and where a field wants one category of
   them, that category alone, so a gas source's `cylinder` offers the cylinders and not the
-  regulators its volume could never be taken from. Open: the phone's form.
+  regulators its volume could never be taken from, and it offers to make one where nothing
+  answers to what was typed, `GUI-48`. Open: the phone's form.
+- **GUI-48 — How an item that does not exist yet is named in a reference.** *Settled:* **the
+  drop-down offers to make one, called by what was typed.**
+
+  A buddy met today and a site dived for the first time are the ordinary way a logbook grows, and
+  before this the only way in was to leave the form, make the item on its own tab, and come back.
+  So a reference whose box holds a name that answers to nothing offers one more line — *New dive
+  site: "Blue Hole"* — which makes the item with that name and points the reference at it.
+
+  **It is offered for every type but the dive.** Eight of the nine propose their id from a name,
+  so a name is the whole of what making one needs, `LOGIC-23`. A dive is named for the day it was
+  made on and has no name to give, so nothing offers to make one from a box.
+
+  **The item is made at once, not with the form.** A reference has to point at something that
+  exists, and the form's draft is not a place an item can live. Cancelling the form therefore
+  leaves the new item behind, which is the same as pressing **+** on its own tab and is worth
+  knowing rather than hiding.
+
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
   another item, the name is clickable and opens that item where it lives: the tab holding its
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and

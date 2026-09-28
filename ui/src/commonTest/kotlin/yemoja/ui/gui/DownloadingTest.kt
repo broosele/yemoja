@@ -329,7 +329,11 @@ class DownloadingTest {
         namedAs(import, dive, "Nieuwdorp")
         takeIn(import, arrivingIn(import, into.logbook, 1).single(), null)
         assertEquals(3, into.logbook.allOf(Types.DIVE_SITE).size, "the new one as well")
-        val made = into.logbook["unknown_dive_site"]!!
+        val made = into.logbook["nieuwdorp"] ?: error("named, so its id is its name")
+        val landed = into.logbook.allOf(Types.DIVE).single()
+        val named = (landed.single<yemoja.data.Reference>("dive_site") as yemoja.data.Result.Usable).value
+        assertEquals("nieuwdorp", (named as yemoja.data.Reference.Identified).id,
+            "and the dive names it, not the id it was staged under")
         assertEquals("Nieuwdorp", (made.single<String>("name") as yemoja.data.Result.Usable).value)
         assertEquals(50.4215, (made.single<Double>("latitude") as yemoja.data.Result.Usable).value)
     }

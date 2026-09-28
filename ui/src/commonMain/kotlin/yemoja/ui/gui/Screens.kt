@@ -952,6 +952,13 @@ private fun Arrived(
     }
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
         for (dive in arriving) {
+            var naming by remember(dive.id) { mutableStateOf("") }
+            val taking = { onto: String? ->
+                // A name typed and not pressed is still an answer, and losing it is what a reader
+                // reads as the name being ignored. `GUI-31`.
+                if (naming.isNotBlank()) namedAs(import, dive, naming.trim())
+                done(oneIn(import, dive, onto))
+            }
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
                 verticalAlignment = Alignment.CenterVertically,
@@ -968,14 +975,14 @@ private fun Arrived(
                     if (dive.held) {
                         Aside("This dive is in your logbook already, and taking it in updates it.")
                     }
-                    Where(import, dive, changer)
+                    Where(import, dive, changer, naming) { naming = it }
                 }
                 if (dive.onto != null) {
-                    Button(onClick = { done(oneIn(import, dive, dive.onto)) }) {
+                    Button(onClick = { taking(dive.onto) }) {
                         Text("Merge")
                     }
                 }
-                TextButton(onClick = { done(oneIn(import, dive, null)) }) {
+                TextButton(onClick = { taking(null) }) {
                     Text("Import as dive ${dive.number}")
                 }
             }
@@ -1001,9 +1008,14 @@ private fun Arrived(
  * neither is forced. `LOGIC-18`, `GUI-31`.
  */
 @Composable
-private fun Where(import: Import, dive: Arriving, changer: Changer) {
+private fun Where(
+    import: Import,
+    dive: Arriving,
+    changer: Changer,
+    naming: String,
+    onName: (String) -> Unit,
+) {
     val fix = dive.fix ?: return
-    var naming by remember(dive.id) { mutableStateOf("") }
     Row(
         modifier = Modifier.padding(top = HALF),
         verticalAlignment = Alignment.CenterVertically,
@@ -1029,7 +1041,7 @@ private fun Where(import: Import, dive: Arriving, changer: Changer) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        Compact(value = naming, onChange = { naming = it }, hint = "New site name")
+        Compact(value = naming, onChange = onName, hint = "Name a new site")
         TextButton(
             enabled = naming.isNotBlank(),
             onClick = {

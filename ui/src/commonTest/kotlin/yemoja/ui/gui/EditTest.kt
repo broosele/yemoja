@@ -197,6 +197,15 @@ class EditTest {
  * Beginning a singular owned item that the logbook has none of.
  * See ../../../../../../gui/doc.md — `GUI-29`.
  */
+class MakingFromAReferenceTest {
+
+    @Test
+    fun `a name nothing answers to offers to make one, named as the type is`() {
+        assertEquals("New dive site: \"Blue Hole\"", makingSaid(Types.DIVE_SITE, "Blue Hole"))
+        assertEquals("New person: \"Anna\"", makingSaid(Types.PERSON, " Anna "), "trimmed")
+    }
+}
+
 class BegunTest {
 
     private fun logbook(vararg files: Pair<String, String>): Universe {

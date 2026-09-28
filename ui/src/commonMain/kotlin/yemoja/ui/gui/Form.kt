@@ -50,6 +50,7 @@ import yemoja.data.Cardinality
 import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
+import yemoja.data.ItemDescription
 import yemoja.data.KeyReferenceDescription
 import yemoja.data.OwnedItem
 import yemoja.data.ReferenceDescription
@@ -57,6 +58,7 @@ import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.logic.Change
+import yemoja.logic.Outcome
 import yemoja.logic.Types
 
 /*
@@ -685,6 +687,11 @@ private fun ReferenceEditor(
     // list to choose from.
     val matches = offered.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
         .take(MATCHES)
+    // A name nothing answers to is a name for something new, which is the ordinary way a site or
+    // a buddy first enters a logbook. `GUI-48`.
+    val making = target?.takeIf { makeable(it) && query.isNotBlank() }
+        ?.takeIf { matches.none { match -> match.title.equals(query, ignoreCase = true) } }
+    val changer = LocalChanger.current
     Box {
         Compact(
             value = query,
@@ -702,7 +709,10 @@ private fun ReferenceEditor(
                 )
             },
         )
-        Menu(expanded = open && matches.isNotEmpty(), onDismissRequest = { open = false }) {
+        Menu(
+            expanded = open && (matches.isNotEmpty() || making != null),
+            onDismissRequest = { open = false },
+        ) {
             for (match in matches) {
                 DropdownMenuItem(
                     text = { Text(match.title) },
@@ -710,6 +720,17 @@ private fun ReferenceEditor(
                         query = match.title
                         open = false
                         onChange("@" + match.id, "@" + match.id)
+                    },
+                )
+            }
+            if (making != null) {
+                DropdownMenuItem(
+                    text = { Text(makingSaid(making, query)) },
+                    onClick = {
+                        open = false
+                        val made = changer.change(listOf(Change.Add(making, mapOf("name" to Stored.Leaf(query.trim())))))
+                        val id = (made as? Outcome.Done)?.added?.firstOrNull()
+                        if (id != null) onChange("@$id", "@$id")
                     },
                 )
             }
@@ -725,6 +746,20 @@ private fun keysOf(item: Item, collection: String): List<String> {
     val held = (item.read(collection) as? Result.Usable)?.value as? Map<*, *>
     return held?.keys?.map { it.toString() }.orEmpty()
 }
+
+/**
+ * Whether an item of [type] can be made from a name alone.
+ *
+ * Every type but the dive is named by the user and proposes its id from that name, so a name is
+ * the whole of what making one needs. A dive is named for the day it was made on and has no name
+ * to give, so nothing offers to make one here. `GUI-48`.
+ */
+private fun makeable(type: ItemDescription): Boolean =
+    type != Types.DIVE && type["name"] != null
+
+/** What the drop-down calls making a new item of [type] called [name]. */
+internal fun makingSaid(type: ItemDescription, name: String): String =
+    "New ${labelOf(type).lowercase()}: \"${name.trim()}\""
 
 /** How many items a reference's drop-down offers at once; typing narrows them. */
 private const val MATCHES = 24

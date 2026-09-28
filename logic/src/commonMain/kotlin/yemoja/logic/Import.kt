@@ -234,7 +234,9 @@ class Import private constructor(
             when (meeting(id)) {
                 // A name already taken is minted afresh, which only arises where nothing is
                 // matched: under `BY_ID` a taken id is a match rather than a clash.
-                Meeting.NOTHING -> changes += Change.Add(description, held, freeIn(id, changes))
+                // An item staged under the name it had nothing to be named after is given the id
+                // its own fields propose, a review having filled in what the source could not.
+                Meeting.NOTHING -> changes += Change.Add(description, held, freeIn(proposedFor(item, id), changes))
                 Meeting.THE_SAME -> {
                     val there = into.logbook[id] ?: continue
                     changes += writesOnto(there, held)
@@ -268,6 +270,13 @@ class Import private constructor(
      * ids points at anything else read from it yet, so there is nothing to follow; a source that
      * did would need this to rewrite what names it, and that is not built.
      */
+    private fun proposedFor(item: Item, id: String): String =
+        if (id.removeSuffix(indexIn(id)) != unknownOf(item)) id
+        else item.description.proposedId?.invoke(item) ?: id
+
+    /** The `#1` a minted id may carry, or nothing where it carries none. */
+    private fun indexIn(id: String): String = id.substringAfter('#', "").let { if (it.isEmpty()) "" else "#$it" }
+
     private fun freeIn(id: String, going: List<Change>): String {
         val minted = going.filterIsInstance<Change.Add>().mapNotNull { it.id }
         return freeName(id) { into.logbook[it] != null || it in minted }
