@@ -388,9 +388,9 @@ once and corrected. The numbers stay unused rather than being given to something
   line, a range, labelled by what they bracket.**
 
   A dive holds `start_time` and `end_time`, and under each other they read as two facts a reader
-  has to put together. On one line they read as the one fact they are: *Time 09:15–09:58*. The
+  has to put together. On one line they read as the one fact they are: *Time 09:15 – 09:58*. The
   same goes for the dates of a dive, a profile, a trip and an insurance, and for a gas source's
-  pressures, *Pressure 200 bar–60 bar*.
+  pressures, *Pressure 200 bar – 60 bar*.
 
   **Both ends, and one kind.** A pair is joined only where both are written and both are described
   the same way, because a lone date beside *Date* would not say which end it was, and a pair of

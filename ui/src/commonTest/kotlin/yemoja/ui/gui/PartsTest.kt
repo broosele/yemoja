@@ -252,7 +252,7 @@ class ArrangedTest {
             Types.ALL,
         )["2026-06-22#0"]!!
         val shown = shownAllOf(arrangedOf(Types.DIVE).plain, ranged).associateBy { it.label }
-        assertEquals("09:15:00–09:58:00", shown["Time"]?.text)
+        assertEquals("09:15:00 – 09:58:00", shown["Time"]?.text)
         assertNull(shown["Start time"], "the pair replaces the two")
         assertNull(shown["End time"])
     }

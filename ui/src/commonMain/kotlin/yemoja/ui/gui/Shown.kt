@@ -299,7 +299,7 @@ internal fun prettyOf(key: String): String =
 /**
  * What [fields] say, with a start and an end of one kind shown as a range on one line.
  *
- * A dive says `Time 09:15–09:58` rather than a start time and an end time under each other:
+ * A dive says `Time 09:15 – 09:58` rather than a start time and an end time under each other:
  * the two are one fact, and a reader takes in the span without subtracting. `GUI-47`.
  *
  * The pair has to be whole and of one kind. Where only one end is written, or the two are
@@ -345,7 +345,7 @@ private fun rangeOf(start: FieldDescription, end: FieldDescription, item: Item):
 }
 
 /** What sits between the two ends of a range. */
-private const val RANGE = "\u2013"
+private const val RANGE = " \u2013 "
 
 /**
  * What one field says, or absent where it says nothing.
