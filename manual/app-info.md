@@ -91,7 +91,7 @@ The atlas of regions was written for Yemoja, following the conventions of Natura
 Earth — a public domain map dataset that asks for no credit and gets this one anyway.
 The map itself — coastlines, lakes, borders, rivers and cities — is Natural Earth's data.
 
-The decompression chapter explains the published Bühlmann ZHL-16C model. With thanks to
+The decompression chapter explains the published Bühlmann ZH-L16C model. With thanks to
 Erik C. Baker, whose writing on gradient factors made it comprehensible to a generation of
 divers.
 

@@ -106,7 +106,7 @@ Two adjustments matter and are easy to miss:
 
 Albert Bühlmann published a family of decompression models from the 1960s onwards,
 refined over decades of chamber work and diving in Zurich — including at altitude, which
-the model was built to handle. ZHL-16C is the version this chapter describes. The
+the model was built to handle. ZH-L16C is the version this chapter describes. The
 sixteen is the number of compartments; the C is the third revision of its limits, and
 the most conservative of the three.
 
@@ -220,10 +220,11 @@ above the ceiling, a cylinder that runs out, a mix too rich for the depth it is 
 with too little oxygen for it.
 
 **Planning a second dive of the day** means telling the plan which earlier run you are carrying
-gas from. Point it at the plan you intend to follow, and the model carries your tissues across the
-surface interval into it. Two plans for the morning are two things that might happen, so the
-afternoon's plan says which of them it assumes — and you can keep a chain of plans beside the
-chain of dives you actually made.
+gas from, and the model then carries your tissues across the surface interval into it. Two plans
+for the morning are two things that might happen, so the afternoon's plan says which of them it
+assumes — and you can keep a chain of plans beside the chain of dives you actually made. A plan
+says so in its `previous_profile` field, which you write on the saved plan in the Dives tab: the
+planner itself has no box for it yet.
 
 **What it costs in gas** comes from the SAC rate you write on each cylinder: how fast you breathe,
 in litres a minute at the surface. That is a guess about yourself, and the better your guess the
@@ -284,7 +285,7 @@ to say about why.
 
 ## Other models
 
-Bühlmann ZHL-16C is the model explained here. Others exist. The bubble models — such as VPM-B and RGBM — track the growth of gas
+Bühlmann ZH-L16C is the model explained here. Others exist. The bubble models — such as VPM-B and RGBM — track the growth of gas
 nuclei rather than dissolved gas alone, and generally call for deeper early stops and
 shorter shallow ones. DCIEM and other tabulated schedules come from experimental work
 rather than a compartment model at all.

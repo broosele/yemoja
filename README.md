@@ -26,23 +26,25 @@ or for proper training.
 
 ## Status
 
-Early, and deliberately so. The documentation structure and the layer boundaries are
-being settled before any implementation starts, so the repository holds documentation,
-the layer skeleton, test fixtures and the tooling that checks the documentation —
-and no application code at all.
+Early, and building. The documentation structure and the layer boundaries were settled
+first, and the three layers are now written against them: the item model and its files,
+the logbook operations, decompression and dive planning, and two front ends over them.
+Only the JVM target is built.
 
 The first version aims at a **local logbook**: dives and the items they refer to, in
-readable files on one machine. History, syncing, dive computer downloads and importing
-are designed and specified but not in it — see [features.md](features.md). The file
-format is settled with those in mind, so adding them later is building, not rewriting.
+readable files on one machine. Reading a dive computer and importing UDDF are built as
+far as [features.md](features.md) records; history and syncing are designed and
+specified but not written. The file format was settled with those in mind, so adding
+them later is building, not rewriting.
 
-An earlier attempt at scaffolding was removed rather than kept: it was written before
-these decisions and would only have misled anyone reading it.
+What a reader should not expect yet: nothing is installable, the history and the syncing
+the format was designed for are not written, and none of the four other platforms has been
+built. Each is registered in features.md or in the layer document that owns it.
 
 ## Installing and running
 
-Nothing is installable yet. This section will cover, per platform, how to install a
-release and how to build and run from source, once there is something to run.
+No packaged release exists yet. This section will cover, per platform, how to install one
+once there is. Building and running from source is below, and works today.
 
 **Building what exists** needs a JDK 21 and nothing else. The Gradle wrapper fetches its
 own Gradle, and Gradle fetches the Kotlin compiler, so `./gradlew build` from the root is
@@ -68,8 +70,9 @@ separate file on purpose; see *Licensing* below and `LOGIC-27`.
 `yemoja` on its own says which commands there are. The terminal front end must be started
 from a real terminal, so a pipe or a redirect gets a message rather than a screen — which is
 also why it cannot be run through Gradle, since Gradle gives a child process no terminal. The
-window has no such need and can be. Both read and show, and the window can edit an item's
-fields; nothing else writes a logbook yet. See [ui/tui/doc.md](ui/tui/doc.md) and
+window has no such need and can be. Both read and show; the window also makes items, edits
+their fields, saves a dive plan, and writes what a download or an import brings in. See
+[ui/tui/doc.md](ui/tui/doc.md) and
 [ui/gui/doc.md](ui/gui/doc.md).
 
 Only the JVM target is built. The native targets need a C++ toolchain and Developer Mode,
@@ -123,7 +126,7 @@ fixtures/     fixture logbooks — see fixtures/doc.md
 
 Inside a module, source sits under `src/commonMain/kotlin` and tests under
 `src/commonTest/kotlin`, with a further source set per target where a layer needs one —
-which in practice is only the interface. A layer's `doc.md` sits at the root of its
+in practice the interface, and the logic layer's JVM side, where libdivecomputer is reached. A layer's `doc.md` sits at the root of its
 module, above the source rather than inside it.
 
 **Modules are how the layering rule is kept.** A module declares what it depends on, so
@@ -143,7 +146,9 @@ front end takes **Mordant** for raw keys and the terminal's size, which the JDK 
 to ask for — see `TUI-4` in [ui/tui/doc.md](ui/tui/doc.md). The logic layer takes **xmlutil**
 for reading UDDF, common Kotlin having no XML reader — Apache 2.0, and there rather than in the
 data layer, whose promise of no dependencies stands because a foreign format is not its business.
-The logic layer's JVM side takes **libdivecomputer** for reading dive computers — LGPL-2.1,
+The terminal front end also takes JNA, through Mordant's JVM side, and the window takes
+Compose's extended icon set. The logic layer's JVM side takes **libdivecomputer** for reading dive
+computers — LGPL-2.1,
 linked as a shared library so the rest of the application stays its own, which *Licensing* below
 turns on — and **JNA** to call it, Apache 2.0 under its dual licence. libdivecomputer leaves
 Bluetooth LE to the application, and that is **Kable**, Apache 2.0: Kotlin Multiplatform, so the
@@ -207,8 +212,8 @@ involved — see [data/json/doc.md](data/json/doc.md).
 - **Documentation is updated in the same commit as the change that affects it.**
 - **No private data in the repository** — no real logs, names, addresses, credentials
   or device identifiers. Test data is invented.
-- Formatting and language-level conventions will be fixed, and enforced
-  automatically, when the implementation language is settled.
+- **No formatter or linter is configured.** The language is settled and this is not, so the
+  conventions are what the code already does and a reviewer is what enforces them.
 
 ## Documentation
 
@@ -230,6 +235,7 @@ involved — see [data/json/doc.md](data/json/doc.md).
 | [manual/data-fields.md](manual/data-fields.md) | **The definition of every data field**, written for users |
 | [manual/settings.md](manual/settings.md) | The settings files: app-owned, not part of the data format |
 | [manual/data-format.md](manual/data-format.md) | How a logbook is written to disk, written for users |
+| [manual/getting-started.md](manual/getting-started.md) · [manual/decompression.md](manual/decompression.md) · [manual/computers-and-importing.md](manual/computers-and-importing.md) · [manual/uddf.md](manual/uddf.md) · [manual/app-info.md](manual/app-info.md) | The rest of the manual's chapters |
 | [fixtures/doc.md](fixtures/doc.md) | Fixture logbooks used by tests |
 | [testing.md](testing.md) | The test suite: the conventions that hold across all three modules |
 | [ui/gui/desktop/doc.md](ui/gui/desktop/doc.md) | Desktop form factor — [windows](ui/gui/desktop/windows/doc.md), [mac](ui/gui/desktop/mac/doc.md), [linux](ui/gui/desktop/linux/doc.md) |
@@ -312,7 +318,9 @@ in the meantime should assume the terms are what they say and nothing more.
 
 ### What the dependencies would force
 
-Nothing is chosen yet, so nothing is binding yet. The constraints to plan around:
+The terms are chosen — all rights reserved, with CC0 for `manual/` and `libraries/` — and the
+ constraints below are what the dependencies force on them. The first is answered already:
+ libdivecomputer is shipped as a shared library beside the jars rather than linked in.
 
 - **libdivecomputer is LGPL-2.1.** Linked as a shared library, the rest of the
   application stays proprietary. Linked statically, relinking obligations follow.
@@ -340,7 +348,7 @@ their owners. No logos or stylised marks are used, and none should be added.
 
 ### Settled
 
-All five kept with their identifiers so earlier discussion still resolves.
+All six kept with their identifiers so earlier discussion still resolves.
 
 - **LIC-1** — CC0 for the manuals and the libraries. No attribution required. The
   fixtures are not included.

@@ -89,7 +89,7 @@ Owned by [ui/gui/doc.md](ui/gui/doc.md), except where noted.
 |---|---|
 | **front end** | one of several interfaces over the logic layer — see [ui/doc.md](ui/doc.md) |
 | **form factor** *(defined here)* | the two shapes the application takes: a large screen with keyboard and mouse, and a small touch screen. Which one applies follows from what the screen affords, not from the operating system — Windows and macOS are one form factor, Android and iPhone the other |
-| **tab** | one of the eight top-level divisions of the application |
+| **tab** | one of the seven top-level divisions of the application |
 | **selector** | narrows a collection down to one item |
 | **item view** | shows one item, arranged for reading, and changes nothing |
 | **edit view** | shows every field of one item, arranged to be filled in |

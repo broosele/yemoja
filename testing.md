@@ -107,8 +107,12 @@ the build refuses.
    tests reaching past what that module is; a module of its own depending on all three is
    the alternative, and buys a fourth thing to build for a handful of tests.
 
+   There is an application to drive now, and the tests that come nearest sit where neither
+   answer puts them: `logic/src/jvmTest` opens a real folder through the data layer, and
+   `ui/src/jvmTest` starts the program. That is provisional, not the answer.
+
    Gradle has no convention here worth deferring to, which is why this is the part
-   `TEST-3` could not settle. It waits on there being an application to drive.
+   `TEST-3` could not settle.
 
 ## Settled
 
@@ -163,7 +167,9 @@ the build refuses.
 
   One thing to check against the version actually pinned rather than take on trust: running
   common UI tests on desktop and iOS without experimental workarounds arrived in Compose
-  Multiplatform 1.11, and Android needs
+  Multiplatform 1.11, and the build pins 1.9.3. Nothing is wired to `compose.uiTest` yet, so this
+  is settled and not yet exercised: every test under `ui/src/commonTest` reads a view model rather
+  than a window. Android needs
   `instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)` or `commonTest`
   never links to the instrumented variant — which fails only once the tests reach a device.
 
@@ -186,7 +192,7 @@ the build refuses.
 
   Python also happens to suit them. They read vocabularies out of the manual's prose —
   fixed sets, numeric ranges, field lists — and that is text work, which would be more code
-  in a typed language for no gain. Rewriting 481 working lines would buy one command and
+  in a typed language for no gain. Rewriting them would buy one command and
   cost the thing that makes them easy to extend.
 
   **Accepted with it:** Python on the machine of anyone who wants to check their own work,

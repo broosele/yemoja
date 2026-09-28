@@ -28,10 +28,11 @@ a feature waits on such a question, it names it.
 - **FEAT-1 — Log dives.** Recording a dive and everything about it.
 - **FEAT-2 — Dive sites, people, gear, trips, operators.** The items a dive refers to.
 
-The first version is a **local logbook and nothing else**: dives and the items they refer
-to, in readable files on one machine. Everything that moves data between places — history,
-syncing, downloading, importing, merging — is intended and designed for, and none of it is
-what makes this a logbook.
+The first version is a **local logbook**: dives and the items they refer to, in readable
+files on one machine. Reading a dive computer and importing another application's file are
+built on top of that. What moves data between installations — history, syncing, merging one
+logbook with another — is intended and designed for, and none of it is what makes this a
+logbook.
 
 That is a decision about order, not about ambition. The design work behind those features
 is done and recorded, and the file format must not foreclose them: see
@@ -78,20 +79,30 @@ them.
 
   A plan is made in the Calculations tab, of any number of segments and cylinders, with the way
   up worked out as it is typed, a role for each cylinder, a safety stop and a gas reserve
-  (`GUI-43`). It is saved as a new dive or on to one already there, and a dive's plans are opened
-  back into the planner from the Dives tab (`GUI-44`). What is owed is saving the planner's own
-  settings with a plan, and a date for a plan saved as a new dive.
+  (`GUI-43`). It is saved as a new dive or on to one already there, and a saved plan is opened
+  back into the planner from the Dives tab or from *Open plan*, which lists every plan in the
+  logbook (`GUI-44`). What is owed is saving the planner's own settings with a plan, a date for a
+  plan saved as a new dive, and pointing a plan at the dive whose gas it carries, which the model
+  reads and the planner cannot yet be told.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
-  built; see [logic/reconciliation.md](logic/reconciliation.md). A first slice of UDDF is read
-  — the dive and its recording — and how far it goes is under *What is built* in
-  [logic/uddf.md](logic/uddf.md).
+  built; see [logic/reconciliation.md](logic/reconciliation.md). UDDF is read — the dive, its
+  recording, and the sites, wrecks, people, gear, trips and operators it names — and how far it
+  goes is under *What is built* in [logic/uddf.md](logic/uddf.md).
 - **FEAT-8 — Statistics over the logbook.** Totals, counts and summaries, each reported
   with what it was based on.
+
+  *Built:* any two things a dive answers for, plotted against each other on the home screen —
+  each dive, a count, a total, an average, the largest, the smallest, or a running total, grouped
+  by whatever the user picks. `Figures.kt` counts and the home screen draws it.
 - **FEAT-9 — Renewal tracking.** One list answering what needs renewing, across
   insurance and gear maintenance. The reason the validity work in
   [data/doc.md](data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
   stored value: the data layer records when a thing falls due and this feature decides
   when that is worth saying.
+
+  *Built:* the home screen warns of gear maintenance that has fallen due, and of the user's own
+  medical and insurance. What is owed is the single list across the logbook, and `LOGIC-7`
+  itself.
 - **FEAT-12 — A programmatic interface.** Another program driving the logbook without a person
   present. See [ui/api/doc.md](ui/api/doc.md). Moved from *Future* because `FEAT-18` is built on
   it. The tools an agent reads through are the part built first; scripting and automation follow
@@ -110,8 +121,9 @@ them.
   `RECON-8` in [logic/reconciliation.md](logic/reconciliation.md), and its arithmetic is
   `LOGIC-34` in [logic/doc.md](logic/doc.md).
 
-  *Built:* a panel beside the tabs starts the agent the user names, hands it the tools and refuses
-  every request of its own. It reads, and it stages a change where the user allows one. What it
+  *Built:* a panel beside the tabs starts the agent the user names, hands it the tools, and
+  refuses a request of its own to read the files unless the user ticks *Allow files*; a command it
+  asks to run is always refused. It reads, and it stages a change where the user allows one. What it
   staged is reviewed on the home screen field by field, with anything the logbook has moved under
   marked before it is taken in.
 
