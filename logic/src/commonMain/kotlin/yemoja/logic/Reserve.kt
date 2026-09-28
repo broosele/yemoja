@@ -276,7 +276,7 @@ private fun reserveOver(
             }
         }
     }
-    val at = worst ?: return Reserve.Refused("this run holds no depths")
+    val at = worst ?: return Reserve.Refused("this recording holds no depths, so nothing can be worked out from it")
     return Reserve.Done(
         worst = at.second,
         worstMetres = at.metres,

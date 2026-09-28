@@ -151,7 +151,7 @@ private fun Line(field: Changed, kind: Staged.Kind) {
  * know before pressing anything.
  */
 internal fun stagedSaidOf(staged: List<Staged>): String {
-    if (staged.isEmpty()) return "An agent has staged nothing."
+    if (staged.isEmpty()) return "The agent has proposed no changes."
     val counts = Staged.Kind.entries.mapNotNull { kind ->
         val many = staged.count { it.kind == kind }
         if (many == 0) null else "${counted(many, "item")} ${kindSaidOf(kind)}"

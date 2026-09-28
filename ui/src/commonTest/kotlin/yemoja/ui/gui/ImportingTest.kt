@@ -90,12 +90,12 @@ class ImportingTest {
         assertEquals(1, one.arrived, "the other dive is still waiting")
         assertEquals(1, into.logbook.allOf(Types.DIVE).size)
         assertNull(into.logbook["anna"], "and so is the person")
-        assertEquals("1 taken into the logbook.", one.said)
+        assertEquals("1 item was added to your logbook.", one.said)
         takeIn(import, second, null)
         val last = afterDeciding(into, Taken(1, null))
         assertEquals(0, last.arrived)
         assertTrue(into.logbook["anna"] != null, "the rest goes in with the last dive")
-        assertEquals("2 taken into the logbook.", last.said, "the last dive and the person")
+        assertEquals("2 items were added to your logbook.", last.said, "the last dive and the person")
         assertNull(into.importing, "and the review is over")
     }
 

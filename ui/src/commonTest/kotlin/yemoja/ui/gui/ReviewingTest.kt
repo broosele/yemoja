@@ -59,7 +59,7 @@ class StagedSaidTest {
 
     @Test
     fun `nothing staged says so, which is what an empty review would say`() {
-        assertEquals("An agent has staged nothing.", stagedSaidOf(emptyList()))
+        assertEquals("The agent has proposed no changes.", stagedSaidOf(emptyList()))
     }
 }
 

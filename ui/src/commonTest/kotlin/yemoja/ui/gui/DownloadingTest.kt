@@ -30,10 +30,9 @@ class DownloadingTest {
         assertNull(sayingOf(Stage.IDLE, null))
         assertEquals("Looking for a dive computer…", sayingOf(Stage.LOOKING, null))
         assertTrue(sayingOf(Stage.CHOOSING, null)!!.startsWith("More than one"))
-        assertEquals(
-            "Reading Perdix 2. A full computer takes minutes.",
-            sayingOf(Stage.READING, "Perdix 2"),
-        )
+        val reading = sayingOf(Stage.READING, "Perdix 2")!!
+        assertTrue(reading.startsWith("Reading Perdix 2."), reading)
+        assertTrue("several minutes" in reading, "and how long to expect it to take")
         assertNull(sayingOf(Stage.DONE, null), "what came of it is said another way")
     }
 
@@ -41,16 +40,26 @@ class DownloadingTest {
     fun `finding nothing is said two ways, the remedies being nothing alike`() {
         val nothing = emptyOf(true)
         val nowhere = emptyOf(false)
-        assertTrue("within reach" in nothing, nothing)
+        assertTrue("No dive computer was found" in nothing, nothing)
         assertTrue("Bluetooth" in nothing, "what to do about it")
         assertTrue("libdivecomputer" in nowhere, nowhere)
-        assertTrue("within reach" !in nowhere, "not a computer's fault")
+        assertTrue("was found" !in nowhere, "not a computer's fault")
     }
 
     @Test
     fun `what came of a download is how many arrived, or why none did`() {
-        assertEquals("3 dives came across.", outcomeOf(Outcome.Done(), 3))
-        assertEquals("1 dive came across.", outcomeOf(Outcome.Done(), 1))
+        assertEquals(
+            "The download finished, and 3 new dives are ready to review.",
+            outcomeOf(Outcome.Done(), 3),
+        )
+        assertEquals(
+            "The download finished, and 1 new dive is ready to review.",
+            outcomeOf(Outcome.Done(), 1),
+        )
+        assertEquals(
+            "The download finished, and there was no new dive on the computer.",
+            outcomeOf(Outcome.Done(), 0),
+        )
         assertEquals("nothing new", outcomeOf(Outcome.Refused("nothing new"), 0))
     }
 

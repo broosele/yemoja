@@ -776,7 +776,8 @@ private fun take(universe: Universe, platform: Platform, taking: Taking, changer
             val import = universe.importing
             taking.arrived = arrivedIn(import)
             taking.said = if (import == null || taking.arrived == 0) {
-                "Nothing in $from that this can read."
+                "Yemoja found nothing to import in $from. It reads a logbook folder " +
+                    "and a UDDF file."
             } else {
                 summaryOf(countedIn(import))
             }
@@ -882,7 +883,7 @@ private fun Reader(
                 after = { taken ->
                     reading.arrived = arrivedIn(universe.importing)
                     if (reading.arrived == 0) universe.stopImporting()
-                    reading.said = taken.refusal ?: "${taken.many} taken into the logbook."
+                    reading.said = taken.refusal ?: takenSaid(taken.many)
                 },
                 leave = { reading.stage = Stage.IDLE },
             )
@@ -958,9 +959,15 @@ private fun Arrived(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Aside(dive.said)
-                    if (dive.glued > 1) Aside("merged from ${dive.glued} recordings")
-                    dive.ontoSaid?.let { Aside("matches $it, already logged") }
-                    if (dive.held) Aside("already in this logbook, and will be updated")
+                    if (dive.glued > 1) {
+                        Aside("Pieced together from ${dive.glued} recordings on the computer.")
+                    }
+                    dive.ontoSaid?.let {
+                        Aside("This looks like $it, which is in your logbook already.")
+                    }
+                    if (dive.held) {
+                        Aside("This dive is in your logbook already, and taking it in updates it.")
+                    }
                     Where(import, dive, changer)
                 }
                 if (dive.onto != null) {
@@ -1002,7 +1009,7 @@ private fun Where(import: Import, dive: Arriving, changer: Changer) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        Aside("Site for $fix:")
+        Aside("The computer recorded this dive at $fix. Which site was it?")
         for (near in dive.nearby) {
             TextButton(
                 onClick = {
@@ -1055,7 +1062,9 @@ private fun Deeds(deeds: Map<Deed, () -> Unit>) {
             Button(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
         }
     }
-    if (Deed.entries.any { it !in deeds }) Aside("Greyed-out actions are not available yet")
+    if (Deed.entries.any { it !in deeds }) {
+        Aside("The greyed-out actions need a logbook open, or this platform cannot offer them.")
+    }
 }
 
 /**
@@ -1068,7 +1077,7 @@ private fun Deeds(deeds: Map<Deed, () -> Unit>) {
 private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
     val variables = remember { variablesOf() }
     if (variables.size < 2) {
-        Aside("Not enough data to plot")
+        Aside("There is not enough in this logbook yet to draw this.")
         return
     }
     val opening = remember(variables) { openingOf(variables) }
@@ -1106,13 +1115,13 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
     when (gathering) {
         Gathering.EACH -> {
             val spots = remember(set, edition, across, up) { plottedOf(set, across, up) }
-            if (spots.isEmpty()) Aside("No dives have both values")
+            if (spots.isEmpty()) Aside("No dive in this logbook records both of the things chosen.")
             else Scatter(spots, titledOf(across), titledOf(up), joined = false)
         }
 
         Gathering.RUNNING -> {
             val spots = remember(set, edition, across, up) { runningOf(set, across, up) }
-            if (spots.isEmpty()) Aside("No dives have both values")
+            if (spots.isEmpty()) Aside("No dive in this logbook records both of the things chosen.")
             else Scatter(spots, titledOf(across), titledOf(up), joined = true)
         }
 
@@ -1120,7 +1129,7 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
             val bars = remember(set, edition, across, up, gathering, steps, stepAt) {
                 barsOf(set, across, up, gathering, steps[stepAt])
             }
-            if (bars.isEmpty()) Aside("No dives have both values")
+            if (bars.isEmpty()) Aside("No dive in this logbook records both of the things chosen.")
             else Bars(bars, titledOf(across), sideOf(gathering, up))
         }
     }

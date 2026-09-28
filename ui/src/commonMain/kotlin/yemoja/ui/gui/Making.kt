@@ -82,11 +82,11 @@ internal fun deleteWarned(set: ItemSet, ids: Set<String>): String? {
     val holding = holdersOf(set, ids)
     val many = holding.sumOf { it.second }
     if (many == 0) return null
-    val what = if (many == 1) "One reference" else "$many references"
+    val what = if (many == 1) "One other item names" else "$many other items name"
     val going = if (ids.size == 1) "it" else "them"
-    val said = "$what to $going will be left pointing at nothing"
+    val said = "$what $going, and will be left naming something that is no longer here"
     if (holding.size > FEW) return "$said."
-    return "$said, in ${listedOf(holding.map { titleOf(it.first) })}."
+    return "$said: ${listedOf(holding.map { titleOf(it.first) })}."
 }
 
 /**

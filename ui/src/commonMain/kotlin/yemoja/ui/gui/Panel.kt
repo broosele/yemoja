@@ -407,8 +407,8 @@ internal suspend fun startedWith(conversation: Conversation, command: String): S
  * the tab they are on. `GUI-38`.
  */
 internal fun unaskedOf(logbookOpen: Boolean, hosts: Boolean, command: String?): String? = when {
-    !hosts -> "An agent is run on a desktop, and this is not one."
-    !logbookOpen -> "Open a logbook first: an agent is asked about one."
+    !hosts -> "An agent runs on a desktop, and this is a phone."
+    !logbookOpen -> "Open a logbook first. An agent answers questions about the logbook you have open."
     command.isNullOrBlank() -> "Set the command that starts your agent in Settings, on the home screen."
     else -> null
 }

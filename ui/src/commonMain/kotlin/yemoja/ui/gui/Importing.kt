@@ -103,7 +103,11 @@ internal fun afterDeciding(universe: Universe, taken: Taken): Decided {
     return Decided(0, rest.refusal ?: takenSaid(taken.many + rest.many))
 }
 
-private fun takenSaid(many: Int): String = "$many taken into the logbook."
+internal fun takenSaid(many: Int): String = when (many) {
+    0 -> "Nothing was added to your logbook."
+    1 -> "1 item was added to your logbook."
+    else -> "$many items were added to your logbook."
+}
 
 /**
  * Take in whatever is still staged once the dives are decided, as one change.

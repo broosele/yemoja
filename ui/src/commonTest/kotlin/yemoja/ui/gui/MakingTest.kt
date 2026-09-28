@@ -99,12 +99,12 @@ class DeleteAskedTest {
     fun `the references a delete would leave dangling are counted, and where few, named`() {
         // A reference to something deleted is left dangling rather than hunted down.
         assertEquals(
-            "2 references to it will be left pointing at nothing, in 2026-06-21#0 and " +
+            "2 other items name it, and will be left naming something that is no longer here: 2026-06-21#0 and " +
                 "2026-06-22#0.",
             deleteWarned(logbook, setOf("anna")),
         )
         assertEquals(
-            "3 references to them will be left pointing at nothing, in 2026-06-21#0 and " +
+            "3 other items name them, and will be left naming something that is no longer here: 2026-06-21#0 and " +
                 "2026-06-22#0.",
             deleteWarned(logbook, setOf("anna", "bo")),
             "two references in one dive is one name, not two",
@@ -114,7 +114,7 @@ class DeleteAskedTest {
     @Test
     fun `one reference reads as one`() {
         assertEquals(
-            "One reference to it will be left pointing at nothing, in 2026-06-21#0.",
+            "One other item names it, and will be left naming something that is no longer here: 2026-06-21#0.",
             deleteWarned(logbook, setOf("blue")),
         )
     }
@@ -130,7 +130,7 @@ class DeleteAskedTest {
         )
         assertNull(deleteWarned(held, setOf("2026-06-21#0")), "nothing stored points at it")
         assertEquals(
-            "One reference to it will be left pointing at nothing, in 2026-06-21#0.",
+            "One other item names it, and will be left naming something that is no longer here: 2026-06-21#0.",
             deleteWarned(held, setOf("blue")),
             "and the dive's own dive_site, which is stored, still counts",
         )
@@ -146,7 +146,7 @@ class DeleteAskedTest {
             "dive/2026-06-24#0.json" to """{"buddies": ["@anna"]}""",
         )
         assertEquals(
-            "4 references to it will be left pointing at nothing.",
+            "4 other items name it, and will be left naming something that is no longer here.",
             deleteWarned(crowd, setOf("anna")),
             "four names is a wall rather than a question",
         )

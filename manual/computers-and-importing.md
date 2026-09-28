@@ -15,7 +15,7 @@ over USB or a serial cable, and for one advertising over Bluetooth.
 - **One found:** it is read straight away.
 - **Several found:** you are asked which, with a button for each.
 
-Reading a full computer takes minutes, and the window says so while it works.
+Reading a full computer takes several minutes, and the window says so while it works.
 
 **Only dives this logbook has not seen come across.** Yemoja remembers where the last download
 from each computer stopped, so the next one brings only what you dived since.
@@ -27,7 +27,7 @@ the code is remembered there.
 
 ## Looking over what arrived
 
-Every dive that came across is a line, oldest first: when it started, how long it was, how deep,
+Every dive that arrived is a line, oldest first: when it started, how long it was, how deep,
 and which computer recorded it.
 
 - **Import as dive N** takes it in as a new dive, numbered one after the highest number in your

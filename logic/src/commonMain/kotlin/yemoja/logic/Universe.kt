@@ -390,7 +390,7 @@ class Universe(
             return Outcome.Done()
         }
         if (!store.isFile("")) {
-            return Outcome.Refused("$from should be a folder or a file, and is neither")
+            return Outcome.Refused("$from cannot be opened: it is neither a folder nor a file")
         }
         val source = try {
             Uddf.read(store.readText(""))
@@ -400,7 +400,7 @@ class Universe(
         // A file holding no dive would open a review of the items around one and no dive to
         // hang them on, with no word about why.
         if (source.allOf(Types.DIVE).isEmpty()) {
-            return Outcome.Refused("$from holds no dives, and dives are what is read from UDDF")
+            return Outcome.Refused("$from holds no dives, so there is nothing to import from it")
         }
         // Nothing matches: a UDDF file carries no ids of ours, so the ones its dives have were
         // minted while reading it and say nothing about which dive is which.
@@ -441,7 +441,9 @@ class Universe(
         val serial = session.serial
         if (handed != null && serial != null) keepAccessCode(serial, handed)
         if (read.allOf(Types.DIVE).isEmpty()) {
-            return Outcome.Refused("${computer.name} holds no dives this logbook has not seen")
+            return Outcome.Refused(
+                "Nothing new to download. Every dive on ${computer.name} is in this logbook already.",
+            )
         }
         importFrom(read, where, Matching.NONE)
         return Outcome.Done()

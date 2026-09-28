@@ -273,7 +273,7 @@ fun evaluate(profile: Item): Evaluated = evaluated(profile, emptySet())
  */
 fun evaluate(run: Run): Evaluated {
     val depths = pointsOf(run)
-        ?: return Evaluated.Refused("this run holds no depths", Refusal.UNASKED)
+        ?: return Evaluated.Refused("this recording holds no depths, so nothing can be worked out from it", Refusal.UNASKED)
     // A run holding cylinders and saying nothing about which was breathed is a gap somebody can
     // close, unlike a recording that simply says nothing about the model.
     val breathed = breathedBy(run) ?: return Evaluated.Refused(
@@ -324,14 +324,14 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated =
  * arithmetic sees none of the reading.
  */
 private fun runOf(profile: Item, seen: Set<Item>): Read {
-    if (profile in seen) return Read.Refused("this run carries gas from itself", Refusal.FAULTY)
+    if (profile in seen) return Read.Refused("this dive is set to follow itself, so the gas it starts with cannot be worked out", Refusal.FAULTY)
     val low = (profile.single<Double>("gradient_factor_low") as? Result.Usable)?.value
     val high = (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value
     // Both factors are needed. One of them is a setting half written down, and guessing the other
     // would put a number into a decompression answer that nobody chose.
     if (low == null || high == null) {
         return Read.Refused(
-            "nothing says what model this run was calculated with, or how conservative it was",
+            "this recording should say which model it was calculated with and how conservative it was",
             Refusal.UNASKED,
         )
     }
@@ -341,7 +341,7 @@ private fun runOf(profile: Item, seen: Set<Item>): Read {
     }
     val density = (profile.single<Double>("density") as? Result.Usable)?.value
         ?: return Read.Refused(
-            "nothing says what water this run was in, so its depths are not pressures",
+            "this recording should say whether the water was salt or fresh, without which a depth is not a pressure",
             Refusal.UNASKED,
         )
     val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
@@ -664,7 +664,7 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
     val evaluated = evaluate(run)
     if (evaluated is Evaluated.Refused) return Ascended.Refused(evaluated.reason)
     val breathing = breathedBy(run) ?: return Ascended.Refused("nothing says what is breathed")
-    val depths = pointsOf(run) ?: return Ascended.Refused("this run holds no depths")
+    val depths = pointsOf(run) ?: return Ascended.Refused("this recording holds no depths, so nothing can be worked out from it")
     val end = depths.last()
     val climbed = climbed(
         From((evaluated as Evaluated.Done).surfacing, end.second, end.metres, breathing.keyAt(end.second)),
@@ -673,7 +673,7 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
         metresAMinute,
         lastStop,
         run.depth,
-    ) ?: return Ascended.Refused("No way up within 24 hours: check the depths and gases")
+    ) ?: return Ascended.Refused("No way up was found within 24 hours. Check the depths and the gases")
     return Ascended.Done(climbed.points, climbed.switches)
 }
 

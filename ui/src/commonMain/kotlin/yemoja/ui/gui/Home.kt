@@ -99,7 +99,7 @@ internal class Occasion(val said: String, val page: String? = null)
 internal fun tellingOf(user: ReferenceableItem?, greeting: Greeting?): String = when {
     greeting == null -> "You can make a new logbook, or open one you already have."
     user == null ->
-        "Name one of this logbook's people as yourself, and it will greet you by name."
+        "Open the Community tab and mark one of its people as yourself, to be greeted by name."
 
     else -> "You have ${counted(greeting.dives, "logged dive")} on " +
         "${counted(greeting.places, "different location")} for a total of " +

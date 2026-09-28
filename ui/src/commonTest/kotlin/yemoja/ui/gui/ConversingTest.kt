@@ -27,7 +27,7 @@ class ConversingTest {
     fun `what is said while an agent is starting and while it is answering`() {
         assertEquals("Starting codex…", sayingOf(Stance.STARTING, "codex"))
         assertEquals("Starting the agent…", sayingOf(Stance.STARTING, null))
-        assertTrue(sayingOf(Stance.ANSWERING, "codex")!!.startsWith("Thinking."))
+        assertTrue(sayingOf(Stance.ANSWERING, "codex")!!.startsWith("Working on your question."))
         assertNull(sayingOf(Stance.NONE, "codex"), "the panel offers to start, and says nothing")
         assertNull(sayingOf(Stance.READY, "codex"), "and nothing while it waits to be asked")
     }

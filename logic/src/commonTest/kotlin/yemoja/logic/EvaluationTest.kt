@@ -162,7 +162,7 @@ class EvaluationTest {
         val set = chained(""""previous_profile": "@second#0*a", """)
         val reason = refused(profile(set["second#0"]!!, "a"))
 
-        assertTrue("carries gas from itself" in reason, reason)
+        assertTrue("set to follow itself" in reason, reason)
     }
 
     @Test
@@ -185,7 +185,7 @@ class EvaluationTest {
     @Test
     fun `what the model cannot be asked, it says it cannot be asked`() {
         assertTrue(
-            "how conservative" in refused(
+            "how conservative it was" in refused(
                 profile(
                     logbook(
                         "dive/d#0.json" to """{"gas_sources": {"g1": {"gas_type": "AIR"}},
@@ -196,7 +196,7 @@ class EvaluationTest {
             ),
         )
         assertTrue("vpm" in refused(planned(""""deco_model": "vpm", $DEEP""")))
-        assertTrue("what water" in refused(bare(""""gradient_factor_low": 1.0,
+        assertTrue("salt or fresh" in refused(bare(""""gradient_factor_low": 1.0,
             "gradient_factor_high": 1.0, $DEEP""")))
         assertTrue("no depths" in refused(planned(""""remarks": "nothing recorded"""")))
     }

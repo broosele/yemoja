@@ -62,7 +62,7 @@ class GreetingTest {
         val greeting = greetingOf(DIVED)
         assertEquals("Hello diver.", hailOf(null, greeting, plain, false).sentence)
         assertEquals(
-            "Name one of this logbook's people as yourself, and it will greet you by name.",
+            "Open the Community tab and mark one of its people as yourself, to be greeted by name.",
             tellingOf(null, greeting),
         )
     }

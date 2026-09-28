@@ -54,8 +54,10 @@ internal enum class Stage {
 /** What to say while a download is at [stage], or absent where the screen says it another way. */
 internal fun sayingOf(stage: Stage, computer: String?): String? = when (stage) {
     Stage.LOOKING -> "Looking for a dive computer…"
-    Stage.CHOOSING -> "More than one is within reach. Which of them?"
-    Stage.READING -> "Reading ${computer ?: "it"}. A full computer takes minutes."
+    Stage.CHOOSING -> "More than one dive computer is within reach. Which one should be read?"
+    Stage.READING ->
+        "Reading ${computer ?: "the dive computer"}. This can take several minutes, depending on " +
+            "how many dives are on it."
     else -> null
 }
 
@@ -66,8 +68,11 @@ internal fun sayingOf(stage: Stage, computer: String?): String? = when (stage) {
  */
 internal fun outcomeOf(outcome: Outcome, arrived: Int): String = when (outcome) {
     is Outcome.Refused -> outcome.reason
-    is Outcome.Done ->
-        if (arrived == 1) "1 dive came across." else "$arrived dives came across."
+    is Outcome.Done -> when (arrived) {
+        0 -> "The download finished, and there was no new dive on the computer."
+        1 -> "The download finished, and 1 new dive is ready to review."
+        else -> "The download finished, and $arrived new dives are ready to review."
+    }
 }
 
 /**
@@ -79,10 +84,10 @@ internal fun outcomeOf(outcome: Outcome, arrived: Int): String = when (outcome) 
  */
 internal fun emptyOf(readable: Boolean): String =
     if (readable) {
-        "No dive computer is within reach. Switch it on and put it into Bluetooth mode."
+        "No dive computer was found. Switch yours on, put it into Bluetooth mode, and try again."
     } else {
-        "Nothing here can read a dive computer: libdivecomputer is not where this " +
-            "installation can find it."
+        "This installation cannot read a dive computer. The libdivecomputer library is " +
+            "missing, so no computer can be found whatever you do."
     }
 
 /** How many dives a staged import holds, which is what a download brought. */

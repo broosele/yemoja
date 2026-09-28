@@ -160,8 +160,8 @@ filed there, with the category, and the kind where you chose one, already filled
 in the form like anything else.
 
 **The bin** deletes the item, after asking. Anything the item holds goes with it. Where other
-items point at it, the question says how many references will be left pointing at nothing, and
-names where they are when there are only a few; ticking **Also remove references to it** takes them
+items name it, the question says how many will be left naming something that is no longer
+there, and which they are when there are only a few; ticking **Also remove references to it** takes them
 out as well. With several dives chosen, the bin deletes them all.
 
 Locations has no + and no bin yet. A new dive site arrives with a download, which offers to name

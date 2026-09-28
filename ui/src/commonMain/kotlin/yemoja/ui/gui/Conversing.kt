@@ -88,7 +88,8 @@ internal enum class Stance {
 /** What to say while a conversation is at [stance], or absent where the panel says it itself. */
 internal fun sayingOf(stance: Stance, agent: String?): String? = when (stance) {
     Stance.STARTING -> "Starting ${agent ?: "the agent"}…"
-    Stance.ANSWERING -> "Thinking. A question about every dive takes as long as reading them."
+    Stance.ANSWERING ->
+        "Working on your question. One that covers the whole logbook can take a minute or more."
     else -> null
 }
 
