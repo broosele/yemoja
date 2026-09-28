@@ -1291,18 +1291,6 @@ private fun Conditions(shaping: Shaping) {
 private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
         Column {
-            // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen,
-            // and None for no lost-gas scenario at all: the choice is the scenario's switch.
-            Labelled("Gas lost", PlannerTips.GAS_LOST) {
-                Pick(
-                    dense = true,
-                    chosen = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }?.let { gasChoiceOf(shaping, it) } ?: NO_GAS_LOST,
-                    options = listOf(NO_GAS_LOST) + shaping.gases.indices.map { gasChoiceOf(shaping, it) },
-                ) { chosen ->
-                    shaping.lostGasScenario = chosen > 0
-                    if (chosen > 0) shaping.lostGas = chosen - 1
-                }
-            }
             Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it }
             Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it }
         }
@@ -1470,19 +1458,33 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                 horizontalArrangement = Arrangement.spacedBy(GAP),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (scenario == Scenario.SHARED) {
-                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-                        Checkbox(
-                            checked = shaping.sharedScenario,
-                            onCheckedChange = { shaping.sharedScenario = it },
-                            // The platform draws its box at one size whatever the slot, so it is
-                            // drawn smaller rather than squeezed into a smaller slot.
-                            modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
-                        )
+                // Each line begins with its own switch, in a slot of one width so the names line up.
+                Box(modifier = Modifier.width(SWITCH)) {
+                    when (scenario) {
+                        // Which cylinder is lost, the first deco cylinder until one is chosen, and
+                        // None for no lost-gas scenario at all: the choice is the scenario's switch.
+                        Scenario.LOST_GAS -> Explained(PlannerTips.GAS_LOST) {
+                            Pick(
+                                dense = true,
+                                chosen = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
+                                    ?.let { gasChoiceOf(shaping, it) } ?: NO_GAS_LOST,
+                                options = listOf(NO_GAS_LOST) + shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                            ) { chosen ->
+                                shaping.lostGasScenario = chosen > 0
+                                if (chosen > 0) shaping.lostGas = chosen - 1
+                            }
+                        }
+                        Scenario.SHARED ->
+                            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                                Checkbox(
+                                    checked = shaping.sharedScenario,
+                                    onCheckedChange = { shaping.sharedScenario = it },
+                                    // The platform draws its box at one size whatever the slot, so it
+                                    // is drawn smaller rather than squeezed into a smaller slot.
+                                    modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
+                                )
+                            }
                     }
-                } else {
-                    // Switched by *Gas lost* instead, and kept in line with the one that has a tick.
-                    Box(modifier = Modifier.size(DENSE_GLYPH))
                 }
                 Explained(scenario.tip) {
                     Text(
@@ -1594,6 +1596,9 @@ private val FIGURED = 56.dp
 
 /** How wide a scenario's name is, so what follows it lines up. */
 private val SCENARIO = 110.dp
+
+/** How wide the slot a scenario's switch sits in is: a choice of gas for one, a tick for the other. */
+private val SWITCH = 80.dp
 
 /** What *Gas lost* offers for losing no gas, which is no lost-gas scenario. */
 private const val NO_GAS_LOST = "None"

@@ -234,7 +234,7 @@ recording that has cylinder pressures in it.
 **Whether you carry enough gas for trouble** is a different question from what the dive costs.
 Yemoja answers it with two things that can go wrong, and keeps back enough for the worse of them.
 
-- **Lost gas.** One cylinder is gone, the one chosen under *Gas lost* in the plan's settings, your
+- **Lost gas.** One cylinder is gone, the one chosen at the start of the *Lost gas* line, your
   first deco gas unless you choose another, and you must still reach the surface on what is left: every stop the model asks for, and your
   safety stop, breathing at your usual SAC.
 - **Buddy out of gas.** Your buddy has lost their bottom gas, and the two of you breathe from yours
