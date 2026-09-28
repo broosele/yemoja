@@ -69,7 +69,7 @@ neither, and the compromise usually costs the reading.
 ### What each selector is
 
 `GUI-14` settled that the shape of a selector is decided per tab rather than once for all of
-them. These are those decisions. Three of the six are not a list at all, which is why the
+them. These are those decisions. Four of the six are not a list at all, which is why the
 question had to be asked per tab.
 
 - **Dives** — a table of four columns: the trip, the dive's own number, the date, and the site,
@@ -91,6 +91,9 @@ question had to be asked per tab.
   no dive touches. `GUI-26`.
 - **Manuals** — a tree of two levels: the chapters, and the sections of each. A chapter is
   shown whole, and choosing a section scrolls to its place in it. `GUI-15`.
+- **Calculations** — a list of what can be worked out, narrower than the other selectors because
+  its names are a few letters long. The dive plan heads it and is chosen on the first visit.
+  `GUI-43`.
 **Home has no selector.** It is not a collection, which is why the pattern above says *most*
 tabs rather than all of them.
 
@@ -293,8 +296,7 @@ application feels most.
 listing what a tab holds by type, and an item view showing the fields of the one chosen. On a
 desktop the plain fields flow into two columns, an owned item is set into a box of its own and
 shown in full, and a keyed one is such a box with a tab per entry. The manual is read in its
-tab, a chapter at a time. Two tabs hold nothing yet and say what they will hold rather than
-showing an empty box.
+tab, a chapter at a time. Every tab has a screen behind it; none is a placeholder.
 
 **An item's fields can be edited, and an item made and deleted.** A pencil on the item card
 turns it over into the edit form, which `GUI-29` describes, and an entry of a keyed collection
@@ -303,7 +305,7 @@ deletes, `GUI-35`, except on Locations, which offers neither. There is no journa
 
 It opens as `yemoja gui [<logbook folder>]`, beside the terminal front end, and unlike that one
 it can be run from the build, a window needing no console. The folder is optional: with none it
-opens on the welcome and offers Home and Manuals. `GUI-30`.
+opens on the welcome and offers Home, Calculations and Manuals. `GUI-30`.
 
 **The look is the platform's, in the application's colours.** Material as it comes, light or
 dark as the system is set, with one thing of ours in it: the colours are a marine palette rather
@@ -408,6 +410,9 @@ once and corrected. The numbers stay unused rather than being given to something
   and its own name, as `2026-03-01#1: Plan A`, and opens the chosen one as *Edit plan* would, so a
   plan can be found without first finding its dive. No date or time is asked
   yet, so a plan saved as a new dive has none, which a dive may lack: nothing is required.
+
+  *Forget the dive* unbinds a plan opened from one, so the next save makes a new dive instead of
+  saving over the one it came from.
 
   **One way.** What is saved is the run with its way up, as points, `LOGIC-35`; its cylinders, each
   keyed by what it is for, with its role written as `usage`; its gradient factors and its water.
@@ -1253,7 +1258,8 @@ once and corrected. The numbers stay unused rather than being given to something
   **The window opens without a logbook**, which is what makes the third reachable: the folder
   the command takes is optional, and named with none the window opens on the welcome. A folder
   that is named and will not read is still an error, that being what was asked for. Only the
-  tabs that are not about what a logbook holds are offered then, which is Home and Manuals; a
+  tabs that are not about what a logbook holds are offered then, which is Home, Calculations and
+  Manuals; a
   tab is about a logbook exactly when it lists item types, so the model answers that rather
   than a list kept beside it.
 
