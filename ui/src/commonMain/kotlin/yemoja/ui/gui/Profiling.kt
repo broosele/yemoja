@@ -50,6 +50,7 @@ import yemoja.logic.Reserve
 import yemoja.logic.NumberSetting
 import yemoja.logic.Run
 import yemoja.logic.SafetyStop
+import yemoja.logic.Universe
 import yemoja.logic.Settings
 import yemoja.logic.Source
 import yemoja.logic.completeAscent
@@ -172,6 +173,13 @@ internal class Shaping {
 
     /** In the words `water_type` uses. */
     var water: String by mutableStateOf(Settings.DEFAULT_WATER_TYPE.default)
+
+    /** When the plan begins, as typed: a date such as `2026-10-03`, and a time such as `14:30`. */
+    var startDate: String by mutableStateOf("")
+    var startTime: String by mutableStateOf("")
+
+    /** The earlier run the plan follows, or null for none, which is where it starts. `GUI-43`. */
+    var following: Following? by mutableStateOf(null)
 
     /** Whether the form has been opened before, which decides whether it takes the settings. */
     var prefilled: Boolean = false
@@ -536,7 +544,7 @@ internal sealed class Shaped {
  *
  * The run carries nothing: a plan in the calculations belongs to no dive and so follows none.
  */
-internal fun shapedOf(shaping: Shaping): Shaped {
+internal fun shapedOf(shaping: Shaping, universe: Universe? = null): Shaped {
     val (conditions, unreadable) = conditionsOf(shaping)
     val (legs, wrong) = laidOf(
         shaping.segments,
@@ -559,6 +567,12 @@ internal fun shapedOf(shaping: Shaping): Shaped {
         )
         sources[gasKeyOf(index)] = sourceOf(breathed, gas, conditions)
     }
+    // A start that will not read, or a run followed that cannot be, is the plan's fault as a
+    // setting that will not read is: the model cannot say what the dive starts from.
+    val followed = followedOf(shaping, universe)
+    if (followed is Followed.Wrong) return Shaped.Wrong(followed.reason, legs)
+    (startOf(shaping) as? Start.Wrong)?.let { return Shaped.Wrong(it.reason, legs) }
+    val left = (followed as? Followed.After)?.residual
     val points = listOf(0 to 0.0) + legs.map { it.ends to it.to }
     val switches = ArrayList<Pair<Int, String>>()
     for (leg in legs) {
@@ -579,6 +593,8 @@ internal fun shapedOf(shaping: Shaping): Shaped {
                 null
             },
             ascentRate = conditions.ascentRate,
+            carried = left?.tissues,
+            oxygenCarried = left?.oxygen,
         ),
         legs,
         conditions,
@@ -957,6 +973,8 @@ internal fun PlanForm(
     shaping: Shaping,
     settings: Settings?,
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)? = null,
+    /** The logbook a plan may follow an earlier run from, or absent where none is open. */
+    universe: Universe? = null,
     /** The row the plan is saved from, under its heading. `GUI-44`. */
     saving: @Composable () -> Unit = {},
 ) {
@@ -964,13 +982,14 @@ internal fun PlanForm(
         if (!shaping.prefilled) shaping.prefill(settings)
         shaping
     }
-    val shaped = shapedOf(shaping)
+    val shaped = shapedOf(shaping, universe)
     val worked = (shaped as? Shaped.Ready)?.let { workedOf(it) }
     val done = worked as? Worked.Done
     val conditions = conditionsOf(shaping).first
     val reckoned = if (done != null && conditions != null) reckonedOf(shaping, done, conditions) else null
     Heading("Dive plan")
     saving()
+    StartRow(shaping, universe, followedOf(shaping, universe))
     // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
     // two columns end on one line however many cylinders there are.
     Row(

@@ -269,6 +269,13 @@ it is a stay, and needs a duration. Durations are minutes and seconds, `2:13`, o
 `25`. The number before each line is the minute it ends in. Twenty-five minutes at forty metres is
 therefore two lines: 40 m going down, then 40 m staying for 22:46.
 
+Under the heading, **Start** is the date and time the dive begins, and **After** is the dive it
+follows, for a second dive of the day. *After* lists the dives and plans in your logbook that
+ended in the two days before the start, and starts at *None*: Yemoja never chooses one for you.
+If you leave it at *None* while a dive ended in the day before, a note beside it says so. Once you
+choose one, the plan is calculated from what that dive left in you, and the note says the surface
+interval and the CNS you start with.
+
 Each line breathes the gas of the line above it, shown in italics, until you choose another.
 Choosing the gas above makes it follow again. **+** adds a line below, and **×** takes one out.
 A gas turns red on a line that takes it deeper than its limit, or shallower than a hypoxic mix may
@@ -326,7 +333,9 @@ planner from a dive, with **Add plan** or **Edit plan**, you can also save it ba
 dive and its name, and opens the one you choose the same way. What is saved is the dive itself: every depth and gas switch, the way up included,
 the cylinders, the gradient factors and the water. The planner's other settings, such as the
 oxygen limits, the safety stop and the reserve, are not saved, so a plan you open again starts
-from your defaults for those. A plan saved as a new dive has no date yet.
+from your defaults for those. The start and the dive it follows are saved too, and a plan saved
+as a new dive is filed under its date. A plan following one dive cannot be saved on to a dive that
+already follows a different one, and says so; it can still be saved as a new dive.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
 decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts

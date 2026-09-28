@@ -414,8 +414,17 @@ once and corrected. The numbers stay unused rather than being given to something
   takes the name typed where that dive holds no plan of the name, and the next free letter where it
   does, so it never saves over one. *Open plan* is a menu of every saved plan, named by its dive's id
   and its own name, as `2026-03-01#1: Plan A`, and opens the chosen one as *Edit plan* would, so a
-  plan can be found without first finding its dive. No date or time is asked
-  yet, so a plan saved as a new dive has none, which a dive may lack: nothing is required.
+  plan can be found without first finding its dive.
+
+  **A plan saves its start and what it follows.** The start goes on the plan itself, as a
+  recording's does, so a dive holding only plans has a start and an end, and a new dive is filed
+  under its day. The run followed goes on the plan as `previous_profile`, since a dive's own
+  `previous_dive` speaks for its primary run alone. A new dive also names that dive as
+  `previous_dive` and takes its time zone, so the surface interval the logbook works out is the one
+  the planner showed. A dive already there takes `previous_dive` only where it names none: a dive
+  follows one dive, so a plan following another than the one it names is refused there, with a
+  sentence saying which, and may still be saved as a new dive. Opening a saved plan brings its
+  start and its choice back.
 
   *Forget the dive* unbinds a plan opened from one, so the next save makes a new dive instead of
   saving over the one it came from.
@@ -524,6 +533,20 @@ once and corrected. The numbers stay unused rather than being given to something
   shortens what is added, and a dive typed to the surface has nothing added. Nothing turns those
   lines into typed ones. The deed that did, *Add ascent*, is gone: a reader who wants to shape the
   way up types it, and the italic part fills in only what they left.
+
+  **A plan has a start, and may follow an earlier run.** Under the heading, a date and a time, and
+  *After*, a choice of the runs in the logbook that ended in the two days before that start, the
+  latest first, each named by its dive and its own name. The choice starts at *None* and is never
+  made for the reader: following a run is a claim about what the user did, and one made for them
+  would carry a dive they did not mean. Where it stays at *None* and a dive ended in the day
+  before, a note says so and how long before, as *2026-10-03#0 ended 1 hour and 30 minutes before
+  this start: choose it under After if this dive follows it*. Once a run is chosen the same place
+  says what the plan starts with, as *Surface interval 1 hour and 30 minutes after 2026-10-03#0,
+  Plan A; CNS 18 % at the start*, in plain words rather than the model's: the words are about the
+  user's dive, not the arithmetic behind it. The whole plan is then worked out from what that run
+  left, `LOGIC-37`. A start that will not read, or one before the chosen run's dive ended, is the
+  plan's fault as any setting that will not read is. A start alone, following nothing, changes
+  nothing but what is saved.
 
   **The settings are the plan's own.** They sit in titled sections, each a single column, the
   sections stacked in two columns with space between them. On the left, *General* holds descent

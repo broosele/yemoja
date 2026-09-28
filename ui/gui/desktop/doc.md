@@ -61,6 +61,11 @@ what it means is argued there; what is here is where it goes on a large screen.
   them come the whole dive's clocks on one line, what the model objects to, and the graph. What a
   plan holds and how it is worked out is `GUI-43`.
 
+  **The start and the run followed are a row of their own**, under the heading and the save row
+  and above the two columns, with what they come to after them on the same line. They belong to
+  the dive rather than to one of its boxes, and the settings box is already as tall as the gases
+  can spare.
+
   **The top is a fixed height, and the runtime scrolls past it**, with a bar where the platform
   draws one. The boxes beside it stay where they are however long the dive is. The gases take what
   the two boxes above them leave of the same height, so the two columns end on one line, and they

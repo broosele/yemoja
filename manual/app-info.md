@@ -12,7 +12,7 @@ yourself, whatever becomes of the app.
 
 - **There is no undo.** Every change is written to your files the moment it is saved.
 - **A saved plan keeps only its dive.** The planner's oxygen limits, safety stop, rates and
-  reserve are not saved with it, and a plan saved as a new dive has no date or time.
+  reserve are not saved with it.
   See [getting-started.md](getting-started.md#calculations).
 - **Few settings exist yet.** What a new plan starts from can be chosen, and the agent's command
   is remembered; units, date formats and the rest cannot be chosen. See [settings.md](settings.md).

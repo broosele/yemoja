@@ -331,8 +331,10 @@ that is the only record of it.
   together as one dive and kept a token for each. It always writes the list, `["a1b2"]` even
   for one; a lone token written plainly, as an older logbook has it, is read as a list of one
   and needs no changing.
-- `start_date` (date) — the day the recording began, as the computer had it.
-- `start_time` (time) — the moment it began, as the computer had it.
+- `start_date` (date) — the day the recording began, as the computer had it, or the day a plan
+  is to begin.
+- `start_time` (time) — the moment it began, as the computer had it, or the moment a plan is to
+  begin.
 
 - `recorded_time_offset` (number) — how far the computer's clock read ahead of the local time,
   which is what has to come off the two above. Seconds, unless the file says otherwise, and

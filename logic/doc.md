@@ -778,6 +778,20 @@ To settle when we discuss architecture and features:
   judged against `LEAST_OXYGEN`. It is public for the MOD
   calculation too, `GUI-43`.
 
+  **A plan typed in follows an earlier run as a saved one does.** `residualAfter` evaluates the
+  earlier run, its own chain behind it included, and spends the surface interval on air, through
+  the same code a saved plan's `previous_profile` goes through, so a plan typed after the morning's
+  and the same plan saved after it start from the same tissues and the same oxygen clocks. What it
+  gives back is a run's `carried` and `oxygenCarried`.
+
+  **The runs on offer are `earlierRuns`**: every run on a dive that ended before a start and within
+  a stated time of it, the latest dive first and its primary run first among its own. The interval
+  is measured from the dive's end whichever of its runs is followed, as `surface_interval` measures
+  it, so the planner and the saved plan agree. Local times are compared as written, a plan's start
+  being read in the time of the dive it follows; a saved plan takes that dive's time zone with it so
+  the logbook compares them the same way. A plan stores its own `start_date` and `start_time`, as a
+  recording does, which is what gives a planned dive an end another plan can follow.
+
   **A plan's own promises are checked as well.** A run that names a safety stop and reaches the
   surface without holding it is warned about where it left the stop's depth, including a dive
   typed all the way up by hand. A run that names an ascent rate is warned about where it rises

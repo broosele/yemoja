@@ -81,9 +81,8 @@ them.
   up worked out as it is typed, a role for each cylinder, a safety stop and a gas reserve
   (`GUI-43`). It is saved as a new dive or on to one already there, and a saved plan is opened
   back into the planner from the Dives tab or from *Open plan*, which lists every plan in the
-  logbook (`GUI-44`). What is owed is saving the planner's own settings with a plan, a date for a
-  plan saved as a new dive, and pointing a plan at the dive whose gas it carries, which the model
-  reads and the planner cannot yet be told.
+  logbook (`GUI-44`). A plan has a start and may follow an earlier dive or plan, and saves both.
+  What is owed is saving the planner's own settings with a plan.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). UDDF is read — the dive, its
   recording, and the sites, wrecks, people, gear, trips and operators it names — and how far it

@@ -222,9 +222,9 @@ with too little oxygen for it.
 **Planning a second dive of the day** means telling the plan which earlier run you are carrying
 gas from, and the model then carries your tissues across the surface interval into it. Two plans
 for the morning are two things that might happen, so the afternoon's plan says which of them it
-assumes — and you can keep a chain of plans beside the chain of dives you actually made. A plan
-says so in its `previous_profile` field, which you write on the saved plan in the Dives tab: the
-planner itself has no box for it yet.
+assumes — and you can keep a chain of plans beside the chain of dives you actually made. In the
+planner that is **After**, beside the plan's start, and the surface interval is the time between
+the earlier dive's end and that start. A saved plan keeps it in its `previous_profile` field.
 
 **What it costs in gas** comes from the SAC rate you write on each cylinder: how fast you breathe,
 in litres a minute at the surface. That is a guess about yourself, and the better your guess the

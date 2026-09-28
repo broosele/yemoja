@@ -461,7 +461,7 @@ private fun Calculators(
                         Calculation.MOD -> ModForm(working, settings)
                         Calculation.EAD -> EadForm(working)
                         Calculation.END -> EndForm(working)
-                        Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar) {
+                        Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar, universe) {
                             SaveRow(working.saving, working.shaping, universe)
                         }
                     }

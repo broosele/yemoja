@@ -26,6 +26,8 @@ internal object PlannerTips {
     const val GF_HIGH = "Gradient factor at the surface; lower means longer shallow stops"
     const val BOTTOM_OXYGEN = "Oxygen pressure limit for bottom and bailout gases; sets their MOD"
     const val DECO_OXYGEN = "Oxygen pressure limit for deco gases; sets the depth each is switched to"
+    const val DIVE_START = "When the dive begins, a date and a time; needed to follow an earlier dive, and saved with the plan"
+    const val AFTER = "An earlier dive or plan this dive follows, whose nitrogen and oxygen are still in you at the start"
     const val LEAST_OXYGEN = "Least oxygen pressure any gas may be breathed at; a hypoxic gas is warned of above its minimum depth"
     const val DESCENT_RATE = "Descent rate for lines given no duration or rate"
     const val ASCENT_RATE = "Ascent rate for the calculated ascent, and for lines given no duration or rate"

@@ -33,6 +33,9 @@ import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Stored
+import yemoja.data.Reference
+import yemoja.data.Time
+import yemoja.data.Date
 import yemoja.data.Units
 import yemoja.logic.Change
 import yemoja.logic.Outcome
@@ -108,6 +111,15 @@ internal fun planFieldsOf(shaping: Shaping, conditions: Conditions, whole: Run):
         numberOf(breathed.sac)?.let { source["sac"] = Stored.Leaf(it) }
         sources[key] = Stored.Members(source)
     }
+    val began = (startOf(shaping) as? Start.At)?.moment
+    val start = if (began == null) {
+        emptyMap()
+    } else {
+        // Written as a file writes them, which is what a leaf of a date or a time is read from.
+        mapOf("start_date" to Stored.Leaf(began.date.toString()), "start_time" to Stored.Leaf(began.time.toString()))
+    }
+    // Named on the plan itself, since a dive's own previous dive speaks for its primary run alone.
+    val after = shaping.following?.let { mapOf("previous_profile" to Stored.Leaf("@${it.dive}*${it.key}")) }.orEmpty()
     return linkedMapOf(
         "planned" to Stored.Leaf(true),
         "water_type" to Stored.Leaf(shaping.water),
@@ -121,7 +133,33 @@ internal fun planFieldsOf(shaping: Shaping, conditions: Conditions, whole: Run):
             },
         ),
         "gas_sources" to Stored.Members(sources),
-    )
+    ) + start + after
+}
+
+/**
+ * What a new dive holding [shaping]'s plan says of itself besides the plan: the dive it follows, and
+ * that dive's time zone, so the surface interval it works out is the one the planner showed.
+ */
+internal fun diveFieldsOf(shaping: Shaping, universe: Universe?): Map<String, Stored> {
+    val following = shaping.following ?: return emptyMap()
+    val fields = linkedMapOf<String, Stored>("previous_dive" to Stored.Leaf("@${following.dive}"))
+    val earlier = universe?.logbook?.get(following.dive)
+    (earlier?.single<Double>("time_zone_offset") as? Result.Usable)?.value?.let {
+        fields["time_zone_offset"] = Stored.Leaf(it)
+    }
+    return fields
+}
+
+/**
+ * Why [shaping]'s plan cannot go on [dive], or null where it can: a dive follows one dive, so a plan
+ * following another than the one [dive] already names would contradict it.
+ */
+internal fun followingClashOf(shaping: Shaping, dive: Item): String? {
+    val following = shaping.following ?: return null
+    val named = (dive.single<Reference>("previous_dive") as? Result.Usable)?.value as? Reference.Identified
+        ?: return null
+    if (named.id == following.dive) return null
+    return "After should be a run of ${named.id}, which this dive already follows, or the plan saved as a new dive"
 }
 
 /** What a cylinder of [role] is for, in the words `usage` uses. */
@@ -163,15 +201,16 @@ internal fun plansIn(universe: Universe): List<Pair<Bound.Editing, String>> =
     }.sortedByDescending { it.second }
 
 /** The changes that make a new dive holding only the plan [fields], under [key]. */
-internal fun newDiveOf(key: String, fields: Map<String, Stored>): List<Change> = listOf(
-    Change.Add(
-        Types.DIVE,
-        mapOf(
-            "primary_profile" to Stored.Leaf("*$key"),
-            "profiles" to Stored.Members(mapOf(key to Stored.Members(fields))),
+internal fun newDiveOf(key: String, fields: Map<String, Stored>, dive: Map<String, Stored> = emptyMap()): List<Change> =
+    listOf(
+        Change.Add(
+            Types.DIVE,
+            mapOf(
+                "primary_profile" to Stored.Leaf("*$key"),
+                "profiles" to Stored.Members(mapOf(key to Stored.Members(fields))),
+            ) + dive,
         ),
-    ),
-)
+    )
 
 /**
  * The changes that put the plan [fields] on [dive] under [key]: a new profile where there is none
@@ -180,7 +219,12 @@ internal fun newDiveOf(key: String, fields: Map<String, Stored>): List<Change> =
  * A dive with no profile before takes the plan as its primary one, as a new dive does; one with a
  * recording keeps the recording.
  */
-internal fun onDiveOf(dive: Item, key: String, fields: Map<String, Stored>): List<Change> {
+internal fun onDiveOf(
+    dive: Item,
+    key: String,
+    fields: Map<String, Stored>,
+    diveFields: Map<String, Stored> = emptyMap(),
+): List<Change> {
     val written = LinkedHashMap<String, Stored>()
     for ((held, entry) in keyedEntriesOf(dive, "profiles")) {
         written[held] = ItemWriter.write(entry, Units.DEFAULT)
@@ -189,6 +233,9 @@ internal fun onDiveOf(dive: Item, key: String, fields: Map<String, Stored>): Lis
     written[key] = Stored.Members(kept + fields)
     val changes = mutableListOf<Change>(Change.Write(dive, "profiles", Stored.Members(written)))
     if (written.size == 1) changes += Change.Write(dive, "primary_profile", Stored.Leaf("*$key"))
+    // A dive already following one keeps it; followingClashOf refuses a plan that says otherwise.
+    val follows = dive.single<Reference>("previous_dive") !is Result.Absent
+    if (!follows) for ((field, value) in diveFields) changes += Change.Write(dive, field, value)
     return changes
 }
 
@@ -250,6 +297,16 @@ internal fun Shaping.loadFrom(profile: Item, dive: Item?) {
     (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value?.let { gradientHigh = plain(it * 100) }
     (profile.single<String>("water_type") as? Result.Usable)?.value
         ?.takeIf { it in Settings.DEFAULT_WATER_TYPE.choices }?.let { water = it }
+
+    // The plan's own start where it has one, and its dive's otherwise.
+    val date = (profile.single<Date>("start_date") as? Result.Usable)?.value
+        ?: (dive?.single<Date>("start_date") as? Result.Usable)?.value
+    val time = (profile.single<Time>("start_time") as? Result.Usable)?.value
+        ?: (dive?.single<Time>("start_time") as? Result.Usable)?.value
+    startDate = date?.toString().orEmpty()
+    startTime = time?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" }.orEmpty()
+    following = (profile.single<KeyReference>("previous_profile") as? Result.Usable)?.value
+        ?.let { reference -> reference.id?.let { Following(it, reference.key) } }
 }
 
 /** Empties [shaping] to a plan of one blank line on one cylinder, under the settings' defaults. */
@@ -260,6 +317,9 @@ internal fun Shaping.startAfresh(settings: Settings?) {
     gases += Breathed()
     // A cylinder chosen as lost names a place in the list just emptied, so the choice goes with it.
     lostGas = null
+    startDate = ""
+    startTime = ""
+    following = null
     prefill(settings)
 }
 
@@ -300,7 +360,7 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
     // A plan bound to a dive since taken out saves as a new one.
     val bound = saving.bound?.takeIf { universe?.logbook?.get(it.dive) != null }
     val dive = bound?.let { universe?.logbook?.get(it.dive) }
-    val ready = shapedOf(shaping) as? Shaped.Ready
+    val ready = shapedOf(shaping, universe) as? Shaped.Ready
     val done = ready?.let { workedOf(it) as? Worked.Done }
     val unsaved = when {
         universe == null -> "Open a logbook to save a plan into it."
@@ -311,8 +371,8 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
         val fields = planFieldsOf(shaping, ready!!.conditions, done!!.whole)
         val key = if (target is Bound.Editing) target.key else planKeyOf(saving.name)
         val outcome = when (target) {
-            null -> changer.change(newDiveOf(key, fields))
-            else -> changer.change(onDiveOf(universe!!.logbook[target.dive]!!, key, fields))
+            null -> changer.change(newDiveOf(key, fields, diveFieldsOf(shaping, universe)))
+            else -> changer.change(onDiveOf(universe!!.logbook[target.dive]!!, key, fields, diveFieldsOf(shaping, universe)))
         }
         saving.said = when (outcome) {
             is Outcome.Refused -> outcome.reason
@@ -346,7 +406,8 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
             null -> null
             else -> dive?.let { titleOf(it) }
         }
-        val blocked = unsaved ?: nameWrong
+        val clash = dive?.let { followingClashOf(shaping, it) }
+        val blocked = unsaved ?: nameWrong ?: clash
         if (target != null) {
             Explained(blocked) {
                 SmallButton(if (bound is Bound.Editing) "Save" else "Add to $target", blocked == null) {
@@ -354,15 +415,18 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
                 }
             }
         }
-        Explained(blocked) {
-            SmallButton("Save as new dive", blocked == null, quiet = target != null) { save(null) }
+        // A new dive follows whatever the plan says, so a clash with the bound dive does not stop it.
+        val blockedNew = unsaved ?: nameWrong
+        Explained(blockedNew) {
+            SmallButton("Save as new dive", blockedNew == null, quiet = target != null) { save(null) }
         }
         Explained(unsaved) {
             Attach(universe, enabled = unsaved == null) { chosen ->
                 val id = universe!!.logbook.idOf(chosen) ?: return@Attach
                 val key = attachedKeyOf(chosen, saving.name)
                 val fields = planFieldsOf(shaping, ready!!.conditions, done!!.whole)
-                saving.said = when (val outcome = changer.change(onDiveOf(chosen, key, fields))) {
+                followingClashOf(shaping, chosen)?.let { saving.said = it; return@Attach }
+                saving.said = when (val outcome = changer.change(onDiveOf(chosen, key, fields, diveFieldsOf(shaping, universe)))) {
                     is Outcome.Refused -> outcome.reason
                     is Outcome.Done -> {
                         saving.bound = Bound.Editing(id, key)

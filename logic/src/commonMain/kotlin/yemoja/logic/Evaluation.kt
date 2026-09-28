@@ -1001,8 +1001,18 @@ private fun carriedInto(profile: Item, surface: Double, seen: Set<Item>): Carrie
         ?: return Carried.Refused("$id has no run called ${named.key}")
     val interval = (owner(profile)?.single<Double>("surface_interval") as? Result.Usable)?.value
         ?: return Carried.Refused("nothing says how long the surface interval before this was")
+    return carriedAcross(earlier, interval, surface, seen + profile)
+}
 
-    return when (val ran = evaluated(earlier, seen + profile)) {
+/**
+ * What [earlier] leaves in the tissues and on the oxygen clocks after [interval] seconds breathing
+ * air at [surface] bar, or why it cannot be worked out. [seen] is the chain behind it so far.
+ *
+ * A saved plan's evaluation and the planner's both come here, so a plan follows an earlier run the
+ * same way whether it is typed or saved.
+ */
+private fun carriedAcross(earlier: Item, interval: Double, surface: Double, seen: Set<Item>): Carried =
+    when (val ran = evaluated(earlier, seen)) {
         is Evaluated.Refused -> Carried.Refused("the run before this one: ${ran.reason}")
         is Evaluated.Done -> Carried.From(
             ran.surfacing.breathing(Gas.AIR, surface, surface, interval),
@@ -1013,6 +1023,34 @@ private fun carriedInto(profile: Item, surface: Double, seen: Set<Item>): Carrie
                 interval,
             ),
         )
+    }
+
+/**
+ * Residual is what an earlier run leaves in the tissues and on the oxygen clocks when a later one
+ * begins, or why that cannot be worked out.
+ */
+sealed class Residual {
+
+    /** What a run following it starts from: its `carried` and its `oxygenCarried`. */
+    class Done(val tissues: Tissues, val oxygen: OxygenClock) : Residual()
+
+    data class Refused(val reason: String) : Residual()
+}
+
+/**
+ * What [earlier] leaves after [intervalSeconds] on the surface breathing air at [surface] bar, for
+ * a run that belongs to no dive yet.
+ *
+ * [earlier] is evaluated as it would be anywhere, the chain behind it included, and the interval
+ * is spent as a saved plan's is. `LOGIC-37`.
+ */
+fun residualAfter(earlier: Item, intervalSeconds: Double, surface: Double = SEA_LEVEL): Residual {
+    require(intervalSeconds >= 0) {
+        "a surface interval should be 0 seconds or more, but was $intervalSeconds"
+    }
+    return when (val carried = carriedAcross(earlier, intervalSeconds, surface, emptySet())) {
+        is Carried.From -> Residual.Done(carried.tissues, carried.oxygen)
+        is Carried.Refused -> Residual.Refused(carried.reason)
     }
 }
 
