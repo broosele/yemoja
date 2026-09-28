@@ -13,6 +13,7 @@
     "elevation": 32,
     "max_depth": 18,
     "water_type": "fresh",
+    "entry": "steps",
     "rating": 5,
     "environment_type": "quarry",
     "substrate": "gravel and sunken timber",
@@ -34,6 +35,7 @@
     "latitude": 45.12,
     "elevation": 1180,
     "water_type": "fresh",
+    "entry": "shore",
     "environment_type": "lake",
     "facilities": [
       "parking"
@@ -50,6 +52,7 @@
     "latitude": 43.06,
     "max_depth": 22,
     "water_type": "salt",
+    "entry": "boat",
     "rating": 9,
     "environment_type": "sea",
     "substrate": "sand between rock",
@@ -70,6 +73,7 @@
     "longitude": 6.12,
     "latitude": 43.01,
     "water_type": "salt",
+    "entry": "boat",
     "environment_type": "sea",
     "facilities": [
       "boat access"
@@ -85,6 +89,7 @@
     "latitude": 42.94,
     "max_depth": 60,
     "water_type": "salt",
+    "entry": "boat",
     "rating": 8,
     "environment_type": "sea",
     "facilities": [
@@ -106,6 +111,7 @@
     "latitude": 52.11,
     "max_depth": 12,
     "water_type": "salt",
+    "entry": "boat",
     "environment_type": "sea",
     "wrecks": [
       "@britannic"
@@ -124,6 +130,7 @@
     "latitude": 52.48,
     "max_depth": 34,
     "water_type": "salt",
+    "entry": "boat",
     "rating": 7,
     "environment_type": "sea",
     "wrecks": [
@@ -143,6 +150,7 @@
     "latitude": 51.92,
     "max_depth": 9,
     "water_type": "en13319",
+    "entry": "jetty",
     "rating": 2,
     "environment_type": "sea",
     "substrate": "deep silt, easily stirred",
@@ -174,6 +182,7 @@
       "@netherlands"
     ],
     "water_type": "fresh",
+    "entry": "rope",
     "remarks": "Position never recorded, which is allowed."
   }
 }

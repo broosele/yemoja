@@ -2,8 +2,6 @@
   "dive_number": 38,
   "time_zone_offset": 7200,
   "dive_site": "@lantern_reef",
-  "entry": "boat",
-  "exit": "boat",
   "previous_dive": "@2025-05-30#1",
   "buddies": [
     "@jacques_cousteau"

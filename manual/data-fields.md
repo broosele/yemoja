@@ -191,18 +191,6 @@ All five can be corrected where the calculation is wrong.
 
 - `dive_site` (reference) — where the dive was.
 
-- `entry`, `exit` (text) — how you got in, and how you got out. Anything you like; the
-  usual ones are `shore`, `pier`, `boat`, `hard boat`, `rib`, `liveaboard`, `platform`
-  and `pool`.
-
-  Two fields rather than one because they differ more often than you would think: a drift
-  dive goes in off a boat and comes out on a beach, and a shore dive in a swell sometimes
-  comes out up a ladder. Where they are the same, write the same word twice — Yemoja does
-  not assume one from the other, because assuming would make the interesting case invisible.
-
-  This is a property of the *dive*, not of the site. The same quarry is a shore dive one
-  day and a boat dive the next.
-
 - `buddies` (list of references or text) — who you dived with. Plain names are allowed
   for people you have no item for.
 - `buddy_count` (whole number, derived) — from the list. Correct it when you remember how
@@ -778,6 +766,12 @@ A place you dive.
   the two can disagree. `en13319` is the nominal density laid down by the
   European standard for depth gauges, which is what many dive computers use in place of
   either real value.
+- `entry` (text) — how you get into the water here. Anything you like; the usual ones are
+  `shore`, `jetty`, `steps`, `rope`, `boat` and `poolside`.
+
+  It belongs to the site because that is where it stays the same: a quarry with a jetty has
+  one every time you dive it. Where a dive was different — a zodiac drop on a house reef you
+  normally walk into — the dive's `remarks` say so.
 - `max_depth` (number) — how deep the site goes. The site's own depth, not how deep you
   went: a dive there may have turned round anywhere above it.
 - `rating` (whole number) — what you make of the site, from 1 to 10. Your view of the

@@ -20,11 +20,11 @@ class StatsTest {
                 "person.json" to
                     """{"anna": {"first_name": "Anna"}, "bram": {"first_name": "Bram"}}""",
                 "dive/2026-06-01#0.json" to """{"dive_number": 1, "dive_site": "@blue", "rating": 6,
-                    "deco": false, "buddies": ["@anna"], "entry": "shore",
+                    "deco": false, "buddies": ["@anna"], "tags": ["training"],
                     "profiles": {"p": {"start_date": "2026-06-01", "start_time": "10:00:00",
                     "depth": [[0, 0], [60, 10.0], [120, 0]]}}}""",
                 "dive/2026-06-02#0.json" to """{"dive_number": 2, "dive_site": "@blue", "rating": 8,
-                    "deco": true, "buddies": ["@anna", "@bram"], "entry": "boat",
+                    "deco": true, "buddies": ["@anna", "@bram"], "tags": ["wreck", "deep"],
                     "profiles": {"p": {"start_date": "2026-06-02", "start_time": "11:00:00",
                     "depth": [[0, 0], [60, 30.0], [120, 0]]}}}""",
                 "dive/2026-06-03#0.json" to """{"dive_number": 3, "dive_site": "@elph",
@@ -64,7 +64,7 @@ class StatsTest {
         assertEquals("Elphinstone, Blue Hole (2 different)", site.text)
         assertEquals(listOf("elph", null, "blue", null), site.parts.map { it.leadsTo })
         assertEquals("Anna, Bram (2 different) (2 of 3)", about("Buddies").text)
-        assertEquals("Boat, Shore (2 different) (2 of 3)", about("Entry").text)
+        assertEquals("wreck, deep, training (3 different) (2 of 3)", about("Tags").text)
     }
 
     @Test

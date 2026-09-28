@@ -50,7 +50,7 @@ class EditTest {
         assertEquals(Kind.REFERENCE, kindOf(field("dive_site")))
         assertEquals(Kind.KEY, kindOf(field("primary_profile")))
         assertEquals(Kind.CHOICE, kindOf(Types.DIVE_SITE["water_type"]!!))
-        assertEquals(Kind.SUGGESTED, kindOf(field("entry")), "offered, not enforced")
+        assertEquals(Kind.SUGGESTED, kindOf(Types.DIVE_SITE["entry"]!!), "offered, not enforced")
         assertEquals(Kind.LONG_TEXT, kindOf(field("remarks")))
         assertEquals(Kind.NONE, kindOf(profile()["depth"]!!), "a series is read on the graph")
     }

@@ -496,24 +496,6 @@ private fun cylindersVolume(source: Item): Result<Any> {
 private const val CYLINDER = "cylinder"
 
 /**
- * How a diver crosses the waterline, at either end of a dive.
- *
- * Suggested rather than fixed. A closed list would have to be right the first time and this
- * one is not closeable — ice, a marina ladder, a helicopter — and nothing exports it to
- * another format's closed list, which is what `water_type` and `environment_type` are held to.
- */
-private val ENTRIES_AND_EXITS = setOf(
-    "shore",
-    "pier",
-    "boat",
-    "hard boat",
-    "rib",
-    "liveaboard",
-    "platform",
-    "pool",
-)
-
-/**
  * Dive is one dive, and the largest thing here.
  *
  * Absent so far: nothing of its own.
@@ -558,11 +540,6 @@ internal val DIVE: ItemDescription = ItemDescription(
         ),
         BooleanDescription("deco", role = Role.Overrideable(::divesDeco)),
         ReferenceDescription("dive_site", targetType = "dive_site"),
-        // How the water was got into and out of. Two fields because they differ: a drift
-        // dive goes in off a boat and comes out on a beach. Neither is assumed from the
-        // other, which would hide exactly that case.
-        TextDescription("entry", suggestedSet = ENTRIES_AND_EXITS),
-        TextDescription("exit", suggestedSet = ENTRIES_AND_EXITS),
         ReferenceDescription(
             "buddies",
             targetType = "person",

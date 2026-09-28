@@ -29,6 +29,21 @@ private val ENVIRONMENT_TYPES = setOf(
  *
  * Absent so far: nothing of its own.
  */
+/**
+ * How a diver crosses the waterline here.
+ *
+ * Suggested rather than fixed. A closed list would have to be right the first time and this one
+ * is not closeable — ice, a marina ladder, a helicopter. `DATA-123`.
+ */
+private val ENTRIES = setOf(
+    "shore",
+    "jetty",
+    "steps",
+    "rope",
+    "boat",
+    "poolside",
+)
+
 internal val DIVE_SITE: ItemDescription = ItemDescription(
     "dive_site",
     listOf(
@@ -37,6 +52,7 @@ internal val DIVE_SITE: ItemDescription = ItemDescription(
         ReferenceDescription("regions", targetType = "region", cardinality = Cardinality.LIST),
         TextDescription("environment_type", fixedSet = ENVIRONMENT_TYPES),
         TextDescription("water_type", fixedSet = WATER_TYPES),
+        TextDescription("entry", suggestedSet = ENTRIES),
         // The site's own depth, not how deep anybody went.
         NumberDescription("max_depth", Dimension.LENGTH),
         WholeNumberDescription("rating", range = 1..10),

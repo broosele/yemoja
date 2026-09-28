@@ -2201,6 +2201,34 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-123 — Whether how you get into the water belongs to the dive or to the site.**
+  *Settled:* **to the site, as `entry`, and the dive's `entry` and `exit` go.**
+
+  The first answer was the dive's, on the reasoning that the same quarry is a shore dive one day
+  and a boat dive the next. A logbook of three hundred and forty dives says otherwise: the way in
+  is the site's, ninety-eight sites have one way in each, and the dives that differ are a handful
+  of zodiac drops on two house reefs. Writing the same word on every dive made there is recording
+  the site over and over.
+
+  **A dive that differs says so in its remarks.** That is the trade, and it is worth stating: the
+  word stops being a field a query can gather, so *which dives did I do off a boat* becomes a
+  reading of prose. The alternative was a field on the dive that usually repeats its site, which
+  is what the logbook already showed nobody fills in consistently — of three hundred and forty
+  dives, eighty-nine had none at all and one site carried three different answers.
+
+  **`exit` goes with it.** Two fields existed because a drift dive goes in off a boat and comes
+  out on a beach. A site has one way in, and a dive that came out somewhere else is the same
+  remark as the zodiac drop.
+
+  **The words are `shore`, `jetty`, `steps`, `rope`, `boat` and `poolside`**, suggested rather
+  than fixed, `DATA-115`'s sets being for what must survive an export. They are what a hundred
+  real sites needed: a quarry with a jetty, a Zeeland site with a rope down the dyke, an indoor
+  pool, a reef reached by boat.
+
+  A logbook written before this holds the two fields on its dives. `tool/liftentry.py` reads
+  them, writes each site the entry its dives agree on, drops both fields, and names every dive
+  that disagreed so its remark can be written.
+
 - **DATA-122 — Whether a dive's `details` stays an owned item.** *Settled:* **no: `dive_trip`,
   `operator` and `tags` are the dive's own fields, gathered by a section called *Details*.**
 

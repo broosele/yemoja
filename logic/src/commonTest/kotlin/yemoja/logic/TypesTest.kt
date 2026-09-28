@@ -114,6 +114,19 @@ class EveryTypeTest {
     }
 
     @Test
+    fun `how you get into the water is the site's, not the dive's`() {
+        val entry = Types.DIVE_SITE["entry"]
+        assertIs<TextDescription>(entry)
+        assertEquals(
+            setOf("shore", "jetty", "steps", "rope", "boat", "poolside"),
+            entry.suggestedSet,
+            "the words a hundred real sites needed",
+        )
+        assertNull(Types.DIVE["entry"], "the dive says it only where it differed, in remarks")
+        assertNull(Types.DIVE["exit"])
+    }
+
+    @Test
     fun `a person carries their medical, their insurance and their courses`() {
         assertIs<OwnedItemDescription>(Types.PERSON["medical"])
         assertEquals(Cardinality.SINGLE, Types.PERSON["medical"]?.cardinality)

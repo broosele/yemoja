@@ -116,11 +116,11 @@ omission, and none is yet decided:
 - `apparatus`, `purpose`, `program`, `stateofrestbeforedive`, `diveplan`, `pressuredrop`,
   `internaldivenumber`, `applicationdata`.
 
-**`platform` has a counterpart now.** It was on the list above until this model gained `entry`
-and `exit`, which say how a diver got in and how they got out. What is not yet compared is the
-two vocabularies: ours is a suggested set of eight and UDDF's is whatever its own page says,
-which nobody has read against it. One field there against two here also means an export must
-choose, and a drift dive is exactly where the two differ.
+**`platform` has a counterpart, on the site rather than the dive.** `DATA-123` put `entry` on
+the dive site, where it does not change from one dive to the next, and UDDF's `platform` sits on
+a dive. What is not yet compared is the two vocabularies: ours is a suggested set of six and
+UDDF's is whatever its own page says, which nobody has read against it. An export also has to
+decide whether a site's entry is worth writing on to every dive made there.
 
 ## The profile
 
