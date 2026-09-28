@@ -550,7 +550,10 @@ internal fun Explained(said: String?, content: @Composable () -> Unit) {
     }
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
-        tooltip = { PlainTooltip { Text(said) } },
+        // Outside every selection, as a menu's words are. `GUI-36`. A tooltip opens in a layer of
+        // its own and would join the selection of the view under it, and a press on words it
+        // covers would then measure across two layers and throw.
+        tooltip = { PlainTooltip { DisableSelection { Text(said) } } },
         // Kept while the pointer rests there, rather than for a second and a half: a reader is
         // being told where to go, and reads at their own pace.
         state = rememberTooltipState(isPersistent = true),

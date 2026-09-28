@@ -1007,6 +1007,11 @@ once and corrected. The numbers stay unused rather than being given to something
    selection the view could not measure against: choosing *quarter* in the statistics threw
    rather than choosing. Every menu is `Menu` in `Screens.kt`, which switches selection off.
 
+   **So are a tooltip's.** A tooltip opens in a layer of its own the same way, and while one showed,
+   a press on the words under it threw for the same reason: choosing a gas lost in the planner,
+   whose dropdown carries a tooltip, closed the application. `Explained` switches selection off in
+   what it shows, and a test presses words under their own tooltip to keep it so.
+
    **A click still chooses.** A row in a list inside a view is chosen by a click as it was
    before, and the click clears whatever was selected; only a drag selects.
 - **GUI-35 — How an item is made and unmade.** *Settled:* **two buttons beside the pencil, and
