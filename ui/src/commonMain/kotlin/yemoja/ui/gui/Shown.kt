@@ -297,6 +297,57 @@ internal fun prettyOf(key: String): String =
     key.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
 /**
+ * What [fields] say, with a start and an end of one kind shown as a range on one line.
+ *
+ * A dive says `Time 09:15–09:58` rather than a start time and an end time under each other:
+ * the two are one fact, and a reader takes in the span without subtracting. `GUI-47`.
+ *
+ * The pair has to be whole and of one kind. Where only one end is written, or the two are
+ * described differently, each says itself under its own label, because a lone `2026-02-23` beside
+ * *Date* would not say which end it was.
+ */
+internal fun shownAllOf(fields: List<FieldDescription>, item: Item): List<Shown> {
+    val named = fields.associateBy { it.name }
+    val ends = HashSet<String>()
+    val out = ArrayList<Shown>()
+    for (field in fields) {
+        if (field.name in ends) continue
+        val end = rangedWith(field, named)
+        val ranged = end?.let { rangeOf(field, it, item) }
+        if (ranged != null && end != null) {
+            ends += end.name
+            out += ranged
+        } else {
+            shownOf(field, item)?.let { out += it }
+        }
+    }
+    return out
+}
+
+/** The field that ends what [field] starts, among [named], or absent where there is none. */
+private fun rangedWith(field: FieldDescription, named: Map<String, FieldDescription>): FieldDescription? {
+    val stem = field.name.removePrefix("start_")
+    if (stem == field.name) return null
+    val end = named["end_$stem"] ?: return null
+    return end.takeIf { it::class == field::class && it.cardinality == field.cardinality }
+}
+
+/** [start] and [end] on one line, or absent where either says nothing. */
+private fun rangeOf(start: FieldDescription, end: FieldDescription, item: Item): Shown? {
+    val from = shownOf(start, item) ?: return null
+    val to = shownOf(end, item) ?: return null
+    if (from.wrong || to.wrong) return null
+    return Shown(
+        label = prettyOf(start.name.removePrefix("start_")),
+        parts = from.parts + Part(RANGE) + to.parts,
+        worked = from.worked && to.worked,
+    )
+}
+
+/** What sits between the two ends of a range. */
+private const val RANGE = "\u2013"
+
+/**
  * What one field says, or absent where it says nothing.
  *
  * **Absent and unusable are not the same silence**, and only one of them is silence: a field

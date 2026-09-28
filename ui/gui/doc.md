@@ -384,6 +384,22 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-47 — What the item view does with a start and an end.** *Settled:* **the pair is one
+  line, a range, labelled by what they bracket.**
+
+  A dive holds `start_time` and `end_time`, and under each other they read as two facts a reader
+  has to put together. On one line they read as the one fact they are: *Time 09:15–09:58*. The
+  same goes for the dates of a dive, a profile, a trip and an insurance, and for a gas source's
+  pressures, *Pressure 200 bar–60 bar*.
+
+  **Both ends, and one kind.** A pair is joined only where both are written and both are described
+  the same way, because a lone date beside *Date* would not say which end it was, and a pair of
+  different kinds is not a range. The gradient factors are a low and a high rather than a start and
+  an end, and are left alone: neither brackets the other.
+
+  **The edit form keeps them apart.** Two boxes are what a typist needs, and a range in one box
+  would have to be parsed back into two fields. `GUI-29`.
+
 - **GUI-45 — How the Calculations tab words what it says.** *Settled:* **the subject first, then
   what is correct.**
 

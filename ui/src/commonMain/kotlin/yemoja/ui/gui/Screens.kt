@@ -2452,10 +2452,10 @@ private fun ItemCard(
 @Composable
 private fun Fields(item: Item, onFollow: (String) -> Unit) {
     val arranged = remember(item.description) { arrangedOf(item.description) }
-    val shown = arranged.plain.mapNotNull { shownOf(it, item) }
+    val shown = shownAllOf(arranged.plain, item)
     val insets = arranged.insets.filter { item.read(it.name) is Result.Usable }
     val foot = arranged.foot.mapNotNull { shownOf(it, item) }
-    val sections = arranged.sections.map { it.section to it.fields.mapNotNull { field -> shownOf(field, item) } }
+    val sections = arranged.sections.map { it.section to shownAllOf(it.fields, item) }
         .filter { (_, shown) -> shown.isNotEmpty() }
     if (shown.isEmpty() && insets.isEmpty() && foot.isEmpty() && sections.isEmpty()) {
         Aside("No values")
