@@ -574,8 +574,9 @@ once and corrected. The numbers stay unused rather than being given to something
   gases, *Minimum*: the most any scenario switched on asks of it, red on a cylinder that falls short
   in any of them. Each line gives the scenario's name, *Lost* or *Buddy out of gas*, then its
   switch, then what it came to. The lost-gas line's switch is the choice of gas lost, below, and
-  the sharing line's a tick that switches it off, the two in a slot of one width so that what they
-  came to lines up, and both shown before the plan can be worked out as well. Each line says what
+  the sharing line's a tick that switches it off, both shown before the plan can be worked out as
+  well. The name and the switch are each as wide as they are, so what the scenario came to has the
+  rest of the line; the user preferred that width to the two results lining up. Each line says what
   it asks each cylinder
   to hold, its own worst moment, and what it assumes, in one sentence: *Gas 1 needs 28 bar at 25:00
   (40 m), two divers sharing to 21.6 m, each at 2 × SAC (panic stress factor)*: the figure is named

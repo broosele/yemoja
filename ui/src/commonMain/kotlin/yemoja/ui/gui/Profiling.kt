@@ -1458,16 +1458,12 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                 horizontalArrangement = Arrangement.spacedBy(GAP),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // The scenario's name, then its own switch in a slot of one width, so the switches
-                // and what they came to line up.
+                // The scenario's name, then its own switch, each as wide as it is, so what the
+                // scenario came to has the rest of the line rather than lining up with the other.
                 Explained(scenario.tip) {
-                    Text(
-                        scenario.label,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.width(SCENARIO),
-                    )
+                    Text(scenario.label, style = MaterialTheme.typography.bodySmall)
                 }
-                Box(modifier = Modifier.width(SWITCH)) {
+                Box {
                     when (scenario) {
                         // Which cylinder is lost, the first deco cylinder until one is chosen, and
                         // None for no lost-gas scenario at all: the choice is the scenario's switch.
@@ -1595,11 +1591,6 @@ private val PRESSURE = 72.dp
 private val SAC = 84.dp
 private val FIGURED = 56.dp
 
-/** How wide a scenario's name is, so what follows it lines up. */
-private val SCENARIO = 110.dp
-
-/** How wide the slot a scenario's switch sits in is: a choice of gas for one, a tick for the other. */
-private val SWITCH = 80.dp
 
 /** What *Gas lost* offers for losing no gas, which is no lost-gas scenario. */
 private const val NO_GAS_LOST = "None"
