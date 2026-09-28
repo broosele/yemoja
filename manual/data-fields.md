@@ -241,16 +241,12 @@ One per dive. What the conditions were.
   a middle.
 - `air_temperature` (number) — what it was like on the surface. Nothing calculates it for
   you; write it if you want it.
-- `surface_temperature` (number) — the water at the surface, which is what you felt
-  getting in. Not the air: a computer that reports a *surface* temperature is nearly
-  always reporting water, which is why this is a field of its own rather than a second
-  source for `air_temperature`.
-- `bottom_temperature` (number) — the coldest water you were in. A download fills it in
-  from what the computer itself reported.
-- `atmospheric_pressure` (number) — from where the dive was, and **absolute**: about 1 bar
-  at sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge
-  reads against; it is the pressure itself. Weather moves it about, and altitude matters
-  more than most divers expect.
+- `surface_temperature` (number, derived) — the water at the surface, which is what you felt
+  getting in, taken from the primary recording. Not the air: a computer that reports a
+  *surface* temperature is nearly always reporting water, which is why this is a field of its
+  own rather than a second source for `air_temperature`.
+- `bottom_temperature` (number, derived) — the coldest water you were in, taken from the
+  primary recording. Write either yourself for a dive you kept no recording of.
 - `remarks` (multiline text) — the conditions in words, where six steps and a
   handful of numbers do not tell it.
 
@@ -357,9 +353,14 @@ that is the only record of it.
   the gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
   figure on it. Nothing is calculated where `water_type` is not written, which is the case for
   a recording imported from UDDF. Write it in yourself if you know better.
-- `atmospheric_pressure` (number, derived) — the air above this run, **absolute**, taken from
-  the dive's own. Write it on a plan made before you know what the day will bring, or where two
-  plans for one dive assume different days.
+- `atmospheric_pressure` (number) — the air above this run, and **absolute**: about 1 bar at
+  sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge reads
+  against; it is the pressure itself. A download writes what the computer measured, and a plan
+  writes what it assumes. Each recording carries its own, so two computers on one dive keep
+  their own readings.
+- `bottom_temperature` (number, derived) — the coldest water this recording sampled, from its
+  own samples where the computer reported no figure of its own.
+- `surface_temperature` (number) — the water at the surface, as this computer reported it.
 - `deco_model` (text) — which decompression model the computer was running: `buhlmann`,
   `vpm`, `rgbm` or `dciem`. Anything you like, since a maker may use something else.
 - `gradient_factor_low`, `gradient_factor_high` (number) — how conservative a Bühlmann

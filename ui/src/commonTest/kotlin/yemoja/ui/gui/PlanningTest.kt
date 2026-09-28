@@ -33,9 +33,9 @@ private fun logbook(vararg files: Pair<String, String>): ItemSet =
 
 /** A dive holding one plan, whose profile holds [run] beside the settings every test shares. */
 private fun planned(run: String, sources: String = AIR): Item = logbook(
-    "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+    "dive/d#0.json" to """{
         "gas_sources": {$sources},
-        "profiles": {"a": {"planned": true, "water_type": "fresh",
+        "profiles": {"a": {"planned": true, "water_type": "fresh", "atmospheric_pressure": 1.0,
             "gradient_factor_low": 1.0, "gradient_factor_high": 1.0, $run}}}""",
 )["d#0"]!!
 
@@ -186,9 +186,9 @@ class PlanningTest {
     @Test
     fun `a recording with a fault in it is told of wherever it is found`() {
         val dive = logbook(
-            "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+            "dive/d#0.json" to """{
                 "gas_sources": {"g1": {"gas_type": "AIR"}, "g2": {"gas_type": "EAN50"}},
-                "profiles": {"p1": {"water_type": "fresh", "gradient_factor_low": 1.0,
+                "profiles": {"p1": {"water_type": "fresh", "atmospheric_pressure": 1.0, "gradient_factor_low": 1.0,
                     "gradient_factor_high": 1.0, $DEEP}}}""",
         )["d#0"]!!
         val refused = assertIs<Evaluated.Refused>(evaluate(profile(dive, "p1")))

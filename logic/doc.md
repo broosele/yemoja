@@ -943,7 +943,7 @@ To settle when we discuss architecture and features:
 
   **What it assumes.** An ideal gas, which undercounts what a full cylinder holds by a few
   percent, as every logbook's SAC does. Water of the recording's `density`, and of 1020 where it
-  gives none, the nominal figure most computers convert with. Air of the dive's
+  gives none, the nominal figure most computers convert with. Air of the recording's
   `atmospheric_pressure`, and sea level where it gives none. None of these is written anywhere:
   change one and the figure follows.
 - **LOGIC-32 — What a dive's time means, and where the clocks' differences are kept.**
@@ -1356,7 +1356,7 @@ To settle when we discuss architecture and features:
    and it was measured rather than picked.
 
    **The stakes are lower than they look, and for a reason worth stating.** `DC_FIELD_ATMOSPHERIC`
-   is already carried to `environment.atmospheric_pressure`. Ambient pressure is what
+   is already carried to `profile.atmospheric_pressure`, `DATA-124`. Ambient pressure is what
    decompression wants and elevation is a proxy for it, so a downloaded dive records the
    meaningful quantity by a better route. It is a typed or planned dive that leans on
    `elevation`, and neither has a fix to take one from.

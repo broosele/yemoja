@@ -8,9 +8,6 @@
     "wreck",
     "planned"
   ],
-  "environment": {
-    "atmospheric_pressure": 1.013
-  },
   "profiles": {
     "a": {
       "planned": true,

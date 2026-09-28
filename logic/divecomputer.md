@@ -61,9 +61,9 @@ being live before they are saved.
 | `GASMIX`, `GASMIX_COUNT` | `dive.gas_sources` | with the tanks: `LOGIC-12` |
 | `TANK`, `TANK_COUNT` | `dive.gas_sources` | `LOGIC-12` |
 | `SALINITY` | `profile.water_type`, `density` | type and density both: `LOGIC-14` |
-| `ATMOSPHERIC` | `environment.atmospheric_pressure` | absolute in both |
-| `TEMPERATURE_MINIMUM` | `environment.bottom_temperature` | the coldest water |
-| `TEMPERATURE_SURFACE` | `environment.surface_temperature` | water, not air: `LOGIC-19` |
+| `ATMOSPHERIC` | `profile.atmospheric_pressure` | absolute in both: `DATA-124` |
+| `TEMPERATURE_MINIMUM` | `profile.bottom_temperature` | the coldest water |
+| `TEMPERATURE_SURFACE` | `profile.surface_temperature` | water, not air: `LOGIC-19` |
 | `TEMPERATURE_MAXIMUM` | — | dropped: neither surface nor bottom |
 | `DIVEMODE` | — | dropped: `LOGIC-10`, as UDDF's is |
 | `DECOMODEL` | `profile.deco_model` and three more | `LOGIC-17` |

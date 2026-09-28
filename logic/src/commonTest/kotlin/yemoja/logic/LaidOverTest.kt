@@ -55,23 +55,25 @@ class LaidOverTest {
     }
 
     @Test
-    fun `a second computer's profile lands beside the first, and the environment keeps its own`() {
+    fun `a second computer's profile lands beside the first, with its own conditions`() {
         val (into, import) = over(
             """{"environment": {"visibility": 5},
                 "gas_sources": {"g1": {"gas_type": "AIR", "volume": 12}},
                 "profiles": {"p1": {"dive_computer": "@perdix", "start_date": "2024-06-15",
                     "start_time": "10:00:00", "duration": 3600}}}""",
             """{"start_date": "2024-06-15", "start_time": "10:00:30", "duration": 3500,
-                "environment": {"atmospheric_pressure": 1.01},
                 "profiles": {"i330r": {"fingerprint": "a1", "start_date": "2024-06-15",
-                    "start_time": "10:00:30", "duration": 3500}}}""",
+                    "start_time": "10:00:30", "duration": 3500,
+                    "atmospheric_pressure": 1.01}}}""",
         )
         assertIs<Outcome.Done>(import.insert("x#0", "d#0"))
         val dive = into.logbook["d#0"]!!
         assertEquals(listOf("p1", "i330r"), keysOf(dive, "profiles"))
         val environment = (dive.read("environment") as Result.Usable).value as Item
         assertEquals(5.0, number(environment, "visibility"))
-        assertEquals(1.01, number(environment, "atmospheric_pressure"))
+        val runs = (dive.keyed<OwnedItem>("profiles") as Result.Usable).value
+        val arrived = (runs["i330r"] as Element.Usable).value
+        assertEquals(1.01, number(arrived, "atmospheric_pressure"), "the arriving run keeps its own")
         assertEquals(listOf("g1"), keysOf(dive, "gas_sources"), "no gas reported, none touched")
     }
 

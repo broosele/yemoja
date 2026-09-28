@@ -56,10 +56,16 @@ private val ENVIRONMENT = ItemDescription(
         NumberDescription("air_temperature", Dimension.TEMPERATURE),
         // The water at the surface, which is not the air above it. A computer reporting a
         // surface temperature is nearly always reporting water.
-        NumberDescription("surface_temperature", Dimension.TEMPERATURE),
-        NumberDescription("bottom_temperature", Dimension.TEMPERATURE),
-        // From where the dive was, and absolute: about a bar at sea level.
-        NumberDescription("atmospheric_pressure", Dimension.PRESSURE),
+        NumberDescription(
+            "surface_temperature",
+            Dimension.TEMPERATURE,
+            role = Role.Overrideable(::environmentsSurfaceTemperature),
+        ),
+        NumberDescription(
+            "bottom_temperature",
+            Dimension.TEMPERATURE,
+            role = Role.Overrideable(::environmentsBottomTemperature),
+        ),
         REMARKS,
     ),
 )
@@ -238,14 +244,17 @@ private val PROFILE = ItemDescription(
             Dimension.DENSITY,
             role = Role.Overrideable(::profilesDensity),
         ),
-        // The dive's, and written here where this run is at a pressure of its own: a plan is often
-        // made before anybody knows what the day will bring, and two plans may assume different
-        // days. Absolute, as the dive's is.
+        // The air above this run, absolute: about a bar at sea level. Each recording carries its
+        // own, a computer measuring it, and a plan writes what it assumes. `DATA-124`.
+        NumberDescription("atmospheric_pressure", Dimension.PRESSURE),
+        // The coldest water this run saw, and the water at the surface. A computer reports both,
+        // and the samples give the first where it does not.
         NumberDescription(
-            "atmospheric_pressure",
-            Dimension.PRESSURE,
-            role = Role.Overrideable(::profilesAtmosphericPressure),
+            "bottom_temperature",
+            Dimension.TEMPERATURE,
+            role = Role.Overrideable(::profilesBottomTemperature),
         ),
+        NumberDescription("surface_temperature", Dimension.TEMPERATURE),
         // What `decostop` and `no_deco_time` were computed with. Suggested rather than fixed: a
         // maker may run something none of the four names, and nothing exports this to a closed
         // list.
@@ -360,17 +369,36 @@ private fun profilesPrevious(profile: Item): Result<Any> {
 }
 
 /**
- * The pressure of the air above this run, from the dive it belongs to.
+ * The coldest water this run sampled, or absent where it sampled none.
  *
- * Absent where the dive says nothing, which is where a plan is most likely to write its own.
+ * A computer that reports its own writes it and this is not consulted. `DATA-124`.
  */
-private fun profilesAtmosphericPressure(profile: Item): Result<Any> {
-    val dive = (profile as? OwnedItem)?.parent ?: return Result.Absent
-    val environment = (dive.single<OwnedItem>("environment") as? Result.Usable)?.value
+private fun profilesBottomTemperature(profile: Item): Result<Any> {
+    val read = (profile.read("temperature") as? Result.Usable)?.value as? Series
         ?: return Result.Absent
-    val pressure = environment.single<Double>("atmospheric_pressure") as? Result.Usable
-        ?: return Result.Absent
-    return Result.Usable(pressure.value, Result.Origin.DERIVED)
+    val coldest = read.usable().filterIsInstance<Double>().minOrNull() ?: return Result.Absent
+    return Result.Usable(coldest, Result.Origin.DERIVED)
+}
+
+/** The coldest water the dive's primary run saw. */
+private fun environmentsBottomTemperature(environment: Item): Result<Any> =
+    ofPrimary(environment) { it.single<Double>("bottom_temperature") }
+
+/** The water at the surface, as the dive's primary run has it. */
+private fun environmentsSurfaceTemperature(environment: Item): Result<Any> =
+    ofPrimary(environment) { it.single<Double>("surface_temperature") }
+
+/**
+ * What [take] reads on the primary run of the dive owning [environment].
+ *
+ * Absent where the environment sits outside a dive, which nothing that reads a logbook produces.
+ */
+private fun ofPrimary(environment: Item, take: (Item) -> Result<Double>): Result<Any> {
+    val dive = (environment as? OwnedItem)?.parent ?: return Result.Absent
+    return fromProfile(dive) { profile ->
+        val read = take(profile) as? Result.Usable ?: return@fromProfile Result.Absent
+        Result.Usable(read.value, Result.Origin.DERIVED)
+    }
 }
 
 /** When the last sample was taken, in local time, or absent where there is none. */

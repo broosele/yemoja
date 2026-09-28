@@ -239,19 +239,9 @@ object Download {
         held.duration?.let { fields["duration"] = Stored.Leaf(it) }
         held.maxDepth?.let { fields["max_depth"] = Stored.Leaf(it) }
         held.averageDepth?.let { fields["average_depth"] = Stored.Leaf(it) }
-        environmentOf(held)?.let { fields["environment"] = it }
         gasesOf(held)?.let { fields["gas_sources"] = it }
         profileOf(held, named)?.let { fields["profiles"] = it }
         return fields
-    }
-
-    /** The conditions, of which a computer knows temperature and pressure and nothing else. */
-    private fun environmentOf(held: Recording): Stored.Members? {
-        val fields = LinkedHashMap<String, Stored>()
-        held.coldest?.let { fields["bottom_temperature"] = Stored.Leaf(it) }
-        held.surface?.let { fields["surface_temperature"] = Stored.Leaf(it) }
-        held.atmospheric?.let { fields["atmospheric_pressure"] = Stored.Leaf(it) }
-        return fields.ifEmpty { null }?.let { Stored.Members(it) }
     }
 
     /**
@@ -296,6 +286,11 @@ object Download {
         // pressure divided by an assumed density, and UDDF discards the density. `DATA-59`.
         held.water?.type?.let { fields["water_type"] = Stored.Leaf(it) }
         held.water?.density?.let { fields["density"] = Stored.Leaf(it) }
+        // What this computer measured is this computer's, so a second one beside it overwrites
+        // nothing and the dive reads whichever is primary. `DATA-124`.
+        held.atmospheric?.let { fields["atmospheric_pressure"] = Stored.Leaf(it) }
+        held.coldest?.let { fields["bottom_temperature"] = Stored.Leaf(it) }
+        held.surface?.let { fields["surface_temperature"] = Stored.Leaf(it) }
         held.model?.name?.let { fields["deco_model"] = Stored.Leaf(it) }
         held.model?.conservatism?.let { fields["conservatism"] = Stored.Leaf(it) }
         held.model?.gradientFactorLow?.let { fields["gradient_factor_low"] = Stored.Leaf(it) }

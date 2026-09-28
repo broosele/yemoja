@@ -82,14 +82,16 @@ class DownloadedDiveTest {
     }
 
     @Test
-    fun `the conditions are what a computer knows and no more`() {
+    fun `what a computer measured lands on its own recording, not on the dive`() {
         val dive = recorded {
             it.copy(coldest = 12.0, surface = 19.5, atmospheric = 1.013)
         }
-        val where = (dive.single<OwnedItem>("environment") as Result.Usable).value
-        assertEquals(12.0, (where.single<Double>("bottom_temperature") as Result.Usable).value)
-        assertEquals(19.5, (where.single<Double>("surface_temperature") as Result.Usable).value)
-        assertEquals(Result.Absent, where.read("current"), "a computer does not know it")
+        val run = ((dive.keyed<OwnedItem>("profiles") as Result.Usable).value.values.first()
+            as Element.Usable).value
+        assertEquals(12.0, (run.single<Double>("bottom_temperature") as Result.Usable).value)
+        assertEquals(19.5, (run.single<Double>("surface_temperature") as Result.Usable).value)
+        assertEquals(1.013, (run.single<Double>("atmospheric_pressure") as Result.Usable).value)
+        assertEquals(Result.Absent, dive.read("environment"), "a download writes the dive nothing")
     }
 }
 

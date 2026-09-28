@@ -20,8 +20,7 @@
     "current": "none",
     "waves": "none",
     "visibility": 8,
-    "bottom_temperature": 4,
-    "atmospheric_pressure": 0.88
+    "bottom_temperature": 4
   },
   "gear": {
     "items": [

@@ -2201,6 +2201,31 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-124 — Where what a computer measured is kept, when two computers made one dive.**
+  *Settled:* **on the recording that measured it. The dive's environment reads its primary
+  recording, and `environment.atmospheric_pressure` goes.**
+
+  A download wrote the air pressure and the two water temperatures on to the dive, so a second
+  computer's download overwrote the first's. One dive, two devices, one set of readings, and no way
+  to tell whose. The rule that fixes it is the one the dive's other figures already follow: the
+  recording holds what it measured, and the dive reads whichever recording is primary, `DATA-120`.
+
+  **The pressure has no copy on the dive at all.** Every other field of this kind is written in two
+  places because a dive may have no recording — a paper logbook still says the water was twelve
+  degrees. A surface pressure is different: nothing reads it but the model, the model reads it from
+  a run, and a dive with no run computes nothing. The copy on the dive fed the run by derivation
+  and was read nowhere else, so it is gone, and `profile.atmospheric_pressure` is written rather
+  than derived.
+
+  **The two temperatures stay on the environment, derived.** `bottom_temperature` and
+  `surface_temperature` are observations a diver may want without a computer, so they stay
+  writeable there and derive from the primary recording otherwise. The recording carries its own
+  pair, the coldest derived from its samples where the device reported none.
+
+  What follows: a dive whose environment holds nothing else has no environment at all, and a
+  reader sees the conditions on the recording rather than beside the dive. That is the cost of not
+  writing a copy nobody reads.
+
 - **DATA-123 — Whether how you get into the water belongs to the dive or to the site.**
   *Settled:* **to the site, as `entry`, and the dive's `entry` and `exit` go.**
 

@@ -199,10 +199,10 @@ class PlannedTest {
     }
 
     @Test
-    fun `a profile breathes the dive's air, and a plan may assume another day`() {
+    fun `each run carries its own air, and a dive that holds none says nothing`() {
         val dive = dive(
-            """"environment": {"atmospheric_pressure": 0.95},
-               "profiles": {"p1": {}, "a": {"planned": true, "atmospheric_pressure": 1.02}}""",
+            """"profiles": {"p1": {"atmospheric_pressure": 0.95},
+               "a": {"planned": true, "atmospheric_pressure": 1.02}}""",
         )
         val recording = assertIs<Result.Usable<*>>(
             entry(dive, "profiles", "p1").read("atmospheric_pressure"),
@@ -212,9 +212,21 @@ class PlannedTest {
         )
 
         assertEquals(0.95, recording.value)
-        assertEquals(Result.Origin.DERIVED, recording.origin)
-        assertEquals(1.02, plan.value)
-        assertEquals(Result.Origin.OVERRIDDEN, plan.origin)
+        assertEquals(Result.Origin.STORED, recording.origin, "nothing derives it now")
+        assertEquals(1.02, plan.value, "and two runs of one dive may disagree")
+    }
+
+    @Test
+    fun `the dive's water temperatures come from its primary run`() {
+        val dive = dive(
+            """"primary_profile": "*p1", "environment": {"visibility": 5},
+               "profiles": {"p1": {"bottom_temperature": 11.0, "surface_temperature": 18.0},
+               "p2": {"bottom_temperature": 9.0}}""",
+        )
+        val environment = assertIs<Result.Usable<*>>(dive.read("environment")).value as Item
+        val coldest = assertIs<Result.Usable<*>>(environment.read("bottom_temperature"))
+        assertEquals(11.0, coldest.value, "the primary's, not the other computer's")
+        assertEquals(Result.Origin.DERIVED, coldest.origin)
     }
 }
 

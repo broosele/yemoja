@@ -28,9 +28,9 @@ private const val AMBIENT = 1.0 + 1000 * 9.80665 * 10 / 100_000
  * holds [recording] beside its depth.
  */
 private fun dived(sources: String, recording: String): Item = set(
-    "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+    "dive/d#0.json" to """{
         "gas_sources": {$sources},
-        "profiles": {"p1": {"water_type": "fresh",
+        "profiles": {"p1": {"water_type": "fresh", "atmospheric_pressure": 1.0,
             "depth": [[0, 10], [1800, 10]], $recording}}}""",
 )["d#0"]!!
 

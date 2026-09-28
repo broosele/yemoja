@@ -39,8 +39,8 @@ Each of these is here because it is awkward, not because it is typical.
 **Derived values, corrected**
 
 - `2026-08-08#0` sets `buddy_count` to 5 while naming two people.
-- `2025-07-19#0` overrides `atmospheric_pressure`, which would otherwise come from the
-  site's altitude.
+- `2025-07-19#0` is a dive at altitude with no recording, so it carries no
+  `atmospheric_pressure` at all: the field is a run's, and this dive has no run. `DATA-124`.
 - `provence_week` overrides its dates to cover the travelling days.
 - `altitude_trial` has no dives at all, so it has no dates to derive.
 
@@ -208,8 +208,8 @@ leave out.
 - `a`'s `g1` names `@steel_12` and takes its volume from it, while `g2` writes a `volume` for a
   stage nobody here owns an item for. Both write a `sac`, which is what the gas a plan needs is
   worked out from and what no recording of a dive not yet made could supply.
-- `b` writes an `atmospheric_pressure` of its own where the dive says 1.013, because it is a
-  plan for another day. That is the only place in this fixture where a profile overrides it.
+- `b` writes an `atmospheric_pressure` of `0.995` where `a` writes none, because it is a plan
+  for another day. Each run carries its own air, and nothing derives one from the dive.
 - Both plans run their depths to the surface, stops included. `a` holds a 40-metre bottom and
   four stops; `b` holds a 30-metre bottom and none, being the shallow alternative for a day
   with swell.

@@ -8,15 +8,13 @@
   "tags": [
     "planned"
   ],
-  "environment": {
-    "atmospheric_pressure": 1.013
-  },
   "profiles": {
     "a": {
       "planned": true,
       "start_date": "2026-10-03",
       "start_time": "14:30:00",
       "water_type": "salt",
+      "atmospheric_pressure": 1.013,
       "deco_model": "buhlmann",
       "gradient_factor_low": 0.3,
       "gradient_factor_high": 0.75,

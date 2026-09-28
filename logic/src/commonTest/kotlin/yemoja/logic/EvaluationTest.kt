@@ -32,9 +32,9 @@ private fun logbook(vararg files: Pair<String, String>): ItemSet =
 /** A dive holding one plan, whose profile is [run] beside the settings every test shares. */
 private fun planned(run: String, sources: String = AIR): Item {
     val set = logbook(
-        "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+        "dive/d#0.json" to """{
             "gas_sources": {$sources},
-            "profiles": {"a": {"planned": true, "water_type": "fresh",
+            "profiles": {"a": {"planned": true, "water_type": "fresh", "atmospheric_pressure": 1.0,
                 "gradient_factor_low": 1.0, "gradient_factor_high": 1.0, $run}}}""",
     )
     return profile(set["d#0"]!!, "a")
@@ -88,9 +88,9 @@ class EvaluationTest {
         // first stop drew a ceiling beside an hour of time left: the two saying opposite things.
         val evaluated = done(
             logbook(
-                "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+                "dive/d#0.json" to """{
                     "gas_sources": {"g1": {"gas_type": "AIR"}},
-                    "profiles": {"a": {"planned": true, "water_type": "fresh",
+                    "profiles": {"a": {"planned": true, "water_type": "fresh", "atmospheric_pressure": 1.0,
                         "gradient_factor_low": 0.3, "gradient_factor_high": 0.75,
                         "depth": [[0, 0], [90, 18], [1800, 18], [1920, 0]]}}}""",
             )["d#0"]!!.let { profile(it, "a") },
@@ -168,11 +168,11 @@ class EvaluationTest {
     @Test
     fun `a run before with no surface interval to cross leaves nothing to say`() {
         val set = logbook(
-            "dive/first#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+            "dive/first#0.json" to """{
                 "gas_sources": {"g1": {"gas_type": "AIR"}},
                 "profiles": {"a": {"water_type": "fresh", "gradient_factor_low": 1.0,
                     "gradient_factor_high": 1.0, $DEEP}}}""",
-            "dive/second#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+            "dive/second#0.json" to """{
                 "gas_sources": {"g1": {"gas_type": "AIR"}},
                 "profiles": {"a": {"water_type": "fresh", "gradient_factor_low": 1.0,
                     "gradient_factor_high": 1.0, "previous_profile": "@first#0*a", $DEEP}}}""",
@@ -797,9 +797,9 @@ class EvaluationTest {
         // twenty-four minutes, and nothing about the trimix. Taking the first switch's gas for
         // the time before it breathed EAN50 at thirty-five metres, and said so as a finding.
         val set = logbook(
-            "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+            "dive/d#0.json" to """{
                 "gas_sources": {"g1": {"gas_type": "TMX18/35"}, "g2": {"gas_type": "EAN50"}},
-                "profiles": {"p1": {"water_type": "fresh", "gradient_factor_low": 0.3,
+                "profiles": {"p1": {"water_type": "fresh", "atmospheric_pressure": 1.0, "gradient_factor_low": 0.3,
                     "gradient_factor_high": 0.7, "gas_switches": [[1440, "*g2"]],
                     "depth": [[0, 0], [120, 35], [1400, 35], [1440, 21], [2400, 0]]}}}""",
         )
@@ -815,9 +815,9 @@ class EvaluationTest {
         // started on at ten. The rule was one sample wide and refused every such dive; it allows
         // a minute, which no bottom gas is breathed long enough in to matter.
         val set = logbook(
-            "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+            "dive/d#0.json" to """{
                 "gas_sources": {"g1": {"gas_type": "TMX18/35"}, "g2": {"gas_type": "EAN50"}},
-                "profiles": {"p1": {"water_type": "fresh", "gradient_factor_low": 0.3,
+                "profiles": {"p1": {"water_type": "fresh", "atmospheric_pressure": 1.0, "gradient_factor_low": 0.3,
                     "gradient_factor_high": 0.7, "gas_switches": [[10, "*g1"], [1440, "*g2"]],
                     "depth": [[0, 0], [5, 2], [120, 35], [1400, 35], [1440, 21], [2400, 0]]}}}""",
         )
@@ -828,9 +828,9 @@ class EvaluationTest {
     @Test
     fun `a first switch at the surface is the gas the dive went in on`() {
         val set = logbook(
-            "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+            "dive/d#0.json" to """{
                 "gas_sources": {"g1": {"gas_type": "TMX18/35"}, "g2": {"gas_type": "EAN50"}},
-                "profiles": {"p1": {"water_type": "fresh", "gradient_factor_low": 0.3,
+                "profiles": {"p1": {"water_type": "fresh", "atmospheric_pressure": 1.0, "gradient_factor_low": 0.3,
                     "gradient_factor_high": 0.7, "gas_switches": [[5, "*g1"], [1440, "*g2"]],
                     "depth": [[0, 0], [120, 35], [1400, 35], [1440, 21], [2400, 0]]}}}""",
         )
@@ -855,7 +855,7 @@ class EvaluationTest {
 /** A dive whose profile holds [run] and nothing the tests otherwise supply. */
 private fun bare(run: String): Item {
     val set = logbook(
-        "dive/d#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+        "dive/d#0.json" to """{
             "gas_sources": {"g1": {"gas_type": "AIR"}}, "profiles": {"a": {$run}}}""",
     )
     return profile(set["d#0"]!!, "a")
@@ -866,11 +866,11 @@ private fun repetitive(carrying: String): Item =
     profile(chained(carrying)["second#0"]!!, "a")
 
 private fun chained(carrying: String): ItemSet = logbook(
-    "dive/first#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+    "dive/first#0.json" to """{
         "gas_sources": {"g1": {"gas_type": "AIR"}},
         "profiles": {"a": {"water_type": "fresh", "gradient_factor_low": 1.0,
             "gradient_factor_high": 1.0, $DEEP}}}""",
-    "dive/second#0.json" to """{"environment": {"atmospheric_pressure": 1.0},
+    "dive/second#0.json" to """{
         "surface_interval": 3600,
         "gas_sources": {"g1": {"gas_type": "AIR"}},
         "profiles": {"a": {"water_type": "fresh", "gradient_factor_low": 1.0,
