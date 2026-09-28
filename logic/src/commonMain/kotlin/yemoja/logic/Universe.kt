@@ -397,8 +397,8 @@ class Universe(
         } catch (refused: UddfFormatException) {
             return Outcome.Refused("$from should be UDDF: ${refused.message}")
         }
-        // Only dives are read from one yet, so a file holding none would open a review with
-        // nothing in it and no word about why.
+        // A file holding no dive would open a review of the items around one and no dive to
+        // hang them on, with no word about why.
         if (source.allOf(Types.DIVE).isEmpty()) {
             return Outcome.Refused("$from holds no dives, and dives are what is read from UDDF")
         }

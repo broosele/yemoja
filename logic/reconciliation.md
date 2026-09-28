@@ -184,7 +184,7 @@ a tolerance, a duration, a maximum depth — which are three numbers nobody can 
 **Two rules propose, and neither has a number in it.** One that says when it was is proposed by
 **overlapping in time**: an impossibility rather than a tolerance, nobody being on two dives at
 once, so two recordings that overlap are two recordings of one dive. Everything else is proposed
-by **the name its type would give it** — nine of the ten types propose an id from the item's own
+by **the name its type would give it** — eight of the nine types propose an id from the item's own
 `name`, so two logbooks each holding a site called Blue Hole both propose `blue_hole`, and the
 proposal is the name match a reader would make by eye.
 
@@ -223,9 +223,9 @@ matching rule does rather than something applying should improvise.
 
 ### What is built
 
-The shared half, a set-to-set import that exercises it, and the terminal front end's half of
-reviewing one. Both halves of a *source* are still owed — `FEAT-3` reads a dive computer and
-`FEAT-7` another application's file, and each brings its own matching rule with it.
+The shared half, and both sources over it: a dive computer read through `Universe.downloadFrom`
+(`FEAT-3`) and another application's file read through `Universe.importFrom` (`FEAT-7`), each
+bringing its own matching rule. Both front ends review one.
 
 **Deciding is editing.** An item taken in leaves the staged logbook and so does one turned
 down, so what is left in the folder is exactly what has not been decided. There is no list of
@@ -314,8 +314,10 @@ columns mapped by the user rather than guessed.
   holding two profiles and naming no primary, which makes its date, its duration and its depth
   read back *unusable* rather than wrong. `primaryProfile` refuses to guess, correctly.
 
-  So a second computer's recording should bring its profile and leave the rest, and should name
-  a primary where the dive did not have to before. Whether that is a rule the review applies by
+  The naming half is now settled and built: a change that gives a dive its second profile names
+  the first as primary, `DATA-120`, so a merged recording no longer leaves a dive unusable. What
+  is still open is the writing half. A second computer's recording should bring its profile and
+  leave the times and the maximum depth alone, and whether that is a rule the review applies by
   itself — a recording from a computer the dive has no profile from is a profile and nothing
   else — or a question put to the user, is the decision. It is the half of `RECON-2` that was
   left open, met in a concrete case.

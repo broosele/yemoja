@@ -50,7 +50,7 @@ internal fun slug(text: String): String {
 internal fun unknownOf(item: Item): String = "unknown_${item.description.name}"
 
 /**
- * The id proposed for an item named by its `name` field, which is seven of the nine types.
+ * The id proposed for an item named by its `name` field, which is eight of the nine types.
  *
  * A person's `name` is assembled from the parts, so this works for one who has only a first name
  * and for one whose name was corrected by hand.

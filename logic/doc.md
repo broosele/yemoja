@@ -65,7 +65,8 @@ what diving is:
 ```
 logic/
   doc.md          this file
-  build.gradle.kts  the module, which depends on data and on nothing else, and which
+  build.gradle.kts  the module, which depends on data, on an XML reader for UDDF, and on
+                    the JVM side on JNA and Kable for reading a dive computer, and which
                     packages the supplied libraries into the application
   reconciliation.md  merging an import into the logbook
   uddf.md         UDDF against this model, field by field
@@ -90,9 +91,27 @@ logic/
                   Recordings.kt    the walk into a profile that a dive's fields share
                   Expiry.kt        what has run out, for an insurance and a maintenance
                   Today.kt         what day it is, which four fields count against
+                  Settings.kt      what the user chose, and what is offered
+                  Figures.kt       statistics over the logbook
+                  Import.kt        an import under review, and what it would land
+                  Staging.kt       a copy to review against before anything lands
+                  Decompression.kt  the tissues, and how shallow they may be brought
+                  Evaluation.kt    what a run costs, and what it objects to
+                  Surfacing.kt     the way up out of a run
+                  Reserve.kt       what gas a plan keeps back for trouble
+                  Oxygen.kt        the oxygen clocks
+                  Consumption.kt   gas used, and what a cylinder has left
+                  Equivalents.kt   equivalent air and narcotic depth
+                  Pressure.kt      the water above a depth
+                  Serial.kt        what tells two computers of one model apart
+                  Hex.kt           bytes as text, for what a device hands back
+                  divecomputer/    a device read, joined, thinned and recorded
+                  uddf/            UDDF read and written
   src/jvmMain/kotlin/yemoja/logic/
                   Today.kt      the machine's own date, a day needing a zone
+                  divecomputer/  libdivecomputer itself, and Bluetooth under it
   src/commonTest/kotlin/yemoja/logic/
+  src/jvmTest/kotlin/yemoja/logic/
                   the tests, beside what they cover
 ```
 
@@ -117,9 +136,10 @@ members is the description written in that type's own file; the eleven owned typ
 through the types that own them and are not named there.
 
 The **Universe** exists, holding the part of what the section below describes that there is
-anything to hold: the open logbook, and whoever it belongs to. `Universe.open` is the one place
-in this layer that names a source, which is what makes `ui/doc.md`'s rule true rather than
-aspirational — a front end names a folder and never opens one.
+anything to hold: the open logbook, and whoever it belongs to. The Universe is the one place in
+this layer that names a source — opening, creating, staging, importing and exporting each reach
+for one there — which is what makes `ui/doc.md`'s rule true rather than aspirational: a front end
+names a folder and never opens one.
 
 It was called `Logbook` while that was all it did. The rename is not a new capability: it is the
 point at which a front end stops naming a stand-in, so that everything added to the Universe
@@ -129,8 +149,8 @@ later arrives where front ends are already looking.
 last of them: its profiles and its gas sources under keys, a profile's depth and temperature
 against time, and its pressures one series per gas source.
 
-**Every field the manual defines is described**, all two hundred of them, and every one it works
-out is worked out.
+**Every field the manual defines is described**, all two hundred and eighteen of them, and every
+one it derives is derived. `tool/checkdata.py` counts both sides and fails where they differ.
 
 A person's `name` is assembled from the parts; a dive's is its id, which the set it belongs to
 answers for. `buddy_count` counts the list. A region's `children` and a trip's
@@ -215,8 +235,10 @@ Two things to hold it to, or it will quietly become the whole application:
   *through* it rather than wrapped by it. Hand-written forwarding is boilerplate that
   drifts apart the first time somebody adds to one side and forgets the other.
 
-**What is built is the state, and two things over it**: `logbook`, `user`, `open`, `change` and
-`suggested`.
+**What is built is the state and the deeds over it**: the open logbook and its user, `open` and
+`create`, `change` and `suggested`, `reload` and a `revision` that says something moved, the
+settings, staging, an import under review, an export, and a download from a device. Each has its
+own paragraph below or its own document.
 The rest of what the section describes — statistics, decompression, the domain rules — is a
 service beside the Universe rather than a method on it, and `LOGIC-1` decides how those are
 arranged. It is untouched by `change`, which is not one of them.
@@ -254,7 +276,7 @@ uses what already reads, edits and saves a logbook rather than a preview path of
 whole of it goes in through one `change`. [reconciliation.md](reconciliation.md) holds the
 reasoning; `RECON-1` and `RECON-2` are what it settled.
 
-Three things `change` guarantees, and one it does not.
+Five things `change` guarantees, and one it does not.
 
 - **It lands whole or not at all.** Every part is judged before any is applied — an added item is
   built and its fields read, an id is minted — so a refusal leaves the logbook as it was. `REQ-2`
@@ -271,12 +293,14 @@ Three things `change` guarantees, and one it does not.
   person not entered yet. `Delete` takes `alsoReferences` for the case where the deletion is meant
   to leave no trace, and even then it reaches only references — a mention in free text is prose,
   `JSON-23` gives it no fixed meaning, and clearing one would be editing what somebody wrote.
+- **A dive gaining its second profile names its first as primary**, in the same change, unless
+  the dive or the change already names one. A dive with several profiles and none named is
+  unusable, `DATA-120`, and attaching a plan, merging a download or importing would otherwise
+  make one. `Recordings.kt` writes the extra part.
 - **The files are not atomic together.** A change touching two of them can be interrupted between
   them. `JSON-25`.
 
-Two of the things named above are absent and each waits on something. **An import's candidate
-set** is the second thing the Universe is meant to hold, and waits on `RECON-2`. **The units a
-user wants shown** belong here by `UI-2`. The settings they would be chosen in are now read,
+One of the things named above is absent. **The units a user wants shown** belong here by `UI-2`. The settings they would be chosen in are now read,
 `Settings.kt` on the Universe, but no unit is among them yet; until one is, a front end formats in
 the model's own units, and a change is judged in them.
 
@@ -292,7 +316,7 @@ a front end may name a type and may not describe one. The proposal runs against 
 which works because an item holds no id — one is made, asked what it should be called, and added
 under the answer.
 
-Seven types propose from `name`, a dive from the day it began, and an item with nothing to go on
+Eight types propose from `name`, a dive from the day it began, and an item with nothing to go on
 falls back to `unknown_person`, which the manual promises. The Universe then takes the first id
 free from the proposal: index zero is left off unless the type proposes one, so a second Anna is
 `anna#1` and a second dive that day is `2026-04-28#1`. **The lowest free, so a deleted item's id

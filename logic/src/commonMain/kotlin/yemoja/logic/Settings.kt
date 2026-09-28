@@ -283,8 +283,8 @@ class Settings internal constructor(private val store: FileStore) {
         /**
          * Every setting the settings form offers, in its order.
          *
-         * The agent's command is not among them. It is chosen where it is used, in the agent panel,
-         * which remembers the one last started. `GUI-42`.
+         * The agent's command is not in this list. It is text rather than a number, and the form
+         * offers it beside these, kept to this device. `GUI-42`.
          */
         val OFFERED: List<NumberSetting> = listOf(
             DEFAULT_GF_LOW,

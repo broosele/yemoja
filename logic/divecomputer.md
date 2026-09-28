@@ -5,10 +5,10 @@ A field-by-field comparison between what
 `manual/data-fields.md`. It is the companion to [uddf.md](uddf.md), which does the same for
 a file format, and it feeds `FEAT-3` — downloading from a dive computer.
 
-**This is analysis and decisions, not behaviour.** Nothing is built: `FEAT-3` is *Planned*,
-and `LOGIC-2` has not settled where the device-facing half of it lives. What is settled is
-the correspondence between two data models and what a download does with each part of it,
-which is a fact about both and does not wait on either.
+**This is the map between two data models**, and what a download does with each part of it.
+The mapping is built on both sides of the port, `LOGIC-2` having settled where the
+device-facing half lives; what each section below says is what the code does. *What is built*
+and *What is owed* at the end say how far that has been proven on real devices.
 
 Each row cites the question that settled it. The reasoning lives with the question in
 [doc.md](doc.md); this document is the map.
@@ -118,15 +118,13 @@ them.
 
 ## What has no source at all
 
-Six things this model holds that a download may not supply, and each has somewhere else to
+Six things this model holds that a download does not supply, and each has somewhere else to
 come from:
 
 - **`dive.time_zone_offset`** — where the device reports no zone, which no computer read so far
   has. The dive is then taken to be on GMT, and the user writes it: `LOGIC-32`.
 - **`profile.recorded_time_offset`** — a device cannot know its own clock was wrong. The user's
   alone, and a download never writes it.
-- **`profile.tolerances`** — nothing gives it because nothing else does the thinning.
-  `LOGIC-15` makes the import owe the figures.
 - **`otu`, `no_flight_time`, `desaturation_time`** — computers display them; the library
   does not report them. They come from UDDF, or from the user.
 - **`gas_source.usage`** — `bottom`, `stage`, `deco` and `travel` are a diver's words for what
@@ -135,16 +133,6 @@ come from:
   by, so nothing points at a gear item. `volume` is written directly instead. `LOGIC-12`.
 - **`alarms`: `breath`, `deco`, `error`, `skincooling`** — four of our nine words that no
   event maps onto. `LOGIC-16` refuses to stretch a near-miss into them.
-- **A fix**, for now. The library declares a location *field* and nothing in it fills one, for
-  any device. It also has a location *sample*, a position at an instant, and the Shearwater
-  driver fills that — which this walk drops, along with every other sample type it does not
-  name. So `LOGIC-18`'s proposal does have a source, and it has been looked at: reading twenty
-  Perdix dives gave a position on nineteen of them, always on the first sample, and on four of
-  the nineteen a second one on the last. That is an entry fix and sometimes an exit fix, which
-  is a better answer than the field would have been and settles what a dive's one position is
-  made of. Nothing reads it yet, so a site is still the user's to name. `LOGIC-18` is what turns
-  it into a proposal.
-
 ## Where the two models disagree in shape
 
 Four places where the difference is structural rather than a name.
@@ -261,6 +249,13 @@ Two more gaps, each of them a decision rather than typing:
   collects it. What is dropped is decided; where the list goes is not.
 - **`LOGIC-15`'s tolerances.** The thinning is built and the figures it uses are provisional.
 
+**A fix has a source, and it is read.** The library declares a location *field* and nothing
+in it fills one, for any device. It also has a location *sample*, a position at an instant, and
+the Shearwater driver fills that. Reading twenty Perdix dives gave a position on nineteen of
+them, always on the first sample, and on four of the nineteen a second one on the last: an entry
+fix and sometimes an exit fix, which settles what a dive's one position is made of. The download
+turns it into a proposed dive site at review, which is `LOGIC-18` built.
+
 ## What is owed
 
 Decided and not built, or built and not proven. Each is here rather than in somebody's head.
@@ -346,7 +341,7 @@ Decided and not built, or built and not proven. Each is here rather than in some
 What this document also waits on is elsewhere:
 
 - **`LOGIC-22`** — how the characteristics a device talks through are found, which is decided
-  and not yet proven on a device.
+  and proven on the two devices met. Every other vendor is unproven.
 - **`RECON-2`** — whether an import can be accepted in part, which `LOGIC-18` gives a new
   kind of candidate to.
 - **`TUI-8`** — what a job that takes minutes looks like, which is what a download is.

@@ -9,7 +9,7 @@ This is analysis first. What is settled is the correspondence between two data m
 a fact about both; what of it is read and written is under *What is built*, and `RECON-4` settled
 that the one package does both.
 
-**What a user keeps or loses is stated in [../../manual/uddf.md](../manual/uddf.md),
+**What a user keeps or loses is stated in [../manual/uddf.md](../manual/uddf.md),
 and that chapter owns it.** This document holds what the manual deliberately does not: the
 element names, the quotations from the specification, and the reasoning behind each
 decision — why a thing is lost, what the alternatives were, and which question settled it.
@@ -29,9 +29,8 @@ things this application is not for. Excluded wholesale, and not listed again bel
   species, abundance, sightings. Not modelled, and not intended to be.
 - **Dive computer control.** UDDF can drive a device: setting tables, transferring
   schedules. Yemoja reads computers, it does not program them.
-- **Other decompression models.** `vpm`, `rgbm` and their parameters. `LOGIC-3` has not
-  settled which models this application supports, and only Bühlmann is described in the
-  manual.
+- **Other decompression models.** `vpm`, `rgbm` and their parameters. `LOGIC-3` settled that
+  Bühlmann ZH-L16C with gradient factors is the only model, so these have nowhere to land.
 
 What remains is the logbook: the dive, its profile, its gas, the site, the person and the
 equipment. That is what this document covers.
