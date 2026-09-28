@@ -281,13 +281,20 @@ to the surface gets nothing added.
 
 Rest the pointer on any box, column or figure in the planner and it says in a line what it is.
 
-On the right are the plan's settings, in five groups: *General*, *Contingency*, *Algorithm*, *Stops*
-and *Gas*. They start from what you chose in [Settings](settings.md),
+On the right are the plan's settings, in four groups: *General*, *Gas*, *Algorithm* and *Stops*.
+They start from what you chose in [Settings](settings.md),
 and a change here is for this plan only. A safety stop of 0 minutes means none. The safety stop is
 held on the way up as a minimum, and a longer decompression stop at the same depth counts towards
 it.
 
-Under the settings are the gases, a line for each cylinder: the mix, its role, its size, what it
+Under the settings is **Contingency**, the gas reserve: what you must keep back in case something
+goes wrong. On its left are its settings, the gas lost, the panic stress factor and the
+problem-solving time, which also start from your Settings. Beside them is a line for each
+scenario, *Lost gas* and *Buddy out of gas*, each with a tick to switch it off, what it asks each
+cylinder to hold, its worst moment, and what it assumes. Change a setting and the lines change
+with it. [The decompression model](decompression.md#planning-a-dive) explains both scenarios.
+
+Under that are the gases, a line for each cylinder: the mix, its role, its size, what it
 was filled to, and your breathing rate. Yemoja shows how deep the mix may be breathed, and what the
 plan takes from the cylinder and leaves in it. The role says what the cylinder is for:
 
@@ -304,11 +311,8 @@ Beside each cylinder, *Minimum* is its share of the gas reserve: what it must st
 worst moment of the dive, in whichever scenario asks more. It is red on a cylinder that falls
 short.
 
-Under all that is a line with the oxygen clocks, the no-fly time and the desaturation time. Below
-it is a line for each scenario of the gas reserve, *Lost gas* and *Buddy out of gas*, each with a
-tick to switch it off, what it asks each cylinder to hold, its worst moment, and what it assumes.
-[The decompression model](decompression.md#planning-a-dive) explains both. Then comes anything
-Yemoja objects to, such as going above the ceiling, rising faster than your ascent
+Under all that is a line with the oxygen clocks, the no-fly time and the desaturation time. Then
+comes anything Yemoja objects to, such as going above the ceiling, rising faster than your ascent
 rate, missing the safety stop, a cylinder running dry, a cylinder holding less than its reserve,
 or a mix breathed too deep or too shallow for its oxygen. Last is a
 graph of the whole dive.

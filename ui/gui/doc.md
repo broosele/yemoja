@@ -520,8 +520,8 @@ once and corrected. The numbers stay unused rather than being given to something
   way up types it, and the italic part fills in only what they left.
 
   **The top of the plan is a fixed height, and the runtime scrolls past it**, with a bar where the
-  platform draws one. The settings and the gases beside it stay where they are however long the
-  dive is. The gases take what the settings leave of the same height, so the two columns end on one
+  platform draws one. The settings, the contingency box and the gases beside it stay where they are
+  however long the dive is. The gases take what the two boxes above them leave of the same height, so the two columns end on one
   line, and they scroll in the same way once there are more than fit, their headings staying above
   them. The lines of all three parts are dense, in smaller type than a form's, so about eighteen
   lines of the runtime and about four cylinders show before either scrolls.
@@ -534,10 +534,11 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **The settings are the plan's own.** They sit in titled sections, each a single column, the
   sections stacked in two columns with space between them. On the left, *General* holds descent
-  and ascent rate and water, and *Contingency* the gas lost, panic stress factor and problem-solving
-  time. On the right, *Algorithm* names the model, Bühlmann ZH-L16C, as a value that is shown rather than
-  chosen until there is a second model, above GF low and high. *Stops* holds the last stop and the
-  safety stop's depth and duration, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. Each starts
+  and ascent rate and water, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. On the right,
+  *Algorithm* names the model, Bühlmann ZH-L16C, as a value that is shown rather than chosen until
+  there is a second model, above GF low and high, and *Stops* holds the last stop and the safety
+  stop's depth and duration. The gas reserve's settings are not among them: they have a box of their
+  own beside what they decide, below. Each starts
   from what the settings hold, `GUI-42`, and is changed here for this plan alone. A safety stop of nought minutes is none,
   and its depth is greyed. The safety stop is a minimum the ascent holds, with a longer deco stop
   there counting towards it, and a dive that does not hold it is warned of, typed or not. The water
@@ -553,10 +554,14 @@ once and corrected. The numbers stay unused rather than being given to something
   ascent's choice and the warning are one figure. What the plan takes from each cylinder and leaves
   in it are worked out beside it.
 
-  **The gas reserve is beside each cylinder, and its scenarios under the clocks.** What each
-  cylinder must still hold is a column of the gases, *Minimum*: the most any scenario switched on
-  asks of it, red on a cylinder that falls short in any of them. Under the clocks is a line for
-  each scenario, `LOGIC-40`, with a tick before it that switches it off: what it asks each cylinder
+  **The gas reserve has a box of its own, between the settings and the gases.** *Contingency* holds
+  the reserve's settings on the left, the gas lost, the panic stress factor and the problem-solving
+  time, and beside them a line for each scenario, `LOGIC-40`. The settings and what they decide sit
+  together, so a reader changing one sees the other move; the user moved them out of the settings
+  and from under the clocks for that. What each cylinder must still hold is also a column of the
+  gases, *Minimum*: the most any scenario switched on asks of it, red on a cylinder that falls short
+  in any of them. Each scenario's line has a tick before it that switches it off, shown before the
+  plan can be worked out as well, and says what it asks each cylinder
   to hold, its own worst moment, and what it assumes, in one sentence: *Gas 1 needs 28 bar at 25:00
   (40 m), two divers sharing to 21.6 m at 2 × SAC*. A scenario that asks nothing says why, as *No
   sharing needed: each diver switches to 2: EAN50 at once*, rather than a worst moment at the

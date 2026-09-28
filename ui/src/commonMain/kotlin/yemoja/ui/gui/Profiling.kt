@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -987,6 +988,8 @@ internal fun PlanForm(
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Caption("Settings")
             Framed { Conditions(shaping) }
+            Caption("Contingency")
+            Framed { Contingency(shaping, reckoned) }
             Caption("Gases")
             Column(modifier = Modifier.weight(1f).fillMaxWidth().framed().padding(HALF)) {
                 CylinderHeadings()
@@ -997,7 +1000,6 @@ internal fun PlanForm(
         }
     }
     if (done != null) Figures(done.evaluated)
-    if (reckoned != null) Scenarios(reckoned, shaping)
     when {
         shaped is Shaped.Wrong -> Refused(shaped.reason)
         worked is Worked.Refused -> Refused(worked.reason)
@@ -1257,17 +1259,10 @@ private fun Conditions(shaping: Shaping) {
                     ) { shaping.water = Settings.DEFAULT_WATER_TYPE.choices[it] }
                 }
             }
-            Section("Contingency") {
-                // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen.
-                Labelled("Gas lost", PlannerTips.GAS_LOST) {
-                    Pick(
-                        dense = true,
-                        chosen = shaping.lostIndex()?.let { gasChoiceOf(shaping, it) } ?: "none",
-                        options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
-                    ) { shaping.lostGas = it }
-                }
-                Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it }
-                Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it }
+            Section("Gas") {
+                Setting("pO₂ max bottom", PlannerTips.BOTTOM_OXYGEN, shaping.bottomOxygen, "bar") { shaping.bottomOxygen = it }
+                Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it }
+                Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it }
             }
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GAP)) {
@@ -1284,12 +1279,32 @@ private fun Conditions(shaping: Shaping) {
                 Setting("Safety stop depth", PlannerTips.SAFETY_DEPTH, shaping.safetyDepth, "m", enabled = !none) { shaping.safetyDepth = it }
                 Setting("Safety stop duration", PlannerTips.SAFETY_DURATION, shaping.safetyMinutes, "min") { shaping.safetyMinutes = it }
             }
-            Section("Gas") {
-                Setting("pO₂ max bottom", PlannerTips.BOTTOM_OXYGEN, shaping.bottomOxygen, "bar") { shaping.bottomOxygen = it }
-                Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it }
-                Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it }
-            }
         }
+    }
+}
+
+/**
+ * The gas reserve's box: its settings on the left, and beside them a line for each scenario with
+ * what it came to. `LOGIC-40`.
+ *
+ * The settings and what they decide sit together, so a reader changing one sees the other move.
+ */
+@Composable
+private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
+        Column {
+            // Which cylinder the lost-gas scenario loses, the first deco cylinder until one is chosen.
+            Labelled("Gas lost", PlannerTips.GAS_LOST) {
+                Pick(
+                    dense = true,
+                    chosen = shaping.lostIndex()?.let { gasChoiceOf(shaping, it) } ?: "none",
+                    options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                ) { shaping.lostGas = it }
+            }
+            Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it }
+            Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it }
+        }
+        Scenarios(reckoned, shaping, Modifier.weight(1f))
     }
 }
 
@@ -1444,11 +1459,12 @@ private fun Figures(evaluated: Evaluated.Done) {
  * which scenario set it.
  */
 @Composable
-private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = GAP)) {
-        for ((scenario, reckoning) in reckoned.scenarios) {
+private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        for (scenario in Scenario.entries) {
+            val reckoning = reckoned?.scenarios?.get(scenario)
             Row(
-                modifier = Modifier.height(ROW),
+                modifier = Modifier.heightIn(min = ROW),
                 horizontalArrangement = Arrangement.spacedBy(GAP),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -1473,19 +1489,24 @@ private fun Scenarios(reckoned: Reckoned, shaping: Shaping) {
                 Explained(scenario.tip) {
                     Text(
                         scenario.label,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.width(SCENARIO),
                     )
                 }
-                val quiet = MaterialTheme.colorScheme.outline
-                when (reckoning) {
-                    null -> Text("off", style = MaterialTheme.typography.bodyMedium, color = quiet)
-                    is Reckoning.Wrong -> Text(reckoning.reason, style = MaterialTheme.typography.bodyMedium, color = quiet)
-                    is Reckoning.Done -> Text(
-                        scenarioSaid(scenario, reckoning.reserve, shaping),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                val quiet = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
+                val said = when {
+                    // Before a plan can be worked out there is nothing to say, only the tick.
+                    reckoned == null -> ""
+                    reckoning == null -> "off"
+                    reckoning is Reckoning.Wrong -> reckoning.reason
+                    reckoning is Reckoning.Done -> scenarioSaid(scenario, reckoning.reserve, shaping)
+                    else -> ""
                 }
+                Text(
+                    said,
+                    style = if (reckoning is Reckoning.Done) MaterialTheme.typography.bodySmall else quiet,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -1574,7 +1595,7 @@ private val SAC = 84.dp
 private val FIGURED = 56.dp
 
 /** How wide a scenario's name is, so what follows it lines up. */
-private val SCENARIO = 130.dp
+private val SCENARIO = 110.dp
 
 /** The cylinders' columns, headed, as wide as what sits under them. */
 private val CYLINDER_COLUMNS: List<Triple<String, Dp, String>> = listOf(
