@@ -2336,7 +2336,8 @@ Kept with their identifiers so earlier discussion still resolves.
 
 - **DATA-115 — Which fields are not for reading.** *Settled:* **the field says so, in two marks.**
   `FieldDescription` carries `housekeeping`, for a field kept for the machinery rather than for
-  reading — a download's bookmark, a pairing key, which recording a dive is worked from — and
+  reading — a download's bookmark, a pairing key, which recording a dive is worked from, whether a
+  profile is a plan — and
   `source`, for one that is solely a source for another that says it better, a recording's own
   start beside the dive's. A front end shows neither in a view and both when editing, without
   knowing what they name. The manual already said of each that it is not for reading; the

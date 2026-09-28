@@ -821,7 +821,9 @@ once and corrected. The numbers stay unused rather than being given to something
   its number says `plan` instead, greyed: a plan has no place in the reader's own numbering, and
   that column is the only one whose value a plan does not have. Its recording is drawn as a
   dashed depth line, dashes being what a line that has not happened yet is drawn with
-  everywhere.
+  everywhere. The `planned` field itself is housekeeping, `DATA-115`, so it is not among the
+  fields on a card: the row, the dashes and the planner say it, and a line reading *Planned: no*
+  on every dive ever made says nothing.
 
   **Counted nowhere** is the greeting and the places it counts, the statistics in all seven
   gatherings, the year rows of the table, and what a year chooses when it is clicked. A year

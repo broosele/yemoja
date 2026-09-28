@@ -200,7 +200,7 @@ private val PROFILE = ItemDescription(
         // Whether the series below are what is intended rather than what happened. Absent is a
         // recording: every profile written before plans existed is one, and a dive is one that was
         // made unless something says otherwise.
-        BooleanDescription("planned"),
+        BooleanDescription("planned", housekeeping = true),
         // Worked out from the serial: the gear item carrying it. Written where the user says
         // otherwise, or names a computer they keep no item for. `LOGIC-23`.
         ReferenceDescription(
@@ -526,7 +526,7 @@ internal val DIVE: ItemDescription = ItemDescription(
         TextDescription("name", role = Role.Derived(::divesId)),
         // Whether this dive is still ahead: it holds profiles and every one of them is a plan.
         // What counts dives leaves it out, and so does what leaves the logbook.
-        BooleanDescription("planned", role = Role.Derived(::divesPlanned)),
+        BooleanDescription("planned", role = Role.Derived(::divesPlanned), housekeeping = true),
         // The user's own numbering, which nothing renumbers. Not every diver keeps one.
         WholeNumberDescription("dive_number"),
         // All five from the primary profile, in GMT, and all five correctable: the computer
