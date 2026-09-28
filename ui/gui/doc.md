@@ -575,8 +575,9 @@ once and corrected. The numbers stay unused rather than being given to something
   in any of them. Each line gives the scenario's name, *Lost* or *Buddy out of gas*, then its
   switch, then what it came to. The lost-gas line's switch is the choice of gas lost, below, and
   the sharing line's a tick that switches it off, both shown before the plan can be worked out as
-  well. The name and the switch are each as wide as they are, so what the scenario came to has the
-  rest of the line; the user preferred that width to the two results lining up. Each line says what
+  well. The name and its switch sit close together, as wide as the widest pair needs, in a slot of
+  one width for both lines: the results line up, and the width a fixed slot for each part would take
+  is left to them. Each line says what
   it asks each cylinder
   to hold, its own worst moment, and what it assumes, in one sentence: *Gas 1 needs 28 bar at 25:00
   (40 m), two divers sharing to 21.6 m, each at 2 × SAC*: *each* is there because a bare *2 × SAC*
