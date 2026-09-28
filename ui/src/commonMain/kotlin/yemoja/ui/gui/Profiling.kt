@@ -624,7 +624,7 @@ internal fun Shaping.lostGasTried(): Boolean = lostGasScenario && lostIndex() !=
 internal enum class Scenario(val label: String, val tip: String) {
 
     /** The cylinders ticked *Lost* are gone, and the way up is to the surface at the usual rate. */
-    LOST_GAS("Lost gas", PlannerTips.LOST_GAS),
+    LOST_GAS("Lost", PlannerTips.LOST_GAS),
 
     /** A buddy has lost their bottom gas, and the two share this diver's up to a deco gas. */
     SHARED("Buddy out of gas", PlannerTips.SHARED),
@@ -766,7 +766,7 @@ internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Sh
             (held?.let { "$it at depth, then " } ?: "") + "surfacing without $lost at normal SAC"
         }
         Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
-            "${upToSaid(reserve.upTo)} at ${shaping.panicFactor.trim()} × SAC"
+            "${upToSaid(reserve.upTo)}, each at ${shaping.panicFactor.trim()} × SAC (panic stress factor)"
     }
     return "${needs.joinToString(" and ")} at ${worstSaid(reserve)}, $assumed"
 }
@@ -1458,7 +1458,15 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                 horizontalArrangement = Arrangement.spacedBy(GAP),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Each line begins with its own switch, in a slot of one width so the names line up.
+                // The scenario's name, then its own switch in a slot of one width, so the switches
+                // and what they came to line up.
+                Explained(scenario.tip) {
+                    Text(
+                        scenario.label,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.width(SCENARIO),
+                    )
+                }
                 Box(modifier = Modifier.width(SWITCH)) {
                     when (scenario) {
                         // Which cylinder is lost, the first deco cylinder until one is chosen, and
@@ -1485,13 +1493,6 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                                 )
                             }
                     }
-                }
-                Explained(scenario.tip) {
-                    Text(
-                        scenario.label,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.width(SCENARIO),
-                    )
                 }
                 val quiet = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
                 val said = when {

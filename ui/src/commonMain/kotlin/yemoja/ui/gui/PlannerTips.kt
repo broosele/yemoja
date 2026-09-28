@@ -59,5 +59,5 @@ internal object PlannerTips {
 
     // The reserve.
     const val LOST_GAS = "Reserve for losing the gas source chosen as lost, at the worst moment"
-    const val SHARED = "Reserve for sharing your gas with a buddy from the worst moment until a deco gas"
+    const val SHARED = "Reserve for sharing your gas with a buddy from the worst moment until a deco gas, each at the panic stress factor"
 }

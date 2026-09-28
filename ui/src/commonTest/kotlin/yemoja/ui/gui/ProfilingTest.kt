@@ -445,8 +445,8 @@ class ReserveTest {
         val said = scenarioSaid(Scenario.SHARED, reserve, shaping)
 
         assertTrue(reserve.upTo > 20, "EAN50 may be breathed from about 22 m: ${reserve.upTo}")
-        assertTrue(said.startsWith("Gas 1 needs ") && said.endsWith("at 2 × SAC"), said)
-        assertTrue(Regex("sharing 2:00 at depth, then to [0-9]+([.][0-9])? m at").containsMatchIn(said), "to a tenth, as the MOD is: $said")
+        assertTrue(said.startsWith("Gas 1 needs ") && said.endsWith("each at 2 × SAC (panic stress factor)"), said)
+        assertTrue(Regex("sharing 2:00 at depth, then to [0-9]+([.][0-9])? m, each at").containsMatchIn(said), "to a tenth, as the MOD is: $said")
         assertTrue(
             reserve.needed.getValue("g1") < scenario(shaping, Scenario.LOST_GAS).needed.getValue("g1"),
             "a short share to the deco gas costs less than every stop on bottom gas",
