@@ -234,11 +234,6 @@ object Download {
         // reports one, which is local time against GMT if its clock was set. `LOGIC-32`.
         held.offset?.let { fields["time_zone_offset"] = Stored.Leaf(it) }
         where?.let { fields["dive_site"] = Stored.Leaf("@$it") }
-        // Written as overrides: a computer usually reports a better figure than its own recording,
-        // which is sampled only every few seconds. `LOGIC-19`.
-        held.duration?.let { fields["duration"] = Stored.Leaf(it) }
-        held.maxDepth?.let { fields["max_depth"] = Stored.Leaf(it) }
-        held.averageDepth?.let { fields["average_depth"] = Stored.Leaf(it) }
         gasesOf(held)?.let { fields["gas_sources"] = it }
         profileOf(held, named)?.let { fields["profiles"] = it }
         return fields
@@ -289,6 +284,10 @@ object Download {
         // What this computer measured is this computer's, so a second one beside it overwrites
         // nothing and the dive reads whichever is primary. `DATA-124`.
         held.atmospheric?.let { fields["atmospheric_pressure"] = Stored.Leaf(it) }
+        // Written as overrides: a computer usually reports a better figure than its own samples,
+        // which are taken only every few seconds. `LOGIC-19`.
+        held.maxDepth?.let { fields["max_depth"] = Stored.Leaf(it) }
+        held.averageDepth?.let { fields["average_depth"] = Stored.Leaf(it) }
         held.coldest?.let { fields["bottom_temperature"] = Stored.Leaf(it) }
         held.surface?.let { fields["surface_temperature"] = Stored.Leaf(it) }
         held.model?.name?.let { fields["deco_model"] = Stored.Leaf(it) }

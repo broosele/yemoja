@@ -56,8 +56,8 @@ being live before they are saved.
 | `clock.devtime`, `.systime` | — | a second route to the offset, unverified |
 | `datetime.timezone` | `dive.time_zone_offset` | where reported: `LOGIC-32` |
 | `DIVETIME` | `profile.duration` | written as an override: `LOGIC-19` |
-| `MAXDEPTH` | `dive.max_depth` | written as an override |
-| `AVGDEPTH` | `dive.average_depth` | written as an override |
+| `MAXDEPTH` | `profile.max_depth` | written as an override: `DATA-124` |
+| `AVGDEPTH` | `profile.average_depth` | written as an override |
 | `GASMIX`, `GASMIX_COUNT` | `dive.gas_sources` | with the tanks: `LOGIC-12` |
 | `TANK`, `TANK_COUNT` | `dive.gas_sources` | `LOGIC-12` |
 | `SALINITY` | `profile.water_type`, `density` | type and density both: `LOGIC-14` |

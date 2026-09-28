@@ -2249,6 +2249,14 @@ Kept with their identifiers so earlier discussion still resolves.
   reader sees the conditions on the recording rather than beside the dive. That is the cost of not
   writing a copy nobody reads.
 
+  *Extended:* the depths went the same way. `max_depth` and `average_depth` were the dive's alone,
+  derived from the primary recording's samples, and a download wrote its own figures over them —
+  so a second computer overwrote the first here too. The recording now carries both, derived from
+  its own samples and overridden by what the device reported, and the dive reads whichever
+  recording is primary. `LOGIC-19`'s argument is untouched: a computer's own figure still beats
+  its samples, on the recording that took them. Nothing a download writes lands on the dive now
+  but the site it proposes and the zone its clock was set to.
+
 - **DATA-123 — Whether how you get into the water belongs to the dive or to the site.**
   *Settled:* **to the site, as `entry`, and the dive's `entry` and `exit` go.**
 

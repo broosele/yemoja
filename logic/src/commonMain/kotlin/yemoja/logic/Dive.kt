@@ -232,6 +232,18 @@ private val PROFILE = ItemDescription(
             Dimension.TIME,
             role = Role.Overrideable(::profilesDuration),
         ),
+        // Worth correcting: a computer usually reports a better figure than its own samples,
+        // which are taken only every few seconds.
+        NumberDescription(
+            "max_depth",
+            Dimension.LENGTH,
+            role = Role.Overrideable(::profilesMaxDepth),
+        ),
+        NumberDescription(
+            "average_depth",
+            Dimension.LENGTH,
+            role = Role.Overrideable(::profilesAverageDepth),
+        ),
         // What the computer was set to while it recorded, which is not what the site is.
         TextDescription("water_type", fixedSet = WATER_TYPES),
         // What the recorded depths were made with, which is what reading them back needs.
@@ -535,8 +547,6 @@ internal val DIVE: ItemDescription = ItemDescription(
             Dimension.TIME,
             role = Role.Overrideable(::divesDuration),
         ),
-        // Worth correcting: a computer usually reports a better figure than its own
-        // recorded profile, which is sampled only every few seconds.
         NumberDescription(
             "max_depth",
             Dimension.LENGTH,
@@ -615,10 +625,21 @@ private fun divesDuration(dive: Item): Result<Any> = fromProfile(dive, ::profile
  * The largest depth of the `depth` series. A sample that could not be read is passed over: one
  * bad number does not hide how deep the rest of the dive went.
  */
-private fun divesMaxDepth(dive: Item): Result<Any> = fromProfile(dive) { profile ->
+private fun divesMaxDepth(dive: Item): Result<Any> =
+    fromProfile(dive) { profile -> asDerived(profile.single<Double>("max_depth")) }
+
+/** The deepest sample a recording took, or absent where it took none. */
+private fun profilesMaxDepth(profile: Item): Result<Any> {
     val depth = (profile.read("depth") as? Result.Usable)?.value as? Series
-    val deepest = depth?.usable()?.filterIsInstance<Double>()?.maxOrNull()
-    if (deepest == null) Result.Absent else Result.Usable(deepest, Result.Origin.DERIVED)
+    val deepest = depth?.usable()?.filterIsInstance<Double>()?.maxOrNull() ?: return Result.Absent
+    return Result.Usable(deepest, Result.Origin.DERIVED)
+}
+
+/** [read] as a figure the dive worked out, whoever wrote it on the recording. */
+private fun asDerived(read: Result<Double>): Result<Any> = when (read) {
+    is Result.Usable -> Result.Usable(read.value, Result.Origin.DERIVED)
+    is Result.Unusable -> read
+    Result.Absent -> Result.Absent
 }
 
 /**
@@ -633,9 +654,13 @@ private fun divesMaxDepth(dive: Item): Result<Any> = fromProfile(dive) { profile
  * A sample that could not be read breaks the pair it belongs to and both its intervals are
  * passed over; the rest of the dive is unaffected.
  */
-private fun divesAverageDepth(dive: Item): Result<Any> = fromProfile(dive) { profile ->
+private fun divesAverageDepth(dive: Item): Result<Any> =
+    fromProfile(dive) { profile -> asDerived(profile.single<Double>("average_depth")) }
+
+/** How deep a recording was on average, weighted by how long it held each depth. */
+private fun profilesAverageDepth(profile: Item): Result<Any> {
     val depth = (profile.read("depth") as? Result.Usable)?.value as? Series
-        ?: return@fromProfile Result.Absent
+        ?: return Result.Absent
     var area = 0.0
     var ran = 0
     for (at in 1..<depth.size) {
@@ -646,7 +671,7 @@ private fun divesAverageDepth(dive: Item): Result<Any> = fromProfile(dive) { pro
         area += (before + after) / 2 * seconds
         ran += seconds
     }
-    if (ran == 0) Result.Absent else Result.Usable(area / ran, Result.Origin.DERIVED)
+    return if (ran == 0) Result.Absent else Result.Usable(area / ran, Result.Origin.DERIVED)
 }
 
 /**

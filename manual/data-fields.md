@@ -165,9 +165,8 @@ All three can be corrected where the calculation is wrong.
 - `duration` (number, derived) — how long the dive lasted, in seconds unless the file says
   otherwise. From the primary profile, or written by you where there is no recording. It is what
   says when the dive ended, there being no field for that.
-- `max_depth` (number, derived) — the deepest point reached, from the primary profile. Worth
-  correcting: a dive computer usually reports a better figure than its own recorded profile,
-  which is only sampled every few seconds.
+- `max_depth` (number, derived) — the deepest point reached, from the primary profile. Correct
+  it for a dive you kept no recording of; for one you did, the figure belongs on the recording.
 - `average_depth` (number, derived) — how deep the dive was on average, weighted by time
   rather than by sample. A computer records unevenly, so counting samples would let a slow
   ascent drag the figure down for no reason. Correct it for the same reason as `max_depth`.
@@ -339,6 +338,11 @@ that is the only record of it.
 
 - `duration` (number, derived) — how long it ran, from its last sample. Correct it where the
   recording stopped before you surfaced.
+- `max_depth` (number, derived) — the deepest sample this recording took. Worth correcting: a
+  dive computer usually reports a better figure than its own samples, which it takes only every
+  few seconds, and a download writes what the computer said.
+- `average_depth` (number, derived) — how deep this recording was on average, weighted by time
+  rather than by sample, and corrected the same way.
 - `water_type` (fixed set) — what the computer was **set to** while it recorded: `salt`,
   `fresh` or `en13319`. Not what the water actually was — you can dive the sea with a
   computer set to fresh, and the depths it wrote down will say so.

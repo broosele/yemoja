@@ -51,12 +51,17 @@ class DownloadedDiveTest {
     }
 
     @Test
-    fun `the figures a computer reports are written over its own recording`() {
-        // A computer usually reports a better one than its profile, sampled every few seconds.
+    fun `the figures a computer reports are written on its own recording, and the dive reads them`() {
+        // A computer usually reports a better one than its samples, taken every few seconds.
         val dive = recorded { it.copy(duration = 3600.0, maxDepth = 28.4) }
+        val run = ((dive.keyed<OwnedItem>("profiles") as Result.Usable).value.values.first()
+            as Element.Usable).value
+        val measured = run.single<Double>("max_depth") as Result.Usable
+        assertEquals(28.4, measured.value)
+        assertEquals(Result.Origin.OVERRIDDEN, measured.origin, "over what the samples give")
         val depth = dive.single<Double>("max_depth") as Result.Usable
-        assertEquals(28.4, depth.value)
-        assertEquals(Result.Origin.OVERRIDDEN, depth.origin)
+        assertEquals(28.4, depth.value, "and the dive reads its primary run")
+        assertEquals(Result.Origin.DERIVED, depth.origin)
     }
 
     @Test

@@ -1263,15 +1263,19 @@ To settle when we discuss architecture and features:
    computer it is the *water* at the surface rather than the air, so putting it in
    `air_temperature` would say something the device did not — and the manual is explicit that
    nothing works that field out for you. It is a fact worth keeping and a fact of its own, so
-   it gets a field beside the other two temperatures, on the environment where the conditions
-   of a dive live.
+   it gets a field beside the other two temperatures.
+
+   *Amended by `DATA-124`:* all three temperatures and the pressure are the recording's, so a
+   second computer on one dive overwrites nothing. The dive's environment reads the primary
+   recording, and a diver with no computer still writes its two water temperatures by hand.
 
    `DC_FIELD_TEMPERATURE_MAXIMUM` is still dropped. The warmest water at any point in a dive is
    neither the surface nor the bottom, and nothing here asks for it.
 
-   **`DIVETIME` is written as an override**, the way `MAXDEPTH` is. `duration` derives from the
-   last sample, and the manual makes both correctable for the same reason: a device reports
-   better than the profile it kept. A computer that stopped sampling before the diver surfaced
+   **`DIVETIME` is written as an override**, the way `MAXDEPTH` is, and both land on the
+   recording, `DATA-124`. `duration` derives from the last sample and `max_depth` from the
+   deepest, and the manual makes both correctable for the same reason: a device reports better
+   than the samples it kept. A computer that stopped sampling before the diver surfaced
    still knows how long the dive was, and the TUI already shows an overridden value in bold, so
    the difference is visible rather than silent.
 - **LOGIC-18 — What a download's coordinates become.** *Settled:* **a proposal at review, with
