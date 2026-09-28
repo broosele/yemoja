@@ -579,8 +579,9 @@ once and corrected. The numbers stay unused rather than being given to something
   rest of the line; the user preferred that width to the two results lining up. Each line says what
   it asks each cylinder
   to hold, its own worst moment, and what it assumes, in one sentence: *Gas 1 needs 28 bar at 25:00
-  (40 m), two divers sharing to 21.6 m, each at 2 × SAC (panic stress factor)*: the figure is named
-  where it is used, since a bare *2 × SAC* read as both divers together. A scenario that asks nothing says why, as *No
+  (40 m), two divers sharing to 21.6 m, each at 2 × SAC*: *each* is there because a bare *2 × SAC*
+  read as both divers together, and the multiple is given as it is rather than by the setting's
+  name. A scenario that asks nothing says why, as *No
   sharing needed: each diver switches to 2: EAN50 at once*, rather than a worst moment at the
   surface that would mean nothing. The lines are where a reader sees which scenario set a minimum, and the
   phrase is the rule said once, where it applies, rather than in a paragraph they would have to go

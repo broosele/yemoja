@@ -766,7 +766,7 @@ internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Sh
             (held?.let { "$it at depth, then " } ?: "") + "surfacing without $lost at normal SAC"
         }
         Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
-            "${upToSaid(reserve.upTo)}, each at ${shaping.panicFactor.trim()} × SAC (panic stress factor)"
+            "${upToSaid(reserve.upTo)}, each at ${shaping.panicFactor.trim()} × SAC"
     }
     return "${needs.joinToString(" and ")} at ${worstSaid(reserve)}, $assumed"
 }
