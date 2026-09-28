@@ -1,16 +1,17 @@
 """Move what a computer measured on to the recording that measured it, for `DATA-124`.
 
-A download used to write `atmospheric_pressure`, `bottom_temperature` and `surface_temperature`
-on to a dive's environment. Each recording now carries its own. This moves them on to the dive's
-primary recording, or on to its only one, and drops the pressure from the environment, which no
-longer has that field.
+A download used to write what it measured on to the dive: `atmospheric_pressure`,
+`bottom_temperature` and `surface_temperature` on the environment, and `max_depth`,
+`average_depth` and `duration` on the dive itself. Each recording now carries its own. This moves
+the named fields on to the dive's primary recording, or on to its only one.
 
-    python tool/liftconditions.py <logbook folder> [--write]
+    python tool/liftconditions.py <logbook folder> [--fields=a,b] [--write]
 
-Without `--write` it says what it would do and changes nothing. The two temperatures are left on
-the environment as well, where they now read as written rather than derived; pass `--only-pressure`
-to move nothing else. A dive with several recordings and none named primary is reported and left
-alone, there being no way to tell which computer measured what.
+Without `--write` it says what it would do and changes nothing. `--fields` names what to move, and
+defaults to the pressure alone, that being the one field a dive no longer has anywhere to keep. A
+dive with several recordings and none named primary is reported and left alone, there being no way
+to tell which computer measured what; a dive with no recording is left alone too, its figures
+being its own.
 """
 
 import json
@@ -18,7 +19,7 @@ import os
 import re
 import sys
 
-MOVED = ('atmospheric_pressure', 'bottom_temperature', 'surface_temperature')
+ENVIRONMENT = ('atmospheric_pressure', 'bottom_temperature', 'surface_temperature')
 
 
 def dives_in(folder):
@@ -46,48 +47,59 @@ def primary_of(dive):
     return None
 
 
-def main(folder, write, only_pressure):
-    moving = [field for field in MOVED if field == 'atmospheric_pressure' or not only_pressure]
+def held_by(dive, fields):
+    """What [dive] holds of [fields], on itself or on its environment, by name."""
+    out = {}
+    for name in fields:
+        where = dive.get('environment') or {} if name in ENVIRONMENT else dive
+        if name in where:
+            out[name] = where[name]
+    return out
+
+
+def main(folder, fields, write):
     dives, owed, split = dives_in(folder), 0, []
     for path, dive in dives.items():
-        held = {name: value for name, value in (dive.get('environment') or {}).items()
-                if name in moving}
+        held = held_by(dive, fields)
         if not held:
             continue
         key = primary_of(dive)
         if key is None:
-            split.append(os.path.basename(path)[:-5])
+            # A dive with no recording keeps its own figures; one with several and no primary
+            # cannot say which computer measured them.
+            if any(not run.get('planned') for run in (dive.get('profiles') or {}).values()):
+                split.append(os.path.basename(path)[:-5])
             continue
         owed += 1
-        if not write:
-            continue
-        move(path, key, held, only_pressure)
-    print('%d dives carry conditions to move, %d cannot be placed' % (owed, len(split)))
+        if write:
+            move(path, key, held)
+    print('%d dives carry %s to move, %d cannot be placed'
+          % (owed, ' or '.join(fields), len(split)))
     for name in split:
-        print('  %s names no primary recording, and has more than one' % name)
+        print('  %s has no one recording to move them to' % name)
     if not write:
         print('nothing written; pass --write to do it')
 
 
-def move(path, key, held, only_pressure):
-    """Writes [held] on to the recording under [key], and takes the pressure off the environment."""
+def move(path, key, held):
+    """Writes [held] on to the recording under [key], and takes each field off the dive."""
     lines = open(path, encoding='utf-8').read().split('\n')
-    lines = without_pressure(lines)
+    lines = without(lines, held)
     at = next((i for i, line in enumerate(lines)
                if re.match(r'^\s*"%s": \{' % re.escape(key), line)), None)
     if at is None:
         return
-    written = ['      "%s": %s,' % (name, json.dumps(value)) for name, value in held.items()
-               if name == 'atmospheric_pressure' or not only_pressure]
-    lines[at + 1:at + 1] = written
+    lines[at + 1:at + 1] = ['      "%s": %s,' % (name, json.dumps(value))
+                            for name, value in held.items()]
     open(path, 'w', encoding='utf-8', newline='\n').write('\n'.join(lines))
 
 
-def without_pressure(lines):
-    """[lines] with the environment's pressure taken out, and the block dropped where it empties."""
+def without(lines, held):
+    """[lines] with each moved field taken out, and an environment dropped where it empties."""
+    gone = re.compile(r'^\s*"(%s)":' % '|'.join(re.escape(name) for name in held))
     out = []
     for line in lines:
-        if re.match(r'^\s{4}"atmospheric_pressure":', line):
+        if gone.match(line) and not line.startswith('        '):
             # A field that ended its object leaves the one before it carrying a comma to nothing.
             if not line.rstrip().endswith(',') and out and out[-1].rstrip().endswith(','):
                 out[-1] = out[-1].rstrip()[:-1]
@@ -107,4 +119,6 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(2)
-    main(sys.argv[1], '--write' in sys.argv, '--only-pressure' in sys.argv)
+    named = next((arg[len('--fields='):] for arg in sys.argv if arg.startswith('--fields=')), None)
+    main(sys.argv[1], tuple(named.split(',')) if named else ('atmospheric_pressure',),
+         '--write' in sys.argv)
