@@ -224,7 +224,7 @@ How references and ids are written down is a storage concern; see
 **A number means one of two things, and never a third.** Either the default, or what
 the file it sits in says. Nothing else is consulted.
 
-The default is SI but for four dimensions, where strict SI is close to unreadable for
+The default is SI but for five dimensions, where strict SI is close to unreadable for
 diving — 200 bar is 20000000 Pa, 14 °C is 287.15 K, a twelve-litre cylinder is
 0.012 m³:
 
@@ -238,6 +238,7 @@ diving — 200 bar is 20000000 Pa, 14 °C is 287.15 K, a twelve-litre cylinder i
 | pressure | bar | not SI |
 | angle | degree | not SI |
 | density | kilogram per cubic metre | SI |
+| flow | litre per minute | not SI |
 
 Any file may carry a `units` declaration replacing any of them for that file, and that
 is the whole of the rule. **A declaration reaches no further than the file it is
@@ -262,9 +263,8 @@ default cannot be broken by one changing.
 
 Three things follow:
 
-- **Every numeric field has a dimension** — length, mass, time, temperature, volume,
-  pressure, angle — recorded in the schema. That is how a declaration knows which
-  fields it governs.
+- **Every numeric field has a dimension** — the ones in the table above — recorded in the
+  schema. That is how a declaration knows which fields it governs.
 - **Values are converted on the way in and back on the way out.** *Amended:* this said
   the opposite — kept as written, converted at the point of use — to avoid the drift that
   converting twice causes. The drift is real and was measured: 18.3 pounds returns as
@@ -276,8 +276,9 @@ Three things follow:
   every bound needs a unit and every comparison a conversion. Converting early keeps that
   in one place, and nothing above a description ever meets a foot.
 
-  The drift is then a writing problem, and `DATA-88` settles it: twelve significant digits,
-  which is past where the tail lives and short of anything anyone writes.
+  The drift is then a writing problem, and `DATA-88` settles it: each unit carries its own
+  precision in decimal places, and a number is rounded to it. `DATA-88` replaced an earlier
+  answer of twelve significant digits, which was right about files and useless on a screen.
 
   What a writer must still do is keep the declaration. A file's `units` block is data and
   has to survive a read-and-write cycle untouched, or the units someone chose by hand are
@@ -570,13 +571,15 @@ carrying an id it does not have yet or having one written into it later.
 
 **Nor does this layer invent one.** An id is the user's, arrived at with whatever help
 the interface offers — proposing one from a person's name or a dive's date is an
-assistance, not machinery, and it does not live here. An `ItemDescription` says nothing
-about how a proposal is made, and `DATA-73` records why: a recipe per type in the
-descriptions would be this layer knowing what a dive is.
+assistance, not machinery, and it does not live here. An `ItemDescription` carries the
+recipe as `proposedId`, and the layer that describes a type supplies it. `DATA-73` refused
+that while the descriptions were this layer's; they are the logic layer's now — see *Where
+the descriptions live* — so a recipe among them is that layer knowing what a dive is, which
+is its job.
 
-An **id proposal** is a *base*, not a finished id. Whatever manages the collection resolves
-clashes by appending `#<index>`, and that much *is* here, because only the collection can
-see the neighbours.
+An **id proposal** is a *base*, not a finished id. Whatever mints an id resolves a clash by
+appending `#<index>`, which needs the neighbours in view and so happens at the Universe. It is
+not written in this layer.
 
 **The clash is checked against the libraries too**, not only the logbook. A new dive site
 whose proposal matches a supplied one becomes `blue_hole#1` rather than silently replacing
@@ -815,7 +818,10 @@ data/
                   Item.kt          one item of one type, referenceable or owned
                   ItemReader.kt    a description and a tree, walked into an item
                   ItemSet.kt       everything loaded, by id and by type
+                  ItemWriter.kt    an item, written back into a tree
+                  Mention.kt       an item named in free text, and what it points at
                   Moment.kt        a day, a time of day, and the two together
+                  Ordering.kt      which way a type's items are listed
                   Reference.kt     naming another item, and what it points at
                   Result.kt        what reading a field gave, one member of a collection,
                                    and what a parser throws
@@ -827,6 +833,8 @@ data/
                   json/FileStore.kt      which files hold a type, and one store in memory
                   json/Json.kt     a JSON text, read into that
                   json/LogbookReader.kt  a folder of them, read into a set of items
+                  json/LogbookWriter.kt  a change, written back into those files
+                  json/SettingsFiles.kt  where the settings of a logbook are kept
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
@@ -950,7 +958,7 @@ To settle when we discuss architecture:
   already on.
 
 - **DATA-86 — What supplies files, and where it lands.** *Settled:* **Okio, behind a
-  four-method interface**, so the library is named in one file and nothing above it knows
+  six-method interface**, so the library is named in one file and nothing above it knows
   which library it is.
 
   Common Kotlin has no files. Something outside has to supply them, and unlike a date — which
@@ -970,8 +978,10 @@ To settle when we discuss architecture:
   **Four operations, because reading needs four**: whether a path is a file, whether it is a
   folder, what is directly inside a folder, and the whole of a file as text. `JSON-21` has to
   tell a `dive` folder from a `dive.json` file, and the files are small enough to read whole.
-  Writing widens this when there is a writer; guessing at it now would be designing against
-  no implementation.
+
+  *Amended:* writing widened it, as this said it would. `writeText` and `delete` joined the
+  four, so the interface declares six, and `refuseLibrary` beside them bars writing into
+  `libraries/`.
 
   **A store spans two places**, the logbook's folder and whatever holds the supplied
   libraries. They are apart because a logbook contains itself and may be copied, while
@@ -1040,7 +1050,7 @@ To settle when we discuss architecture:
   `-` and `.`**, with `#` reserved as the index separator and forbidden in a base. Not empty,
   and not starting or ending with `_`, `-` or `.`.
 
-  All 523 ids in the fixtures and the libraries already fit, including
+  Every id in the fixtures and the libraries already fits, including
   `generic_0.5_kg_lead_weight`, whose dot carries a decimal, and `2026-06-21#0`, whose
   hyphens carry a date.
 
@@ -1316,6 +1326,11 @@ To settle when we discuss architecture:
   interface offers, not machinery this layer owns — so an `ItemDescription` says nothing
   about it, and no recipe per type appears in the descriptions. A recipe there would be
   this layer knowing what a dive is.
+
+  *Amended:* the descriptions left this layer, and the recipe went onto them.
+  `ItemDescription.proposedId` holds one and the logic layer supplies one per type, which the
+  Universe reads when it mints an id. The reason above stood while the descriptions were this
+  layer's, and stopped applying when they moved.
 
   **`required` was never about requirement.** Six fields carried the word and five gave the
   same reason beside it — *the item's id is worked out from it* — with a person's
@@ -1927,7 +1942,7 @@ Kept with their identifiers so earlier discussion still resolves.
   get and no business storing.
 
   Tracking what diving costs is a reasonable thing to want and a different application
-  from this one. Registered as rejected in [../../features.md](../features.md) with
+  from this one. Registered as rejected in [../features.md](../features.md) with
   the reason, so it is not proposed again.
 
 - **DATA-32 — Whether a numeric range is enforced or advisory.** *Settled:* enforced, and
@@ -2301,7 +2316,7 @@ Kept with their identifiers so earlier discussion still resolves.
     the logic layer uses. A name the description does not know is a fault in the code,
     not in the data, and is reported as one — which is the distinction that makes a
     misspelt field name findable rather than a silent absent.
-  - **Typed convenience methods** — `getInt`, `getText`, `getDate` and the rest — which
+  - **Typed convenience methods**, one per kind of value, which
     look the field up in the description, confirm it is declared as that kind, and hand
     back the three states of `DATA-50` with the value already typed. A caller asking for
     the wrong kind is told so rather than given a bad cast.

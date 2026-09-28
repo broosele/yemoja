@@ -106,7 +106,7 @@ holds the **actions** that carried it out:
 ]
 ```
 
-A changeset items three things about its origin, which is what makes *where did this
+A changeset records three things about its origin, which is what makes *where did this
 come from* answerable: **when** it happened, **which installation** did it, and **what
 kind of operation** it was — a manual edit, a dive computer download, an import, a sync.
 All three are known at the moment of the change and none has to be asked for.
@@ -320,7 +320,7 @@ id and two members of one name is a real mistake rather than an undefined one. A
 beyond sixty-four deep, so that a corrupt file of nothing but brackets is reported instead
 of exhausting the stack.
 
-All forty files in `fixtures/` and `libraries/` are strict JSON, so nothing yet depends on
+All forty-two files in `fixtures/` and `libraries/` are strict JSON, so nothing yet depends on
 either forgiveness.
 
 ## Not in scope
@@ -336,10 +336,6 @@ follows from it.
 
 To settle when we discuss architecture:
 
-
-   **This is `REQ-14` in another guise** — whether a conflict is per item or per
-   field. Storage that keeps whole items and merging that compares fields can coexist,
-   but the two questions have to be answered together or the answers will disagree.
 - **JSON-13 — When an action or a changeset may be moved or dropped.** Two actions commute
    if they touch different items, or different fields of one item; outside that they
    depend on each other. Either the journal refuses a change that would break a
