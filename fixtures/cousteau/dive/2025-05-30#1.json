@@ -2,7 +2,7 @@
   "dive_number": 37,
   "start_date": "2025-05-30",
   "start_time": "11:40:00",
-  "end_time": "12:19:00",
+  "duration": 2340,
   "time_zone_offset": 7200,
   "dive_site": "@mistral_point",
   "previous_dive": "@2025-05-30#0",

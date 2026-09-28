@@ -161,7 +161,7 @@ Four dives carry profiles, and the other eighteen deliberately do not — a logb
 every dive came off a computer would not be one anybody has.
 
 - `2025-05-30#2` is the simple case: **one profile, so no `primary_profile`**, since there
-  is nothing to choose between. The dive writes no `start_date`, `start_time`, `end_time`,
+  is nothing to choose between. The dive writes no `start_date`, `start_time`, `duration`,
   `max_depth` or `deco` at all; every one of them derives from the recording, which is the
   whole point of having it. Its cylinder was rented, so the gas source names no `cylinder`
   and writes `volume` by hand — the case the manual describes, where nothing can be worked

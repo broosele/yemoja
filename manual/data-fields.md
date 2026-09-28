@@ -118,14 +118,16 @@ The individual field descriptions follow.
 The item everything else exists to describe.
 
 **Where the times come from.** A dive can have more than one profile, and one of them
-is the primary. If there is a primary profile, the start, the end and the duration are
-all taken from it — the computer was there and you were busy.
+is the primary. If there is a primary profile, the start and the duration are both taken
+from it — the computer was there and you were busy.
 
-With no primary profile you write the start date and the times yourself, and the rest
-follow: an end time earlier than a start time means the dive ran past midnight, and the
-duration follows from the two.
+With no primary profile you write the start date, the start time and the duration
+yourself. **There is no end.** A dive says when it began and how long it ran, and where
+it finished follows without anybody having to say whether the day turned: a dive in at
+23:20 for 45 minutes came out at 00:05 the next morning, and nothing about that needs
+recording.
 
-All five can be corrected where the calculation is wrong.
+All three can be corrected where the calculation is wrong.
 
 - `name` (text, derived) — the dive's date and its number within that day, as
   `2026-02-23#0`. This is what a dive is listed and linked as.
@@ -151,11 +153,6 @@ All five can be corrected where the calculation is wrong.
   From the primary profile, corrected by its `recorded_time_offset`, or from you.
 - `start_time` (time, derived) — when you went in, in local time. The dive's times are all
   local, and shown as they are.
-- `end_date` (date, derived) — the day the dive finished. From the primary profile, or from
-  your own times: an end time earlier than the start means it ran past midnight. Correct it for
-  the rare dive spanning more than one night, or where the clocks moved underneath you. A dive
-  with no start time leaves this blank, there being nothing to tell the two days apart.
-- `end_time` (time, derived) — when you came out.
 - `time_zone_offset` (number) — how far local time was ahead of GMT where the dive was made, in
   seconds unless the file says otherwise, and shown as hours and minutes: summer in Western
   Europe is `7200`, shown `+2:00`, and New York in winter is `-18000`.
@@ -166,8 +163,8 @@ All five can be corrected where the calculation is wrong.
   nothing is taken to be on GMT, which compares correctly with any other dive that says nothing.
   A download fills it in where the computer reports its zone.
 - `duration` (number, derived) — how long the dive lasted, in seconds unless the file says
-  otherwise. From the primary profile, or from your start and end times where there is no
-  recording.
+  otherwise. From the primary profile, or written by you where there is no recording. It is what
+  says when the dive ended, there being no field for that.
 - `max_depth` (number, derived) — the deepest point reached, from the primary profile. Worth
   correcting: a dive computer usually reports a better figure than its own recorded profile,
   which is only sampled every few seconds.
@@ -340,10 +337,8 @@ that is the only record of it.
   The correction moves the date as well as the time where it has to: two minutes past
   midnight, with two hours coming off, is late the previous evening.
 
-- `end_date` (date, derived) — the day the recording ended, from the last sample.
-- `end_time` (time, derived) — the moment it ended.
-- `duration` (number, derived) — how long it ran. Correct any of these where the recording
-  stopped before you surfaced.
+- `duration` (number, derived) — how long it ran, from its last sample. Correct it where the
+  recording stopped before you surfaced.
 - `water_type` (fixed set) — what the computer was **set to** while it recorded: `salt`,
   `fresh` or `en13319`. Not what the water actually was — you can dive the sea with a
   computer set to fresh, and the depths it wrote down will say so.

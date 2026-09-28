@@ -2,7 +2,7 @@
   "dive_number": 3,
   "start_date": "2024-06-16",
   "start_time": "09:50:00",
-  "end_time": "10:35:00",
+  "duration": 2700,
   "dive_site": "@ravensgate_quarry",
   "buddies": [
     "@tom_janssen",

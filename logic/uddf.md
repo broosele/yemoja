@@ -95,7 +95,7 @@ arrives empty from every UDDF file and is dropped on the way out. Temperature an
 visibility used to lose a pair each to UDDF's single value; this model records one of each
 too, so nothing is given up there now.
 
-`duration`, `buddy_count`, `end_date`, `end_time` and `name` are derived here and would be
+`duration`, `buddy_count` and `name` are derived here and would be
 computed either side rather than carried across. **`deco` is the awkward one.** Where a
 profile recorded stops it is derived from them and survives, because the stops themselves
 export as `decostop` samples. Where there is no profile it is the user's own answer

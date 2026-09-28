@@ -2,7 +2,7 @@
   "dive_number": 74,
   "start_date": "2026-08-08",
   "start_time": "12:10:00",
-  "end_time": "13:04:00",
+  "duration": 3240,
   "dive_site": "@lantern_reef",
   "buddies": [
     "@jacques_cousteau",

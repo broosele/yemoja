@@ -165,19 +165,13 @@ absent, because a blank looks like a field nobody wrote and each of these is a m
 seeing. `DATA-50`. Absent is kept for what is not a mistake at all — a rented cylinder nobody
 has an item for, a dive with no recording, a trip nothing has been logged against yet.
 
-**A dive's `end_date` and `duration` fall back to the dive's own times.** Everything else taken
-from a recording has no other source, but these two do: a dive that starts on a date at a time
-and ends at a time has ended on a day, and lasted from one to the other. The day is the day it
-began, or the next one where the end time is earlier than the start — no dive runs for
-twenty-four hours, so an end before a start is the following morning and nothing else. The
-manual has said this under `end_date` since the field was defined; the code only caught up
-once seventeen of the twenty fixture dives turned out to be logged by hand and to have neither.
+**A dive's `duration` is written where there is no recording to take it from.** Everything else
+taken from a recording has no other source; this one is what a dive typed from paper says about
+its own length, and what says when it ended, `DATA-125` having left no field for that.
 
-Two limits keep it from guessing. **A recording still wins**, including one that cannot be
-chosen — a dive holding several profiles and naming none is a question asked twice and settled
-neither time, and answering it from elsewhere would hide that. And **a dive with no start time
-gets nothing**: there is then nothing for the end time to be earlier than, so whether the day
-turned is unknown rather than unlikely.
+One limit keeps it honest. **A recording still wins**, including one that cannot be chosen — a
+dive holding several profiles and naming none is a question asked twice and settled neither time,
+and answering it from elsewhere would hide that.
 
 `DiveGear.weight` counts every item in the `weights` category and nothing else. A
 weight-integrated harness is not one: its own mass is the pockets, and the lead that went in

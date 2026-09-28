@@ -451,7 +451,7 @@ Stored as `dive/2026-02-23#0.json`. The file is the dive itself.
   },
   "start_date": "2026-02-23",
   "start_time": "09:15:00",
-  "end_time": "09:58:00",
+  "duration": 2580,
   "dive_number": 143,
   "dive_site": "@blue_quarry",
   "buddies": ["@anna_de_vries", "john"],
@@ -478,9 +478,10 @@ Stored as `dive/2026-02-23#0.json`. The file is the dive itself.
 }
 ```
 
-Notice what is **not** in the file. There is no `name`, no `end_date`, no `duration` and
-no `buddy_count`: Yemoja works all of those out. Writing them in would only be worth doing
-to correct one of them.
+Notice what is **not** in the file. There is no `name` and no `buddy_count`: Yemoja works
+both of those out. Writing one in would only be worth doing to correct it. `duration` is here
+because this dive has no recording to take it from, and it is what says when the dive ended,
+there being no field for that.
 
 `max_depth` is here because this dive has no profile. With one, it would be calculated
 too, and worth writing only if the computer's own figure were better.

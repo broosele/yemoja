@@ -5,7 +5,7 @@
   "dive_number": 66,
   "start_date": "2026-03-14",
   "start_time": "10:20:00",
-  "end_time": "11:01:00",
+  "duration": 2460,
   "dive_site": "@windlass_wreck",
   "buddies": [
     "@john_smith#1"

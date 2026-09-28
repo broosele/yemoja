@@ -57,11 +57,17 @@ fun earlierRuns(logbook: ItemSet, start: Moment, withinSeconds: Long): List<Earl
     return found.sortedWith(compareByDescending<Earlier> { it.ended }.thenBy { !it.primary }.thenBy { it.key })
 }
 
-/** When [dive] ended, in its local time, or null where it does not say. */
+/**
+ * When [dive] ended, in its local time, or null where it does not say.
+ *
+ * Its start and how long it ran. A dive that crossed midnight needs nothing said about the day,
+ * which is what a stored end could never settle. `DATA-125`.
+ */
 fun endOf(dive: Item): Moment? {
-    val date = (dive.single<Date>("end_date") as? Result.Usable)?.value ?: return null
-    val time = (dive.single<Time>("end_time") as? Result.Usable)?.value ?: return null
-    return Moment(date, time)
+    val date = (dive.single<Date>("start_date") as? Result.Usable)?.value ?: return null
+    val time = (dive.single<Time>("start_time") as? Result.Usable)?.value ?: return null
+    val ran = (dive.single<Double>("duration") as? Result.Usable)?.value ?: return null
+    return Moment(date, time).plusSeconds(ran.toLong())
 }
 
 /** The run [reference] names, as `@2026-09-20#0*b`, or null where the logbook holds none. */

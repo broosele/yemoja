@@ -245,27 +245,30 @@ class ArrangedTest {
         val ranged = LogbookReader.read(
             MemoryFileStore(
                 mapOf(
-                    "dive/2026-06-22#0.json" to
-                        """{"start_date": "2026-06-22", "start_time": "09:15:00", "end_time": "09:58:00"}""",
+                    "dive_trip.json" to
+                        """{"provence": {"name": "Provence", "start_date": "2026-06-20",
+                            "end_date": "2026-06-27"}}""",
                 ),
             ),
             Types.ALL,
-        )["2026-06-22#0"]!!
-        val shown = shownAllOf(arrangedOf(Types.DIVE).plain, ranged).associateBy { it.label }
-        assertEquals("09:15:00 – 09:58:00", shown["Time"]?.text)
-        assertNull(shown["Start time"], "the pair replaces the two")
-        assertNull(shown["End time"])
+        )["provence"]!!
+        val shown = shownAllOf(arrangedOf(Types.DIVE_TRIP).plain, ranged).associateBy { it.label }
+        assertEquals("2026-06-20 – 2026-06-27", shown["Date"]?.text)
+        assertNull(shown["Start date"], "the pair replaces the two")
+        assertNull(shown["End date"])
     }
 
     @Test
     fun `a start with no end says itself, under its own label`() {
         val alone = LogbookReader.read(
-            MemoryFileStore(mapOf("dive/2026-06-23#0.json" to """{"start_time": "11:00:00"}""")),
+            MemoryFileStore(
+                mapOf("dive_trip.json" to """{"one": {"name": "One", "start_date": "2026-06-20"}}"""),
+            ),
             Types.ALL,
-        )["2026-06-23#0"]!!
-        val shown = shownAllOf(arrangedOf(Types.DIVE).plain, alone).associateBy { it.label }
-        assertEquals("11:00:00", shown["Start time"]?.text, "a lone time says which end it is")
-        assertNull(shown["Time"], "and is no range")
+        )["one"]!!
+        val shown = shownAllOf(arrangedOf(Types.DIVE_TRIP).plain, alone).associateBy { it.label }
+        assertEquals("2026-06-20", shown["Start date"]?.text, "a lone date says which end it is")
+        assertNull(shown["Date"], "and is no range")
     }
 
     @Test

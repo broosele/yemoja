@@ -142,8 +142,9 @@ class TypedFieldTest {
     @Test
     fun `clearing a correction puts back what is worked out`() {
         val (_, screen) = editable(
-            "dive/d#0.json" to """{"start_date": "2026-06-21", "start_time": "10:00:00",
-                "end_time": "11:00:00", "duration": 60}""",
+            "dive/d#0.json" to """{"duration": 60,
+                "profiles": {"p1": {"start_date": "2026-06-21", "start_time": "10:00:00",
+                    "depth": [[0, 0], [3600, 0]]}}}""",
         )
         toTab(screen, "dive")
         toField(screen, "duration")
@@ -151,7 +152,7 @@ class TypedFieldTest {
         repeat(6) { screen.press(Key.BACKSPACE) }
         screen.press(Key.OPEN)
         val read = screen.item!!.single<Double>("duration") as Result.Usable
-        assertEquals(3600.0, read.value, "worked out from the times again")
+        assertEquals(3600.0, read.value, "from the recording again")
         assertEquals(Result.Origin.DERIVED, read.origin)
     }
 

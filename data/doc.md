@@ -2201,6 +2201,29 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-125 — Whether a dive says when it ended.** *Settled:* **no. A dive says when it began
+  and how long it ran, and `end_date` and `end_time` go, from the dive and from the recording
+  alike.**
+
+  The two said nothing the other two did not. A recording's end was its start plus its last
+  sample; a dive's was its primary recording's, or — for a dive typed from paper — a stored end
+  time that a rule turned into a duration. Four fields carrying two facts, and the fourth needing
+  a guess.
+
+  **The guess is what settles it.** An end time earlier than a start time was read as the next
+  morning, which is right for a night dive and wrong for a dive that ran twenty-five hours, and
+  nothing in the data could tell the two apart. A duration cannot be ambiguous: 23:20 for 45
+  minutes ended at 00:05 the next day, and a dive over several days says so by its length.
+
+  **What is written instead.** A recording keeps `start_date`, `start_time` and `duration`, the
+  last derived from its samples. A dive keeps the same three, each from its primary recording or
+  written where there is none. `endOf` in the logic layer adds the two where anything needs the
+  moment a dive ended — a surface interval, and what an earlier run leaves in the tissues.
+
+  **What is lost, said plainly.** A diver who remembers surfacing at 10:41 but not that the dive
+  lasted 36 minutes now does the subtraction. That is one sum, against a field that could not say
+  what it meant.
+
 - **DATA-124 — Where what a computer measured is kept, when two computers made one dive.**
   *Settled:* **on the recording that measured it. The dive's environment reads its primary
   recording, and `environment.atmospheric_pressure` goes.**

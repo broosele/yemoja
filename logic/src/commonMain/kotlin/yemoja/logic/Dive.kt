@@ -227,10 +227,6 @@ private val PROFILE = ItemDescription(
         // home time, one that missed summer time. The user's to set, and a download never writes
         // it. A length of time like any other, and scoped like one. `LOGIC-32`, `DATA-10`.
         NumberDescription("recorded_time_offset", Dimension.TIME, housekeeping = true),
-        // From the last sample, and correctable where the recording stopped before the user
-        // surfaced.
-        DateDescription("end_date", role = Role.Overrideable(::profilesEndDate)),
-        TimeDescription("end_time", role = Role.Overrideable(::profilesEndTime)),
         NumberDescription(
             "duration",
             Dimension.TIME,
@@ -401,19 +397,6 @@ private fun ofPrimary(environment: Item, take: (Item) -> Result<Double>): Result
     }
 }
 
-/** When the last sample was taken, in local time, or absent where there is none. */
-private fun ended(profile: Item): Moment? {
-    val start = began(profile) ?: return null
-    val ran = ranFor(profile) ?: return null
-    return start.plusSeconds(ran.toLong())
-}
-
-private fun profilesEndDate(profile: Item): Result<Any> =
-    ended(profile)?.let { dateOf(it) } ?: Result.Absent
-
-private fun profilesEndTime(profile: Item): Result<Any> =
-    ended(profile)?.let { timeOf(it) } ?: Result.Absent
-
 /**
  * How long a recording ran, in seconds.
  *
@@ -543,8 +526,6 @@ internal val DIVE: ItemDescription = ItemDescription(
         // was there and the user was busy, but a recording can still be wrong.
         DateDescription("start_date", role = Role.Overrideable(::divesStartDate)),
         TimeDescription("start_time", role = Role.Overrideable(::divesStartTime)),
-        DateDescription("end_date", role = Role.Overrideable(::divesEndDate)),
-        TimeDescription("end_time", role = Role.Overrideable(::divesEndTime)),
         // How far local time was ahead of GMT where the dive was made. The times above are local
         // and shown as they are; this puts two dives on one clock to compare them, and a dive
         // saying nothing is taken to be on GMT. `LOGIC-32`.
@@ -626,54 +607,7 @@ private fun divesStartDate(dive: Item): Result<Any> =
 private fun divesStartTime(dive: Item): Result<Any> =
     fromProfile(dive) { began(it)?.let { moment -> timeOf(moment) } ?: Result.Absent }
 
-private fun divesEndDate(dive: Item): Result<Any> =
-    fromProfile(dive, ::profilesEndDate).orElse { finished(dive)?.let(::dateOf) ?: Result.Absent }
-
-private fun divesEndTime(dive: Item): Result<Any> = fromProfile(dive, ::profilesEndTime)
-
-private fun divesDuration(dive: Item): Result<Any> =
-    fromProfile(dive, ::profilesDuration).orElse { lasted(dive) }
-
-/**
- * [this] unless there was nothing to work it out from, in which case what [instead] makes of it.
- *
- * A recording that cannot be chosen still travels. `primaryProfile` reports a dive holding
- * several profiles and naming none, and falling back there would answer a question the dive has
- * asked twice and settled neither time.
- */
-private fun Result<Any>.orElse(instead: () -> Result<Any>): Result<Any> =
-    if (this == Result.Absent) instead() else this
-
-/**
- * When a dive ended, from what it says about itself rather than from a recording.
- *
- * The day it started, or the day after where the end time is earlier than the start time. No
- * dive runs for twenty-four hours, so an end before a start is the following morning and nothing
- * else. The manual states this to the user under `end_date`.
- *
- * **A dive with no start time is left alone.** There is then nothing for the end time to be
- * earlier than, so whether midnight was crossed is unknown rather than unlikely.
- */
-private fun finished(dive: Item): Moment? {
-    val began = begun(dive) ?: return null
-    val end = (dive.single<Time>("end_time") as? Result.Usable)?.value ?: return null
-    val day = if (end < began.time) Date.ofEpochDay(began.date.epochDay + 1) else began.date
-    return Moment(day, end)
-}
-
-/** How long a dive ran, from its own times, or absent where they do not place both ends. */
-private fun lasted(dive: Item): Result<Any> {
-    val began = begun(dive) ?: return Result.Absent
-    val ended = finished(dive) ?: return Result.Absent
-    return Result.Usable(began.secondsUntil(ended).toDouble(), Result.Origin.DERIVED)
-}
-
-/** When a dive says it began, both halves being needed before either is any use. */
-private fun begun(dive: Item): Moment? {
-    val date = (dive.single<Date>("start_date") as? Result.Usable)?.value ?: return null
-    val time = (dive.single<Time>("start_time") as? Result.Usable)?.value ?: return null
-    return Moment(date, time)
-}
+private fun divesDuration(dive: Item): Result<Any> = fromProfile(dive, ::profilesDuration)
 
 /**
  * The deepest point a recording reached.
@@ -801,8 +735,7 @@ private fun surfaceInterval(dive: Item): Result<Any> {
     val id = (named.value as? Reference.Identified)?.id
         ?: return unusable("a surface interval needs a dive with an id to measure from")
     val before = dive.set[id] ?: return unusable("$id is not in this logbook")
-    val out = momentOf(before, "end_date", "end_time")?.let { absoluteOf(before, it) }
-        ?: return Result.Absent
+    val out = endOf(before)?.let { absoluteOf(before, it) } ?: return Result.Absent
     val back = momentOf(dive, "start_date", "start_time")?.let { absoluteOf(dive, it) }
         ?: return Result.Absent
     val seconds = out.secondsUntil(back)
