@@ -7,6 +7,11 @@ One application, two form factors: [desktop](desktop/doc.md) and
 [phone](phone/doc.md). They share their structure and differ only in how that
 structure is placed on screen.
 
+**What is decided here and what is decided there.** A `GUI` decision says what the window shows
+and how it behaves, whatever the screen. A `DESK` or a `PHONE` decision says where that goes on
+one: the columns, the boxes, the pointer, the sizes. Where a decision has both halves, each is
+written where it belongs and names the other.
+
 ## Priority
 
 1. **Windows desktop** — first
@@ -98,7 +103,8 @@ question had to be asked per tab.
 tabs rather than all of them.
 
 Four things follow that the shapes above do not answer, and each is a way for an item type to
-become unreachable rather than a matter of taste. All four are settled: `GUI-19` to `GUI-22`.
+become unreachable rather than a matter of taste. All four are settled: `DESK-7`, `GUI-20`,
+`GUI-21` and `GUI-22`.
 
 ### Selecting more than one
 
@@ -429,18 +435,6 @@ once and corrected. The numbers stay unused rather than being given to something
   A dive with no profile before takes the plan as its primary one; a dive with a recording keeps
   the recording, and the plan sits beside it for comparing.
 
-- **GUI-46 — What the window does with a section.** *Settled:* **a section in the flow gets its
-  label over its fields; a section drawn as a box gets the frame an owned item gets.**
-
-  The fields of a type flow two to a row, `GUI-16`, and a section is a run of them under a heading
-  rather than a new kind of thing. A section marked *box* is drawn exactly as an owned item is, so
-  a dive's *Details* looks as it did before `DATA-122` moved its three fields onto the dive.
-
-  **The edit form ignores sections for now.** It has its own arrangement — what follows from a
-  category comes forward, the rest folds away, `GUI-29` — and a grouping laid over that is a
-  second thing deciding where a field sits. A section there is worth doing once the form is next
-  opened up.
-
 - **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
   the form for the one chosen on the right: a dive plan, SAC, NDL, MOD, EAD and END.**
 
@@ -495,10 +489,10 @@ once and corrected. The numbers stay unused rather than being given to something
   wording in three places cannot drift into a softer claim in one of them, which is why the
   sentence is a constant a test holds against those four claims. `manual/decompression.md`.
 
-  **A dive plan belongs to no dive.** Its top half is two columns: the runtime on
-  the left, the settings and the gases on the right, each of the three in a box of its own. Below
-  them come the whole dive's clocks on one line, what the model objects to, and the graph a
-  recording is drawn with.
+  **A dive plan belongs to no dive.** It is a runtime, the settings it is worked out under, the
+  cylinders it is breathed from, what the whole dive costs, what the model objects to, and the
+  graph a recording is drawn with. Where those go on a screen is `DESK-8` in
+  [desktop/doc.md](desktop/doc.md).
 
   **Each line of the runtime is one segment, a change of depth or a stay.** A line is typed as a
   depth and either a duration or a rate. The other is worked out and shown in italics in its own
@@ -530,19 +524,6 @@ once and corrected. The numbers stay unused rather than being given to something
   shortens what is added, and a dive typed to the surface has nothing added. Nothing turns those
   lines into typed ones. The deed that did, *Add ascent*, is gone: a reader who wants to shape the
   way up types it, and the italic part fills in only what they left.
-
-  **The top of the plan is a fixed height, and the runtime scrolls past it**, with a bar where the
-  platform draws one. The settings, the contingency box and the gases beside it stay where they are
-  however long the dive is. The gases take what the two boxes above them leave of the same height, so the two columns end on one
-  line, and they scroll in the same way once there are more than fit, their headings staying above
-  them. The lines of all three parts are dense, in smaller type than a form's, so about eighteen
-  lines of the runtime and about four cylinders show before either scrolls.
-
-  **Every box, column and figure of the plan says what it is when pointed at.** The lines are too
-  dense for a label beside each box, and the runtime has no headings at all, so a tooltip stands in
-  for them: a phrase naming the field as a label would, then what it does to the plan where the
-  name leaves that unclear. The words live together in `PlannerTips`, the one place to
-  read them over. A cross on a gas that a line breathes says why it cannot be taken out instead.
 
   **The settings are the plan's own.** They sit in titled sections, each a single column, the
   sections stacked in two columns with space between them. On the left, *General* holds descent
@@ -768,9 +749,8 @@ once and corrected. The numbers stay unused rather than being given to something
   shown with the items behind it, both the number used and the number there were —
   "total time underwater: 210 hours (248/253 dives)". The reader sees the sample and
   anything excluded from it in one place, without every exclusion being itemised.
-- **GUI-13 — The tab switcher on a phone.** *Settled:* it must be accessible, not
-  permanently visible. Seven tabs do not fit across the foot of a phone, and requiring
-  them to would force the same compromise on the desktop, where there is ample room.
+- **GUI-13 — The tab switcher on a phone.** *Relocated to [phone/doc.md](phone/doc.md) as
+  `PHONE-5`.*
 - **GUI-3 — How much visual identity to define up front.** *Settled in part:* **the colours and
   the icon, and nothing else yet.** The platform's scheme is violet and a logbook of the sea is
   not, so the same roles are filled from a marine hue, navy where the default is purple and a
@@ -859,8 +839,9 @@ once and corrected. The numbers stay unused rather than being given to something
   reader sees is therefore always the agent reaching past the logbook for the machine, which is
   what makes it worth saying aloud.
 
-  **The panel sits beside whichever tab is showing** and stays open while the user moves between
-  tabs, so a dive the agent names can be opened while the conversation carries on. It holds the
+  **The panel stays open while the user moves between tabs**, so a dive the agent names can be
+  opened while the conversation carries on. Where it sits and what it looks like is `DESK-9` in
+  [desktop/doc.md](desktop/doc.md). It holds the
   choice of agent, the conversation, and two boxes that are off at the start of every conversation:
   *Allow changes*, which lets the agent stage, and *Allow files*, which lets it at the files
   directly. `API-5`. A box that held back a person's private details is gone with the machinery
@@ -1012,8 +993,8 @@ once and corrected. The numbers stay unused rather than being given to something
    whose dropdown carries a tooltip, closed the application. `Explained` switches selection off in
    what it shows, and a test presses words under their own tooltip to keep it so.
 
-   **A click still chooses.** A row in a list inside a view is chosen by a click as it was
-   before, and the click clears whatever was selected; only a drag selects.
+   **What a pointer does with all this is `DESK-10`**, a drag and a click being a large screen's
+   inputs.
 - **GUI-35 — How an item is made and unmade.** *Settled:* **two buttons beside the pencil, and
    a question before anything is deleted.**
 
@@ -1050,10 +1031,6 @@ once and corrected. The numbers stay unused rather than being given to something
    `Change.Add`, which mints `anna_devries` from them. Cancel leaves no trace, there being
    nothing to undo. A block begun inside the new item folds into those fields rather than
    becoming a write of its own, there being no owner yet to write it onto.
-
-   **Delete is red under the pointer and nowhere else.** A button red all the time is an alarm
-   on a card that is read a hundred times and meant once; one that reddens as it is reached for
-   says the same thing at the moment it matters.
 
    **It asks, because it cannot be taken back.** There is no journal yet, `RECON-1`, so a
    deletion is the one thing in the window with no way back. The question names one item and
@@ -1398,11 +1375,8 @@ once and corrected. The numbers stay unused rather than being given to something
   needs a hint for how much room it takes.
 - **GUI-29 — How a field is edited.** *Settled:* **the item view turned over.** A pencil on
   the card, between the buttons that make one and unmake one, `GUI-35`, turns it into the edit
-  form: the same fields in the same places, two columns and
-  the insets and their tabs, with *Save* and *Cancel* on the title line, so a reader who knows
-  where a field sits when reading knows where it sits when editing. The title line, with its
-  pencil or its Save and Cancel, stays put while the fields scroll under it, so what is being
-  looked at and the way out of it are never scrolled away. Cancel puts the card back
+  form: the same fields in the same places, so a reader who knows where a field sits when reading
+  knows where it sits when editing. How a desktop frames that is `DESK-11`. Cancel puts the card back
   as it was; Save hands every field changed to the model as one change, and a refusal comes
   back to the field it was about.
 
@@ -1460,9 +1434,7 @@ once and corrected. The numbers stay unused rather than being given to something
   is keyed as its type proposes for one holding nothing, the first free taken. **A reference
   offers the items it may name**: those of its type, and where a field wants one category of
   them, that category alone, so a gas source's `cylinder` offers the cylinders and not the
-  regulators its volume could never be taken from. Open: the phone's form. The text fields are the height of
-  their text rather than the platform's fifty-six pixels: a form of twenty fields in tall boxes
-  is one nobody scrolls to the end of.
+  regulators its volume could never be taken from. Open: the phone's form.
 - **GUI-28 — What a reference is on a screen.** *Settled:* **a link.** Wherever a field names
   another item, the name is clickable and opens that item where it lives: the tab holding its
   type, on the right subtab, with the item chosen — or, for a region, with the map on it — and
@@ -1474,7 +1446,7 @@ once and corrected. The numbers stay unused rather than being given to something
   goes through the first site it lies at. That holds in every item view, so a site's
   dives lead to the dives and each dive's site leads back; the back-links the model works out
   are what make the second direction exist. The dive table's site column is not a link, since
-  `GUI-19` gave a click there to the dive.
+  `DESK-7` gave a click there to the dive.
 - **GUI-27 — What a tab keeps when it is left.** *Settled:* **everything.** The item chosen,
   the region, the box, which branches are unfolded, which subtab, where each list is scrolled
   to: a tab returned to is where it was left, because switching tabs to look something up and
@@ -1525,11 +1497,9 @@ once and corrected. The numbers stay unused rather than being given to something
   Two things follow from a wreck having no place of its own. One at no site appears under no
   region, and one named by two sites appears under both, which is right where the sites are two
   moorings on one hull and misleading where they are not.
-- **GUI-19 — How a dive trip is reached.** *Settled:* **by the column that names it.** The
-  trip column holds one cell per trip, spanning the consecutive dives on it, and clicking that
-  cell selects the trip where clicking anywhere else in the row selects the dive. So a trip is
-  reached from any dive on it and needs no list of its own, and the column earns its width
-  twice: it says which trip a dive was on, and it is the way in.
+- **GUI-19 — How a dive trip is reached.** *Relocated to [desktop/doc.md](desktop/doc.md) as
+  `DESK-7`.* A table with a spanning cell is a large screen's answer, and a phone will need
+  another.
 - **GUI-14 — Tabs holding more than one kind of item.** *Settled:* the shape of a
   selector is decided per tab, not once for all of them. Dive, community and location
   each answer it their own way.
@@ -1566,19 +1536,8 @@ once and corrected. The numbers stay unused rather than being given to something
   `back_mounted` is *Back mounted*. Only a field with a set of words to draw on has words in
   it, so free text is left exactly as it was typed and a gas is `EAN32` rather than `Ean32`.
 
-  **How a desktop lays an item out.** The plain fields flow into two columns, in the type's
-  order. An owned item is set into a box of its own, titled, and shown in full the same way,
-  boxes nesting where an owned item owns one. A keyed owned item is such a box with a tab per
-  entry, the tabs small buttons on the title's own line, each as wide as its name, the first
-  open; a tab is called
-  by the entry's name where it has one, else by what the first reference on it points at — a
-  recording by the computer that made it, a course by its certification — and by its key only
-  where nothing on it says anything. A series is not laid out at all: the graph is where it is read.
-
-  **A list of dives on gear, a person, a dive site or an operator sits at the foot**, in a box of
-  its own as wide as the card, after every owned item. It runs to hundreds of names, and in one of two columns it was a
-  narrow ribbon that pushed every field after it off the screen. The box is left out where the
-  list is empty. The form keeps the field among the rest, nobody typing into it.
+  **Where all of that goes on a screen is the form factor's**, and a desktop's answer is `DESK-5`
+  in [desktop/doc.md](desktop/doc.md): the columns, the boxes, the tabs and the foot.
 
   **A list with nothing in it is not shown, wherever it sits.** A worked-out list always answers,
   so a region no site names has an empty list of sites rather than none, and it read *(empty)*

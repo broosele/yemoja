@@ -10,7 +10,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /*
- * What each tab's selector holds. See ../../../../../../gui/doc.md — `GUI-19` to `GUI-22`.
+ * What each tab's selector holds. See ../../../../../../gui/doc.md — `GUI-20` to `GUI-22`, and `DESK-7` in desktop/doc.md.
  */
 
 private fun logbook(vararg files: Pair<String, String>) =

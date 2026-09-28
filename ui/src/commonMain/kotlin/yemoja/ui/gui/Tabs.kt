@@ -27,7 +27,7 @@ import yemoja.logic.Types
  */
 internal enum class Shape {
 
-    /** A table of dives, the trip cell spanning the consecutive dives on it. `GUI-19`. */
+    /** A table of dives, the trip cell spanning the consecutive dives on it. `DESK-7`. */
     DIVES,
 
     /** A tree of categories and the kinds within them. `GUI-21`. */

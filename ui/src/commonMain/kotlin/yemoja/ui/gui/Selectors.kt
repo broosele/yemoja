@@ -18,7 +18,7 @@ import yemoja.logic.wasMade
  * was. Each is built here and drawn in Screens.kt, so what a selector *is* can be tested without
  * an interface at all — which ../../../../../../gui/doc.md gives as the reason for the split.
  *
- * See ../../../../../../gui/doc.md — `GUI-19` to `GUI-22`.
+ * See ../../../../../../gui/doc.md — `GUI-20` to `GUI-22`, and `DESK-7` in desktop/doc.md.
  */
 
 /** One item a selector offers: what it is called, and how to reach it. */
@@ -32,7 +32,7 @@ internal fun divesMadeIn(set: ItemSet): List<ReferenceableItem> =
 internal fun entriesOf(set: ItemSet, type: ItemDescription): List<Chosen> =
     set.inOrder(type).mapNotNull { item -> set.idOf(item)?.let { Chosen(it, titleOf(item), item) } }
 
-// --- The dive table. `GUI-19`.
+// --- The dive table. `DESK-7`.
 
 /**
  * One row of the dive table: a trip, a number, a date and a site.

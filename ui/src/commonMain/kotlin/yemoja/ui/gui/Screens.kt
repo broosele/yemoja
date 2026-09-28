@@ -452,7 +452,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
  * The tabs, across the top.
  *
  * Seven fit comfortably across a desktop window and do not fit across the foot of a phone.
- * `GUI-13` settled that a phone keeps this a gesture away instead, which is a placement rather
+ * `PHONE-5` settled that a phone keeps this a gesture away instead, which is a placement rather
  * than a different set of tabs.
  */
 /**
@@ -1454,7 +1454,7 @@ private fun chosenOf(set: ItemSet, item: ReferenceableItem): Chosen? =
  * The dive table: the trip, the dive's own number, the date and the site.
  *
  * The trip cell spans the consecutive dives on it, and which column is clicked decides what is
- * selected. `GUI-19`. The span is drawn as one: the cell is tinted down the whole run, its title
+ * selected. `DESK-7`. The span is drawn as one: the cell is tinted down the whole run, its title
  * sits on the first row, and a rule separates one run from the next rather than one row from
  * the next.
  */

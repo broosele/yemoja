@@ -24,6 +24,12 @@ Platform specifics live one level down: [android](android/doc.md) (second priori
 
 Anything specific to one mobile OS — that goes in that platform's own doc.
 
+## Settled
+
+- **PHONE-5 — The tab switcher.** *Settled:* **accessible, not permanently visible.** Seven
+  tabs do not fit across the foot of a phone, and requiring them to would force the same
+  compromise on the desktop, where there is ample room. Relocated from `GUI-13`.
+
 ## Open questions
 
 - **PHONE-1 — Which features are phone-appropriate at all.** Dive planning on a phone screen
