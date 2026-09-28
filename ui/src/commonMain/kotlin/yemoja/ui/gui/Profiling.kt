@@ -1505,9 +1505,12 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                     reckoning is Reckoning.Done -> scenarioSaid(scenario, reckoning.reserve, shaping)
                     else -> ""
                 }
+                // Two lines whatever it says, so switching a scenario off or on does not move the
+                // gases below: a result at this width takes two, and *off* takes the same room.
                 Text(
                     said,
                     style = if (reckoning is Reckoning.Done) MaterialTheme.typography.bodySmall else quiet,
+                    minLines = RESULT_LINES,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -1597,6 +1600,9 @@ private val PRESSURE = 72.dp
 private val SAC = 84.dp
 private val FIGURED = 56.dp
 
+
+/** How many lines a scenario's result is given, whether or not it needs them. */
+private const val RESULT_LINES = 2
 
 /** How wide a scenario's name and switch are together, the same for both lines. */
 private val LEAD = 140.dp
