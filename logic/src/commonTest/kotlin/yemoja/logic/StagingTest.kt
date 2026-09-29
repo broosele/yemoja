@@ -5,6 +5,7 @@ import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -36,6 +37,20 @@ private fun read(universe: Universe, id: String, field: String): Any? =
     (universe.logbook[id]?.read(field) as? Result.Usable)?.value
 
 class StagingTest {
+
+    @Test
+    fun `a list holding something unreadable is refused rather than staged`() {
+        // An agent sent the text of a list where a list belonged, and it was kept as a list of
+        // one unreadable thing: usable as a whole, a fault in its only element.
+        val universe = diving()
+        val staging = stagingOf(universe)
+        val refused = staging.set("blue", "regions", """["@egypt"]""")
+        assertIs<Outcome.Refused>(refused)
+        assertTrue("regions" in refused.reason, refused.reason)
+        assertTrue("cannot be read" in refused.reason, refused.reason)
+        assertTrue(staging.empty, "and nothing is staged")
+        assertEquals(Outcome.Done(), staging.set("blue", "regions", listOf("@egypt")), "a list is a list")
+    }
 
     @Test
     fun `a staged edit says what the field was and what it would be`() {

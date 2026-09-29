@@ -138,8 +138,8 @@ class Staging private constructor(
         refresh(id, path, held)
         val copy = after.copyOf(id, held)
         val at = walkTo(copy, path) ?: return Outcome.Refused(unreachable(held.description, path))
-        val made = at.item.prepared(at.field, value, Units.DEFAULT)
-        if (made is Result.Unusable) return Outcome.Refused(made.reason)
+        val made = at.item.prepared(at.field, shapedOf(value), Units.DEFAULT)
+        unreadableIn(at.field, made)?.let { return Outcome.Refused(it) }
         at.item.apply(at.field, made)
         after.write(id, copy)
         edition += 1
@@ -163,14 +163,60 @@ class Staging private constructor(
             if (description[name] == null) {
                 return Outcome.Refused("$type has no field called $name")
             }
-            val read = made.prepared(name, value, Units.DEFAULT)
-            if (read is Result.Unusable) return Outcome.Refused(read.reason)
+            val read = made.prepared(name, shapedOf(value), Units.DEFAULT)
+            unreadableIn(name, read)?.let { return Outcome.Refused(it) }
             made.apply(name, read)
         }
         after.write(freshId(), made)
         edition += 1
         return Outcome.Done()
     }
+
+/**
+ * [value] as the shape a source hands over, so that a list arrives as a list.
+ *
+ * What reaches here from a tool is what JSON carried: a number, a word, a list of them, a map.
+ * Everything that is not already a [Stored] was wrapped as one leaf, so a list became a single
+ * value and a field expecting several read a fault. A caller writing one value is unaffected.
+ */
+private fun shapedOf(value: Any?): Any? = when (value) {
+    is List<*> -> Stored.Elements(value.map { shapedAs(it) })
+    is Map<*, *> -> Stored.Members(value.entries.associate { (key, held) ->
+        key.toString() to shapedAs(held)
+    })
+    else -> value
+}
+
+/** One member of a list or a map, as a [Stored] node. */
+private fun shapedAs(value: Any?): Stored = when (value) {
+    is Stored -> value
+    is List<*> -> Stored.Elements(value.map { shapedAs(it) })
+    is Map<*, *> -> Stored.Members(value.entries.associate { (key, held) ->
+        key.toString() to shapedAs(held)
+    })
+    else -> Stored.Leaf(value)
+}
+
+/**
+ * Why [made] cannot be staged on the field called [name], or absent where it can.
+ *
+ * **A list is judged element by element.** The whole of a list reads as usable while one of its
+ * entries does not, so a value that is a list of one unreadable thing passed every check and was
+ * written as it stood: an agent that sent the *text* of a list where a list belonged had it stored
+ * that way, and the field read back as a fault nobody had made by hand. Staging is the one place
+ * that can refuse it while there is still somebody to tell. `RECON-8`.
+ */
+private fun unreadableIn(name: String, made: Result<Any>): String? {
+    if (made is Result.Unusable) return made.reason
+    val value = (made as? Result.Usable)?.value ?: return null
+    val elements = when (value) {
+        is List<*> -> value
+        is Map<*, *> -> value.values
+        else -> return null
+    }
+    val wrong = elements.filterIsInstance<Element.Unusable>().firstOrNull() ?: return null
+    return "$name holds something that cannot be read: ${wrong.reason}"
+}
 
     /**
      * Stage the item called [id] to be deleted.
