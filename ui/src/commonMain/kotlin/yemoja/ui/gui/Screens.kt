@@ -85,6 +85,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Path
@@ -479,9 +480,21 @@ internal fun Selectable(content: @Composable () -> Unit) {
 internal fun Menu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
+    /**
+     * Whether the menu takes the keyboard.
+     *
+     * A menu that narrows as a reader types must not: the platform hands the keyboard to whatever
+     * opened last, so an open menu swallows the rest of the word and the box stops filling.
+     * `GUI-29`.
+     */
+    takesKeys: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+        properties = PopupProperties(focusable = takesKeys),
+    ) {
         val column = this
         DisableSelection { column.content() }
     }

@@ -709,9 +709,11 @@ private fun ReferenceEditor(
                 )
             },
         )
+        // The keyboard stays in the box: a list that narrows as a name is typed cannot take it.
         Menu(
             expanded = open && (matches.isNotEmpty() || making != null),
             onDismissRequest = { open = false },
+            takesKeys = false,
         ) {
             for (match in matches) {
                 DropdownMenuItem(
