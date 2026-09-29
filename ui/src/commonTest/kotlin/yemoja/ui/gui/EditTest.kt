@@ -209,6 +209,16 @@ class MakingFromAReferenceTest {
             "offered with nothing typed, saying what it needs",
         )
     }
+
+    @Test
+    fun `keeping a name and making an item are two lines, and only one field takes both`() {
+        assertEquals("Keep \"John\" as a name only", keepingSaid("John"))
+        assertEquals("Keep as a name: type one", keepingSaid(" "))
+        val buddies = Types.DIVE["buddies"] as yemoja.data.ReferenceDescription
+        assertEquals(true, buddies.oneOffAllowed, "a buddy may be a name and nothing else")
+        val site = Types.DIVE["dive_site"] as yemoja.data.ReferenceDescription
+        assertEquals(false, site.oneOffAllowed, "a site has to be an item, so only making one shows")
+    }
 }
 
 class BegunTest {

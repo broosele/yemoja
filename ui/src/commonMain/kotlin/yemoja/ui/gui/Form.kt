@@ -725,6 +725,18 @@ private fun ReferenceEditor(
                     },
                 )
             }
+            // A name typed where one is allowed stays a name, and the line says so, so that
+            // keeping one and making an item are two deeds rather than one guess. `GUI-48`.
+            if (field.oneOffAllowed) {
+                DropdownMenuItem(
+                    text = { Text(keepingSaid(query.takeIf { naming })) },
+                    enabled = naming,
+                    onClick = {
+                        open = false
+                        onChange(query.trim(), givenOf(Kind.TEXT, query.trim()))
+                    },
+                )
+            }
             if (making != null) {
                 DropdownMenuItem(
                     text = { Text(makingSaid(making, query.takeIf { naming })) },
@@ -760,6 +772,16 @@ private fun keysOf(item: Item, collection: String): List<String> {
  */
 private fun makeable(type: ItemDescription): Boolean =
     type != Types.DIVE && type["name"] != null
+
+/**
+ * What the drop-down calls keeping [name] as a written name, on a field that allows one.
+ *
+ * A buddy nobody keeps an item for is a name and nothing else, and the field takes it. Saying so
+ * beside *make one* is what keeps the two apart: one grows the logbook, the other writes a word.
+ * `GUI-48`.
+ */
+internal fun keepingSaid(name: String?): String =
+    if (name.isNullOrBlank()) "Keep as a name: type one" else "Keep \"${name.trim()}\" as a name only"
 
 /**
  * What the drop-down calls making a new item of [type], called [name] where one is typed.

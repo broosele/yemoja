@@ -1503,6 +1503,14 @@ once and corrected. The numbers stay unused rather than being given to something
   Offering it only once a name was typed was the first shape, and it hid the feature from whoever
   opened the list to look.
 
+  **Keeping a name and making an item are two lines, where both are allowed.** A buddy, an
+  emergency contact and a dive computer may be a written name and nothing else — a *one-off*, as
+  `data/doc.md` has it — and a
+  name typed into such a field used to stay one silently — so making an item and writing a word
+  looked identical while they were being done. The list now says both: *Keep "John" as a name
+  only* above *New person: "John"*. A field that takes no written name, a dive site among them,
+  shows only the second, which is what makes the difference visible.
+
   **It is offered for every type but the dive.** Eight of the nine propose their id from a name,
   so a name is the whole of what making one needs, `LOGIC-23`. A dive is named for the day it was
   made on and has no name to give, so nothing offers to make one from a box.

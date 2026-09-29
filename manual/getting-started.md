@@ -141,7 +141,11 @@ you type.
 - A field pointing at another item finds it as you type its name, and its list always ends with
   **making one**: type a name nothing matches and the last line reads *New dive site: "Blue
   Hole"*, which makes the site and points the field at it. With nothing typed the line says
-  *type a name* and waits. The new item
+  *type a name* and waits.
+- Where a plain name is allowed — a buddy, an emergency contact, a dive computer you keep no
+  item for — the list offers both: **Keep "John" as a name only**, which writes the word and
+  nothing more, and **New person: "John"**, which makes the person. A dive site takes no plain
+  name, so there the only offer is to make the site. The new item
   is made straight away, so cancelling the form leaves it behind. Every type but a dive can be
   made this way, a dive being named for the day it was made on. A plain name is kept instead
   where one is allowed: a buddy, an emergency contact, or a dive computer you keep no item for.
