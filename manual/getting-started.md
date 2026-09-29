@@ -67,8 +67,10 @@ you made each month, widening the bars where there would be too many to read.
 - **Community** holds people, operators and certifications, each on a small tab of its own. You
   are marked among the people, and the tab opens on you.
 - **Locations** holds the regions of the world as a tree, the sites and wrecks in the one chosen,
-  and a map of it with your sites marked. **Hide unused**, which is on to begin with, leaves out
-  the sites none of your dives were at, and the regions left with nothing in them.
+  and a map of it with your sites marked. The tree ends with **No region** where a site names
+  none, which is where a site you have just made waits until you say where it is. **Hide
+  unused**, which is on to begin with, leaves out the sites none of your dives were at, and the
+  regions left with nothing in them.
 - **Calculations** gives a number from figures you type, with no dive to read them from.
   Choose what to calculate on the left; the form is on the right. See
   [Calculations](getting-started.md#calculations) below.
@@ -143,9 +145,11 @@ you type.
   Hole"*, which makes the site and points the field at it. With nothing typed the line says
   *type a name* and waits.
 - Where a plain name is allowed — a buddy, an emergency contact, a dive computer you keep no
-  item for — the list offers both: **Keep "John" as a name only**, which writes the word and
-  nothing more, and **New person: "John"**, which makes the person. A dive site takes no plain
-  name, so there the only offer is to make the site. The new item
+  item for, a dive site you dived once — the list offers both: **Keep "Nionplas" as a name
+  only**, which writes the word and nothing more, and **New dive site: "Nionplas"**, which makes
+  the site. Nothing is worked out from a plain name, so a dive whose site is one has no water
+  type, no altitude and no place on the map. A trip, an operator and a certification take no
+  plain name, so there the only offer is to make the item. The new item
   is made straight away, so cancelling the form leaves it behind. Every type but a dive can be
   made this way, a dive being named for the day it was made on. A plain name is kept instead
   where one is allowed: a buddy, an emergency contact, or a dive computer you keep no item for.

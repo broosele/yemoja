@@ -213,10 +213,23 @@ internal fun regionTreeOf(set: ItemSet): List<Branch> {
     val placed = HashSet<String>()
     for (branch in tree) gather(branch, placed)
     val lost = all.filter { it.id !in placed }
-    return tree + lost.map {
-        Branch(it.id, it.title + CIRCULAR, held = listOf(it))
-    }
+    val circular = lost.map { Branch(it.id, it.title + CIRCULAR, held = listOf(it)) }
+    // A site naming no region is under no region, and a tree is the only way into one. So the
+    // sites that hang nowhere hang here instead, rather than being unreachable. `GUI-25`.
+    val loose = looseSitesIn(set)
+    val unplaced = if (loose.isEmpty()) emptyList() else listOf(Branch(UNPLACED, "No region"))
+    return tree + circular + unplaced
 }
+
+/** The sites naming no region this logbook holds, which no branch of the tree would show. */
+internal fun looseSitesIn(set: ItemSet): List<Chosen> {
+    val regions = entriesOf(set, Types.REGION).map { it.id }.toHashSet()
+    return entriesOf(set, Types.DIVE_SITE)
+        .filter { site -> pointedAtAll(site.item, "regions").none { it in regions } }
+}
+
+/** The branch holding the sites that name no region. Not a region, and named by nothing else. */
+internal const val UNPLACED = "*unplaced"
 
 /** Every region a branch placed, itself and everything under it. */
 private fun gather(branch: Branch, into: MutableSet<String>) {
@@ -256,7 +269,9 @@ internal fun atPlaceIn(
 ): Pair<List<Chosen>, List<Chosen>> {
     val within = withinOf(set, region)
     val used = if (hideUnused) usedSitesIn(set) else null
-    val sites = entriesOf(set, Types.DIVE_SITE)
+    // A site nobody has dived yet is one somebody has just made, so the branch that holds what
+    // hangs nowhere shows them all. `GUI-26`.
+    val sites = if (region == UNPLACED) looseSitesIn(set) else entriesOf(set, Types.DIVE_SITE)
         .filter { used == null || it.id in used }
         .filter { pointedAtAll(it.item, "regions").any { named -> named in within } }
     val wrecks = LinkedHashMap<String, Chosen>()
@@ -295,6 +310,8 @@ internal fun usedSitesIn(set: ItemSet): Set<String> =
  * way, through two parents both cut out, is kept once.
  */
 internal fun shownTreeOf(set: ItemSet, hideUnused: Boolean): List<Branch> {
+    // What hangs nowhere is shown whether or not a dive names it: it is what a reader has just
+    // made, and hiding it is what sent them looking. `GUI-26`.
     val tree = regionTreeOf(set)
     if (!hideUnused) return tree
     val used = usedSitesIn(set)
@@ -306,7 +323,8 @@ internal fun shownTreeOf(set: ItemSet, hideUnused: Boolean): List<Branch> {
             direct[region] = (direct[region] ?: 0) + 1
         }
     }
-    return tree.flatMap { prunedOf(it, direct) }.distinctBy { it.key }
+    return tree.flatMap { if (it.key == UNPLACED) listOf(it) else prunedOf(it, direct) }
+        .distinctBy { it.key }
 }
 
 /** A branch pruned: nothing, itself trimmed, or the one child that stands in for it. */

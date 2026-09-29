@@ -354,9 +354,15 @@ internal fun Application(universe: Universe?, platform: Platform) {
                 item.description == Types.REGION -> there.place = chosen
                 to.shape == Shape.PLACES -> {
                     there.chosen = chosen
-                    // The map follows the site: a site in Egypt is looked at on Egypt.
-                    homeOf(universe.logbook, item)?.let { home ->
-                        universe.logbook[home]?.let { there.place = Chosen(home, titleOf(it), it) }
+                    // The map follows the site: a site in Egypt is looked at on Egypt. A site
+                    // naming no region is looked at where such sites hang. `GUI-25`.
+                    val home = homeOf(universe.logbook, item)
+                    there.place = when {
+                        home == null && item.description == Types.DIVE_SITE ->
+                            Chosen(UNPLACED, "No region", item)
+                        else -> home?.let { at ->
+                            universe.logbook[at]?.let { Chosen(at, titleOf(it), it) }
+                        } ?: there.place
                     }
                 }
                 to.shape == Shape.TYPES -> {

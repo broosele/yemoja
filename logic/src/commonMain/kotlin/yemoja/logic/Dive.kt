@@ -558,7 +558,9 @@ internal val DIVE: ItemDescription = ItemDescription(
             role = Role.Overrideable(::divesAverageDepth),
         ),
         BooleanDescription("deco", role = Role.Overrideable(::divesDeco)),
-        ReferenceDescription("dive_site", targetType = "dive_site"),
+        // A written name is allowed, as it is for a buddy: a quarry dived once on holiday is a
+        // name somebody remembers rather than an item worth keeping. `DATA-126`.
+        ReferenceDescription("dive_site", targetType = "dive_site", oneOffAllowed = true),
         ReferenceDescription(
             "buddies",
             targetType = "person",

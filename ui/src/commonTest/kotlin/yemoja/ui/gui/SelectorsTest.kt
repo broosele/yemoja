@@ -359,6 +359,47 @@ class HideUnusedTest {
     }
 }
 
+class UnplacedSitesTest {
+
+    private val set = logbook(
+        "region.json" to """{"zeeland": {"name": "Zeeland"}}""",
+        "dive_site.json" to """{
+            "zeelandbrug": {"name": "Zeelandbrug", "regions": ["@zeeland"]},
+            "nionplas": {"name": "Nionplas"}
+        }""",
+        "dive/2026-06-21#0.json" to """{"dive_site": "@zeelandbrug"}""",
+    )
+
+    @Test
+    fun `a site naming no region hangs where such sites hang, rather than nowhere`() {
+        assertEquals(listOf("Nionplas"), looseSitesIn(set).map { it.title })
+        val tree = shownTreeOf(set, hideUnused = false)
+        assertEquals(listOf("Zeeland", "No region"), tree.map { it.label })
+        assertEquals(listOf("Nionplas"), atPlaceIn(set, UNPLACED).first.map { it.title })
+    }
+
+    @Test
+    fun `it hangs there whether or not a dive names it, which a new one does not`() {
+        // A site nobody has dived is the one a reader has just made, and hiding it is what sent
+        // them looking for it.
+        val tree = shownTreeOf(set, hideUnused = true)
+        assertEquals(listOf("Zeeland", "No region"), tree.map { it.label })
+        assertEquals(
+            listOf("Nionplas"),
+            atPlaceIn(set, UNPLACED, hideUnused = true).first.map { it.title },
+        )
+    }
+
+    @Test
+    fun `a logbook whose sites all name a region has no such branch`() {
+        val placed = logbook(
+            "region.json" to """{"zeeland": {"name": "Zeeland"}}""",
+            "dive_site.json" to """{"zeelandbrug": {"name": "Zeelandbrug", "regions": ["@zeeland"]}}""",
+        )
+        assertEquals(listOf("Zeeland"), shownTreeOf(placed, hideUnused = false).map { it.label })
+    }
+}
+
 class HomeTest {
 
     private val set = logbook(

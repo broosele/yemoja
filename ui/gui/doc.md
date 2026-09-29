@@ -1491,6 +1491,12 @@ once and corrected. The numbers stay unused rather than being given to something
   So every reference's list ends with one more line — *New dive site: "Blue Hole"* — which makes
   the item with that name and points the reference at it.
 
+  **A site made this way names no region**, and the Locations tree lists a site under the
+  regions it names, so it hung nowhere and a reader could not find what they had just made. The
+  tree ends with *No region* where any such site exists, and that branch shows them whether or not
+  a dive names one — *Hide unused* is for the supplied sites nobody has dived, not for the one
+  made a moment ago. `GUI-25`, `GUI-26`.
+
   **The list does not take the keyboard.** A menu opens in a layer of its own and the platform
   hands the keys to whatever opened last, so a list that narrows as a name is typed swallowed the
   rest of the word: one letter opened it and the next went nowhere, which left the new-item line

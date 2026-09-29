@@ -2201,6 +2201,27 @@ Kept with their identifiers so earlier discussion still resolves.
   Sorting is not a third question for `ItemSet`. `DATA-4` holds: the set lists a type and names
   an item, and `inOrder` composes those two over an ordinary list.
 
+- **DATA-126 — Which fields take a written name instead of an item.** *Settled:* **a dive's
+  buddies and its site, a person's emergency contacts, and a recording's dive computer. Nothing
+  else.**
+
+  The four have one thing in common: the thing named may be worth recording and not worth keeping.
+  A buddy met once on a boat, a contact who is not a diver, a shop's rental computer, a quarry
+  dived on holiday and never again — each is a name somebody remembers, and forcing an item on
+  them is bookkeeping the logbook does not need. What a one-off asserts is nothing, `data/doc.md`
+  under *References and one-off values*: two dives naming `nionplas` claim no more than that both
+  were written down.
+
+  **The site joined the other three**, having been item-only. It was the same argument met from
+  the other side: a reader who dives a quarry once was made to build a site for it or leave the
+  dive placeless. What a site carries — its water, its elevation, its coordinates — is what the
+  model wants where there is one, and a dive that names a word simply has none of it, which is
+  what a dive with no site has today.
+
+  **A trip, an operator and a certification take no written name.** A trip gathers its dives by
+  reference and a name gathers nothing; an operator is looked up and rated; a certification hangs
+  a validity on itself. Each is an item or it is not recorded.
+
 - **DATA-125 — Whether a dive says when it ended.** *Settled:* **no. A dive says when it began
   and how long it ran, and `end_date` and `end_time` go, from the dive and from the recording
   alike.**

@@ -217,7 +217,9 @@ class MakingFromAReferenceTest {
         val buddies = Types.DIVE["buddies"] as yemoja.data.ReferenceDescription
         assertEquals(true, buddies.oneOffAllowed, "a buddy may be a name and nothing else")
         val site = Types.DIVE["dive_site"] as yemoja.data.ReferenceDescription
-        assertEquals(false, site.oneOffAllowed, "a site has to be an item, so only making one shows")
+        assertEquals(true, site.oneOffAllowed, "a quarry dived once is a name, as a buddy may be")
+        val trip = Types.DIVE["dive_trip"] as yemoja.data.ReferenceDescription
+        assertEquals(false, trip.oneOffAllowed, "a trip gathers dives, so it has to be an item")
     }
 }
 

@@ -185,7 +185,9 @@ All three can be corrected where the calculation is wrong.
   application cannot reproduce, and a second opinion arrived at years later would be
   answering a different question.
 
-- `dive_site` (reference) — where the dive was.
+- `dive_site` (reference or text) — where the dive was. A plain name is allowed for a place
+  you keep no site for: nothing is worked out from it, so a dive named this way has no water
+  type, no elevation and no place on the map.
 
 - `buddies` (list of references or text) — who you dived with. Plain names are allowed
   for people you have no item for.
