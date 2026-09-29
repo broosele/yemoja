@@ -1442,7 +1442,16 @@ private fun Subject(
             if (makeable.isEmpty()) null else { type -> kept.making = type }
         var asking by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
         var clearing by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
-        val going = if (kept.chosenMany.size > 1) kept.chosenMany else setOfNotNull(chosen?.id)
+        // Locations has two cards, a region and what is at it, so what a bin asks about is what
+        // it was pressed on rather than whatever the tab has chosen. `GUI-35`.
+        var pressed by remember(chosen, kept.chosenMany) { mutableStateOf(emptySet<String>()) }
+        val ask = { ids: Set<String> ->
+            pressed = ids
+            asking = true
+        }
+        val going = pressed.ifEmpty {
+            if (kept.chosenMany.size > 1) kept.chosenMany else setOfNotNull(chosen?.id)
+        }
         if (asking) {
             deleteAsked(set, going)?.let { asked ->
                 Confirm(
@@ -1463,12 +1472,8 @@ private fun Subject(
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             Selectable {
                 when {
-                    tab.shape == Shape.PLACES -> {
-                        PlaceView(set, atlas, kept.hideUnused, kept.place, chosen, onFollow)
-                    }
-                    kept.chosenMany.size > 1 -> {
-                        ManyView(set, kept.chosenMany, onFollow) { asking = true }
-                    }
+                    // A form being filled in comes before the tab's own view, Locations included:
+                    // pressing + there would otherwise open a form nothing showed. `GUI-35`.
                     kept.making != null -> {
                         NewCard(
                             type = kept.making!!,
@@ -1483,7 +1488,24 @@ private fun Subject(
                             },
                         )
                     }
-                    chosen != null -> ItemView(chosen, onFollow, makeable, add, { asking = true })
+                    tab.shape == Shape.PLACES -> {
+                        PlaceView(
+                            set = set,
+                            atlas = atlas,
+                            hideUnused = kept.hideUnused,
+                            place = kept.place,
+                            chosen = chosen,
+                            onFollow = onFollow,
+                            makeable = makeable,
+                            onAdd = add,
+                            onDelete = { id -> ask(setOf(id)) },
+                        )
+                    }
+                    kept.chosenMany.size > 1 -> {
+                        ManyView(set, kept.chosenMany, onFollow) { asking = true }
+                    }
+                    chosen != null ->
+                        ItemView(chosen, onFollow, makeable, add, { ask(emptySet()) })
                     // Where nothing is chosen the middle still offers to make one, which is the
                     // only way a logbook with nothing in it grows a first item. `GUI-35`.
                     making != null && add != null -> Empty(makeSaid(making)) { add(making) }
@@ -2214,6 +2236,9 @@ private fun PlaceView(
     place: Chosen?,
     chosen: Chosen?,
     onFollow: (String) -> Unit,
+    makeable: List<ItemDescription> = emptyList(),
+    onAdd: ((ItemDescription) -> Unit)? = null,
+    onDelete: ((String) -> Unit)? = null,
 ) {
     if (place == null && chosen == null) {
         Middle("choose a region on the left")
@@ -2229,9 +2254,23 @@ private fun PlaceView(
             }
             val frame = remember(set, place) { frameOf(place.item, dots) }
             if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)
-            ItemCard(place, onFollow)
+            ItemCard(
+                chosen = place,
+                onFollow = onFollow,
+                makeable = makeable,
+                onAdd = onAdd,
+                onDelete = onDelete?.let { delete -> { delete(place.id) } },
+            )
         }
-        if (chosen != null) ItemCard(chosen, onFollow)
+        if (chosen != null) {
+            ItemCard(
+                chosen = chosen,
+                onFollow = onFollow,
+                makeable = makeable,
+                onAdd = onAdd,
+                onDelete = onDelete?.let { delete -> { delete(chosen.id) } },
+            )
+        }
     }
 }
 

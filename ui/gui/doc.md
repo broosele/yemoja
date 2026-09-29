@@ -307,7 +307,7 @@ tab, a chapter at a time. Every tab has a screen behind it; none is a placeholde
 **An item's fields can be edited, and an item made and deleted.** A pencil on the item card
 turns it over into the edit form, which `GUI-29` describes, and an entry of a keyed collection
 can be taken out or added there. A **+** beside it makes another of the same type and a bin
-deletes, `GUI-35`, except on Locations, which offers neither. There is no journal to undo with.
+deletes, `GUI-35`. There is no journal to undo with.
 
 It opens as `yemoja gui [<logbook folder>]`, beside the terminal front end, and unlike that one
 it can be run from the build, a window needing no console. The folder is optional: with none it
@@ -1054,6 +1054,13 @@ once and corrected. The numbers stay unused rather than being given to something
    logbook with no trip in it has no trip to press plus on, so a trip could not be made at all.
    The list is the tab's own types and nothing else, so the Dives tab offers *Add a dive* and
    *Add a dive trip*, and a tab holding one type presses straight through as before.
+
+   *Amended:* **Locations has both buttons too**, having had neither. It shows two cards, a region
+   and what is at it, so the bin asks about the card it was pressed on rather than about whatever
+   the tab has chosen. Its list is *Add a region*, *Add a dive site* and *Add a wreck*, which is
+   the only way to make a first wreck: a wreck is reached through the site that names it, and a
+   logbook with none had none to reach. Deleting a region the supplied library holds is refused
+   where it is written, the libraries being read-only, and the reason is what the card says.
 
    **A branch of the gear tree chosen fills the form's first fields.** A reader looking at the
    cylinders who presses plus is adding a cylinder, and the category and the kind are answers the

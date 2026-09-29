@@ -163,7 +163,9 @@ anything that is not a cylinder. They are there under **more fields** when you n
 **Adding a tab** to something an item holds several of, or taking one away with its cross,
 happens at once rather than waiting for Save.
 
-**The + on a card** makes another item and opens it as a form. On a tab holding one kind it
+**The + on a card** makes another item and opens it as a form. On Locations it offers **Add a
+region**, **Add a dive site** and **Add a wreck**, and the bin there deletes whichever card you
+press it on — the region, or the site or wreck at it. On a tab holding one kind it
 makes that kind straight away; on a tab holding several it offers them in a list, the kind you
 are looking at first — so the Dives tab offers **Add a dive** and **Add a dive trip**, which is
 how the first trip in a logbook is made. Nothing is made until you save, and the item's id is
