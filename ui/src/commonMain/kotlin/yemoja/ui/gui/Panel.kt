@@ -261,11 +261,9 @@ private fun Asking(
         modifier = Modifier.fillMaxWidth().padding(top = HALF),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(GAP),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        // A box to a line: the panel is a column beside a tab, and three of them across it left
+        // each one a word wide. `GUI-38`.
+        Column(modifier = Modifier.weight(1f)) {
             Boxed("Allow changes", talk.writing) { talk.writing = it }
             Boxed("Allow files", talk.direct) { talk.direct = it }
             Boxed("Allow the internet", talk.online) { talk.online = it }

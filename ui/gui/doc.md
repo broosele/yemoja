@@ -955,7 +955,8 @@ once and corrected. The numbers stay unused rather than being given to something
   with *Stop* beside it — *Start* after a stop or a failed start; the conversation, a
   view of its own for copying; what the stance says while an agent is starting or thinking; how
   much is staged and the deed to review it, where anything is; and what to ask, with the two boxes
-  side by side to the left of *Ask*, drawn small so that they fit there. *Ask* is live only while an agent waits to be asked, and Enter presses it,
+  under each other to the left of *Ask*, a box to a line: the panel is a column beside a tab, and
+  three of them across it left each one a word wide. *Ask* is live only while an agent waits to be asked, and Enter presses it,
   Shift and Enter making a new line, as in any chat. While the agent answers, *Ask* gives way to
   *Interrupt*, which is the protocol's own cancel: the answer ends where it has got to and stays on
   the screen, and the agent stays running to be asked again. *Stop* is the other thing, and ends

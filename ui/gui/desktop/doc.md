@@ -92,7 +92,7 @@ what it means is argued there; what is here is where it goes on a large screen.
   **What it holds, top to bottom**: a title naming the agent the command names, with *Stop* beside
   it; the conversation, a view of its own for copying; what the stance says while an agent is
   starting or thinking; how much is staged and the deed to review it; and what to ask, with the two
-  boxes side by side to the left of *Ask*, drawn small so that they fit there. A table of before and
+  boxes under each other to the left of *Ask*, a box to a line. A table of before and
   after wants the window's width, which is why a review is a screen rather than a panel.
 
 - **DESK-10 — What a pointer does.** *Settled:* **a drag selects, a click chooses and clears the
