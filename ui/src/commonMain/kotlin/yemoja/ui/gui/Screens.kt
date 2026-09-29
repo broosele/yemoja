@@ -1408,9 +1408,11 @@ private fun Subject(
         VerticalDivider()
         val changer = LocalChanger.current
         val making = remember(tab, chosen) { makingOf(tab, chosen) }
+        val makeable = remember(tab, chosen) { makeableIn(tab, chosen) }
         // Pressing + opens a form and makes nothing: the item is made on Save, so its id is
         // minted from what was typed rather than from an item saying nothing. `GUI-35`.
-        val add: (() -> Unit)? = making?.let { type -> { kept.making = type } }
+        val add: ((ItemDescription) -> Unit)? =
+            if (makeable.isEmpty()) null else { type -> kept.making = type }
         var asking by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
         var clearing by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
         val going = if (kept.chosenMany.size > 1) kept.chosenMany else setOfNotNull(chosen?.id)
@@ -1454,10 +1456,10 @@ private fun Subject(
                             },
                         )
                     }
-                    chosen != null -> ItemView(chosen, onFollow, add, { asking = true })
+                    chosen != null -> ItemView(chosen, onFollow, makeable, add, { asking = true })
                     // Where nothing is chosen the middle still offers to make one, which is the
                     // only way a logbook with nothing in it grows a first item. `GUI-35`.
-                    making != null && add != null -> Empty(makeSaid(making), add)
+                    making != null && add != null -> Empty(makeSaid(making)) { add(making) }
                     else -> Middle("Select an item")
                 }
             }
@@ -2052,7 +2054,8 @@ internal fun Line(
 private fun ItemView(
     chosen: Chosen,
     onFollow: (String) -> Unit,
-    onAdd: (() -> Unit)? = null,
+    makeable: List<ItemDescription> = emptyList(),
+    onAdd: ((ItemDescription) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     opensEditing: Boolean = false,
 ) {
@@ -2062,6 +2065,7 @@ private fun ItemView(
         chosen = chosen,
         onFollow = onFollow,
         scrolls = true,
+        makeable = makeable,
         onAdd = onAdd,
         onDelete = onDelete,
         opensEditing = opensEditing,
@@ -2300,6 +2304,38 @@ private fun pathOf(
  * on it, read a hundred times a day and meant once; one that reddens as it is reached for says
  * the same thing at the moment it matters. `GUI-35`.
  */
+/**
+ * The **+** on a card: another of what is being looked at, and a menu where the tab makes more
+ * than one type.
+ *
+ * A tab holding two types cannot offer the second through *another of this*, a logbook with no
+ * trip in it having no trip to press it on. `GUI-35`.
+ */
+@Composable
+private fun Adder(makeable: List<ItemDescription>, onAdd: (ItemDescription) -> Unit) {
+    var choosing by remember { mutableStateOf(false) }
+    Box {
+        Explained(makeSaid(makeable.first()).takeIf { makeable.size == 1 }) {
+            IconButton(
+                onClick = { if (makeable.size == 1) onAdd(makeable.first()) else choosing = true },
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "add another")
+            }
+        }
+        Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
+            for (type in makeable) {
+                DropdownMenuItem(
+                    text = { Text(makeSaid(type)) },
+                    onClick = {
+                        choosing = false
+                        onAdd(type)
+                    },
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun Deleter(onDelete: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
@@ -2376,7 +2412,9 @@ private fun ItemCard(
     chosen: Chosen,
     onFollow: (String) -> Unit,
     scrolls: Boolean = false,
-    onAdd: (() -> Unit)? = null,
+    /** The types the tab can make, the one being looked at first. `GUI-35`. */
+    makeable: List<ItemDescription> = emptyList(),
+    onAdd: ((ItemDescription) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     /** Whether the card opens turned over, which an item made a moment ago does. `GUI-35`. */
     opensEditing: Boolean = false,
@@ -2423,10 +2461,8 @@ private fun ItemCard(
                         },
                     )
                 } else {
-                    onAdd?.let {
-                        IconButton(onClick = it) {
-                            Icon(Icons.Filled.Add, contentDescription = "add another")
-                        }
+                    if (onAdd != null && makeable.isNotEmpty()) {
+                        Adder(makeable, onAdd)
                     }
                     IconButton(onClick = { editing = true }) {
                         Icon(Icons.Filled.Edit, contentDescription = "edit")

@@ -41,6 +41,23 @@ class MadeTypeTest {
     }
 
     @Test
+    fun `a tab offers every type it holds, the one being looked at first`() {
+        // A logbook with no trip in it has no trip to press + on, so the tab has to offer one.
+        assertEquals(listOf(Types.DIVE, Types.DIVE_TRIP), makeableIn(dive, null))
+        val held = set("dive_trip.json" to """{"egypt": {"name": "Egypt"}}""")
+        assertEquals(listOf(Types.DIVE_TRIP, Types.DIVE), makeableIn(dive, chosen(held, "egypt")))
+        assertEquals(
+            listOf(Types.PERSON, Types.OPERATOR, Types.CERTIFICATION),
+            makeableIn(community, null),
+        )
+    }
+
+    @Test
+    fun `a tab holding no types makes nothing, and offers none`() {
+        assertEquals(emptyList(), makeableIn(TABS.first { it.name == "Home" }, null))
+    }
+
+    @Test
     fun `a tab holding no types makes nothing`() {
         assertNull(makingOf(TABS.first { it.name == "Home" }, null))
     }

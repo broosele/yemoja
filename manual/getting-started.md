@@ -155,9 +155,12 @@ anything that is not a cylinder. They are there under **more fields** when you n
 **Adding a tab** to something an item holds several of, or taking one away with its cross,
 happens at once rather than waiting for Save.
 
-**The + on a card** makes another item of the same kind, and opens it as a form. Nothing is
-made until you save, and the item's id is derived then, from what you typed. Where nothing
-is chosen, the middle of the screen offers to add one.
+**The + on a card** makes another item and opens it as a form. On a tab holding one kind it
+makes that kind straight away; on a tab holding several it offers them in a list, the kind you
+are looking at first — so the Dives tab offers **Add a dive** and **Add a dive trip**, which is
+how the first trip in a logbook is made. Nothing is made until you save, and the item's id is
+derived then, from what you typed. Where nothing is chosen, the middle of the screen offers to
+add one.
 
 On the Gear tab you can also click a category or a kind in the tree, which chooses it — the
 arrow beside it still folds it away. A new piece of gear added while one is chosen starts out

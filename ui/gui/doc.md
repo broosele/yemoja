@@ -1049,6 +1049,12 @@ once and corrected. The numbers stay unused rather than being given to something
    around, the regions the sites hang from — and the empty middle offers it in words, *Add a
    dive*, which is the only way a logbook with nothing in it grows a first item.
 
+   *Amended:* **on a tab holding more than one type, plus opens a list of them**, the one being
+   looked at first. *Another of this* answers the common case and cannot answer the first one: a
+   logbook with no trip in it has no trip to press plus on, so a trip could not be made at all.
+   The list is the tab's own types and nothing else, so the Dives tab offers *Add a dive* and
+   *Add a dive trip*, and a tab holding one type presses straight through as before.
+
    **A branch of the gear tree chosen fills the form's first fields.** A reader looking at the
    cylinders who presses plus is adding a cylinder, and the category and the kind are answers the
    screen watched them give. So a chosen branch puts its own words into `category`, and into

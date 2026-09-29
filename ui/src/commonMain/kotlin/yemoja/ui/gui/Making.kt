@@ -52,6 +52,19 @@ internal fun startedOf(type: ItemDescription, branch: String?): Map<String, Stri
 internal fun makeSaid(type: ItemDescription): String = "Add a " + labelOf(type).lowercase()
 
 /**
+ * Every type a tab can make, the one being looked at first.
+ *
+ * **A tab holding two types can make either.** *Another of what you are looking at* answers the
+ * common case and cannot answer the first: a logbook with no trip in it has no trip to look at,
+ * so a trip could not be made at all. The rest of the tab's types follow the first, and a tab
+ * holding one offers one. `GUI-35`.
+ */
+internal fun makeableIn(tab: Tab, chosen: Chosen?): List<ItemDescription> {
+    val first = makingOf(tab, chosen) ?: return emptyList()
+    return listOf(first) + tab.types.filter { it != first }
+}
+
+/**
  * What deleting [ids] from [set] asks, or nothing where there is nothing to ask about.
  *
  * Named where there is one, counted where there are several: a reader deleting a single dive
