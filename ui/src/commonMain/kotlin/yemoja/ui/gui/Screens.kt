@@ -229,6 +229,13 @@ internal class Kept {
     /** The item chosen, shown on the right. */
     var chosen: Chosen? by mutableStateOf(null)
 
+    /**
+     * Whether the branch gathering the sites that name no region is the one chosen.
+     *
+     * It holds no region, so it cannot be a `place` the way every other branch is. `GUI-25`.
+     */
+    var unplaced: Boolean by mutableStateOf(false)
+
     /** Every dive chosen, where several are: their statistics are shown instead. `GUI-23`. */
     var chosenMany: Set<String> by mutableStateOf(emptySet())
 
@@ -357,12 +364,13 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     // The map follows the site: a site in Egypt is looked at on Egypt. A site
                     // naming no region is looked at where such sites hang. `GUI-25`.
                     val home = homeOf(universe.logbook, item)
-                    there.place = when {
-                        home == null && item.description == Types.DIVE_SITE ->
-                            Chosen(UNPLACED, "No region", item)
-                        else -> home?.let { at ->
-                            universe.logbook[at]?.let { Chosen(at, titleOf(it), it) }
-                        } ?: there.place
+                    there.unplaced = home == null && item.description == Types.DIVE_SITE
+                    if (there.unplaced) {
+                        there.place = null
+                    } else {
+                        home?.let { at ->
+                            universe.logbook[at]?.let { there.place = Chosen(at, titleOf(it), it) }
+                        }
                     }
                 }
                 to.shape == Shape.TYPES -> {
@@ -1906,14 +1914,27 @@ private fun Places(
                         onToggle = { key ->
                             kept.open = if (key in open) open - key else open + key
                         },
-                        onChoose = onPlace,
+                        onChoose = { place ->
+                            kept.unplaced = false
+                            onPlace(place)
+                        },
+                        keyChosen = UNPLACED.takeIf { kept.unplaced },
+                        onChooseKey = { key ->
+                            if (key == UNPLACED) {
+                                kept.unplaced = true
+                                kept.place = null
+                            }
+                        },
                     )
                 }
             }
         }
         VerticalDivider()
-        val what = remember(set, place, hideUnused, LocalChanger.current.edition) {
-            place?.let { atPlaceIn(set, it.id, hideUnused) }
+        val what = remember(set, place, kept.unplaced, hideUnused, LocalChanger.current.edition) {
+            when {
+                kept.unplaced -> atPlaceIn(set, UNPLACED, hideUnused)
+                else -> place?.let { atPlaceIn(set, it.id, hideUnused) }
+            }
         }
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Selectable {
@@ -1951,6 +1972,9 @@ private fun LazyListScope.branchesIn(
     open: Set<String>,
     onToggle: (String) -> Unit,
     onChoose: (Chosen) -> Unit,
+    /** Which branch holding no item of its own is chosen, and what choosing one does. */
+    keyChosen: String? = null,
+    onChooseKey: (String) -> Unit = {},
 ) {
     for (branch in branches) {
         val key = path + "/" + branch.key
@@ -1959,13 +1983,21 @@ private fun LazyListScope.branchesIn(
                 label = branch.label,
                 depth = depth,
                 open = if (branch.children.isEmpty()) null else key in open,
-                chosen = branch.held.any { it.id == chosen?.id },
+                chosen = branch.held.any { it.id == chosen?.id } ||
+                    (branch.held.isEmpty() && branch.key == keyChosen),
                 onToggle = { onToggle(key) },
-                onClick = { branch.held.firstOrNull()?.let(onChoose) },
+                // A branch with no region of its own is still a place to stand: the one that
+                // gathers the sites naming no region. `GUI-25`.
+                onClick = {
+                    branch.held.firstOrNull()?.let(onChoose) ?: onChooseKey(branch.key)
+                },
             )
         }
         if (key in open) {
-            branchesIn(branch.children, key, depth + 1, chosen, open, onToggle, onChoose)
+            branchesIn(
+                branch.children, key, depth + 1, chosen, open, onToggle, onChoose,
+                keyChosen, onChooseKey,
+            )
         }
     }
 }

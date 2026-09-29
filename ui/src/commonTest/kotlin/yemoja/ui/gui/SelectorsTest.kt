@@ -391,6 +391,15 @@ class UnplacedSitesTest {
     }
 
     @Test
+    fun `the branch holds no region, so what chooses it is its key`() {
+        // Every other branch is chosen by the region it holds; this one has none to hold, which
+        // is why the tree reports the key instead.
+        val branch = shownTreeOf(set, hideUnused = false).single { it.key == UNPLACED }
+        assertEquals(emptyList(), branch.held.map { it.id })
+        assertEquals("No region", branch.label)
+    }
+
+    @Test
     fun `a logbook whose sites all name a region has no such branch`() {
         val placed = logbook(
             "region.json" to """{"zeeland": {"name": "Zeeland"}}""",
