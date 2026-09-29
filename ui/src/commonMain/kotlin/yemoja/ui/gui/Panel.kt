@@ -113,6 +113,15 @@ internal class Talk {
      */
     var direct: Boolean by mutableStateOf(false)
 
+    /**
+     * Whether an agent may reach the internet, the third box, off at the start of every
+     * conversation.
+     *
+     * What it fetches nobody here has read, and what it sends is the conversation it is having
+     * about this logbook. `API-5`.
+     */
+    var online: Boolean by mutableStateOf(false)
+
     /** How many of the agent's refused requests have been shown. `GUI-38`. */
     var shown: Int by mutableStateOf(0)
 }
@@ -128,7 +137,7 @@ internal class Talk {
 @Composable
 internal fun Panel(
     set: ItemSet,
-    conversing: (writing: () -> Boolean, direct: () -> Boolean) -> Conversation,
+    conversing: (writing: () -> Boolean, direct: () -> Boolean, online: () -> Boolean) -> Conversation,
     /** The command that starts the agent, as the settings hold it. `GUI-42`. */
     command: String,
     /** How many items an agent has staged, waiting to be reviewed. */
@@ -147,7 +156,7 @@ internal fun Panel(
     onFollow: (String) -> Unit,
 ) {
     val talk = remember { Talk() }
-    val conversation = remember { conversing({ talk.writing }, { talk.direct }) }
+    val conversation = remember { conversing({ talk.writing }, { talk.direct }, { talk.online }) }
     // Whatever was said before this panel opened has been read already: a panel opened again is
     // not a conversation carried on, and would otherwise begin with old news.
     val before = remember { told }
@@ -259,6 +268,7 @@ private fun Asking(
         ) {
             Boxed("Allow changes", talk.writing) { talk.writing = it }
             Boxed("Allow files", talk.direct) { talk.direct = it }
+            Boxed("Allow the internet", talk.online) { talk.online = it }
         }
         if (talk.stance == Stance.ANSWERING) {
             // The protocol's cancel: the agent stops where it is and stays running, and the
@@ -365,6 +375,7 @@ private fun start(
     talk.shown = 0
     talk.writing = false
     talk.direct = false
+    talk.online = false
     val turn = talk.turn
     scope.launch { started(talk, turn, startedWith(conversation, command)) }
 }

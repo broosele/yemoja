@@ -242,6 +242,14 @@ logbook opening, and the panel says so if that happens. Take a backup first, as 
 editing by hand. Running a command is never allowed, whatever is ticked. This box, too, starts
 empty for every conversation.
 
+**It can be let at the internet.** Tick *Allow the internet* and the agent may use its own
+tools to fetch a page — a dive site's description, a computer's manual, a table it does not carry.
+Two things to know before you do. Yemoja cannot see what it fetches or what it sends, so an agent
+that can read your logbook and reach the internet can put the one into the other. And this is not
+a lock on the agent's network: it is the window's answer when the agent asks, and a program on
+your computer has whatever network your computer gives it. The box starts empty for every
+conversation, like the others.
+
 **It works beside your logbook, not in it.** An agent writes files of its own as it goes — a note
 of which tools it has been allowed, and whatever else it keeps. Those go in a folder next to your
 logbook, named after it with `.agent` on the end, so your logbook stays your dives and nothing

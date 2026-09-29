@@ -200,7 +200,9 @@ internal class Platform(
      * tools read them on every call, a conversation being long enough for either answer to change
      * part way through. `GUI-38`, `API-5`.
      */
-    val conversing: ((writing: () -> Boolean, direct: () -> Boolean) -> Conversation)? = null,
+    val conversing:
+        ((writing: () -> Boolean, direct: () -> Boolean, online: () -> Boolean) -> Conversation)? =
+        null,
     /**
      * What this platform can do to a logbook as a whole, by deed.
      *

@@ -279,6 +279,24 @@ class ReachesOnlyFilesTest {
     }
 
     @Test
+    fun `the internet is a box of its own, and a fetch waits on it`() {
+        val fetch = { online: Boolean ->
+            allows(false, ToolKind.FETCH, at("https://example.test"), folders, false, online)
+        }
+        assertFalse(fetch(false), "off, a fetch is refused with everything else of its own")
+        assertTrue(fetch(true), "on, it is answered, whatever it names")
+        assertFalse(
+            allows(false, ToolKind.EXECUTE, at("https://example.test"), folders, true, true),
+            "a command is run for no box",
+        )
+        val inside = java.io.File(logbook, "person.json").path
+        assertFalse(allows(false, ToolKind.READ, at(inside), folders, false, true),
+            "the internet says nothing about the files")
+        assertTrue(allows(true, ToolKind.OTHER, null, folders, false, false),
+            "a tool of ours needs no box")
+    }
+
+    @Test
     fun `one location outside refuses the whole call, however it is spelled`() {
         val inside = java.io.File(logbook, "person.json").path
         val outside = java.io.File(logbook.parentFile, "elsewhere.json").path

@@ -92,6 +92,13 @@ class Hosted(
      * command is never run for it. `API-5`.
      */
     private val direct: () -> Boolean = { false },
+    /**
+     * Whether the user allows the agent the internet, asked whenever it asks.
+     *
+     * Off, a tool of its own that fetches is refused with the rest. On, it is allowed and nothing
+     * here reads what comes back: a fetch names a URL and the answer is somebody else's. `API-5`.
+     */
+    private val online: () -> Boolean = { false },
 ) {
 
     private var running: Process? = null
@@ -243,7 +250,7 @@ class Hosted(
             ),
         ) { _, _ ->
             val reach = listOf(java.io.File(folder), workingBeside(folder))
-            Refusing(NAME, refusals, reach, direct, calls)
+            Refusing(NAME, refusals, reach, direct, online, calls)
         }
     }
 
@@ -381,6 +388,7 @@ private class Refusing(
     /** The logbook and the agent's own folder, which is as far as direct access reaches. */
     private val folders: List<java.io.File>,
     private val direct: () -> Boolean,
+    private val online: () -> Boolean,
     /** What each tool call was announced as, which its permission request does not repeat. */
     private val calls: Calls,
 ) : ClientSessionOperations {
@@ -395,8 +403,7 @@ private class Refusing(
         // it will act were said when the call was announced, so they are looked up by its id.
         val kind = toolCall.kind ?: calls.kindOf(toolCall.toolCallId.value)
         val locations = toolCall.locations ?: calls.locationsOf(toolCall.toolCallId.value)
-        val atFiles = direct() && reachesOnlyFiles(kind, locations, folders)
-        if (!ours(called) && !atFiles) {
+        if (!allows(ours(called), kind, locations, folders, direct(), online())) {
             refused += called
             return RequestPermissionResponse(RequestPermissionOutcome.Cancelled)
         }
@@ -515,6 +522,29 @@ internal class Calls {
     fun locationsOf(id: String): List<ToolCallLocation>? = known[id]?.locations
 
     private class Announced(val kind: ToolKind?, val locations: List<ToolCallLocation>?)
+}
+
+/**
+ * Whether a request the agent makes is answered rather than cancelled.
+ *
+ * A tool of Yemoja's own is always answered: the tools are what an agent is given. Of its own,
+ * one that stays at the files is answered where the user allows the files, and one that fetches
+ * where they allow the internet. A fetch is the one kind whose reach is nobody's to check — what
+ * it asks for is a URL and what comes back is somebody else's — so the box is the whole of the
+ * answer. Everything else is refused, a command above all. `API-5`.
+ */
+internal fun allows(
+    ours: Boolean,
+    kind: ToolKind?,
+    locations: List<ToolCallLocation>?,
+    folders: List<java.io.File>,
+    direct: Boolean,
+    online: Boolean,
+): Boolean = when {
+    ours -> true
+    direct && reachesOnlyFiles(kind, locations, folders) -> true
+    online && kind == ToolKind.FETCH -> true
+    else -> false
 }
 
 /**

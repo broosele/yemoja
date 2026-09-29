@@ -28,6 +28,10 @@ What exists:
   so and ask, rather than looking for the files yourself. Once allowed, files tells you where
   they are and what to take care of. Even then the tools come first and a file is the last
   resort.
+- Your own fetching tools answer only while the user ticks *Allow the internet*, and are refused
+  until they do. Where one is refused, say what the user would tick rather than working around it.
+  What you fetch is nobody's here to check, so what you bring back is yours to weigh, and what
+  you send is this logbook's.
 
 Reading:
 - list returns every item of a type, a page at a time. Name the fields you need — max_depth,

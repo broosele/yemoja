@@ -37,6 +37,8 @@ internal class Talking(
     private val scope: CoroutineScope,
     /** Whether the user allows the agent at the logbook's files, asked whenever it asks. */
     private val direct: () -> Boolean = { false },
+    /** Whether the user allows the agent the internet, asked whenever it asks. `API-5`. */
+    private val online: () -> Boolean = { false },
     /**
      * Reads the logbook again after a turn in which the agent was allowed at its files, answering
      * what went wrong where it did.
@@ -63,7 +65,7 @@ internal class Talking(
         val words = command.trim().split(SPACES).filter { it.isNotEmpty() }
         require(words.isNotEmpty()) { "an agent should be named, and nothing was" }
         val started = Started(words.first(), words.drop(1))
-        val agent = Hosted(started, socket, folder, scope, direct = direct)
+        val agent = Hosted(started, socket, folder, scope, direct = direct, online = online)
         agent.open()
         hosted = agent
     }

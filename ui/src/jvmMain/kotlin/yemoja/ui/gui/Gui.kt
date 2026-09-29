@@ -83,7 +83,7 @@ fun gui(folder: String? = null): Int {
                 scrollbar = { state, modifier ->
                     VerticalScrollbar(rememberScrollbarAdapter(state), modifier)
                 },
-                conversing = { writing, direct ->
+                conversing = { writing, direct, online ->
                     val open = held
                     val where = at
                     if (open == null || where == null) {
@@ -96,7 +96,7 @@ fun gui(folder: String? = null): Int {
                     // changes, the other lets it at the files. `API-5`.
                     val tools = Tools(open, writing = writing, direct = direct)
                     val relay = ToolSocket(tools, eventThread())
-                    Talking(relay, where, scope, direct) {
+                    Talking(relay, where, scope, direct, online) {
                         when (val read = open.reload()) {
                             is Outcome.Refused -> "Yemoja could not read the logbook again after " +
                                 "the agent's turn: ${read.reason}. What the window shows may be " +

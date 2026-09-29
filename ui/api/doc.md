@@ -144,6 +144,22 @@ behaviour of its own, that behaviour is in the wrong place.
   withholding and the mark are gone, since half-kept machinery of that sort is worse than none —
   it reads as a promise.
 
+  *Extended:* **a third box, *Allow the internet*, answers the agent's own fetching tools.** An
+  agent asks the window before each tool of its own, and every such request was refused but the
+  ones that stay at the files. A question about a dive site, a computer's manual or a table the
+  agent does not carry is a fetch, and refusing all of them made the agent poorer than it is.
+
+  **A fetch is the one kind whose reach cannot be checked.** A file tool names the paths it will
+  touch and is held to the logbook and the agent's own folder; a fetch names a URL, and what comes
+  back is somebody else's. So the box is the whole of the answer, and what it answers is stated
+  plainly in the manual: an agent that can reach the internet and read your logbook can put the
+  one into the other.
+
+  **It is not a firewall.** The box answers what the agent *asks*; a program on this machine has
+  whatever network the machine gives it, and Yemoja neither grants nor takes that away. What the
+  box decides is whether the window says yes when the agent asks to fetch, and it is off at the
+  start of every conversation like the other two.
+
   **The write tools do nothing while *Allow changes* is unticked**, and it is off at the
   start of every conversation. Every call to one is refused, with a reply saying what the user
   would have to tick, so an agent asked to correct forty dives says so rather than reporting that
