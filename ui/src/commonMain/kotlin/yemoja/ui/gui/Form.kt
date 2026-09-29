@@ -687,10 +687,10 @@ private fun ReferenceEditor(
     // list to choose from.
     val matches = offered.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
         .take(MATCHES)
-    // A name nothing answers to is a name for something new, which is the ordinary way a site or
-    // a buddy first enters a logbook. `GUI-48`.
-    val making = target?.takeIf { makeable(it) && query.isNotBlank() }
-        ?.takeIf { matches.none { match -> match.title.equals(query, ignoreCase = true) } }
+    // Making one is offered whenever the list is, so that a reader who opens it meets the
+    // possibility rather than having to know it is there. `GUI-48`.
+    val making = target?.takeIf { makeable(it) }
+    val naming = query.isNotBlank() && matches.none { it.title.equals(query, ignoreCase = true) }
     val changer = LocalChanger.current
     Box {
         Compact(
@@ -725,10 +725,12 @@ private fun ReferenceEditor(
             }
             if (making != null) {
                 DropdownMenuItem(
-                    text = { Text(makingSaid(making, query)) },
+                    text = { Text(makingSaid(making, query.takeIf { naming })) },
+                    enabled = naming,
                     onClick = {
                         open = false
-                        val made = changer.change(listOf(Change.Add(making, mapOf("name" to Stored.Leaf(query.trim())))))
+                        val fields = mapOf("name" to Stored.Leaf(query.trim()))
+                        val made = changer.change(listOf(Change.Add(making, fields)))
                         val id = (made as? Outcome.Done)?.added?.firstOrNull()
                         if (id != null) onChange("@$id", "@$id")
                     },
@@ -757,9 +759,17 @@ private fun keysOf(item: Item, collection: String): List<String> {
 private fun makeable(type: ItemDescription): Boolean =
     type != Types.DIVE && type["name"] != null
 
-/** What the drop-down calls making a new item of [type] called [name]. */
-internal fun makingSaid(type: ItemDescription, name: String): String =
-    "New ${labelOf(type).lowercase()}: \"${name.trim()}\""
+/**
+ * What the drop-down calls making a new item of [type], called [name] where one is typed.
+ *
+ * The line is there either way, since a reader who has not typed anything still learns that a new
+ * one can be made from here. With nothing to call it there is nothing to make, so it says what to
+ * do instead of offering. `GUI-48`.
+ */
+internal fun makingSaid(type: ItemDescription, name: String?): String {
+    val what = labelOf(type).lowercase()
+    return if (name.isNullOrBlank()) "New $what: type a name" else "New $what: \"${name.trim()}\""
+}
 
 /** How many items a reference's drop-down offers at once; typing narrows them. */
 private const val MATCHES = 24

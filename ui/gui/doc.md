@@ -1482,8 +1482,14 @@ once and corrected. The numbers stay unused rather than being given to something
 
   A buddy met today and a site dived for the first time are the ordinary way a logbook grows, and
   before this the only way in was to leave the form, make the item on its own tab, and come back.
-  So a reference whose box holds a name that answers to nothing offers one more line — *New dive
-  site: "Blue Hole"* — which makes the item with that name and points the reference at it.
+  So every reference's list ends with one more line — *New dive site: "Blue Hole"* — which makes
+  the item with that name and points the reference at it.
+
+  **The line is there whether or not anything has been typed**, because a reader who has to know
+  it is there has not been told. With nothing to call the new item there is nothing to make, so it
+  reads *New dive site: type a name* and is greyed until the box holds a name nothing answers to.
+  Offering it only once a name was typed was the first shape, and it hid the feature from whoever
+  opened the list to look.
 
   **It is offered for every type but the dive.** Eight of the nine propose their id from a name,
   so a name is the whole of what making one needs, `LOGIC-23`. A dive is named for the day it was

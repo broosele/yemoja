@@ -203,6 +203,11 @@ class MakingFromAReferenceTest {
     fun `a name nothing answers to offers to make one, named as the type is`() {
         assertEquals("New dive site: \"Blue Hole\"", makingSaid(Types.DIVE_SITE, "Blue Hole"))
         assertEquals("New person: \"Anna\"", makingSaid(Types.PERSON, " Anna "), "trimmed")
+        assertEquals(
+            "New dive site: type a name",
+            makingSaid(Types.DIVE_SITE, null),
+            "offered with nothing typed, saying what it needs",
+        )
     }
 }
 
