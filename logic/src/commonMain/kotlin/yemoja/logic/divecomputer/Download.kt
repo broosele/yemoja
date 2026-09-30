@@ -468,9 +468,11 @@ internal fun joinedIn(held: Recording): Recording {
     }
     val mixed = held.gases.indices.filter { held.gases[it].gas != null }
     val tank = pressured.singleOrNull() ?: return held
-    val gas = mixed.singleOrNull() ?: return held
-    if (tank == gas) return held
-    if (held.gases[tank].gas != null) return held
+    val gas = mixed.filter { it != tank }.singleOrNull() ?: return held
+    // The tank slot may carry a mix of its own, and a computer that fills it in writes the same
+    // one: air against air says nothing about two cylinders. A different mix does, and stays two.
+    val theirs = held.gases[tank].gas
+    if (theirs != null && !theirs.equals(held.gases[gas].gas, ignoreCase = true)) return held
     if (held.samples.any { gas in it.pressures }) return held
     val switches = held.samples.filter { it.gas != null }
     val began = switches.singleOrNull() ?: return held
