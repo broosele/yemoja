@@ -152,6 +152,32 @@ them.
 - **FEAT-15 — More than one logbook.** *Answered by `JSON-8`:* any number may exist on
   disk and one is open at a time. What remains here is the convenience around it —
   remembering recent logbooks, switching without hunting for a folder.
+- **FEAT-25 — Scans of the papers a logbook stands on.** A photograph or a scan attached to a
+  `person`'s `courses`, `medical` and `insurance`, and to a piece of gear's `maintenances`: the
+  certification card, the doctor's certificate, the insurance card, the service receipt. Each of
+  those already records what a paper says and a date it runs to; none of them records the paper.
+  A diver asked to show a card on a boat has it on their phone rather than in a drawer at home.
+
+  **It is the first thing in a logbook that is not text**, which is what makes it more than a
+  field. Everything in [manual/data-format.md](manual/data-format.md) is readable and diffable,
+  and an image is neither, so the files go beside the logbook rather than into it and a field
+  holds the name of one. Where exactly, and whether a name is a path or an id, is the data
+  layer's to settle.
+
+  Three things it drags in, none of them hard but none of them free:
+
+  - **Size.** `FEAT-5` moves a logbook between installations, and a folder of scans is the first
+    thing that makes one large. Whether they travel with it, or are left behind like a cache, is
+    a decision that belongs with that feature rather than after it.
+  - **Privacy.** A scanned medical certificate is the most sensitive thing a logbook would hold,
+    and `API-5` sends an agent everything it reads. What an agent does about a file it cannot
+    read as text — and what it may do with one while *Allow raw file access* is ticked — needs an
+    answer before the first scan lands, not after.
+  - **Export.** UDDF has nowhere to put one, so an exported logbook loses them silently unless
+    [logic/uddf.md](logic/uddf.md) says otherwise.
+
+  Future rather than planned: nothing depends on it, and the three questions above are worth
+  answering deliberately rather than in a hurry.
 
 ## Low priority
 
