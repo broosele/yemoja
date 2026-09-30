@@ -313,13 +313,61 @@ class Tools(
         if (held.description != Types.DIVE) {
             return refused("$dive is a ${held.description.name} rather than a dive")
         }
-        // Staging reaches a field, and an entry of a keyed collection is not one: `set` walks a
-        // path and refuses to stop on the collection itself. So a plan can be staged as a dive of
-        // its own and not yet on to a dive that is already there. `API-9`.
-        return refused(
-            "a plan can only be staged as a new dive for now. Leave out dive, or ask the user to " +
-                "attach it to $dive themselves from the Calculations tab.",
-        )
+        // A new entry, never one already there: staging over a plan the user has would be
+        // rewriting it field by field, which is a different request and should be asked as one.
+        val profiles = held.read(PROFILES)
+        if ((profiles as? Result.Usable)?.value.let { it as? Map<*, *> }?.containsKey(made.key) == true) {
+            return refused(
+                "$dive already has a plan called ${made.key}. Give this one another name.",
+            )
+        }
+        val first = (profiles as? Result.Usable)?.value.let { it as? Map<*, *> }.isNullOrEmpty()
+        // Each field of the plan is staged on its own path, the entry being made on the way to
+        // the first of them, which is how a review shows it and how applying lands it. `RECON-8`.
+        val profile = (Types.DIVE[PROFILES] as OwnedItemDescription).description
+        return staging { staging ->
+            for ((path, value) in leavesOf(profile, "$PROFILES.${made.key}", made.fields)) {
+                val done = staging.set(dive, path, value)
+                if (done is Outcome.Refused) return@staging done
+            }
+            // A dive with no profile until now works from this one, as `onDiveOf` has it.
+            if (first) {
+                val done = staging.set(dive, "primary_profile", "*${made.key}")
+                if (done is Outcome.Refused) return@staging done
+            }
+            Outcome.Done()
+        }
+    }
+
+    /** The collection a dive's recordings and plans are kept in. */
+    private val PROFILES = "profiles"
+
+    /**
+     * The fields [members] holds as paths under [prefix], each ending at a value.
+     *
+     * A block is gone into and a keyed collection is gone into entry by entry, because staging
+     * reaches a value and refuses a whole block. The order is the members' own.
+     */
+    private fun leavesOf(
+        description: ItemDescription,
+        prefix: String,
+        members: Map<String, Stored>,
+    ): List<Pair<String, Stored>> {
+        val out = ArrayList<Pair<String, Stored>>()
+        for ((name, held) in members) {
+            val field = description[name]
+            val inside = (held as? Stored.Members)?.members
+            when {
+                field !is OwnedItemDescription || inside == null -> out += "$prefix.$name" to held
+                field.cardinality == Cardinality.SINGLE ->
+                    out += leavesOf(field.description, "$prefix.$name", inside)
+                else -> for ((key, entry) in inside) {
+                    val entryFields = (entry as? Stored.Members)?.members ?: continue
+                    out += leavesOf(field.description, "$prefix.$name.$key", entryFields)
+                }
+            }
+        }
+        return out
     }
 
     /**

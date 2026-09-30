@@ -164,7 +164,8 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
                 property(
                     "path",
                     "The field: rating, environment.visibility, or gas_sources.g1.usage for a " +
-                        "field inside an entry of a keyed collection.",
+                        "field inside an entry of a keyed collection. A key the item does not " +
+                        "have yet makes that entry.",
                 )
                 property(
                     "value",

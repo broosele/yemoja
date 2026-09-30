@@ -377,6 +377,23 @@ columns mapped by the user rather than guessed.
 
   What shows all this is the window's, `GUI-38`.
 
+  *Extended:* **a field inside an entry not there yet can be staged, and the entry is made on the
+  way.** A path through a keyed collection names the entry by its key, `gas_sources.deco.gas_type`,
+  and the walk to it now makes an empty entry under a key it does not find, exactly as it already
+  made a single block a dive did not have. That was never decided against: the block case was added
+  when a test found it, and the entry case, one level down, was not. Until then an agent could not
+  add a gas source, a course or a plan to anything that already existed.
+
+  **The entries already there keep their objects.** The new one is added beside them rather than
+  the collection being written afresh. Applying resolves every staged field to the entry it sits in
+  before any lands, so rebuilding the collection for one new entry would leave the other fields of
+  that item aimed at entries no longer in it, and they would land on nothing.
+
+  **A key is what the format's proposals produce**, `JSON-18`: letters, digits and `_`, with `#`
+  and `-` for the suffix that parts two alike. Anything else is refused by name — a dot would split
+  the path and a marker would make a reference to it ambiguous. An entry named and then left with
+  nothing in it is no change, and nothing of it is written.
+
 - **RECON-4 — Whether importers are also exporters.** *Settled:* **for UDDF, yes, and export is
   not reconciliation.** One package reads and writes the format, `logic/uddf`, so the mapping is
   one table read in both directions and a vocabulary crossing it is one list of pairs. Export

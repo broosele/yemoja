@@ -187,6 +187,16 @@ private fun shapedOf(value: Any?): Any? = when (value) {
     else -> value
 }
 
+/**
+ * Whether [key] can name an entry of a keyed collection.
+ *
+ * What `JSON-18`'s proposals produce: letters, digits and `_`, with `#` and `-` for the suffix
+ * that parts two entries proposed alike. A dot would split the path it is written in, and a space
+ * or a marker would make a reference to it ambiguous.
+ */
+internal fun isKey(key: String): Boolean =
+    key.isNotEmpty() && key.first() != '#' && key.all { it.isLetterOrDigit() || it in "_#-" }
+
 /** One member of a list or a map, as a [Stored] node. */
 private fun shapedAs(value: Any?): Stored = when (value) {
     is Stored -> value
@@ -404,6 +414,9 @@ private fun unreadableIn(name: String, made: Result<Any>): String? {
      * rather than a value, and what the caller meant is a field inside it.
      */
     private fun unreachable(type: ItemDescription, path: String): String {
+        badKeyIn(type, path)?.let { key ->
+            return "$key is not a key: a key is letters, digits and _, # or -, as `Plan_A` or `bottom`"
+        }
         val field = describedAt(type, path)
         if (field is OwnedItemDescription) {
             val inside = field.description.fields
@@ -412,6 +425,25 @@ private fun unreadableIn(name: String, made: Result<Any>): String? {
             return "$path is a set of fields rather than a value. Name one inside it: $inside"
         }
         return "${type.name} has no field at $path"
+    }
+
+    /** The first key [path] names inside a keyed collection that could not be one, or absent. */
+    private fun badKeyIn(type: ItemDescription, path: String): String? {
+        val segments = path.split('.')
+        var description = type
+        var index = 0
+        while (index < segments.size) {
+            val field = description[segments[index]] as? OwnedItemDescription ?: return null
+            if (field.cardinality == Cardinality.SINGLE) {
+                index += 1
+            } else {
+                val key = segments.getOrNull(index + 1) ?: return null
+                if (!isKey(key)) return key
+                index += 2
+            }
+            description = field.description
+        }
+        return null
     }
 
     /**
@@ -493,18 +525,54 @@ private fun unreadableIn(name: String, made: Result<Any>): String? {
                 if (made is Result.Unusable) return null
                 at.apply(field.name, made)
             }
+            if (field.cardinality == Cardinality.KEYED) {
+                val key = segments.getOrNull(index + 1) ?: return null
+                if (!isKey(key)) return null
+                if (!entered(at, field, key)) return null
+            }
             val value = (at.read(field.name) as? Result.Usable)?.value ?: return null
             if (field.cardinality == Cardinality.SINGLE) {
                 at = value as? Item ?: return null
                 index += 1
             } else {
-                val key = segments.getOrNull(index + 1) ?: return null
+                val key = segments[index + 1]
                 at = ((value as? Map<*, *>)?.get(key) as? Element.Usable<*>)?.value as? Item
                     ?: return null
                 index += 2
             }
         }
         return null
+    }
+
+    /**
+     * Makes sure the keyed collection [field] of [item] has an entry under [key], adding an empty
+     * one where it has none, and says whether it has one now.
+     *
+     * **The entries already there keep their objects.** The new one is added beside them rather
+     * than the collection being written afresh, because applying resolves each staged field to the
+     * entry it sits in before any of them lands: rebuilding the collection for one new entry would
+     * leave every other field of that item aimed at an entry no longer in it, and lost. The same
+     * shape as a single block made on the way through, one level down. `RECON-8`.
+     */
+    private fun entered(item: Item, field: OwnedItemDescription, key: String): Boolean {
+        val held = item.read(field.name)
+        val entries = when (held) {
+            is Result.Usable -> held.value as? Map<*, *> ?: return false
+            Result.Absent -> emptyMap<String, Any>()
+            is Result.Unusable -> return false
+        }
+        if (entries.containsKey(key)) return true
+        val made = item.prepared(
+            field.name,
+            Stored.Members(mapOf(key to Stored.Members(emptyMap()))),
+            Units.DEFAULT,
+        ) as? Result.Usable ?: return false
+        val added = (made.value as? Map<*, *>)?.get(key) ?: return false
+        @Suppress("UNCHECKED_CAST")
+        val beside = LinkedHashMap(entries as Map<String, Any>)
+        beside[key] = added
+        item.apply(field.name, Result.Usable(beside, made.origin))
+        return true
     }
 
     /** Every field that differs between [was] and [would], as a file would write each of them. */

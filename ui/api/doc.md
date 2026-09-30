@@ -107,12 +107,11 @@ behaviour of its own, that behaviour is in the wrong place.
   reports a plan. An agent answering a question about a dive nobody has made yet is the one place
   in this application where a figure could be read as advice, and the words are `decompression.md`'s.
 
-  Open, and a real limit rather than a choice: **a plan can only be staged as a new dive.**
-  `Staging.set` walks a path to a field, and an entry of a keyed collection is not one — so
-  *this plan, on that dive* has nothing to stage through. Asked for one, `create_plan` refuses and
-  says the user can attach it themselves. Teaching staging to carry a whole owned collection, or an
-  entry of one, would settle it and is not this decision's to make: it is `RECON-8`'s, and the same
-  gap stops an agent adding a gas source to a dive.
+  **A plan goes onto a dive that exists, or onto a new one.** Onto an existing dive it is staged a
+  field at a time under a new entry of the dive's `profiles`, which staging makes on the way,
+  `RECON-8`; the review shows every field it brings. A name the dive already has is refused rather
+  than staged over — rewriting a plan the user has is a different request — and a dive with no
+  profile until then is worked from the plan, as attaching one in the window does.
 
 - **API-8 — How a plan reaches something outside the application.** *Settled:* **a command that
   reads a file of plans and writes what they come to.**

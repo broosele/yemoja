@@ -60,7 +60,8 @@ Planning:
   changes nothing, so it is always allowed. The chapter planning-from-a-file.md gives every field.
 - The model is not a dive computer and has been neither certified nor validated as one. Say so
   when you report a plan, and never present one as what the user should follow in the water.
-- create_plan stages a plan onto a dive, like any other change: it waits for the user.
+- create_plan stages a plan onto a dive, or onto a new dive where none is named, like any other
+  change: it waits for the user.
 
 Changing:
 - You can propose changes, and only propose them: stage_set, stage_add, stage_delete and

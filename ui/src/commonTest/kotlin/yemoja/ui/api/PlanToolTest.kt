@@ -76,20 +76,45 @@ class PlanToolTest {
     }
 
     @Test
-    fun `a plan on a dive that already exists is refused, and says what to do instead`() {
-        // Staging reaches a field, and an entry of a keyed collection is not one. `API-9`.
+    fun `a plan staged on a dive that exists waits, and lands beside what the dive holds`() {
         val universe = universeOf(
             "dive/2026-06-21#0.json" to
-                """{"profiles": {"p": {"depth": [[0, 0], [60, 12.0], [120, 0]]}}}""",
+                """{"primary_profile": "*p", "profiles": {"p": {"depth": [[0, 0], [60, 12.0], [120, 0]]}}}""",
+        )
+        val tools = Tools(universe, writing = { true })
+        val reply = tools.createPlan(plan(), dive = "2026-06-21#0", name = "Plan A")
+        assertTrue(!reply.refused, reply.text)
+        val dive = assertNotNull(universe.logbook["2026-06-21#0"])
+        fun profiles(): Set<Any?> = ((dive.read("profiles") as Result.Usable<*>).value as Map<*, *>).keys
+        assertEquals(setOf("p"), profiles(), "nothing lands until the user applies it")
+        val staged = assertNotNull(universe.staging).staged.single()
+        assertTrue(staged.fields.all { it.at.startsWith("profiles.Plan_A.") }, "one path per field")
+        val applied = universe.staging!!.apply()
+        assertTrue(applied.refused.isEmpty(), applied.refused.toString())
+        assertEquals(setOf("p", "Plan_A"), profiles(), "the recording stays where it was")
+        assertEquals("*p", (dive.read("primary_profile") as Result.Usable<*>).value.toString(), "and stays primary")
+    }
+
+    @Test
+    fun `a plan on a dive that has none becomes the one the dive is worked from`() {
+        val universe = universeOf("dive/2026-06-21#0.json" to """{"rating": 4}""")
+        val tools = Tools(universe, writing = { true })
+        assertTrue(!tools.createPlan(plan(), dive = "2026-06-21#0", name = "Plan A").refused)
+        universe.staging!!.apply()
+        val dive = assertNotNull(universe.logbook["2026-06-21#0"])
+        assertEquals("*Plan_A", (dive.read("primary_profile") as Result.Usable<*>).value.toString())
+    }
+
+    @Test
+    fun `a name the dive already has is refused rather than written over`() {
+        val universe = universeOf(
+            "dive/2026-06-21#0.json" to """{"profiles": {"Plan_A": {"depth": [[0, 0], [60, 9.0]]}}}""",
         )
         val tools = Tools(universe, writing = { true })
         val reply = tools.createPlan(plan(), dive = "2026-06-21#0", name = "Plan A")
         assertTrue(reply.refused)
-        assertTrue("only be staged as a new dive" in reply.text, reply.text)
-        assertTrue("Calculations tab" in reply.text, "and what the user can do instead")
-        val dive = assertNotNull(universe.logbook["2026-06-21#0"])
-        val profiles = (dive.read("profiles") as Result.Usable<*>).value as Map<*, *>
-        assertEquals(setOf("p"), profiles.keys, "and the dive is untouched")
+        assertTrue("already has a plan called Plan_A" in reply.text, reply.text)
+        assertTrue(universe.staging?.staged.isNullOrEmpty(), "and nothing is staged")
     }
 
     @Test
