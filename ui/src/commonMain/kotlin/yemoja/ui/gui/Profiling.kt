@@ -1036,7 +1036,7 @@ internal fun PlanForm(
 
 /** One line of what the model objects to, in the error colour where it is a fault. */
 @Composable
-private fun Warning(text: String, wrong: Boolean) {
+internal fun Warning(text: String, wrong: Boolean) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,

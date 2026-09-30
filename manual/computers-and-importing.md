@@ -27,26 +27,28 @@ the code is remembered there.
 
 ## Looking over what arrived
 
-Every dive that arrived is a line, oldest first: when it started, how long it was, how deep,
-and which computer recorded it.
+Every dive that arrived is a box, oldest first, headed by when it started, how long it was, how
+deep, and which computer recorded it. Each has three choices, one of them already chosen:
 
-- **Import as dive N** takes it in as a new dive, numbered one after the highest number in your
-  logbook.
-- **Merge** is offered where the dive overlaps one you already have. Nobody is on two
-  dives at once, so the two are recordings of the same dive, and the recording is added to the
-  one you have.
+- **Merge** where the dive overlaps one you already have. Nobody is on two dives at once, so the
+  two are recordings of the same dive, and the recording is added to the one you have. It is
+  chosen to begin with wherever it applies, and greyed where it does not.
+- **Import as dive N** takes it in as a new dive. The number follows from the boxes above: a
+  merged dive takes none, a skipped one takes none, so change one and the numbers below move.
+- **Skip** leaves it waiting, to be looked at another time.
 
-A line also says when a dive was merged from several recordings, because the computer
+A box also says when a dive was pieced together from several recordings, because the computer
 cut it in two, and when it is a dive this logbook already holds.
 
-**Where a dive recorded a position**, the line asks where it was: the three nearest of your dive
-sites, **No site**, or a new site you name in the box. Pressing **Create site** makes it straight
-away, and importing the dive makes it too, so a name typed and left is not lost. The new site takes
-its name as its id and keeps the position the computer recorded. A dive left unanswered goes in
-with no site.
+**Where a dive recorded a position**, the box asks where it was, with a chooser: the three nearest
+of your dive sites with how far off each is, **No site**, or **New site**, named in the box beside
+it. Typing a name chooses *New site* by itself. The new site takes its name as its id and keeps the
+position the computer recorded. A dive left at *No site* goes in with none.
 
-**Import all** takes every line as it stands. **Close** closes the list without taking in what is
-left, which stays waiting to be reviewed later.
+**Nothing happens until you press Apply.** Every choice can be changed until then, and the line
+beside the button counts what it will do — *1 merged, 2 imported, 1 left staged*. Apply works
+down the list and stops at the first thing it cannot do, saying why under that box; what is
+above has landed and what is below is still waiting. **Close** leaves everything waiting.
 
 What has arrived but not been decided is kept in a folder beside your logbook, with `.import`
 after its name. It is not part of your logbook.

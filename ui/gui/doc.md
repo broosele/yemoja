@@ -1181,9 +1181,9 @@ once and corrected. The numbers stay unused rather than being given to something
    pointing at. The picker is the platform's, like the two that open and make a logbook, and the
    deed is greyed where a platform has none.
 
-   **The dives are reviewed with the machinery a download already has**, `GUI-31`: a line
-   apiece, what each appears to be a second copy of, and a button to put it together with that
-   one or take it as a dive of its own. The question is the same question — *which of these am I
+   **The dives are reviewed with the machinery a download already has**, `GUI-31`: a box
+   apiece, what each appears to be a second copy of, and a choice held until *Apply* of whether
+   to put it together with that one, take it as a dive of its own, or leave it. The question is the same question — *which of these am I
    already holding* — and the answer machinery does not care what put them there. It asks only
    where the source carried no ids of its own, which today means UDDF.
 
@@ -1289,10 +1289,34 @@ once and corrected. The numbers stay unused rather than being given to something
   way through is a thing a reader should know happened rather than discover. `LOGIC-25` does the
   gluing before any of it is a dive; this only reports it.
 
-  *Import all* does every row as its own button would, for a reader who has read the list and
-  agrees. *Close* keeps them staged, where they are found again and where the terminal
-  front end can review them. Taking in stops at the first refusal and leaves the rest: what is in
-  the folder is what has not been decided, `RECON-1`.
+  *Close* keeps them staged, where they are found again and where the terminal front end can
+  review them. Taking in stops at the first refusal and leaves the rest: what is in the folder is
+  what has not been decided, `RECON-1`.
+
+  *Amended:* **a decision is a choice held until *Apply*, not a button that acts.** The first
+  review had *Merge* and *Import as dive N* as buttons, each landing the dive the moment it was
+  pressed, and the site question as a row of buttons that vanished once one was chosen. Three
+  things were wrong with it, all reported at once: the dives ran together with nothing between
+  them; nothing could be unmade, since every press was the deed; and the list changed shape under
+  the pointer, a row losing its buttons or its question as soon as it was answered.
+
+  So each dive is a box of its own, and what is decided about it is held in the review — the
+  model's own answers, `answered`, `namedAs` and `takeIn`, each land the moment they are called
+  and cannot be taken back, which is exactly why the review keeps its own copy. Three choices sit
+  on every row, *Merge*, *Import as dive N* and *Skip*, one of them chosen: *Merge* wherever the
+  dive appears to be one already held, which is what *Import all* did, and *Import* otherwise.
+  *Merge* is greyed rather than left out where it does not apply, so the rows keep one shape.
+  Where the dive came with a fix, a chooser offers the nearest sites, *No site* and *New site*,
+  with the name box beside it always there; typing a name chooses *New site*, a name typed being
+  an answer. *Apply* does all of it, oldest first, and stops at the first refusal, saying which
+  box it stopped at. A line beside it counts what it will do, so the review can be read before it
+  is pressed. `Arrivals.kt`.
+
+  **A row's number follows the decisions above it.** The model numbers arriving dives once, from
+  their default decisions, so two dives took one number the moment a merge was declined. The
+  review counts for itself — advanced only by a row decided *Import* — and *Apply* reads each dive
+  afresh once the ones before it have landed, so what it is numbered and what it appears to be
+  both follow from the logbook as it stands by then.
 
   **Where a dive was made is asked, not guessed.** A device says where it was and nothing more,
   and a fix is not a site: a site has a name, a water type and its regions, none of which is in
