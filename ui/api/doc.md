@@ -60,11 +60,21 @@ behaviour of its own, that behaviour is in the wrong place.
 - **API-1 — What kind of interface?** An in-process library binding, a command-line tool,
    or a local server. These serve different users and are not mutually exclusive.
    *Answered for an agent by `API-4`:* a local MCP server, run inside the application.
-- **API-3 — Whether it may run against a logbook the GUI has open**, and what that means for
-   concurrent access. It does not arise for an agent, whose server runs in the window's own
-   process.
 
 ## Settled
+
+- **API-3 — Whether something may run against a logbook the window has open.** *Settled:*
+  **a lock for editing.** Whoever opens a logbook to change it takes a lock beside it, and a
+  second opener is refused and told what has it and where the lock is. Reading needs no lock:
+  `yemoja plan` opens no logbook at all, and a future reading command opens one without taking
+  the lock. What the lock is and where it lives is the format's, `JSON-27`.
+
+  It does not arise for an agent, whose server runs in the window's own process and works on the
+  Universe the window holds.
+
+  **The window refuses rather than opening read-only.** A read-only window is a window in which
+  every pencil, bin and box has to know it is read-only, which is a feature of its own; a refusal
+  that names the other window is what a reader with two windows open actually needs.
 
 - **API-2 — Who the interface is for.** *Settled:* **third parties as much as our own tooling,
   and one set of functions serves both.**

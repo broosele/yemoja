@@ -345,6 +345,23 @@ To settle when we discuss architecture:
    Nulls are never stored and absent means absent, so `null` is not available to mean
    "this field did not exist". Adding a field and changing one must still be told
    apart.
+- **JSON-27 — How a logbook says it is open for editing.** *Settled:* **a folder beside it,
+  named after it with `.lock` on the end, holding one file that says what took it.**
+
+  A folder rather than a file because making one is the one thing every file system does
+  atomically: two windows racing for one logbook get one winner and one refusal, with no moment
+  where both believe they hold it. Beside the logbook rather than in it for the reason `.import`,
+  `.proposed` and `.agent` are: the logbook stays the reader's dives and nothing else, and a
+  sync that carries the folder does not carry a lock from another machine with it.
+
+  **A lock nobody released stays until somebody removes it.** Nothing portable can tell a window
+  that crashed from one still running, so the refusal says where the folder is and the manual
+  says to delete it. A file-system lock that dies with its process would be better, and is not
+  available to every platform this is meant to reach.
+
+  A logbook that will not read is not held: the lock is taken before the files are read and
+  released again if reading refuses, so a window that never opened leaves nothing behind.
+
 - **JSON-26 — What a writer works from.** *Settled:* **the file it is about to replace**, not
    the item set.
 

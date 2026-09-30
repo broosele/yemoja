@@ -18,6 +18,11 @@ buttons.
 
 The folder can also be named when Yemoja is started, and it then opens straight away.
 
+**A logbook is open in one window at a time.** Opening it for editing puts a folder beside it,
+named after it with `.lock` on the end, and a second window is refused and told so. If Yemoja
+stopped without closing — a crash, a machine switched off — that folder is left behind and the
+next opening is refused too: delete it and open again.
+
 **Tell Yemoja which person you are.** A new logbook names nobody, and until it knows, it cannot
 say which medical and which insurance are yours to be warned about, or which certifications are.
 Add yourself on the Community tab, then press the **person** button on your card, beside the

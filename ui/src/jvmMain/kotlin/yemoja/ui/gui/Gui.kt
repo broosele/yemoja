@@ -109,6 +109,8 @@ fun gui(folder: String? = null): Int {
                     Deed.NEW to {
                         chosen("New logbook", "Create")?.let { where ->
                             made(where)?.let {
+                                // The logbook being left is let go, so another window may have it.
+                                held?.close()
                                 at = where
                                 held = it
                             }
@@ -117,6 +119,7 @@ fun gui(folder: String? = null): Int {
                     Deed.OPEN to {
                         chosen("Open logbook", "Open")?.let { where ->
                             opened(where)?.let {
+                                held?.close()
                                 at = where
                                 held = it
                             }
@@ -129,7 +132,10 @@ fun gui(folder: String? = null): Int {
         val density = LocalDensity.current
         val icon = remember { useResource("yemoja.svg") { loadSvgPainter(it, density) } }
         Window(
-            onCloseRequest = ::exitApplication,
+            onCloseRequest = {
+                held?.close()
+                exitApplication()
+            },
             title = if (at == null) "Yemoja" else "Yemoja — $at",
             icon = icon,
             state = rememberWindowState(size = DpSize(1650.dp, 1140.dp)),

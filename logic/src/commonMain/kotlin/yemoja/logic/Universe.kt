@@ -20,6 +20,7 @@ import yemoja.data.json.DiskFileStore
 import yemoja.data.json.FileStore
 import yemoja.data.json.Json
 import yemoja.data.json.LogbookFormatException
+import yemoja.data.json.Lock
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
 import yemoja.logic.divecomputer.DiveComputer
@@ -84,6 +85,8 @@ class Universe(
      * each with a folder of its own. `RECON-8`.
      */
     private val proposing: FileStore? = null,
+    /** The lock held on the logbook's folder, or absent for a logbook nowhere on disk. */
+    private val lock: Lock? = null,
 ) {
 
     /**
@@ -102,6 +105,17 @@ class Universe(
     /** The logbook's owner, or absent where the manifest names nobody it holds. `JSON-22`. */
     var user: ReferenceableItem? = owner
         private set
+
+    /**
+     * Lets the logbook go, so another window may open it for editing.
+     *
+     * Nothing else is closed: what is held in memory stays readable, and a later change would
+     * write it. The window calls this before it opens another logbook and when it exits;
+     * a logbook nowhere on disk holds no lock and this does nothing. `JSON-27`.
+     */
+    fun close() {
+        lock?.release()
+    }
 
     /**
      * Makes the person called [id] the logbook's user, and writes it down.
@@ -690,12 +704,30 @@ class Universe(
             // A folder that is not there answers every question with no, so without this a
             // mistyped path opens as an empty logbook rather than as a mistake.
             require(store.isFolder("")) { "$path should be a folder, and is not" }
-            val manifest = LogbookReader.manifest(store)
-            val items = LogbookReader.read(store, Types.ALL, manifest)
-            val user = manifest.user?.let { items[it.id] }
-            val owner = if (user?.description == Types.PERSON) user else null
-            return Universe(items, owner, store, path, devices)
+            // Taken before anything is read, so two windows racing for one logbook get one
+            // window. A lock nobody released stays until a reader removes it, and the refusal
+            // says where it is. `JSON-27`.
+            val lock = Lock.take(path, HOLDING) ?: throw IllegalStateException(
+                "$path is open for editing elsewhere" +
+                    (Lock.holderOf(path)?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: "") +
+                    ". If nothing has it open, delete the folder $path${Lock.BESIDE}",
+            )
+            try {
+                val manifest = LogbookReader.manifest(store)
+                val items = LogbookReader.read(store, Types.ALL, manifest)
+                val user = manifest.user?.let { items[it.id] }
+                val owner = if (user?.description == Types.PERSON) user else null
+                return Universe(items, owner, store, path, devices, lock = lock)
+            } catch (refused: RuntimeException) {
+                // A logbook that will not read is not held: the lock would outlive the window
+                // that never opened.
+                lock.release()
+                throw refused
+            }
         }
+
+        /** What the lock says it was taken by, read back to whoever is refused. */
+        private const val HOLDING = "a Yemoja window"
 
         /**
          * A new logbook in the folder at [path], made and then opened.

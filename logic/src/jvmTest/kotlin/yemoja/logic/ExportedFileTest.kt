@@ -21,12 +21,14 @@ class ExportedFileTest {
         it
     }
 
+    private val cousteau = Universe.open("../fixtures/cousteau")
+
+    // The fixture is shared by every test in the run, so its lock is let go after each. `JSON-27`.
     @AfterTest
     fun clean() {
+        cousteau.close()
         here.deleteRecursively()
     }
-
-    private val cousteau = Universe.open("../fixtures/cousteau")
 
     /** How many of the fixture's dives were made: a plan is not written to a file. `LOGIC-36`. */
     private fun made(): Int = cousteau.logbook.allOf(Types.DIVE).count { dive ->

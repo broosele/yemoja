@@ -18,11 +18,13 @@ __pycache__/
 *.py[cod]
 
 # What the application writes beside a logbook: an import staged for review, the folder an agent
-# is started in, and a change an agent staged. All sit next to the logbook rather than inside it,
-# which puts them here when the logbook being worked on is a fixture.
+# is started in, a change an agent staged, and the lock a window holds while it has the logbook
+# open. All sit next to the logbook rather than inside it, which puts them here when the logbook
+# being worked on is a fixture.
 *.import/
 *.agent/
 *.proposed/
+*.lock/
 
 # Gradle build output
 .gradle/
