@@ -79,7 +79,7 @@ class ToolServerTest {
         val refused = client.callTool("stage_set", asked)
         assertEquals(true, refused.isError)
         val said = (refused.content.single() as TextContent).text
-        assertTrue("Allow changes" in said, said)
+        assertTrue("Allow logbook edits" in said, said)
     }
 
     @Test

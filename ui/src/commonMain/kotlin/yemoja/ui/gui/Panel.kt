@@ -264,9 +264,9 @@ private fun Asking(
         // A box to a line: the panel is a column beside a tab, and three of them across it left
         // each one a word wide. `GUI-38`.
         Column(modifier = Modifier.weight(1f)) {
-            Boxed("Allow changes", talk.writing) { talk.writing = it }
-            Boxed("Allow files", talk.direct) { talk.direct = it }
-            Boxed("Allow the internet", talk.online) { talk.online = it }
+            Boxed("Allow logbook edits", talk.writing) { talk.writing = it }
+            Boxed("Allow raw file access", talk.direct) { talk.direct = it }
+            Boxed("Allow internet access", talk.online) { talk.online = it }
         }
         if (talk.stance == Stance.ANSWERING) {
             // The protocol's cancel: the agent stops where it is and stays running, and the

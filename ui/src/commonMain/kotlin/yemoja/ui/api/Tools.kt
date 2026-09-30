@@ -387,15 +387,16 @@ class Tools(
      * on, where *changing data is not allowed* is a thing to be sorry about. `API-5`.
      */
     private fun notWriting(): Reply = refused(
-        "ask the user to tick *Allow changes* beside the conversation. Until they do, " +
+        "ask the user to tick *Allow logbook edits* beside the conversation. Until they do, " +
             "nothing can be staged; once they have, what you stage still waits for them to " +
             "review it.",
     )
 
     /** What `files` answers while the user has not allowed direct access. */
     private fun notDirect(): Reply = refused(
-        "ask the user to tick *Allow files* beside the conversation, and say why the tools " +
-            "were not enough. Until they do, the logbook's files are not yours to read or edit.",
+        "ask the user to tick *Allow raw file access* beside the conversation, and say why the " +
+            "tools were not enough. Until they do, the logbook's files are not yours to read " +
+            "or edit.",
     )
 
     /**

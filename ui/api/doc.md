@@ -90,8 +90,8 @@ behaviour of its own, that behaviour is in the wrong place.
 
   **Creating one stages, like every other change.** `RECON-8` has no exception for a big change,
   and a dive plan is exactly the kind somebody should read before it lands. So `create_plan` needs
-  *Allow changes*, and what it stages waits on the home screen like anything else. A plan that will
-  not calculate is refused rather than staged, as it is refused rather than written.
+  *Allow logbook edits*, and what it stages waits on the home screen like anything else. A plan
+  that will not calculate is refused rather than staged, as it is refused rather than written.
 
   **The briefing says the model is not a dive computer** and tells the agent to say so when it
   reports a plan. An agent answering a question about a dive nobody has made yet is the one place
@@ -276,7 +276,7 @@ behaviour of its own, that behaviour is in the wrong place.
   withholding and the mark are gone, since half-kept machinery of that sort is worse than none —
   it reads as a promise.
 
-  *Extended:* **a third box, *Allow the internet*, answers the agent's own fetching tools.** An
+  *Extended:* **a third box, *Allow internet access*, answers the agent's own fetching tools.** An
   agent asks the window before each tool of its own, and every such request was refused but the
   ones that stay at the files. A question about a dive site, a computer's manual or a table the
   agent does not carry is a fetch, and refusing all of them made the agent poorer than it is.
@@ -292,7 +292,7 @@ behaviour of its own, that behaviour is in the wrong place.
   box decides is whether the window says yes when the agent asks to fetch, and it is off at the
   start of every conversation like the other two.
 
-  **The write tools do nothing while *Allow changes* is unticked**, and it is off at the
+  **The write tools do nothing while *Allow logbook edits* is unticked**, and it is off at the
   start of every conversation. Every call to one is refused, with a reply saying what the user
   would have to tick, so an agent asked to correct forty dives says so rather than reporting that
   it cannot. Even ticked, nothing is applied: what a write tool does is stage, and applying is the
@@ -308,7 +308,8 @@ behaviour of its own, that behaviour is in the wrong place.
   read a file or run a command are refused by the window, `GUI-38`. An agent given the logbook
   folder could edit the files directly, and nothing in this entry would stop it.
 
-  *Added once built:* **a second box, *Allow files*, off at the start of every conversation,
+  *Added once built:* **a second box, *Allow raw file access*, off at the start of every
+  conversation,
   lets the agent read and edit the logbook's files itself.** It exists because the first box is a
   promise about Yemoja's tools and not a fence around the agent: an agent is the user's own program
   with the user's rights, and its own file tools run in its own process, so what the window can

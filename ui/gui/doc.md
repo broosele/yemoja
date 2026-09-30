@@ -870,7 +870,8 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **When a conversation starts the agent is handed the tool server**, `API-4`. Its own requests
   to read or write a file or to run a command are refused, every time, so the tools are the only
-  way to the logbook — unless the user ticks *Allow files*, when a read or write inside the
+  way to the logbook — unless the user ticks *Allow raw file access*, when a read or write inside
+  the
   logbook or the agent's own folder is served and its own tools of the file-handling kinds are
   allowed there, and the window reads the logbook again when the turn ends. A command is never
   run. `API-5`.
@@ -885,7 +886,8 @@ once and corrected. The numbers stay unused rather than being given to something
   opened while the conversation carries on. Where it sits and what it looks like is `DESK-9` in
   [desktop/doc.md](desktop/doc.md). It holds the
   choice of agent, the conversation, and two boxes that are off at the start of every conversation:
-  *Allow changes*, which lets the agent stage, and *Allow files*, which lets it at the files
+  *Allow logbook edits*, which lets the agent stage, and *Allow raw file access*, which lets it
+  at the files
   directly. `API-5`. A box that held back a person's private details is gone with the machinery
   behind it: an agent is sent whatever it reads, and the manual says so where its chapter begins.
 

@@ -140,7 +140,7 @@ class FilesTest {
     @Test
     fun `the files are refused until the box is ticked, naming the box`() {
         val reason = reason(Tools(diving()).files())
-        assertTrue("tick *Allow files*" in reason, reason)
+        assertTrue("tick *Allow raw file access*" in reason, reason)
         assertTrue("say why the tools were not enough" in reason, reason)
     }
 
@@ -364,7 +364,7 @@ class StagingToolsTest {
         val tools = Tools(staging())
         val said = reason(tools.stageSet("2026-06-01#0", "rating", "8"))
         assertTrue(said.startsWith("ask the user to tick"), "what to do comes first: $said")
-        assertTrue("*Allow changes*" in said, "and names the box as it is labelled: $said")
+        assertTrue("*Allow logbook edits*" in said, "and names the box as it is labelled: $said")
         assertTrue(reason(tools.stageDelete("2026-06-01#0")).isNotEmpty())
         assertTrue(reason(tools.stageAdd("dive_site", emptyMap())).isNotEmpty())
         assertTrue(reason(tools.staged()).isNotEmpty())

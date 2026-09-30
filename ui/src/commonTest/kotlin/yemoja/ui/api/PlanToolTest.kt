@@ -62,7 +62,7 @@ class PlanToolTest {
         val tools = Tools(universeOf(), writing = { false })
         val reply = tools.createPlan(plan(), dive = null, name = "Plan A")
         assertTrue(reply.refused)
-        assertTrue("Allow changes" in reply.text, "and it says what to tick")
+        assertTrue("Allow logbook edits" in reply.text, "and it says what to tick")
     }
 
     @Test

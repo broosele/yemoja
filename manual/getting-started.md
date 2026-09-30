@@ -230,7 +230,7 @@ Yemoja can refuse is only what the agent asks it, though: the agent is a program
 running with your rights, and an agent that goes looking for files on its own is a matter between
 you and it. Yemoja never tells it where your logbook is, and asks it not to look.
 
-**It can propose changes, and you decide.** Tick *Allow changes* and an agent can stage
+**It can propose changes, and you decide.** Tick *Allow logbook edits* and an agent can stage
 changes — correct a clock error across a trip, give one dive's gear to the others. Nothing it
 stages touches your logbook. The panel says how many items are waiting, and **Review** takes you to
 them on the home screen, under the other deeds. Each item shows every field it would change, what
@@ -243,7 +243,7 @@ again against what the field holds now. **Discard** any item you do not want, th
 What is waiting is kept in a folder beside your logbook, with `.proposed` after its name, so it
 survives the window being closed. It is not part of your logbook.
 
-**It can be let at the files themselves, as a last resort.** Tick *Allow files* and the
+**It can be let at the files themselves, as a last resort.** Tick *Allow raw file access* and the
 agent is told where your logbook is, may read its files, and may edit them — directly, with
 nothing staged and nothing to review. It is asked to do that only for what the tools cannot, to
 make the smallest change, and to say which file it changed and why; Yemoja reads your logbook again
@@ -252,7 +252,7 @@ logbook opening, and the panel says so if that happens. Take a backup first, as 
 editing by hand. Running a command is never allowed, whatever is ticked. This box, too, starts
 empty for every conversation.
 
-**It can be let at the internet.** Tick *Allow the internet* and the agent may use its own
+**It can be let at the internet.** Tick *Allow internet access* and the agent may use its own
 tools to fetch a page — a dive site's description, a computer's manual, a table it does not carry.
 Two things to know before you do. Yemoja cannot see what it fetches or what it sends, so an agent
 that can read your logbook and reach the internet can put the one into the other. And this is not

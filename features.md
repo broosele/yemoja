@@ -127,9 +127,9 @@ them.
   `LOGIC-34` in [logic/doc.md](logic/doc.md).
 
   *Built:* a panel beside the tabs starts the agent the user names, hands it the tools, and
-  refuses a request of its own unless a box allows it: *Allow files* for one that stays at the
-  logbook's files, *Allow the internet* for one that fetches. A command it asks to run is always
-  refused. It reads, and it stages a change where the user allows one. What it
+  refuses a request of its own unless a box allows it: *Allow raw file access* for one that
+  stays at the logbook's files, *Allow internet access* for one that fetches. A command it asks
+  to run is always refused. It reads, and it stages a change where the user allows one. What it
   staged is reviewed on the home screen field by field, with anything the logbook has moved under
   marked before it is taken in.
 
