@@ -30,6 +30,10 @@ package yemoja.data
  */
 class ItemSet(
     descriptions: List<ItemDescription>,
+    /** The person the manifest names, which [ItemSet.user] starts as. */
+    user: Reference.Identified? = null,
+) {
+
     /**
      * The person the logbook belongs to, as its manifest names them, or absent where it names
      * nobody.
@@ -38,11 +42,14 @@ class ItemSet(
      * the set it sits in: the user's own `dives` are every dive, and nothing else could tell the
      * user's person apart from a buddy's. It may name nothing, like any reference. `DATA-118`.
      *
-     * Set again where the manifest is written or read again, so what is derived from it does
-     * not go on reading the person the logbook used to belong to.
+     * Set again where the manifest is written or read again, so what is derived from it does not
+     * go on reading the person the logbook used to belong to, and setting it moves [revision].
      */
-    var user: Reference.Identified? = null,
-) {
+    var user: Reference.Identified? = user
+        set(value) {
+            field = value
+            revision += 1
+        }
 
     // Copied. A List is read-only, not immutable.
     /**
@@ -65,8 +72,8 @@ class ItemSet(
     /**
      * Puts [item] in under [id].
      *
-     * Refuses an id already taken: one id names one item. Resolving a clash by appending `#1`
-     * belongs here too and is not written yet.
+     * Refuses an id already taken: one id names one item. Choosing a free one is the logic
+     * layer's, where ids are minted.
      */
     fun add(id: String, item: ReferenceableItem) {
         require(id.isNotEmpty()) { "an id should not be empty" }

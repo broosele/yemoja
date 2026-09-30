@@ -88,7 +88,12 @@ object LogbookReader {
         for (description in types) {
             val named = manifest.libraries[description.name].orEmpty()
             for ((id, held) in itemsOf(store, description.name, named)) {
-                set.add(id, ItemReader.read(description, held.members, set, held.units))
+                val item = ItemReader.read(description, held.members, set, held.units)
+                try {
+                    set.add(id, item)
+                } catch (refused: IllegalArgumentException) {
+                    throw LogbookFormatException("${description.name} $id: ${refused.message}")
+                }
             }
         }
         return set

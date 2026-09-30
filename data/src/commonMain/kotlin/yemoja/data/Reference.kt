@@ -54,7 +54,7 @@ sealed class Reference {
          * Reads a reference. Throws where the text is not one.
          *
          * [oneOffAllowed] says whether a plain name may stand in here. Where it may not, text
-         * a leading `@` is not a reference at all.
+         * without a leading `@` is not a reference at all.
          */
         fun parse(text: String, oneOffAllowed: Boolean): Reference {
             val written = text.trim()

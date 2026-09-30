@@ -285,7 +285,9 @@ class NumberDescription(
             is Double -> given
             is Long -> given.toDouble()
             is Int -> given.toDouble()
-            is String -> given.trim().toDoubleOrNull()
+            // `"NaN"` and `"Infinity"` parse and are not numbers anybody measured: kept unusable
+            // they go back to the file as written, where a usable one was saved as nought.
+            is String -> given.trim().toDoubleOrNull()?.takeIf { it.isFinite() }
             else -> null
         } ?: return Result.Unusable(Stored.Leaf(given), "$name should be a number")
         return resultOf(units.toDefault(dimension, written), given, overrides)
@@ -781,6 +783,18 @@ class ItemDescription(
     val name: String,
     fields: List<FieldDescription>,
     orderedBy: List<Ordering> = emptyList(),
+    /**
+     * What a new item of this type should be called, from the item itself.
+     *
+     * A *proposal*: whoever mints takes the first id free from it, so this need not check what is
+     * already there and two items may propose the same thing. It runs against a built item, which
+     * works because an item holds no id — one is made, asked what it should be called, and added
+     * under the answer.
+     *
+     * The logic layer supplies it, being domain knowledge: a dive is named for the day it was made
+     * on, a person for their name, and `DATA-84` says the cost of the narrow character rule falls
+     * where the proposal is made. Absent on an owned type, which is never named at all.
+     */
     val proposedId: ((Item) -> String)? = null,
     sections: List<Section> = emptyList(),
 ) {
@@ -816,22 +830,8 @@ class ItemDescription(
      */
     val orderedBy: List<Ordering> = orderedBy.toList()
 
-    /**
-     * What a new item of this type should be called, from the item itself.
-     *
-     * A *proposal*: whoever mints takes the first id free from it, so this need not check what is
-     * already there and two items may propose the same thing. It runs against a built item, which
-     * works because an item holds no id — one is made, asked what it should be called, and added
-     * under the answer.
-     *
-     * It sits here rather than in the data layer because it is domain knowledge: a dive is named
-     * for the day it was made on, a person for their name, and `DATA-84` says the cost of the
-     * narrow character rule falls where the proposal is made. Absent on an owned type, which is
-     * never named at all.
-     */
-
     /** Built on first use. Every read is by name, and a scan per read is the wrong shape. */
-    val byName: Map<String, FieldDescription> by lazy { fields.associateBy { it.name } }
+    val byName: Map<String, FieldDescription> by lazy { this.fields.associateBy { it.name } }
 
     operator fun get(name: String): FieldDescription? = byName[name]
 }

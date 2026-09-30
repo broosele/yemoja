@@ -380,7 +380,7 @@ class LogbookItemTest {
 
     @Test
     fun `one id may not name two items, whatever their types`() {
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<LogbookFormatException> {
             logbook(
                 "postbox.json" to """{"tuesday": {}}""",
                 "round.json" to """{"tuesday": {}}""",

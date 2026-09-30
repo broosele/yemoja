@@ -128,7 +128,8 @@ private fun number(value: Double): String {
     val exponent = printed.substring(mark + 1).toInt()
     val body = printed.substring(0, mark)
     val sign = if (body.startsWith("-")) "-" else ""
-    val digits = body.removePrefix("-").replace(".", "")
+    // `1.0E-4` prints its mantissa as `1.0`, and that nought is not a digit of the value.
+    val digits = body.removePrefix("-").replace(".", "").trimEnd('0').ifEmpty { "0" }
     val point = (body.removePrefix("-").indexOf('.').takeIf { it >= 0 } ?: body.length) + exponent
     return sign + when {
         point <= 0 -> "0." + "0".repeat(-point) + digits
@@ -140,7 +141,17 @@ private fun number(value: Double): String {
 /** [text] as a JSON string, escaping what the format cannot carry raw. */
 private fun quoted(text: String): String {
     val out = StringBuilder(text.length + 2).append('"')
-    for (character in text) {
+    for ((index, character) in text.withIndex()) {
+        // Half a surrogate pair cannot be written as UTF-8 and would come back as `?`, so it goes
+        // as an escape and reads back as itself.
+        val alone = character.isSurrogate() && when {
+            character.isHighSurrogate() -> text.getOrNull(index + 1)?.isLowSurrogate() != true
+            else -> text.getOrNull(index - 1)?.isHighSurrogate() != true
+        }
+        if (alone) {
+            out.append("\\u").append(character.code.toString(16).padStart(4, '0'))
+            continue
+        }
         when (character) {
             '"' -> out.append("\\\"")
             '\\' -> out.append("\\\\")

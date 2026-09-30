@@ -9,7 +9,7 @@ import yemoja.data.Units
 /*
  * Putting an item back into the logbook's files: the inverse of LogbookReader.
  *
- * See ../../../../../../doc.md — the source's own document is data/json/doc.md.
+ * See ../../../../../../json/doc.md.
  */
 
 /**
@@ -43,14 +43,14 @@ object LogbookWriter {
         val folder = "$type/$id.json"
         if (store.isFolder(type)) {
             val (held, units) = openedOr(store, folder)
-            store.writeText(folder, Json.write(withUnits(ItemWriter.write(item, units), held)))
+            store.writeText(folder, fileOf(withUnits(ItemWriter.write(item, units), held)))
             return
         }
         val file = "$type.json"
         val (held, units) = openedOr(store, file)
         val members = LinkedHashMap(held.members)
         members[id] = ItemWriter.write(item, units)
-        store.writeText(file, Json.write(Stored.Members(members)))
+        store.writeText(file, fileOf(Stored.Members(members)))
     }
 
     /**
@@ -70,7 +70,7 @@ object LogbookWriter {
         if (!store.isFile(file)) return
         val (held, _) = openedOr(store, file)
         if (id !in held.members) return
-        store.writeText(file, Json.write(Stored.Members(held.members - id)))
+        store.writeText(file, fileOf(Stored.Members(held.members - id)))
     }
 
     /** What is in the file at [path] now, or nothing where there is no file yet. */
@@ -101,3 +101,11 @@ object LogbookWriter {
         return Units.of(declared.members.mapValues { (_, held) -> (held as? Stored.Leaf)?.value })
     }
 }
+
+/**
+ * [stored] as a file holds it, ending with a newline.
+ *
+ * What a person writes by hand, what the fixtures hold, and what the manifest and settings are
+ * written as. Without it the first save of a hand-written file changes a line nobody touched.
+ */
+private fun fileOf(stored: Stored): String = Json.write(stored) + "\n"
