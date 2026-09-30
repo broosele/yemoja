@@ -1578,6 +1578,18 @@ once and corrected. The numbers stay unused rather than being given to something
   **Statistics are left alone.** Every figure on that tab is calculated, and a page in italics
   throughout distinguishes nothing from nothing.
 
+  **The settings form answers it the same way.** A setting nobody has chosen was typed into its box
+  as though somebody had, and only the note beside it said *the default*. The box is now left empty
+  and the default shows through it as a hint, italic, so the settings a reader has actually made
+  are the ones in ordinary type. That also takes an ambiguity out of Save, which no longer has to
+  work out which boxes are answers and which are the application repeating itself. Typing over the
+  default chooses it and emptying the box gives it back, which is `GUI-41`'s rule already —
+  *an empty box takes the choice away* — made visible.
+
+  **The planner's own settings are not this.** Its boxes are a working copy of a plan being shaped
+  rather than a reading of what is stored, and it carries no notion of chosen against defaulted to
+  draw on. `GUI-43` seeds them and lets a reader type over them freely.
+
   *For now:* grey and italic together are two markers for one fact, kept while `GUI-8` is still a
   placeholder. Dropping one is cheap once that is answered.
 

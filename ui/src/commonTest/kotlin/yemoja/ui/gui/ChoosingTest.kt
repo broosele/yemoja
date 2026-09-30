@@ -1,8 +1,13 @@
 package yemoja.ui.gui
 
 import yemoja.data.Date
+import yemoja.data.json.LogbookReader
+import yemoja.data.json.MemoryFileStore
 import yemoja.data.json.SettingsFile
+import yemoja.logic.Outcome
 import yemoja.logic.Settings
+import yemoja.logic.Types
+import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -50,6 +55,12 @@ class EnteredTest {
 
 class ShownSettingTest {
 
+    /** Settings over an empty logbook, so every one of them is the application's own answer. */
+    private fun settings(): Settings {
+        val store = MemoryFileStore(emptyMap())
+        return Universe(LogbookReader.read(store, Types.ALL), null, store, null, null).settings
+    }
+
     @Test
     fun `a value is shown as a person writes it`() {
         assertEquals("30", shownOf(Settings.DEFAULT_GF_LOW, 0.3))
@@ -66,6 +77,43 @@ class ShownSettingTest {
         assertEquals("not set", answeredSaid(null, Settings.DEFAULT_GF_LOW), "a factor has no default")
         assertEquals("not set", answeredSaid(null, Settings.AGENT_COMMAND), "and nor has the command")
         assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.AGENT_COMMAND))
+    }
+
+    @Test
+    fun `a default is left out of the boxes, so it shows through them`() {
+        val settings = settings()
+        val choosing = Choosing()
+        choosing.fill(settings)
+        assertEquals(
+            "",
+            choosing.typed[Settings.DEFAULT_ASCENT_RATE.name],
+            "nobody chose it, so the box is empty and the default reads through it",
+        )
+        assertEquals(
+            "",
+            filledOf(settings, Settings.DEFAULT_ASCENT_RATE),
+            "and a form that opens again fills it the same way",
+        )
+        assertEquals(
+            false,
+            Settings.DEFAULT_WATER_TYPE.name in choosing.typed,
+            "a word nobody picked is not in the form either",
+        )
+    }
+
+    @Test
+    fun `a value somebody chose is in its box, and reads as written`() {
+        val settings = settings()
+        assertTrue(settings.choose(Settings.DEFAULT_ASCENT_RATE, 7.0) is Outcome.Done)
+        val choosing = Choosing()
+        choosing.fill(settings)
+        assertEquals("7", choosing.typed[Settings.DEFAULT_ASCENT_RATE.name])
+        assertEquals("7", filledOf(settings, Settings.DEFAULT_ASCENT_RATE))
+        assertEquals(
+            SettingsFile.LOGBOOK,
+            settings.answeredBy(Settings.DEFAULT_ASCENT_RATE),
+            "which is what the note beside the box reports",
+        )
     }
 
     @Test

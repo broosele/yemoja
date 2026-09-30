@@ -9,6 +9,11 @@ that came from: *set on this device*, *set in this logbook*, *the default*, or *
 any box and press **Save**. Empty a box and save to take your choice away, so the next place in
 line answers again.
 
+**A default shows through an empty box, in italics**, the way every value Yemoja works out for
+itself is shown. So you can see at a glance which of your settings you have actually chosen: those
+are in ordinary type. Typing over an italic value chooses it; emptying the box again gives the
+default back.
+
 **These files belong to Yemoja, not to your data.** Everything in `data-format.md` and
 `data-fields.md` is yours — a format that stays readable and that Yemoja promises not to
 break. Settings carry no such promise. What they hold, and how, changes as the

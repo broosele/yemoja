@@ -61,13 +61,39 @@ internal fun Chooser(universe: Universe?, choosing: Choosing, onChanged: () -> U
     val settings = universe.settings
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
         for (setting in Settings.OFFERED) {
-            SettingRow(setting, BOX, unitOf(setting), answeredSaid(settings.answeredBy(setting), setting), choosing)
+            SettingRow(
+                setting = setting,
+                wide = BOX,
+                after = unitOf(setting),
+                answered = answeredSaid(settings.answeredBy(setting), setting),
+                // The application's own answer, shown in the box the way every other value
+                // nobody wrote is shown. `GUI-49`.
+                hint = if (settings.answeredBy(setting) == null) {
+                    shownOf(setting, settings.number(setting))
+                } else {
+                    ""
+                },
+                choosing = choosing,
+            )
         }
         for (setting in Settings.OFFERED_CHOICES) {
-            ChoiceRow(setting, answeredSaid(settings.answeredBy(setting), setting), choosing)
+            ChoiceRow(
+                setting = setting,
+                chosen = choosing.typed[setting.name] ?: settings.choice(setting),
+                answered = answeredSaid(settings.answeredBy(setting), setting),
+                choosing = choosing,
+            )
         }
         val agent = Settings.AGENT_COMMAND
-        SettingRow(agent, COMMAND, "", answeredSaid(settings.answeredBy(agent), agent), choosing)
+        SettingRow(
+            setting = agent,
+            wide = COMMAND,
+            after = "",
+            answered = answeredSaid(settings.answeredBy(agent), agent),
+            // Nothing stands behind it: an agent nobody named is an agent there is not.
+            hint = "",
+            choosing = choosing,
+        )
         Aside(AGENT_SETUP)
         choosing.said?.let { Aside(it) }
         Row(
@@ -85,9 +111,24 @@ internal fun Chooser(universe: Universe?, choosing: Choosing, onChanged: () -> U
     }
 }
 
-/** One setting: what it is called, the box it is typed in, and where its value came from. */
+/**
+ * One setting: what it is called, the box it is typed in, and where its value came from.
+ *
+ * **A box nobody has filled in shows the default in it**, italic, as a calculated value is shown
+ * anywhere else. `GUI-49`. Before this the default was typed into the box as though somebody had
+ * chosen it, and only the note beside it said otherwise. Typing replaces it and emptying the box
+ * brings it back, which is the same pair of acts as *override* and *revert* on a field: the model
+ * already reads an empty box as taking the choice away.
+ */
 @Composable
-private fun SettingRow(setting: Setting, wide: Dp, after: String, answered: String, choosing: Choosing) {
+private fun SettingRow(
+    setting: Setting,
+    wide: Dp,
+    after: String,
+    answered: String,
+    hint: String,
+    choosing: Choosing,
+) {
     Row(
         modifier = Modifier.padding(vertical = HALF),
         horizontalArrangement = Arrangement.spacedBy(GAP),
@@ -108,6 +149,8 @@ private fun SettingRow(setting: Setting, wide: Dp, after: String, answered: Stri
                     choosing.said = null
                 },
                 after = after,
+                hint = hint,
+                derived = true,
             )
         }
         Text(
@@ -118,9 +161,19 @@ private fun SettingRow(setting: Setting, wide: Dp, after: String, answered: Stri
     }
 }
 
-/** One setting of a fixed set: what it is called, a menu of its words, and where it came from. */
+/**
+ * One setting of a fixed set: what it is called, a menu of its words, and where it came from.
+ *
+ * [chosen] is the word it holds, which is the application's own until somebody picks one; picked or
+ * not is what decides how it reads. `GUI-49`.
+ */
 @Composable
-private fun ChoiceRow(setting: ChoiceSetting, answered: String, choosing: Choosing) {
+private fun ChoiceRow(
+    setting: ChoiceSetting,
+    chosen: String,
+    answered: String,
+    choosing: Choosing,
+) {
     Row(
         modifier = Modifier.padding(vertical = HALF),
         horizontalArrangement = Arrangement.spacedBy(GAP),
@@ -134,10 +187,10 @@ private fun ChoiceRow(setting: ChoiceSetting, answered: String, choosing: Choosi
             modifier = Modifier.width(LABEL),
         )
         Box(modifier = Modifier.width(BOX)) {
-            val held = choosing.typed[setting.name] ?: setting.default
             Pick(
-                chosen = wordSaid(held),
+                chosen = wordSaid(chosen),
                 options = setting.choices.map { wordSaid(it) },
+                italic = choosing.typed[setting.name] == null,
             ) { index ->
                 choosing.typed[setting.name] = setting.choices[index]
                 choosing.said = null
@@ -154,14 +207,26 @@ private fun ChoiceRow(setting: ChoiceSetting, answered: String, choosing: Choosi
 /** A setting's word as a menu shows it: `salt` as *Salt*. */
 internal fun wordSaid(word: String): String = word.replaceFirstChar { it.uppercase() }
 
-/** Fills the form with what each setting holds now, as it is shown. */
+/**
+ * Fills the form with what somebody chose for each setting, as it is shown.
+ *
+ * **What nobody chose is left out**, so its box is empty and the default shows through it. A
+ * default typed into the box would read as a choice, and Save would then have to work out which
+ * of the boxes were answers and which were the application repeating itself.
+ */
 internal fun Choosing.fill(settings: Settings) {
     typed.clear()
-    for (setting in Settings.OFFERED) typed[setting.name] = shownOf(setting, settings.number(setting))
-    for (setting in Settings.OFFERED_CHOICES) typed[setting.name] = settings.choice(setting)
+    for (setting in Settings.OFFERED) typed[setting.name] = filledOf(settings, setting)
+    for (setting in Settings.OFFERED_CHOICES) {
+        if (settings.answeredBy(setting) != null) typed[setting.name] = settings.choice(setting)
+    }
     typed[Settings.AGENT_COMMAND.name] = settings.text(Settings.AGENT_COMMAND).orEmpty()
     said = null
 }
+
+/** What [setting]'s box holds when the form opens: the chosen value, and nothing for a default. */
+internal fun filledOf(settings: Settings, setting: NumberSetting): String =
+    if (settings.answeredBy(setting) == null) "" else shownOf(setting, settings.number(setting))
 
 /**
  * How the agent's command is set up, said under its box.
@@ -188,7 +253,7 @@ private fun saved(settings: Settings, choosing: Choosing): String {
     val chosen = LinkedHashMap<NumberSetting, Double?>()
     for (setting in Settings.OFFERED) {
         val typed = choosing.typed[setting.name].orEmpty()
-        if (typed.trim() == shownOf(setting, settings.number(setting))) continue
+        if (typed.trim() == filledOf(settings, setting)) continue
         when (val read = chosenOf(setting, typed)) {
             is Entered.Wrong -> return read.reason
             is Entered.Value -> chosen[setting] = read.value
