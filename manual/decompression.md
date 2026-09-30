@@ -217,7 +217,9 @@ Asked about a plan, the model answers what it answers about any dive: the ceilin
 time left before stops become necessary, the gas each cylinder gives up and what its gauge would
 read, the two oxygen clocks, how long before you may fly, and a list of what it objects to — going
 above the ceiling, a cylinder that runs out, a mix too rich for the depth it is breathed at, a mix
-with too little oxygen for it.
+with too little oxygen for it. **The CNS clock is not defined above 1.6 bar**: the published
+limits stop there, so past it the clock runs no faster than it does at 1.6, and the objection
+beside it is the answer rather than the figure.
 
 **Planning a second dive of the day** means telling the plan which earlier run you are carrying
 gas from, and the model then carries your tissues across the surface interval into it. Two plans
