@@ -18,16 +18,15 @@ buttons.
 
 The folder can also be named when Yemoja is started, and it then opens straight away.
 
-**Yemoja greets you by name once it knows which person you are.** A new logbook names nobody.
+**Tell Yemoja which person you are.** A new logbook names nobody, and until it knows, it cannot
+say which medical and which insurance are yours to be warned about, or which certifications are.
 Add yourself on the Community tab, then write your id as the `user` in `yemoja.json`, as
-[data-format.md](data-format.md) shows. Until then the greeting says so.
+[data-format.md](data-format.md) shows.
 
 ## Home
 
-**The greeting** says hello, and remarks on the day when there is something to remark on: your
-birthday, the new year, a day given to the sea, or the first day of a season. The seasons turn
-round when your dive sites lie, on average, south of the equator. The line under it counts your
-dives, the places you dived and the time you spent underwater.
+**The top of the screen** counts your dives, the places you dived and the time you spent
+underwater.
 
 **Warnings** come next, when something is due. A red box holds what has already lapsed, and a
 yellow one what falls due within a month:
@@ -76,8 +75,6 @@ you made each month, widening the bars where there would be too many to read.
   [Calculations](getting-started.md#calculations) below.
 - **Manuals** is this manual.
 
-Each tab keeps what you chose and where you had scrolled to while you look at another.
-
 **Several dives can be chosen at once.** Hold Ctrl and click to add a dive or take one out, or
 hold Shift and click to take every dive between the last one chosen and this one. What they
 come to together is shown instead of a single dive: the range and average of each figure, how
@@ -101,7 +98,7 @@ Something an item holds several of, such as a dive's recordings or a person's co
 with a small tab for each. The recording a dive is worked from comes first, marked with a star.
 A dive's recordings are all drawn to the same scale, so a shorter or shallower one looks it.
 
-A planned dive counts nowhere: not in the greeting, not in the statistics, and not in the
+A planned dive counts nowhere: not in the totals on Home, not in the statistics, and not in the
 number a year carries. Clicking a year chooses the dives you made in it. If you tick a plan
 yourself and ask what your selection comes to, the answer includes it — what you chose is what
 is counted.
@@ -182,8 +179,8 @@ how the first trip in a logbook is made. Nothing is made until you save, and the
 derived then, from what you typed. Where nothing is chosen, the middle of the screen offers to
 add one.
 
-On the Gear tab you can also click a category or a kind in the tree, which chooses it — the
-arrow beside it still folds it away. A new piece of gear added while one is chosen starts out
+On the Gear tab you can also click a category or a kind in the tree, which chooses it. A new
+piece of gear added while one is chosen starts out
 filed there, with the category, and the kind where you chose one, already filled in. Change them
 in the form like anything else.
 
@@ -191,9 +188,6 @@ in the form like anything else.
 items name it, the question says how many will be left naming something that is no longer
 there, and which they are when there are only a few; ticking **Also remove references to it** takes them
 out as well. With several dives chosen, the bin deletes them all.
-
-Locations has no + and no bin yet. A new dive site arrives with a download, which offers to name
-one where a dive was, or with an import.
 
 **Everything is written to your files the moment it is saved**, and there is no undo yet. Keep
 a backup of your logbook folder.
@@ -213,14 +207,12 @@ where nothing leaves it.
 
 **First tell Yemoja how to start your agent**, in **Settings** on the home screen: the *Agent
 command* box, which [settings.md](settings.md#the-agent-command) explains. Until it is set, the
-sparkle button is greyed, and resting the pointer on it says so.
+sparkle button is greyed.
 
-**Press the sparkle button** at the right of the tabs, on whichever tab you are on; it says *Ask
-an agent* when the pointer rests on it. A panel opens beside it and starts your agent, which takes
-a few seconds, and stays there as you move between tabs, so a dive the agent names can be opened
-and read while you carry on talking. Pressing the button again closes the panel. The panel is
-headed with the agent's name. Once the agent is
-running, type a question and press Enter, or **Ask**; Shift and Enter starts a new line. While it
+**Press the sparkle button** at the right of the tabs. A panel opens beside it and starts your
+agent, which takes a few seconds, and stays there as you move between tabs, so a dive the agent
+names can be opened and read while you carry on talking. Once it is running, type a question and
+press Enter, or **Ask**; Shift and Enter starts a new line. While it
 is thinking, **Interrupt** stops the answer where it is and leaves the agent running for the next
 question. **Stop** ends the conversation and leaves it to read; **Start** then begins another.
 
@@ -322,8 +314,6 @@ stop, and every gas switch it makes. It changes as you type, and there is nothin
 type part of the way up yourself, it adds only what is left, and a dive you have typed all the way
 to the surface gets nothing added.
 
-Rest the pointer on any box, column or figure in the planner and it says in a line what it is.
-
 On the right are the plan's settings, in four groups: *General*, *Gas*, *Algorithm* and *Stops*.
 They start from what you chose in [Settings](settings.md),
 and a change here is for this plan only. A safety stop of 0 minutes means none. The safety stop is
@@ -394,12 +384,6 @@ narcotic as your mix. Helium is not narcotic. Whether oxygen is, agencies disagr
 tick for it: counting oxygen gives the deeper and more cautious depth, and it is on until you turn
 it off. The three share one gas box, and each assumes salt water at sea level. EAD and END are
 rounded up.
-
-## Copying text
-
-Anything the window shows can be selected with a drag and copied. A selection stays within the
-part of the window it began in, so dragging down a card does not pick up the list beside it.
-The tabs along the top and the boxes of a form are not part of it.
 
 ---
 
