@@ -68,6 +68,37 @@ class LockTest {
     }
 
     @Test
+    fun `a path with a trailing separator is the same logbook, with the same lock beside it`() {
+        val folder = logbook()
+        val first = Universe.open(folder.toString())
+        assertFailsWith<IllegalStateException> { Universe.open(folder.toString() + java.io.File.separator) }
+        assertTrue(!folder.resolve(Lock.BESIDE).exists(), "never a lock inside the logbook")
+        first.close()
+    }
+
+    @Test
+    fun `closing does not take away a lock that is no longer this window's`() {
+        // A reader deleted a lock while its window was alive, and a second window took the logbook.
+        val folder = logbook()
+        val first = Universe.open(folder.toString())
+        lockOf(folder).toFile().deleteRecursively()
+        val second = Universe.open(folder.toString())
+        first.close()
+        assertTrue(lockOf(folder).exists(), "the second window's lock survives the first closing")
+        assertFailsWith<IllegalStateException> { Universe.open(folder.toString()) }
+        second.close()
+        assertTrue(!lockOf(folder).exists())
+    }
+
+    @Test
+    fun `the refusal says what holds the lock and nothing of its token`() {
+        val folder = logbook()
+        val first = Universe.open(folder.toString())
+        assertEquals("a Yemoja window", Lock.holderOf(folder.toString()))
+        first.close()
+    }
+
+    @Test
     fun `a logbook nowhere on disk holds no lock, and closing it does nothing`() {
         val store = MemoryFileStore(emptyMap())
         val universe = Universe(LogbookReader.read(store, Types.ALL), null, store, null, null)

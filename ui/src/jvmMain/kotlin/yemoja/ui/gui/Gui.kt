@@ -56,7 +56,7 @@ import yemoja.logic.Outcome
 fun gui(folder: String? = null): Int {
     val universe = if (folder == null) null else try {
         Universe.open(folder, FoundDevices())
-    } catch (refused: RuntimeException) {
+    } catch (refused: Exception) {
         // A folder that is not a logbook, or a file in it that will not read. There is no window
         // yet to say so in, so it is said where the command was typed.
         System.err.println("$folder could not be read: ${refused.message}")
@@ -118,6 +118,11 @@ fun gui(folder: String? = null): Int {
                     },
                     Deed.OPEN to {
                         chosen("Open logbook", "Open")?.let { where ->
+                            // The logbook already open is already open: opening it again would be
+                            // refused by this window's own lock, as though another window had it.
+                            if (at != null && java.io.File(where).canonicalPath == java.io.File(at!!).canonicalPath) {
+                                return@let
+                            }
                             opened(where)?.let {
                                 held?.close()
                                 at = where
@@ -211,7 +216,7 @@ private fun chosen(asking: String, approving: String): String? {
 /** A new logbook at [where], or absent where it could not be made and the reader was told. */
 private fun made(where: String): Universe? = try {
     Universe.create(where, FoundDevices())
-} catch (refused: RuntimeException) {
+} catch (refused: Exception) {
     warn("$where could not be made into a logbook: ${refused.message}")
     null
 }
@@ -225,7 +230,7 @@ private fun made(where: String): Universe? = try {
  */
 private fun opened(where: String): Universe? = try {
     Universe.open(where, FoundDevices())
-} catch (refused: RuntimeException) {
+} catch (refused: Exception) {
     warn("$where could not be read: ${refused.message}")
     null
 }

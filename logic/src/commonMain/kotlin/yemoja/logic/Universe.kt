@@ -710,7 +710,7 @@ class Universe(
             val lock = Lock.take(path, HOLDING) ?: throw IllegalStateException(
                 "$path is open for editing elsewhere" +
                     (Lock.holderOf(path)?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: "") +
-                    ". If nothing has it open, delete the folder $path${Lock.BESIDE}",
+                    ". If nothing has it open, delete the folder ${Lock.folderOf(path)}",
             )
             try {
                 val manifest = LogbookReader.manifest(store)
@@ -718,9 +718,9 @@ class Universe(
                 val user = manifest.user?.let { items[it.id] }
                 val owner = if (user?.description == Types.PERSON) user else null
                 return Universe(items, owner, store, path, devices, lock = lock)
-            } catch (refused: RuntimeException) {
+            } catch (refused: Exception) {
                 // A logbook that will not read is not held: the lock would outlive the window
-                // that never opened.
+                // that never opened. Any failure, a file the disk will not give up included.
                 lock.release()
                 throw refused
             }

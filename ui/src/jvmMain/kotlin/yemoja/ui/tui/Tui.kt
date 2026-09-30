@@ -23,13 +23,18 @@ import yemoja.logic.Types
 fun tui(folder: String): Int {
     val universe = try {
         Universe.open(folder, FoundDevices())
-    } catch (refused: RuntimeException) {
+    } catch (refused: Exception) {
         // A folder that is not a logbook, or a file in it that will not read. Either way the
         // message names what was wrong, and a terminal that never started needs no tidying up.
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    return show(universe)
+    // The lock is let go however the terminal stops, or the next window is refused. `JSON-27`.
+    return try {
+        show(universe)
+    } finally {
+        universe.close()
+    }
 }
 
 /**
