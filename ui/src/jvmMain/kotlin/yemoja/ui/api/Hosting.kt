@@ -56,10 +56,12 @@ data class Started(val command: String, val arguments: List<String> = emptyList(
  * The agent logs itself in, so whether it answers from a subscription, an API key or a model on
  * this machine is between the user and whoever it belongs to. Nothing here holds a key. `GUI-38`.
  *
- * **It is given the logbook's tools and nothing else.** The session names `yemoja api` as an MCP
- * server of its own, which is how the agent reaches [socket], and every request the agent makes to
- * read a file, write one or run a command is refused. An agent meant for writing code would
- * otherwise edit the logbook's files directly and walk around every rule the tools hold it to.
+ * **It is given the logbook's tools, and of the machine only what the boxes allow.** The session
+ * names `yemoja api` as an MCP server of its own, which is how the agent reaches [socket]. A request
+ * of the agent's own is refused unless a box allows it — files within the logbook for *Allow raw
+ * file access*, a fetch for *Allow internet access* — and a command is refused always. An agent
+ * meant for writing code would otherwise edit the logbook's files directly and walk around every
+ * rule the tools hold it to. `API-5`.
  *
  * **It works beside the logbook rather than in it.** An agent treats the folder it is started in
  * as its own and writes there — the first real one left a file recording which tools it had been
@@ -376,9 +378,9 @@ internal val BRIEFING_NAMES: List<String> = listOf("CLAUDE.md", "AGENTS.md")
  * **An agent asks permission for the tools we gave it as well as for its own**, so refusing
  * everything refuses the logbook: a real one asked to call `describe` and was turned down, and
  * the fake one in the tests never asks at all, which is how that got as far as it did. What is
- * ours is allowed, because the user opening the panel is the consent for it and nothing it holds
- * can write. Everything else — a file read, a file written, a command run — is turned down and
- * noted in [refused], so the window can say what the agent tried to do. `API-5`, `GUI-38`.
+ * ours is allowed, because the user opening the panel is the consent for it, and its writing only
+ * stages. Everything else is judged by [allows] against the boxes, and what is turned down is noted
+ * in [refused], so the window can say what the agent tried to do. `API-5`, `GUI-38`.
  *
  * [server] is what the tool server calls itself, which is what its tools are named after.
  */
@@ -407,8 +409,8 @@ private class Refusing(
             refused += called
             return RequestPermissionResponse(RequestPermissionOutcome.Cancelled)
         }
-        // Standing where it is offered: the tools are read-only, and a conversation that asks
-        // about eight hundred dives would otherwise ask the user four hundred times.
+        // Standing where it is offered: what is allowed here is allowed for the conversation,
+        // and one that asks about eight hundred dives would otherwise ask four hundred times.
         val allowed = permissions.firstOrNull { it.kind == PermissionOptionKind.ALLOW_ALWAYS }
             ?: permissions.firstOrNull { it.kind == PermissionOptionKind.ALLOW_ONCE }
             ?: return RequestPermissionResponse(RequestPermissionOutcome.Cancelled)
@@ -541,7 +543,9 @@ internal fun allows(
     direct: Boolean,
     online: Boolean,
 ): Boolean = when {
-    ours -> true
+    // The title is the agent's to write, so it is trusted only for the kind our tools arrive
+    // as: a command or a file edit titled `yemoja/describe` is judged as what it is.
+    ours && (kind == null || kind == ToolKind.OTHER) -> true
     direct && reachesOnlyFiles(kind, locations, folders) -> true
     online && kind == ToolKind.FETCH -> true
     else -> false

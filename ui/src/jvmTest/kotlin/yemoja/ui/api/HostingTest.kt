@@ -294,6 +294,9 @@ class ReachesOnlyFilesTest {
             "the internet says nothing about the files")
         assertTrue(allows(true, ToolKind.OTHER, null, folders, false, false),
             "a tool of ours needs no box")
+        // The title is the agent's to write: a command or an edit claiming to be ours is not.
+        assertFalse(allows(true, ToolKind.EXECUTE, null, folders, true, true), "a command titled as ours")
+        assertFalse(allows(true, ToolKind.EDIT, null, folders, false, false), "an edit titled as ours")
     }
 
     @Test

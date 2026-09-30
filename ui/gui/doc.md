@@ -886,9 +886,9 @@ once and corrected. The numbers stay unused rather than being given to something
   **The panel stays open while the user moves between tabs**, so a dive the agent names can be
   opened while the conversation carries on. Where it sits and what it looks like is `DESK-9` in
   [desktop/doc.md](desktop/doc.md). It holds the
-  choice of agent, the conversation, and two boxes that are off at the start of every conversation:
-  *Allow logbook edits*, which lets the agent stage, and *Allow raw file access*, which lets it
-  at the files
+  choice of agent, the conversation, and three boxes that are off at the start of every
+  conversation: *Allow logbook edits*, which lets the agent stage, *Allow raw file access*, which
+  lets it at the files, and *Allow internet access*, which lets it fetch
   directly. `API-5`. A box that held back a person's private details is gone with the machinery
   behind it: an agent is sent whatever it reads, and the manual says so where its chapter begins.
 
@@ -958,7 +958,7 @@ once and corrected. The numbers stay unused rather than being given to something
   **What it holds, top to bottom**: a title naming the agent the command names, *Ask Claude*,
   with *Stop* beside it — *Start* after a stop or a failed start; the conversation, a
   view of its own for copying; what the stance says while an agent is starting or thinking; how
-  much is staged and the deed to review it, where anything is; and what to ask, with the two boxes
+  much is staged and the deed to review it, where anything is; and what to ask, with the three boxes
   under each other to the left of *Ask*, a box to a line: the panel is a column beside a tab, and
   three of them across it left each one a word wide. *Ask* is live only while an agent waits to be asked, and Enter presses it,
   Shift and Enter making a new line, as in any chat. While the agent answers, *Ask* gives way to

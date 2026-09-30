@@ -239,9 +239,15 @@ internal fun placeOf(latitude: Double, longitude: Double): String =
     "${rounded(latitude)}, ${rounded(longitude)}"
 
 private fun rounded(degrees: Double): String {
-    val whole = (degrees * 10_000).toLong()
-    return "${whole / 10_000}.${(if (whole < 0) -whole else whole) % 10_000}"
+    val whole = kotlin.math.round(degrees * TEN_THOUSANDTHS).toLong()
+    val sign = if (whole < 0) "-" else ""
+    val size = kotlin.math.abs(whole)
+    val fraction = (size % TEN_THOUSANDTHS.toLong()).toString().padStart(4, '0')
+    return "$sign${size / TEN_THOUSANDTHS.toLong()}.$fraction"
 }
+
+/** How finely a position is written: to four decimals of a degree, about eleven metres. */
+private const val TEN_THOUSANDTHS = 10_000.0
 
 /** Which site an arriving dive names, where it names one by id. */
 private fun siteNamedBy(dive: Item): String? =

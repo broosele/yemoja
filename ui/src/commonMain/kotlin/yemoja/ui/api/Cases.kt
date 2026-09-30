@@ -74,7 +74,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             duration = textOf(held["duration"]).orEmpty(),
             rate = textOf(held["rate"]).orEmpty(),
             // A cylinder is named by its number, as it is everywhere else here. `API-7`.
-            gas = textOf(held["gas"])?.toIntOrNull()?.let { it - 1 },
+            gas = when (val named = textOf(held["gas"])) {
+                null -> null
+                else -> named.toIntOrNull()?.takeIf { it >= 1 }?.let { it - 1 }
+                    ?: return Made.Wrong("$name line ${index + 1} gas should be a cylinder's number, not $named")
+            },
         )
     }
     val cylinders = (members["gases"] as? Stored.Elements)?.elements ?: emptyList()
@@ -91,6 +95,15 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             size = textOf(held["size"]).orEmpty(),
             fill = textOf(held["fill"]).orEmpty(),
             sac = textOf(held["sac"]).orEmpty(),
+        )
+    }
+    val beyond = segments.withIndex().firstOrNull { (_, line) ->
+        line.gas != null && line.gas >= gases.ifEmpty { listOf(Breathed()) }.size
+    }
+    if (beyond != null) {
+        return Made.Wrong(
+            "$name line ${beyond.index + 1} gas should be one of the ${gases.size.coerceAtLeast(1)} " +
+                "cylinders, not ${beyond.value.gas!! + 1}",
         )
     }
     fun setting(key: String, held: NumberSetting): String =

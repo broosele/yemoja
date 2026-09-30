@@ -326,14 +326,22 @@ class Tools(
         // the first of them, which is how a review shows it and how applying lands it. `RECON-8`.
         val profile = (Types.DIVE[PROFILES] as OwnedItemDescription).description
         return staging { staging ->
+            // Where the dive had nothing staged, a refusal part-way takes back what this staged:
+            // half a plan waiting to be applied is worse than none. Where it had something, that
+            // is the agent's earlier work and stays; the refusal says what did not go.
+            val clean = staging.staged.none { it.id == dive }
+            fun refused(done: Outcome.Refused): Outcome {
+                if (clean) staging.drop(dive)
+                return done
+            }
             for ((path, value) in leavesOf(profile, "$PROFILES.${made.key}", made.fields)) {
                 val done = staging.set(dive, path, value)
-                if (done is Outcome.Refused) return@staging done
+                if (done is Outcome.Refused) return@staging refused(done)
             }
             // A dive with no profile until now works from this one, as `onDiveOf` has it.
             if (first) {
                 val done = staging.set(dive, "primary_profile", "*${made.key}")
-                if (done is Outcome.Refused) return@staging done
+                if (done is Outcome.Refused) return@staging refused(done)
             }
             Outcome.Done()
         }

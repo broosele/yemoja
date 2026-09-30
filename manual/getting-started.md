@@ -236,7 +236,7 @@ the field holds and what it would hold. If you have edited one of those fields s
 staged it, the row says what it holds now, in red, and that change is left alone when you apply the
 rest. It stays waiting afterwards, still in red, until you **Discard** it or the agent stages it
 again against what the field holds now. **Discard** any item you do not want, then press
-**Apply all** or **Discard all**. The box starts empty for every conversation, like the other one.
+**Apply all** or **Discard all**. The box starts empty for every conversation, like the others.
 
 What is waiting is kept in a folder beside your logbook, with `.proposed` after its name, so it
 survives the window being closed. It is not part of your logbook.

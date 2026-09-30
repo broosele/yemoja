@@ -369,7 +369,7 @@ internal fun secondsOf(clock: String): Long? {
     val sign = if (clock.startsWith("-")) -1 else 1
     val parts = clock.removePrefix("-").split(':')
     return when (parts.size) {
-        1 -> parts[0].toDoubleOrNull()?.let { (it * 60).toLong() * sign }
+        1 -> parts[0].toDoubleOrNull()?.let { kotlin.math.round(it * 60).toLong() * sign }
         2 -> {
             val minutes = parts[0].toLongOrNull() ?: return null
             val seconds = parts[1].toLongOrNull() ?: return null

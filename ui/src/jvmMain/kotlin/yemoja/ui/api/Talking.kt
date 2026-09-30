@@ -79,7 +79,10 @@ internal class Talking(
      */
     override suspend fun ask(said: String, heard: (String) -> Unit) {
         val agent = hosted ?: error("an agent was asked something before it was started")
+        // Direct access ticked at any moment of the turn may have been used, unticked since or not.
+        var touched = direct()
         agent.ask(said).collect { event ->
+            if (direct()) touched = true
             if (event !is Event.SessionUpdateEvent) return@collect
             val update = event.update
             if (update !is SessionUpdate.AgentMessageChunk) return@collect
@@ -87,7 +90,7 @@ internal class Talking(
         }
         // The agent may have edited the files, and nothing in the window saw it. What will not
         // read again is said in the conversation, since that is where the user is looking.
-        if (direct()) reread()?.let { heard("\n\n$it") }
+        if (touched || direct()) reread()?.let { heard("\n\n$it") }
     }
 
     override suspend fun interrupt() {

@@ -702,7 +702,12 @@ private fun ListEditor(field: FieldDescription, item: Item, draft: Draft, kind: 
                 }
                 IconButton(
                     onClick = {
+                        // Held by position, so every entry after this one moves up a place with
+                        // what it was given; left where it was, the third would take the second's.
+                        val after = givens.filterKeys { it > index }
                         givens.remove(index)
+                        for (at in after.keys) givens.remove(at)
+                        for ((at, given) in after) givens[at - 1] = given
                         put(entries.filterIndexed { at, _ -> at != index })
                     },
                 ) {
@@ -835,7 +840,7 @@ private fun ReferenceEditor(
     } else {
         shown
     }
-    var query by remember(item, field.name) { mutableStateOf(display) }
+    var query by remember(item, field.name, display) { mutableStateOf(display) }
     var open by remember { mutableStateOf(false) }
     // Every item of the type from the arrow, and the ones whose names hold what was typed
     // while typing; either way the first few dozen, a list of three hundred dives being no

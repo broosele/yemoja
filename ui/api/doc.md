@@ -24,7 +24,7 @@ than a second one. `API-6`.
 into a logbook. `API-7`, in `Planning.kt`.
 
 **An agent can ask for a plan and propose one.** `plan` calculates and is always allowed;
-`create_plan` stages a plan as a new dive while the user allows changes. `API-9`.
+`create_plan` stages a plan onto a dive, or as a new one, while the user allows changes. `API-9`.
 
 **`yemoja plan` carries the reading half to anybody.** A file of plans in, a table or the whole
 answer out, no logbook anywhere. `API-8`, in `Cases.kt`, `Reported.kt` and `Planner.kt`, and
@@ -37,7 +37,7 @@ chapters. `Hosting.kt` writes the briefing where the agent starts.
 Everything an item holds is sent, private details included: `API-5`.
 
 **The window starts it and the panel decides what is allowed.** A conversation makes a socket of
-its own, hands the tools the box the user ticks beside it, and closes both when it ends. `GUI-38`.
+its own, hands the tools the boxes the user ticks beside it, and closes both when it ends. `GUI-38`.
 
 **An agent can stage a change.** `stage_set`, `stage_add`, `stage_delete` and `staged` answer while
 the user allows changes and are refused while they do not, and what they stage is `RECON-8`'s
@@ -119,8 +119,8 @@ behaviour of its own, that behaviour is in the wrong place.
   `yemoja plan <file>` gives a table, one row a plan, and `--json` gives every line of every dive.
   It opens no logbook, which is what makes it the surface the reading half deserves: a plan is
   arithmetic over what the file says, so nothing has to be open and nothing can be spoilt. It is
-  also why the writing half is not here — `saved` needs a logbook, and a command that opens one is
-  `API-3`, which is not settled.
+  also why the writing half is not here — `saved` needs a logbook, and a command that opens one
+  takes the lock `API-3` settles, which is work not yet done.
 
   **A file rather than switches.** The question this answers is *how do these compare*, and a
   comparison is thirty cases rather than one. Switches would make a caller write a loop in a shell

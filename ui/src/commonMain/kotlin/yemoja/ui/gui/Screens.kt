@@ -842,7 +842,7 @@ private suspend fun give(universe: Universe, to: String, giving: Giving) {
     giving.said = withContext(Dispatchers.Default) {
         try {
             exportSaid(universe.exportTo(to), to)
-        } catch (refused: RuntimeException) {
+        } catch (refused: Exception) {
             "$to could not be written: ${refused.message}"
         }
     }
@@ -1323,6 +1323,7 @@ private fun Subject(
         val add: ((ItemDescription) -> Unit)? =
             if (makeable.isEmpty()) null else { type -> kept.making = type }
         var asking by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
+        var deleteRefused by remember(chosen, kept.chosenMany) { mutableStateOf<String?>(null) }
         var clearing by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
         // Locations has two cards, a region and what is at it, so what a bin asks about is what
         // it was pressed on rather than whatever the tab has chosen. `GUI-35`.
@@ -1338,15 +1339,27 @@ private fun Subject(
             deleteAsked(set, going)?.let { asked ->
                 Confirm(
                     asked = asked,
-                    warned = deleteWarned(set, going),
+                    // A refusal is said where the question was asked, and the question stays.
+                    warned = listOfNotNull(deleteRefused, deleteWarned(set, going))
+                        .joinToString("\n\n").ifEmpty { null },
                     clearing = clearing,
                     onClearing = { clearing = it },
-                    onNo = { asking = false },
-                    onYes = {
+                    onNo = {
                         asking = false
-                        changer.change(going.map { Change.Delete(it, clearing) })
-                        kept.chosen = null
-                        kept.chosenMany = emptySet()
+                        deleteRefused = null
+                    },
+                    onYes = {
+                        when (val done = changer.change(going.map { Change.Delete(it, clearing) })) {
+                            is Outcome.Refused -> deleteRefused = done.reason
+                            is Outcome.Done -> {
+                                asking = false
+                                deleteRefused = null
+                                kept.chosen = null
+                                kept.chosenMany = emptySet()
+                                // A region deleted from its own card takes the card with it.
+                                if (kept.place?.id in going) kept.place = null
+                            }
+                        }
                     },
                 )
             }
@@ -2168,10 +2181,11 @@ private fun PlaceView(
         verticalArrangement = Arrangement.spacedBy(GAP),
     ) {
         if (place != null) {
-            val dots = remember(set, place, hideUnused) {
+            val edition = LocalChanger.current.edition
+            val dots = remember(set, place, hideUnused, edition) {
                 dotsOf(atPlaceIn(set, place.id, hideUnused).first)
             }
-            val frame = remember(set, place) { frameOf(place.item, dots) }
+            val frame = remember(set, place, edition) { frameOf(place.item, dots) }
             if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)
             ItemCard(
                 chosen = place,
