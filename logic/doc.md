@@ -237,7 +237,8 @@ The rest of what the section describes — statistics, decompression, the domain
 service beside the Universe rather than a method on it, and `LOGIC-1` decides how those are
 arranged. It is untouched by `change`, which is not one of them.
 
-**`change` is the one way anything in a logbook changes**, and it is shaped as the changeset
+**`change` is the one way an item in a logbook changes** — whose the logbook is changes
+through `own`, which writes the manifest and touches no item, `GUI-51` — and it is shaped as the changeset
 `data/json/doc.md` describes: an operation, and the actions that carried it out. That is the whole
 reason it exists now rather than when something needed it. When `FEAT-4` arrives a changeset has
 to be recorded for every change, and a front end reaching past this to an item's own `write` would
@@ -326,8 +327,11 @@ rather than being mangled, and the `name` field keeps the real spelling.
 Decompression calculation is the one part of this project where a mistake can hurt
 someone. It gets treated differently from everything else:
 
-- Isolated behind its own boundary, with no dependency on storage or UI, so it can
-  be tested exhaustively and compared against reference schedules.
+- Isolated behind its own boundary, with no dependency on storage or UI, so it can be
+  tested exhaustively and compared against published schedules. What that comparison
+  amounts to today is `ScheduleTest`: four air dives held to bands around what published
+  air tables ask, `LOGIC-37`, and two no-stop limits. The bands are wide and the tables are
+  not named, which is what `yemoja plan` exists to make better, `API-8`.
 - No change without tests.
 - Whatever the app shows is a planning aid, never a substitute for a dive computer
   or for training. That framing is a requirement on the UI layer too.

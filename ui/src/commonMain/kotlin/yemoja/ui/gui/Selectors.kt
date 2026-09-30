@@ -156,6 +156,16 @@ internal class Branch(
 )
 
 /**
+ * Whether [item] may be made the user: a person, and not the one [user] already is.
+ *
+ * On everything else the offer is absent rather than refused, there being nothing to say to a
+ * reader who cannot press it. `GUI-51`.
+ */
+internal fun owningOf(item: Item, user: ReferenceableItem?, set: ItemSet): Boolean =
+    item.description == Types.PERSON &&
+        (item as? ReferenceableItem)?.let { set.idOf(it) } != user?.let { set.idOf(it) }
+
+/**
  * The paths a tree opens with: its roots, and nothing under them.
  *
  * A region under every parent that names it runs to fifteen hundred lines fully open, so a tree

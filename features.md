@@ -110,8 +110,14 @@ them.
   itself.
 - **FEAT-12 — A programmatic interface.** Another program driving the logbook without a person
   present. See [ui/api/doc.md](ui/api/doc.md). Moved from *Future* because `FEAT-18` is built on
-  it. The tools an agent reads through are the part built first; scripting and automation follow
-  under this entry.
+  it. The tools an agent reads through were the part built first.
+
+  *Built since:* the shape, `API-2` — functions that answer and functions that change, third
+  parties and the agent alike, the agent's boxes deciding which it may use — and the planner as
+  the first of them: `calculated` and `saved`, `yemoja plan` over a file of cases, and the agent's
+  `plan` and `create_plan`. `API-7`, `API-8`, `API-9`. What is owed is a way for something outside
+  the application to *write* — `saved` is built and only the agent reaches it, because a command
+  that opens a logbook the window has open is `API-3`, still unsettled.
 - **FEAT-18 — An AI agent over the logbook.** Asking for something in ordinary language
   and having it answered or done, where doing it by hand would be many reads or many edits:
   how often a stage richer than 36% was breathed, a clock error set across a trip, one dive's

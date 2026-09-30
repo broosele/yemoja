@@ -37,8 +37,11 @@ class ItemSet(
      * Held here rather than only above, because a derived field is worked out from an item and
      * the set it sits in: the user's own `dives` are every dive, and nothing else could tell the
      * user's person apart from a buddy's. It may name nothing, like any reference. `DATA-118`.
+     *
+     * Set again where the manifest is written or read again, so what is derived from it does
+     * not go on reading the person the logbook used to belong to.
      */
-    val user: Reference.Identified? = null,
+    var user: Reference.Identified? = null,
 ) {
 
     // Copied. A List is read-only, not immutable.

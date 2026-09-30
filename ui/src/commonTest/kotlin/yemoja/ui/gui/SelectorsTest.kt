@@ -281,6 +281,27 @@ class RegionTreeTest {
 }
 
 /*
+ * Who may be made the logbook's user. See ../../../../../../gui/doc.md — `GUI-51`.
+ */
+class OwningOfferTest {
+
+    private val set = logbook(
+        "person.json" to """{"anna": {"first_name": "Anna"}, "bo": {"first_name": "Bo"}}""",
+        "dive_site.json" to """{"blue": {"name": "Blue Hole"}}""",
+    )
+
+    @Test
+    fun `offered on a person who is not the user, and on nobody else`() {
+        val anna = set["anna"]!! as yemoja.data.ReferenceableItem
+        val bo = set["bo"]!!
+        assertTrue(owningOf(bo, anna, set), "another person")
+        assertTrue(!owningOf(anna, anna, set), "not the user's own card")
+        assertTrue(!owningOf(set["blue"]!!, anna, set), "not a site")
+        assertTrue(owningOf(anna, null, set), "anybody, while the logbook names nobody")
+    }
+}
+
+/*
  * Unfolding a tree towards something chosen somewhere else. See ../../../../../../gui/doc.md —
  * `GUI-26`.
  */

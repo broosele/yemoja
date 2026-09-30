@@ -2386,6 +2386,12 @@ Kept with their identifiers so earlier discussion still resolves.
   somebody not there is a dangling reference and not an error. It is not a third question in
   the sense of `DATA-4` either, answering nothing about the items the set holds.
 
+  *Extended:* **it moves when the manifest does.** It was set once, when the logbook was read,
+  and choosing a user from the window then changed the manifest and the Universe's owner while
+  a person's `dives` went on being worked out from the old one until the logbook was reopened.
+  So it is written, and the two things that change the manifest — choosing an owner and reading
+  the files again — set it. `GUI-51`.
+
   An import read into a set of its own carries the other logbook's owner, which is right: that
   logbook's dives are theirs.
 

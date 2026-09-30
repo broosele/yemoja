@@ -1386,18 +1386,14 @@ private fun Subject(
                     kept.chosenMany.size > 1 -> {
                         ManyView(set, kept.chosenMany, onFollow) { asking = true }
                     }
-                    chosen != null -> {
-                        val changer = LocalChanger.current
-                        val owning = chosen.item.description == Types.PERSON && chosen.id != user?.let { set.idOf(it) }
-                        ItemView(
-                            chosen = chosen,
-                            onFollow = onFollow,
-                            makeable = makeable,
-                            onAdd = add,
-                            onDelete = { ask(emptySet()) },
-                            onOwn = if (owning) ({ changer.own(chosen.id) }) else null,
-                        )
-                    }
+                    chosen != null -> ItemView(
+                        chosen = chosen,
+                        onFollow = onFollow,
+                        makeable = makeable,
+                        onAdd = add,
+                        onDelete = { ask(emptySet()) },
+                        onOwn = if (owningOf(chosen.item, user, set)) ({ changer.own(chosen.id) }) else null,
+                    )
                     // Where nothing is chosen the middle still offers to make one, which is the
                     // only way a logbook with nothing in it grows a first item. `GUI-35`.
                     making != null && add != null -> Empty(makeSaid(making)) { add(making) }
@@ -2052,7 +2048,7 @@ private fun ItemView(
     onDelete: (() -> Unit)? = null,
     opensEditing: Boolean = false,
     /** Makes this person the user, offered on a person who is not. `GUI-51`. */
-    onOwn: (() -> Unit)? = null,
+    onOwn: (() -> Outcome)? = null,
 ) {
     // The card scrolls its own fields under a title line that stays put; what follows the
     // card scrolls with the fields.
@@ -2432,7 +2428,7 @@ private fun ItemCard(
     /** Whether the card opens turned over, which an item made a moment ago does. `GUI-35`. */
     opensEditing: Boolean = false,
     /** Makes this person the user. Absent on everything that is not a person, and on the user. */
-    onOwn: (() -> Unit)? = null,
+    onOwn: (() -> Outcome)? = null,
     after: @Composable ColumnScope.() -> Unit = {},
 ) {
     val changer = LocalChanger.current
@@ -2482,7 +2478,8 @@ private fun ItemCard(
                     // The glyph the list marks the user with, so pressing it puts the mark here.
                     onOwn?.let { own ->
                         Explained("This is me") {
-                            IconButton(onClick = own) {
+                            // A refusal is said where Save says its own, above the fields.
+                            IconButton(onClick = { refused = (own() as? Outcome.Refused)?.reason }) {
                                 Icon(Icons.Filled.AccountCircle, contentDescription = "this is me")
                             }
                         }

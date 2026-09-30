@@ -121,11 +121,31 @@ class Universe(
         if (named.description != Types.PERSON) {
             return Outcome.Refused("$id is a ${named.description.name} rather than a person")
         }
-        val manifest = LogbookReader.manifest(store)
-        store.writeText(LogbookReader.MANIFEST, Json.write(manifestOf(id, manifest.libraries)) + "\n")
+        // The file as it stands, so that whatever else it holds survives the one key changing.
+        // A file that will not read is refused rather than written over: the reader's complaint
+        // is the one to pass on, and rewriting from nothing would lose what was there.
+        val held = try {
+            manifestMembers()
+        } catch (refused: LogbookFormatException) {
+            return Outcome.Refused("the logbook's manifest could not be read: ${refused.message}")
+        }
+        val reference = Reference.Identified(id)
+        val written = LinkedHashMap(held)
+        written[LogbookReader.USER] = Stored.Leaf(reference.asWritten)
+        store.writeText(LogbookReader.MANIFEST, Json.write(Stored.Members(written)) + "\n")
+        logbook.user = reference
         user = named
         revision += 1
         return Outcome.Done()
+    }
+
+    /** The manifest's members as the file holds them, or none where there is no file. */
+    private fun manifestMembers(): Map<String, Stored> {
+        if (!store.isFile(LogbookReader.MANIFEST)) return emptyMap()
+        // Read through the reader first, so a file it would refuse is refused here too.
+        LogbookReader.manifest(store)
+        val parsed = Json.parse(store.readText(LogbookReader.MANIFEST))
+        return (parsed as? Stored.Members)?.members ?: emptyMap()
     }
 
     /**
@@ -153,6 +173,7 @@ class Universe(
         for (description in fresh.descriptions) {
             for (item in fresh.allOf(description)) fresh.idOf(item)?.let { logbook.add(it, item) }
         }
+        logbook.user = manifest.user
         val named = manifest.user?.let { logbook[it.id] }
         user = if (named?.description == Types.PERSON) named else null
         revision += 1
@@ -162,7 +183,8 @@ class Universe(
     /**
      * Does [changes] as one [operation], and saves whatever it touched.
      *
-     * **The one way anything changes.** Nothing above calls a mutator on an item, and the reason
+     * **The one way an item changes.** Whose the logbook is changes through [own], which writes
+     * the manifest and no item. Nothing above calls a mutator on an item, and the reason
      * is not tidiness: when `FEAT-4` arrives a changeset has to be recorded for every change, and
      * a front end reaching past this would leave nothing to record it from. The shape here is the
      * changeset's own — an operation, and the actions that carried it out — so the journal is a
@@ -685,7 +707,7 @@ class Universe(
             require(!store.isFile(LogbookReader.MANIFEST)) {
                 "$path already holds a logbook, and making one would write over it"
             }
-            store.writeText(LogbookReader.MANIFEST, Json.write(manifestOf(null, shippedIn(store))) + "\n")
+            store.writeText(LogbookReader.MANIFEST, Json.write(manifestOf(shippedIn(store))) + "\n")
             return open(path, devices)
         }
 
@@ -714,20 +736,18 @@ class Universe(
 }
 
 /**
- * A manifest as a file holds it: whose the logbook is, where [user] names somebody, and the
- * [libraries] it uses by type.
+ * A new logbook's manifest: the [libraries] it uses by type, and no owner yet. `JSON-3`.
  *
- * The one place the file's shape is written, so making a logbook and choosing its user cannot
- * write two different files. `JSON-3`, `JSON-22`.
+ * Choosing the owner later edits the file rather than writing it afresh, so whatever else a
+ * manifest comes to hold survives; this is the one place a manifest is made from nothing.
  */
-private fun manifestOf(user: String?, libraries: Map<String, List<String>>): Stored.Members {
-    val members = LinkedHashMap<String, Stored>()
-    user?.let { members[LogbookReader.USER] = Stored.Leaf("@$it") }
-    members[LIBRARIES] = Stored.Members(
-        libraries.mapValues { (_, held) -> Stored.Elements(held.map { Stored.Leaf(it) }) },
-    )
-    return Stored.Members(members)
-}
+private fun manifestOf(libraries: Map<String, List<String>>): Stored.Members = Stored.Members(
+    mapOf(
+        LIBRARIES to Stored.Members(
+            libraries.mapValues { (_, held) -> Stored.Elements(held.map { Stored.Leaf(it) }) },
+        ),
+    ),
+)
 
 /** The key a manifest groups its libraries under. */
 private const val LIBRARIES = "libraries"
