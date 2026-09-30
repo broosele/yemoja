@@ -21,8 +21,11 @@ says and `shapedOf` takes it, so a caller with no window asks the window's own c
 than a second one. `API-6`.
 
 **The planner is two functions.** `calculated` answers and writes nothing; `saved` writes a plan
-into a logbook. `API-7`, in `Planning.kt`. Nothing outside the application calls either yet: the
-command that carries them to a user is next.
+into a logbook. `API-7`, in `Planning.kt`.
+
+**`yemoja plan` carries the reading half to anybody.** A file of plans in, a table or the whole
+answer out, no logbook anywhere. `API-8`, in `Cases.kt`, `Reported.kt` and `Planner.kt`, and
+described for its users in `manual/planning-from-a-file.md`.
 
 **The read-only tools, the server that carries them, and an agent that reaches them.**
 `guide`, `describe`, `list`, `get`, `series` and `aggregate` answer as `API-4` sets out, in
@@ -73,6 +76,37 @@ behaviour of its own, that behaviour is in the wrong place.
   calls can be renamed on a whim; one an outside script depends on cannot. So what is exposed is
   documented in `manual/` beside the data format, which is the other thing this project promises
   not to break, and anything not documented there is not part of the promise.
+
+- **API-8 — How a plan reaches something outside the application.** *Settled:* **a command that
+  reads a file of plans and writes what they come to.**
+
+  `yemoja plan <file>` gives a table, one row a plan, and `--json` gives every line of every dive.
+  It opens no logbook, which is what makes it the surface the reading half deserves: a plan is
+  arithmetic over what the file says, so nothing has to be open and nothing can be spoilt. It is
+  also why the writing half is not here — `saved` needs a logbook, and a command that opens one is
+  `API-3`, which is not settled.
+
+  **A file rather than switches.** The question this answers is *how do these compare*, and a
+  comparison is thirty cases rather than one. Switches would make a caller write a loop in a shell
+  to ask thirty questions; a file makes it one run and one table.
+
+  **What a case leaves out, the application answers.** A row of an air table is a depth and a
+  bottom time; making a caller write eleven settings beside it to say *the ordinary ones* would be
+  eleven chances to write a comparison that was not comparing what it claimed. The gradient factors
+  have no default and must be given, which is `GUI-42`'s position and not this decision's.
+
+  **A number reads as its text.** `40` and `"40"` say the same depth, because a caller writing a
+  case file by hand should not have to learn which fields this application quotes. Everything
+  arrives as the text a form would hold, so `API-6`'s refusals are the refusals here.
+
+  **One case that will not calculate does not stop the run.** It takes a row of its own with the
+  reason in it and the command still succeeds. Fifty cases with one typo in them is the ordinary
+  way a comparison file is written, and losing forty-nine answers to it would be the wrong trade.
+
+  **The table's columns are chosen for the comparison that prompted this**: `bottom_minutes` and
+  `stop_minutes` are what a published air table's row and column say, and `stops` reads as
+  `18@1 15@2 12@3` so that a whole schedule fits in one cell. The rest are what a second program
+  would be asked for beside them.
 
 - **API-7 — What the planner offers.** *Settled:* **one function that answers and one that
   writes, and no third.**

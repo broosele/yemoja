@@ -91,6 +91,9 @@ In reading order, which is the order the Manuals tab lists them in:
   and kept current as fields are decided.
 - `data-format.md` — the logbook on disk: how the files are arranged, named and
   written, and how to edit them by hand. **Written.**
+- `planning-from-a-file.md` — the `plan` command: writing dive plans as a file and reading
+  what they come to. **Written.** It carries the same safety framing `decompression.md` does,
+  because a reader who never opens the window may meet the model here first.
 - `settings.md` — the two settings files, which of them wins, and why they are not part
   of the data format. **Written**, and grows as settings are added.
 - `decompression.md` — the model, what it assumes and what it cannot know.

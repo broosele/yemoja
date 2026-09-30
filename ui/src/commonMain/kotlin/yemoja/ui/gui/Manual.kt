@@ -26,6 +26,7 @@ internal val CHAPTERS: List<String> = listOf(
     "uddf.md",
     "data-fields.md",
     "data-format.md",
+    "planning-from-a-file.md",
     "settings.md",
     "decompression.md",
     "app-info.md",

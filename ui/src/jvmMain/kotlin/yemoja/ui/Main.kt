@@ -1,6 +1,7 @@
 package yemoja.ui
 
 import yemoja.ui.api.api
+import yemoja.ui.api.planned
 import yemoja.ui.gui.gui
 import yemoja.ui.tui.tui
 import java.nio.file.Paths
@@ -27,6 +28,15 @@ internal val COMMANDS: Map<String, Command> = mapOf(
     // start it, and it carries that agent's tool calls to a window that is already open. `API-4`.
     "api" to Command(listOf("port"), "relay an agent to an open window") {
         api(it.single())
+    },
+    // No logbook: a plan is arithmetic over what the file says, so this asks for a hundred of
+    // them at once and writes what they come to. `API-8`.
+    "plan" to Command(
+        listOf("plan file", "--json"),
+        "calculate the plans in a file",
+        least = 1,
+    ) {
+        planned(it.first(), it.drop(1))
     },
 )
 
