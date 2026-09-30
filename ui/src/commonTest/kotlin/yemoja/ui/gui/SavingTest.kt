@@ -44,13 +44,13 @@ private fun shaping(vararg segments: Segment, gases: List<Breathed> = CARRIED): 
 }
 
 private fun doneOf(shaping: Shaping): Pair<Shaped.Ready, Worked.Done> {
-    val ready = assertIs<Shaped.Ready>(shapedOf(shaping))
+    val ready = assertIs<Shaped.Ready>(shapedOf(shaping.described()))
     return ready to assertIs<Worked.Done>(workedOf(ready))
 }
 
 private fun fieldsOf(shaping: Shaping): Map<String, Stored> {
     val (ready, done) = doneOf(shaping)
-    return planFieldsOf(shaping, ready.conditions, done.whole)
+    return planFieldsOf(shaping.described(), ready.conditions, done.whole)
 }
 
 private fun emptyLogbook(files: Map<String, String> = emptyMap()): Universe {

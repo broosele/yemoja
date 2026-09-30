@@ -16,6 +16,10 @@ logic layer is designed with it in mind.
 
 ## What is built
 
+**A plan is described apart from the form that describes it.** `Planned` holds what a dive plan
+says and `shapedOf` takes it, so a caller with no window asks the window's own calculation rather
+than a second one. `API-6`.
+
 **The read-only tools, the server that carries them, and an agent that reaches them.**
 `guide`, `describe`, `list`, `get`, `series` and `aggregate` answer as `API-4` sets out, in
 `Tools.kt`, and `ToolServer.kt` serves them over MCP with the briefing and the manual's two data
@@ -46,13 +50,47 @@ behaviour of its own, that behaviour is in the wrong place.
 - **API-1 — What kind of interface?** An in-process library binding, a command-line tool,
    or a local server. These serve different users and are not mutually exclusive.
    *Answered for an agent by `API-4`:* a local MCP server, run inside the application.
-- **API-2 — Who is it for** — the project's own tooling, or third parties? That decides how
-   stable the surface must be.
 - **API-3 — Whether it may run against a logbook the GUI has open**, and what that means for
    concurrent access. It does not arise for an agent, whose server runs in the window's own
    process.
 
 ## Settled
+
+- **API-2 — Who the interface is for.** *Settled:* **third parties as much as our own tooling,
+  and one set of functions serves both.**
+
+  There are two kinds of them. **Functions that answer a question** read the logbook and change
+  nothing. **Functions that change data** write to it. An outside caller may use both; the agent
+  may use both as well, and which it may use is what the boxes beside the conversation decide —
+  `GUI-38` and `API-5` already gate its writing that way, and nothing about that is special to an
+  agent beyond who is being asked.
+
+  **That the surface is third parties' is what makes it a promise.** A function nobody outside
+  calls can be renamed on a whim; one an outside script depends on cannot. So what is exposed is
+  documented in `manual/` beside the data format, which is the other thing this project promises
+  not to break, and anything not documented there is not part of the promise.
+
+- **API-6 — How a plan is described to something with no window.** *Settled:* **an immutable
+  description holding the same text the form holds.**
+
+  The planner's calculation is the window's: `shapedOf` turns typed lines into a run, `workedOf`
+  completes the ascent and evaluates it. An interface that calculated a plan any other way would
+  be a second implementation of the hardest arithmetic here, free to disagree with what a user
+  sees — and the point of offering a plan to an outside caller is that the numbers are the same
+  numbers. So the pipeline is shared and only its input changes.
+
+  **`Planned` is what it takes**: the lines, the cylinders, the settings, the start and the run
+  followed, each as it would be typed. The window keeps a `Shaping`, the same fields in Compose
+  state so that typing redraws, and `described()` reads one out of the other. Everything that
+  reads a plan takes the description; only the form and its buttons take the `Shaping`.
+
+  **Text rather than numbers, deliberately.** A caller sending `soon` for a duration is refused in
+  the words the form refuses it in. Parsing the description a second time, in numbers, would mean
+  two readings of what a plan says and two sets of complaints about it.
+
+  Open: `Planned` and the shaping functions still sit in the `gui` package, which is where they
+  grew. Nothing outside reaches them through it, and moving them to a package of their own is
+  tidying rather than a decision.
 
 - **API-4 — What an agent is given.** *Settled:* **tools over the Universe that return whole
   items, and the instructions for using them.** They are served over MCP from inside the running

@@ -213,7 +213,7 @@ internal fun gasLabelOf(index: Int): String = "Gas ${index + 1}"
  *
  * Example: `2: EAN50`, or `2` alone while its mix is still blank.
  */
-internal fun gasChoiceOf(shaping: Shaping, index: Int): String {
+internal fun gasChoiceOf(shaping: Planned, index: Int): String {
     val typed = shaping.gases.getOrNull(index)?.gas?.trim().orEmpty()
     val mix = gasOf(typed)?.toString() ?: typed
     return if (mix.isEmpty()) "${index + 1}" else "${index + 1}: $mix"
@@ -465,7 +465,7 @@ internal class Conditions(
 )
 
 /** The plan's settings, or why the first that will not read does not. */
-internal fun conditionsOf(shaping: Shaping): Pair<Conditions?, String?> {
+internal fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
     val low = percentageOf(shaping.gradientLow) ?: return null to factorWrong("low", shaping.gradientLow)
     val high = percentageOf(shaping.gradientHigh) ?: return null to factorWrong("high", shaping.gradientHigh)
     if (low > high) return null to "GF low should not be higher than GF high"
@@ -543,7 +543,7 @@ internal sealed class Shaped {
  *
  * The run carries nothing: a plan in the calculations belongs to no dive and so follows none.
  */
-internal fun shapedOf(shaping: Shaping, universe: Universe? = null): Shaped {
+internal fun shapedOf(shaping: Planned, universe: Universe? = null): Shaped {
     val (conditions, unreadable) = conditionsOf(shaping)
     val (legs, wrong) = laidOf(
         shaping.segments,
@@ -626,14 +626,14 @@ internal fun workedOf(ready: Shaped.Ready): Worked {
  * The cylinder the lost-gas scenario loses: the one chosen, or the first deco cylinder where none
  * is, or null where there is neither.
  */
-internal fun Shaping.lostIndex(): Int? =
+internal fun Planned.lostIndex(): Int? =
     lostGas?.takeIf { it in gases.indices } ?: gases.indexOfFirst { it.role == Role.DECO }.takeIf { it >= 0 }
 
 /**
  * Whether the lost-gas scenario is tried: a cylinder is lost, and *None* was not chosen. A plan with
  * no deco gas and nothing chosen loses none, so its reserve has no lost-gas scenario to try.
  */
-internal fun Shaping.lostGasTried(): Boolean = lostGasScenario && lostIndex() != null
+internal fun Planned.lostGasTried(): Boolean = lostGasScenario && lostIndex() != null
 
 /** Scenario is one way a dive can go wrong that the gas reserve is kept back for. `LOGIC-40`. */
 internal enum class Scenario(val label: String, val tip: String) {
@@ -671,7 +671,7 @@ internal class Reckoned(val scenarios: Map<Scenario, Reckoning?>) {
  * The stress factor is read apart from the other settings, so one typed wrong leaves the shared
  * scenario unsaid and everything else answered. `LOGIC-40`.
  */
-internal fun reckonedOf(shaping: Shaping, done: Worked.Done, conditions: Conditions): Reckoned {
+internal fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Reckoned {
     fun reckoning(reserve: Reserve): Reckoning = when (reserve) {
         is Reserve.Done -> Reckoning.Done(reserve)
         // A cylinder named is one whose rate is missing: said with everything else it lacks, and
@@ -737,7 +737,7 @@ internal fun worstSaid(reserve: Reserve.Done): String =
  *
  * Example: `Cannot be calculated (missing for Gas 1: SAC, volume, start pressure)`.
  */
-internal fun missingSaid(shaping: Shaping): String? {
+internal fun missingSaid(shaping: Planned): String? {
     val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
     val missing = shaping.gases.withIndex().filter { (index, breathed) ->
         index != lost && breathed.sac.trim().toDoubleOrNull() == null
@@ -761,7 +761,7 @@ private fun lackedBy(breathed: Breathed): List<String> = listOfNotNull(
  *
  * Example: `Gas 1 needs 54 bar at 25:00 (40 m), surfacing without Gas 2 at normal SAC`.
  */
-internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Shaping): String {
+internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): String {
     val needs = reserve.needed.filterValues { it > 0 }.keys.map { key ->
         val held = reserve.reserve[key]?.let { "${ceil(it).toInt()} bar" }
             ?: "${ceil(reserve.needed.getValue(key)).toInt()} L"
@@ -787,11 +787,11 @@ internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Sh
 }
 
 /** The problem-solving time [shaping] asks for, in whole seconds, or null where it will not read. */
-internal fun problemSecondsOf(shaping: Shaping): Int? =
+internal fun problemSecondsOf(shaping: Planned): Int? =
     shaping.problemMinutes.trim().toDoubleOrNull()?.takeIf { it >= 0 }?.let { (it * SECONDS_IN_MINUTE).roundToInt() }
 
 /** The deco cylinder a buddy goes to first, being the one breathable deepest, as its line names it. */
-private fun decoReachedSaid(shaping: Shaping): String? {
+private fun decoReachedSaid(shaping: Planned): String? {
     val conditions = conditionsOf(shaping).first ?: return null
     return shaping.gases.withIndex().filter { it.value.role == Role.DECO }
         .maxByOrNull { (_, breathed) ->
@@ -818,7 +818,7 @@ internal fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? =
 }
 
 /** The cylinders a reserve breathes that have no size or no start pressure, so cannot be checked. */
-internal fun uncheckedSaid(reckoned: Reckoned, shaping: Shaping): String? {
+internal fun uncheckedSaid(reckoned: Reckoned, shaping: Planned): String? {
     val unchecked = reckoned.done.values.filter { !it.judged }.flatMap { it.needed.keys }
         .map { gasIndexOf(it) }.distinct().sorted().filter {
             val breathed = shaping.gases[it]
@@ -880,7 +880,7 @@ internal fun tailOf(run: Run, ascent: Ascended.Done): List<Leg> {
  * Whether [leg] goes deeper than its cylinder may be breathed, at the limit its role gives under
  * [conditions]. A mix with no oxygen may be breathed nowhere, so any line on one is too deep.
  */
-internal fun tooDeepFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Boolean {
+internal fun tooDeepFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean {
     if (conditions == null) return false
     val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
     val gas = gasOf(breathed.gas) ?: return false
@@ -893,7 +893,7 @@ internal fun tooDeepFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Bo
  * Whether [leg] comes shallower than its cylinder may be breathed, where the mix is hypoxic and its
  * oxygen falls below the plan's *pO₂ min*. A mix with no oxygen is caught by [tooDeepFor] already.
  */
-internal fun tooShallowFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Boolean {
+internal fun tooShallowFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean {
     if (conditions == null) return false
     val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
     val gas = gasOf(breathed.gas) ?: return false
@@ -902,7 +902,7 @@ internal fun tooShallowFor(leg: Leg, shaping: Shaping, conditions: Conditions?):
 }
 
 /** Whether [leg] breathes its cylinder anywhere it may not be breathed, too deep or too shallow. */
-internal fun gasWrongFor(leg: Leg, shaping: Shaping, conditions: Conditions?): Boolean =
+internal fun gasWrongFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean =
     tooDeepFor(leg, shaping, conditions) || tooShallowFor(leg, shaping, conditions)
 
 /**
@@ -981,14 +981,16 @@ internal fun PlanForm(
         if (!shaping.prefilled) shaping.prefill(settings)
         shaping
     }
-    val shaped = shapedOf(shaping, universe)
+    // The form as a plan, read once: everything below asks the same description the same question.
+    val planned = shaping.described()
+    val shaped = shapedOf(planned, universe)
     val worked = (shaped as? Shaped.Ready)?.let { workedOf(it) }
     val done = worked as? Worked.Done
-    val conditions = conditionsOf(shaping).first
-    val reckoned = if (done != null && conditions != null) reckonedOf(shaping, done, conditions) else null
+    val conditions = conditionsOf(planned).first
+    val reckoned = if (done != null && conditions != null) reckonedOf(planned, done, conditions) else null
     Heading("Dive plan")
     saving()
-    StartRow(shaping, universe, followedOf(shaping, universe))
+    StartRow(shaping, universe, followedOf(planned, universe))
     // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
     // two columns end on one line however many cylinders there are.
     Row(
@@ -1020,13 +1022,13 @@ internal fun PlanForm(
         shaped is Shaped.Wrong -> Refused(shaped.reason)
         worked is Worked.Refused -> Refused(worked.reason)
         done != null -> {
-            for (finding in findingsSaidOf(done.evaluated, mixedTanksOf(shaping))) {
+            for (finding in findingsSaidOf(done.evaluated, mixedTanksOf(planned))) {
                 Warning("${finding.label} ${finding.parts.joinToString("") { it.text }}", finding.wrong)
             }
             for ((scenario, reserve) in reckoned?.done.orEmpty()) {
                 shortfallSaid(scenario, reserve)?.let { Warning(it, wrong = true) }
             }
-            reckoned?.let { uncheckedSaid(it, shaping) }?.let { Warning(it, wrong = false) }
+            reckoned?.let { uncheckedSaid(it, planned) }?.let { Warning(it, wrong = false) }
         }
     }
     if (done != null) Graph(done, shaping)
@@ -1044,14 +1046,14 @@ private fun Warning(text: String, wrong: Boolean) {
 }
 
 /** What each cylinder is called where the model warns of it, its mix beside its name: `Gas 2 (EAN50)`. */
-private fun mixedTanksOf(shaping: Shaping): Map<String, String> =
+private fun mixedTanksOf(shaping: Planned): Map<String, String> =
     shaping.gases.indices.associate { index ->
         val mix = gasChoiceOf(shaping, index).substringAfter(": ", "")
         gasKeyOf(index) to if (mix.isEmpty()) gasLabelOf(index) else "${gasLabelOf(index)} ($mix)"
     }
 
 /** What each cylinder is called, under the key the run holds it by. */
-private fun tanksOf(shaping: Shaping): Map<String, String> =
+private fun tanksOf(shaping: Planned): Map<String, String> =
     shaping.gases.indices.associate { gasKeyOf(it) to gasLabelOf(it) }
 
 /**
@@ -1068,7 +1070,7 @@ private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?, c
             index,
             segment,
             leg,
-            gasWrong = leg != null && gasWrongFor(leg, shaping, conditions),
+            gasWrong = leg != null && gasWrongFor(leg, shaping.described(), conditions),
             ceilingBroken = leg != null && breaksCeiling(leg, above),
         )
     }
@@ -1076,7 +1078,7 @@ private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?, c
         WorkedLine(
             leg,
             shaping,
-            gasWrong = gasWrongFor(leg, shaping, conditions),
+            gasWrong = gasWrongFor(leg, shaping.described(), conditions),
             ceilingBroken = breaksCeiling(leg, above),
         )
     }
@@ -1151,13 +1153,14 @@ private fun TypedLine(
                 enabled = !staying,
             )
         }
-        val above = gasAbove(shaping, index)
+        val planned = shaping.described()
+        val above = gasAbove(planned, index)
         val shown = segment.gas?.takeIf { it in shaping.gases.indices } ?: above
         Tipped(PlannerTips.GAS, GAS) {
             Pick(
                 dense = true,
-                chosen = gasChoiceOf(shaping, shown),
-                options = shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                chosen = gasChoiceOf(planned, shown),
+                options = planned.gases.indices.map { gasChoiceOf(planned, it) },
                 italic = segment.gas == null,
                 wrong = gasWrong,
             ) { chose ->
@@ -1181,7 +1184,7 @@ private fun TypedLine(
 }
 
 /** What the lines above [index] breathe at their end, which a line following them breathes too. */
-internal fun gasAbove(shaping: Shaping, index: Int): Int {
+internal fun gasAbove(shaping: Planned, index: Int): Int {
     var gas = 0
     for (segment in shaping.segments.take(index)) {
         gas = segment.gas?.takeIf { it in shaping.gases.indices } ?: gas
@@ -1205,7 +1208,7 @@ private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBro
             Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, if (ceilingBroken) error else italic)
             Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
             Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
-            Cell(gasChoiceOf(shaping, leg.gas), GAS, TextAlign.Start, if (gasWrong) error else italic, padding = GAP)
+            Cell(gasChoiceOf(shaping.described(), leg.gas), GAS, TextAlign.Start, if (gasWrong) error else italic, padding = GAP)
         }
     }
 }
@@ -1485,11 +1488,12 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                             // None for no lost-gas scenario at all: the choice is the scenario's switch.
                             Scenario.LOST_GAS -> Explained(PlannerTips.GAS_LOST) {
                                 Box(modifier = Modifier.width(SETTING)) {
+                                    val planned = shaping.described()
                                     Pick(
                                         dense = true,
-                                        chosen = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
-                                            ?.let { gasChoiceOf(shaping, it) } ?: NO_GAS_LOST,
-                                        options = listOf(NO_GAS_LOST) + shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                                        chosen = planned.lostIndex()?.takeIf { planned.lostGasTried() }
+                                            ?.let { gasChoiceOf(planned, it) } ?: NO_GAS_LOST,
+                                        options = listOf(NO_GAS_LOST) + planned.gases.indices.map { gasChoiceOf(planned, it) },
                                     ) { chosen ->
                                         shaping.lostGasScenario = chosen > 0
                                         if (chosen > 0) shaping.lostGas = chosen - 1
@@ -1515,7 +1519,7 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                     reckoned == null -> ""
                     reckoning == null -> "off"
                     reckoning is Reckoning.Wrong -> reckoning.reason
-                    reckoning is Reckoning.Done -> scenarioSaid(scenario, reckoning.reserve, shaping)
+                    reckoning is Reckoning.Done -> scenarioSaid(scenario, reckoning.reserve, shaping.described())
                     else -> ""
                 }
                 // Two lines whatever it says, so switching a scenario off or on does not move the
@@ -1544,7 +1548,7 @@ private fun Figure(label: String, said: String, tip: String) {
 /** The whole dive drawn as a recording is: depth, the ceiling over it, and the switches on it. */
 @Composable
 private fun Graph(done: Worked.Done, shaping: Shaping) {
-    val tanks = tanksOf(shaping)
+    val tanks = tanksOf(shaping.described())
     val depth = listOfNotNull(
         Line("Depth", done.whole.depth.map { (second, metres) -> Point(second / SECONDS_IN_MINUTE, metres) }),
         ceilingLineOf(done.evaluated),

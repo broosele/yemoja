@@ -97,7 +97,7 @@ internal val LocalPlanOpener = staticCompositionLocalOf<((Bound) -> Unit)?> { nu
  * The cylinders are keyed as a gas source's key is proposed: by what each is for, `bottom`,
  * `deco`, `bailout`, with `#1` where two are for the same. `JSON-18`.
  */
-internal fun planFieldsOf(shaping: Shaping, conditions: Conditions, whole: Run): Map<String, Stored> {
+internal fun planFieldsOf(shaping: Planned, conditions: Conditions, whole: Run): Map<String, Stored> {
     val keys = ArrayList<String>()
     val sources = LinkedHashMap<String, Stored>()
     for (breathed in shaping.gases) {
@@ -140,7 +140,7 @@ internal fun planFieldsOf(shaping: Shaping, conditions: Conditions, whole: Run):
  * What a new dive holding [shaping]'s plan says of itself besides the plan: the dive it follows, and
  * that dive's time zone, so the surface interval it works out is the one the planner showed.
  */
-internal fun diveFieldsOf(shaping: Shaping, universe: Universe?): Map<String, Stored> {
+internal fun diveFieldsOf(shaping: Planned, universe: Universe?): Map<String, Stored> {
     val following = shaping.following ?: return emptyMap()
     val fields = linkedMapOf<String, Stored>("previous_dive" to Stored.Leaf("@${following.dive}"))
     val earlier = universe?.logbook?.get(following.dive)
@@ -154,7 +154,7 @@ internal fun diveFieldsOf(shaping: Shaping, universe: Universe?): Map<String, St
  * Why [shaping]'s plan cannot go on [dive], or null where it can: a dive follows one dive, so a plan
  * following another than the one [dive] already names would contradict it.
  */
-internal fun followingClashOf(shaping: Shaping, dive: Item): String? {
+internal fun followingClashOf(shaping: Planned, dive: Item): String? {
     val following = shaping.following ?: return null
     val named = (dive.single<Reference>("previous_dive") as? Result.Usable)?.value as? Reference.Identified
         ?: return null
@@ -360,7 +360,8 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
     // A plan bound to a dive since taken out saves as a new one.
     val bound = saving.bound?.takeIf { universe?.logbook?.get(it.dive) != null }
     val dive = bound?.let { universe?.logbook?.get(it.dive) }
-    val ready = shapedOf(shaping, universe) as? Shaped.Ready
+    val planned = shaping.described()
+    val ready = shapedOf(planned, universe) as? Shaped.Ready
     val done = ready?.let { workedOf(it) as? Worked.Done }
     val unsaved = when {
         universe == null -> "Open a logbook to save a plan into it."
@@ -368,11 +369,11 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
         else -> null
     }
     fun save(target: Bound?) {
-        val fields = planFieldsOf(shaping, ready!!.conditions, done!!.whole)
+        val fields = planFieldsOf(planned, ready!!.conditions, done!!.whole)
         val key = if (target is Bound.Editing) target.key else planKeyOf(saving.name)
         val outcome = when (target) {
-            null -> changer.change(newDiveOf(key, fields, diveFieldsOf(shaping, universe)))
-            else -> changer.change(onDiveOf(universe!!.logbook[target.dive]!!, key, fields, diveFieldsOf(shaping, universe)))
+            null -> changer.change(newDiveOf(key, fields, diveFieldsOf(planned, universe)))
+            else -> changer.change(onDiveOf(universe!!.logbook[target.dive]!!, key, fields, diveFieldsOf(planned, universe)))
         }
         saving.said = when (outcome) {
             is Outcome.Refused -> outcome.reason
@@ -406,7 +407,7 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
             null -> null
             else -> dive?.let { titleOf(it) }
         }
-        val clash = dive?.let { followingClashOf(shaping, it) }
+        val clash = dive?.let { followingClashOf(planned, it) }
         val blocked = unsaved ?: nameWrong ?: clash
         if (target != null) {
             Explained(blocked) {
@@ -424,9 +425,9 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
             Attach(universe, enabled = unsaved == null) { chosen ->
                 val id = universe!!.logbook.idOf(chosen) ?: return@Attach
                 val key = attachedKeyOf(chosen, saving.name)
-                val fields = planFieldsOf(shaping, ready!!.conditions, done!!.whole)
-                followingClashOf(shaping, chosen)?.let { saving.said = it; return@Attach }
-                saving.said = when (val outcome = changer.change(onDiveOf(chosen, key, fields, diveFieldsOf(shaping, universe)))) {
+                val fields = planFieldsOf(planned, ready!!.conditions, done!!.whole)
+                followingClashOf(planned, chosen)?.let { saving.said = it; return@Attach }
+                saving.said = when (val outcome = changer.change(onDiveOf(chosen, key, fields, diveFieldsOf(planned, universe)))) {
                     is Outcome.Refused -> outcome.reason
                     is Outcome.Done -> {
                         saving.bound = Bound.Editing(id, key)

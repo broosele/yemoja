@@ -27,7 +27,7 @@ private fun planned(vararg segments: Segment, gases: List<Breathed> = listOf(Bre
     return shaping
 }
 
-private fun ready(shaping: Shaping): Shaped.Ready = assertIs<Shaped.Ready>(shapedOf(shaping))
+private fun ready(shaping: Shaping): Shaped.Ready = assertIs<Shaped.Ready>(shapedOf(shaping.described()))
 
 private fun done(shaping: Shaping): Worked.Done = assertIs<Worked.Done>(workedOf(ready(shaping)))
 
@@ -67,8 +67,43 @@ class LaidOfTest {
     }
 
     @Test
+    fun `a form describes a plan, and the description alone calculates it`() {
+        val shaping = Shaping()
+        shaping.prefill(null)
+        shaping.gradientLow = "30"
+        shaping.gradientHigh = "70"
+        shaping.segments.clear()
+        shaping.segments.addAll(FORTY)
+        val described = shaping.described()
+        assertEquals("30", described.gradientLow)
+        assertEquals("70", described.gradientHigh)
+        assertEquals(FORTY.toList(), described.segments, "the lines as they were typed")
+        assertEquals(shaping.water, described.water)
+        assertEquals(shaping.lastStop, described.lastStop)
+        // Nothing of the form is left behind: the description calculates the same dive.
+        val run = assertIs<Shaped.Ready>(shapedOf(described)).run
+        assertEquals(0.3, run.gradientFactorLow)
+        assertEquals(40.0, run.depth.maxOf { it.second })
+    }
+
+    @Test
+    fun `a description is its own, and editing the form after it does not reach it`() {
+        val shaping = Shaping()
+        shaping.prefill(null)
+        shaping.gradientLow = "30"
+        shaping.gradientHigh = "70"
+        shaping.segments.clear()
+        shaping.segments.addAll(FORTY)
+        val described = shaping.described()
+        shaping.gradientLow = "10"
+        shaping.segments.clear()
+        assertEquals("30", described.gradientLow, "what was described stays described")
+        assertEquals(2, described.segments.size)
+    }
+
+    @Test
     fun `a stay without a duration says so`() {
-        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment("40"), Segment("40"))))
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment("40"), Segment("40")).described()))
         assertEquals("Line 2 needs a duration, because it stays at 40 m", wrong.reason)
         assertEquals(1, wrong.legs.size, "the lines above it are still read")
     }
@@ -79,19 +114,19 @@ class LaidOfTest {
         assertEquals(1500, durationOf("25"))
         assertNull(durationOf("0"))
         assertNull(durationOf("soon"))
-        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment("40", duration = "soon"))))
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment("40", duration = "soon")).described()))
         assertTrue("as 2:13" in wrong.reason, wrong.reason)
     }
 
     @Test
     fun `a line timed but not placed asks for its depth`() {
-        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment(duration = "5"))))
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment(duration = "5")).described()))
         assertEquals("Line 1 needs a depth", wrong.reason)
     }
 
     @Test
     fun `an empty plan waits, and an empty line among others is passed over`() {
-        assertIs<Shaped.Waiting>(shapedOf(planned(Segment())))
+        assertIs<Shaped.Waiting>(shapedOf(planned(Segment()).described()))
         assertEquals(2, ready(planned(FORTY[0], Segment(), FORTY[1])).legs.size)
     }
 
@@ -117,7 +152,7 @@ class LaidOfTest {
             Segment("18", duration = "20"),
             gases = listOf(Breathed(), Breathed("EAN32")),
         )
-        assertEquals(1, gasAbove(shaping, 1), "what the second line shows in italics")
+        assertEquals(1, gasAbove(shaping.described(), 1), "what the second line shows in italics")
         assertEquals(listOf(1, 1), ready(shaping).legs.map { it.gas }, "and what it breathes")
         assertEquals(setOf(1), shaping.breathed())
     }
@@ -153,7 +188,8 @@ class ConditionsOfTest {
         assertEquals("3", shaping.safetyMinutes)
         assertEquals("salt", shaping.water)
         assertEquals("", shaping.gradientLow, "no conservatism is chosen for anybody")
-        val wrong = assertIs<Shaped.Wrong>(shapedOf(shaping.also { it.segments[0] = Segment("18") }))
+        shaping.segments[0] = Segment("18")
+        val wrong = assertIs<Shaped.Wrong>(shapedOf(shaping.described()))
         assertEquals("GF low is missing", wrong.reason)
     }
 
@@ -198,7 +234,7 @@ class ConditionsOfTest {
     @Test
     fun `how deep a cylinder may go is the model's figure at its role's limit`() {
         val shaping = planned(*FORTY)
-        val conditions = assertNotNull(conditionsOf(shaping).first)
+        val conditions = assertNotNull(conditionsOf(shaping.described()).first)
         val deco = maximumOperatingDepth(Gas.parse("EAN50"), most = 1.6, density = 1030.0)!!
         assertEquals("${rateSaid(deco)} m", deepestSaid(Breathed("EAN50", Role.DECO), conditions))
         assertTrue(deepestSaid(Breathed("EAN50", Role.DECO), conditions).startsWith("21."))
@@ -253,17 +289,17 @@ class GasListTest {
     @Test
     fun `a line names a cylinder by its number and its mix`() {
         val shaping = planned(Segment("18"), gases = listOf(Breathed(), Breathed("EAN50"), Breathed(" ")))
-        assertEquals("1: AIR", gasChoiceOf(shaping, 0))
-        assertEquals("2: EAN50", gasChoiceOf(shaping, 1))
-        assertEquals("3", gasChoiceOf(shaping, 2), "a mix not yet typed leaves the number alone")
+        assertEquals("1: AIR", gasChoiceOf(shaping.described(), 0))
+        assertEquals("2: EAN50", gasChoiceOf(shaping.described(), 1))
+        assertEquals("3", gasChoiceOf(shaping.described(), 2), "a mix not yet typed leaves the number alone")
     }
 
     @Test
     fun `a gas is named as the application writes it, whatever case it was typed in`() {
         val shaping = planned(Segment("18"), gases = listOf(Breathed("air"), Breathed("ean50"), Breathed("tmx 18/45")))
-        assertEquals("1: AIR", gasChoiceOf(shaping, 0))
-        assertEquals("2: EAN50", gasChoiceOf(shaping, 1))
-        assertEquals("3: TMX18/45", gasChoiceOf(shaping, 2))
+        assertEquals("1: AIR", gasChoiceOf(shaping.described(), 0))
+        assertEquals("2: EAN50", gasChoiceOf(shaping.described(), 1))
+        assertEquals("3: TMX18/45", gasChoiceOf(shaping.described(), 2))
         assertEquals("EAN50", prettyGasOf("ean50"))
         assertEquals("O2", prettyGasOf("o2"))
         assertEquals("tmx 18/45", prettyGasOf("tmx 18/45"), "what would move under the cursor is left as typed")
@@ -355,7 +391,7 @@ private val BOTTOM_AND_DECO = listOf(
 
 private fun reckoned(shaping: Shaping): Reckoned {
     val done = done(shaping)
-    return reckonedOf(shaping, done, assertNotNull(conditionsOf(shaping).first))
+    return reckonedOf(shaping.described(), done, assertNotNull(conditionsOf(shaping.described()).first))
 }
 
 private fun scenario(shaping: Shaping, scenario: Scenario): yemoja.logic.Reserve.Done =
@@ -383,18 +419,18 @@ class ReserveTest {
     @Test
     fun `the gas lost is the first deco gas until another is chosen`() {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO + Breathed(gas = "EAN80", role = Role.DECO))
-        assertEquals(1, shaping.lostIndex())
+        assertEquals(1, shaping.described().lostIndex())
 
         shaping.lostGas = 0
-        assertEquals(0, shaping.lostIndex(), "any cylinder may be chosen, the bottom gas too")
+        assertEquals(0, shaping.described().lostIndex(), "any cylinder may be chosen, the bottom gas too")
     }
 
     @Test
     fun `a plan with no deco gas loses none until one is chosen`() {
         val shaping = planned(*FORTY, gases = listOf(Breathed(gas = "air", size = "24", fill = "232", sac = "20")))
 
-        assertNull(shaping.lostIndex())
-        assertTrue(!shaping.lostGasTried())
+        assertNull(shaping.described().lostIndex())
+        assertTrue(!shaping.described().lostGasTried())
         assertNull(reckoned(shaping).scenarios[Scenario.LOST_GAS], "no lost-gas scenario, rather than a complaint")
     }
 
@@ -403,7 +439,7 @@ class ReserveTest {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
         shaping.lostGasScenario = false
 
-        assertTrue(!shaping.lostGasTried())
+        assertTrue(!shaping.described().lostGasTried())
         assertNull(reckoned(shaping).scenarios[Scenario.LOST_GAS])
         assertIs<Reckoning.Done>(reckoned(shaping).scenarios[Scenario.SHARED], "the other goes on")
 
@@ -417,11 +453,11 @@ class ReserveTest {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO + Breathed(gas = "EAN80", role = Role.DECO))
         shaping.lostGas = 2
         shaping.addGas(0)
-        assertEquals(3, shaping.lostIndex(), "moved down with the cylinder added above it")
+        assertEquals(3, shaping.described().lostIndex(), "moved down with the cylinder added above it")
 
         shaping.removeGas(3)
         assertNull(shaping.lostGas, "taken out with its cylinder")
-        assertEquals(1, shaping.lostIndex(), "and back to the first deco cylinder, the one just added")
+        assertEquals(1, shaping.described().lostIndex(), "and back to the first deco cylinder, the one just added")
     }
 
     @Test
@@ -430,7 +466,7 @@ class ReserveTest {
         val reserve = scenario(shaping, Scenario.LOST_GAS)
 
         assertEquals(setOf("g1"), reserve.needed.keys, "the deco gas is lost")
-        val said = scenarioSaid(Scenario.LOST_GAS, reserve, shaping)
+        val said = scenarioSaid(Scenario.LOST_GAS, reserve, shaping.described())
         assertTrue(
             said.matches(Regex("Gas 1 needs [0-9]+ bar at 25:00 \\(40 m\\), 2:00 at depth, then surfacing without Gas 2 at normal SAC")),
             said,
@@ -442,7 +478,7 @@ class ReserveTest {
     fun `a buddy shares bottom gas only as far as the deco gas`() {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
         val reserve = scenario(shaping, Scenario.SHARED)
-        val said = scenarioSaid(Scenario.SHARED, reserve, shaping)
+        val said = scenarioSaid(Scenario.SHARED, reserve, shaping.described())
 
         assertTrue(reserve.upTo > 20, "EAN50 may be breathed from about 22 m: ${reserve.upTo}")
         assertTrue(said.startsWith("Gas 1 needs ") && said.endsWith(", each at 2 × SAC"), said)
@@ -462,7 +498,7 @@ class ReserveTest {
         shaping.problemMinutes = "0"
         val prompt = scenario(shaping, Scenario.SHARED)
         assertTrue(prompt.needed.getValue("g1") < held, "a minute sharing at 40 m costs gas")
-        assertTrue("at depth" !in scenarioSaid(Scenario.SHARED, prompt, shaping))
+        assertTrue("at depth" !in scenarioSaid(Scenario.SHARED, prompt, shaping.described()))
     }
 
     @Test
@@ -519,7 +555,7 @@ class ReserveTest {
         val reckoned = reckoned(shaping)
 
         for ((scenario, reserve) in reckoned.done) assertNull(shortfallSaid(scenario, reserve), "$scenario")
-        assertNull(uncheckedSaid(reckoned, shaping))
+        assertNull(uncheckedSaid(reckoned, shaping.described()))
     }
 
     @Test
@@ -546,7 +582,7 @@ class ReserveTest {
         val shaping = planned(*FORTY, gases = listOf(Breathed(), Breathed("EAN32", Role.BAILOUT, size = "11")))
         assertEquals(
             "Cannot be calculated (missing for Gas 1: SAC, volume, start pressure; Gas 2: SAC, start pressure)",
-            missingSaid(shaping),
+            missingSaid(shaping.described()),
         )
     }
 
@@ -555,7 +591,7 @@ class ReserveTest {
         // A cylinder added as deco and left as air may be breathed at 40 m, so nothing is shared.
         val shaping = planned(*FORTY, gases = listOf(Breathed(sac = "20"), Breathed(role = Role.DECO, sac = "20")))
         val reserve = scenario(shaping, Scenario.SHARED)
-        assertEquals("No sharing needed: each diver switches to 2: AIR at once", scenarioSaid(Scenario.SHARED, reserve, shaping))
+        assertEquals("No sharing needed: each diver switches to 2: AIR at once", scenarioSaid(Scenario.SHARED, reserve, shaping.described()))
     }
 
     @Test
@@ -564,7 +600,7 @@ class ReserveTest {
         val reckoned = reckoned(shaping)
 
         assertTrue(minimumSaid(reckoned, "g1").endsWith(" L"), minimumSaid(reckoned, "g1"))
-        assertEquals("Gas 1: reserve in litres only (missing: volume, start pressure)", uncheckedSaid(reckoned, shaping))
+        assertEquals("Gas 1: reserve in litres only (missing: volume, start pressure)", uncheckedSaid(reckoned, shaping.described()))
     }
 
     @Test
@@ -576,7 +612,7 @@ class ReserveTest {
 
         assertTrue("g2" in reserve.needed.keys, "${reserve.needed}")
         assertTrue("g3" !in reserve.needed.keys, "the one lost is not")
-        assertTrue(scenarioSaid(Scenario.LOST_GAS, reserve, shaping).endsWith("surfacing without Gas 3 at normal SAC"))
+        assertTrue(scenarioSaid(Scenario.LOST_GAS, reserve, shaping.described()).endsWith("surfacing without Gas 3 at normal SAC"))
     }
 
     @Test
@@ -601,12 +637,12 @@ class WarnedLinesTest {
             Segment("40", duration = "10"),
             gases = listOf(Breathed(gas = "air"), Breathed(gas = "TMX10/70")),
         )
-        val conditions = assertNotNull(conditionsOf(shaping).first)
+        val conditions = assertNotNull(conditionsOf(shaping.described()).first)
         val legs = ready(shaping).legs
 
-        assertTrue(tooShallowFor(legs[0], shaping, conditions), "0 to 3 m on 10/70, which needs about 8")
-        assertTrue(gasWrongFor(legs[0], shaping, conditions))
-        assertTrue(!tooShallowFor(legs[2], shaping, conditions), "at 40 m it is breathable")
+        assertTrue(tooShallowFor(legs[0], shaping.described(), conditions), "0 to 3 m on 10/70, which needs about 8")
+        assertTrue(gasWrongFor(legs[0], shaping.described(), conditions))
+        assertTrue(!tooShallowFor(legs[2], shaping.described(), conditions), "at 40 m it is breathable")
     }
 
     @Test
@@ -619,21 +655,21 @@ class WarnedLinesTest {
         )
         assertEquals("0.18", shaping.leastOxygen, "starting from the setting")
         val first = ready(shaping).legs[0]
-        assertTrue(tooShallowFor(first, shaping, assertNotNull(conditionsOf(shaping).first)))
+        assertTrue(tooShallowFor(first, shaping.described(), assertNotNull(conditionsOf(shaping.described()).first)))
 
         shaping.leastOxygen = "0.1"
-        assertTrue(!tooShallowFor(first, shaping, assertNotNull(conditionsOf(shaping).first)), "10/70 is 0.10 bar at the surface")
+        assertTrue(!tooShallowFor(first, shaping.described(), assertNotNull(conditionsOf(shaping.described()).first)), "10/70 is 0.10 bar at the surface")
 
         shaping.leastOxygen = ""
-        assertEquals("pO₂ min is missing", conditionsOf(shaping).second)
+        assertEquals("pO₂ min is missing", conditionsOf(shaping.described()).second)
     }
 
     @Test
     fun `a mix breathable at the surface is never too shallow`() {
         val shaping = planned(Segment("10"), Segment("10", duration = "10"))
-        val conditions = assertNotNull(conditionsOf(shaping).first)
+        val conditions = assertNotNull(conditionsOf(shaping.described()).first)
 
-        assertTrue(ready(shaping).legs.none { tooShallowFor(it, shaping, conditions) })
+        assertTrue(ready(shaping).legs.none { tooShallowFor(it, shaping.described(), conditions) })
     }
 
     @Test
@@ -644,12 +680,12 @@ class WarnedLinesTest {
             Segment("21", gas = 2),
             gases = listOf(Breathed(), Breathed("EAN50"), Breathed("EAN50", Role.DECO)),
         )
-        val conditions = assertNotNull(conditionsOf(shaping).first)
+        val conditions = assertNotNull(conditionsOf(shaping.described()).first)
         val legs = ready(shaping).legs
-        assertEquals(false, tooDeepFor(legs[0], shaping, conditions), "air at 30 m")
-        assertEquals(true, tooDeepFor(legs[1], shaping, conditions), "EAN50 as a bottom gas at 30 m")
+        assertEquals(false, tooDeepFor(legs[0], shaping.described(), conditions), "air at 30 m")
+        assertEquals(true, tooDeepFor(legs[1], shaping.described(), conditions), "EAN50 as a bottom gas at 30 m")
         // The rise to 21 m begins at 30 m, deeper than EAN50 may go even as a deco gas.
-        assertEquals(true, tooDeepFor(legs[2], shaping, conditions))
+        assertEquals(true, tooDeepFor(legs[2], shaping.described(), conditions))
     }
 
     @Test
@@ -659,8 +695,8 @@ class WarnedLinesTest {
             Segment("21", duration = "5", gas = 1),
             gases = listOf(Breathed(), Breathed("EAN50", Role.DECO)),
         )
-        val conditions = assertNotNull(conditionsOf(shaping).first)
-        assertEquals(false, tooDeepFor(ready(shaping).legs[1], shaping, conditions), "21 m is inside its 21.6")
+        val conditions = assertNotNull(conditionsOf(shaping.described()).first)
+        assertEquals(false, tooDeepFor(ready(shaping).legs[1], shaping.described(), conditions), "21 m is inside its 21.6")
     }
 
     @Test
