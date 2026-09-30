@@ -1056,6 +1056,27 @@ To settle when we discuss architecture and features:
    Both readers do it, a file being as free as a device to keep recording once the diving
    stopped: a download, and a UDDF document.
 
+- **LOGIC-42 — What a download does with a tank and a mix that arrive apart.** *Settled:*
+  **they are one cylinder, where the mix is the gas the dive began on.**
+
+   A Perdix reports the transmitter's tank and the gas list as separate slots: the pressures come
+   from the tank, which carries no mix, and the mix from a slot that carries no pressures.
+   `LOGIC-29` counts both as used, correctly by its own terms — a pressure was read from one and
+   the diver switched to the other — so a dive on one cylinder arrived as two sources, one saying
+   nothing about how much gas there was and the other nothing about what it held. Seven dives of
+   one September week in the logbook this was measured against read that way.
+
+   **The switch is what decides it.** Where the only switch in the recording names the mix slot
+   and comes within the first minute, the computer is saying what it is breathing rather than that
+   anything changed, and the two slots are one cylinder: the mix, with the tank's pressures and
+   volume on it. A second switch, or one later in the dive, is a cylinder changed for — a switch
+   at thirty-nine minutes is in that same logbook — and two sources are then what happened.
+
+   **A minute, and it is a threshold like `LOGIC-25`'s.** A computer writes what it is breathing
+   within a sample or two of the water closing over it, and nothing is changed for in the first
+   minute of a dive. Where both slots carry pressures, or neither carries a mix, nothing is
+   joined: the picture is already two cylinders or already one.
+
 - **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones
    something used, unless there is only one.**
 

@@ -519,6 +519,60 @@ class UsedGasTest {
     }
 
     @Test
+    fun `a tank and the mix it was breathed on are one cylinder`() {
+        // What a Perdix reports: the transmitter's tank, carrying pressures and no mix, and the
+        // gas list's own slot, carrying the mix and switched to as the dive began.
+        val held = joinedIn(
+            usedIn(
+                dived(
+                    listOf(Recording.GasSource(startPressure = 190.0, endPressure = 90.0),
+                        Recording.GasSource(gas = "EAN32")),
+                    listOf(
+                        Recording.Sample(at = 0, pressures = mapOf(0 to 190.0)),
+                        Recording.Sample(at = 10, gas = 1),
+                        Recording.Sample(at = 600, pressures = mapOf(0 to 90.0)),
+                    ),
+                ),
+            ),
+        )
+        val one = held.gases.single()
+        assertEquals("EAN32", one.gas)
+        assertEquals(190.0, one.startPressure)
+        assertEquals(90.0, one.endPressure)
+        assertEquals(0, held.samples.first { it.gas != null }.gas, "and everything names the one")
+        assertEquals(mapOf(0 to 190.0), held.samples.first().pressures)
+    }
+
+    @Test
+    fun `a switch later in the dive is a second cylinder, and stays one`() {
+        val held = joinedIn(
+            usedIn(
+                dived(
+                    listOf(Recording.GasSource(startPressure = 190.0), Recording.GasSource(gas = "EAN50")),
+                    listOf(
+                        Recording.Sample(at = 0, gas = 0, pressures = mapOf(0 to 190.0)),
+                        Recording.Sample(at = 2360, gas = 1),
+                    ),
+                ),
+            ),
+        )
+        assertEquals(2, held.gases.size, "forty minutes in is a cylinder changed for")
+    }
+
+    @Test
+    fun `two tanks both carrying pressures are two cylinders`() {
+        val held = joinedIn(
+            usedIn(
+                dived(
+                    listOf(Recording.GasSource(gas = "air"), Recording.GasSource(gas = "EAN50")),
+                    listOf(Recording.Sample(at = 10, gas = 1, pressures = mapOf(0 to 190.0, 1 to 200.0))),
+                ),
+            ),
+        )
+        assertEquals(2, held.gases.size)
+    }
+
+    @Test
     fun `the only slot there is stays, there being nothing to choose between`() {
         val held = usedIn(dived(slots("EAN32")))
         assertEquals(listOf("EAN32"), held.gases.map { it.gas })

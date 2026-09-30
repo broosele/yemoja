@@ -56,6 +56,7 @@ being live before they are saved.
 | `clock.devtime`, `.systime` | — | a second route to the offset, unverified |
 | `datetime.timezone` | `dive.time_zone_offset` | where reported: `LOGIC-32` |
 | `DIVETIME` | `profile.duration` | written as an override: `LOGIC-19` |
+| the transmitter's tank | joined to the mix the dive began on | `LOGIC-42` |
 | `MAXDEPTH` | `profile.max_depth` | written as an override: `DATA-124` |
 | `AVGDEPTH` | `profile.average_depth` | written as an override |
 | `GASMIX`, `GASMIX_COUNT` | `dive.gas_sources` | with the tanks: `LOGIC-12` |
@@ -269,11 +270,6 @@ Decided and not built, or built and not proven. Each is here rather than in some
   split at twenty bytes where the driver meant one packet of twenty-one, a whole family of
   models answering to one another's names, and a density of zero written as though it were a
   measurement. That is the class still waiting for every model not yet met.
-- **A tank and its mix arrive apart.** The Perdix reports a tank from its transmitter with
-  pressures and no mix, and the mix on its own, so a dive on one cylinder of EAN30 becomes two
-  sources: one with pressures and no gas, one with gas and no pressures. That is what `LOGIC-12`
-  says to do with a tank whose mix is unknown, and it is the wrong picture of that dive. Whether
-  one tank and one mix are joined when there is exactly one of each is a decision not yet put.
 - **A second reading has not used the access code.** The i330R was paired once, the code was
   typed, and the sixteen bytes it handed back are kept. Nothing has yet handed them back to it,
   so whether a kept code opens the device without asking is the one half of `LOGIC-24` still

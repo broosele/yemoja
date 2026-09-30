@@ -68,7 +68,7 @@ object Download {
         // apart by the index on their id, and an index that runs backwards through the day is
         // one a reader has to know not to trust.
         for (held in joined(recordings.map { ended(it) }).sortedWith(BY_WHEN)) {
-            val recording = usedIn(held)
+            val recording = joinedIn(usedIn(held))
             val named = recording.serial?.let { into?.let { logbook -> computerIn(logbook, it) } }
             // Where the device said it was, as a site to be asked about. `LOGIC-18`.
             val where = recording.position?.let { placedIn(places, it, set) }
@@ -446,6 +446,60 @@ internal fun usedIn(held: Recording): Recording {
         },
     )
 }
+
+/**
+ * [held] with a tank and the mix it was breathed on made one source, where they arrived apart.
+ *
+ * A Perdix reports the transmitter's tank and the gas list as different slots: the pressures come
+ * from the tank, which carries no mix, and the mix from a slot that carries no pressures. A dive
+ * on one cylinder then reads as two sources, one of which says nothing about how much gas there
+ * was and the other nothing about what it held. `LOGIC-31`.
+ *
+ * **Only where the mix was the gas the dive began on.** The switch that names it is at the start,
+ * where a computer says what it is breathing rather than that anything changed, and it is the
+ * only one. A second switch later in the dive is a second cylinder, and two sources are then what
+ * happened.
+ */
+internal fun joinedIn(held: Recording): Recording {
+    if (held.gases.size != 2) return held
+    val pressured = held.gases.indices.filter { at ->
+        held.gases[at].startPressure != null || held.gases[at].endPressure != null ||
+            held.samples.any { at in it.pressures }
+    }
+    val mixed = held.gases.indices.filter { held.gases[it].gas != null }
+    val tank = pressured.singleOrNull() ?: return held
+    val gas = mixed.singleOrNull() ?: return held
+    if (tank == gas) return held
+    if (held.gases[tank].gas != null) return held
+    if (held.samples.any { gas in it.pressures }) return held
+    val switches = held.samples.filter { it.gas != null }
+    val began = switches.singleOrNull() ?: return held
+    if (began.gas != gas || began.at > AT_THE_START) return held
+    val one = held.gases[gas].copy(
+        volume = held.gases[gas].volume ?: held.gases[tank].volume,
+        startPressure = held.gases[tank].startPressure,
+        endPressure = held.gases[tank].endPressure,
+    )
+    return held.copy(
+        gases = listOf(one),
+        samples = held.samples.map { sample ->
+            sample.copy(
+                gas = sample.gas?.let { 0 },
+                pressures = sample.pressures.mapNotNull { (at, read) ->
+                    if (at == tank) 0 to read else null
+                }.toMap(),
+            )
+        },
+    )
+}
+
+/**
+ * How late a switch may be and still be the gas a dive began on, in seconds.
+ *
+ * A computer writes what it is breathing within a sample or two of the water closing over it; a
+ * cylinder changed for is minutes down at least.
+ */
+private const val AT_THE_START = 60
 
 /**
  * [held] with what it recorded after the dive ended cut off.
