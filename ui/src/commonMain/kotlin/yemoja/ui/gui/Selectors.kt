@@ -156,6 +156,62 @@ internal class Branch(
 )
 
 /**
+ * The paths a tree opens with: its roots, and nothing under them.
+ *
+ * A region under every parent that names it runs to fifteen hundred lines fully open, so a tree
+ * opens shut. `GUI-21`.
+ */
+internal fun rootsOf(tree: List<Branch>): Set<String> = tree.map { "/" + it.key }.toSet()
+
+/**
+ * The branches that must be unfolded for the one holding [id] to be on the screen.
+ *
+ * Its ancestors, by path, and absent where nothing in the tree holds it. **Not the branch itself**:
+ * a reader who follows a link to a site wants to see where it sits, not every region beneath it.
+ */
+internal fun openingTo(tree: List<Branch>, id: String): Set<String>? {
+    val path = pathTo(tree, id) ?: return null
+    val keys = path.split("/").drop(1).dropLast(1)
+    return keys.indices.map { "/" + keys.take(it + 1).joinToString("/") }.toSet()
+}
+
+/**
+ * Where the branch holding [id] sits, as the path `branchesIn` keys it by, or absent where none
+ * holds it.
+ *
+ * The first place it is found. A region under two parents is in the tree twice, and answering
+ * *where is this* with two answers is worse than answering with one. `GUI-25`.
+ */
+internal fun pathTo(tree: List<Branch>, id: String, path: String = ""): String? {
+    for (branch in tree) {
+        val here = "$path/${branch.key}"
+        if (branch.held.any { it.id == id }) return here
+        pathTo(branch.children, id, here)?.let { return it }
+    }
+    return null
+}
+
+/**
+ * Which line of a tree the branch at [path] is, counting only the lines a reader can see.
+ *
+ * Absent where it is not one of them, which is a branch under something folded. The count is the
+ * order `branchesIn` lays the lines out in, so it is an index into the list on the screen.
+ */
+internal fun lineOf(tree: List<Branch>, open: Set<String>, path: String): Int? {
+    var at = 0
+    fun walk(branches: List<Branch>, above: String): Int? {
+        for (branch in branches) {
+            val here = "$above/${branch.key}"
+            if (here == path) return at
+            at += 1
+            if (here in open) walk(branch.children, here)?.let { return it }
+        }
+        return null
+    }
+    return walk(tree, "")
+}
+
+/**
  * Gear by category, and by kind within a category.
  *
  * Both words are the logbook's rather than this file's, so the branches come from what is there.

@@ -1665,6 +1665,22 @@ once and corrected. The numbers stay unused rather than being given to something
   inside it is left out, and a region left with one child and no site of its own is cut out
   so the child takes its place — Europe with only the Netherlands left in it is not a level
   worth a click. Off, the whole atlas is there, which is where a new site is filed.
+
+  *Extended:* **following a link unfolds the tree to what it chose, and scrolls to it.** The tree
+  keeps which branches are open, and choosing a place left that alone — so a link to a site in
+  Catalonia set the region, changed the card on the right, and left the tree beside it exactly as
+  it was, with the answer folded four levels down. Every ancestor of the chosen branch is opened
+  now, and the tree scrolls to the line: a tree unfolded towards something off the bottom of the
+  list is the same failure one step later.
+
+  **Its ancestors, and not the branch itself.** A reader who asks where a site is wants the chain
+  down to it, not every region beneath it. And **the first path, not every one**: `GUI-22` puts a
+  region under both its parents, so there are two chains to a Red Sea, and answering *where is
+  this* twice is worse than answering once.
+
+  ***Hide unused* is turned off where it would hide the answer.** A site nobody has dived is in no
+  region the filtered tree shows, so unfolding towards a branch that is not there would leave the
+  reader looking at the same tree again and wondering what the link did.
 - **GUI-22 — Which parent a region tree uses.** *Settled:* **all of them.** A region has
   `parents`, plural, so regions form a graph rather than a tree, and a region with two parents
   appears under both. Nothing is hidden and no rule has to be invented for which path is the

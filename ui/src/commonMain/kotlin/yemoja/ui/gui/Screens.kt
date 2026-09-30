@@ -360,7 +360,10 @@ internal fun Application(universe: Universe?, platform: Platform) {
             val chosen = Chosen(id, titleOf(item), item)
             there.opened = true
             when {
-                item.description == Types.REGION -> there.place = chosen
+                item.description == Types.REGION -> {
+                    there.place = chosen
+                    unfold(universe.logbook, there, id)
+                }
                 to.shape == Shape.PLACES -> {
                     there.chosen = chosen
                     // The map follows the site: a site in Egypt is looked at on Egypt. A site
@@ -372,6 +375,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     } else {
                         home?.let { at ->
                             universe.logbook[at]?.let { there.place = Chosen(at, titleOf(it), it) }
+                            unfold(universe.logbook, there, at)
                         }
                     }
                 }
@@ -1914,8 +1918,14 @@ private fun Places(
     onPlace: (Chosen) -> Unit,
     onChoose: (Chosen) -> Unit,
 ) {
-    val open = kept.open ?: tree.map { "/" + it.key }.toSet()
+    val open = kept.open ?: rootsOf(tree)
     val place = kept.place
+    // The tree scrolls to whatever was chosen elsewhere: unfolding towards a branch a reader
+    // cannot see would be answering *where is this* off the bottom of the list. `GUI-26`.
+    LaunchedEffect(place?.id, open, tree) {
+        val at = place?.id?.let { held -> pathTo(tree, held) }?.let { lineOf(tree, open, it) }
+        if (at != null) kept.tree.scrollToItem(at)
+    }
     val chosen = kept.chosen
     val hideUnused = kept.hideUnused
     Row(modifier = Modifier.fillMaxSize()) {
@@ -2024,6 +2034,28 @@ private fun LazyListScope.branchesIn(
             )
         }
     }
+}
+
+/**
+ * Unfolds the region tree as far as the region called [id], so following a link shows where it is.
+ *
+ * The tree keeps which branches are open, and setting the place left that alone: a link to a site
+ * in Catalonia chose the region and left it folded four levels down, so the card on the right
+ * changed and the tree beside it did not. `GUI-26`.
+ *
+ * **Hide unused is turned off where it would hide the answer.** A site nobody has dived is in no
+ * region the filtered tree shows, and unfolding towards a branch that is not there would leave the
+ * reader looking at the same tree again.
+ */
+private fun unfold(set: ItemSet, kept: Kept, id: String) {
+    var tree = shownTreeOf(set, kept.hideUnused)
+    var opening = openingTo(tree, id)
+    if (opening == null && kept.hideUnused) {
+        kept.hideUnused = false
+        tree = shownTreeOf(set, false)
+        opening = openingTo(tree, id)
+    }
+    kept.open = (kept.open ?: rootsOf(tree)) + (opening ?: return)
 }
 
 /** One line of a tree: an arrow where there is something to close, and the name. */

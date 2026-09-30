@@ -6,6 +6,7 @@ import yemoja.logic.Types
 import yemoja.logic.wasMade
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -276,6 +277,74 @@ class RegionTreeTest {
             }""",
         )
         assertEquals(setOf("a", "b"), withinOf(looped, "a"))
+    }
+}
+
+/*
+ * Unfolding a tree towards something chosen somewhere else. See ../../../../../../gui/doc.md —
+ * `GUI-26`.
+ */
+class UnfoldingTest {
+
+    private val set = logbook(
+        "region.json" to """{
+            "world": {"name": "World"},
+            "africa": {"name": "Africa", "parents": ["@world"]},
+            "egypt": {"name": "Egypt", "parents": ["@africa"]},
+            "europe": {"name": "Europe", "parents": ["@world"]}
+        }""",
+    )
+
+    private val tree = regionTreeOf(set)
+
+    @Test
+    fun `a tree opens on its roots and nothing under them`() {
+        assertEquals(setOf("/world"), rootsOf(tree))
+    }
+
+    @Test
+    fun `a branch is found by the path its line is keyed with`() {
+        assertEquals("/world/africa/egypt", pathTo(tree, "egypt"))
+        assertEquals("/world", pathTo(tree, "world"))
+        assertNull(pathTo(tree, "atlantis"), "nothing holds it")
+    }
+
+    @Test
+    fun `unfolding towards a branch opens its ancestors and not itself`() {
+        assertEquals(setOf("/world", "/world/africa"), openingTo(tree, "egypt"))
+        assertEquals(
+            emptySet(),
+            openingTo(tree, "world"),
+            "a root needs nothing opened, and opening it would unfold the world",
+        )
+        assertNull(openingTo(tree, "atlantis"))
+    }
+
+    @Test
+    fun `a line is counted among the lines a reader can see`() {
+        val shut = setOf("/world")
+        assertEquals(0, lineOf(tree, shut, "/world"))
+        assertEquals(1, lineOf(tree, shut, "/world/africa"))
+        assertEquals(2, lineOf(tree, shut, "/world/europe"), "Egypt is folded away under Africa")
+        assertNull(lineOf(tree, shut, "/world/africa/egypt"))
+        val open = shut + "/world/africa"
+        assertEquals(2, lineOf(tree, open, "/world/africa/egypt"))
+        assertEquals(3, lineOf(tree, open, "/world/europe"), "and Europe moves down for it")
+    }
+
+    @Test
+    fun `a region under two parents is answered with the first place it sits`() {
+        val both = logbook(
+            "region.json" to """{
+                "world": {"name": "World"},
+                "africa": {"name": "Africa", "parents": ["@world"]},
+                "europe": {"name": "Europe", "parents": ["@world"]},
+                "red_sea": {"name": "Red Sea", "parents": ["@africa", "@europe"]}
+            }""",
+        )
+        val opening = assertNotNull(openingTo(regionTreeOf(both), "red_sea"))
+        assertEquals(2, opening.size, "one chain, not two: $opening")
+        assertTrue("/world" in opening)
     }
 }
 
