@@ -189,11 +189,14 @@ internal fun StartRow(shaping: Shaping, universe: Universe?, followed: Followed)
         Explained(PlannerTips.AFTER) {
             Text("After", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
-        Pick(
-            dense = true,
-            chosen = chosen?.let { labelOf(it) } ?: NO_EARLIER,
-            options = listOf(NO_EARLIER) + runs.map { labelOf(it) },
-        ) { picked -> shaping.following = if (picked == 0) null else runs[picked - 1] }
+        // A dive is named in full, so this box is wider than a setting's and not the row's.
+        Box(modifier = Modifier.width(FOLLOWED)) {
+            Pick(
+                dense = true,
+                chosen = chosen?.let { labelOf(it) } ?: NO_EARLIER,
+                options = listOf(NO_EARLIER) + runs.map { labelOf(it) },
+            ) { picked -> shaping.following = if (picked == 0) null else runs[picked - 1] }
+        }
         followedSaid(shaping, universe, followed)?.let {
             Text(
                 it,
@@ -206,6 +209,9 @@ internal fun StartRow(shaping: Shaping, universe: Universe?, followed: Followed)
 
 /** What *After* offers for following no run, which is a plan starting fresh. */
 private const val NO_EARLIER = "None"
+
+/** How wide the box naming the dive this plan follows is: a date, a number and a plan's name. */
+private val FOLLOWED = 220.dp
 
 private val DATE_BOX = 110.dp
 private val TIME_BOX = 72.dp

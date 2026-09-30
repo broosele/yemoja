@@ -276,6 +276,46 @@ internal fun editable(field: FieldDescription): Boolean = field.role !is Role.De
 internal fun overrideable(field: FieldDescription): Boolean = field.role is Role.Overrideable
 
 /**
+ * Offered is what a form offers for a field: whether its box is locked, and what it says.
+ *
+ * Immutable.
+ */
+internal class Offered(
+    /** Whether the box is the model's to fill in rather than the reader's to type into. */
+    val locked: Boolean,
+    /** What the box says, which for a locked one is the value it shows. */
+    val held: Result<Any>,
+    /** Whether the logbook holds a correction on this field, which Save would have to clear. */
+    val overridden: Boolean,
+)
+
+/**
+ * What the row for [field] of [item] looks like, given what [draft] has been told.
+ *
+ * A calculated field is locked and a written one is not, and the form decides that from the draft
+ * rather than from the logbook: a correction typed here has not landed yet, and one reverted here
+ * has not gone yet.
+ *
+ * **Reverted, a field locks again and shows the calculation.** The logbook still holds the
+ * correction until Save, so reading the item would give the correction back and the box would say
+ * the very thing the reader had just dropped. It is the computation that is shown instead.
+ * `GUI-29`.
+ */
+internal fun offeredOf(field: FieldDescription, item: Item, draft: Draft): Offered {
+    val stored = item.read(field.name)
+    val overridden = stored is Result.Usable && stored.origin == Result.Origin.OVERRIDDEN
+    val drafted = draft.changed(item, field.name)
+    val reverted = drafted && draft.shownOf(item, field.name) == null
+    val written = if (drafted) !reverted else overridden
+    val role = field.role
+    return Offered(
+        locked = !editable(field) || (overrideable(field) && !written),
+        held = if (reverted && role is Role.Overrideable) role.compute(item) else stored,
+        overridden = overridden,
+    )
+}
+
+/**
  * A stored value as the text a field is edited as: a time as a clock, a reference as it is
  * written, and the rest as the file holds it.
  */

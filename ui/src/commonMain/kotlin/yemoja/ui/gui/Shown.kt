@@ -9,12 +9,14 @@ import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
 import yemoja.data.KeyReference
 import yemoja.data.KeyReferenceDescription
+import yemoja.data.MultilineTextDescription
 import yemoja.data.NumberDescription
 import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
+import yemoja.data.Role
 import yemoja.data.Section
 import yemoja.data.Series
 import yemoja.data.TextDescription
@@ -73,8 +75,14 @@ internal fun fieldsShownOf(
 ): List<FieldDescription> =
     type.fields.filter {
         it.name !in ALREADY_SHOWN[type.name].orEmpty() &&
-            (editing || (!it.housekeeping && !it.source))
+            (editing || (!it.housekeeping && !it.source)) &&
+            // The card is titled with the name, so a card saying it again says it twice. A form
+            // keeps it where it can be typed: a site is renamed by writing in that box. `GUI-16`.
+            (it.name != NAME || (editing && it.role !is Role.Derived))
     }
+
+/** The field every card is titled by, which [titleOf] reads. */
+private const val NAME = "name"
 
 /**
  * Whether [field] is worth offering on [item], or belongs under the fold.
@@ -181,6 +189,35 @@ internal class Arranged(
 ) {
     /** Every field that is not an inset or at the foot, sections included, in their order. */
     val flowing: List<FieldDescription> get() = plain + sections.flatMap { it.fields }
+}
+
+/**
+ * [held] in rows of [COLUMNS], except that one [wide] takes a row of its own.
+ *
+ * A paragraph of remarks, or a list of buddies stacked one box to a line, is as tall as the four
+ * fields beside it and leaves a hole where three of them would have been. Given the row it fills
+ * the hole goes, and the fields after it line up again. `GUI-16`.
+ */
+internal fun <T> rowsOf(held: List<T>, wide: (T) -> Boolean): List<List<T>> {
+    val rows = ArrayList<List<T>>()
+    var row = ArrayList<T>()
+    for (one in held) {
+        if (wide(one)) {
+            if (row.isNotEmpty()) {
+                rows += row
+                row = ArrayList()
+            }
+            rows += listOf(one)
+            continue
+        }
+        row += one
+        if (row.size == COLUMNS) {
+            rows += row
+            row = ArrayList()
+        }
+    }
+    if (row.isNotEmpty()) rows += row
+    return rows
 }
 
 /** One section of a type, with the fields it gathers in hand. */
@@ -341,6 +378,9 @@ private fun rangeOf(start: FieldDescription, end: FieldDescription, item: Item):
         label = prettyOf(start.name.removePrefix("start_")),
         parts = from.parts + Part(RANGE) + to.parts,
         worked = from.worked && to.worked,
+        // Either end corrected marks the range, one written value being what a reader is
+        // looking for on a line the model would otherwise have filled in on its own.
+        overridden = from.overridden || to.overridden,
     )
 }
 
@@ -361,14 +401,25 @@ private const val RANGE = " \u2013 "
  * the file as something written, and is not worth a line on the screen either. `GUI-16`.
  */
 internal fun shownOf(field: FieldDescription, item: Item): Shown? =
-    when (val read = item.read(field.name)) {
+    shownOf(field, item.read(field.name), item)
+
+/**
+ * [read] as [field] of [item] says it, for a caller that has the value in hand.
+ *
+ * A form uses it to show what a field will say once a correction it is dropping is gone: the
+ * logbook still holds that correction until Save, so reading the item would give it back.
+ */
+internal fun shownOf(field: FieldDescription, read: Result<Any>, item: Item): Shown? =
+    when (read) {
         Result.Absent -> null
         is Result.Unusable -> Shown(field.label, listOf(Part(read.reason)), wrong = true)
         is Result.Usable -> if ((read.value as? List<*>)?.isEmpty() == true) null else Shown(
             field.label,
             said(field, read.value, item),
             worked = read.origin == Result.Origin.DERIVED,
+            overridden = read.origin == Result.Origin.OVERRIDDEN,
             rating = ratingOf(field, read.value),
+            wide = field is MultilineTextDescription,
         )
     }
 
@@ -408,10 +459,14 @@ internal class Shown(
     val parts: List<Part>,
     /** Whether the value would not read, and so what is shown is the reason rather than it. */
     val wrong: Boolean = false,
-    /** Whether nobody wrote it and the model worked it out. An override counts as written. */
+    /** Whether nobody wrote it and the model calculated it. An override counts as written. */
     val worked: Boolean = false,
+    /** Whether it was written on a field the model would otherwise have calculated. */
+    val overridden: Boolean = false,
     /** Out of ten, where the field is a rating; shown as stars in place of what it says. */
     val rating: Int? = null,
+    /** Whether it takes a row to itself, a paragraph in half a card being a ribbon. `GUI-16`. */
+    val wide: Boolean = false,
 ) {
     /** What it says, read straight through. */
     val text: String get() = parts.joinToString("") { it.text }

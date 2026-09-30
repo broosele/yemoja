@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -1199,7 +1198,7 @@ private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBro
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HALF),
         ) {
-            val italic = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)
+            val italic = calculatedOf(MaterialTheme.typography.bodySmall)
             Cell(runtimeSaid(leg), RUNTIME, TextAlign.End, italic)
             Cell(leg.direction.arrow, ARROW, TextAlign.Center, italic)
             val error = italic.copy(color = MaterialTheme.colorScheme.error)
@@ -1244,17 +1243,6 @@ private fun Framed(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 private fun Modifier.framed(): Modifier = border(FRAME, MaterialTheme.colorScheme.outlineVariant, SHAPE)
 
-/** A small heading over one part of the form. */
-@Composable
-private fun Caption(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.outline,
-        modifier = Modifier.padding(vertical = HALF),
-    )
-}
-
 /**
  * The plan's settings, in titled sections stacked in two columns, each starting from what the
  * settings hold and belonging to this plan alone. A safety stop of nought minutes greys its depth,
@@ -1269,11 +1257,15 @@ private fun Conditions(shaping: Shaping) {
                 Setting("Descent rate", PlannerTips.DESCENT_RATE, shaping.descentRate, "m/min") { shaping.descentRate = it }
                 Setting("Ascent rate", PlannerTips.ASCENT_RATE, shaping.ascentRate, "m/min") { shaping.ascentRate = it }
                 Labelled("Water", PlannerTips.WATER) {
-                    Pick(
-                        dense = true,
-                        chosen = wordSaid(shaping.water),
-                        options = Settings.DEFAULT_WATER_TYPE.choices.map { wordSaid(it) },
-                    ) { shaping.water = Settings.DEFAULT_WATER_TYPE.choices[it] }
+                    // As wide as the boxes above it, a setting being a setting whether it is
+                    // typed or chosen.
+                    Box(modifier = Modifier.width(SETTING)) {
+                        Pick(
+                            dense = true,
+                            chosen = wordSaid(shaping.water),
+                            options = Settings.DEFAULT_WATER_TYPE.choices.map { wordSaid(it) },
+                        ) { shaping.water = Settings.DEFAULT_WATER_TYPE.choices[it] }
+                    }
                 }
             }
             Section("Gas") {
@@ -1492,14 +1484,16 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                             // Which cylinder is lost, the first deco cylinder until one is chosen, and
                             // None for no lost-gas scenario at all: the choice is the scenario's switch.
                             Scenario.LOST_GAS -> Explained(PlannerTips.GAS_LOST) {
-                                Pick(
-                                    dense = true,
-                                    chosen = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
-                                        ?.let { gasChoiceOf(shaping, it) } ?: NO_GAS_LOST,
-                                    options = listOf(NO_GAS_LOST) + shaping.gases.indices.map { gasChoiceOf(shaping, it) },
-                                ) { chosen ->
-                                    shaping.lostGasScenario = chosen > 0
-                                    if (chosen > 0) shaping.lostGas = chosen - 1
+                                Box(modifier = Modifier.width(SETTING)) {
+                                    Pick(
+                                        dense = true,
+                                        chosen = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
+                                            ?.let { gasChoiceOf(shaping, it) } ?: NO_GAS_LOST,
+                                        options = listOf(NO_GAS_LOST) + shaping.gases.indices.map { gasChoiceOf(shaping, it) },
+                                    ) { chosen ->
+                                        shaping.lostGasScenario = chosen > 0
+                                        if (chosen > 0) shaping.lostGas = chosen - 1
+                                    }
                                 }
                             }
                             Scenario.SHARED ->
@@ -1609,7 +1603,7 @@ private val GAS = 110.dp
 private val BUTTON = 22.dp
 
 private val SETTING_LABEL = 150.dp
-private val SETTING = 104.dp
+internal val SETTING = 104.dp
 
 private val INDEX = 16.dp
 private val MIX = 76.dp

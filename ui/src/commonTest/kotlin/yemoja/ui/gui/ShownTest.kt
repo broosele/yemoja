@@ -120,6 +120,36 @@ class ShownTest {
     }
 
     @Test
+    fun `a value written over one the model would have calculated is marked as corrected`() {
+        // The recording says twelve metres; somebody who was there says fourteen and a half.
+        val held = logbook(
+            "dive/2026-06-21#0.json" to """{"max_depth": 14.5,
+                "profiles": {"p1": {"depth": [[0, 0], [60, 12.0], [120, 0]]}}}""",
+        )["2026-06-21#0"]!!
+        val shown = shownOf(held, "max_depth")!!
+        assertEquals("14.5 m", shown.text)
+        assertTrue(shown.overridden, "somebody wrote it over what was calculated")
+        assertTrue(!shown.worked, "a correction is not a calculation")
+        assertTrue(!shownOf(held, "average_depth")!!.overridden, "nobody wrote this one")
+        assertTrue(!shownOf(dive, "dive_number")!!.overridden, "a plain field is not corrected")
+    }
+
+    @Test
+    fun `a range is marked corrected where either end was written`() {
+        // A trip's dates are its dives'; writing one end says the trip ran longer than they do.
+        val held = logbook(
+            "dive_trip.json" to """{"egypt": {"name": "Egypt", "start_date": "2026-06-01"}}""",
+            "dive/2026-06-21#0.json" to
+                """{"dive_trip": "@egypt", "start_date": "2026-06-21"}""",
+        )["egypt"]!!
+        val dates = Types.DIVE_TRIP.fields.filter { it.name in setOf("start_date", "end_date") }
+        val shown = shownAllOf(dates, held).single()
+        assertEquals("2026-06-01 – 2026-06-21", shown.text, "one range, not two dates")
+        assertTrue(shown.overridden, "one end of it was written")
+        assertTrue(!shown.worked, "and so the range is not the model's alone")
+    }
+
+    @Test
     fun `a value that will not read shows the reason rather than the value`() {
         val broken = logbook("gear.json" to """{"x": {"name": "X", "capacity": "wide"}}""")
         val shown = shownOf(broken["x"]!!, "capacity")!!

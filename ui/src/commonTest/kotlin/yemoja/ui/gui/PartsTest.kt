@@ -53,11 +53,27 @@ class PartsTest {
     @Test
     fun `a region's children are left to the tree, a trip's dives to their statistics`() {
         val names = fieldsShownOf(Types.REGION).map { it.name }
-        assertEquals(Types.REGION.fields.size - 1, names.size)
+        // Two fewer: its children are the tree beside it, and its name is the card's title.
+        assertEquals(Types.REGION.fields.size - 2, names.size)
         assertEquals(false, "children" in names)
         assertEquals(false, "dives" in fieldsShownOf(Types.DIVE_TRIP).map { it.name })
         val kept = Types.DIVE.fields.count { it.housekeeping }
-        assertEquals(Types.DIVE.fields.size - kept, fieldsShownOf(Types.DIVE).size)
+        assertEquals(Types.DIVE.fields.size - kept - 1, fieldsShownOf(Types.DIVE).size)
+    }
+
+    @Test
+    fun `a card is not told its name twice, and a form still offers to change it`() {
+        assertEquals(false, "name" in fieldsShownOf(Types.DIVE_SITE).map { it.name })
+        assertEquals(
+            true,
+            "name" in fieldsShownOf(Types.DIVE_SITE, editing = true).map { it.name },
+            "a site is renamed by writing in that box",
+        )
+        assertEquals(
+            false,
+            "name" in fieldsShownOf(Types.DIVE, editing = true).map { it.name },
+            "a dive's name is its date and its number, and nobody writes it",
+        )
     }
 
     @Test
@@ -237,7 +253,8 @@ class ArrangedTest {
         )
         assertEquals(false, dive.plain.any { it.name in dive.insets.map { i -> i.name } })
         val kept = Types.DIVE.fields.count { it.housekeeping }
-        assertEquals(Types.DIVE.fields.size - kept, dive.flowing.size + dive.insets.size)
+        // Less the name, which is the card's title rather than a field on it.
+        assertEquals(Types.DIVE.fields.size - kept - 1, dive.flowing.size + dive.insets.size)
     }
 
     @Test
@@ -269,6 +286,42 @@ class ArrangedTest {
         val shown = shownAllOf(arrangedOf(Types.DIVE_TRIP).plain, alone).associateBy { it.label }
         assertEquals("2026-06-20", shown["Start date"]?.text, "a lone date says which end it is")
         assertNull(shown["Date"], "and is no range")
+    }
+
+    @Test
+    fun `a wide field takes a row of its own, and the rest go two to a row`() {
+        val rows = rowsOf(listOf("a", "b", "wide", "c", "d", "e")) { it == "wide" }
+        assertEquals(
+            listOf(listOf("a", "b"), listOf("wide"), listOf("c", "d"), listOf("e")),
+            rows,
+            "the pair before it is closed first, and what follows pairs up again",
+        )
+        assertEquals(listOf(listOf("wide")), rowsOf(listOf("wide")) { true })
+        assertEquals(emptyList(), rowsOf(emptyList<String>()) { true })
+    }
+
+    @Test
+    fun `a form gives a list and a paragraph the whole row, and a card only a paragraph`() {
+        assertEquals(true, wideOf(Types.DIVE["remarks"]!!), "a paragraph in a form")
+        assertEquals(true, wideOf(Types.DIVE["buddies"]!!), "a box to a line, in a form")
+        assertEquals(false, wideOf(Types.DIVE["max_depth"]!!))
+        val held = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "dive/2026-06-21#0.json" to
+                        """{"buddies": ["@anna", "@bram"], "remarks": "A long swim out."}""",
+                    "person.json" to
+                        """{"anna": {"first_name": "Anna"}, "bram": {"first_name": "Bram"}}""",
+                ),
+            ),
+            Types.ALL,
+        )["2026-06-21#0"]!!
+        assertEquals(true, shownOf(Types.DIVE["remarks"]!!, held)!!.wide)
+        assertEquals(
+            false,
+            shownOf(Types.DIVE["buddies"]!!, held)!!.wide,
+            "a card reads a list as one line of names, which needs no room",
+        )
     }
 
     @Test

@@ -37,7 +37,76 @@ class EditTest {
 
     private val dive = set["2026-06-21#0"]!!
 
+    /** A dive whose recording says twelve metres and whose logbook says fourteen and a half. */
+    private val overridden = LogbookReader.read(
+        MemoryFileStore(
+            mapOf(
+                "dive/2026-06-21#0.json" to """{"max_depth": 14.5,
+                    "profiles": {"p": {"depth": [[0, 0], [60, 12.0], [120, 0]]}}}""",
+            ),
+        ),
+        Types.ALL,
+    )["2026-06-21#0"]!!
+
+    /** A dive with nobody named on it, so its buddy count has nothing to calculate from. */
+    private val noBuddies = LogbookReader.read(
+        MemoryFileStore(mapOf("dive/2026-06-21#0.json" to """{"rating": 4}""")),
+        Types.ALL,
+    )["2026-06-21#0"]!!
+
     private fun field(name: String) = Types.DIVE[name]!!
+
+    @Test
+    fun `a box the model fills in is locked, and one written over is not`() {
+        val draft = Draft()
+        val calculated = offeredOf(field("duration"), dive, draft)
+        assertTrue(calculated.locked, "nobody wrote it, so it is the model's box")
+        assertEquals(120.0, (calculated.held as Result.Usable).value)
+        assertTrue(!calculated.overridden)
+        val absent = offeredOf(field("buddy_count"), noBuddies, Draft())
+        assertTrue(absent.locked, "and locked just the same with nothing to calculate")
+        assertEquals(Result.Absent, absent.held)
+        val plain = offeredOf(field("rating"), dive, draft)
+        assertTrue(!plain.locked, "a field the model never fills in is always the reader's")
+    }
+
+    @Test
+    fun `a correction in the logbook leaves the box live`() {
+        val corrected = offeredOf(field("max_depth"), overridden, Draft())
+        assertTrue(!corrected.locked)
+        assertTrue(corrected.overridden)
+        assertEquals(14.5, (corrected.held as Result.Usable).value)
+    }
+
+    @Test
+    fun `overriding opens the box, and reverting locks it on the calculation again`() {
+        val draft = Draft()
+        // Override seeds the box with what it was showing.
+        draft.put(overridden, "max_depth", "20")
+        val typed = offeredOf(field("max_depth"), overridden, draft)
+        assertTrue(!typed.locked, "being typed into")
+        // Revert: the logbook still holds 14.5 until Save, and the box must not show it.
+        draft.put(overridden, "max_depth", null, null)
+        val reverted = offeredOf(field("max_depth"), overridden, draft)
+        assertTrue(reverted.locked, "back to the model's box")
+        assertEquals(
+            12.0,
+            (reverted.held as Result.Usable).value,
+            "what the recording says, not the correction on its way out",
+        )
+        assertTrue(reverted.overridden, "and Save still has a correction to clear")
+    }
+
+    @Test
+    fun `reverting something typed here rather than stored leaves nothing to save`() {
+        val draft = Draft()
+        draft.put(dive, "duration", "90")
+        assertTrue(!draft.isEmpty)
+        // What Revert does where the logbook holds no correction: the draft forgets it.
+        draft.drop(dive, "duration")
+        assertTrue(draft.isEmpty, "Save is not offered for a change nobody made")
+        assertTrue(offeredOf(field("duration"), dive, draft).locked)
+    }
 
     @Test
     fun `each kind of field is edited its own way`() {

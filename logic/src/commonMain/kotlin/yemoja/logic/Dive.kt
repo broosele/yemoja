@@ -526,27 +526,18 @@ private const val CYLINDER = "cylinder"
 internal val DIVE: ItemDescription = ItemDescription(
     "dive",
     listOf(
-        // The id, which is what a dive is listed and linked as. Not correctable: writing
-        // one would be renaming the dive, which the Universe does with its references.
-        TextDescription("name", role = Role.Derived(::divesId)),
-        // Whether this dive is still ahead: it holds profiles and every one of them is a plan.
-        // What counts dives leaves it out, and so does what leaves the logbook.
-        BooleanDescription("planned", role = Role.Derived(::divesPlanned), housekeeping = true),
-        // The user's own numbering, which nothing renumbers. Not every diver keeps one.
-        WholeNumberDescription("dive_number"),
-        // All five from the primary profile, in GMT, and all five correctable: the computer
-        // was there and the user was busy, but a recording can still be wrong.
+        // The dive's start, from the primary profile and in GMT. Correctable, as everything
+        // else a recording gives is: the computer was there and the user was busy, and a
+        // recording can still be wrong.
         DateDescription("start_date", role = Role.Overrideable(::divesStartDate)),
         TimeDescription("start_time", role = Role.Overrideable(::divesStartTime)),
-        // How far local time was ahead of GMT where the dive was made. The times above are local
-        // and shown as they are; this puts two dives on one clock to compare them, and a dive
-        // saying nothing is taken to be on GMT. `LOGIC-32`.
-        NumberDescription("time_zone_offset", Dimension.TIME, housekeeping = true),
         NumberDescription(
             "duration",
             Dimension.TIME,
             role = Role.Overrideable(::divesDuration),
         ),
+        // The user's own numbering, which nothing renumbers. Not every diver keeps one.
+        WholeNumberDescription("dive_number"),
         NumberDescription(
             "max_depth",
             Dimension.LENGTH,
@@ -557,10 +548,10 @@ internal val DIVE: ItemDescription = ItemDescription(
             Dimension.LENGTH,
             role = Role.Overrideable(::divesAverageDepth),
         ),
-        BooleanDescription("deco", role = Role.Overrideable(::divesDeco)),
         // A written name is allowed, as it is for a buddy: a quarry dived once on holiday is a
         // name somebody remembers rather than an item worth keeping. `DATA-126`.
         ReferenceDescription("dive_site", targetType = "dive_site", oneOffAllowed = true),
+        BooleanDescription("deco", role = Role.Overrideable(::divesDeco)),
         ReferenceDescription(
             "buddies",
             targetType = "person",
@@ -581,9 +572,6 @@ internal val DIVE: ItemDescription = ItemDescription(
             Dimension.TIME,
             role = Role.Overrideable(::surfaceInterval),
         ),
-        // Which of `profiles` to work from. Leaving it out where there is one is the
-        // ordinary case.
-        KeyReferenceDescription("primary_profile", collection = "profiles", housekeeping = true),
         ReferenceDescription("dive_trip", targetType = "dive_trip"),
         ReferenceDescription("operator", targetType = "operator"),
         TextDescription("tags", cardinality = Cardinality.LIST),
@@ -591,6 +579,19 @@ internal val DIVE: ItemDescription = ItemDescription(
         OwnedItemDescription("gear", DIVE_GEAR),
         OwnedItemDescription("profiles", PROFILE, cardinality = Cardinality.KEYED),
         OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
+        // The id, which is what a dive is listed and linked as. Not correctable: writing
+        // one would be renaming the dive, which the Universe does with its references.
+        TextDescription("name", role = Role.Derived(::divesId)),
+        // Whether this dive is still ahead: it holds profiles and every one of them is a plan.
+        // What counts dives leaves it out, and so does what leaves the logbook.
+        BooleanDescription("planned", role = Role.Derived(::divesPlanned), housekeeping = true),
+        // How far local time was ahead of GMT where the dive was made. The times above are local
+        // and shown as they are; this puts two dives on one clock to compare them, and a dive
+        // saying nothing is taken to be on GMT. `LOGIC-32`.
+        NumberDescription("time_zone_offset", Dimension.TIME, housekeeping = true),
+        // Which of `profiles` to work from. Leaving it out where there is one is the
+        // ordinary case.
+        KeyReferenceDescription("primary_profile", collection = "profiles", housekeeping = true),
         REMARKS,
     ),
     orderedBy = listOf(

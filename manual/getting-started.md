@@ -89,8 +89,10 @@ What you choose is shown on a card, titled with its name.
 
 - A value that points at something else is a **link**. Following it goes to that item, on
   whichever tab holds it.
-- A value **in grey** was calculated by Yemoja rather than written by you.
+- A value **in grey italics** was calculated by Yemoja rather than written by you.
+- A value **in bold** was calculated by Yemoja and then corrected by you.
 - A value **in red** could not be read, and says why in its place.
+- A value in ordinary type is one you wrote on a field Yemoja never calculates.
 - A rating shows as **stars**, two points to a star.
 - A person, a piece of gear, a dive site or an operator lists its **dives** in a box at the
   bottom.
@@ -136,8 +138,16 @@ until you change something; **Cancel** leaves the item as it was. Something that
 saved says why, in red, above the fields, and a field that will not read says so beneath it as
 you type.
 
-- A worked-out value can be **overridden** with a value of your own, and **reverted** to what
-  is calculated.
+- The form is the card turned over: the same fields, in the same places, each with its name
+  beside its box.
+- A box Yemoja fills in is **locked**, and shows what it calculated, or a dash where it had
+  nothing to calculate from. **Override** beside it unlocks it for a value of your own, and
+  **Revert** locks it again and shows the calculation at once, before you save. The box looks the
+  same either way, so you can tell at a glance which fields are yours to write and which are
+  Yemoja's.
+- **More fields** at the end opens the ones this item has no use for: the settings Yemoja keeps
+  for itself, and the fields that belong to another kind of gear. Nothing is ever taken away,
+  only tucked out of the way.
 - A field with usual answers offers them from its arrow, and anything else may still be typed.
   A field with a fixed list offers only that list.
 - A field pointing at another item finds it as you type its name, and its list always ends with

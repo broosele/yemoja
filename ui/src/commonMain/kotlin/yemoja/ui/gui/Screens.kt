@@ -2638,29 +2638,20 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
     for (footing in foot) Inset(footing.label) { Said(footing, onFollow) }
 }
 
-/** Fields in the flow of a card, two to a row. */
+/** Fields in the flow of a card, two to a row, a wide one taking its own. */
 @Composable
 private fun Flowing(shown: List<Shown>, onFollow: (String) -> Unit) {
-    for (pair in shown.chunked(COLUMNS)) {
+    for (row in rowsOf(shown) { it.wide }) {
+        val wide = row.size == 1 && row.first().wide
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(GAP * 2),
         ) {
-            for (field in pair) Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
-            repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
+            for (field in row) Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
+            // A wide field spans the columns; a last row one short keeps its place in them.
+            if (!wide) repeat(COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
-}
-
-/** A section's name, over the fields it gathers. */
-@Composable
-private fun Caption(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.outline,
-        modifier = Modifier.padding(top = GAP, bottom = HALF),
-    )
 }
 
 /** A keyed owned item as an inset with a tab per entry, the first open. */
@@ -2878,12 +2869,7 @@ private fun Said(shown: Shown, onFollow: (String) -> Unit, modifier: Modifier = 
     }
     Text(
         text = said,
-        style = MaterialTheme.typography.bodyMedium,
-        color = when {
-            shown.wrong -> MaterialTheme.colorScheme.error
-            shown.worked -> MaterialTheme.colorScheme.outline
-            else -> MaterialTheme.colorScheme.onSurface
-        },
+        style = styleOf(shown, MaterialTheme.typography.bodyMedium),
         modifier = modifier,
     )
 }

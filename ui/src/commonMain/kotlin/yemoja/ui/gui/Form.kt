@@ -42,8 +42,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Cardinality
@@ -52,9 +55,11 @@ import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.KeyReferenceDescription
+import yemoja.data.Layout
 import yemoja.data.OwnedItem
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
+import yemoja.data.Role
 import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.logic.Change
@@ -98,17 +103,23 @@ internal fun EditFields(item: Item, draft: Draft) {
     // What the form says rather than what the item holds: a category typed a moment ago decides
     // where the fields that follow from it sit, without waiting for Save. `GUI-29`.
     val saying = draft.shownOf(item, "category") as? String
-    val forward = arranged.flowing.filter { forwardOf(it, item, saying) }
-    for (pair in forward.chunked(COLUMNS)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
-        ) {
-            for (field in pair) Box(modifier = Modifier.weight(1f)) { Editor(field, item, draft) }
-            repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
+    fun offered(fields: List<FieldDescription>): List<FieldDescription> =
+        fields.filter { forwardOf(it, item, saying) && !it.housekeeping }
+    Rows(offered(arranged.plain), item, draft)
+    for (sectioned in arranged.sections) {
+        val fields = offered(sectioned.fields)
+        if (fields.isEmpty()) continue
+        when (sectioned.section.layout) {
+            Layout.BOX -> Inset(sectioned.section.label) { Rows(fields, item, draft) }
+            Layout.FLOW -> {
+                Caption(sectioned.section.label)
+                Rows(fields, item, draft)
+            }
         }
     }
-    Folded(arranged.flowing.filterNot { forwardOf(it, item, saying) }, item, draft)
+    // The fields this kind of item has no use for, and the ones it keeps for the machinery,
+    // behind one fold: both are reachable and neither is in the way. `GUI-29`.
+    Folded(arranged.flowing.filterNot { forwardOf(it, item, saying) && !it.housekeeping }, item, draft)
     for (inset in arranged.insets) {
         when (inset.cardinality) {
             Cardinality.KEYED -> KeyedEditor(inset.label, inset.name, item, draft)
@@ -116,6 +127,48 @@ internal fun EditFields(item: Item, draft: Draft) {
         }
     }
 }
+
+/**
+ * A small heading over the fields or the boxes it gathers.
+ *
+ * One of them for the whole application: a section of a card, a section of a form, and a part of
+ * the planner are the same thing to a reader. `GUI-16`.
+ */
+@Composable
+internal fun Caption(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.outline,
+        modifier = Modifier.padding(top = GAP, bottom = HALF),
+    )
+}
+
+/** Fields in the flow of a form, two to a row, a wide one taking its own. */
+@Composable
+private fun Rows(fields: List<FieldDescription>, item: Item, draft: Draft) {
+    for (row in rowsOf(fields, ::wideOf)) {
+        val wide = row.size == 1 && wideOf(row.first())
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+        ) {
+            for (field in row) Box(modifier = Modifier.weight(1f)) { Editor(field, item, draft) }
+            // A wide field spans the columns; a last row one short keeps its place in them.
+            if (!wide) repeat(COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+        }
+    }
+}
+
+/**
+ * Whether [field] takes a row of its own in a form.
+ *
+ * A list is a box to a line with an *add* under them, and long text is a paragraph. Either is
+ * taller than the four one-line fields beside it. A card is not the same question: there a list
+ * reads as one line of names, and only a paragraph needs the width. `GUI-16`.
+ */
+internal fun wideOf(field: FieldDescription): Boolean =
+    field.cardinality == Cardinality.LIST || kindOf(field) == Kind.LONG_TEXT
 
 /**
  * A singular owned item's fields, whether or not the item has one yet.
@@ -156,15 +209,7 @@ private fun Folded(fields: List<FieldDescription>, item: Item, draft: Draft) {
         }
     }
     if (!open) return
-    for (pair in fields.chunked(COLUMNS)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
-        ) {
-            for (field in pair) Box(modifier = Modifier.weight(1f)) { Editor(field, item, draft) }
-            repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
-        }
-    }
+    Rows(fields, item, draft)
 }
 
 /**
@@ -213,86 +258,172 @@ private fun KeyedEditor(label: String, name: String, item: Item, draft: Draft) {
 }
 
 /**
- * One field as an editor: its label, then the widget its kind gets, and under it whatever the
- * model would refuse it for.
+ * One field as an editor: its label, then the widget its kind gets, then the button that unlocks
+ * it, with whatever the model would refuse it for under the widget.
  *
- * A field the model works out and nobody may write is shown as read. One it works out unless
- * told otherwise shows what it worked out with an *override* beside it; overridden, it is
- * edited like any other, with a *revert* that clears the override so the worked-out value
- * returns. *Override* rather than *correct*: a button reading *correct* beside a number reads
- * as saying the number is.
+ * **The label sits beside the widget**, ranged against it as a card ranges a label against a
+ * value, so a field is in the same place read and written. `GUI-29`.
+ *
+ * **A field the model fills in is drawn the same whether or not it had an answer today.** It is
+ * its own box, locked, holding what was calculated or a dash for nothing, with *override* in a
+ * slot of its own beside it. Before this a calculation that succeeded gave a line of text and a
+ * button while one that came to nothing gave a plain box, so one field was two controls and
+ * neither said which kind it was. *Override* rather than *correct*: a button reading *correct*
+ * beside a number reads as saying the number is. Overridden, the box is live and the button
+ * reads *revert*, which clears what was written so the calculation returns.
  */
 @Composable
 private fun Editor(field: FieldDescription, item: Item, draft: Draft) {
     val kind = kindOf(field)
     if (kind == Kind.NONE) return
+    val offered = offeredOf(field, item, draft)
+    // The slot is kept on every row of a type that has one field to override, so the boxes of
+    // that form all end in the same place. A type with none spends no width on it.
+    val overriding = remember(item.description) {
+        item.description.fields.any { it.role is Role.Overrideable }
+    }
     // Outside the view's selection, which every other word is in. `GUI-36`. A field being typed
     // into has a selection of its own, which is what a caret is, and two over one run of text
     // fight: a drag would paint the view's selection across the box rather than move the caret.
     // Nothing is lost, a text field copying what it holds already.
     DisableSelection {
-        Column(modifier = Modifier.fillMaxWidth().padding(vertical = HALF)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+            horizontalArrangement = Arrangement.spacedBy(GAP),
+        ) {
             Text(
                 text = field.label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.outline,
+                textAlign = TextAlign.End,
+                // Dropped to the first line of the box, which a taller widget grows below.
+                modifier = Modifier.width(LABEL).padding(top = SITS),
             )
-            if (!editable(field)) {
-                Read(field, item)
-                return@Column
-            }
-            val stored = item.read(field.name)
-            val workedOut = stored is Result.Usable && stored.origin == Result.Origin.DERIVED
-            if (overrideable(field) && workedOut && !draft.changed(item, field.name)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Read(field, item)
-                    Spacer(modifier = Modifier.width(GAP))
-                    TextButton(
-                        onClick = { draft.put(item, field.name, textOf(field, stored.value)) },
-                    ) {
-                        Text("Override")
+            Column(modifier = Modifier.weight(1f)) {
+                when {
+                    offered.locked -> Calculated(field, offered.held, item)
+                    field.cardinality == Cardinality.LIST -> ListEditor(field, item, draft, kind)
+                    else -> {
+                        val shown = if (draft.changed(item, field.name)) {
+                            draft.shownOf(item, field.name)?.toString().orEmpty()
+                        } else {
+                            textOf(field, (offered.held as? Result.Usable)?.value)
+                        }
+                        SingleEditor(field, kind, item, shown) { text, given ->
+                            draft.put(item, field.name, text, given)
+                        }
                     }
                 }
-                return@Column
-            }
-            if (field.cardinality == Cardinality.LIST) {
-                ListEditor(field, item, draft, kind)
-            } else {
-                val shown = if (draft.changed(item, field.name)) {
-                    draft.shownOf(item, field.name)?.toString().orEmpty()
-                } else {
-                    textOf(field, (stored as? Result.Usable)?.value)
-                }
-                SingleEditor(field, kind, item, shown) { text, given ->
-                    draft.put(item, field.name, text, given)
+                draft.refusalOf(item, field.name)?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
-            val overridden = stored is Result.Usable && stored.origin == Result.Origin.OVERRIDDEN
-            if (overrideable(field) && (overridden || draft.changed(item, field.name))) {
-                TextButton(onClick = { draft.put(item, field.name, null, null) }) {
-                    Text("Revert")
-                }
-            }
-            draft.refusalOf(item, field.name)?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
+            if (overriding) {
+                Box(modifier = Modifier.width(ACTION)) { Unlock(field, item, offered, draft) }
             }
         }
     }
 }
 
-/** A field as read, in an editor: what the item view would show, greyed. */
+/** The button that turns a calculated field into one being written, and back. */
 @Composable
-private fun Read(field: FieldDescription, item: Item) {
-    val shown = shownOf(field, item)
-    Text(
-        text = shown?.text ?: "—",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.outline,
+private fun Unlock(field: FieldDescription, item: Item, offered: Offered, draft: Draft) {
+    if (!overrideable(field)) return
+    if (offered.locked) {
+        TextButton(
+            onClick = {
+                // What the box was showing, to correct rather than to retype. Nothing where the
+                // calculation had no answer, which is a box to fill in from empty.
+                val shown = (offered.held as? Result.Usable)?.let { textOf(field, it.value) }
+                draft.put(item, field.name, shown.orEmpty())
+            },
+        ) {
+            Text("Override")
+        }
+    } else {
+        TextButton(
+            onClick = {
+                // Clearing a correction the logbook holds is a change Save must carry. Clearing
+                // one typed into this form is not: there the draft simply forgets it, and Save
+                // goes back to being offered only where something really changed.
+                if (offered.overridden) {
+                    draft.put(item, field.name, null, null)
+                } else {
+                    draft.drop(item, field.name)
+                }
+            },
+        ) {
+            Text("Revert")
+        }
+    }
+}
+
+/**
+ * A field nobody types into, in the box it would be typed in, locked.
+ *
+ * The box is what makes the row the same shape as its neighbours. [held] is what it says, which is
+ * what a card would say of it: the value, the reason it will not read, or a dash where there is
+ * nothing. `GUI-29`.
+ */
+@Composable
+private fun Calculated(field: FieldDescription, held: Result<Any>, item: Item) {
+    val shown = shownOf(field, held, item)
+    Compact(
+        value = "",
+        onChange = {},
+        hint = shown?.text ?: NO_VALUE,
+        lines = if (kindOf(field) == Kind.LONG_TEXT) LONG else 1,
+        derived = true,
+        enabled = false,
+        wrong = shown?.wrong == true,
     )
+}
+
+/** What a field with nothing in it shows, calculated or written. */
+private const val NO_VALUE = "—"
+
+/** How many lines a box for a paragraph is tall for at least. */
+private const val LONG = 3
+
+/** How far a label is dropped to meet the first line of the box beside it. */
+private val SITS = 7.dp
+
+/** How wide the slot holding *override* or *revert* is, kept the same on every row. */
+private val ACTION = 92.dp
+
+/**
+ * [base] as a value the model calculated is written: italic, and in an ink of its own.
+ *
+ * The one place the look is decided, so a plan's runtime, a card and a calculator's answer cannot
+ * drift apart. The ink is not the one labels are drawn in: a card would then say a field's name
+ * and a field's value in the same colour. `GUI-29`.
+ */
+@Composable
+internal fun calculatedOf(base: TextStyle): TextStyle = base.copy(
+    color = MaterialTheme.colorScheme.onSurfaceVariant,
+    fontStyle = FontStyle.Italic,
+)
+
+/**
+ * [base] as [shown] is written, by where its value came from.
+ *
+ * Calculated is italic, corrected is bold, and written is neither. A value that would not read
+ * stands in the error colour, what is drawn being the reason rather than the value, so it is
+ * upright: a sentence is not a figure the model arrived at. `GUI-29`.
+ */
+@Composable
+internal fun styleOf(shown: Shown, base: TextStyle): TextStyle = when {
+    shown.wrong -> base.copy(color = MaterialTheme.colorScheme.error)
+    shown.worked -> calculatedOf(base)
+    shown.overridden -> base.copy(
+        color = MaterialTheme.colorScheme.onSurface,
+        fontWeight = FontWeight.Bold,
+    )
+    else -> base.copy(color = MaterialTheme.colorScheme.onSurface)
 }
 
 /**
@@ -345,15 +476,32 @@ private fun SingleEditor(
 }
 
 /**
+ * The ground and border a value sits in.
+ *
+ * In one place, so a box that is typed in and one that is chosen from a menu are the same box. A
+ * chooser drawn as a word with an arrow after it was thirty pixels wide beside a text field that
+ * filled its column, and a form of ten fields had two shapes in it. `GUI-29`.
+ */
+@Composable
+internal fun Modifier.boxed(wrong: Boolean = false, dense: Boolean = false): Modifier =
+    clip(SHAPE)
+        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+        .border(
+            1.dp,
+            if (wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
+            SHAPE,
+        )
+        .padding(horizontal = if (dense) GAP / 2 else GAP, vertical = if (dense) 2.dp else 6.dp)
+
+/**
  * A text field the height of its text, which the platform's own is not: a form of twenty
  * fields in boxes fifty-six pixels tall is a form nobody scrolls to the end of.
  *
  * [after] is written after the text, a unit; [hint] is shown in its place while it is empty;
  * [lines] is how many the field is tall for at least, more than one making it multiline.
  *
- * A [derived] hint is a value worked out from the other boxes rather than a prompt, so it is shown
- * in italics in the colour of text: a reader reads it as the answer, and typing over it replaces
- * it. `GUI-43`.
+ * A [derived] hint is a value calculated from the other boxes rather than a prompt, so it is drawn
+ * as a calculated value is drawn everywhere. Typing over it replaces it. `GUI-49`.
  */
 @Composable
 internal fun Compact(
@@ -387,27 +535,23 @@ internal fun Compact(
         modifier = Modifier.fillMaxWidth().then(modifier),
         decorationBox = { inner ->
             Row(
-                modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1f else GREYED).clip(SHAPE)
-                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                    .border(
-                        1.dp,
-                        if (wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
-                        SHAPE,
-                    )
-                    .padding(horizontal = if (dense) GAP / 2 else GAP, vertical = if (dense) 2.dp else 6.dp),
+                // A locked box is faded, except where it holds a reason: the one line of a
+                // form that must be read is not the one to fade. `GUI-49`.
+                modifier = Modifier.fillMaxWidth().alpha(if (enabled || wrong) 1f else GREYED)
+                    .boxed(wrong, dense),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     if (value.isEmpty() && hint.isNotEmpty()) {
-                        if (derived) {
-                            Text(
-                                text = hint,
-                                style = style.copy(fontStyle = FontStyle.Italic),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        } else {
-                            Text(hint, style = style, color = MaterialTheme.colorScheme.outline)
-                        }
+                        Text(
+                            text = hint,
+                            style = when {
+                                // The style carries the error ink already, which a reason wants.
+                                wrong -> style
+                                derived -> calculatedOf(style)
+                                else -> style.copy(color = MaterialTheme.colorScheme.outline)
+                            },
+                        )
                     }
                     inner()
                 }
@@ -447,10 +591,11 @@ internal fun Pick(
     Box {
         if (dense) {
             // A button keeps a minimum height a table row has no room for, so this is a row that
-            // is clicked instead.
+            // is clicked instead. Boxed like the cells beside it: a column of numbers in boxes
+            // with one bare word among them is a table nobody thought about. `GUI-29`.
             Row(
-                modifier = Modifier.clip(SHAPE).clickable { picking = true }
-                    .padding(horizontal = HALF, vertical = 2.dp),
+                modifier = Modifier.fillMaxWidth().clickable { picking = true }
+                    .boxed(wrong, dense = true),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -466,16 +611,21 @@ internal fun Pick(
                 )
             }
         } else {
-            TextButton(onClick = { picking = true }) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { picking = true }.boxed(wrong),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     text = chosen,
                     style = MaterialTheme.typography.bodyMedium.copy(fontStyle = fontStyle),
                     color = if (wrong) MaterialTheme.colorScheme.error else Color.Unspecified,
+                    modifier = Modifier.weight(1f),
                 )
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(GLYPH),
                 )
             }
         }
@@ -577,18 +727,23 @@ private fun Choice(options: List<String>, shown: String, onChoose: (String) -> U
     var picking by remember { mutableStateOf(false) }
     Box {
         Row(
-            modifier = Modifier.clip(SHAPE).clickable { picking = true }
-                .padding(horizontal = HALF, vertical = HALF),
+            modifier = Modifier.fillMaxWidth().clickable { picking = true }.boxed(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = shown.ifEmpty { "—" },
+                text = shown.ifEmpty { NO_VALUE },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (shown.isEmpty()) {
+                    MaterialTheme.colorScheme.outline
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                modifier = Modifier.weight(1f),
             )
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = "choose",
+                tint = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.size(GLYPH),
             )
         }

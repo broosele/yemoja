@@ -319,7 +319,8 @@ than the default violet, and nothing else is ours yet. `GUI-3`. Within that, the
 across the top, each with the platform's glyph for its subject beside its name, the dive table
 is headed and its trip cell is drawn as one cell down the run it spans, whatever is chosen is
 tinted rather than emboldened, a tree unfolds branch by branch, and the item view sits on a card
-with its labels ranged against its values.
+with its labels ranged against its values — the form beneath the pencil being the same card with
+boxes where the values were.
 
 Three things it does badly, each of them an open question above rather than a bug:
 
@@ -330,8 +331,8 @@ Three things it does badly, each of them an open question above rather than a bu
   and is a link to it, which is the *an id is never shown* rule holding where it was broken by
   the back door; a key is neither a name nor an id, and reading it the way a label is read is
   as far from the spelling as it honestly gets.
-- **A worked-out value is greyed and an unreadable one reddened**, which is a placeholder for
-  `GUI-8` rather than an answer to it.
+- **An unreadable value is reddened**, which is a placeholder for `GUI-8` rather than an answer
+  to it. Where a value came from is settled and is not this: `GUI-49`.
 
 `GUI-5` stays open. What the smallest *usable* version contains is not answered by a version
 that cannot edit.
@@ -1463,6 +1464,45 @@ once and corrected. The numbers stay unused rather than being given to something
   `DATA-116` makes the same rule everywhere, so a block emptied by any route stops being
   written.
 
+  **A field is a row: its label, its widget, then the button that unlocks it.** The label is
+  ranged against the widget as a card ranges a label against a value, so a field sits in the same
+  place read and written, and every widget in a column begins and ends at the same two positions.
+  Before this the form stacked a small label over each box and the card put the label beside the
+  value, so the two views of one item shared nothing but their order. Fields go two to a row, and
+  **a list or a paragraph takes a row to itself**, `GUI-16`: a stack of buddy boxes beside a
+  one-line field left a hole where four fields would have been.
+
+  **A field the model fills in is drawn the same whether or not it had an answer today.** It is
+  its own box, locked and faded, holding what was calculated, the reason it would not read, or a
+  dash for nothing, with *override* in a slot of its own beside it. What the box holds is `GUI-49`.
+  Before this a calculation that succeeded gave a line of text and a button while one that came to
+  nothing gave an ordinary empty box, so one field was two different controls and the shape of a
+  row said what the data happened to be rather than what kind of field it was. The slot is kept on
+  every row of a type that has one field to override and costs nothing on a type that has none.
+
+  **Reverting locks the box again and shows the calculation at once.** A correction is still in the
+  logbook until Save, so a box reading the item after a revert would show the very value the reader
+  had just dropped, and the button beside it would go on offering to revert something that was
+  already gone. The form therefore shows what the field *will* say: the computation, run against
+  the item as it stands. What the draft carries is separate — clearing a correction the logbook
+  holds is a change Save must make, while clearing one typed into this form is the draft forgetting
+  it, so Save goes back to being offered only where something really changed. `offeredOf` decides
+  all of this in one place, away from the drawing.
+
+  **A chooser is the same box as a text field.** A fixed set, a key and a gas were drawn as a word
+  with a small arrow after it, thirty pixels wide beside a box that filled its column. They now sit
+  in the box everything else sits in, the arrow at its right, and `Modifier.boxed` is the one place
+  that border and ground are decided — so a planner's settings, a table cell, a calculator's input
+  and a form's field cannot come apart. Nothing is typed into a chooser; the menu does the work.
+
+  **The machinery is folded away with what does not apply.** A housekeeping field — a dive's
+  `time_zone_offset`, `planned` and `primary_profile` — is reachable and out of the way, behind the
+  same *N more fields* line that holds the fields of another kind of gear. Both are things a reader
+  is not looking for and must still be able to reach.
+
+  **A section is a box when editing too**, as it is when reading, so *Details* does not dissolve
+  into loose fields the moment the pencil is pressed.
+
   **One widget per kind of field**, chosen from its description: a text field, taller for
   multiline text; a number field with its unit after it, a time as `m:ss`; a date as text; a
   yes-or-no as a three-state box, the third being *not said*; a fixed set as a drop-down, and a
@@ -1473,8 +1513,9 @@ once and corrected. The numbers stay unused rather than being given to something
   collection's keys; a list as one such widget per entry, with add and take out. A series is not
   edited: the graph is its place.
 
-  **What is worked out is shown, not edited.** A derived field is read-only and greyed. One the
-  model works out unless told otherwise shows what it worked out with an *override* beside it —
+  **What is worked out is shown, not edited.** A derived field is read-only, and how it is drawn
+  is `GUI-49`. One the model works out unless told otherwise shows what it worked out with an
+  *override* beside it —
   not *correct*, which beside a number reads as saying the number is; overridden, it is edited
   like any other, and *revert* clears the override so the worked-out value returns. **Validation
   stays in the model**: every drafted value is judged by the field's own description as it is
@@ -1491,6 +1532,55 @@ once and corrected. The numbers stay unused rather than being given to something
   them, that category alone, so a gas source's `cylinder` offers the cylinders and not the
   regulators its volume could never be taken from, and it offers to make one where nothing
   answers to what was typed, `GUI-48`. Open: the phone's form.
+- **GUI-50 — What a card does with a name and with a field too wide for a column.** *Settled:*
+  **the title is the name, so the body never repeats it; a paragraph spans both columns.**
+
+  Every card is titled with its item's `name`, and every card then listed `name` again as its first
+  field. A dive's read *Name 2026-06-21#0* under a heading saying 2026-06-21#0. So the body leaves
+  it out. **A form keeps it where it can be written**: a site, a person and a piece of gear are
+  renamed by typing in that box, and only a name the model calculates — a dive's, which is its date
+  and its number within the day — is dropped from the form as well.
+
+  **A field wider than a column takes the row.** Fields flow two to a row, and a paragraph of
+  remarks in half of one is a ribbon four lines tall with a hole beside it. A card gives the row to
+  long text; a form gives it to long text and to lists as well, a list there being a box to a line
+  with an *add* under them rather than the one line of names a card reads it as. That is the same
+  question `AT_FOOT` answers for the hundreds of dives on a site, at the other end of the scale:
+  that list gets a box under everything, this one gets its row where it stands.
+
+- **GUI-49 — How a reader is told where a value came from.** *Settled, for now:* **calculated is
+  grey italics, corrected is bold, written is neither.**
+
+  A field holds one of four things, and the four were drawn six ways across two tabs. A card greyed
+  what the model calculated and the edit form did the same; the planner's runtime put a calculated
+  duration in italics in a darker ink; the SAC calculator drew its answer in the ink of a number
+  somebody had typed. Nothing distinguished a value corrected by hand from one written on a field
+  that is never calculated, though the two are entirely different claims — *the model was wrong
+  here* against *nobody calculates this*.
+
+  So one rule, in one place. **Calculated is italic in `onSurfaceVariant`.** Italic carries it
+  because it survives being greyed and a reader takes a slanted number in a box as an answer rather
+  than a prompt; the ink is not the `outline` that labels are drawn in, a card otherwise naming a
+  field and saying its value in one colour. **Corrected is bold in the ordinary ink**, which is the
+  loudest of the four and belongs to the rarest: a number a user went out of their way to write
+  over the model's. **Written is upright in the ordinary ink**, and is what everything else looks
+  like. **Unreadable is the error colour**, upright, the reason standing where the value would be,
+  because a sentence is not a figure the model arrived at.
+
+  `calculatedOf` and `styleOf` in `Form.kt` are the whole of it, so the item view, the edit form,
+  the runtime table and the four calculators cannot drift apart again.
+
+  **A value being typed is not styled.** This says where a value a reader is *told* came from, and
+  a box is for writing in: bolding the characters under a caret would be styling the act rather
+  than the fact. A corrected field in a form is known by the *revert* beside it, which says the
+  same thing and offers to undo it.
+
+  **Statistics are left alone.** Every figure on that tab is calculated, and a page in italics
+  throughout distinguishes nothing from nothing.
+
+  *For now:* grey and italic together are two markers for one fact, kept while `GUI-8` is still a
+  placeholder. Dropping one is cheap once that is answered.
+
 - **GUI-48 — How an item that does not exist yet is named in a reference.** *Settled:* **the
   drop-down offers to make one, called by what was typed.**
 

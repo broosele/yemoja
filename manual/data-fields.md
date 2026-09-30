@@ -129,6 +129,63 @@ recording.
 
 All three can be corrected where the calculation is wrong.
 
+- `start_date` (date, derived) — the day the dive began, in the local time where it was made.
+  From the primary profile, corrected by its `recorded_time_offset`, or from you.
+- `start_time` (time, derived) — when you went in, in local time. The dive's times are all
+  local, and shown as they are.
+- `duration` (number, derived) — how long the dive lasted, in seconds unless the file says
+  otherwise. From the primary profile, or written by you where there is no recording. It is what
+  says when the dive ended, there being no field for that.
+- `dive_number` (whole number) — your own numbering, if you keep one. Not every diver
+  numbers every dive, and Yemoja does not require it. This is unrelated to the number at
+  the end of the item's id.
+- `max_depth` (number, derived) — the deepest point reached, from the primary profile. Correct
+  it for a dive you kept no recording of; for one you did, the figure belongs on the recording.
+- `average_depth` (number, derived) — how deep the dive was on average, weighted by time
+  rather than by sample. A computer records unevenly, so counting samples would let a slow
+  ascent drag the figure down for no reason. Correct it for the same reason as `max_depth`.
+- `dive_site` (reference or text) — where the dive was. A plain name is allowed for a place
+  you keep no site for: nothing is worked out from it, so a dive named this way has no water
+  type, no elevation and no place on the map.
+- `deco` (true or false, derived) — whether the dive went past the no-decompression limit,
+  so that stops were required on the way up. Taken from the primary profile: a `decostop` above
+  zero at any point means yes, and one recorded but never above zero means no. Where there is
+  no `decostop`, `no_deco_time` decides: reaching zero means yes, and never reaching it means
+  no. Most computers write stops only when there are stops, which is why the second reading
+  matters. A zero before the first positive value is ignored: some computers read zero at the
+  surface before they have calculated anything, and a dive cannot begin in deco.
+
+  Where the recording has neither, or there is no profile at all, nothing is calculated
+  and the field is empty for you to answer. Yemoja will not decide this one for you — your
+  computer decided it at the time, with you in the water and with settings this
+  application cannot reproduce, and a second opinion arrived at years later would be
+  answering a different question.
+- `buddies` (list of references or text) — who you dived with. Plain names are allowed
+  for people you have no item for.
+- `buddy_count` (whole number, derived) — from the list. Correct it when you remember how
+  many people were there but not all their names.
+- `rating` (whole number) — what you made of it, from 1 to 10.
+- `previous_dive` (reference) — the dive you were still carrying gas from when you went
+  back in. Leave it out for a dive you started clean, which is most of them. Yemoja does
+  not calculate this from the clock: whether a surface interval was long enough to ignore
+  is a judgement, and any threshold that decided it for you would be wrong for somebody.
+  It must name a dive in this logbook that ended before this one began.
+- `surface_interval` (number, derived) — how long you were out of the water before this
+  dive, from `previous_dive`'s end time to this dive's start. Nothing is calculated when
+  `previous_dive` is unset, and where it names a dive that is not in this logbook or that
+  ended after this one began, the interval is shown as something that cannot be calculated. Write it yourself for a dive whose predecessor is not in this
+  logbook — an imported dive often knows the interval without knowing the dive.
+- `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
+  the leg: a trip's list of dives gathers its own and those of everything beneath it.
+- `operator` (reference) — who you dived with.
+- `tags` (list of text) — your own labels. Anything you like; `solo` and `wreck` are
+  examples.
+- `environment` (owned item) — the conditions you found.
+- `gear` (owned item) — what you took, and how it performed. Described under *Dive gear*
+  below.
+- `profiles` (keyed owned items) — the depth records through the dive, one of them the
+  primary.
+- `gas_sources` (keyed owned items) — what you breathed from.
 - `name` (text, derived) — the dive's date and its number within that day, as
   `2026-02-23#0`. This is what a dive is listed and linked as.
 - `planned` (true or false, derived) — whether this dive is still ahead of you. True where the
@@ -146,13 +203,6 @@ All three can be corrected where the calculation is wrong.
   picked, because you did the picking. And a recording coming off your computer is matched against
   planned dives like any other, which is how the dive you planned and the dive you made end up in
   one place.
-- `dive_number` (whole number) — your own numbering, if you keep one. Not every diver
-  numbers every dive, and Yemoja does not require it. This is unrelated to the number at
-  the end of the item's id.
-- `start_date` (date, derived) — the day the dive began, in the local time where it was made.
-  From the primary profile, corrected by its `recorded_time_offset`, or from you.
-- `start_time` (time, derived) — when you went in, in local time. The dive's times are all
-  local, and shown as they are.
 - `time_zone_offset` (number) — how far local time was ahead of GMT where the dive was made, in
   seconds unless the file says otherwise, and shown as hours and minutes: summer in Western
   Europe is `7200`, shown `+2:00`, and New York in winter is `-18000`.
@@ -162,48 +212,6 @@ All three can be corrected where the calculation is wrong.
   dive apart from one you already have when you have crossed a zone since. A dive that says
   nothing is taken to be on GMT, which compares correctly with any other dive that says nothing.
   A download fills it in where the computer reports its zone.
-- `duration` (number, derived) — how long the dive lasted, in seconds unless the file says
-  otherwise. From the primary profile, or written by you where there is no recording. It is what
-  says when the dive ended, there being no field for that.
-- `max_depth` (number, derived) — the deepest point reached, from the primary profile. Correct
-  it for a dive you kept no recording of; for one you did, the figure belongs on the recording.
-- `average_depth` (number, derived) — how deep the dive was on average, weighted by time
-  rather than by sample. A computer records unevenly, so counting samples would let a slow
-  ascent drag the figure down for no reason. Correct it for the same reason as `max_depth`.
-
-- `deco` (true or false, derived) — whether the dive went past the no-decompression limit,
-  so that stops were required on the way up. Taken from the primary profile: a `decostop` above
-  zero at any point means yes, and one recorded but never above zero means no. Where there is
-  no `decostop`, `no_deco_time` decides: reaching zero means yes, and never reaching it means
-  no. Most computers write stops only when there are stops, which is why the second reading
-  matters. A zero before the first positive value is ignored: some computers read zero at the
-  surface before they have calculated anything, and a dive cannot begin in deco.
-
-  Where the recording has neither, or there is no profile at all, nothing is calculated
-  and the field is empty for you to answer. Yemoja will not decide this one for you — your
-  computer decided it at the time, with you in the water and with settings this
-  application cannot reproduce, and a second opinion arrived at years later would be
-  answering a different question.
-
-- `dive_site` (reference or text) — where the dive was. A plain name is allowed for a place
-  you keep no site for: nothing is worked out from it, so a dive named this way has no water
-  type, no elevation and no place on the map.
-
-- `buddies` (list of references or text) — who you dived with. Plain names are allowed
-  for people you have no item for.
-- `buddy_count` (whole number, derived) — from the list. Correct it when you remember how
-  many people were there but not all their names.
-- `rating` (whole number) — what you made of it, from 1 to 10.
-- `previous_dive` (reference) — the dive you were still carrying gas from when you went
-  back in. Leave it out for a dive you started clean, which is most of them. Yemoja does
-  not calculate this from the clock: whether a surface interval was long enough to ignore
-  is a judgement, and any threshold that decided it for you would be wrong for somebody.
-  It must name a dive in this logbook that ended before this one began.
-- `surface_interval` (number, derived) — how long you were out of the water before this
-  dive, from `previous_dive`'s end time to this dive's start. Nothing is calculated when
-  `previous_dive` is unset, and where it names a dive that is not in this logbook or that
-  ended after this one began, the interval is shown as something that cannot be calculated. Write it yourself for a dive whose predecessor is not in this
-  logbook — an imported dive often knows the interval without knowing the dive.
 - `primary_profile` (key reference) — which of them to work from: `"*p1"`. Leave it out
   when there is only one profile, since there is nothing to choose between. With several
   and none named, Yemoja cannot tell which to believe, and everything calculated from a
@@ -211,17 +219,6 @@ All three can be corrected where the calculation is wrong.
   calculate rather than guessed at. That happens only to a file edited by hand: when Yemoja
   adds a second profile to a dive, a plan or another computer's recording, it names the one
   the dive already had as primary, so the dive goes on saying what it said.
-- `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
-  the leg: a trip's list of dives gathers its own and those of everything beneath it.
-- `operator` (reference) — who you dived with.
-- `tags` (list of text) — your own labels. Anything you like; `solo` and `wreck` are
-  examples.
-- `environment` (owned item) — the conditions you found.
-- `gear` (owned item) — what you took, and how it performed. Described under *Dive gear*
-  below.
-- `profiles` (keyed owned items) — the depth records through the dive, one of them the
-  primary.
-- `gas_sources` (keyed owned items) — what you breathed from.
 - `remarks` (multiline text) — how the dive went. The seal that flooded, the shoal
   that came past, why you turned round early.
 

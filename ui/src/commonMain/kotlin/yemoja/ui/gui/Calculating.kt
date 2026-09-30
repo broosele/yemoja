@@ -497,7 +497,7 @@ private fun SacForm(working: Working) {
                 if (solved) {
                     Text(
                         text = (answer as? Answer.Value)?.let { answerSaid(it, figure.unit) } ?: "",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = calculatedOf(MaterialTheme.typography.bodyMedium),
                         modifier = Modifier.padding(horizontal = GAP, vertical = HALF),
                     )
                 } else {
@@ -548,7 +548,10 @@ private fun NdlForm(working: Working, settings: Settings?) {
                 textAlign = TextAlign.End,
                 modifier = Modifier.width(LABEL),
             )
-            Text(answerSaid(answer, "min").orEmpty(), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = answerSaid(answer, "min").orEmpty(),
+                style = calculatedOf(MaterialTheme.typography.bodyMedium),
+            )
         }
         is Answer.Wrong -> Refused(answer.reason)
         Answer.Waiting -> Unit
@@ -642,7 +645,10 @@ private fun Answered(label: String, answer: Answer, unit: String) {
                 textAlign = TextAlign.End,
                 modifier = Modifier.width(LABEL),
             )
-            Text(answerSaid(answer, unit).orEmpty(), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = answerSaid(answer, unit).orEmpty(),
+                style = calculatedOf(MaterialTheme.typography.bodyMedium),
+            )
         }
         is Answer.Wrong -> Refused(answer.reason)
         Answer.Waiting -> Unit
