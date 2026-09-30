@@ -20,6 +20,10 @@ logic layer is designed with it in mind.
 says and `shapedOf` takes it, so a caller with no window asks the window's own calculation rather
 than a second one. `API-6`.
 
+**The planner is two functions.** `calculated` answers and writes nothing; `saved` writes a plan
+into a logbook. `API-7`, in `Planning.kt`. Nothing outside the application calls either yet: the
+command that carries them to a user is next.
+
 **The read-only tools, the server that carries them, and an agent that reaches them.**
 `guide`, `describe`, `list`, `get`, `series` and `aggregate` answer as `API-4` sets out, in
 `Tools.kt`, and `ToolServer.kt` serves them over MCP with the briefing and the manual's two data
@@ -69,6 +73,35 @@ behaviour of its own, that behaviour is in the wrong place.
   calls can be renamed on a whim; one an outside script depends on cannot. So what is exposed is
   documented in `manual/` beside the data format, which is the other thing this project promises
   not to break, and anything not documented there is not part of the promise.
+
+- **API-7 — What the planner offers.** *Settled:* **one function that answers and one that
+  writes, and no third.**
+
+  `calculated(planned)` gives the schedule: every line of the dive in one list, the ones the caller
+  described and the ones the model added each saying which they are, the stops deepest first, the
+  runtime, the gas taken from each cylinder, the oxygen clocks and the waits, and what the model
+  has to say against the plan. **It reads no logbook and touches none.** A plan is arithmetic over
+  what the description says, so a caller with a question and no data can ask it.
+
+  `saved(universe, planned, dive, name)` writes the plan onto a dive, or onto a new dive where none
+  is named. It is the write the window's *Save as new dive* and *Attach to existing dive* make, so
+  a plan written this way is one the window can open and edit.
+
+  **The split is the one `API-2` draws**, and this is where it is first drawn: a question and a
+  change are different acts, answered by different functions, so what may be allowed is decided by
+  which function is called rather than by what a caller asks for.
+
+  **A plan that will not calculate is not written.** `saved` refuses it in the same words
+  `calculated` refuses it in. A schedule nobody can read is not worth keeping, and a caller that
+  wanted it kept anyway has `calculated` to tell it what is wrong first.
+
+  **A cylinder is named by its number**, `1` and `2`, rather than by the `g1` the model keys it
+  under. The key is the file format's, `JSON-19`, and a caller describing gases as a list should
+  not have to learn a second name for the first of them.
+
+  Open: a plan that follows an earlier run. `calculated` cannot answer one, the run it follows
+  being a dive in a logbook it has not got; `saved` can, having a universe. Whether the reading
+  half grows a way to say *and this is what I surfaced with* is not settled.
 
 - **API-6 — How a plan is described to something with no window.** *Settled:* **an immutable
   description holding the same text the form holds.**
