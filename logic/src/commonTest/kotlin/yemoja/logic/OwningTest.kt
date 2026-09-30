@@ -107,6 +107,23 @@ class OwningTest {
     }
 
     @Test
+    fun `reading the files again refuses a manifest that will not read, and throws nothing`() {
+        val (universe, store) = universe()
+        store.writeText(LogbookReader.MANIFEST, """{"user": 1}""")
+        val refused = assertIs<Outcome.Refused>(universe.reload())
+        assertTrue("could not be read again" in refused.reason, refused.reason)
+        assertNull(universe.user, "and nothing moved")
+    }
+
+    @Test
+    fun `a manifest that is not an object is refused by name`() {
+        val (universe, store) = universe()
+        store.writeText(LogbookReader.MANIFEST, """[1, 2]""")
+        val refused = assertIs<Outcome.Refused>(universe.own("anna"))
+        assertTrue("should hold an object" in refused.reason, refused.reason)
+    }
+
+    @Test
     fun `reading the files again moves the set's user with the manifest`() {
         val (universe, store) = universe()
         store.writeText(LogbookReader.MANIFEST, """{"user": "@bo", "libraries": {}}""")

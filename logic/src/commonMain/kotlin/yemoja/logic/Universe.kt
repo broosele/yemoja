@@ -121,31 +121,41 @@ class Universe(
         if (named.description != Types.PERSON) {
             return Outcome.Refused("$id is a ${named.description.name} rather than a person")
         }
-        // The file as it stands, so that whatever else it holds survives the one key changing.
-        // A file that will not read is refused rather than written over: the reader's complaint
-        // is the one to pass on, and rewriting from nothing would lose what was there.
+        // The file as it stands, read once and validated as read, so that whatever else it holds
+        // survives the one key changing. A file that will not read is refused rather than
+        // written over: the reader's complaint is the one to pass on, and rewriting from nothing
+        // would lose what was there.
         val held = try {
             manifestMembers()
-        } catch (refused: LogbookFormatException) {
+        } catch (refused: RuntimeException) {
             return Outcome.Refused("the logbook's manifest could not be read: ${refused.message}")
         }
         val reference = Reference.Identified(id)
-        val written = LinkedHashMap(held)
+        val written = LinkedHashMap(held.members)
         written[LogbookReader.USER] = Stored.Leaf(reference.asWritten)
-        store.writeText(LogbookReader.MANIFEST, Json.write(Stored.Members(written)) + "\n")
+        try {
+            store.writeText(LogbookReader.MANIFEST, Json.write(Stored.Members(written)) + "\n")
+        } catch (failed: Exception) {
+            return Outcome.Refused("the logbook's manifest could not be written: ${failed.message}")
+        }
         logbook.user = reference
         user = named
         revision += 1
         return Outcome.Done()
     }
 
-    /** The manifest's members as the file holds them, or none where there is no file. */
-    private fun manifestMembers(): Map<String, Stored> {
-        if (!store.isFile(LogbookReader.MANIFEST)) return emptyMap()
-        // Read through the reader first, so a file it would refuse is refused here too.
-        LogbookReader.manifest(store)
-        val parsed = Json.parse(store.readText(LogbookReader.MANIFEST))
-        return (parsed as? Stored.Members)?.members ?: emptyMap()
+    /**
+     * The manifest as the file holds it, validated, or an empty one where there is no file.
+     *
+     * Throws as the reader throws: a file that is not an object, or one whose owner or libraries
+     * will not read, is the reader's complaint and the caller's to turn into a refusal.
+     */
+    private fun manifestMembers(): Stored.Members {
+        if (!store.isFile(LogbookReader.MANIFEST)) return Stored.Members(emptyMap())
+        val parsed = Json.parse(store.readText(LogbookReader.MANIFEST)) as? Stored.Members
+            ?: throw LogbookFormatException("${LogbookReader.MANIFEST} should hold an object")
+        LogbookReader.manifestOf(parsed)
+        return parsed
     }
 
     /**
@@ -161,9 +171,9 @@ class Universe(
      * differed, since what was read is not compared with what was held.
      */
     fun reload(): Outcome {
-        val manifest = LogbookReader.manifest(store)
-        val fresh = try {
-            LogbookReader.read(store, logbook.descriptions, manifest)
+        val (manifest, fresh) = try {
+            val manifest = LogbookReader.manifest(store)
+            manifest to LogbookReader.read(store, logbook.descriptions, manifest)
         } catch (refused: RuntimeException) {
             return Outcome.Refused("the logbook could not be read again: ${refused.message}")
         }
@@ -743,14 +753,11 @@ class Universe(
  */
 private fun manifestOf(libraries: Map<String, List<String>>): Stored.Members = Stored.Members(
     mapOf(
-        LIBRARIES to Stored.Members(
+        FileStore.LIBRARIES to Stored.Members(
             libraries.mapValues { (_, held) -> Stored.Elements(held.map { Stored.Leaf(it) }) },
         ),
     ),
 )
-
-/** The key a manifest groups its libraries under. */
-private const val LIBRARIES = "libraries"
 
 /** What a library file is called. */
 private const val SUFFIX = ".json"

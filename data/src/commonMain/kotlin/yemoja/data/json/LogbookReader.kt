@@ -103,9 +103,17 @@ object LogbookReader {
      */
     fun manifest(store: FileStore): Manifest {
         if (!store.isFile(MANIFEST)) return Manifest.NOTHING
-        val read = membersOf(store, MANIFEST)
-        return Manifest(userIn(read), librariesIn(read))
+        return manifestOf(membersOf(store, MANIFEST))
     }
+
+    /**
+     * What [read] says as a manifest, for a caller that has the file's members in hand already.
+     *
+     * The same reading [manifest] gives, so a caller that goes on to edit those members and
+     * write them back has validated the document it is about to change rather than a second
+     * reading of the file. Refuses as [manifest] refuses.
+     */
+    fun manifestOf(read: Stored.Members): Manifest = Manifest(userIn(read), librariesIn(read))
 
     /**
      * Who the logbook belongs to, or absent where it says nothing. `JSON-22`.
