@@ -104,6 +104,31 @@ class Universe(
         private set
 
     /**
+     * Makes the person called [id] the logbook's user, and writes it down.
+     *
+     * **The one place a logbook says whose it is is the manifest**, `JSON-22`, and until this
+     * nothing wrote it: a reader added themselves on the Community tab and then edited
+     * `yemoja.json` by hand. The libraries the manifest declares are kept as they are; only the
+     * owner changes.
+     *
+     * Refused where [id] names nothing here, or names something that is not a person: an owner
+     * is what a certification, a medical and an emergency contact hang off, and a dive site can
+     * carry none of them. Nothing else about the logbook moves, and the revision does, so what
+     * reads the user reads again.
+     */
+    fun own(id: String): Outcome {
+        val named = logbook[id] ?: return Outcome.Refused("$id is not in this logbook")
+        if (named.description != Types.PERSON) {
+            return Outcome.Refused("$id is a ${named.description.name} rather than a person")
+        }
+        val manifest = LogbookReader.manifest(store)
+        store.writeText(LogbookReader.MANIFEST, Json.write(manifestOf(id, manifest.libraries)) + "\n")
+        user = named
+        revision += 1
+        return Outcome.Done()
+    }
+
+    /**
      * Reads the logbook's files again, replacing what is held with what is on disk.
      *
      * **For a change made by another hand.** Everything of the window's own goes through [change]
@@ -660,11 +685,7 @@ class Universe(
             require(!store.isFile(LogbookReader.MANIFEST)) {
                 "$path already holds a logbook, and making one would write over it"
             }
-            val declared = shippedIn(store).mapValues { (_, held) ->
-                Stored.Elements(held.map { Stored.Leaf(it) })
-            }
-            val manifest = Stored.Members(mapOf(LIBRARIES to Stored.Members(declared)))
-            store.writeText(LogbookReader.MANIFEST, Json.write(manifest) + "\n")
+            store.writeText(LogbookReader.MANIFEST, Json.write(manifestOf(null, shippedIn(store))) + "\n")
             return open(path, devices)
         }
 
@@ -690,6 +711,22 @@ class Universe(
             return shipped
         }
     }
+}
+
+/**
+ * A manifest as a file holds it: whose the logbook is, where [user] names somebody, and the
+ * [libraries] it uses by type.
+ *
+ * The one place the file's shape is written, so making a logbook and choosing its user cannot
+ * write two different files. `JSON-3`, `JSON-22`.
+ */
+private fun manifestOf(user: String?, libraries: Map<String, List<String>>): Stored.Members {
+    val members = LinkedHashMap<String, Stored>()
+    user?.let { members[LogbookReader.USER] = Stored.Leaf("@$it") }
+    members[LIBRARIES] = Stored.Members(
+        libraries.mapValues { (_, held) -> Stored.Elements(held.map { Stored.Leaf(it) }) },
+    )
+    return Stored.Members(members)
 }
 
 /** The key a manifest groups its libraries under. */

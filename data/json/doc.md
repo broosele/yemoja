@@ -834,6 +834,10 @@ To settle when we discuss architecture:
   a malformed file rather than a missing person, and the sibling declaration in the same file
   refuses the same way.
 
+  *Extended:* **the application writes it.** `Universe.own` names a person in the manifest and
+  leaves the libraries it declares alone; the window offers it on the person's card, `GUI-51`.
+  Until then the field was read and never written, and a reader set it by editing the file.
+
 - **JSON-3 — What `yemoja.json` holds.** *Settled:* the structure of the logbook and
   nothing else — who owns it and which libraries it uses. *Amended:* it said *and where each
   type's files live*, which `JSON-21` later took away by making the layout a convention. The

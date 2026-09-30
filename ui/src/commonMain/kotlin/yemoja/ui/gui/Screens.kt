@@ -327,6 +327,14 @@ internal class Changer(private val universe: Universe?) {
         if (outcome is Outcome.Done) edition++
         return outcome
     }
+
+    /** Makes the person called [id] the logbook's user. `GUI-51`. */
+    fun own(id: String): Outcome {
+        val open = universe ?: return Outcome.Refused("no logbook is open")
+        val outcome = open.own(id)
+        if (outcome is Outcome.Done) edition++
+        return outcome
+    }
 }
 
 /** The changer, for whatever is deep enough in a screen to save something. */
@@ -1378,8 +1386,18 @@ private fun Subject(
                     kept.chosenMany.size > 1 -> {
                         ManyView(set, kept.chosenMany, onFollow) { asking = true }
                     }
-                    chosen != null ->
-                        ItemView(chosen, onFollow, makeable, add, { ask(emptySet()) })
+                    chosen != null -> {
+                        val changer = LocalChanger.current
+                        val owning = chosen.item.description == Types.PERSON && chosen.id != user?.let { set.idOf(it) }
+                        ItemView(
+                            chosen = chosen,
+                            onFollow = onFollow,
+                            makeable = makeable,
+                            onAdd = add,
+                            onDelete = { ask(emptySet()) },
+                            onOwn = if (owning) ({ changer.own(chosen.id) }) else null,
+                        )
+                    }
                     // Where nothing is chosen the middle still offers to make one, which is the
                     // only way a logbook with nothing in it grows a first item. `GUI-35`.
                     making != null && add != null -> Empty(makeSaid(making)) { add(making) }
@@ -2033,6 +2051,8 @@ private fun ItemView(
     onAdd: ((ItemDescription) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     opensEditing: Boolean = false,
+    /** Makes this person the user, offered on a person who is not. `GUI-51`. */
+    onOwn: (() -> Unit)? = null,
 ) {
     // The card scrolls its own fields under a title line that stays put; what follows the
     // card scrolls with the fields.
@@ -2044,6 +2064,7 @@ private fun ItemView(
         onAdd = onAdd,
         onDelete = onDelete,
         opensEditing = opensEditing,
+        onOwn = onOwn,
     ) {
         // A trip is both an item and a set of dives, and shows as both. `GUI-23`.
         if (chosen.item.description == Types.DIVE_TRIP) {
@@ -2410,6 +2431,8 @@ private fun ItemCard(
     onDelete: (() -> Unit)? = null,
     /** Whether the card opens turned over, which an item made a moment ago does. `GUI-35`. */
     opensEditing: Boolean = false,
+    /** Makes this person the user. Absent on everything that is not a person, and on the user. */
+    onOwn: (() -> Unit)? = null,
     after: @Composable ColumnScope.() -> Unit = {},
 ) {
     val changer = LocalChanger.current
@@ -2455,6 +2478,14 @@ private fun ItemCard(
                 } else {
                     if (onAdd != null && makeable.isNotEmpty()) {
                         Adder(makeable, onAdd)
+                    }
+                    // The glyph the list marks the user with, so pressing it puts the mark here.
+                    onOwn?.let { own ->
+                        Explained("This is me") {
+                            IconButton(onClick = own) {
+                                Icon(Icons.Filled.AccountCircle, contentDescription = "this is me")
+                            }
+                        }
                     }
                     IconButton(onClick = { editing = true }) {
                         Icon(Icons.Filled.Edit, contentDescription = "edit")

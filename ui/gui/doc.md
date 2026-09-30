@@ -88,7 +88,8 @@ question had to be asked per tab.
 - **Gear** — a tree of categories and the kinds within them, and beside it the items in
   whichever branch is chosen.
 - **Community** — a subtab per type: people, operators, certifications. The user, whoever the
-  logbook names as its own, is marked among the people and is what the tab opens on.
+  logbook names as its own, is marked among the people and is what the tab opens on. A person
+  who is not the user has a button on their card that makes them so, `GUI-51`.
 - **Locations** — a tree of regions, and beside it the dive sites in whichever region is chosen
   or in any region inside it, with the wrecks at those sites in the same list and marked apart
   from them. A region and a site are chosen at once, and the item view shows a map of the
@@ -1558,6 +1559,24 @@ once and corrected. The numbers stay unused rather than being given to something
   them, that category alone, so a gas source's `cylinder` offers the cylinders and not the
   regulators its volume could never be taken from, and it offers to make one where nothing
   answers to what was typed, `GUI-48`. Open: the phone's form.
+- **GUI-51 — How the user is chosen.** *Settled:* **a button on a person's card, beside the
+  pencil, which writes them into the manifest.**
+
+  `JSON-22` settled that a logbook says whose it is in one place, `yemoja.json`, and nothing in
+  the application wrote that place: the manual told a reader to add themselves on Community and
+  then edit the file by hand, which is the one thing a window exists to spare them.
+
+  **On the card, not in Settings.** Whose the logbook is is a fact about the logbook, kept in the
+  manifest and travelling with it; the settings are preferences and stay behind. And it is a
+  fact about a person, so it is said where the person is. The button carries the glyph the
+  Community list already marks the user with, so pressing it puts that mark on this card, and it
+  is absent on the user's own card and on everything that is not a person.
+
+  **Nothing asks.** Choosing the user changes no item, only which of them the logbook names, and
+  pressing it on somebody else moves it: a logbook names one person or nobody, `JSON-22`, so
+  there is no second state to confirm. `Universe.own` is the one writer of the manifest's `user`,
+  and it keeps the libraries the manifest declares as they are.
+
 - **GUI-50 — What a card does with a name and with a field too wide for a column.** *Settled:*
   **the title is the name, so the body never repeats it; a paragraph spans both columns.**
 

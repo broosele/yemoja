@@ -20,8 +20,9 @@ The folder can also be named when Yemoja is started, and it then opens straight 
 
 **Tell Yemoja which person you are.** A new logbook names nobody, and until it knows, it cannot
 say which medical and which insurance are yours to be warned about, or which certifications are.
-Add yourself on the Community tab, then write your id as the `user` in `yemoja.json`, as
-[data-format.md](data-format.md) shows.
+Add yourself on the Community tab, then press the **person** button on your card, beside the
+pencil. It writes you into `yemoja.json` as the logbook's `user`, which
+[data-format.md](data-format.md) describes; press it on somebody else to move it.
 
 ## Home
 
