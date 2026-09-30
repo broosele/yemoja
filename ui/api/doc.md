@@ -23,6 +23,9 @@ than a second one. `API-6`.
 **The planner is two functions.** `calculated` answers and writes nothing; `saved` writes a plan
 into a logbook. `API-7`, in `Planning.kt`.
 
+**An agent can ask for a plan and propose one.** `plan` calculates and is always allowed;
+`create_plan` stages a plan as a new dive while the user allows changes. `API-9`.
+
 **`yemoja plan` carries the reading half to anybody.** A file of plans in, a table or the whole
 answer out, no logbook anywhere. `API-8`, in `Cases.kt`, `Reported.kt` and `Planner.kt`, and
 described for its users in `manual/planning-from-a-file.md`.
@@ -76,6 +79,30 @@ behaviour of its own, that behaviour is in the wrong place.
   calls can be renamed on a whim; one an outside script depends on cannot. So what is exposed is
   documented in `manual/` beside the data format, which is the other thing this project promises
   not to break, and anything not documented there is not part of the promise.
+
+- **API-9 — What the planner offers an agent.** *Settled:* **`plan` to calculate, always
+  allowed, and `create_plan` to stage one, allowed by the same box every other change is.**
+
+  **Calculating is always allowed** because there is nothing in it to allow. `plan` reads no
+  logbook and changes none: it is a question about arithmetic, and refusing it would be refusing to
+  answer a sum. That it is the same function `yemoja plan` calls is the point — an agent asked
+  *what would forty metres for twenty-five minutes cost* gives the figure the window would.
+
+  **Creating one stages, like every other change.** `RECON-8` has no exception for a big change,
+  and a dive plan is exactly the kind somebody should read before it lands. So `create_plan` needs
+  *Allow changes*, and what it stages waits on the home screen like anything else. A plan that will
+  not calculate is refused rather than staged, as it is refused rather than written.
+
+  **The briefing says the model is not a dive computer** and tells the agent to say so when it
+  reports a plan. An agent answering a question about a dive nobody has made yet is the one place
+  in this application where a figure could be read as advice, and the words are `decompression.md`'s.
+
+  Open, and a real limit rather than a choice: **a plan can only be staged as a new dive.**
+  `Staging.set` walks a path to a field, and an entry of a keyed collection is not one — so
+  *this plan, on that dive* has nothing to stage through. Asked for one, `create_plan` refuses and
+  says the user can attach it themselves. Teaching staging to carry a whole owned collection, or an
+  entry of one, would settle it and is not this decision's to make: it is `RECON-8`'s, and the same
+  gap stops an agent adding a gas source to a dive.
 
 - **API-8 — How a plan reaches something outside the application.** *Settled:* **a command that
   reads a file of plans and writes what they come to.**

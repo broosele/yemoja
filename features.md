@@ -87,7 +87,8 @@ them.
   *Also built:* **the planner without a window.** `yemoja plan` reads a file of plans and writes
   what they come to, as a table or in full, opening no logbook — which is how a schedule is put
   beside a published table or another program's. `API-8`, and
-  [manual/planning-from-a-file.md](manual/planning-from-a-file.md) for a user.
+  [manual/planning-from-a-file.md](manual/planning-from-a-file.md) for a user. An agent reaches
+  the same calculation through `plan`, and stages one through `create_plan`. `API-9`.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). UDDF is read — the dive, its
   recording, and the sites, wrecks, people, gear, trips and operators it names — and how far it

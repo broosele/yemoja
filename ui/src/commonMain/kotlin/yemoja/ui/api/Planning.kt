@@ -2,6 +2,7 @@ package yemoja.ui.api
 
 import yemoja.data.Element
 import yemoja.data.Series
+import yemoja.data.Stored
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
 import yemoja.logic.planKeyOf
@@ -167,6 +168,49 @@ private fun lastOf(series: Series): Double {
 }
 
 /**
+ * Prepared is a plan ready to be written: the key it sits under and the fields it carries, or why it
+ * is not ready.
+ *
+ * The one place those fields are built, so a plan the window saves, one this writes and one an
+ * agent stages are the same plan. `API-9`.
+ */
+internal sealed class Prepared {
+
+    class Plan(
+        val key: String,
+        /** The profile's own fields, which sit under [key] in the dive's `profiles`. */
+        val fields: Map<String, Stored>,
+        /** What the plan says about the dive itself: its start, and the dive it follows. */
+        val dive: Map<String, Stored>,
+    ) : Prepared()
+
+    class Refused(val reason: String) : Prepared()
+}
+
+/**
+ * [planned] as the fields a plan is written as, calculated first.
+ *
+ * [universe] is absent where there is no logbook, which a plan following an earlier run needs and
+ * nothing else does.
+ */
+internal fun preparedOf(universe: Universe?, planned: Planned, name: String): Prepared {
+    val ready = when (val shaped = shapedOf(planned, universe)) {
+        is Shaped.Ready -> shaped
+        is Shaped.Wrong -> return Prepared.Refused(shaped.reason)
+        is Shaped.Waiting -> return Prepared.Refused("the plan has no lines")
+    }
+    val done = when (val worked = workedOf(ready)) {
+        is Worked.Done -> worked
+        is Worked.Refused -> return Prepared.Refused(worked.reason)
+    }
+    return Prepared.Plan(
+        key = planKeyOf(name),
+        fields = planFieldsOf(planned, ready.conditions, done.whole),
+        dive = diveFieldsOf(planned, universe),
+    )
+}
+
+/**
  * Saved is what writing a plan into a logbook came to: the dive it sits on, or why it does not.
  */
 internal sealed class Saved {
@@ -193,27 +237,21 @@ internal fun saved(
     dive: String? = null,
     name: String = "Plan A",
 ): Saved {
-    val ready = when (val shaped = shapedOf(planned, universe)) {
-        is Shaped.Ready -> shaped
-        is Shaped.Wrong -> return Saved.Refused(shaped.reason)
-        is Shaped.Waiting -> return Saved.Refused("the plan has no lines")
+    val made = when (val read = preparedOf(universe, planned, name)) {
+        is Prepared.Refused -> return Saved.Refused(read.reason)
+        is Prepared.Plan -> read
     }
-    val done = when (val worked = workedOf(ready)) {
-        is Worked.Done -> worked
-        is Worked.Refused -> return Saved.Refused(worked.reason)
-    }
-    val key = planKeyOf(name)
-    val fields = planFieldsOf(planned, ready.conditions, done.whole)
     val held = dive?.let {
         universe.logbook[it] ?: return Saved.Refused("$it is not in this logbook")
     }
     if (held != null && held.description != Types.DIVE) {
         return Saved.Refused("$dive is a ${held.description.name} rather than a dive")
     }
+    val key = made.key
     val changes = if (held == null) {
-        newDiveOf(key, fields, diveFieldsOf(planned, universe))
+        newDiveOf(key, made.fields, made.dive)
     } else {
-        onDiveOf(held, key, fields, diveFieldsOf(planned, universe))
+        onDiveOf(held, key, made.fields, made.dive)
     }
     return when (val outcome = universe.change(Operation.EDIT, *changes.toTypedArray())) {
         is Outcome.Refused -> Saved.Refused(outcome.reason)

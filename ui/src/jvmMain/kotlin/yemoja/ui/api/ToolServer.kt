@@ -215,6 +215,59 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     ) { carried(onto) { tools.staged() } }
 
     server.addTool(
+        "plan",
+        "Calculate a dive plan: the stops, the runtime, the gas it takes and what the model has " +
+            "to say against it. Reads no logbook and changes nothing, so it is always allowed. " +
+            "The plan is written as planning-from-a-file.md describes.",
+        ToolSchema(
+            properties = buildJsonObject {
+                putJsonObject("plan") {
+                    put("type", "object")
+                    put(
+                        "description",
+                        "The plan: lines, gases, and any setting it names. See the chapter " +
+                            "planning-from-a-file.md for every field.",
+                    )
+                }
+            },
+            required = listOf("plan"),
+        ),
+    ) { request ->
+        val plan = request.arguments?.get("plan")?.let { storedOf(it) }
+        carried(onto) {
+            if (plan == null) Reply("no plan was given", refused = true) else tools.plan(plan)
+        }
+    }
+
+    server.addTool(
+        "create_plan",
+        "Stage a dive plan as a profile on a dive, for the user to review. Nothing changes until " +
+            "they apply it. The plan is written as for the plan tool.",
+        ToolSchema(
+            properties = buildJsonObject {
+                putJsonObject("plan") {
+                    put("type", "object")
+                    put("description", "The plan, as for the plan tool.")
+                }
+                property("dive", "The dive's id. Leave it out to make a dive for the plan.")
+                property("name", "What to call the plan within the dive, such as Plan A.")
+            },
+            required = listOf("plan"),
+        ),
+    ) { request ->
+        val plan = request.arguments?.get("plan")?.let { storedOf(it) }
+        val dive = request.text("dive")
+        val name = request.text("name") ?: PLAN
+        carried(onto) {
+            if (plan == null) {
+                Reply("no plan was given", refused = true)
+            } else {
+                tools.createPlan(plan, dive, name)
+            }
+        }
+    }
+
+    server.addTool(
         "files",
         "Where the logbook's files are and how to treat them, for the rare case the other tools " +
             "cannot do what is asked. Refused unless the user has ticked Allow files.",
@@ -243,6 +296,9 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     }
     return server
 }
+
+/** What a plan is called where the agent does not say, which is what the window calls its first. */
+private const val PLAN = "Plan A"
 
 /** Serves [server] to one agent, reading its requests from [input] and answering on [output]. */
 suspend fun serve(server: Server, input: Source, output: Sink): ServerSession =
@@ -303,7 +359,7 @@ private object Bundled
  */
 internal val TOOL_NAMES: List<String> = listOf(
     "guide", "describe", "list", "get", "series", "aggregate",
-    "stage_set", "stage_add", "stage_delete", "staged", "files",
+    "stage_set", "stage_add", "stage_delete", "staged", "plan", "create_plan", "files",
 )
 
 /** The manual's chapters an agent may read, being the definition of what it is reading. */

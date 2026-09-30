@@ -65,7 +65,7 @@ class ToolServerTest {
         assertEquals(
             listOf(
                 "guide", "describe", "list", "get", "series", "aggregate",
-                "stage_set", "stage_add", "stage_delete", "staged", "files",
+                "stage_set", "stage_add", "stage_delete", "staged", "plan", "create_plan", "files",
             ),
             client.listTools().tools.map { it.name },
         )

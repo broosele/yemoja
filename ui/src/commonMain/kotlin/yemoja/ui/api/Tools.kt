@@ -27,6 +27,7 @@ import yemoja.logic.Figured
 import yemoja.logic.Measure
 import yemoja.logic.Outcome
 import yemoja.logic.Staging
+import yemoja.logic.Types
 import yemoja.logic.Universe
 import yemoja.logic.fieldAt
 import yemoja.logic.figureOf
@@ -257,6 +258,68 @@ class Tools(
             },
         )
         return replied(*members.toList().toTypedArray())
+    }
+
+    /**
+     * The plan [stored] describes, calculated, with nothing read and nothing changed.
+     *
+     * **Always answered**, ticks or none: a calculation is a question about arithmetic, not about
+     * this logbook, and there is nothing in it to allow. `API-9`.
+     */
+    fun plan(stored: Stored): Reply {
+        val case = when (val read = casesOf(stored)) {
+            is Read.Wrong -> return refused(read.reason)
+            is Read.Cases -> read.cases.firstOrNull() ?: return refused("no plan was given")
+        }
+        return when (val answer = calculated(case.planned)) {
+            is Calculated.Refused -> refused(answer.reason)
+            is Calculated.Done -> Reply(Json.write(saidOf(case.name, answer.schedule)))
+        }
+    }
+
+    /**
+     * Stage the plan [stored] describes as a profile on the dive called [dive], or on a new dive.
+     *
+     * **Staged like every other change**, so a plan an agent makes waits for the user to look at
+     * it. `RECON-8` has no exception for a big one, and a dive plan is exactly the change somebody
+     * should read before it lands.
+     *
+     * A plan that will not calculate is refused rather than staged, as it is refused rather than
+     * written. `API-9`.
+     */
+    fun createPlan(stored: Stored, dive: String?, name: String): Reply {
+        if (!writing()) return notWriting()
+        val case = when (val read = casesOf(stored)) {
+            is Read.Wrong -> return refused(read.reason)
+            is Read.Cases -> read.cases.firstOrNull() ?: return refused("no plan was given")
+        }
+        val made = when (val ready = preparedOf(universe, case.planned, name)) {
+            is Prepared.Refused -> return refused(ready.reason)
+            is Prepared.Plan -> ready
+        }
+        val block = Stored.Members(made.fields)
+        if (dive == null) {
+            return staging {
+                it.add(
+                    Types.DIVE.name,
+                    mapOf(
+                        "primary_profile" to Stored.Leaf("*${made.key}"),
+                        "profiles" to Stored.Members(mapOf(made.key to block)),
+                    ) + made.dive,
+                )
+            }
+        }
+        val held = universe.logbook[dive] ?: return refused("$dive names nothing")
+        if (held.description != Types.DIVE) {
+            return refused("$dive is a ${held.description.name} rather than a dive")
+        }
+        // Staging reaches a field, and an entry of a keyed collection is not one: `set` walks a
+        // path and refuses to stop on the collection itself. So a plan can be staged as a dive of
+        // its own and not yet on to a dive that is already there. `API-9`.
+        return refused(
+            "a plan can only be staged as a new dive for now. Leave out dive, or ask the user to " +
+                "attach it to $dive themselves from the Calculations tab.",
+        )
     }
 
     /**
