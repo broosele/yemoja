@@ -156,4 +156,18 @@ class ShownTest {
         assertTrue(shown.wrong)
         assertEquals("capacity should be a number", shown.text, "the reason, not the value")
     }
+
+    @Test
+    fun `a list of dives says how many it holds, and other lists do not`() {
+        val held = logbook(
+            "dive_site.json" to """{"reef": {"name": "Reef"}}""",
+            "person.json" to """{"anna": {"first_name": "Anna"}, "bo": {"first_name": "Bo"}}""",
+            "dive/2026-06-01#0.json" to """{"dive_site": "@reef", "buddies": ["@anna", "@bo"]}""",
+            "dive/2026-06-02#0.json" to """{"dive_site": "@reef", "buddies": ["@anna"]}""",
+        )
+        assertEquals("Dives (2)", shownOf(held["reef"]!!, "dives")!!.label, "a site's dives")
+        assertEquals("Dives (2)", shownOf(held["anna"]!!, "dives")!!.label, "a person's")
+        assertEquals("Dives (1)", shownOf(held["bo"]!!, "dives")!!.label)
+        assertEquals("Buddies", shownOf(held["2026-06-01#0"]!!, "buddies")!!.label, "not a list of dives")
+    }
 }

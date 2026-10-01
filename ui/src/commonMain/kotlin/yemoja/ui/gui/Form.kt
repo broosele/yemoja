@@ -292,7 +292,7 @@ private fun Editor(field: FieldDescription, item: Item, draft: Draft) {
             horizontalArrangement = Arrangement.spacedBy(GAP),
         ) {
             Text(
-                text = field.label,
+                text = labelOf(field, item.read(field.name)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.outline,
                 textAlign = TextAlign.End,

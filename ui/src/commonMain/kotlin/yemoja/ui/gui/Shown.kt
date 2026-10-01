@@ -414,7 +414,7 @@ internal fun shownOf(field: FieldDescription, read: Result<Any>, item: Item): Sh
         Result.Absent -> null
         is Result.Unusable -> Shown(field.label, listOf(Part(read.reason)), wrong = true)
         is Result.Usable -> if ((read.value as? List<*>)?.isEmpty() == true) null else Shown(
-            field.label,
+            labelOf(field, read),
             said(field, read.value, item),
             worked = read.origin == Result.Origin.DERIVED,
             overridden = read.origin == Result.Origin.OVERRIDDEN,
@@ -422,6 +422,23 @@ internal fun shownOf(field: FieldDescription, read: Result<Any>, item: Item): Sh
             wide = field is MultilineTextDescription,
         )
     }
+
+/**
+ * What [field] is called where [read] is what it holds: its own label, and for a list of dives
+ * how many it holds, *Dives (5)*.
+ *
+ * A site's, a person's or a piece of gear's dives run to dozens, and how many is the first thing
+ * asked of them and the last a reader should have to count.
+ */
+internal fun labelOf(field: FieldDescription, read: Result<Any>): String {
+    val dives = field is ReferenceDescription && field.targetType == DIVES_OF &&
+        field.cardinality == Cardinality.LIST
+    val many = ((read as? Result.Usable)?.value as? List<*>)?.size
+    return if (dives && many != null) "${field.label} ($many)" else field.label
+}
+
+/** The type a list of dives points at. */
+private const val DIVES_OF = "dive"
 
 /** A rating out of ten, where [field] is one and [value] reads as a whole number. */
 private fun ratingOf(field: FieldDescription, value: Any): Int? =

@@ -308,7 +308,8 @@ tab, a chapter at a time. Every tab has a screen behind it; none is a placeholde
 turns the chosen item's card over into the edit form, which `GUI-29` describes, and an entry of a
 keyed collection can be taken out or added there. A **+** beside it makes another of the same type
 and a bin deletes, `GUI-35`; all three stand left of the agent's button, `GUI-53`. There is no
-journal to undo with.
+journal to undo with. A list of dives, on a site, a person, a piece of gear, an operator or a
+trip, is labelled with how many it holds, *Dives (5)*, in the item view and in the form alike.
 
 It opens as `yemoja gui [<logbook folder>]`, beside the terminal front end, and unlike that one
 it can be run from the build, a window needing no console. The folder is optional: with none it
