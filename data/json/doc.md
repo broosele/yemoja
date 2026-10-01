@@ -348,8 +348,25 @@ To settle when we discuss architecture:
    Nulls are never stored and absent means absent, so `null` is not available to mean
    "this field did not exist". Adding a field and changing one must still be told
    apart.
-- **JSON-27 — How a logbook says it is open for editing.** *Settled:* **a folder beside it,
-  named after it with `.lock` on the end, holding one file that says what took it.**
+- **JSON-27 — How a logbook says it is open for editing.** *Settled:* **a file inside it,
+  `.yemoja.lock`, that says what took it.** *Revised from a folder beside it, below.*
+
+  *Revised:* **inside the logbook, so a sync carries it.** A phone is granted the folder it is
+  given and nothing beside it, so a lock beside the logbook was out of its reach, `AND-5`. And a
+  phone and a desktop sharing one synced folder are exactly the two windows a lock exists to keep
+  apart, which a lock beside the folder never told each other about. So the lock moved inside, on
+  every platform, and is reached through the logbook's own store. The reader asks for files by
+  type and never reads it.
+
+  Two things went with the folder. **It is no longer atomic**: making a folder was the test and
+  the setting in one step, and writing a file is not, so the file is read back once written and
+  the lock held only where it still names this holder. Two windows starting in the same instant
+  can still race between looking and writing. **And a phone takes over its own**: Android runs
+  one copy of an app and ends it without warning, so a lock bearing the name that install took it
+  under is one it left, and is taken over. A desktop never does, two windows on one machine being
+  possible.
+
+  What follows is the decision as first made, kept for the reasoning it answered.
 
   A folder rather than a file because making one is the one thing every file system does
   atomically: two windows racing for one logbook get one winner and one refusal, with no moment

@@ -38,6 +38,19 @@ import yemoja.logic.uddf.UddfFormatException
  */
 
 /**
+ * Holder is what takes a logbook's lock: what to call it, and which device it is on.
+ *
+ * [device] and [takesOver] matter only to a holder that runs once on its device, which may take
+ * over a lock that device left behind. `JSON-27`. Immutable.
+ */
+class Holder(val note: String, val device: String = "", val takesOver: Boolean = false) {
+    companion object {
+        /** A desktop window, of which a machine may have two open. */
+        val WINDOW: Holder = Holder("a Yemoja window")
+    }
+}
+
+/**
  * Universe is what is open: the logbook, and in time whatever else is being worked on.
  *
  * `ui/doc.md` holds every front end to reaching everything through this, so a front end names a
@@ -717,20 +730,49 @@ class Universe(
             // A folder that is not there answers every question with no, so without this a
             // mistyped path opens as an empty logbook rather than as a mistake.
             require(store.isFolder("")) { "$path should be a folder, and is not" }
+            return opened(store, path, path, devices, Holder.WINDOW, null, null)
+        }
+
+        /**
+         * The logbook [store] holds, called [called] where a refusal names it.
+         *
+         * For a logbook reached otherwise than by a path, a folder a phone was granted. A review
+         * is staged in [staging] and an agent's changes in [proposing], there being no folder
+         * beside such a logbook to put them in. [holder] is what takes its lock. `AND-5`.
+         */
+        fun open(
+            store: FileStore,
+            called: String,
+            staging: FileStore,
+            proposing: FileStore,
+            holder: Holder,
+            devices: Devices? = null,
+        ): Universe = opened(store, called, null, devices, holder, staging, proposing)
+
+        private fun opened(
+            store: FileStore,
+            called: String,
+            path: String?,
+            devices: Devices?,
+            holder: Holder,
+            staging: FileStore?,
+            proposing: FileStore?,
+        ): Universe {
             // Taken before anything is read, so two windows racing for one logbook get one
             // window. A lock nobody released stays until a reader removes it, and the refusal
             // says where it is. `JSON-27`.
-            val lock = Lock.take(path, HOLDING) ?: throw IllegalStateException(
-                "$path is open for editing elsewhere" +
-                    (Lock.holderOf(path)?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: "") +
-                    ". If nothing has it open, delete the folder ${Lock.folderOf(path)}",
-            )
+            val lock = Lock.take(store, holder.note, holder.device, holder.takesOver)
+                ?: throw IllegalStateException(
+                    "$called is open for editing elsewhere" +
+                        (Lock.holderOf(store)?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: "") +
+                        ". If nothing has it open, delete the file ${Lock.FILE} in it",
+                )
             try {
                 val manifest = LogbookReader.manifest(store)
                 val items = LogbookReader.read(store, Types.ALL, manifest)
                 val user = manifest.user?.let { items[it.id] }
                 val owner = if (user?.description == Types.PERSON) user else null
-                return Universe(items, owner, store, path, devices, lock = lock)
+                return Universe(items, owner, store, path, devices, staging, proposing, lock)
             } catch (refused: Exception) {
                 // A logbook that will not read is not held: the lock would outlive the window
                 // that never opened. Any failure, a file the disk will not give up included.
@@ -739,8 +781,6 @@ class Universe(
             }
         }
 
-        /** What the lock says it was taken by, read back to whoever is refused. */
-        private const val HOLDING = "a Yemoja window"
 
         /**
          * A new logbook in the folder at [path], made and then opened.
@@ -758,12 +798,29 @@ class Universe(
          * there are people, and a new logbook has none.
          */
         fun create(path: String, devices: Devices? = null): Universe {
-            val store = DiskFileStore(path)
+            made(DiskFileStore(path), path)
+            return open(path, devices)
+        }
+
+        /** A new logbook in [store], made and then opened, as [open] opens one. `AND-5`. */
+        fun create(
+            store: FileStore,
+            called: String,
+            staging: FileStore,
+            proposing: FileStore,
+            holder: Holder,
+            devices: Devices? = null,
+        ): Universe {
+            made(store, called)
+            return open(store, called, staging, proposing, holder, devices)
+        }
+
+        /** Writes the manifest that makes [store] a logbook, refusing one that already is. */
+        private fun made(store: FileStore, called: String) {
             require(!store.isFile(LogbookReader.MANIFEST)) {
-                "$path already holds a logbook, and making one would write over it"
+                "$called already holds a logbook, and making one would write over it"
             }
             store.writeText(LogbookReader.MANIFEST, Json.write(manifestOf(shippedIn(store))) + "\n")
-            return open(path, devices)
         }
 
         /**

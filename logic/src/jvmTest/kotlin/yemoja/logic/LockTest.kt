@@ -22,17 +22,17 @@ class LockTest {
         it.resolve("yemoja.json").writeText("""{"libraries": {}}""")
     }
 
-    private fun lockOf(folder: Path): Path = folder.resolveSibling(folder.fileName.toString() + Lock.BESIDE)
+    private fun lockOf(folder: Path): Path = folder.resolve(Lock.FILE)
 
     @Test
     fun `opening takes the lock, and a second opening is refused and told where it is`() {
         val folder = logbook()
         val first = Universe.open(folder.toString())
-        assertTrue(lockOf(folder).exists(), "the lock sits beside the logbook")
+        assertTrue(lockOf(folder).exists(), "the lock sits inside the logbook")
         val refused = assertFailsWith<IllegalStateException> { Universe.open(folder.toString()) }
         assertTrue("open for editing elsewhere" in refused.message.orEmpty(), refused.message)
         assertTrue("a Yemoja window" in refused.message.orEmpty(), "and says what has it")
-        assertTrue(Lock.BESIDE in refused.message.orEmpty(), "and where the lock is, to remove it")
+        assertTrue(Lock.FILE in refused.message.orEmpty(), "and where the lock is, to remove it")
         first.close()
     }
 
@@ -41,7 +41,7 @@ class LockTest {
         val folder = logbook()
         val first = Universe.open(folder.toString())
         first.close()
-        assertTrue(!lockOf(folder).exists(), "the folder is gone")
+        assertTrue(!lockOf(folder).exists(), "the file is gone")
         val second = Universe.open(folder.toString())
         second.close()
         second.close()
@@ -68,11 +68,19 @@ class LockTest {
     }
 
     @Test
-    fun `a path with a trailing separator is the same logbook, with the same lock beside it`() {
+    fun `a path with a trailing separator is the same logbook, with the same lock in it`() {
         val folder = logbook()
         val first = Universe.open(folder.toString())
         assertFailsWith<IllegalStateException> { Universe.open(folder.toString() + java.io.File.separator) }
-        assertTrue(!folder.resolve(Lock.BESIDE).exists(), "never a lock inside the logbook")
+        first.close()
+    }
+
+    @Test
+    fun `the reader never reads the lock as part of the logbook`() {
+        val folder = logbook()
+        val first = Universe.open(folder.toString())
+        val read = LogbookReader.read(yemoja.data.json.DiskFileStore(folder.toString()), Types.ALL)
+        assertEquals(emptyList(), read.allOf(Types.DIVE), "an empty logbook, lock and all")
         first.close()
     }
 
@@ -81,7 +89,7 @@ class LockTest {
         // A reader deleted a lock while its window was alive, and a second window took the logbook.
         val folder = logbook()
         val first = Universe.open(folder.toString())
-        lockOf(folder).toFile().deleteRecursively()
+        lockOf(folder).toFile().delete()
         val second = Universe.open(folder.toString())
         first.close()
         assertTrue(lockOf(folder).exists(), "the second window's lock survives the first closing")
@@ -94,7 +102,7 @@ class LockTest {
     fun `the refusal says what holds the lock and nothing of its token`() {
         val folder = logbook()
         val first = Universe.open(folder.toString())
-        assertEquals("a Yemoja window", Lock.holderOf(folder.toString()))
+        assertEquals("a Yemoja window", Lock.holderOf(yemoja.data.json.DiskFileStore(folder.toString())))
         first.close()
     }
 
@@ -104,5 +112,27 @@ class LockTest {
         val universe = Universe(LogbookReader.read(store, Types.ALL), null, store, null, null)
         universe.close()
         assertEquals(0, universe.revision, "nothing about it moved")
+    }
+
+    @Test
+    fun `a holder that runs once on its device takes over the lock that device left`() {
+        val store = MemoryFileStore(mapOf("yemoja.json" to "{}"))
+        val phone = Holder("Yemoja on a phone", device = "phone-1", takesOver = true)
+        Lock.take(store, phone.note, phone.device, phone.takesOver)!!
+        // The app was ended without warning, and starts again.
+        val again = Lock.take(store, phone.note, phone.device, phone.takesOver)
+        assertTrue(again != null, "its own lock is taken over")
+        again!!.release()
+        assertTrue(!store.isFile(Lock.FILE))
+    }
+
+    @Test
+    fun `another device's lock is refused, and a desktop never takes one over`() {
+        val store = MemoryFileStore(mapOf("yemoja.json" to "{}"))
+        Lock.take(store, "Yemoja on a phone", device = "phone-1", takesOver = true)!!
+        assertEquals(null, Lock.take(store, "Yemoja on a tablet", device = "tablet-2", takesOver = true))
+        val desktop = MemoryFileStore(mapOf("yemoja.json" to "{}"))
+        Lock.take(desktop, Holder.WINDOW.note)!!
+        assertEquals(null, Lock.take(desktop, Holder.WINDOW.note), "two windows on one machine")
     }
 }
