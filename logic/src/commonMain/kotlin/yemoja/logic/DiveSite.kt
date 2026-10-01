@@ -44,6 +44,20 @@ private val ENTRIES = setOf(
     "poolside",
 )
 
+private val FACILITIES = setOf(
+    "parking",
+    "air fills",
+    "nitrox",
+    "trimix",
+    "toilets",
+    "showers",
+    "changing rooms",
+    "rinse tanks",
+    "gear rental",
+    "slipway",
+    "cafe",
+)
+
 internal val DIVE_SITE: ItemDescription = ItemDescription(
     "dive_site",
     listOf(
@@ -59,7 +73,7 @@ internal val DIVE_SITE: ItemDescription = ItemDescription(
         // A description rather than a classification, so no list to choose from.
         TextDescription("substrate"),
         ReferenceDescription("wrecks", targetType = "wreck", cardinality = Cardinality.LIST),
-        TextDescription("facilities", cardinality = Cardinality.LIST),
+        TextDescription("facilities", cardinality = Cardinality.LIST, suggestedSet = FACILITIES),
         // The height of the water above sea level, which changes how a dive is worked out.
         NumberDescription("elevation", Dimension.LENGTH),
         NumberDescription("longitude", Dimension.ANGLE, range = LONGITUDE),

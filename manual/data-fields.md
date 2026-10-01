@@ -782,8 +782,10 @@ A place you dive.
   `bottom` on a gas source, which is the gas you breathed at depth.
 - `wrecks` (list of references) — the ships lying there, if any. A site may hold more
   than one; a wreck may be reachable from more than one site.
-- `facilities` (list of text) — what is there: parking, air fills, toilets, a slipway,
-  and so on.
+- `facilities` (list of text) — what is there. Anything you like; the usual ones are
+  `parking`, `air fills`, `nitrox`, `trimix`, `toilets`, `showers`, `changing rooms`,
+  `rinse tanks`, `gear rental`, `slipway` and `cafe`, and what you have written on other sites
+  is offered too.
 - `elevation` (number) — the height of the water above sea level. It matters for more
   than the map: diving at altitude changes how a dive is calculated.
 - `longitude`, `latitude` (number) — where it is, in degrees.

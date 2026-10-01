@@ -87,4 +87,16 @@ class SuggestedTest {
         universe.change(Operation.EDIT, Change.Write(region, "category", "archipelago"))
         assertTrue("archipelago" in universe.suggested(categoryOf(Types.REGION)))
     }
+
+    @Test
+    fun `a list suggests from every entry it holds, after what it ships with`() {
+        val facilities = Types.DIVE_SITE["facilities"]!!
+        val suggested = over(
+            "dive_site.json" to """{"quarry": {"facilities": ["parking", "boat access"]},
+                "reef": {"facilities": ["dive shop"]}}""",
+        ).suggested(facilities)
+        assertEquals("parking", suggested.first(), "the presets come first")
+        assertEquals(listOf("boat access", "dive shop"), suggested.takeLast(2), "then the rest, sorted")
+        assertEquals(1, suggested.count { it == "parking" }, "a preset in use is offered once")
+    }
 }
