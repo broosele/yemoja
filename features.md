@@ -155,9 +155,12 @@ them.
   under *What is built* in [logic/uddf.md](logic/uddf.md). No other format is written.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).
-- **FEAT-15 — More than one logbook.** *Answered by `JSON-8`:* any number may exist on
-  disk and one is open at a time. What remains here is the convenience around it —
-  remembering recent logbooks, switching without hunting for a folder.
+- **FEAT-26 — Tides at a dive site.** When the water is high and low, and how hard it is running,
+  for the day a dive is planned or was made at a site on the coast. Slack water is when a drift
+  site can be dived at all, and a logbook that knows a site's tides could say whether a planned
+  dive falls in it. Needs a source of tide predictions that is free of obligations, the same test
+  `libraries/` holds data to, and a place on a dive site to say which station or harmonics it
+  follows; neither is chosen. Not in the first version, `GUI-5`.
 - **FEAT-25 — Scans of the papers a logbook stands on.** A photograph or a scan attached to a
   `person`'s `courses`, `medical` and `insurance`, and to a piece of gear's `maintenances`: the
   certification card, the doctor's certificate, the insurance card, the service receipt. Each of
@@ -230,6 +233,12 @@ them.
 ## Rejected
 
 Entries here keep their reason, so that a decision already taken is not taken again.
+
+- **FEAT-15 — More than one logbook to hand.** Remembering recent logbooks and switching between
+  them without hunting for a folder. Rejected: a user keeps one logbook, and the convenience is
+  for a way of working the application does not set out to serve. What `JSON-8` settles stays
+  true and costs nothing — any number of logbooks may exist on disk, one is open at a time, and
+  *Open logbook* reaches any of them — but nothing is built around having several.
 
 - **FEAT-24 — A state on a piece of gear.** Whether an item is new, in use, retired or sold.
   Considered against a real logbook that records one, and declined: a logbook is not an

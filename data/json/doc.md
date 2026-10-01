@@ -660,8 +660,8 @@ To settle when we discuss architecture:
   **One open at a time** keeps every mechanism here concerned with exactly one logbook,
   which is what they already assume: the journal is a logbook's history, sync is between
   two copies of *the same* logbook, and an `ItemSet` resolves ids within one. Several on
-  disk costs nothing — a logbook is a folder, and Yemoja need only remember which was last
-  opened. This is what `FEAT-15` asked for, so it is answered rather than merely unblocked.
+  disk costs nothing — a logbook is a folder. Nothing is built around keeping several to hand,
+  which `FEAT-15` asked for and is rejected.
 
   A consequence for the local settings: `settings.local.json` lives in the logbook folder
   and belongs to one installation, so a user who moves or copies a folder carries it

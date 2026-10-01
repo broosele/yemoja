@@ -335,7 +335,7 @@ Three things it does badly, each of them an open question above rather than a bu
 - **An unreadable value is reddened**, which is a placeholder for `GUI-8` rather than an answer
   to it. Where a value came from is settled and is not this: `GUI-49`.
 
-`GUI-5` stays open. What the smallest *usable* version contains is not answered by a version
+What the first version contains is settled, `GUI-5`. What the smallest *usable* version contains was not answered by a version
 that cannot edit.
 
 ## Open questions
@@ -369,8 +369,6 @@ that cannot edit.
    overlap in time. Sorted by site, or by depth, a trip's dives scatter and there is nothing to
    span. Either the merging is a property of the date ordering and goes when the order changes,
    or the table refuses to be sorted another way, or grouping survives sorting within a group.
-- **GUI-5 — What the first usable version contains** — the smallest set of screens that
-   makes the app worth opening.
 - **GUI-10 — Which of an item's own fields appear in a selector row**, and whether
    that is fixed per type or chosen by the user.
 - **GUI-11 — Whether a "show everything" preference overrides collapsing**, for people
@@ -1567,6 +1565,20 @@ once and corrected. The numbers stay unused rather than being given to something
   them, that category alone, so a gas source's `cylinder` offers the cylinders and not the
   regulators its volume could never be taken from, and it offers to make one where nothing
   answers to what was typed, `GUI-48`. Open: the phone's form.
+- **GUI-5 — What the first usable version contains.** *Settled:* **what is built now, on the
+  desktop, and nothing more.**
+
+  The first version is the application as it stands: the logbook and its items, the dive computer
+  download, UDDF import and export, the planner and the calculations, statistics on the home
+  screen, renewal warnings, the agent, and the terminal front end beside the window. It ships for
+  the desktop alone; the phone and its platform documents wait for a later version, and their open
+  questions with them. Scans of papers are not in it, `FEAT-25`, and neither is anything about
+  keeping several logbooks to hand, which is rejected outright, `FEAT-15`.
+
+  **Nothing is added to reach it.** What is owed before it ships is what is broken rather than what
+  is missing: the defects the review of 2026-10-01 left, and `GUI-52`, a download changing the
+  logbook while the window goes on editing it, which is a correctness question and not a feature.
+
 - **GUI-51 — How the user is chosen.** *Settled:* **a button on a person's card, beside the
   pencil, which writes them into the manifest.**
 
