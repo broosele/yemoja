@@ -155,6 +155,20 @@ them.
   under *What is built* in [logic/uddf.md](logic/uddf.md). No other format is written.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).
+- **FEAT-10 — A buoyancy calculator.** How much lead a dive needs, worked out from the kit taken
+  and the water it is taken into: the suit, the cylinders full and nearly empty, everything else
+  carried, in salt water or fresh. A calculator beside the others in the Calculations tab, and the
+  same figure offered where a dive's `gear` is filled in. Moved from *Low priority*, where it was
+  *weighting from gear buoyancy*. Gear already carries the `buoyancy` figures it would read and a
+  dive already sums its `weight` from them, so nothing waits on it; what is not settled is which
+  moment of a dive the answer is for — a diver is weighted to be neutral at the end, with the
+  cylinders nearly empty, and that is the figure a table of ballast gives.
+- **FEAT-27 — Gear sets.** A named set of gear — *drysuit kit*, *tropical kit*, *twinset* —
+  given to a dive in one step rather than an item at a time, and kept as a set so a dive says
+  which it was taken with. A logbook that dives two or three ways has the same eight items on most
+  of its dives and fills them in by hand each time. Open: whether a set is an item of its own that
+  a dive's `gear` names, or only a convenience that fills in the list and is forgotten; the first
+  lets a set change and every dive follow it, which is wrong for dives already made.
 - **FEAT-26 — Tides at a dive site.** When the water is high and low, and how hard it is running,
   for the day a dive is planned or was made at a site on the coast. Slack water is when a drift
   site can be dived at all, and a logbook that knows a site's tides could say whether a planned
@@ -226,9 +240,6 @@ them.
   expressible: any type may be stored as a directory of one file per item, and each
   file then says what it likes. The cost of reinstating it is that the rule stops being
   statable in one sentence, not that the code is hard.
-- **FEAT-10 — Weighting from gear buoyancy.** Working out ballast from the kit taken.
-  Gear carries buoyancy figures whether or not this is ever built, so nothing waits on
-  it.
 
 ## Rejected
 
