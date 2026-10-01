@@ -43,9 +43,14 @@ built. Each is registered in features.md or in the layer document that owns it.
 
 ## Installing and running
 
-No release has been published yet. The first will be a Windows installer, for Windows 10 and
-11; the Mac, Linux and the phone come later. Building one, and building and running from source,
+**Releases are on [GitHub](https://github.com/broosele/yemoja/releases)**: a Windows installer,
+for Windows 10 and 11, and an Android app, for Android 12 and later, both attached to each release.
+The Mac, Linux and the iPhone come later. Building either, and building and running from source,
 are below.
+
+**A release is made as a draft first**, the installer and the app attached to it, and published
+after. The repository's releases are immutable, so nothing can be attached once one is published,
+and a tag a deleted release used cannot be used again. Tags are the bare version, `0.1.0`.
 
 **The installer** is built with `./gradlew :ui:packageMsi`, which writes
 `ui/build/compose/binaries/main/msi/Yemoja-<version>.msi`. It carries its own Java runtime and
@@ -89,7 +94,8 @@ desktop's screens laid out for a phone, and reads a dive computer over Bluetooth
 installs into any folder without elevation; tell the build where in a `local.properties` at the
 root, `sdk.dir=<folder>`, which git ignores. Reading a dive computer needs libdivecomputer built
 for Android with the SDK's NDK, which `tool/libdivecomputer-android.py` does from the library's
-source; tell the build where it put it with `-Plibdivecomputer.android=<folder>`. Then
+source; tell the build where it put it with `-Plibdivecomputer.android=<folder>`. A release build
+is signed with the key in the folder `-Pyemoja.signing=<folder>` names, `AND-1`. Then
 
 ```
 ./gradlew :android:assembleDebug      writes android/build/outputs/apk/debug/android-debug.apk

@@ -60,8 +60,13 @@ its progress and a Cancel, `AND-3`. Tried on the emulator as far as an emulator 
 permissions are asked, the library loads, and the scan finds nothing, there being no dive
 computer to find. No read has been made on a phone yet.
 
-**Not yet:** import and export, which need Android's pickers for a file; and a signed release,
-`AND-1`. What a tooltip says over a greyed button is said on a long press, the
+**Released signed, as 0.1.0**, `AND-1`. A release build signs with `yemoja.jks` from the folder
+the property `yemoja.signing` names, kept outside the repository with its password beside it; its
+certificate names Yemoja and nobody else, since anyone can read it off the app. An update installs
+only over an app signed with the same key, so that folder is kept and backed up. A debug build
+keeps Android's own debug key, and the two cannot be installed over each other.
+
+**Not yet:** import and export, which need Android's pickers for a file. What a tooltip says over a greyed button is said on a long press, the
 toolkit's own answer on a touch screen.
 
 ## Settled
