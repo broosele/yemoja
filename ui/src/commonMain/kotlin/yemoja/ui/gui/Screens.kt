@@ -3523,10 +3523,10 @@ private val SUBTABS = 340.dp
 private val TAB_ICON = 24.dp
 private val TABLE = 600.dp
 private val TREE = 220.dp
-private val TRIP = 170.dp
+private val TRIP = 80.dp
 private val NUMBER = 52.dp
 private val DATE = 100.dp
-private val SITE = 240.dp
+private val SITE = 330.dp
 /** How wide the column a field's name sits in is, which a review lines its own up with. */
 internal val LABEL = 130.dp
 private val SITES = 300.dp
