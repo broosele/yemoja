@@ -1616,6 +1616,10 @@ once and corrected. The numbers stay unused rather than being given to something
   for a later version, and their open questions with them. Scans of papers are not in it, `FEAT-25`, and neither is anything about
   keeping several logbooks to hand, which is rejected outright, `FEAT-15`.
 
+  **It is numbered 0.1.** Everything in it is built and most of it has not been tried on real
+  dives yet, which a 1.0 would claim it had. The number is said once, in `ui/build.gradle.kts`,
+  where the installer and the manual's App info both take it from.
+
   **Nothing is added to reach it.** What was owed before it ships was what is broken rather than
   what is missing: the defects the review of 2026-10-01 left, and `GUI-52`, a download changing
   the logbook while the window went on editing it. Both are done.

@@ -65,13 +65,19 @@ tasks.withType<Test>().configureEach {
     findProperty("logbook")?.let { environment("YEMOJA_LOGBOOK", it.toString()) }
 }
 
+// The version, said here once: the installer is numbered with it and the manual's App info
+// shows it. 0.1 while most of the application waits to be tried on real dives. `GUI-5`.
+val release = "0.1.0"
+
 // The manual, bundled so the Manuals tab can read it. Every chapter, and not the file about
 // writing them, which is internal.
 tasks.named<Copy>("jvmProcessResources") {
+    inputs.property("release", release)
     from(rootProject.file("manual")) {
         include("*.md")
         exclude("doc.md")
         into("manual")
+        filesMatching("app-info.md") { filter { line -> line.replace("{version}", release) } }
     }
 }
 
@@ -179,7 +185,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
             packageName = "Yemoja"
-            packageVersion = "1.0.0"
+            packageVersion = release
             description = "A dive logbook kept as readable files"
             appResourcesRootDir.set(nativeResources)
             // The whole runtime rather than a list of modules worked out by hand: a module left
