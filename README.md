@@ -84,10 +84,12 @@ their fields, saves a dive plan, and writes what a download or an import brings 
 [ui/tui/doc.md](ui/tui/doc.md) and
 [ui/gui/doc.md](ui/gui/doc.md).
 
-**Android is built too**, as a first step: the app starts, keeps a logbook in its own storage
-and shows the desktop's screens, not yet laid out for a phone. It needs the Android SDK, which
+**Android is built too**: the app keeps a logbook in a folder the user picks, shows the
+desktop's screens laid out for a phone, and reads a dive computer over Bluetooth. It needs the Android SDK, which
 installs into any folder without elevation; tell the build where in a `local.properties` at the
-root, `sdk.dir=<folder>`, which git ignores. Then
+root, `sdk.dir=<folder>`, which git ignores. Reading a dive computer needs libdivecomputer built
+for Android with the SDK's NDK, which `tool/libdivecomputer-android.py` does from the library's
+source; tell the build where it put it with `-Plibdivecomputer.android=<folder>`. Then
 
 ```
 ./gradlew :android:assembleDebug      writes android/build/outputs/apk/debug/android-debug.apk
@@ -146,9 +148,9 @@ fixtures/     fixture logbooks — see fixtures/doc.md
 
 Inside a module, source sits under `src/commonMain/kotlin` and tests under
 `src/commonTest/kotlin`, with a further source set per target where a layer needs one —
-in practice the interface, and the logic layer's JVM side, where libdivecomputer is reached.
-The logic layer also has `javaMain`, which the JVM and Android share. A layer's `doc.md` sits at the root of its
-module, above the source rather than inside it.
+in practice the interface, and the logic layer's `javaMain`, shared by the JVM and Android, where
+libdivecomputer is reached. A layer's `doc.md` sits at the root of its module, above the source
+rather than inside it.
 
 **Modules are how the layering rule is kept.** A module declares what it depends on, so
 the data layer cannot reach the logic layer by accident: there is nothing to reach, and
@@ -168,7 +170,7 @@ to ask for — see `TUI-4` in [ui/tui/doc.md](ui/tui/doc.md). The logic layer ta
 for reading UDDF, common Kotlin having no XML reader — Apache 2.0, and there rather than in the
 data layer, whose promise of no dependencies stands because a foreign format is not its business.
 The terminal front end also takes JNA, through Mordant's JVM side, and the window takes
-Compose's extended icon set. The logic layer's JVM side takes **libdivecomputer** for reading dive
+Compose's extended icon set. The logic layer's JVM and Android side takes **libdivecomputer** for reading dive
 computers — LGPL-2.1,
 linked as a shared library so the rest of the application stays its own, which *Licensing* below
 turns on — and **JNA** to call it, Apache 2.0 under its dual licence. libdivecomputer leaves

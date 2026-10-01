@@ -1,6 +1,8 @@
 package yemoja.ui.gui
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -29,6 +31,8 @@ import yemoja.data.json.LogbookReader
 import yemoja.logic.Holder
 import yemoja.logic.Universe
 import yemoja.logic.today
+import yemoja.logic.divecomputer.Devices
+import yemoja.logic.divecomputer.FoundDevices
 import java.util.UUID
 
 /*
@@ -43,19 +47,23 @@ import java.util.UUID
  * The folder is remembered, so the app opens on it again. One that holds no logbook is made into
  * one, which is how a logbook is started here: New and Open are one question on a phone, which
  * folder. `AND-5`. What this supplies is the platform: the manual and the map read from the app,
- * whatever the phone opens a link with, whether the screen is a phone's, and its back button.
- * Absent so far: a dive computer, `AND-6`, and import and export.
+ * whatever the phone opens a link with, whether the screen is a phone's, its back button, and a
+ * dive computer over Bluetooth, asked permission for when a download starts. `AND-6`. A read is
+ * told to [onReading] while it runs, which is how the app keeps it alive in the background.
+ * `AND-3`. Absent so far: import and export.
  */
 @Composable
-fun Yemoja() {
+fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     val context = LocalContext.current
     val remembered = remember { context.getSharedPreferences(KEPT, Context.MODE_PRIVATE) }
+    // Dive computers over Bluetooth LE, through the library the app carries. `AND-6`.
+    val devices = remember { FoundDevices() }
     var held by remember { mutableStateOf<Universe?>(null) }
     var refused by remember { mutableStateOf<String?>(null) }
     fun take(tree: Uri) {
         held?.close()
         held = null
-        when (val opened = openedIn(context, tree)) {
+        when (val opened = openedIn(context, tree, devices)) {
             is Opening.Done -> {
                 held = opened.universe
                 remembered.edit().putString(FOLDER, tree.toString()).apply()
@@ -67,11 +75,25 @@ fun Yemoja() {
     // The folder picked last time, opened again; a grant that lapsed leaves the welcome.
     remember {
         remembered.getString(FOLDER, null)?.let { kept ->
-            (openedIn(context, Uri.parse(kept)) as? Opening.Done)?.let { held = it.universe }
+            (openedIn(context, Uri.parse(kept), devices) as? Opening.Done)?.let { held = it.universe }
         }
         true
     }
-    DisposableEffect(Unit) { onDispose { held?.close() } }
+    DisposableEffect(Unit) {
+        onDispose {
+            held?.close()
+            devices.close()
+        }
+    }
+    // What a download needs the user to allow, asked when one starts rather than when the app
+    // does, so the question comes with its reason in front of the user. `AND-2`.
+    var granting by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
+    val asking = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { given ->
+        // Bluetooth is what the read needs; notifications only show it, so refusing them refuses
+        // nothing that matters.
+        granting?.invoke(BLUETOOTH.all { given[it] == true || allowed(context, it) })
+        granting = null
+    }
     val picking = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
         if (tree == null) return@rememberLauncherForActivityResult
         // Kept across restarts of the phone, or the folder is unreachable the next time.
@@ -96,6 +118,16 @@ fun Yemoja() {
             compact = compact,
             back = { enabled, onBack -> BackHandler(enabled, onBack) },
             deeds = mapOf(Deed.NEW to choose, Deed.OPEN to choose),
+            permit = { granted ->
+                val wanted = BLUETOOTH + NOTIFYING
+                if (wanted.all { allowed(context, it) }) {
+                    granted(true)
+                } else {
+                    granting = granted
+                    asking.launch(wanted.toTypedArray())
+                }
+            },
+            reading = onReading,
         )
     }
     // Light or dark as the system is set, in the application's own colours. `GUI-3`.
@@ -126,7 +158,7 @@ private sealed class Opening {
  * Staged reviews and an agent's changes are kept in the app's own storage, there being no folder
  * beside a granted one that the grant reaches.
  */
-private fun openedIn(context: Context, tree: Uri): Opening {
+private fun openedIn(context: Context, tree: Uri, devices: Devices): Opening {
     val store = GrantedFileStore(context.contentResolver, tree)
     val called = tree.lastPathSegment?.substringAfterLast(':')?.ifBlank { null } ?: "this folder"
     val staging = DiskFileStore(context.filesDir.resolve("import").path)
@@ -134,9 +166,9 @@ private fun openedIn(context: Context, tree: Uri): Opening {
     val holder = holderOf(context)
     return try {
         val universe = if (store.isFile(LogbookReader.MANIFEST)) {
-            Universe.open(store, called, staging, proposing, holder)
+            Universe.open(store, called, staging, proposing, holder, devices)
         } else {
-            Universe.create(store, called, staging, proposing, holder)
+            Universe.create(store, called, staging, proposing, holder, devices)
         }
         Opening.Done(universe)
     } catch (refused: Exception) {
@@ -158,6 +190,21 @@ private fun holderOf(context: Context): Holder {
     }
     return Holder("Yemoja on ${Build.MODEL}", device = device, takesOver = true)
 }
+
+/** What reading a dive computer needs: to look for one, and to talk to it. Android 12 on. */
+private val BLUETOOTH = listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+
+/** What showing a read's notification needs, which Android asks for from 13 on. */
+private val NOTIFYING: List<String> =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        listOf(Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        emptyList()
+    }
+
+/** Whether the user has already allowed [permission]. */
+private fun allowed(context: Context, permission: String): Boolean =
+    context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
 /** Where the app keeps what it remembers between runs. */
 private const val KEPT = "yemoja"

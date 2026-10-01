@@ -28,15 +28,21 @@ kotlin {
             // is a foreign format and reading one is this layer's job. `FEAT-7`.
             implementation("io.github.pdvrieze.xmlutil:core:0.90.3")
         }
-        jvmMain.dependencies {
-            // Calling libdivecomputer, which is C. Apache 2.0 under its dual licence. Here rather
-            // than in common because only a JVM reaches a library this way: `LOGIC-2` puts each
-            // target's own answer below the port.
-            implementation("net.java.dev.jna:jna:5.19.1")
+        // Calling libdivecomputer, which is C. Apache 2.0 under its dual licence. Shared by the
+        // JVM and Android, whose code reaching it is one, and published for each as its own
+        // artifact: a jar for the JVM, and for Android an archive carrying its native part.
+        // `LOGIC-2` puts each target's own answer below the port.
+        named("javaMain").dependencies {
+            compileOnly("net.java.dev.jna:jna:5.19.1")
             // Reaching a dive computer over Bluetooth LE, which libdivecomputer leaves to the
-            // application. Apache 2.0. One library for every target it will be built for, but
-            // declared per target all the same, for the reason above.
+            // application. Apache 2.0. One library for every target it will be built for.
             implementation("com.juul.kable:kable-core:0.44.3")
+        }
+        jvmMain.dependencies {
+            implementation("net.java.dev.jna:jna:5.19.1")
+        }
+        androidMain.dependencies {
+            implementation("net.java.dev.jna:jna:5.19.1@aar")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

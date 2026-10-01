@@ -15,11 +15,21 @@ android {
         targetSdk = property("androidSdk").toString().toInt()
         versionCode = 1
         versionName = property("release").toString()
+        // The processors libdivecomputer is built for: a phone's, and the emulator's. Every phone
+        // running Android 12 or later that is worth supporting is one of these. `AND-2`.
+        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    // libdivecomputer, built for Android by tool/libdivecomputer-android.py into a folder of one
+    // subfolder per processor, and carried as a file of its own as on the desktop. `LOGIC-27`.
+    // Where none is given the app reads no dive computer, which it says. `LOGIC-28`.
+    findProperty("libdivecomputer.android")?.toString()?.let { built ->
+        sourceSets.getByName("main").jniLibs.directories += built
     }
 
     packaging {

@@ -66,8 +66,8 @@ what diving is:
 logic/
   doc.md          this file
   build.gradle.kts  the module, which depends on data, on an XML reader for UDDF, and on
-                    the JVM side on JNA and Kable for reading a dive computer, and which
-                    packages the supplied libraries into the application
+                    the JVM and Android on JNA and Kable for reading a dive computer, and
+                    which packages the supplied libraries into the application
   reconciliation.md  merging an import into the logbook
   uddf.md         UDDF against this model, field by field
   divecomputer.md  a dive computer against this model, the same way
@@ -107,7 +107,8 @@ logic/
                   Hex.kt           bytes as text, for what a device hands back
                   divecomputer/    a device read, joined, thinned and recorded
                   uddf/            UDDF read and written
-  src/jvmMain/kotlin/yemoja/logic/
+  src/javaMain/kotlin/yemoja/logic/
+                  what the JVM and Android share, both being Java underneath
                   Today.kt      the machine's own date, a day needing a zone
                   divecomputer/  libdivecomputer itself, and Bluetooth under it
   src/commonTest/kotlin/yemoja/logic/

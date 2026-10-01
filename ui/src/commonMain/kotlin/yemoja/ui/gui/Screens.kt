@@ -229,7 +229,24 @@ internal class Platform(
      * A phone's back button or gesture, which steps back through a tab as the arrow does. `PHONE-2`.
      */
     val back: (@Composable (enabled: Boolean, onBack: () -> Unit) -> Unit)? = null,
+    /**
+     * Asks for what reading a dive computer needs, and says whether it was given, or absent where
+     * nothing needs asking. A phone's Bluetooth and notifications are the user's to allow. `AND-2`.
+     */
+    val permit: ((granted: (Boolean) -> Unit) -> Unit)? = null,
+    /**
+     * Told of a read while it runs and once more, with absent, when it stops, or absent where the
+     * platform has nothing to do about one. A phone keeps the read alive in the background with a
+     * notification of its own. `AND-3`.
+     */
+    val reading: ((Underway?) -> Unit)? = null,
 )
+
+/**
+ * Underway is a dive computer being read, as a platform is told of it: which, how far, and how to
+ * give it up. `AND-3`. Immutable.
+ */
+class Underway(val name: String, val done: Long, val total: Long, val cancel: () -> Unit)
 
 /**
  * Kept is what a tab holds on to between visits: what is chosen, and how its selector stands.
@@ -796,7 +813,20 @@ private fun Home(
                     // One download at a time. Another started over a finished one replaces it.
                     if (reading.stage != Stage.LOOKING && reading.stage != Stage.READING) {
                         put(Deed.DOWNLOAD) {
-                            downloads.launch { look(universe, platform, reading) }
+                            val start = { downloads.launch { look(universe, platform, reading) } }
+                            val permit = platform.permit
+                            if (permit == null) {
+                                start()
+                            } else {
+                                permit { granted ->
+                                    if (granted) {
+                                        start()
+                                    } else {
+                                        reading.said = REFUSED_BLUETOOTH
+                                        reading.stage = Stage.DONE
+                                    }
+                                }
+                            }
                         }
                     }
                     put(Deed.SETTINGS) {
@@ -1040,6 +1070,9 @@ private suspend fun read(
     reading.done = 0
     reading.total = 0
     reading.stage = Stage.READING
+    val told = platform.reading
+    val cancel = { reading.drop() }
+    told?.invoke(Underway(computer.name, 0, 0, cancel))
     val failed = try {
         coroutineScope {
             // Progress is written on the window's thread, which is the one that redraws for it.
@@ -1049,6 +1082,7 @@ private suspend fun read(
                     window.launch {
                         reading.done = done
                         reading.total = total
+                        if (reading.read === read) told?.invoke(Underway(computer.name, done, total, cancel))
                     }
                 }
             }
@@ -1057,6 +1091,8 @@ private suspend fun read(
     } catch (stopped: Exception) {
         // Nothing is waiting on this read but the window, so what stopped it is said there.
         "The download from ${computer.name} stopped: ${stopped.message ?: stopped::class.simpleName}"
+    } finally {
+        told?.invoke(null)
     }
     // Given up meanwhile, or replaced by another: what came back is nobody's.
     if (reading.read !== read) return
@@ -3519,3 +3555,8 @@ private const val ASK_AN_AGENT = "Ask an agent"
 
 /** What the same button does while the panel is open, which is shut it. */
 private const val CLOSE_THE_AGENT = "Close the agent panel"
+
+/** What a download says where the phone was not allowed to use Bluetooth. `AND-2`. */
+internal const val REFUSED_BLUETOOTH: String =
+    "Yemoja was not allowed to use Bluetooth, which reading a dive computer needs. It can be " +
+        "allowed in the phone's settings, under the app's permissions."

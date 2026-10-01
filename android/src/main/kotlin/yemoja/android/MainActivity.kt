@@ -16,6 +16,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { Yemoja() }
+        // A read is kept alive in the background by a service of the app's own. `AND-3`.
+        setContent { Yemoja { read -> ReadingService.tell(applicationContext, read) } }
     }
 }

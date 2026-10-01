@@ -49,9 +49,19 @@ The app is one activity in `android/`, which hands the screen to `Yemoja` in `ui
 everything the platform supplies is there. The manual and the map travel inside the app as they do
 in the desktop's jar.
 
-**Not yet:** import and export, which need Android's pickers for a file; reading a dive
-computer, `AND-6`, with the permissions and the notification it needs, `AND-2` and `AND-3`; and
-a signed release, `AND-1`. What a tooltip says over a greyed button is said on a long press, the
+**A dive computer is read over Bluetooth**, `AND-6`. libdivecomputer is built for Android by
+`tool/libdivecomputer-android.py`, which compiles its sources with the NDK's compiler for a phone's
+processor and the emulator's, USB, IrDA and classic Bluetooth left as the library's own stubs; the
+app carries it as a file of its own, as the desktop does. The code reaching it is the desktop's,
+shared through the logic layer's `javaMain`, JNA taken as its Android archive. Bluetooth is asked
+for when Download is pressed, with notifications beside it, and a refusal says where to allow it,
+`AND-2`. While a read runs, a foreground service keeps the app alive with a notification showing
+its progress and a Cancel, `AND-3`. Tried on the emulator as far as an emulator goes: the
+permissions are asked, the library loads, and the scan finds nothing, there being no dive
+computer to find. No read has been made on a phone yet.
+
+**Not yet:** import and export, which need Android's pickers for a file; and a signed release,
+`AND-1`. What a tooltip says over a greyed button is said on a long press, the
 toolkit's own answer on a touch screen.
 
 ## Settled
