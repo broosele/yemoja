@@ -155,6 +155,12 @@ them.
   under *What is built* in [logic/uddf.md](logic/uddf.md). No other format is written.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).
+- **FEAT-29 — Navigating to a dive site.** A link on a dive site that opens it in a map
+  application, Google Maps or the like, so the way there is one press from the logbook. A site
+  already carries its `latitude` and `longitude`, so nothing new need be stored for the simplest
+  form. Open: which service the link goes to, or whether the platform's own `geo:` link is used and
+  the phone chooses; and whether a site wants a second position of its own, the car park or the
+  entry point, since where the water is and where to drive to are often not the same place.
 - **FEAT-28 — Getting a skipped dive back.** A downloaded dive the review was told to skip, or
   left undecided when the review was closed, is at present gone for good. The next download
   resumes after the newest dive the logbook holds, `DATA-90`, so a dive older than one taken in
