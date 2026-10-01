@@ -106,17 +106,20 @@ internal fun yearHolding(years: List<Year>, id: String?): String? =
     id?.let { years.firstOrNull { year -> year.rows.any { it.dive.id == id } }?.label }
 
 /**
- * Which rows carry a trip's name, so it sits in the middle of its run: the row at the middle of
- * each run, and whether the name is to be nudged up half a line because the run has an even
- * number of rows and its middle is a boundary.
+ * Which rows carry a trip's name, and how many rows it spans: the last row of each run, by index,
+ * with the run's length.
+ *
+ * The last, because a row is drawn after the ones above it, so a name rising from it over the
+ * whole run lies on top of their cells rather than under them. Spanning the run is what lets a
+ * long name in a narrow column wrap onto as many lines as the run has room for.
  */
-internal fun labelledOf(rows: List<DiveRow>): Map<Int, Boolean> {
-    val labelled = LinkedHashMap<Int, Boolean>()
+internal fun spannedOf(rows: List<DiveRow>): Map<Int, Int> {
+    val spanned = LinkedHashMap<Int, Int>()
     for ((index, row) in rows.withIndex()) {
         if (row.run == 0 || row.trip == null) continue
-        labelled[index + row.run / 2] = row.run % 2 == 0
+        spanned[index + row.run - 1] = row.run
     }
-    return labelled
+    return spanned
 }
 
 /** The same rows, each run of one trip counted on the row that opens it. */

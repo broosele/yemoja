@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1762,11 +1763,11 @@ private fun Dives(set: ItemSet, kept: Kept) {
                     )
                 }
                 if (!unfolded) continue
-                val labelled = labelledOf(year.rows)
+                val spanned = spannedOf(year.rows)
                 itemsIndexed(year.rows, key = { _, row -> row.dive.id }) { index, row ->
                     if (index > 0 && row.run > 0) HorizontalDivider()
                     Row(modifier = Modifier.fillMaxWidth().height(LINE)) {
-                        TripCell(row, labelled[index], chosen, chooseTrip)
+                        TripCell(row, spanned[index], chosen, chooseTrip)
                         val here = row.dive.id in many ||
                             (many.isEmpty() && row.dive.id == chosen?.id)
                         Row(
@@ -1859,14 +1860,13 @@ private const val STRIDE = 20
 
 /**
  * The trip cell, tinted down the run and clickable wherever the run is, the trip's name in the
- * middle of the run.
+ * middle of the run, wrapped onto as many lines as the run is tall.
  *
- * [nudged] is whether this row carries the name, and if so whether half a line up, which is
- * where the middle of an even run falls; a row is drawn after the one above it, so the name
- * lies over that row's cell rather than under it.
+ * [spans] is how many rows the name spans, on the run's last row, which carries it, and absent
+ * on every other. The name rises from there over the rows above, which are drawn first.
  */
 @Composable
-private fun TripCell(row: DiveRow, nudged: Boolean?, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
+private fun TripCell(row: DiveRow, spans: Int?, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
     val trip = row.trip
     val here = trip != null && trip.id == chosen?.id
     Box(
@@ -1881,18 +1881,27 @@ private fun TripCell(row: DiveRow, nudged: Boolean?, chosen: Chosen?, onChoose: 
             .let { if (trip == null) it else it.clickable { onChoose(trip) } },
         contentAlignment = Alignment.Center,
     ) {
-        if (nudged != null && trip != null) {
-            Text(
-                text = trip.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (here) FontWeight.Bold else FontWeight.Normal,
-                color = onTint(here),
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = HALF)
-                    .offset(y = if (nudged) -LINE / 2 else 0.dp),
-            )
+        if (spans != null && trip != null) {
+            val style = MaterialTheme.typography.bodyMedium
+            val tall = LINE * spans
+            // As many lines as the run's height holds, and an ellipsis where the name needs more.
+            val lines = (tall.value / style.lineHeight.value).toInt().coerceAtLeast(1)
+            Box(
+                // The run's own height, centred on the run: up from this row by half the rest.
+                modifier = Modifier.requiredHeight(tall).offset(y = -LINE * (spans - 1) / 2),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = trip.title,
+                    style = style,
+                    fontWeight = if (here) FontWeight.Bold else FontWeight.Normal,
+                    color = onTint(here),
+                    textAlign = TextAlign.Center,
+                    maxLines = lines,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = HALF),
+                )
+            }
         }
     }
 }

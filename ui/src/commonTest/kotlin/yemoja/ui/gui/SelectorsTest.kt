@@ -106,9 +106,9 @@ class DiveTableTest {
     }
 
     @Test
-    fun `a trip's name sits on the middle row of its run, nudged up where the run is even`() {
+    fun `a trip's name rides on the last row of its run, spanning the whole run`() {
         // 05 Zeeland alone, 04 none, 03 and 02 Red Sea, 01 Zeeland alone.
-        assertEquals(mapOf(0 to false, 3 to true, 4 to false), labelledOf(rows))
+        assertEquals(mapOf(0 to 1, 3 to 2, 4 to 1), spannedOf(rows))
     }
 
     @Test
