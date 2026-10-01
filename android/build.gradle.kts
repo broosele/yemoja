@@ -20,6 +20,22 @@ android {
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
 
+    // A release is signed with the author's own key, kept outside the repository in a folder
+    // holding yemoja.jks and its password beside it, named by the property yemoja.signing in
+    // ~/.gradle/gradle.properties. An update installs only over an app signed with the same key,
+    // so the one key signs every release. `AND-1`. Without the property a release build is
+    // unsigned, and a debug build signs with Android's own debug key as always.
+    val signing = findProperty("yemoja.signing")?.toString()?.let { file(it) }
+    if (signing != null) {
+        signingConfigs.create("release") {
+            storeFile = signing.resolve("yemoja.jks")
+            storePassword = signing.resolve("password.txt").readText().trim()
+            keyAlias = "yemoja"
+            keyPassword = storePassword
+        }
+        buildTypes.getByName("release").signingConfig = signingConfigs.getByName("release")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
