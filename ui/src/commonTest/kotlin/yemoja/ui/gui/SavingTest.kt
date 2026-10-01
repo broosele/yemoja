@@ -53,6 +53,20 @@ private fun fieldsOf(shaping: Shaping): Map<String, Stored> {
     return planFieldsOf(shaping.described(), ready.conditions, done.whole)
 }
 
+/** [shaping]'s fields as a plan saved before its lines were kept would hold them. */
+private fun withoutLinesOf(shaping: Shaping): Map<String, Stored> = fieldsOf(shaping) - "runtime"
+
+/** The plan [fields] describe, saved as a new dive and opened again into a fresh planner. */
+private fun reopened(fields: Map<String, Stored>): Shaping {
+    val logbook = emptyLogbook()
+    val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fields).toTypedArray()))
+    val dive = assertNotNull(logbook.logbook[made.added.single()])
+    val back = Shaping()
+    back.prefill(null)
+    back.loadFrom(profilesOf(dive).getValue("Plan_A"), dive, logbook)
+    return back
+}
+
 private fun emptyLogbook(files: Map<String, String> = emptyMap()): Universe {
     val store = MemoryFileStore(files)
     return Universe(LogbookReader.read(store, Types.ALL), null, store, null, null)
@@ -129,11 +143,96 @@ class PlanFieldsTest {
 class SavingRoundTripTest {
 
     @Test
-    fun `a plan saved as a new dive comes back as the same run`() {
+    fun `a plan saved as a new dive comes back as the lines that were typed, and the same run`() {
+        val shaping = shaping(Segment("40", rate = "20"), Segment("40", duration = "20"), Segment("21", gas = 1))
+        val (_, done) = doneOf(shaping)
+        val back = reopened(fieldsOf(shaping))
+        assertEquals(
+            listOf(Segment("40", rate = "20"), Segment("40", duration = "20:00"), Segment("21", gas = 1)),
+            back.segments.toList(),
+            "a rate stays a rate, a line given neither stays so, and the way up is not among them",
+        )
+        val (_, again) = doneOf(back)
+        assertEquals(done.whole.depth, again.whole.depth)
+        assertEquals(done.tail, again.tail, "the way up is worked out again")
+    }
+
+    @Test
+    fun `a plan comes back under the settings it was made with, not the ones a new plan starts from`() {
+        val shaping = shaping(*FORTY)
+        shaping.bottomOxygen = "1.3"
+        shaping.decoOxygen = "1.5"
+        shaping.leastOxygen = "0.16"
+        shaping.descentRate = "15"
+        shaping.ascentRate = "10"
+        shaping.lastStop = "6"
+        shaping.safetyDepth = "5"
+        shaping.safetyMinutes = "5"
+        shaping.panicFactor = "3"
+        shaping.problemMinutes = "1.5"
+        shaping.lostGas = 1
+        shaping.sharedScenario = false
+        val back = reopened(fieldsOf(shaping))
+        assertEquals("1.3", back.bottomOxygen)
+        assertEquals("1.5", back.decoOxygen)
+        assertEquals("0.16", back.leastOxygen)
+        assertEquals("15", back.descentRate)
+        assertEquals("10", back.ascentRate)
+        assertEquals("6", back.lastStop)
+        assertEquals("5", back.safetyDepth)
+        assertEquals("5", back.safetyMinutes, "held in seconds, shown in minutes")
+        assertEquals("3", back.panicFactor)
+        assertEquals("1.5", back.problemMinutes)
+        assertEquals(true, back.lostGasScenario)
+        assertEquals(1, back.lostGas, "the cylinder by its place, saved as its key")
+        assertEquals(false, back.sharedScenario)
+    }
+
+    @Test
+    fun `the settings are written as a logbook writes them, under the names the settings use`() {
+        val shaping = shaping(*FORTY)
+        shaping.safetyMinutes = "3"
+        shaping.lostGasScenario = false
+        val fields = fieldsOf(shaping)
+        assertEquals(Stored.Leaf(180L), fields["safety_stop_duration"], "seconds")
+        assertEquals(Stored.Leaf(1.4), fields["po2_max_bottom"])
+        assertEquals(Stored.Leaf(false), fields["lost_gas_reserve"])
+        val lines = assertIs<Stored.Members>(fields["runtime"]).members
+        assertEquals(listOf("1", "2"), lines.keys.toList(), "keyed by their place")
+        val second = assertIs<Stored.Members>(lines["2"]).members
+        assertEquals(Stored.Leaf(1366L), second["duration"])
+    }
+
+    @Test
+    fun `a blank line is not kept, and a gas chosen on a line names its cylinder's key`() {
+        val fields = fieldsOf(shaping(Segment("40", duration = "20"), Segment("21", gas = 1), Segment()))
+        val lines = assertIs<Stored.Members>(fields["runtime"]).members
+        assertEquals(2, lines.size)
+        assertEquals(Stored.Leaf("*deco"), assertIs<Stored.Members>(lines["2"]).members["gas_source"])
+    }
+
+    @Test
+    fun `lines that no longer lead to the points are set aside for the points`() {
+        val shaping = shaping(*FORTY)
+        val fields = fieldsOf(shaping).toMutableMap()
+        // As though the bottom had been typed over by hand in the file: 38 m where 40 was saved.
+        val depth = assertIs<Stored.Elements>(fields["depth"]).elements.map { point ->
+            val (second, metres) = assertIs<Stored.Elements>(point).elements
+            val changed = if ((metres as Stored.Leaf).value == 40.0) Stored.Leaf(38.0) else metres
+            Stored.Elements(listOf(second, changed))
+        }
+        fields["depth"] = Stored.Elements(depth)
+        val back = reopened(fields)
+        assertEquals("38", back.segments.first().depth, "the points, as lines")
+        assertEquals(emptyList(), doneOf(back).second.tail, "and they reach the surface already")
+    }
+
+    @Test
+    fun `a plan saved before its lines were kept comes back as the same run, from its points`() {
         val shaping = shaping(*FORTY)
         val (_, done) = doneOf(shaping)
         val logbook = emptyLogbook()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping)).toTypedArray()))
+        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", withoutLinesOf(shaping)).toTypedArray()))
         val dive = assertNotNull(logbook.logbook[made.added.single()])
         val plan = assertNotNull(profilesOf(dive)["Plan_A"])
         assertTrue(isPlanned(plan))
@@ -156,7 +255,7 @@ class SavingRoundTripTest {
     fun `a stop the model held a minute at a time comes back as one line`() {
         val shaping = shaping(*FORTY)
         val logbook = emptyLogbook()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping)).toTypedArray()))
+        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", withoutLinesOf(shaping)).toTypedArray()))
         val dive = logbook.logbook[made.added.single()]!!
         val back = Shaping()
         back.prefill(null)

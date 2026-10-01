@@ -249,9 +249,9 @@ class Settings internal constructor(private val store: FileStore) {
         val DEFAULT_SAFETY_STOP_DEPTH =
             NumberSetting("default_safety_stop_depth", "Safety stop depth", "m", 6.0, 1.0..12.0)
 
-        /** How long a new plan's safety stop lasts, in minutes. Nought is no safety stop. */
+        /** How long a new plan's safety stop lasts, in seconds as a logbook writes it. Nought is none. */
         val DEFAULT_SAFETY_STOP_DURATION =
-            NumberSetting("default_safety_stop_duration", "Safety stop duration", "min", 3.0, 0.0..15.0)
+            NumberSetting("default_safety_stop_duration", "Safety stop duration", "s", 180.0, 0.0..900.0)
 
         /**
          * How many times their usual rate each of two divers sharing gas breathes at, in a new
@@ -262,10 +262,10 @@ class Settings internal constructor(private val store: FileStore) {
 
         /**
          * How long a new plan's reserve spends at the depth trouble starts before the way up
-         * begins, in minutes, for finding the problem and a buddy. Nought is none. `LOGIC-40`.
+         * begins, in seconds, for finding the problem and a buddy. Nought is none. `LOGIC-40`.
          */
         val DEFAULT_PROBLEM_SOLVING_TIME =
-            NumberSetting("default_problem_solving_time", "Problem solving time", "min", 2.0, 0.0..10.0)
+            NumberSetting("default_problem_solving_time", "Problem solving time", "s", 120.0, 0.0..600.0)
 
         /** The water a new plan is dived in, in the words `water_type` uses. */
         val DEFAULT_WATER_TYPE =

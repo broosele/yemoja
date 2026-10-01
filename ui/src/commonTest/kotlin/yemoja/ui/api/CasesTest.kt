@@ -39,9 +39,9 @@ class CasesTest {
     @Test
     fun `a number says what a string says, so a file need not remember which is quoted`() {
         val quoted = oneOf(
-            """[{"lines": [{"depth": "40", "duration": "10"}], "gradient_factor_low": "1", "gradient_factor_high": "1"}]""",
+            """[{"lines": [{"depth": "40", "duration": "600"}], "gradient_factor_low": "1", "gradient_factor_high": "1"}]""",
         )
-        val plain = oneOf("""[{"lines": [{"depth": 40, "duration": 10}], "gradient_factor_low": 1, "gradient_factor_high": 1}]""")
+        val plain = oneOf("""[{"lines": [{"depth": 40, "duration": 600}], "gradient_factor_low": 1, "gradient_factor_high": 1}]""")
         assertEquals(quoted.planned.segments, plain.planned.segments)
         assertEquals(quoted.planned.gradientLow, plain.planned.gradientLow)
     }
@@ -60,7 +60,7 @@ class CasesTest {
     @Test
     fun `a cylinder is named by its number on a line, as it is everywhere else`() {
         val case = oneOf(
-            """[{"lines": [{"depth": 21, "gas": 2, "duration": 5}],
+            """[{"lines": [{"depth": 21, "gas": 2, "duration": 300}],
                 "gases": [{"gas": "air"}, {"gas": "EAN50", "role": "deco"}],
                 "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}]""",
         )
@@ -70,12 +70,23 @@ class CasesTest {
 
     @Test
     fun `a gradient factor is a proportion, as a logbook writes it, and a percentage is refused`() {
-        val case = oneOf("""[{"lines": [{"depth": 20, "duration": 10}], "gradient_factor_low": 0.3}]""")
+        val case = oneOf("""[{"lines": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3}]""")
         assertEquals("30", case.planned.gradientLow, "the form's percentage")
         assertEquals(
             "case 1 gradient_factor_low should be 0 to 1, but was 30",
             assertIs<Read.Wrong>(read("""{"lines": [{"depth": 20}], "gradient_factor_low": 30}""")).reason,
         )
+    }
+
+    @Test
+    fun `a time is in seconds, as a logbook writes it, and minutes and seconds still read`() {
+        val case = oneOf(
+            """{"lines": [{"depth": 40}, {"depth": 40, "duration": 1366}, {"depth": 40, "duration": "2:00"}],
+                "safety_stop_duration": 300}""",
+        )
+        assertEquals("22:46", case.planned.segments[1].duration)
+        assertEquals("2:00", case.planned.segments[2].duration)
+        assertEquals("5", case.planned.safetyMinutes, "the form's minutes")
     }
 
     @Test
@@ -86,7 +97,7 @@ class CasesTest {
     @Test
     fun `a plan on its own is a file of one`() {
         val cases = assertIs<Read.Cases>(
-            read("""{"lines": [{"depth": 20, "duration": 10}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),
+            read("""{"lines": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),
         ).cases
         assertEquals(1, cases.size)
         assertEquals("case 1", cases.single().name, "and it is called by its place")

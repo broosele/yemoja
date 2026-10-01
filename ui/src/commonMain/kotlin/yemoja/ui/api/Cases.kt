@@ -1,12 +1,14 @@
 package yemoja.ui.api
 
 import yemoja.data.Stored
+import kotlin.math.roundToInt
 import yemoja.logic.NumberSetting
 import yemoja.logic.Settings
 import yemoja.ui.gui.Breathed
 import yemoja.ui.gui.Planned
 import yemoja.ui.gui.Role
 import yemoja.ui.gui.Segment
+import yemoja.ui.gui.clockOf
 import yemoja.ui.gui.shownOf
 
 /*
@@ -71,7 +73,10 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             ?: return Made.Wrong("$name line ${index + 1} should be an object")
         segments += Segment(
             depth = textOf(held["depth"]).orEmpty(),
-            duration = textOf(held["duration"]).orEmpty(),
+            // Seconds, as a logbook writes a time, or minutes and seconds as the form takes them.
+            duration = textOf(held["duration"])?.let { written ->
+                written.toDoubleOrNull()?.let { clockOf(it.roundToInt()) } ?: written
+            }.orEmpty(),
             rate = textOf(held["rate"]).orEmpty(),
             // A cylinder is named by its number, as it is everywhere else here. `API-7`.
             gas = when (val named = textOf(held["gas"])) {
@@ -106,9 +111,13 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
                 "cylinders, not ${beyond.value.gas!! + 1}",
         )
     }
-    fun setting(key: String, held: NumberSetting): String =
-        textOf(members[key]) ?: shownOf(held, held.default)
-    // A gradient factor is a proportion in a file, as in a logbook, and the form takes a percentage.
+    // Written as a logbook writes the field and the setting, and turned into what the form takes: a
+    // gradient factor from a proportion to a percentage, and a time from seconds to minutes.
+    fun setting(key: String, held: NumberSetting): String {
+        val written = textOf(members[key]) ?: return shownOf(held, held.default)
+        return written.toDoubleOrNull()?.let { shownOf(held, it) } ?: written
+    }
+    // A percentage would be read as a proportion a hundred times too large, so it is refused.
     val factors = mapOf(
         "gradient_factor_low" to Settings.DEFAULT_GRADIENT_FACTOR_LOW,
         "gradient_factor_high" to Settings.DEFAULT_GRADIENT_FACTOR_HIGH,
@@ -122,14 +131,12 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             )
         }
     }
-    fun proportion(key: String): String =
-        textOf(members[key])?.let { shownOf(factors.getValue(key), it.toDouble()) }.orEmpty()
     return Made.Plan(
         Planned(
             segments = segments,
             gases = gases.ifEmpty { listOf(Breathed()) },
-            gradientLow = proportion("gradient_factor_low"),
-            gradientHigh = proportion("gradient_factor_high"),
+            gradientLow = setting("gradient_factor_low", Settings.DEFAULT_GRADIENT_FACTOR_LOW),
+            gradientHigh = setting("gradient_factor_high", Settings.DEFAULT_GRADIENT_FACTOR_HIGH),
             bottomOxygen = setting("po2_max_bottom", Settings.DEFAULT_PO2_MAX_BOTTOM),
             decoOxygen = setting("po2_max_deco", Settings.DEFAULT_PO2_MAX_DECO),
             leastOxygen = setting("po2_min", Settings.DEFAULT_PO2_MIN),

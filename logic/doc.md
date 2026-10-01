@@ -629,11 +629,13 @@ To settle when we discuss architecture and features:
   Turning those into fields is the caller's, a change to an item being the Universe's business
   rather than the model's.
 
-  **The rate and the last stop are asked for rather than stored.** They describe the moment the
-  ascent was written, not the plan, and nothing reads them again: the plan holds the points, so it
-  means the same thing to everything that reads it afterwards. Their defaults are the settings
-  `default_ascent_rate` and `default_last_stop`, beside `default_gradient_factor_low`, read by
-  whatever writes an ascent and passed in.
+  **The rate and the last stop are asked for rather than read off the plan.** The plan holds the
+  points, so it means the same thing to everything that reads it afterwards. Their defaults are the
+  settings `default_ascent_rate` and `default_last_stop`, beside `default_gradient_factor_low`,
+  read by whatever writes an ascent and passed in.
+
+  *Amended:* a plan now keeps both, as `ascent_rate` and `last_stop`, so that the planner opens it
+  again as it was made. Nothing here reads them, and the points are still the plan. `DATA-129`.
 
   **Stops go on the threes a diver counts in**, and a run owing any takes its shallowest where it
   was asked to. The gas at each depth is the richest of the run's own sources whose oxygen stays

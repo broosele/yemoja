@@ -136,25 +136,27 @@ class EditTest {
     @Test
     fun `every list a form offers keys from is one the edited item has`() {
         // The general case of the crash above: the form reads the collection off the item it is
-        // editing, so a key field chosen from a list must name a list that type declares. Walked
-        // through everything a dive holds, owned items inside owned items included.
+        // editing or the nearest owner holding one, so a key field chosen from a list must name a
+        // list that type or an owner declares. Walked through everything a dive holds, owned items
+        // inside owned items included.
         val seen = HashSet<String>()
-        fun walk(type: yemoja.data.ItemDescription) {
+        fun walk(type: yemoja.data.ItemDescription, owners: List<yemoja.data.ItemDescription>) {
             if (!seen.add(type.name)) return
             val arranged = arrangedOf(type, editing = true)
             for (each in arranged.plain) {
                 val key = each as? yemoja.data.KeyReferenceDescription ?: continue
                 if (kindOf(key) != Kind.KEY) continue
                 assertTrue(
-                    type[key.collection] != null,
-                    "${type.name}.${key.name} offers keys from ${key.collection}, which a" +
-                        " ${type.name} does not have",
+                    (owners + type).any { it[key.collection] != null },
+                    "${type.name}.${key.name} offers keys from ${key.collection}, which neither a" +
+                        " ${type.name} nor what holds it has",
                 )
             }
-            for (inset in arranged.insets) walk(inset.description)
+            for (inset in arranged.insets) walk(inset.description, owners + type)
         }
-        walk(Types.DIVE)
+        walk(Types.DIVE, emptyList())
         assertTrue("profile" in seen && "gas_source" in seen, "the walk reached a plan's cylinders")
+        assertTrue("runtime_line" in seen, "and a plan's lines, which name those cylinders")
     }
 
     private fun profile() = (field("profiles") as yemoja.data.OwnedItemDescription).description

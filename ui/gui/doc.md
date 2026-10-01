@@ -494,12 +494,16 @@ once and corrected. The numbers stay unused rather than being given to something
   *Forget the dive* unbinds a plan opened from one, so the next save makes a new dive instead of
   saving over the one it came from.
 
-  **One way.** What is saved is the run with its way up, as points, `LOGIC-35`; its cylinders, each
-  keyed by what it is for, with its role written as `usage`; its gradient factors and its water.
-  The planner's other settings, the oxygen limits, the safety stop, the rates, the reserve and which
-  lines were typed, have no field and are not kept. A plan opened again is its points as typed
-  lines under the settings the planner starts from, and a stop the model wrote a point a minute is
-  one line.
+  **What is saved** is the run with its way up, as points, `LOGIC-35`; its cylinders, each keyed by
+  what it is for, with its role written as `usage`; every setting the planner had; and the lines as
+  they were typed. A plan opened again is those lines under those settings, with the way up worked
+  out again, so it is the plan that was saved. `DATA-129`.
+
+  *As it stood:* **one way.** The settings other than the gradient factors and the water had no
+  field, and a plan opened again was its points as typed lines under the settings a new plan starts
+  from. That is still how a plan opens where it keeps no lines, or where its points were changed by
+  hand so that its lines no longer lead to them, and a stop the model wrote a point a minute is one
+  line there.
 
   **A plan is named, and its name is its key.** The first letter free on the dive: *Plan A*, then
   *Plan B*, typed over freely. A key holds no spaces, so *Plan A* is kept as `Plan_A` and shown back

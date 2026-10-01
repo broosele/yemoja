@@ -296,6 +296,7 @@ internal sealed class Entered {
  * **An empty box takes the choice away**, so what answers is the next layer: the logbook's, or the
  * application's default. The gradient factors are typed as percentages, as the plan form takes
  * them, and a value below one is refused rather than read as a fraction of a percent. `GUI-41`.
+ * A time is typed in minutes and held in seconds. `DATA-129`.
  */
 internal fun chosenOf(setting: NumberSetting, typed: String): Entered {
     val text = typed.trim().removeSuffix("%").trim()
@@ -308,6 +309,15 @@ internal fun chosenOf(setting: NumberSetting, typed: String): Entered {
         }
         return Entered.Value(number / PERCENT)
     }
+    if (isMinutes(setting)) {
+        val range = setting.range.start / SECONDS_IN_MINUTE..setting.range.endInclusive / SECONDS_IN_MINUTE
+        if (number !in range) {
+            return Entered.Wrong(
+                "${setting.label} should be ${plain(range.start)} to ${plain(range.endInclusive)} min, but was $text",
+            )
+        }
+        return Entered.Value(number * SECONDS_IN_MINUTE)
+    }
     if (number !in setting.range) {
         return Entered.Wrong(
             "${setting.label} should be ${plain(setting.range.start)} to " +
@@ -317,10 +327,14 @@ internal fun chosenOf(setting: NumberSetting, typed: String): Entered {
     return Entered.Value(number)
 }
 
-/** What a setting holds, as its box shows it: a percentage for a gradient factor, blank for none. */
+/**
+ * What a setting holds, as its box shows it: a percentage for a gradient factor, minutes for a
+ * time, and blank for none.
+ */
 internal fun shownOf(setting: NumberSetting, value: Double?): String = when {
     value == null -> ""
     isPercentage(setting) -> plain(value * PERCENT)
+    isMinutes(setting) -> plain(value / SECONDS_IN_MINUTE)
     else -> plain(value)
 }
 
@@ -332,11 +346,18 @@ internal fun answeredSaid(file: SettingsFile?, setting: Setting): String = when 
 }
 
 /** The unit written after a setting's box. */
-private fun unitOf(setting: NumberSetting): String = if (isPercentage(setting)) "%" else setting.unit
+private fun unitOf(setting: NumberSetting): String = when {
+    isPercentage(setting) -> "%"
+    isMinutes(setting) -> "min"
+    else -> setting.unit
+}
 
 /** Whether [setting] is held as a proportion and typed as a percentage, which the factors are. */
 private fun isPercentage(setting: NumberSetting): Boolean =
     setting == Settings.DEFAULT_GRADIENT_FACTOR_LOW || setting == Settings.DEFAULT_GRADIENT_FACTOR_HIGH
+
+/** Whether [setting] is held in seconds and typed in minutes, which every time is. */
+private fun isMinutes(setting: NumberSetting): Boolean = setting.unit == "s"
 
 /** A number as a person writes it: `18`, not `18.0`, and `9.5` where there is a fraction. */
 internal fun plain(value: Double, decimals: Int = 3): String {
@@ -350,6 +371,8 @@ internal fun plain(value: Double, decimals: Int = 3): String {
 }
 
 private const val PERCENT = 100.0
+
+private const val SECONDS_IN_MINUTE = 60.0
 
 /** How wide a setting's box is. */
 private val BOX = 110.dp

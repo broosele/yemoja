@@ -494,7 +494,7 @@ To settle when we discuss architecture:
   measured, so its keys are borrowed rather than proposed, and one series per cylinder
   follows from that rather than needing a rule.
 
-  The other four are what a diver would say about the entry:
+  The other five are what a diver would say about the entry:
 
   | Collection | Keyed by | Falling back to |
   |---|---|---|
@@ -502,6 +502,7 @@ To settle when we discuss architecture:
   | `gas_sources` | what it was for — `bottom`, `deco` | the gas in it, then `gas` |
   | `courses` | the certification it was for | the date, then `course` |
   | `maintenances` | what was done and when | `maintenance` |
+  | `runtime` | its place in the plan, `1` for the first line | `runtime_line`, read after every numbered line |
 
   A plan has no computer, so it is keyed by the name it is saved under: the first letter free,
   *Plan A*, written `Plan_A` since a key holds no spaces, its case kept because it is a name a

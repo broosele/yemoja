@@ -60,7 +60,7 @@ OWNED = {
 # only this tells them apart: here the values are the entries, there the fields are.
 KEYED = {
     'courses': 'Course', 'maintenances': 'Maintenance', 'gas_sources': 'Gas source',
-    'profiles': 'Profile',
+    'profiles': 'Profile', 'runtime': 'Runtime line',
 }
 # `pressures` holds a series under each gas-source key, not owned items, so there is
 # nothing to walk into and no field list to check it against.
@@ -110,7 +110,7 @@ def manual_vocabularies():
 
     for line in text.split('\n'):
         heading = re.match(r'^#{3,5} (.+)$', line)
-        start = re.match(r'^- `([a-z_]+)` \((fixed set|whole number|number)\)(.*)$', line)
+        start = re.match(r'^- `([a-z0-9_]+)` \((fixed set|whole number|number)\)(.*)$', line)
         if heading or start or (line.startswith('- ') and bullet):
             close()
             bullet, field, kind = None, None, None
@@ -142,9 +142,9 @@ def manual_fields():
         if heading:
             current = heading.group(1)
             fields[current] = set()
-        item = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*)', line)
+        item = re.match(r'^- (`[a-z0-9_]+`(?:, `[a-z0-9_]+`)*)', line)
         if item and current:
-            fields[current] |= set(re.findall(r'`([a-z_]+)`', item.group(1)))
+            fields[current] |= set(re.findall(r'`([a-z0-9_]+)`', item.group(1)))
     return fields
 
 
@@ -162,9 +162,9 @@ def manual_order():
         if heading:
             current = heading.group(1)
             order[current], derived[current] = [], set()
-        item = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(, derived)?\)', line)
+        item = re.match(r'^- (`[a-z0-9_]+`(?:, `[a-z0-9_]+`)*) \(([a-z ]+?)(, derived)?\)', line)
         if item and current:
-            names = re.findall(r'`([a-z_]+)`', item.group(1))
+            names = re.findall(r'`([a-z0-9_]+)`', item.group(1))
             order[current].extend(names)
             if item.group(3):
                 derived[current] |= set(names)
@@ -176,15 +176,15 @@ def described_roles():
     text = described_source()
     shared = {
         field for field, tail in re.findall(
-            r'val [A-Z_]+[^=\n]*=\s*\w+Description\(\s*"([a-z_]+)"([^\n]*)', text)
+            r'val [A-Z_]+[^=\n]*=\s*\w+Description\(\s*"([a-z0-9_]+)"([^\n]*)', text)
         if 'Role.' in tail
     }
     roles = {}
-    for match in re.finditer(r'ItemDescription\(\s*"([a-z_]+)"\s*,\s*listOf\(', text):
+    for match in re.finditer(r'ItemDescription\(\s*"([a-z0-9_]+)"\s*,\s*listOf\(', text):
         body = balanced(text, text.index('(', match.end() - len('listOf(')))
         here = set(shared)
         for piece in re.split(r'(?=\w+Description\(\s*")', body):
-            named = re.match(r'\w+Description\(\s*"([a-z_]+)"', piece)
+            named = re.match(r'\w+Description\(\s*"([a-z0-9_]+)"', piece)
             if named and 'Role.' in piece:
                 here.add(named.group(1))
         roles[match.group(1)] = here
@@ -205,14 +205,14 @@ def manual_bullets():
 
     for line in io.open(MANUAL, encoding='utf-8').read().split('\n'):
         heading = re.match(r'^#{3,5} (.+)$', line)
-        start = re.match(r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(', line)
+        start = re.match(r'^- (`[a-z0-9_]+`(?:, `[a-z0-9_]+`)*) \(', line)
         if heading or start or (line.startswith('- ') and names):
             close()
             names, held = [], []
         if heading:
             here = heading.group(1)
         elif start:
-            names = re.findall(r'`([a-z_]+)`', start.group(1))
+            names = re.findall(r'`([a-z0-9_]+)`', start.group(1))
             held = [line]
         elif names and line.startswith('  '):
             held.append(line.strip())
@@ -231,9 +231,9 @@ def check_suggested():
     """
     source = described_source()
     offered = {}
-    for match in re.finditer(r'ItemDescription\(\s*"([a-z_]+)"\s*,\s*listOf\(', source):
+    for match in re.finditer(r'ItemDescription\(\s*"([a-z0-9_]+)"\s*,\s*listOf\(', source):
         body = balanced(source, source.index('(', match.end() - len('listOf(')))
-        for field, name in re.findall(r'"([a-z_]+)"[^\n]*suggestedSet = ([A-Z_]+)', body):
+        for field, name in re.findall(r'"([a-z0-9_]+)"[^\n]*suggestedSet = ([A-Z_]+)', body):
             offered.setdefault(name, set()).add((match.group(1), field))
     sets = {name: set(re.findall(r'"([^"]+)"', body)) for name, body in
             re.findall(r'val ([A-Z_]+) = setOf\(([^)]*)\)', source, re.S)}
@@ -267,7 +267,7 @@ def described_order():
     """
     source = described_source()
     named = dict(re.findall(
-        r'val ([A-Z_]+): ItemDescription = ItemDescription\(\s*"([a-z_]+)"', source))
+        r'val ([A-Z_]+): ItemDescription = ItemDescription\(\s*"([a-z0-9_]+)"', source))
     listed = re.search(r'val ALL: List<ItemDescription> = listOf\((.*?)\)', source, re.S)
     if not listed:
         return []
@@ -336,9 +336,9 @@ def manual_kinds():
         if heading:
             current = heading.group(1)
         bullet = re.match(
-            r'^- (`[a-z_]+`(?:, `[a-z_]+`)*) \(([a-z ]+?)(?:, derived)?\)', line)
+            r'^- (`[a-z0-9_]+`(?:, `[a-z0-9_]+`)*) \(([a-z ]+?)(?:, derived)?\)', line)
         if bullet and current:
-            for name in re.findall(r'`([a-z_]+)`', bullet.group(1)):
+            for name in re.findall(r'`([a-z0-9_]+)`', bullet.group(1)):
                 kinds[(current, name)] = bullet.group(2)
     return kinds
 
@@ -364,15 +364,15 @@ def described_types():
     shared = {
         name: (kind, field)
         for name, kind, field in re.findall(
-            r'val ([A-Z_]+)[^=\n]*=\s*(\w+Description)\(\s*"([a-z_]+)"', text)
+            r'val ([A-Z_]+)[^=\n]*=\s*(\w+Description)\(\s*"([a-z0-9_]+)"', text)
         if kind != 'ItemDescription'
     }
     types = {}
     for match in re.finditer(
-            r'ItemDescription\(\s*"([a-z_]+)"\s*,\s*listOf\(', text):
+            r'ItemDescription\(\s*"([a-z0-9_]+)"\s*,\s*listOf\(', text):
         body = balanced(text, text.index('(', match.end() - len('listOf(')))
         fields = {field: kind for kind, field in
-                  re.findall(r'(\w+Description)\(\s*"([a-z_]+)"', body)}
+                  re.findall(r'(\w+Description)\(\s*"([a-z0-9_]+)"', body)}
         for name in re.findall(r'\b([A-Z_]{2,})\b', body):
             if name in shared:
                 fields[shared[name][1]] = shared[name][0]

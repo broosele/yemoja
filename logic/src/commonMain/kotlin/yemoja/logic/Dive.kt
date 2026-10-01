@@ -190,6 +190,24 @@ private val GAS_SOURCE = ItemDescription(
 )
 
 /**
+ * A runtime line is one line of a plan as it was typed: a depth, and how it is reached.
+ *
+ * Keyed by its place, from `1`, which is how its order is kept. A line that gives neither a
+ * duration nor a rate moves at the plan's own rate. `DATA-129`.
+ */
+private val RUNTIME_LINE = ItemDescription(
+    "runtime_line",
+    listOf(
+        NumberDescription("depth", Dimension.LENGTH),
+        NumberDescription("duration", Dimension.TIME),
+        NumberDescription("rate", Dimension.SPEED),
+        // Absent to breathe what the line above breathes.
+        KeyReferenceDescription("gas_source", collection = "gas_sources"),
+        REMARKS,
+    ),
+)
+
+/**
  * Profile is one run through a dive, under a key on that dive: what a computer recorded, or what
  * somebody intends.
  *
@@ -341,10 +359,32 @@ private val PROFILE = ItemDescription(
         // dive's. `JSON-19`. A recording keeps none: one dive was breathed once, however many
         // computers watched it.
         OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
+        // What the planner was set to when it made a plan, so a plan opened again is the plan that
+        // was saved. A setting a new plan starts from is each name with `default_` before it. The
+        // points above are the plan, and these only make them again. `DATA-129`.
+        NumberDescription("po2_max_bottom", Dimension.PRESSURE, label = "pO₂ max bottom", housekeeping = true),
+        NumberDescription("po2_max_deco", Dimension.PRESSURE, label = "pO₂ max deco", housekeeping = true),
+        NumberDescription("po2_min", Dimension.PRESSURE, label = "pO₂ min", housekeeping = true),
+        NumberDescription("descent_rate", Dimension.SPEED, housekeeping = true),
+        NumberDescription("ascent_rate", Dimension.SPEED, housekeeping = true),
+        NumberDescription("last_stop", Dimension.LENGTH, housekeeping = true),
+        NumberDescription("safety_stop_depth", Dimension.LENGTH, housekeeping = true),
+        // Nought is no safety stop.
+        NumberDescription("safety_stop_duration", Dimension.TIME, housekeeping = true),
+        // Times the usual SAC each of two divers sharing gas breathes at. `LOGIC-40`.
+        NumberDescription("panic_factor", Dimension.DIMENSIONLESS, housekeeping = true),
+        NumberDescription("problem_solving_time", Dimension.TIME, housekeeping = true),
+        BooleanDescription("lost_gas_reserve", housekeeping = true),
+        // Absent for the first deco cylinder, which is what the reserve loses unless told.
+        KeyReferenceDescription("lost_gas", collection = "gas_sources", housekeeping = true),
+        BooleanDescription("shared_gas_reserve", housekeeping = true),
+        // The lines as they were typed, without the way up the planner adds to them.
+        OwnedItemDescription("runtime", RUNTIME_LINE, cardinality = Cardinality.KEYED, housekeeping = true),
         REMARKS,
     ),
     proposedId = ::profilesProposedKey,
 )
+
 
 /**
  * The run whose gas is still in the user when this one begins.

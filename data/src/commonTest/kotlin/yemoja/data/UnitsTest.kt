@@ -50,6 +50,7 @@ class DefaultUnitsTest {
         assertEquals("bar", Units.defaultName(Dimension.PRESSURE))
         assertEquals("deg", Units.defaultName(Dimension.ANGLE))
         assertEquals("kg/m3", Units.defaultName(Dimension.DENSITY))
+        assertEquals("m/min", Units.defaultName(Dimension.SPEED))
         // A ratio takes no unit and needs none. DATA-8's table has no row for it.
         assertNull(Units.defaultName(Dimension.DIMENSIONLESS))
     }
@@ -137,6 +138,7 @@ class AffineConversionTest {
             Dimension.ANGLE to listOf("deg"),
             Dimension.DENSITY to listOf("kg/m3"),
             Dimension.FLOW to listOf("l/min", "m3/s"),
+            Dimension.SPEED to listOf("m/min", "ft/min"),
         )
         for ((dimension, names) in every) {
             for (name in names) {

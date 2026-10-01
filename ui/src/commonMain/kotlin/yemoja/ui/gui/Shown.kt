@@ -538,6 +538,7 @@ internal fun numberOf(field: FieldDescription, value: Any): String {
     val number = (value as? Number)?.toDouble() ?: return field.format(value, Units.DEFAULT)
     if (field.name in OFFSETS) return offsetOf(number)
     if (field.dimension == Dimension.TIME) return clockOf(number)
+    if (field.name in PARTIAL_PRESSURES) return rounded(number, 2)
     val decimals = DECIMALS[field.dimension] ?: return field.format(value, Units.DEFAULT)
     return rounded(number, decimals)
 }
@@ -571,6 +572,7 @@ private val SYMBOLS: Map<Dimension, String> = mapOf(
     Dimension.DENSITY to "kg/m³",
     Dimension.ANGLE to "°",
     Dimension.FLOW to "l/min",
+    Dimension.SPEED to "m/min",
 )
 
 /**
@@ -613,7 +615,11 @@ private val DECIMALS: Map<Dimension, Int> = mapOf(
     Dimension.PRESSURE to 0,
     Dimension.DENSITY to 0,
     Dimension.FLOW to 1,
+    Dimension.SPEED to 1,
 )
+
+/** The fields holding a partial pressure, which a screen shows to a hundredth: `1.45` bar. */
+private val PARTIAL_PRESSURES: Set<String> = setOf("po2_max_bottom", "po2_max_deco", "po2_min")
 
 private fun plain(text: String): List<Part> = listOf(Part(text))
 

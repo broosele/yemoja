@@ -56,8 +56,10 @@ together without contradicting each other.
 
 ## What is in them
 
-The list will grow. At present, each in its own unit whatever units your logbook's files are
-written in — a settings file declares none:
+The list will grow. At present, each in the unit a logbook file uses when it declares none, so a
+time is in seconds. That holds whatever units your logbook's files are written in, since a
+settings file cannot declare any. Each is named after the field of a plan it fills, with
+`default_` in front:
 
 - `default_gradient_factor_low`, `default_gradient_factor_high` — the gradient factors a new dive
   plan starts with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`; the
@@ -77,14 +79,15 @@ written in — a settings file declares none:
   0.5. A hypoxic gas breathed shallower than this is warned of. Without a choice, 0.18.
 - `default_safety_stop_depth` — how deep a new dive plan's safety stop is, in metres, from 1 to
   12. Without a choice, 6.
-- `default_safety_stop_duration` — how long a new dive plan's safety stop lasts, in minutes, from
-  0 to 15. 0 means no safety stop. Without a choice, 3.
+- `default_safety_stop_duration` — how long a new dive plan's safety stop lasts, in seconds, from
+  0 to 900. 0 means no safety stop. Without a choice, 180. The *Settings* form shows it in minutes.
 - `default_panic_factor` — how many times their usual SAC each of two divers sharing gas breathes
   at, in a new dive plan's gas reserve, from 1 to 10. It is stress alone: the second diver is
   counted separately. Without a choice, 2.
 - `default_problem_solving_time` — how long a new dive plan's gas reserve spends at the depth
-  trouble starts before the way up begins, in minutes, from 0 to 10: the time to notice the problem
-  and, when sharing, to find your buddy and get the gas going. 0 means none. Without a choice, 2.
+  trouble starts before the way up begins, in seconds, from 0 to 600: the time to notice the
+  problem and, when sharing, to find your buddy and get the gas going. 0 means none. Without a
+  choice, 120. The *Settings* form shows it in minutes.
 - `default_water_type` — the water a new dive plan is dived in: `salt` or `fresh`. Without a
   choice, `salt`.
 

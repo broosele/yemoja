@@ -443,6 +443,37 @@ that is the only record of it.
 
   A profile that keeps none names the dive's, which is what `gas_switches` and `pressures` do on
   every recording. A profile that keeps its own names those instead, through the same fields.
+
+**What the planner was set to.** A plan saved from the planner keeps the settings it was made
+under and the lines you typed, so opening it again gives back the plan you saved rather than one
+under today's settings. A recording has none of these. They are shown when you edit a plan and
+not otherwise, being the planner's rather than yours to read. Each has a setting of the same name
+with `default_` in front, which is what a new plan starts from; [settings.md](settings.md) says
+what each does.
+
+- `po2_max_bottom`, `po2_max_deco`, `po2_min` (number) — the most oxygen a bottom or bailout
+  gas is breathed at, the most a deco gas is, and the least any gas is, in bar.
+- `descent_rate`, `ascent_rate` (number) — in metres a minute, for a line that gives neither a
+  duration nor a rate, and for the way up.
+- `last_stop` (number) — the depth the way up takes its shallowest stop at.
+- `safety_stop_depth`, `safety_stop_duration` (number) — the safety stop. A duration of 0 means
+  none.
+- `panic_factor` (number) — how many times their usual SAC each of two divers sharing gas
+  breathes at, in the gas reserve.
+- `problem_solving_time` (number) — how long the gas reserve spends at the depth trouble starts
+  before the way up begins.
+- `lost_gas_reserve` (true or false) — whether the gas reserve tries losing a cylinder.
+- `lost_gas` (key reference) — which cylinder it loses, naming a `gas_sources` entry. Left out,
+  it loses the first deco cylinder.
+- `shared_gas_reserve` (true or false) — whether the gas reserve tries a buddy out of gas,
+  sharing yours.
+- `runtime` (keyed owned items) — the lines you typed, keyed by their place: `1`, `2`, `3`.
+  The way up the planner added is not among them, being worked out again when the plan is
+  opened. Described below.
+
+  **The points are the plan, and these only make it again.** If `depth` or `gas_switches` is
+  changed by hand afterwards so that the lines no longer lead to it, the plan is opened from its
+  points, as a plan saved before these fields existed is.
 - `remarks` (multiline text) — anything about the recording itself: a computer you
   do not trust, a transmitter that dropped out.
 
@@ -480,6 +511,18 @@ is here you know what was given up; where it is not, you do not know.
 
 The figures are not a promise about the computer's accuracy either — only about what was
 discarded from what it reported.
+
+##### Runtime line
+
+One line of a plan, as you typed it in the planner.
+
+- `depth` (number) — the depth the line goes to, or stays at.
+- `duration` (number) — how long the line takes.
+- `rate` (number) — how fast it goes, in metres a minute, where it was given instead of a
+  duration. A line with neither moves at the plan's `descent_rate` or `ascent_rate`.
+- `gas_source` (key reference) — the cylinder the line switches to, naming one of the plan's
+  `gas_sources`. Left out, the line breathes what the line above it breathes.
+- `remarks` (multiline text) — anything about the line: why it is there, what it is for.
 
 #### Gas source
 

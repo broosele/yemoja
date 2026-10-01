@@ -60,7 +60,7 @@ way up is not written: Yemoja calculates it and adds it.
 | Field | What it says |
 |---|---|
 | `depth` | Metres. Required. |
-| `duration` | How long the line takes: `22:46`, or whole minutes as `25`. |
+| `duration` | How long the line takes, in seconds as a logbook writes a time: `1366`, or minutes and seconds as `22:46`. |
 | `rate` | Metres a minute, instead of a duration. |
 | `gas` | Which cylinder, by its number: `1` for the first. Left out, the line breathes what the line above breathes. |
 
@@ -85,7 +85,9 @@ never switches to a `bailout` one.
 
 ### The settings
 
-Each is the same setting the window has, and each may be left out.
+Each is the same setting the window has, and each may be left out. Each is written as a logbook
+writes the field of the same name: a time in seconds, a rate in metres a minute, and a gradient
+factor as a proportion.
 
 | Field | The window's name |
 |---|---|

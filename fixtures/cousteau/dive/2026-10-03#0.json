@@ -54,6 +54,24 @@
           "sac": 14
         }
       },
+      "po2_max_bottom": 1.4,
+      "po2_max_deco": 1.6,
+      "po2_min": 0.18,
+      "descent_rate": 16,
+      "ascent_rate": 9,
+      "last_stop": 3,
+      "safety_stop_depth": 6,
+      "safety_stop_duration": 180,
+      "panic_factor": 2,
+      "problem_solving_time": 120,
+      "lost_gas_reserve": true,
+      "lost_gas": "*g2",
+      "shared_gas_reserve": false,
+      "runtime": {
+        "1": {"depth": 40, "rate": 16},
+        "2": {"depth": 40, "duration": 1050},
+        "3": {"depth": 21, "gas_source": "*g2"}
+      },
       "remarks": "Twenty minutes on the wreck, deco gas from 21 metres."
     },
     "b": {

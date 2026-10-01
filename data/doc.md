@@ -926,14 +926,39 @@ To settle when we discuss architecture:
 
 ## Settled and relocated
 
-- **DATA-128 — What a setting for a plan is called.** *Settled:* **the name of the field it fills,
+- **DATA-129 — What a plan keeps of the planner that made it.** *Settled:* **every setting the
+  planner had, and the lines as they were typed, beside the points.** Decided on 2026-10-01, at
+  the author's word.
+
+  A plan kept its points, its cylinders, its gradient factors and its water, and nothing else
+  the planner was set to. Opened again, it came back under the settings a new plan starts from,
+  and its lines were guessed from its points. That guess turned the way up into lines that seemed
+  typed and no longer followed the dive above them, a rate into a duration, and a line left to the
+  plan's own rate into one with a duration of its own. So a plan now keeps the oxygen limits, the
+  rates, the last stop, the safety stop and the gas reserve's settings under the names `DATA-128`
+  gives them, and its lines under `runtime`, keyed by their place, which is how their order is
+  kept. All of them are `housekeeping`: shown when a plan is edited, since the planner reads them
+  and a reader does not need to.
+
+  **The points stay the plan.** What a plan says to everything that reads it, a graph, a
+  comparison with the dive that was made, the logbook's statistics, is its `depth` and
+  `gas_switches`, as `DATA-57` and `LOGIC-35` have it. The lines are used only while the planner
+  makes those same points from them. Where it does not, because the points were changed by hand,
+  the lines are set aside and the plan is opened from its points, as a plan saved before the lines
+  were kept still is.
+
+  **A rate has a dimension of its own**, speed, in metres a minute or feet a minute. A rate held
+  as a bare number would be the one measurement in a logbook that a `units` block could not
+  convert.
+
+ *Settled:* **the name of the field it fills,
   with `default_` before it, and a plan file uses the field's own name and scale.** Decided on
   2026-10-01, at the author's word.
 
   The same idea had grown three names. A profile held `gradient_factor_low`, a plan file wrote
   `gf_low` and the settings `default_gf_low`; the settings said `default_bottom_po2` where a plan
   file said `po2_max_bottom`, and a plan file's `water` was a profile's `water_type`. Saving a
-  plan's settings with it would have added a fourth. So each idea has one name: a
+  plan's settings with it, `DATA-129`, would have added a fourth. So each idea has one name: a
   profile writes `po2_max_bottom`, a plan file reads it, and the setting a new plan starts from is
   `default_po2_max_bottom`. Where a profile already had a field, its name won, being the one a
   logbook already holds.
@@ -2061,6 +2086,7 @@ Kept with their identifiers so earlier discussion still resolves.
   | angle | `deg` |
   | density | `kg/m3` |
   | flow | `l/min` `m3/s` |
+  | speed | `m/min` `ft/min` |
 
   The first of each is the default. Case is part of the name: `C` is Celsius and `K` is
   kelvin, `Pa` is the pascal, and none can be written the other way round. Cubic metres

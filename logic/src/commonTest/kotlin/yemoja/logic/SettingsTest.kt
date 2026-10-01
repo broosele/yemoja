@@ -155,14 +155,14 @@ class SettingsTest {
         assertEquals(1.6, chosen.number(Settings.DEFAULT_PO2_MAX_DECO))
         assertEquals(0.18, chosen.number(Settings.DEFAULT_PO2_MIN))
         assertEquals(6.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DEPTH))
-        assertEquals(3.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
+        assertEquals(180.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
         assertEquals("salt", chosen.choice(Settings.DEFAULT_WATER_TYPE))
     }
 
     @Test
     fun `a new plan's reserve spends two minutes at depth before the way up`() {
         val (chosen, _) = settings()
-        assertEquals(2.0, chosen.number(Settings.DEFAULT_PROBLEM_SOLVING_TIME))
+        assertEquals(120.0, chosen.number(Settings.DEFAULT_PROBLEM_SOLVING_TIME))
     }
 
     @Test

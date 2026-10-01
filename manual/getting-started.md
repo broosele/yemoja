@@ -367,11 +367,13 @@ or **Attach to existing dive** and choose the dive from the list. Attaching alwa
 if the dive already has one by that name, the plan takes the next free letter. If you opened the
 planner from a dive, with **Add plan** or **Edit plan**, you can also save it back to that dive. **Open plan** lists every plan you have saved, by its
 dive and its name, and opens the one you choose the same way. What is saved is the dive itself: every depth and gas switch, the way up included,
-the cylinders, the gradient factors and the water. The planner's other settings, such as the
-oxygen limits, the safety stop and the reserve, are not saved, so a plan you open again starts
-from your defaults for those. The start and the dive it follows are saved too, and a plan saved
-as a new dive is filed under its date. A plan following one dive cannot be saved on to a dive that
-already follows a different one, and says so; it can still be saved as a new dive.
+and the cylinders. So is everything the planner was set to, and the lines you typed, so a plan
+you open again is the plan you saved, with the way up worked out again rather than your defaults
+of today. If the depths of a saved plan have been changed by hand since, it opens from those
+depths instead, each part of the dive a line of its own. The start and the dive it follows are
+saved too, and a plan saved as a new dive is filed under its date. A plan following one dive
+cannot be saved on to a dive that already follows a different one, and says so; it can still be
+saved as a new dive.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
 decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts

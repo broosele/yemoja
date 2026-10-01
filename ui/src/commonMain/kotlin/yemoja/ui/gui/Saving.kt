@@ -40,20 +40,22 @@ import yemoja.data.Units
 import yemoja.logic.Change
 import yemoja.logic.Outcome
 import yemoja.logic.Run
+import yemoja.logic.NumberSetting
 import yemoja.logic.Settings
 import yemoja.logic.Types
 import yemoja.logic.Universe
 import yemoja.logic.freeName
 import yemoja.logic.planKeyOf
 import yemoja.logic.planName
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /*
  * A plan from the Calculations tab put into the logbook, and a saved plan taken back out.
  *
- * **One way.** A plan is saved as the points of its run, the cylinders and the gradient factors,
- * which is what a planned profile holds. The planner's own settings, the oxygen limits, the safety
- * stop, the rates, the reserve, and which lines were typed, have nowhere to go and are not kept.
- * A plan opened again is its points as typed lines, under the settings the planner starts from.
+ * A plan is saved as the points of its run with its way up, its cylinders, every setting the
+ * planner had, and its lines as typed. The points are the plan, and the rest is kept so that it
+ * opens again as it was saved. `DATA-129`.
  *
  * See ../../../../../../gui/doc.md — `GUI-44`.
  */
@@ -133,7 +135,42 @@ internal fun planFieldsOf(shaping: Planned, conditions: Conditions, whole: Run):
             },
         ),
         "gas_sources" to Stored.Members(sources),
-    ) + start + after
+    ) + start + after + plannerFieldsOf(shaping, conditions, keys)
+}
+
+/**
+ * What the planner was set to for [shaping], and its lines as typed, for opening it again. `DATA-129`.
+ *
+ * A setting that will not read is left out, and the planner's own starting value answers for it
+ * when the plan is opened. A blank line is not kept.
+ */
+private fun plannerFieldsOf(shaping: Planned, conditions: Conditions, keys: List<String>): Map<String, Stored> {
+    val fields = linkedMapOf<String, Stored>(
+        "po2_max_bottom" to Stored.Leaf(conditions.bottomOxygen),
+        "po2_max_deco" to Stored.Leaf(conditions.decoOxygen),
+        "po2_min" to Stored.Leaf(conditions.leastOxygen),
+        "descent_rate" to Stored.Leaf(conditions.descentRate),
+        "ascent_rate" to Stored.Leaf(conditions.ascentRate),
+        "last_stop" to Stored.Leaf(conditions.lastStop),
+        "safety_stop_depth" to Stored.Leaf(conditions.safetyDepth),
+        "safety_stop_duration" to Stored.Leaf(conditions.safetySeconds.toLong()),
+    )
+    numberOf(shaping.panicFactor)?.let { fields["panic_factor"] = Stored.Leaf(it) }
+    problemSecondsOf(shaping)?.let { fields["problem_solving_time"] = Stored.Leaf(it.toLong()) }
+    fields["lost_gas_reserve"] = Stored.Leaf(shaping.lostGasScenario)
+    shaping.lostGas?.let { keys.getOrNull(it) }?.let { fields["lost_gas"] = Stored.Leaf("*$it") }
+    fields["shared_gas_reserve"] = Stored.Leaf(shaping.sharedScenario)
+    val lines = LinkedHashMap<String, Stored>()
+    for (segment in shaping.segments) {
+        val depth = numberOf(segment.depth) ?: continue
+        val line = linkedMapOf<String, Stored>("depth" to Stored.Leaf(depth))
+        durationOf(segment.duration)?.let { line["duration"] = Stored.Leaf(it.toLong()) }
+        numberOf(segment.rate)?.let { line["rate"] = Stored.Leaf(it) }
+        segment.gas?.let { keys.getOrNull(it) }?.let { line["gas_source"] = Stored.Leaf("*$it") }
+        lines["${lines.size + 1}"] = Stored.Members(line)
+    }
+    fields["runtime"] = Stored.Members(lines)
+    return fields
 }
 
 /**
@@ -242,15 +279,19 @@ internal fun onDiveOf(
 // --- A saved plan taken back out.
 
 /**
- * Fills [shaping] with the plan [profile] holds: its points as typed lines, its cylinders, its
- * gradient factors and its water. The planner's other settings are left as they are.
+ * Fills [shaping] with the plan [profile] holds: its lines, its cylinders, and the settings it was
+ * made under. A setting the plan does not hold is left as it is.
  *
- * **Each pair of points is a line**, a rise, a descent or a stay, timed by its duration so the
- * points come back to the second. The minutes a stop is held for, which the model writes a point
+ * **The lines are the ones typed** where the plan keeps them and they still lead to its points,
+ * which [universe] is needed to tell for a plan following another. `DATA-129`.
+ *
+ * **Otherwise each pair of points is a line**, a rise, a descent or a stay, timed by its duration
+ * so the points come back to the second. That is a plan saved before the lines were kept, or one
+ * whose points were changed by hand. The minutes a stop is held for, which the model writes a point
  * at a time, are one line. A line is given its gas where a switch falls at its start, and follows
  * the line above everywhere else.
  */
-internal fun Shaping.loadFrom(profile: Item, dive: Item?) {
+internal fun Shaping.loadFrom(profile: Item, dive: Item?, universe: Universe? = null) {
     val sources = keyedEntriesOf(profile, "gas_sources").ifEmpty {
         dive?.let { keyedEntriesOf(it, "gas_sources") }.orEmpty()
     }
@@ -287,11 +328,9 @@ internal fun Shaping.loadFrom(profile: Item, dive: Item?) {
             lines += Triple(to, ends - began, named)
         }
     }
-    segments.clear()
-    for ((metres, seconds, gas) in lines) {
-        segments += Segment(depth = plain(metres), duration = clockOf(seconds), gas = gas)
-    }
-    if (segments.isEmpty()) segments += Segment()
+    val guessed = lines.map { (metres, seconds, gas) ->
+        Segment(depth = plain(metres), duration = clockOf(seconds), gas = gas)
+    }.ifEmpty { listOf(Segment()) }
 
     (profile.single<Double>("gradient_factor_low") as? Result.Usable)?.value?.let { gradientLow = plain(it * 100) }
     (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value?.let { gradientHigh = plain(it * 100) }
@@ -307,6 +346,64 @@ internal fun Shaping.loadFrom(profile: Item, dive: Item?) {
     startTime = time?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" }.orEmpty()
     following = (profile.single<KeyReference>("previous_profile") as? Result.Usable)?.value
         ?.let { reference -> reference.id?.let { Following(it, reference.key) } }
+
+    loadSettingsFrom(profile, index)
+    val typed = typedLinesOf(profile, index)
+    segments.clear()
+    segments += typed?.takeIf { leadsTo(described().copy(segments = it), universe, points, switches) } ?: guessed
+}
+
+/** Fills [shaping] with the settings [profile] was planned under, where it holds them. `DATA-129`. */
+private fun Shaping.loadSettingsFrom(profile: Item, index: Map<String, Int>) {
+    fun read(field: String, setting: NumberSetting, into: (String) -> Unit) {
+        (profile.single<Double>(field) as? Result.Usable)?.value?.let { into(shownOf(setting, it)) }
+    }
+    read("po2_max_bottom", Settings.DEFAULT_PO2_MAX_BOTTOM) { bottomOxygen = it }
+    read("po2_max_deco", Settings.DEFAULT_PO2_MAX_DECO) { decoOxygen = it }
+    read("po2_min", Settings.DEFAULT_PO2_MIN) { leastOxygen = it }
+    read("descent_rate", Settings.DEFAULT_DESCENT_RATE) { descentRate = it }
+    read("ascent_rate", Settings.DEFAULT_ASCENT_RATE) { ascentRate = it }
+    read("last_stop", Settings.DEFAULT_LAST_STOP) { lastStop = it }
+    read("safety_stop_depth", Settings.DEFAULT_SAFETY_STOP_DEPTH) { safetyDepth = it }
+    read("safety_stop_duration", Settings.DEFAULT_SAFETY_STOP_DURATION) { safetyMinutes = it }
+    read("panic_factor", Settings.DEFAULT_PANIC_FACTOR) { panicFactor = it }
+    read("problem_solving_time", Settings.DEFAULT_PROBLEM_SOLVING_TIME) { problemMinutes = it }
+    (profile.single<Boolean>("lost_gas_reserve") as? Result.Usable)?.value?.let { lostGasScenario = it }
+    (profile.single<KeyReference>("lost_gas") as? Result.Usable)?.value?.let { lostGas = index[it.key] }
+    (profile.single<Boolean>("shared_gas_reserve") as? Result.Usable)?.value?.let { sharedScenario = it }
+}
+
+/** The lines [profile] keeps as they were typed, in their order, or null where it keeps none. */
+private fun typedLinesOf(profile: Item, index: Map<String, Int>): List<Segment>? {
+    val kept = keyedEntriesOf(profile, "runtime").ifEmpty { return null }
+    return kept.sortedBy { (key, _) -> key.toIntOrNull() ?: Int.MAX_VALUE }.map { (_, line) ->
+        Segment(
+            depth = numberSaid(line, "depth"),
+            duration = (line.single<Double>("duration") as? Result.Usable)?.value
+                ?.let { clockOf(it.roundToInt()) }.orEmpty(),
+            rate = numberSaid(line, "rate"),
+            gas = (line.single<KeyReference>("gas_source") as? Result.Usable)?.value?.let { index[it.key] },
+        )
+    }
+}
+
+/**
+ * Whether [planned] still makes the plan saved as [points] and [switches], the cylinder each switch
+ * names given by its place in the list.
+ */
+private fun leadsTo(
+    planned: Planned,
+    universe: Universe?,
+    points: List<Pair<Int, Double>>,
+    switches: List<Pair<Int, Int>>,
+): Boolean {
+    val ready = shapedOf(planned, universe) as? Shaped.Ready ?: return false
+    val whole = (workedOf(ready) as? Worked.Done)?.whole ?: return false
+    if (whole.depth.size != points.size) return false
+    val same = whole.depth.zip(points).all { (made, saved) ->
+        made.first == saved.first && abs(made.second - saved.second) < SAVED_DEPTH
+    }
+    return same && whole.switches.map { (second, key) -> second to gasIndexOf(key) } == switches
 }
 
 /** Empties [shaping] to a plan of one blank line on one cylinder, under the settings' defaults. */
@@ -339,7 +436,7 @@ internal fun Saving.open(bound: Bound, universe: Universe?, shaping: Shaping) {
         is Bound.Editing -> {
             shaping.startAfresh(universe?.settings)
             val profile = dive?.let { keyedEntriesOf(it, "profiles").firstOrNull { (key, _) -> key == bound.key }?.second }
-            if (profile != null) shaping.loadFrom(profile, dive)
+            if (profile != null) shaping.loadFrom(profile, dive, universe)
             name = prettyOf(bound.key)
         }
     }
@@ -561,6 +658,9 @@ private fun sample(second: Int, value: Stored): Stored = Stored.Elements(listOf(
 
 /** The one model built, which a plan is worked out with. `LOGIC-3`. */
 private const val MODEL = "buhlmann"
+
+/** How far a depth made again may lie from the one saved, which was rounded to a millimetre. */
+private const val SAVED_DEPTH = 0.01
 
 /** How wide the box a plan's name is typed in is. */
 private val NAME = 120.dp

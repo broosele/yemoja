@@ -151,4 +151,6 @@ private val SCALES: Map<Dimension, Map<String, Scale>> = mapOf(
     // A volume over time, which is what breathing gas is. Nine for cubic metres a second, the
     // unit UDDF writes: twenty litres a minute is 0.000333333 of one.
     Dimension.FLOW to mapOf("l/min" to Scale(1.0, decimals = 3), "m3/s" to Scale(60_000.0, 0.0, 9)),
+    // A rise or a descent, in the minutes a diver counts them in. `DATA-129`.
+    Dimension.SPEED to mapOf("m/min" to Scale(1.0, decimals = 3), "ft/min" to Scale(0.3048, 0.0, 3)),
 )

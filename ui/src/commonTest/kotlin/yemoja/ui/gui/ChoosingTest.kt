@@ -70,6 +70,17 @@ class ShownSettingTest {
     }
 
     @Test
+    fun `a time is held in seconds and typed in minutes`() {
+        assertEquals("3", shownOf(Settings.DEFAULT_SAFETY_STOP_DURATION, 180.0))
+        assertEquals("1.5", shownOf(Settings.DEFAULT_PROBLEM_SOLVING_TIME, 90.0))
+        assertEquals(Entered.Value(300.0), chosenOf(Settings.DEFAULT_SAFETY_STOP_DURATION, "5"))
+        assertEquals(
+            "Safety stop duration should be 0 to 15 min, but was 20",
+            assertIs<Entered.Wrong>(chosenOf(Settings.DEFAULT_SAFETY_STOP_DURATION, "20")).reason,
+        )
+    }
+
+    @Test
     fun `where a value came from is said beside it`() {
         assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.DEFAULT_GRADIENT_FACTOR_LOW))
         assertEquals("set in this logbook", answeredSaid(SettingsFile.LOGBOOK, Settings.DEFAULT_GRADIENT_FACTOR_LOW))

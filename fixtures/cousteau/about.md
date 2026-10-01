@@ -213,6 +213,11 @@ leave out.
 - Both plans run their depths to the surface, stops included. `a` holds a 40-metre bottom and
   four stops; `b` holds a 30-metre bottom and none, being the shallow alternative for a day
   with swell.
+- `a` keeps what the planner was set to, every setting and three typed lines under `runtime`,
+  and `b` keeps none, as a plan saved before they were kept. `a`'s lines were written by hand
+  rather than by the planner, so the way up the model works out from them is not the four stops
+  its points hold, and it opens from its points: the case of a plan changed after it was saved.
+  `a` names its deco mix as the `lost_gas`, through the same `*g2` its switches use.
 - `2026-10-03#1` is the afternoon, and the reason `previous_profile` exists. Its dive names
   `2026-10-03#0` as the dive before, whose primary is `*a`; its plan writes
   `"@2026-10-03#0*b"` instead, so it is planned against the shallow alternative rather than
