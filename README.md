@@ -51,6 +51,8 @@ are below.
 **A release is made as a draft first**, the installer and the app attached to it, and published
 after. The repository's releases are immutable, so nothing can be attached once one is published,
 and a tag a deleted release used cannot be used again. Tags are the bare version, `0.1.0`.
+`tool/release.py` does all of it from the build's own version, and checks the attached files'
+names before it publishes.
 
 **The installer** is built with `./gradlew :ui:packageMsi`, which writes
 `ui/build/compose/binaries/main/msi/Yemoja-<version>.msi`. It carries its own Java runtime and
