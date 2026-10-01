@@ -81,6 +81,14 @@ interface FileStore {
     fun delete(path: String)
 
     /**
+     * Drops whatever this store remembers about the files, which may have changed by other hands.
+     *
+     * Nothing, for a store that remembers nothing. One that keeps a folder's listing or a copy of
+     * what it read asks again after this. `JSON-28`.
+     */
+    fun forget() {}
+
+    /**
      * Every file holding items of [type], in the order they are to be read.
      *
      * The logbook's own come first — each file in its `type` folder, or the single `type.json`,

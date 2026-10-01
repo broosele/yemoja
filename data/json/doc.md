@@ -436,6 +436,30 @@ To settle when we discuss architecture:
 
 ## Settled
 
+- **JSON-28 — Whether a logbook is read through a copy.** *Settled:* **yes, a local copy of the
+  files, each taken from it only while its date and size are what they were.** Decided on
+  2026-10-01.
+
+  A logbook on a cloud drive is slow to read file by file: on a desktop each file is fetched
+  through the drive, and on a phone each is a separate request to the drive's own app. What a
+  folder's listing says of every file at once, its date and its size, is cheap on both: a few
+  milliseconds for three hundred and fifty files on a desktop, and the one query per folder a phone
+  makes anyway. So each file is stamped from the listing, and one whose stamp matches the copy is
+  read from the copy. On the author's logbook in Google Drive, opening went from about 400 ms to
+  about 70.
+
+  **The logbook stays the only truth.** A file with no stamp, one not copied, or one whose stamp
+  differs is read from the logbook and copied afresh, and what the application writes is read
+  back as written for as long as it is open. A folder's own date is not used: it moves when files
+  are added or removed, and not reliably when one is edited. A folder whose name begins with a dot
+  is not stamped, a logbook under version control holding thousands of files nothing reads. The
+  copy is one file kept outside the logbook, in the user's application data on a desktop and in
+  the app's own storage on a phone, one per logbook; losing it costs one slower opening.
+
+  `CachedFileStore` does it over any store, and each platform supplies the listing. Reading the
+  logbook again after an agent's turn forgets the stamps first, since what changed was changed by
+  other hands.
+
 - **JSON-7 — Whether a one-off can be richer than a string.** *Settled:* it cannot. A
   one-off is a name and nothing else. Anything with properties is an item — **generic**
   where it must still assert no identity, which is the mechanism that already exists for

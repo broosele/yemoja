@@ -17,6 +17,7 @@ import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.data.Units
+import yemoja.data.json.CachedFileStore
 import yemoja.data.json.DiskFileStore
 import yemoja.data.json.FileStore
 import yemoja.data.json.Json
@@ -191,12 +192,15 @@ class Universe(
      * differed, since what was read is not compared with what was held.
      */
     fun reload(): Outcome {
+        // Read afresh: whatever the store remembers of the files may be what changed. `JSON-28`.
+        store.forget()
         val (manifest, fresh) = try {
             val manifest = LogbookReader.manifest(store)
             manifest to LogbookReader.read(store, logbook.descriptions, manifest)
         } catch (refused: RuntimeException) {
             return Outcome.Refused("the logbook could not be read again: ${refused.message}")
         }
+        (store as? CachedFileStore)?.keep()
         for (description in logbook.descriptions) {
             for (item in logbook.allOf(description)) logbook.idOf(item)?.let { logbook.remove(it) }
         }
@@ -698,8 +702,12 @@ class Universe(
          * where it names an item this logbook does not hold — a reference that resolves to
          * nothing is a dangling one, not a reason to refuse the logbook. `JSON-22`.
          */
-        fun open(path: String, devices: Devices? = null): Universe {
-            val store = DiskFileStore(path)
+        fun open(
+            path: String,
+            devices: Devices? = null,
+            /** What the folder is read through, which a platform may give a copy to. `JSON-28`. */
+            store: FileStore = DiskFileStore(path),
+        ): Universe {
             // A folder that is not there answers every question with no, so without this a
             // mistyped path opens as an empty logbook rather than as a mistake.
             require(store.isFolder("")) { "$path should be a folder, and is not" }
@@ -733,6 +741,8 @@ class Universe(
         ): Universe {
             val manifest = LogbookReader.manifest(store)
             val items = LogbookReader.read(store, Types.ALL, manifest)
+            // What was read is kept for next time, where the store keeps a copy. `JSON-28`.
+            (store as? CachedFileStore)?.keep()
             val user = manifest.user?.let { items[it.id] }
             val owner = if (user?.description == Types.PERSON) user else null
             return Universe(items, owner, store, path, devices, staging, proposing)

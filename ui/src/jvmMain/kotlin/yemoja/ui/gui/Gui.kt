@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import yemoja.ui.copiedFrom
 import yemoja.ui.api.bundled
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.VerticalScrollbar
@@ -56,7 +57,7 @@ import yemoja.logic.Outcome
  */
 fun gui(folder: String? = null): Int {
     val universe = if (folder == null) null else try {
-        Universe.open(folder, FoundDevices())
+        Universe.open(folder, FoundDevices(), copiedFrom(folder))
     } catch (refused: Exception) {
         // A folder that is not a logbook, or a file in it that will not read. There is no window
         // yet to say so in, so it is said where the command was typed.
@@ -219,7 +220,7 @@ private fun made(where: String): Universe? = try {
  * dives, which is a truer answer than refusing a folder the reader picked.
  */
 private fun opened(where: String): Universe? = try {
-    Universe.open(where, FoundDevices())
+    Universe.open(where, FoundDevices(), copiedFrom(where))
 } catch (refused: Exception) {
     warn("$where could not be read: ${refused.message}")
     null

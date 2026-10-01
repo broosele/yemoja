@@ -22,21 +22,21 @@ form factor.
 writes a debug app. Tried on the SDK's emulator, Android 16, and on no phone yet.
 
 **A logbook lives in a folder the user picks**, `AND-5`. New and Open are one question on a phone,
-which folder, asked through Android's own picker; a folder holding a logbook is opened, and one
-that holds none is made into one. The grant is kept and the folder remembered, so the app opens
-on it again. It is reached through the storage access framework, by `GrantedFileStore`, whose
-answers about a folder's children are kept until something in it changes. **A folder is listed
-whole**: a cloud provider such as Google Drive's answers in parts, marking the list as still
-loading or giving one page of a longer one, and the first answer taken as the whole once read a
-logbook of 347 dives as 200. So the list is asked for again while it is loading, and page after
-page while it holds fewer than the provider counts, and a folder still loading after two minutes
-is refused rather than read in part. **A logbook is opened off the screen's thread**, the screen
-saying so meanwhile, since reading one from a cloud drive can take a while and a blank screen
-reads as a broken app. The libraries the app
-ships are read from inside it, and since a folder inside an app cannot be listed the build writes
-an index of them, which is how a new logbook learns what to declare. A review and an agent's
-changes are staged in the app's own storage, the grant reaching nothing beside the folder. No
-lock is taken, `JSON-27`.
+which folder, asked through Android's own picker; a folder holding a logbook is opened, and one that
+holds none is made into one. The grant is kept and the folder remembered, so the app opens on it
+again. It is reached through the storage access framework, by `GrantedFileStore`, whose answers
+about a folder's children are kept until something in it changes. **A folder is listed whole**: a
+cloud provider such as Google Drive's answers in parts, marking the list as still loading or giving
+one page of a longer one, and the first answer taken as the whole once read a logbook of 347 dives
+as 200. So the list is asked for again while it is loading, and page after page while it holds fewer
+than the provider counts, and a folder still loading after two minutes is refused rather than read
+in part. **Unchanged files come from a copy** in the app's own storage, the listing's date and size
+saying which, `JSON-28`. **A logbook is opened off the screen's thread**, the screen saying so
+meanwhile, since reading one from a cloud drive can take a while and a blank screen reads as a
+broken app. The libraries the app ships are read from inside it, and since a folder inside an app
+cannot be listed the build writes an index of them, which is how a new logbook learns what to
+declare. A review and an agent's changes are staged in the app's own storage, the grant reaching
+nothing beside the folder. No lock is taken, `JSON-27`.
 
 **On a phone, one page at a time**, `PHONE-2`. The tab row is the open tab with a menu of the
 others, back, and add, edit and delete; the agent's button is not there, `PHONE-1`. A tab shows
@@ -77,8 +77,8 @@ the sea and the fish in front, and the same shapes alone for a phone that tints 
 `tool/icons.py` writes it from `yemoja.svg`, drawn at a little over the part a launcher shows, so
 the sea reaches the mask's edges and the fish stays clear of them.
 
-**Not yet:** import and export, which need Android's pickers for a file. What a tooltip says over a greyed button is said on a long press, the
-toolkit's own answer on a touch screen.
+**Not yet:** import and export, which need Android's pickers for a file. What a tooltip says over a
+greyed button is said on a long press, the toolkit's own answer on a touch screen.
 
 ## Settled
 

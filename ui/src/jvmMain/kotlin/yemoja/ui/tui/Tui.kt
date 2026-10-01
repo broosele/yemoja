@@ -1,5 +1,6 @@
 package yemoja.ui.tui
 
+import yemoja.ui.copiedFrom
 import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
 import yemoja.logic.Universe
@@ -21,7 +22,7 @@ import yemoja.logic.divecomputer.FoundDevices
  */
 fun tui(folder: String): Int {
     val universe = try {
-        Universe.open(folder, FoundDevices())
+        Universe.open(folder, FoundDevices(), copiedFrom(folder))
     } catch (refused: Exception) {
         // A folder that is not a logbook, or a file in it that will not read. Either way the
         // message names what was wrong, and a terminal that never started needs no tidying up.

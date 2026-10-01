@@ -38,7 +38,7 @@ internal class GrantedFileStore(
     private val listed = HashMap<String, Map<String, Entry>>()
 
     /** One child of a folder: its document, and whether it is a folder itself. */
-    private class Entry(val id: String, val folder: Boolean)
+    private class Entry(val id: String, val folder: Boolean, val stamp: String? = null)
 
     private val root: String = DocumentsContract.getTreeDocumentId(tree)
 
@@ -80,6 +80,29 @@ internal class GrantedFileStore(
         // Truncated as it is written, so a shorter text leaves nothing of the longer behind.
         val stream = resolver.openOutputStream(uriOf(id), "wt") ?: error("$path could not be written")
         stream.bufferedWriter().use { it.write(text) }
+    }
+
+    /** The folders are listed again when next asked, having perhaps changed by other hands. */
+    override fun forget() {
+        listed.clear()
+    }
+
+    /**
+     * Every file in the folder by its path there, stamped with its date and size, from the
+     * listings already asked for. A folder whose name begins with a dot is passed over. `JSON-28`.
+     */
+    fun stamps(): Map<String, String> {
+        val found = HashMap<String, String>()
+        fun walk(folder: String, prefix: String) {
+            for ((name, entry) in childrenOf(folder)) {
+                when {
+                    entry.folder && !name.startsWith(".") -> walk(entry.id, "$prefix$name/")
+                    !entry.folder -> entry.stamp?.let { found["$prefix$name"] = it }
+                }
+            }
+        }
+        walk(root, "")
+        return found
     }
 
     override fun delete(path: String) {
@@ -163,14 +186,25 @@ internal class GrantedFileStore(
 
     /** The children from [offset] on, added to [into]. */
     private fun pageOf(children: Uri, offset: Int, into: MutableMap<String, Entry>): Page {
-        val asked = arrayOf(Document.COLUMN_DISPLAY_NAME, Document.COLUMN_DOCUMENT_ID, Document.COLUMN_MIME_TYPE)
+        val asked = arrayOf(
+            Document.COLUMN_DISPLAY_NAME,
+            Document.COLUMN_DOCUMENT_ID,
+            Document.COLUMN_MIME_TYPE,
+            Document.COLUMN_LAST_MODIFIED,
+            Document.COLUMN_SIZE,
+        )
         val paging = if (offset == 0) null else Bundle().apply { putInt(ContentResolver.QUERY_ARG_OFFSET, offset) }
         val rows = resolver.query(children, asked, paging, null) ?: return Page(0, false, -1)
         rows.use {
             var count = 0
             while (it.moveToNext()) {
                 val folder = it.getString(2) == Document.MIME_TYPE_DIR
-                into[it.getString(0)] = Entry(it.getString(1), folder)
+                // A provider that does not know a file's date or size gives no stamp, and that
+                // file is always read from the folder. `JSON-28`.
+                val modified = if (it.isNull(3)) 0L else it.getLong(3)
+                val size = if (it.isNull(4)) -1L else it.getLong(4)
+                val stamp = if (modified > 0 && size >= 0) "$modified/$size" else null
+                into[it.getString(0)] = Entry(it.getString(1), folder, stamp)
                 count += 1
             }
             val extras = it.extras

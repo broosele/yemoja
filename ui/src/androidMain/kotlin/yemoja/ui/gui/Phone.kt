@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import yemoja.data.json.CachedFileStore
 import yemoja.data.json.DiskFileStore
 import yemoja.data.json.LogbookReader
 import yemoja.logic.Universe
@@ -185,7 +186,11 @@ private sealed class Opening {
  * beside a granted one that the grant reaches.
  */
 private fun openedIn(context: Context, tree: Uri, devices: Devices): Opening {
-    val store = GrantedFileStore(context.contentResolver, tree)
+    // Read through a copy of the files kept in the app's own storage, so a folder on a cloud drive
+    // gives up only what changed since the last opening. One copy per folder. `JSON-28`.
+    val granted = GrantedFileStore(context.contentResolver, tree)
+    val copies = context.filesDir.resolve("copies").resolve(tree.toString().hashCode().toUInt().toString(16))
+    val store = CachedFileStore(granted, granted::stamps, DiskFileStore(copies.path))
     val called = tree.lastPathSegment?.substringAfterLast(':')?.ifBlank { null } ?: "this folder"
     val staging = DiskFileStore(context.filesDir.resolve("import").path)
     val proposing = DiskFileStore(context.filesDir.resolve("proposed").path)
