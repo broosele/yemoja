@@ -133,7 +133,7 @@ sealed class Followed {
 
 /**
  * What [shaping] starts from, in [universe]: fresh where it follows nothing, and otherwise what the
- * run it follows leaves after the interval between that dive's end and this start. `LOGIC-37`.
+ * run it follows leaves after the interval between that dive's end and this start. `LOGIC-43`.
  */
 fun followedOf(shaping: Planned, universe: Universe?): Followed {
     val following = shaping.following ?: return Followed.Fresh

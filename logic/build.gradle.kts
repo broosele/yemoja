@@ -15,7 +15,7 @@ kotlin {
     }
     // The website's planner. `wasmJsMain` holds the one thing a browser needs that nothing else
     // does: a JSON-in, JSON-out entry point a page can call without a Kotlin type in sight.
-    // `LOGIC-37`, website/doc.md in the yemoja_website repository.
+    // `LOGIC-43`, website/doc.md in the yemoja_website repository.
     wasmJs {
         browser()
         binaries.executable()

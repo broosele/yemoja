@@ -1144,7 +1144,7 @@ private fun seriesOf(seconds: List<Int>, values: List<Double>): Series =
 /**
  * Seconds into a run as a reader counts them, minutes and seconds: `24:00`.
  *
- * Not internal: the planner, `LOGIC-37`, reads a clock the same way from the `ui` module, and a
+ * Not internal: the planner, `LOGIC-43`, reads a clock the same way from the `ui` module, and a
  * second copy of six characters is not worth keeping apart.
  */
 fun clockOf(second: Int): String =

@@ -3,7 +3,7 @@ package yemoja.logic
 import yemoja.data.json.Json
 
 /*
- * What a browser calls: one plan in as JSON text, one answer out as JSON text. `LOGIC-37`,
+ * What a browser calls: one plan in as JSON text, one answer out as JSON text. `LOGIC-43`,
  * website/doc.md in the yemoja_website repository.
  *
  * The shape is `manual/planning-from-a-file.md`'s own: what `yemoja plan --json` answers with for

@@ -12,12 +12,12 @@ import kotlin.math.roundToLong
 
 /*
  * A dive planned apart from any dive: segments, settings and gases in, the way up and what it
- * costs out. Moved out of the window's own code, `GUI-43`, so that something other than the
+ * costs out. Moved out of the window's own code, `LOGIC-43`, so that something other than the
  * window — a web page compiled from this module, among others — can ask for the same calculation.
  * Nothing here draws anything; the window's Calculations tab is the one place that still does,
  * calling into exactly what is declared below.
  *
- * See ../../../../../doc.md — `LOGIC-37`.
+ * See ../../../../../doc.md — `LOGIC-43`.
  */
 
 /**

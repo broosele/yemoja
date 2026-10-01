@@ -14,7 +14,7 @@ kotlin {
         compileSdk = property("androidSdk").toString().toInt()
         minSdk = property("androidOldest").toString().toInt()
     }
-    // The website's planner, compiled from the logic layer rather than built for it, `LOGIC-37`.
+    // The website's planner, compiled from the logic layer rather than built for it, `LOGIC-43`.
     // Okio publishes for this target at the version pinned above, which is all that is asked here.
     // A library target only: nothing in this layer is the thing that runs in a browser.
     wasmJs {
@@ -23,7 +23,7 @@ kotlin {
 
     sourceSets {
         // What a JVM and Android share: the real disk, through DiskFileStore. A browser has none,
-        // `LOGIC-37`, so wasmJs stays on FileStore and MemoryFileStore alone, both fully common.
+        // `LOGIC-43`, so wasmJs stays on FileStore and MemoryFileStore alone, both fully common.
         val javaMain by creating { dependsOn(commonMain.get()) }
         jvmMain.get().dependsOn(javaMain)
         androidMain.get().dependsOn(javaMain)

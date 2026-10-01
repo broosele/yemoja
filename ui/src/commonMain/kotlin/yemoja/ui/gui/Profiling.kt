@@ -89,7 +89,7 @@ import kotlin.math.roundToInt
 /*
  * The plan form while the tab holds it: the lines, the settings and the cylinders. The model
  * itself — segments, settings and gases in, the way up and what it costs out — moved to the logic
- * layer, `LOGIC-37` and `GUI-43`, so that something other than this window can ask for the same
+ * layer, `LOGIC-43`, so that something other than this window can ask for the same
  * calculation. What stays here is Compose state (so typing redraws) and the screen that edits it.
  *
  * See ../../../../../../gui/doc.md — `GUI-43`.

@@ -1091,6 +1091,21 @@ To settle when we discuss architecture and features:
    minute of a dive. Where both slots carry pressures, or neither carries a mix, nothing is
    joined: the picture is already two cylinders or already one.
 
+- **LOGIC-43 — What lets more than the window ask for a plan.** *Settled:* **the planner's own
+  arithmetic lives here, reached alike by the window, the API layer, and a browser build.**
+
+  `Segment`, `Planned`, `Shaped` and `Worked`, the gas reserve's reckoning, a plan read from JSON
+  and the answer written back to it, and the table a file of them compares to — none of it reads a
+  logbook or draws anything, so none of it belongs to the window alone. It moved here so that a
+  front end with no window at all, `yemoja plan` and the agent's `plan` tool, could call the same
+  functions instead of a copy; the same reason now compiles a single JSON-in-JSON-out function,
+  `calculatePlan`, to WebAssembly for the website's own planner, `website/doc.md` in the
+  yemoja_website repository. The window's `Shaping` and its `PlanForm` screen stay where they are
+  and call what moved rather than holding a copy.
+
+  **Not `LOGIC-37`.** That settles what `evaluate` answers about a profile, which this calls
+  rather than duplicates; the two were cited as one for a while, which this corrects.
+
 - **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones
    something used, unless there is only one.**
 

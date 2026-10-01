@@ -21,7 +21,7 @@ import yemoja.ui.gui.planFieldsOf
  *
  * See ../../../../../../ui/api/doc.md — `API-2` and `API-7`. Both take the description `API-6`
  * settles, and both run the window's own calculation rather than one of their own. The answering
- * half — `Calculated`, `Schedule` and `calculated` — lives in the logic layer, `LOGIC-37`, being
+ * half — `Calculated`, `Schedule` and `calculated` — lives in the logic layer, `LOGIC-43`, being
  * pure arithmetic over a description; what is here is the half that writes.
  */
 

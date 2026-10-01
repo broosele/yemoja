@@ -38,7 +38,7 @@ import yemoja.logic.uddf.UddfFormatException
 
 /**
  * The real disk, at [path]. A JVM and Android share one answer; a browser has no disk to be, and
- * never calls this, the planner being the only thing `wasmJs` runs. `LOGIC-37`.
+ * never calls this, the planner being the only thing `wasmJs` runs. `LOGIC-43`.
  */
 internal expect fun fileStoreAt(path: String): FileStore
 

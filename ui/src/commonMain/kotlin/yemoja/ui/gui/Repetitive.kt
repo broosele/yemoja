@@ -27,7 +27,7 @@ import yemoja.logic.titleOf
 /*
  * A planned dive's start, and the earlier run it follows, drawn. See
  * ../../../../../../gui/doc.md — `GUI-43`. [Following], [Start] and [Followed] themselves, and the
- * functions that read them, moved to the logic layer, `LOGIC-37`, alongside the rest of the model;
+ * functions that read them, moved to the logic layer, `LOGIC-43`, alongside the rest of the model;
  * what stays here is what offers runs to choose from and draws the row that chooses one.
  */
 
