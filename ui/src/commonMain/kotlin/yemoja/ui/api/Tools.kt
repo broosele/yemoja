@@ -28,6 +28,7 @@ import yemoja.logic.Measure
 import yemoja.logic.Outcome
 import yemoja.logic.Staging
 import yemoja.logic.Types
+import yemoja.ui.gui.PROFILES
 import yemoja.logic.Universe
 import yemoja.logic.fieldAt
 import yemoja.logic.figureOf
@@ -77,8 +78,8 @@ class Tools(
      * Where the logbook's files are and how to treat them, while the user allows direct access.
      *
      * Refused while they do not, naming the box, and refused for a logbook that is not on disk.
-     * The path is told here and nowhere else, so an agent that has not been allowed in has
-     * nothing to look for. `API-5`.
+     * An agent may already know where the logbook is, being started beside it; what this adds is
+     * how to treat the files, and what keeps it out is the box rather than the path. `API-10`.
      */
     fun files(): Reply {
         if (!direct()) return notDirect()
@@ -346,9 +347,6 @@ class Tools(
             Outcome.Done()
         }
     }
-
-    /** The collection a dive's recordings and plans are kept in. */
-    private val PROFILES = "profiles"
 
     /**
      * The fields [members] holds as paths under [prefix], each ending at a value.

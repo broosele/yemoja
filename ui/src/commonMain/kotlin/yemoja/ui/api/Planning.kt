@@ -235,7 +235,7 @@ internal fun saved(
     universe: Universe,
     planned: Planned,
     dive: String? = null,
-    name: String = "Plan A",
+    name: String = FIRST_PLAN,
 ): Saved {
     val made = when (val read = preparedOf(universe, planned, name)) {
         is Prepared.Refused -> return Saved.Refused(read.reason)
@@ -261,3 +261,6 @@ internal fun saved(
         )
     }
 }
+
+/** What a plan is called where nobody names it: the first letter free, `GUI-44`. */
+internal const val FIRST_PLAN = "Plan A"

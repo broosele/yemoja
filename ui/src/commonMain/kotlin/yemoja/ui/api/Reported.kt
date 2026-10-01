@@ -1,7 +1,7 @@
 package yemoja.ui.api
 
 import yemoja.data.Stored
-import kotlin.math.round
+import yemoja.ui.gui.plain
 
 /*
  * A calculated plan written out, as a table to compare and as the whole answer.
@@ -32,16 +32,16 @@ internal val COLUMNS: List<String> = listOf(
 /** [schedule] as one row of the table, under [name], in the order [COLUMNS] gives. */
 internal fun rowOf(name: String, schedule: Schedule): List<String> = listOf(
     name,
-    plain(schedule.maxDepthMetres),
-    plain(bottomMinutesOf(schedule)),
-    plain(schedule.runtimeSeconds / SECONDS_A_MINUTE),
-    plain(schedule.stopSeconds / SECONDS_A_MINUTE),
-    schedule.deepestStop?.let { plain(it) }.orEmpty(),
-    schedule.stops.joinToString(" ") { "${plain(it.metres)}@${plain(it.seconds / SECONDS_A_MINUTE)}" },
-    plain(schedule.cnsPercent),
-    plain(schedule.otu),
+    plain(schedule.maxDepthMetres, 1),
+    plain(bottomMinutesOf(schedule), 1),
+    plain(schedule.runtimeSeconds / SECONDS_A_MINUTE, 1),
+    plain(schedule.stopSeconds / SECONDS_A_MINUTE, 1),
+    schedule.deepestStop?.let { plain(it, 1) }.orEmpty(),
+    schedule.stops.joinToString(" ") { "${plain(it.metres, 1)}@${plain(it.seconds / SECONDS_A_MINUTE, 1)}" },
+    plain(schedule.cnsPercent, 1),
+    plain(schedule.otu, 1),
     schedule.gasUsedLitres.entries.sortedBy { it.key }
-        .joinToString(" ") { "${it.key}:${plain(it.value)}" },
+        .joinToString(" ") { "${it.key}:${plain(it.value, 1)}" },
     "",
 )
 
@@ -130,15 +130,5 @@ internal fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
 internal fun saidOf(name: String, refused: String): Stored = Stored.Members(
     mapOf("name" to Stored.Leaf(name), "refused" to Stored.Leaf(refused)),
 )
-
-/** A number to one decimal, without a trailing nought. */
-private fun plain(value: Double): String {
-    val rounded = round(value * 10) / 10
-    return if (rounded == rounded.toLong().toDouble()) {
-        rounded.toLong().toString()
-    } else {
-        rounded.toString()
-    }
-}
 
 private const val SECONDS_A_MINUTE = 60.0

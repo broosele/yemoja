@@ -16,7 +16,6 @@ import yemoja.data.ReferenceDescription
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Role
-import yemoja.data.Series
 import yemoja.data.Stored
 import yemoja.data.Units
 import yemoja.logic.Change

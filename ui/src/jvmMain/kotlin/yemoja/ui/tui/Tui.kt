@@ -4,7 +4,6 @@ import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
 import yemoja.logic.Universe
 import yemoja.logic.divecomputer.FoundDevices
-import yemoja.logic.Types
 
 /*
  * The terminal itself: the one place that reads a keyboard and puts characters on a screen.

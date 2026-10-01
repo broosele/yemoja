@@ -89,7 +89,7 @@ class DownloadingTest {
             MemoryFileStore(emptyMap()),
             Matching.NONE,
         )
-        val taken = takenIn(into.importing!!, into.logbook)
+        val taken = applied(into.importing!!, into.logbook, Reviewing())
         assertEquals(2, taken.many)
         assertNull(taken.refusal)
         assertEquals(2, into.logbook.allOf(Types.DIVE).size, "both are in the logbook now")
@@ -228,7 +228,7 @@ class DownloadingTest {
             MemoryFileStore(emptyMap()),
             Matching.NONE,
         )
-        takenIn(into.importing!!, into.logbook)
+        applied(into.importing!!, into.logbook, Reviewing())
         assertEquals(2, into.logbook.allOf(Types.DIVE).size, "the one held and the one that came")
         val arrived = into.logbook.allOf(Types.DIVE).first { it !== into.logbook["2026-01-01#0"] }
         assertEquals(30.0, (arrived.single<Double>("max_depth") as yemoja.data.Result.Usable).value)
@@ -238,7 +238,7 @@ class DownloadingTest {
     fun `nothing staged is nothing taken`() {
         val into = logbook()
         into.importFrom(arriving(), MemoryFileStore(emptyMap()), Matching.NONE)
-        val taken = takenIn(into.importing!!, into.logbook)
+        val taken = applied(into.importing!!, into.logbook, Reviewing())
         assertEquals(0, taken.many)
         assertNull(taken.refusal)
     }

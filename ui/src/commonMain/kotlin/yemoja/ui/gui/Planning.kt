@@ -6,8 +6,6 @@ import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Stored
-import yemoja.logic.Ascended
-import yemoja.logic.Change
 import yemoja.logic.Evaluated
 import yemoja.logic.Refusal
 import yemoja.logic.Severity

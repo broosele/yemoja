@@ -258,7 +258,7 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     ) { request ->
         val plan = request.arguments?.get("plan")?.let { storedOf(it) }
         val dive = request.text("dive")
-        val name = request.text("name") ?: PLAN
+        val name = request.text("name") ?: FIRST_PLAN
         carried(onto) {
             if (plan == null) {
                 Reply("no plan was given", refused = true)
@@ -297,9 +297,6 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     }
     return server
 }
-
-/** What a plan is called where the agent does not say, which is what the window calls its first. */
-private const val PLAN = "Plan A"
 
 /** Serves [server] to one agent, reading its requests from [input] and answering on [output]. */
 suspend fun serve(server: Server, input: Source, output: Sink): ServerSession =
@@ -344,7 +341,7 @@ private fun JsonObjectBuilder.property(name: String, description: String) {
     }
 }
 
-private fun bundled(path: String): String {
+internal fun bundled(path: String): String {
     val stream = Bundled::class.java.getResourceAsStream("/$path")
         ?: error("$path is not bundled, and the build should have done that")
     return stream.bufferedReader().use { it.readText() }

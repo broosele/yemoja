@@ -358,29 +358,6 @@ internal fun withinLines(item: Item, chosen: Int): List<Line> {
 }
 
 /**
- * The keys of a field holding one thing per key, with [chosen] set apart.
- *
- * What sits under each is said in a word — how many fields an item has, how many samples a
- * series took — so that a reader picking one is picking something rather than a name.
- */
-internal fun keyLines(field: FieldDescription, held: List<Pair<String, Any>>, chosen: Int):
-    List<Line> {
-    if (held.isEmpty()) return listOf(Line(listOf(Span("  (empty)"))))
-    val width = held.maxOf { it.first.length }
-    return heading("Under each key") + held.mapIndexed { at, (key, entry) ->
-        val here = if (at == chosen) setOf(Style.SELECTED) else emptySet()
-        Line(listOf(Span("  " + key.padEnd(width) + "  " + summary(field, entry), here)))
-    }
-}
-
-/** What one entry under a key amounts to, in a word. */
-private fun summary(field: FieldDescription, entry: Any): String = when (entry) {
-    is Series -> samplesIn(entry)
-    is Item -> "${entry.description.fields.size} fields"
-    else -> field.format(entry, Units.DEFAULT)
-}
-
-/**
  * Choice is one row of a chooser: a value to take, a way to type one, or the field left empty.
  *
  * A chooser is offered where a field's values are known, so what a reader does there is pick

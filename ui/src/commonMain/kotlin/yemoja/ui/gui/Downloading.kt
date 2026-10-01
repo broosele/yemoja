@@ -345,28 +345,6 @@ internal fun takeIn(import: Import, arriving: Arriving, onto: String?): Outcome 
 }
 
 /**
- * Take everything that arrived into the logbook, each as a dive of its own.
- *
- * **As each was proposed**, which is onto the dive it overlaps in time where there is one and
- * as a dive of its own where there is not. It is what pressing every row's own button would do,
- * offered once for a reader who has read the list and agrees with it.
- *
- * It stops at the first refusal and says so, leaving the rest staged: a reader who is told the
- * fourth would not go in can look at it, and what is left in the folder is what has not been
- * decided. `RECON-1`.
- */
-internal fun takenIn(import: Import, into: ItemSet): Taken {
-    var many = 0
-    for (arriving in arrivingIn(import, into, nextNumberIn(into))) {
-        when (val done = takeIn(import, arriving, arriving.onto)) {
-            is Outcome.Refused -> return Taken(many, done.reason)
-            is Outcome.Done -> many++
-        }
-    }
-    return Taken(many, null)
-}
-
-/**
  * Answer where an arriving dive was made: at [site] already held, or nowhere.
  *
  * The site the fix proposed is dropped where the answer is somewhere else and no other dive

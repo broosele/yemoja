@@ -3,7 +3,6 @@ package yemoja.ui.gui
 import yemoja.data.Date
 import yemoja.data.Item
 import yemoja.data.ItemSet
-import yemoja.logic.Types
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.log10

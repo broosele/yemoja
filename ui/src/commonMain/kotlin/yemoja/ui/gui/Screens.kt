@@ -118,7 +118,6 @@ import yemoja.data.Units
 import yemoja.data.ItemReader
 import yemoja.data.Cardinality
 import yemoja.data.Element
-import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
@@ -129,7 +128,6 @@ import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.logic.divecomputer.DiveComputer
-import yemoja.logic.Ascended
 import yemoja.logic.Change
 import yemoja.logic.Evaluated
 import yemoja.logic.Import
@@ -138,7 +136,6 @@ import yemoja.logic.Outcome
 import yemoja.logic.Settings
 import yemoja.logic.Types
 import yemoja.logic.Universe
-import yemoja.logic.completeAscent
 import yemoja.logic.evaluate
 
 /*
@@ -2656,7 +2653,7 @@ private fun diveIdOf(item: Item): String? =
     (item as? ReferenceableItem)?.takeIf { it.description == Types.DIVE }?.let { item.set.idOf(it) }
 
 /** What a dive's profiles are called, and the one keyed inset a plan can be added to. */
-private const val PROFILES = "profiles"
+internal const val PROFILES: String = "profiles"
 
 /**
  * A row of small tabs, each a button as wide as its name, the chosen one tinted.

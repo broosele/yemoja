@@ -44,7 +44,7 @@ class ImportingTest {
         val counted = countedIn(import)
         assertEquals(listOf("Dive site", "Person"), counted.map { it.type }, "in the model's order")
         assertEquals(listOf(1, 2), counted.map { it.many })
-        assertEquals(1, divesIn(import), "and a dive is reviewed rather than counted")
+        assertEquals(1, arrivedIn(import), "and a dive is reviewed rather than counted")
     }
 
     @Test

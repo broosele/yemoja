@@ -527,7 +527,7 @@ private val GENERIC_FILES =
 private val GENERIC_FOLDERS = setOf("dist", "build", "bin", "lib", "out", "src", "node_modules")
 
 /** What separates a command from its arguments, however many spaces were typed. */
-private val SPACES = Regex("\\s+")
+internal val SPACES: Regex = Regex("\\s+")
 
 /**
  * [exchanges] with [piece] added to what the agent is saying.

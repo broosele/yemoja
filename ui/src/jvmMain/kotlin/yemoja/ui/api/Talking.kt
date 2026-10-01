@@ -5,6 +5,7 @@ import com.agentclientprotocol.model.ContentBlock
 import com.agentclientprotocol.model.SessionUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collect
+import yemoja.ui.gui.SPACES
 import yemoja.ui.gui.Conversation
 
 /*
@@ -107,5 +108,3 @@ internal class Talking(
     override val refused: List<String> get() = hosted?.refused.orEmpty()
 }
 
-/** What separates a command from its arguments, however many spaces a user typed. */
-private val SPACES = Regex("\\s+")

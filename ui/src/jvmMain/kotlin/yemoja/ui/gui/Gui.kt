@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import yemoja.ui.api.bundled
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -264,11 +265,9 @@ private fun warn(message: String) {
 /** What day it is here, which the greeting remarks on. */
 private fun today(): Date = LocalDate.now().let { Date(it.year, it.monthValue, it.dayOfMonth) }
 
-/** A file's text, as the build bundled it. One missing from the jar is a broken build. */
-private fun bundled(path: String): String {
-    val stream = Bundled::class.java.getResourceAsStream("/$path")
-        ?: error("$path is not bundled, and the build should have done that")
-    return stream.bufferedReader().use { it.readText() }
+/** A link out of the manual, handed to whatever the desktop opens such things with. */
+private fun browse(url: String) {
+    if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI(url))
 }
 
 /**
@@ -281,11 +280,3 @@ private fun bundled(path: String): String {
  */
 internal fun eventThread(): CoroutineDispatcher =
     Executor { SwingUtilities.invokeLater(it) }.asCoroutineDispatcher()
-
-/** Something to look up resources from. A function has no class of its own to ask. */
-private object Bundled
-
-/** A link out of the manual, handed to whatever the desktop opens such things with. */
-private fun browse(url: String) {
-    if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI(url))
-}

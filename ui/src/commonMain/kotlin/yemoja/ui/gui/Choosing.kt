@@ -28,6 +28,7 @@ import yemoja.logic.NumberSetting
 import yemoja.logic.Setting
 import yemoja.logic.Settings
 import yemoja.logic.Universe
+import kotlin.math.pow
 import kotlin.math.roundToLong
 
 /*
@@ -338,8 +339,9 @@ private fun isPercentage(setting: NumberSetting): Boolean =
     setting == Settings.DEFAULT_GF_LOW || setting == Settings.DEFAULT_GF_HIGH
 
 /** A number as a person writes it: `18`, not `18.0`, and `9.5` where there is a fraction. */
-internal fun plain(value: Double): String {
-    val rounded = (value * 1000).roundToLong() / 1000.0
+internal fun plain(value: Double, decimals: Int = 3): String {
+    val scale = 10.0.pow(decimals)
+    val rounded = (value * scale).roundToLong() / scale
     return if (rounded == rounded.roundToLong().toDouble()) {
         rounded.roundToLong().toString()
     } else {

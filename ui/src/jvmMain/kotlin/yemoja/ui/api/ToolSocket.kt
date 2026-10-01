@@ -115,9 +115,6 @@ class ToolSocket(private val tools: Tools, private val onto: CoroutineContext) {
 
     private companion object {
 
-        /** Only this machine reaches it, and only through the loopback. */
-        const val LOOPBACK = "127.0.0.1"
-
         /** How many connections may wait to be accepted. A conversation or two, never a crowd. */
         const val BACKLOG = 4
     }
@@ -133,7 +130,7 @@ class ToolSocket(private val tools: Tools, private val onto: CoroutineContext) {
  */
 fun relay(port: Int, token: String, input: InputStream, output: OutputStream): Int {
     val connection = try {
-        Socket(InetAddress.getByName("127.0.0.1"), port)
+        Socket(InetAddress.getByName(LOOPBACK), port)
     } catch (refused: java.io.IOException) {
         System.err.println("no window is listening on $port: ${refused.message}")
         return 1
@@ -202,3 +199,6 @@ private const val TOKEN_BYTES = 24
 
 /** How long a token is written, which is what bounds what is read looking for one. */
 private const val TOKEN_LENGTH = TOKEN_BYTES * 2
+
+/** Only this machine reaches the socket, and only through the loopback; the relay too. */
+private const val LOOPBACK = "127.0.0.1"

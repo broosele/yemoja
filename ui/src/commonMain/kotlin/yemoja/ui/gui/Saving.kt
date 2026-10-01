@@ -80,7 +80,7 @@ internal class Saving {
     var bound: Bound? by mutableStateOf(null)
 
     /** What the plan will be called on the dive it is added to, typed over freely. */
-    var name: String by mutableStateOf("Plan A")
+    var name: String by mutableStateOf(yemoja.ui.api.FIRST_PLAN)
 
     var said: String? by mutableStateOf(null)
 }
@@ -185,7 +185,7 @@ internal fun planNameOn(dive: Item?): String {
  */
 internal fun attachedKeyOf(dive: Item, name: String): String {
     val typed = planKeyOf(name)
-    val taken = keyedEntriesOf(dive, "profiles").map { it.first }.toSet()
+    val taken = keyedEntriesOf(dive, PROFILES).map { it.first }.toSet()
     return if (typed.isNotEmpty() && typed !in taken) typed else planKeyOf(planNameOn(dive))
 }
 
@@ -196,7 +196,7 @@ internal fun attachedKeyOf(dive: Item, name: String): String {
 internal fun plansIn(universe: Universe): List<Pair<Bound.Editing, String>> =
     universe.logbook.allOf(Types.DIVE).flatMap { dive ->
         val id = universe.logbook.idOf(dive) ?: return@flatMap emptyList()
-        keyedEntriesOf(dive, "profiles").filter { (_, profile) -> isPlanned(profile) }
+        keyedEntriesOf(dive, PROFILES).filter { (_, profile) -> isPlanned(profile) }
             .map { (key, _) -> Bound.Editing(id, key) to "$id: ${prettyOf(key)}" }
     }.sortedByDescending { it.second }
 
@@ -207,7 +207,7 @@ internal fun newDiveOf(key: String, fields: Map<String, Stored>, dive: Map<Strin
             Types.DIVE,
             mapOf(
                 "primary_profile" to Stored.Leaf("*$key"),
-                "profiles" to Stored.Members(mapOf(key to Stored.Members(fields))),
+                PROFILES to Stored.Members(mapOf(key to Stored.Members(fields))),
             ) + dive,
         ),
     )
@@ -226,12 +226,12 @@ internal fun onDiveOf(
     diveFields: Map<String, Stored> = emptyMap(),
 ): List<Change> {
     val written = LinkedHashMap<String, Stored>()
-    for ((held, entry) in keyedEntriesOf(dive, "profiles")) {
+    for ((held, entry) in keyedEntriesOf(dive, PROFILES)) {
         written[held] = ItemWriter.write(entry, Units.DEFAULT)
     }
     val kept = (written[key] as? Stored.Members)?.members.orEmpty()
     written[key] = Stored.Members(kept + fields)
-    val changes = mutableListOf<Change>(Change.Write(dive, "profiles", Stored.Members(written)))
+    val changes = mutableListOf<Change>(Change.Write(dive, PROFILES, Stored.Members(written)))
     if (written.size == 1) changes += Change.Write(dive, "primary_profile", Stored.Leaf("*$key"))
     // A dive already following one keeps it; followingClashOf refuses a plan that says otherwise.
     val follows = dive.single<Reference>("previous_dive") !is Result.Absent
@@ -387,7 +387,7 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
     val nameWrong = when {
         planKeyOf(saving.name).isEmpty() -> "Name is missing"
         bound is Bound.Adding && dive != null &&
-            keyedEntriesOf(dive, "profiles").any { (key, _) -> key == planKeyOf(saving.name) } ->
+            keyedEntriesOf(dive, PROFILES).any { (key, _) -> key == planKeyOf(saving.name) } ->
             "Name should be new on this dive: ${saving.name.trim()} exists"
         else -> null
     }

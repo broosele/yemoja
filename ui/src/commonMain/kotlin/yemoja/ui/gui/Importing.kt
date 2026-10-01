@@ -77,10 +77,6 @@ internal fun summaryOf(counted: List<Counted>): String? {
     return "Also arriving: $said."
 }
 
-/** How many dives arrived, which is what the review lists. */
-internal fun divesIn(import: Import): Int =
-    import.incoming.count { it.description == Types.DIVE }
-
 /** Decided is where an import's review stands once a dive has been answered, and what it says. */
 internal class Decided(val arrived: Int, val said: String?)
 
