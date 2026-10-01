@@ -185,11 +185,11 @@ object LogbookReader {
             // writer emits it settled so that saving an unchanged logbook produces no diff.
             if (path.startsWith("$type/")) {
                 val id = path.removePrefix("$type/").removeSuffix(".json")
-                items.putIfAbsent(id, Held(rest, units))
+                if (id !in items) items[id] = Held(rest, units)
             } else {
                 for ((id, held) in rest.members) {
                     val members = held as? Stored.Members ?: throw fieldsExpected(id, path)
-                    items.putIfAbsent(id, Held(members, units))
+                    if (id !in items) items[id] = Held(members, units)
                 }
             }
         }

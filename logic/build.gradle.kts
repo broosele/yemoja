@@ -13,6 +13,13 @@ kotlin {
         compileSdk = property("androidSdk").toString().toInt()
         minSdk = property("androidOldest").toString().toInt()
     }
+    // The website's planner. `wasmJsMain` holds the one thing a browser needs that nothing else
+    // does: a JSON-in, JSON-out entry point a page can call without a Kotlin type in sight.
+    // `LOGIC-37`, website/doc.md in the yemoja_website repository.
+    wasmJs {
+        browser()
+        binaries.executable()
+    }
 
     sourceSets {
         // What a JVM and Android share, both being Java underneath: the date, and in time the

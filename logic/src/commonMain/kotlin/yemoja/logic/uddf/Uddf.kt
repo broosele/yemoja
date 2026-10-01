@@ -278,7 +278,7 @@ object Uddf {
         for ((at, tank) in dive.everywhere("tankdata", SAMPLES_APART).withIndex()) {
             for (link in tank.all("link")) {
                 val ref = link.attributes["ref"] ?: continue
-                if (ref in mixes) out.putIfAbsent(ref, keyAt(at))
+                if (ref in mixes && ref !in out) out[ref] = keyAt(at)
             }
         }
         return out

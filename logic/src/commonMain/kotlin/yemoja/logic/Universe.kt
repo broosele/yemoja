@@ -18,7 +18,6 @@ import yemoja.data.Stored
 import yemoja.data.TextDescription
 import yemoja.data.Units
 import yemoja.data.json.CachedFileStore
-import yemoja.data.json.DiskFileStore
 import yemoja.data.json.FileStore
 import yemoja.data.json.Json
 import yemoja.data.json.LogbookFormatException
@@ -36,6 +35,12 @@ import yemoja.logic.uddf.UddfFormatException
  *
  * See ../../../../../doc.md — the layer's own document is logic/doc.md, under "The Universe".
  */
+
+/**
+ * The real disk, at [path]. A JVM and Android share one answer; a browser has no disk to be, and
+ * never calls this, the planner being the only thing `wasmJs` runs. `LOGIC-37`.
+ */
+internal expect fun fileStoreAt(path: String): FileStore
 
 /**
  * Universe is what is open: the logbook, and in time whatever else is being worked on.
@@ -442,7 +447,7 @@ class Universe(
         val exported = Uddf.write(logbook)
         val cut = maxOf(to.lastIndexOf('/'), to.lastIndexOf('\\'))
         val folder = if (cut < 0) "." else to.substring(0, cut).ifEmpty { "/" }
-        DiskFileStore(folder).writeText(to.substring(cut + 1), exported.text)
+        fileStoreAt(folder).writeText(to.substring(cut + 1), exported.text)
         return exported
     }
 
@@ -459,7 +464,7 @@ class Universe(
      * A logbook opened from nowhere in particular stages beside the source instead.
      */
     fun importFrom(from: String): Outcome {
-        val store = DiskFileStore(from)
+        val store = fileStoreAt(from)
         val where = stagedIn(from)
             ?: return Outcome.Refused("this logbook has nowhere to stage an import")
         if (store.isFolder("")) {
@@ -593,7 +598,7 @@ class Universe(
      */
     private fun stagedIn(source: String?): FileStore? {
         stagingStore?.let { return it }
-        return (path ?: source)?.let { DiskFileStore("$it.import") }
+        return (path ?: source)?.let { fileStoreAt("$it.import") }
     }
 
     /** Put the review down, leaving whatever is staged where it is. */
@@ -610,7 +615,7 @@ class Universe(
      * nowhere has nowhere beside it and gets none. `RECON-8`.
      */
     val staging: Staging? by lazy {
-        val where = proposing ?: path?.let { DiskFileStore(it + Staging.BESIDE) }
+        val where = proposing ?: path?.let { fileStoreAt(it + Staging.BESIDE) }
         where?.let { Staging.open(this, it) }
     }
 
@@ -706,7 +711,7 @@ class Universe(
             path: String,
             devices: Devices? = null,
             /** What the folder is read through, which a platform may give a copy to. `JSON-28`. */
-            store: FileStore = DiskFileStore(path),
+            store: FileStore = fileStoreAt(path),
         ): Universe {
             // A folder that is not there answers every question with no, so without this a
             // mistyped path opens as an empty logbook rather than as a mistake.
@@ -764,7 +769,7 @@ class Universe(
          * there are people, and a new logbook has none.
          */
         fun create(path: String, devices: Devices? = null): Universe {
-            made(DiskFileStore(path), path)
+            made(fileStoreAt(path), path)
             return open(path, devices)
         }
 
