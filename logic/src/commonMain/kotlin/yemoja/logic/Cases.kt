@@ -129,6 +129,28 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
         is Boolean -> written
         else -> return Made.Wrong("$name gas_switch_stops should be true or false, but was $written")
     }
+    val sharedGasReserve = when (val written = (members["shared_gas_reserve"] as? Stored.Leaf)?.value) {
+        null -> true
+        is Boolean -> written
+        else -> return Made.Wrong("$name shared_gas_reserve should be true or false, but was $written")
+    }
+    val lostGasReserve = when (val written = (members["lost_gas_reserve"] as? Stored.Leaf)?.value) {
+        null -> true
+        is Boolean -> written
+        else -> return Made.Wrong("$name lost_gas_reserve should be true or false, but was $written")
+    }
+    // The cylinder it loses, by its number counted from 1 as every cylinder here is. Left out, the
+    // first deco cylinder, as the window leaves it.
+    val lostGas = textOf(members["lost_gas"])?.let { written ->
+        val number = written.toIntOrNull()?.takeIf { it >= 1 }
+            ?: return Made.Wrong("$name lost_gas should be a cylinder's number, not $written")
+        if (number > gases.size.coerceAtLeast(1)) {
+            return Made.Wrong(
+                "$name lost_gas should be one of the ${gases.size.coerceAtLeast(1)} cylinders, not $number",
+            )
+        }
+        number - 1
+    }
     return Made.Plan(
         Planned(
             segments = segments,
@@ -145,6 +167,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             lastStop = setting("last_stop", Settings.DEFAULT_LAST_STOP),
             switchStops = switchStops,
             water = textOf(members["water_type"]) ?: Settings.DEFAULT_WATER_TYPE.default,
+            panicFactor = setting("panic_factor", Settings.DEFAULT_PANIC_FACTOR),
+            problemMinutes = setting("problem_solving_time", Settings.DEFAULT_PROBLEM_SOLVING_TIME),
+            lostGasScenario = lostGasReserve,
+            lostGas = lostGas,
+            sharedScenario = sharedGasReserve,
         ),
     )
 }

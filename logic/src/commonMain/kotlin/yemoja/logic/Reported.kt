@@ -122,8 +122,39 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
                 )
             },
         ),
+        "reserve" to Stored.Members(
+            schedule.reserves.entries.associate { (scenario, answer) -> keyOf(scenario) to reserveSaid(answer) },
+        ),
     ),
 )
+
+/** [scenario] as the plan-file format names it, the same name it is turned on or off by. */
+private fun keyOf(scenario: Scenario): String = when (scenario) {
+    Scenario.LOST_GAS -> "lost_gas"
+    Scenario.SHARED -> "shared_gas"
+}
+
+private fun reserveSaid(answer: ReserveAnswer): Stored = when (answer) {
+    is ReserveAnswer.Refused -> Stored.Members(mapOf("refused" to Stored.Leaf(answer.reason)))
+    is ReserveAnswer.Done -> Stored.Members(
+        mapOf(
+            "worst_seconds" to Stored.Leaf(answer.worstSeconds.toLong()),
+            "worst_m" to Stored.Leaf(answer.worstMetres),
+            "needed_litres" to Stored.Members(answer.neededLitres.mapValues { Stored.Leaf(it.value) }),
+            "reserve_bar" to Stored.Members(answer.reserveBar.mapValues { Stored.Leaf(it.value) }),
+            "shortfall" to answer.shortfall?.let {
+                Stored.Members(
+                    mapOf(
+                        "second" to Stored.Leaf(it.second.toLong()),
+                        "cylinder" to Stored.Leaf(it.cylinder),
+                        "left_bar" to Stored.Leaf(it.leftBar),
+                        "needed_bar" to Stored.Leaf(it.neededBar),
+                    ),
+                )
+            }.let { it ?: Stored.Leaf(null) },
+        ),
+    )
+}
 
 /** A plan that would not calculate, as the whole answer: its name and the reason. */
 fun saidOf(name: String, refused: String): Stored = Stored.Members(

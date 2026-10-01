@@ -56,6 +56,40 @@ class Schedule(
     val gasUsedLitres: Map<String, Double>,
     /** What the model has to say against the plan, earliest first. */
     val warnings: List<Warning>,
+    /** What each gas-reserve scenario asks of the cylinders, absent where it is switched off. */
+    val reserves: Map<Scenario, ReserveAnswer>,
+)
+
+/**
+ * ReserveAnswer is what one gas-reserve scenario came to, or why it could not be worked out.
+ *
+ * Immutable.
+ */
+sealed class ReserveAnswer {
+
+    class Done(
+        /** The moment the scenario costs the most gas, in seconds from the start. */
+        val worstSeconds: Int,
+        val worstMetres: Double,
+        /** Litres each cylinder gives up at the worst moment, by its number. */
+        val neededLitres: Map<String, Double>,
+        /** The same on each cylinder's own gauge, in bar, for the ones that say how big they are. */
+        val reserveBar: Map<String, Double>,
+        /** The first moment a cylinder holds less than the way up from there needs, or absent. */
+        val shortfall: ReserveShortfall?,
+    ) : ReserveAnswer()
+
+    class Refused(val reason: String) : ReserveAnswer()
+}
+
+/** A moment a cylinder holds less than the way up from there would need. Immutable. */
+class ReserveShortfall(
+    val second: Int,
+    /** The cylinder short, by its number. */
+    val cylinder: String,
+    /** Both pressures are on that cylinder's own gauge, in bar. */
+    val leftBar: Double,
+    val neededBar: Double,
 )
 
 /**
@@ -100,11 +134,12 @@ fun calculated(planned: Planned): Calculated {
         is Worked.Done -> worked
         is Worked.Refused -> return Calculated.Refused(worked.reason)
     }
-    return Calculated.Done(scheduleOf(ready, done))
+    val reckoned = reckonedOf(planned, done, ready.conditions)
+    return Calculated.Done(scheduleOf(ready, done, reckoned))
 }
 
 /** The schedule [done] came to, with the lines [ready] was asked for marked as the caller's. */
-private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done): Schedule {
+private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done, reckoned: Reckoned): Schedule {
     val typed = ready.legs.map { lineOf(it, added = false) }
     val added = done.tail.map { lineOf(it, added = true) }
     val lines = typed + added
@@ -124,7 +159,26 @@ private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done): Schedule {
         desaturationSeconds = done.evaluated.desaturation,
         gasUsedLitres = done.evaluated.gasUsed.mapKeys { numberedOf(it.key) },
         warnings = done.evaluated.findings.map { Warning(it.second, it.severity, it.said) },
+        reserves = reckoned.scenarios.mapNotNull { (scenario, reckoning) ->
+            reckoning?.let { scenario to reserveAnswerOf(it) }
+        }.toMap(),
     )
+}
+
+private fun reserveAnswerOf(reckoning: Reckoning): ReserveAnswer = when (reckoning) {
+    is Reckoning.Wrong -> ReserveAnswer.Refused(reckoning.reason)
+    is Reckoning.Done -> {
+        val reserve = reckoning.reserve
+        ReserveAnswer.Done(
+            worstSeconds = reserve.worst,
+            worstMetres = reserve.worstMetres,
+            neededLitres = reserve.needed.mapKeys { numberedOf(it.key) },
+            reserveBar = reserve.reserve.mapKeys { numberedOf(it.key) },
+            shortfall = reserve.shortfall?.let {
+                ReserveShortfall(it.second, numberedOf(it.source), it.left, it.needed)
+            },
+        )
+    }
 }
 
 private fun lineOf(leg: Leg, added: Boolean): Line = Line(

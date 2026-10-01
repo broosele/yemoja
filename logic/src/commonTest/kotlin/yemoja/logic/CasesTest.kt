@@ -127,6 +127,58 @@ class CasesTest {
                     ).reason,
         )
     }
+
+    @Test
+    fun `the gas reserve's own settings default like every other`() {
+        val case = oneOf(FORTY)
+        assertEquals(
+            shownOf(Settings.DEFAULT_PANIC_FACTOR, Settings.DEFAULT_PANIC_FACTOR.default),
+            case.planned.panicFactor,
+        )
+        assertEquals(
+            shownOf(Settings.DEFAULT_PROBLEM_SOLVING_TIME, Settings.DEFAULT_PROBLEM_SOLVING_TIME.default),
+            case.planned.problemMinutes,
+        )
+        assertEquals(true, case.planned.lostGasScenario)
+        assertEquals(null, case.planned.lostGas, "the first deco cylinder, worked out rather than named")
+        assertEquals(true, case.planned.sharedScenario)
+    }
+
+    @Test
+    fun `lost_gas names a cylinder by number, and lost_gas_reserve switches the scenario off`() {
+        val lines = """"lines": [{"depth": 20, "duration": 600}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]"""
+        assertEquals(1, oneOf("""{$lines, "lost_gas": 2}""").planned.lostGas, "counted from nought")
+        assertEquals(true, oneOf("""{$lines, "lost_gas": 2}""").planned.lostGasScenario)
+        assertEquals(
+            false,
+            oneOf("""{$lines, "lost_gas_reserve": false}""").planned.lostGasScenario,
+        )
+        assertEquals(null, oneOf("""{$lines}""").planned.lostGas, "the first deco cylinder, left to find itself")
+        assertEquals(
+            "case 1 lost_gas should be one of the 2 cylinders, not 3",
+            assertIs<Read.Wrong>(read("""{$lines, "lost_gas": 3}""")).reason,
+        )
+        assertTrue(
+            "should be a cylinder's number" in
+                    assertIs<Read.Wrong>(read("""{$lines, "lost_gas": "two"}""")).reason,
+        )
+        assertTrue(
+            "lost_gas_reserve should be true or false" in
+                    assertIs<Read.Wrong>(read("""{$lines, "lost_gas_reserve": "yes"}""")).reason,
+        )
+    }
+
+    @Test
+    fun `shared_gas_reserve is true or false, as a logbook writes a tick`() {
+        assertEquals(
+            false,
+            oneOf("""{"lines": [{"depth": 20}], "shared_gas_reserve": false}""").planned.sharedScenario,
+        )
+        assertEquals(
+            "case 1 shared_gas_reserve should be true or false, but was yes",
+            assertIs<Read.Wrong>(read("""{"lines": [{"depth": 20}], "shared_gas_reserve": "yes"}""")).reason,
+        )
+    }
 }
 
 class ReportedTest {

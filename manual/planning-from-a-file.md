@@ -98,8 +98,12 @@ factor as a proportion.
 | `safety_stop_depth`, `safety_stop_duration` | Safety stop depth, Safety stop duration |
 | `po2_max_bottom`, `po2_max_deco`, `po2_min` | pO₂ max bottom, pO₂ max deco, pO₂ min |
 | `water_type` | `salt` or `fresh` |
+| `panic_factor`, `problem_solving_time` | Panic stress factor, Problem-solving time |
+| `lost_gas_reserve`, `lost_gas` | The *Lost* scenario's switch, and which cylinder it loses by number, left out for the first deco cylinder |
+| `shared_gas_reserve` | The *Buddy out of gas* scenario's switch |
 
-[settings.md](settings.md) says what each of them does.
+[settings.md](settings.md) says what each of them does, and
+[decompression.md](decompression.md#planning-a-dive) what the two gas-reserve scenarios are.
 
 ## The table
 
@@ -134,6 +138,12 @@ well:
 - `warnings` — what the model has to say against the plan, each with the second it happened at
   and how serious it is.
 - `no_flight_seconds` and `desaturation_seconds`.
+- `reserve` — the gas reserve, keyed `lost_gas` and `shared_gas`; a scenario switched off is left
+  out. Each holds `worst_seconds` and `worst_m`, the moment it costs the most; `needed_litres` and
+  `reserve_bar`, what each cylinder must give up at that moment, by its number; and `shortfall`,
+  the first moment a cylinder's own gauge would run short, or nothing where none does. A scenario
+  that cannot be worked out — a cylinder with no SAC, most often — is an object with only a
+  `refused`, the rest of the plan answered regardless.
 
 A plan that will not calculate is an object with its `name` and a `refused`.
 
