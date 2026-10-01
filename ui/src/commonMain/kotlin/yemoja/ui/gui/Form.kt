@@ -444,7 +444,7 @@ private fun SingleEditor(
             onChoose = { onChange(it, givenOf(kind, it)) },
         )
         Kind.SUGGESTED -> Suggested(
-            options = (field as TextDescription).suggestedSet.orEmpty().toList(),
+            options = LocalChanger.current.suggested(field as TextDescription),
             shown = shown,
             onChange = { onChange(it, givenOf(kind, it)) },
         )

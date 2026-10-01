@@ -57,4 +57,19 @@ class ReviewedTest {
         assertEquals(2, draft.tabs["dive.gas_sources"])
         assertEquals(null, draft.tabs["dive.profiles"], "each collection its own")
     }
+
+    @Test
+    fun `a suggested field offers what the logbook holds, not only what ships with it`() {
+        val store = yemoja.data.json.MemoryFileStore(
+            mapOf("dive_site.json" to """{"quarry": {"facilities": ["boat access"]}}"""),
+        )
+        val universe = yemoja.logic.Universe(
+            yemoja.data.json.LogbookReader.read(store, yemoja.logic.Types.ALL), null, store,
+        )
+        val facilities = yemoja.logic.Types.DIVE_SITE["facilities"] as yemoja.data.TextDescription
+        val offered = Changer(universe).suggested(facilities)
+        assertTrue("parking" in offered, "what ships with it")
+        assertTrue("boat access" in offered, "and what another site was given")
+        assertTrue("boat access" !in Changer(null).suggested(facilities), "no logbook, presets alone")
+    }
 }

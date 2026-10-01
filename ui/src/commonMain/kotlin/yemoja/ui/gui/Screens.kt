@@ -119,6 +119,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import yemoja.data.Stored
+import yemoja.data.TextDescription
 import yemoja.data.Units
 import yemoja.data.ItemReader
 import yemoja.data.Cardinality
@@ -322,6 +323,10 @@ internal class Changer(private val universe: Universe?) {
 
     /** What the user chose, or absent where no logbook is open. `UI-2`. */
     val settings: Settings? get() = universe?.settings
+
+    /** What [field] offers: its presets, then what this logbook already holds in it. */
+    fun suggested(field: TextDescription): List<String> =
+        universe?.suggested(field) ?: field.suggestedSet.orEmpty().toList()
 
     fun change(changes: List<Change>): Outcome {
         // A window opened on no logbook has nothing to write to, and nothing in it asks. `GUI-30`.
