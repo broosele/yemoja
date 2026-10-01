@@ -408,8 +408,8 @@ once and corrected. The numbers stay unused rather than being given to something
   puts the read aside for good, and so does taking every dive in. An access code the device
   handed over is kept on its gear item at the first staging, once.
 
-  `TUI-8` stays open: the terminal still reads in the foreground. The port now carries what an
-  answer there would need, progress and a cancel, on the session.
+  The terminal still reads in the foreground, which `TUI-8` accepts. The port carries what it
+  would need to do otherwise, progress and a cancel, on the session.
 
 - **GUI-47 — What the item view does with a start and an end.** *Settled:* **the pair is one
   line, a range, labelled by what they bracket.**

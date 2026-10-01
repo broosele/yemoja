@@ -605,13 +605,17 @@ description says so, not because this front end knows which fields those are. `T
 
 ## Open questions
 
-One is open. The rest are settled and kept here, since a decision not to relitigate is worth as
+None is open. They are settled and kept here, since a decision not to relitigate is worth as
 much as one still to make.
 
-- **TUI-8 — What a job that takes minutes looks like.** *Open.* Reading a dive computer is the
-  first thing this interface does that does not finish between one keystroke and the next. It
-  can take minutes on a full computer, and at present the screen simply stops: nothing says what
-  is happening, nothing says how far along it is, and nothing offers to give up. Choosing *a dive
+- **TUI-8 — What a job that takes minutes looks like.** *Settled:* **the screen stops while a
+  download runs, and that is accepted.** The window is the first version's front end and reads
+  in the background, `GUI-52`; the terminal does not need to. What follows is the question as it
+  was put, kept for whoever reopens it.
+
+  Reading a dive computer is the first thing this interface does that does not finish between
+  one keystroke and the next. It can take minutes on a full computer, and at present the screen
+  simply stops: nothing says what is happening, nothing says how far along it is, and nothing offers to give up. Choosing *a dive
   computer* on the import screen now stops for four seconds before the list appears, which is
   the Bluetooth scan listening; that is the same silence, shorter. One thing does speak during
   a download: a computer that shows a code has it asked for on the bottom line, typed and
@@ -626,8 +630,6 @@ much as one still to make.
   40, [esc] to stop* between dives is enough. The second needs no concurrency and would not
   answer a device that hangs.
 
-  It bears on `LOGIC-21`, which asks where a download's report of what it dropped goes: both are
-  what a download has to say for itself.
 
 - **TUI-1 — Full-screen interactive or a command-driven REPL?** *Settled:* full-screen
   interactive. The tabs, the list and the cursor keys are what was asked for, and a REPL

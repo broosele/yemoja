@@ -25,8 +25,8 @@ implementation behind it was not read and is not needed.
 
 **One asymmetry worth stating up front.** UDDF is a file, so a bad mapping can be redone
 from the same file tomorrow. A dive computer's log is a ring buffer: it overwrites itself,
-and a dive dropped on the way in is usually gone for good. That is why `LOGIC-10` insists a
-download report what it dropped, and why `LOGIC-17` modelled rather than dropped.
+and a dive dropped on the way in is usually gone for good. That is why `LOGIC-17` modelled
+rather than dropped.
 
 ## What a download creates
 
@@ -244,10 +244,8 @@ with memory laid out by hand. Three of those
 constants were wrong when first written, and one of them mapped `decostop` onto a safety stop,
 which is exactly what `LOGIC-13` refuses.
 
-Two more gaps, each of them a decision rather than typing:
+One more gap, a decision rather than typing:
 
-- **The drop report.** `LOGIC-10` requires a download to say what it dropped, and nothing
-  collects it. What is dropped is decided; where the list goes is not.
 - **`LOGIC-15`'s tolerances.** The thinning is built and the figures it uses are provisional.
 
 **A fix has a source, and it is read.** The library declares a location *field* and nothing
@@ -294,9 +292,6 @@ Decided and not built, or built and not proven. Each is here rather than in some
   over. What was not got cannot be fetched by resuming, because a device counts from its newest
   dive and the fingerprint says where to stop, not where to start. The older dives take another
   full download that lasts.
-- **The drop report is not collected.** `LOGIC-10` settled that a value with no field is dropped
-  *and that the download says what it dropped*. What is dropped is decided field by field above;
-  where the saying goes is `LOGIC-21`.
 - **The fix crosses the port, as the dive's first one.** No parser answers the location
   *field*, but the Shearwater driver fills a location *sample*, and a Perdix sends one on nearly
   every dive: always on the first sample, and sometimes a second on the last. So the walk keeps
@@ -305,9 +300,9 @@ Decided and not built, or built and not proven. Each is here rather than in some
   does with it is a question with three answers.
 - **A sample type the walk does not name is dropped without being counted.** Twenty Perdix
   dives went past carrying twenty-three positions and six and a half thousand
-  remaining-bottom-time readings, and nothing said so. `LOGIC-10` requires a download to report
-  what it dropped, and `LOGIC-21` asks where that report goes; until then the model is being
-  told less than the device offers and cannot tell how much.
+  remaining-bottom-time readings, and nothing said so. Nothing is meant to, `LOGIC-21`, but
+  this list of what is dropped is then the only place it is said, and it does not yet name every
+  sample type the walk passes over.
 - **The serial has not been read off a device.** The JVM listens for the device-info event and
   hands the serial over as a decimal number, and nothing has yet compared that number with what
   a Perdix prints on its screen. The comparison reads a hexadecimal spelling as its number, so
@@ -328,12 +323,7 @@ Decided and not built, or built and not proven. Each is here rather than in some
 
 ## Open questions
 
-- **LOGIC-21 — Where a download's drop report goes.** `LOGIC-10` requires one and nothing
-  collects it. What is dropped is known as it happens — a device field with no home, a sample
-  type this model does not keep — so the question is what carries it and who reads it: a value
-  the download answers with beside the items, something the review shows, or a line in the
-  journal `FEAT-4` will keep. It bears on `TUI-8`, both being what a download has to say for
-  itself while and after it runs.
+None is open.
 
 What this document also waits on is elsewhere:
 
@@ -341,4 +331,3 @@ What this document also waits on is elsewhere:
   and proven on the two devices met. Every other vendor is unproven.
 - **`RECON-2`** — whether an import can be accepted in part, which `LOGIC-18` gives a new
   kind of candidate to.
-- **`TUI-8`** — what a job that takes minutes looks like, which is what a download is.

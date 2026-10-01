@@ -371,19 +371,6 @@ To settle when we discuss architecture and features:
    port deliberately keeps out, so each implementation carries those two tables. The cost is
    accepted for what it buys — a port that names no library — and it is bounded: a wrong word
    lands in a fixed set and reads back *unusable*, not as a plausible lie.
-- **LOGIC-21 — Where a download's drop report goes.** `LOGIC-10` settled that a value this
-   model has no field for is dropped *and that the download says what it dropped*. The first
-   half is built and the second is not: nothing collects the saying.
-
-   What is dropped is known as it happens — a device field with no home, a sample type this
-   model does not keep — so the question is what carries it and who reads it. A value the
-   download answers with, beside the items it made; something the review shows before anything
-   is taken in; or a line in the journal `FEAT-4` will keep, which is where *what happened* is
-   meant to live. The three are not exclusive and the cheapest is the first.
-
-   Whichever it is, it bears on `TUI-8`: a download that says nothing while it runs and nothing
-   when it finishes is the same silence twice.
-
 - **LOGIC-22 — How the characteristics a Bluetooth LE device talks through are found.**
    *Settled:* **by looking, not by a table.** libdivecomputer knows which advertised names are
    which model and nothing about the connection behind them; the application hands it a stream
@@ -502,6 +489,13 @@ To settle when we discuss architecture and features:
    race, so *live* costs only what it costs to hold, not what it costs to protect.
 
 ## Settled
+
+- **LOGIC-21 — Where a download's drop report goes.** *Settled:* **nowhere, there being no
+  report.** `LOGIC-10` said a download should say what it dropped, and nothing collected the
+  saying. The answer is that it is not needed. What a download drops is decided field by field
+  and is the same on every download, so it is said once, in
+  [divecomputer.md](divecomputer.md), rather than again each time a computer is read. `LOGIC-10`
+  is revised to match.
 
 - **LOGIC-41 — What depth of air a mix is equivalent to.** *Settled:* **`equivalentAirDepth` and
   `equivalentNarcoticDepth`, public beside `maximumOperatingDepth`, with whether oxygen is narcotic
@@ -1666,7 +1660,7 @@ To settle when we discuss architecture and features:
    field absent, and absent reads as zero — a dive whose zone nobody knows would be
    indistinguishable from one taken on a computer set to GMT. Writing it says what was assumed.
 - **LOGIC-10 — What a download does with a value the model has no field for.** *Settled:*
-   **it is dropped, and the download says what it dropped.**
+   **it is dropped.**
 
    A dive computer offers more than this model keeps: dive mode, ppO2, a rebreather setpoint,
    remaining bottom time, heart rate, a compass bearing, and whatever a maker puts in its own
@@ -1684,10 +1678,10 @@ To settle when we discuss architecture and features:
    application reads is not waiting to be understood — it is being stored. Putting the two in
    one place would say they are the same kind of thing.
 
-   Dropping is only honest if it is visible, which is why the second half is not decoration.
-   A download reports what it took and what it left, the way [reconciliation](reconciliation.md)
-   reports everything else, so a user who wanted a figure knows it was seen and refused rather
-   than never noticed.
+   **Revised: no report.** This said at first that a download also reports what it dropped,
+   so that a user who wanted a figure would know it was seen and refused. `LOGIC-21` asked where
+   that report would go, and the answer was that it is not needed: what is dropped is the same
+   on every download, and [divecomputer.md](divecomputer.md) says what it is.
 
    Each of the eight can still be modelled later, on its own merits and as a feature. `divemode`
    is the precedent: it was looked at for UDDF and deliberately left out. What this settles is
