@@ -666,7 +666,7 @@ private fun Conditions(shaping: Shaping) {
                     shaping.safetyMinutes,
                     "min"
                 ) { shaping.safetyMinutes = it }
-                Labelled("Gas switch stops", PlannerTips.SWITCH_STOPS) {
+                Labelled("Gas switches between stops", PlannerTips.SWITCH_STOPS) {
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
                         Checkbox(
                             checked = shaping.switchStops,
@@ -1041,7 +1041,7 @@ private val RATE = 110.dp
 private val GAS = 110.dp
 private val BUTTON = 22.dp
 
-private val SETTING_LABEL = 150.dp
+private val SETTING_LABEL = 170.dp
 internal val SETTING = 104.dp
 
 private val INDEX = 16.dp

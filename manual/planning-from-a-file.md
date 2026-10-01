@@ -94,7 +94,7 @@ factor as a proportion.
 | `gradient_factor_low`, `gradient_factor_high` | GF low, GF high, from 0 to 1 — **no default** |
 | `descent_rate`, `ascent_rate` | Descent rate, Ascent rate |
 | `last_stop` | Last stop |
-| `gas_switch_stops` | Gas switch stops, `true` or `false`; `false` if left out |
+| `gas_switch_stops` | Gas switches between stops, `true` or `false`; `false` if left out |
 | `safety_stop_depth`, `safety_stop_duration` | Safety stop depth, Safety stop duration |
 | `po2_max_bottom`, `po2_max_deco`, `po2_min` | pO₂ max bottom, pO₂ max deco, pO₂ min |
 | `water_type` | `salt` or `fresh` |
