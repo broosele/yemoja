@@ -439,3 +439,46 @@ class OpeningTest {
         assertEquals(2, working.gases.size)
     }
 }
+
+class NewPlanTest {
+
+    @Test
+    fun `an untouched planner has nothing to save, and a typed line is a change`() {
+        val saving = Saving()
+        val shaping = Shaping()
+        shaping.prefill(null)
+        assertTrue(!saving.isChanged(shaping, null), "a blank plan asks nothing")
+        shaping.segments[0] = Segment("30")
+        assertTrue(saving.isChanged(shaping, null))
+    }
+
+    @Test
+    fun `a new plan is empty, bound to no dive, called by the first name, and unchanged`() {
+        val saving = Saving()
+        saving.bound = Bound.Editing("2026-10-03#0", "Plan_B")
+        saving.name = "Plan B"
+        saving.said = "Saved as Plan B."
+        val shaping = shaping(*FORTY)
+        saving.startNew(shaping, null)
+        assertEquals(null, saving.bound)
+        assertEquals(yemoja.ui.api.FIRST_PLAN, saving.name)
+        assertEquals(null, saving.said)
+        assertEquals(listOf(Segment()), shaping.segments.toList())
+        assertEquals(listOf(Breathed()), shaping.gases.toList())
+        assertTrue(!saving.isChanged(shaping, null))
+    }
+
+    @Test
+    fun `a plan just opened has nothing to save, and changing it does`() {
+        val logbook = emptyLogbook()
+        val made = assertIs<Outcome.Done>(
+            logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()),
+        )
+        val saving = Saving()
+        val shaping = Shaping()
+        saving.open(Bound.Editing(made.added.single(), "Plan_A"), logbook, shaping)
+        assertTrue(!saving.isChanged(shaping, logbook.settings), "as it was saved")
+        shaping.safetyMinutes = "5"
+        assertTrue(saving.isChanged(shaping, logbook.settings), "a setting is part of the plan")
+    }
+}

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -102,6 +103,28 @@ internal class Saving {
     var name: String by mutableStateOf(yemoja.ui.api.FIRST_PLAN)
 
     var said: String? by mutableStateOf(null)
+
+    /**
+     * The plan as it was last opened, saved or started, which tells whether it has changed since.
+     * Null before any of those, which is a blank plan.
+     */
+    var kept: Planned? by mutableStateOf(null)
+}
+
+/**
+ * Whether [shaping] holds what was never saved: anything changed since the plan was opened, saved
+ * or started. A plan nobody has touched is a blank one under [settings]. `GUI-54`.
+ */
+internal fun Saving.isChanged(shaping: Shaping, settings: Settings?): Boolean =
+    shaping.described() != (kept ?: Shaping().also { it.startAfresh(settings) }.described())
+
+/** Empties the planner to a new plan, bound to no dive and called by the first name. `GUI-54`. */
+internal fun Saving.startNew(shaping: Shaping, settings: Settings?) {
+    bound = null
+    name = yemoja.ui.api.FIRST_PLAN
+    said = null
+    shaping.startAfresh(settings)
+    kept = shaping.described()
 }
 
 /** Opens the planner for [bound], from the Dives tab. Absent where no tab can be switched to. */
@@ -462,6 +485,7 @@ internal fun Saving.open(bound: Bound, universe: Universe?, shaping: Shaping) {
             name = prettyOf(bound.key)
         }
     }
+    kept = shaping.described()
 }
 
 // --- The row a plan is saved from.
@@ -488,7 +512,8 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
         else -> null
     }
 
-    fun save(target: Bound?) {
+    // Whether it was saved, which a new plan asked for after saving waits on.
+    fun save(target: Bound?): Boolean {
         val fields = planFieldsOf(planned, ready!!.conditions, done!!.whole)
         val key = if (target is Bound.Editing) target.key else planKeyOf(saving.name)
         val outcome = when (target) {
@@ -507,9 +532,11 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
             is Outcome.Done -> {
                 val id = if (target == null) outcome.added.firstOrNull() else target.dive
                 id?.let { saving.bound = Bound.Editing(it, key) }
+                saving.kept = planned
                 if (target == null) "Saved as ${prettyOf(key)} on a new dive." else "Saved as ${prettyOf(key)}."
             }
         }
+        return outcome is Outcome.Done
     }
 
     val nameWrong = when {
@@ -566,12 +593,23 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
                     is Outcome.Refused -> outcome.reason
                     is Outcome.Done -> {
                         saving.bound = Bound.Editing(id, key)
+                        saving.kept = planned
                         "Saved as ${prettyOf(key)} on ${titleOf(chosen)}."
                     }
                 }
             }
         }
         OpenPlan(universe) { chosen -> saving.open(chosen, universe, shaping) }
+        // Saved where Save would put it, and as a new dive where it has nowhere to go or cannot go there.
+        val toBound = target != null && blocked == null
+        NewPlan(
+            changed = { saving.isChanged(shaping, universe?.settings) },
+            name = saving.name.trim().ifEmpty { "the plan" },
+            savedAs = if (toBound) "Save" else "Save as new dive",
+            unsavable = if (toBound) null else blockedNew,
+            onSave = { save(if (toBound) bound else null) },
+            onNew = { saving.startNew(shaping, universe?.settings) },
+        )
         if (bound != null) {
             TextButton(
                 onClick = { saving.bound = null; saving.said = null },
@@ -601,6 +639,53 @@ private fun SmallButton(label: String, enabled: Boolean, quiet: Boolean = false,
     } else {
         Button(onClick, Modifier.height(SMALL), enabled = enabled, contentPadding = padding) { text() }
     }
+}
+
+/**
+ * The deed that empties the planner for a new plan, asking first where the plan has changes not
+ * saved: save them, leave them, or stay. A save that fails stays, its reason said in the row.
+ * `GUI-54`.
+ */
+@Composable
+private fun NewPlan(
+    changed: () -> Boolean,
+    name: String,
+    savedAs: String,
+    unsavable: String?,
+    onSave: () -> Boolean,
+    onNew: () -> Unit,
+) {
+    var asking by remember { mutableStateOf(false) }
+    SmallButton("New plan", enabled = true, quiet = true) { if (changed()) asking = true else onNew() }
+    if (!asking) return
+    AlertDialog(
+        onDismissRequest = { asking = false },
+        title = { Text("Save $name first?") },
+        text = {
+            Text(
+                "It has changes that are not saved, and a new plan starts empty." +
+                    // The reason is a sentence of the row's own, which may or may not end in a stop.
+                    (unsavable?.let { "\n\n" + it.removeSuffix(".") + "." } ?: ""),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    asking = false
+                    if (onSave()) onNew()
+                },
+                enabled = unsavable == null,
+            ) { Text(savedAs) }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = { asking = false }) { Text("Cancel") }
+                TextButton(onClick = { asking = false; onNew() }) {
+                    Text("Don't save", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+    )
 }
 
 /** The deed that opens a plan saved before: a menu of them, the one chosen loaded to be changed. */

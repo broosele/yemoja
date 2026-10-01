@@ -385,6 +385,25 @@ Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `G
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
 
+- **GUI-54 — How the planner starts a new plan.** *Settled:* **a *New plan* deed in the save row,
+  which asks first where the plan has changes not saved.** Decided on 2026-10-01, at the author's
+  word.
+
+  The planner could open a saved plan and add one to a dive, and had no way back to an empty one:
+  *Forget the dive* unbinds the plan and keeps it, which is a different thing. *New plan* empties it
+  as *Add plan* does, one blank line on one cylinder of air under the settings' defaults, bound to
+  no dive and called *Plan A*.
+
+  **It asks only where something would be lost.** The planner keeps the plan as it was last opened,
+  saved or started, and a plan that still equals it, or a blank one nobody has touched, is emptied
+  without a word. Otherwise it asks whether to save first: *Save* puts the plan where the row's own
+  Save would, and as a new dive where it is bound to none or cannot go there, and the new plan
+  starts only once that save has landed. *Don't save* empties it, and *Cancel* leaves it. A plan
+  that cannot be saved says why under the question, and its *Save* is greyed.
+
+  *Open plan* replaces the plan without asking, as it did before. That is the same loss and is left
+  as it is until asked for.
+
 - **GUI-53 — Where add, edit and delete stand.** *Settled:* **on the tab row, left of the
   agent's button, acting on the item in front of the reader.**
 
