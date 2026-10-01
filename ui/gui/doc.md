@@ -340,6 +340,14 @@ that cannot edit.
 
 ## Open questions
 
+- **GUI-52 — What the window allows while a download runs.** A download reads the computer off
+   the window's thread and, as it goes, changes the Universe — an access code kept, an import
+   staged — while every other tab stays live, and an agent's tools can run too. `LOGIC-5` says one
+   operation at a time and that the interface refuses the rest meanwhile; the window does not.
+   Either the window refuses edits while a download runs, saying why, or what a download writes is
+   carried onto the window's thread and the rest waits its turn. `TUI-8` is the same question for
+   the terminal, where the screen simply stops.
+
 - **GUI-17 — Where the sync indicator lives.** Syncing is explicit, and the application
   must show at all times whether anything is owed in either direction — see
   [../../data/json/requirements.md](../../data/json/requirements.md). Putting it in the

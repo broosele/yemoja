@@ -61,6 +61,14 @@ behaviour of its own, that behaviour is in the wrong place.
    or a local server. These serve different users and are not mutually exclusive.
    *Answered for an agent by `API-4`:* a local MCP server, run inside the application.
 
+- **API-10 — Where an agent works, and what that tells it.** The agent is started in the
+   logbook's path with `.agent` after it, `API-5`, so its own working folder names the logbook
+   whether or not *Allow raw file access* is ticked. `Tools.files` says the path is told there and
+   nowhere else, and the manual says Yemoja never tells the agent where the logbook is; both are
+   untrue as built. Either the working folder moves somewhere that does not derive from the
+   logbook — which loses it being found beside the logbook it belongs to — or the two texts say
+   what is true: the agent can know where the logbook is, and is asked not to look.
+
 ## Settled
 
 - **API-3 — Whether something may run against a logbook the window has open.** *Settled:*
