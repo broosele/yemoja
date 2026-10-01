@@ -33,8 +33,10 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
 - **PHONE-2 — How the desktop layout folds.** *Settled:* **the list, then the item.** The
   selector fills the screen; choosing opens the item full-screen, and back returns to the list.
   Fields stand in one column and insets one under another, and fields rarely used stay behind
-  *more fields* as gear's already do. Hover does not exist on a touch screen, so what a tooltip
-  says over a greyed button is said on a long press, the platform's own gesture for it.
+  *more fields* as gear's already do. The dive table's trip column is 80 wide rather than the
+  desktop's 170, giving the site the room, and a trip's name wraps down its run, `DESK-7`. Hover
+  does not exist on a touch screen, so what a tooltip says over a greyed button is said on a long
+  press, the platform's own gesture for it.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.

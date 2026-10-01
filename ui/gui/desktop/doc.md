@@ -132,10 +132,9 @@ what it means is argued there; what is here is where it goes on a large screen.
   reached from any dive on it and needs no list of its own, and the column earns its width
   twice: it says which trip a dive was on, and it is the way in. Relocated from `GUI-19`.
 
-  *Amended:* **narrow, the name wrapped down its run.** The column is 80 wide rather than 170,
-  most rows leaving it empty and the site needing the room. A trip's name is centred on its run
-  and wraps onto as many lines as the run is tall, ending in an ellipsis where it needs more; a
-  run of one dive holds one line. It rides on the run's last row and rises over the rows above,
+  *Amended:* **the name wrapped down its run.** A trip's name is centred on its run and wraps
+  onto as many lines as the run is tall, ending in an ellipsis where it needs more; a run of one
+  dive holds one line. It rides on the run's last row and rises over the rows above,
   which are drawn before it. A single word wider than the column still breaks within itself.
 
 ## Open questions

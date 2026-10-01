@@ -1737,10 +1737,10 @@ private fun Dives(set: ItemSet, kept: Kept) {
             modifier = Modifier.fillMaxWidth().height(LINE),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Heading("Trip", TRIP)
+            Heading("Trip", tripWidth())
             Heading("No.", NUMBER, TextAlign.End)
             Heading("Date", DATE)
-            Heading("Site", SITE)
+            Heading("Site", siteWidth())
         }
         HorizontalDivider()
         LazyColumn(state = kept.list, modifier = Modifier.fillMaxHeight()) {
@@ -1777,7 +1777,7 @@ private fun Dives(set: ItemSet, kept: Kept) {
                         ) {
                             Cell(row.number, NUMBER, here, TextAlign.End, quiet = row.planned)
                             Cell(row.date, DATE, here)
-                            Cell(row.site, SITE, here)
+                            Cell(row.site, siteWidth(), here)
                         }
                     }
                 }
@@ -1870,7 +1870,7 @@ private fun TripCell(row: DiveRow, spans: Int?, chosen: Chosen?, onChoose: (Chos
     val trip = row.trip
     val here = trip != null && trip.id == chosen?.id
     Box(
-        modifier = Modifier.width(TRIP).fillMaxHeight()
+        modifier = Modifier.width(tripWidth()).fillMaxHeight()
             .background(
                 when {
                     here -> MaterialTheme.colorScheme.secondaryContainer
@@ -3532,10 +3532,19 @@ private val SUBTABS = 340.dp
 private val TAB_ICON = 24.dp
 private val TABLE = 600.dp
 private val TREE = 220.dp
-private val TRIP = 80.dp
+
+/**
+ * How wide the dive table's trip column is: narrow on a phone, where the site needs the room and
+ * the name wraps down its run, and wide everywhere else. `DESK-7`, `PHONE-2`.
+ */
+@Composable
+private fun tripWidth(): Dp = if (LocalCompact.current) 80.dp else 170.dp
+
+/** How wide the site column is, taking on a phone what the trip column gives up. */
+@Composable
+private fun siteWidth(): Dp = if (LocalCompact.current) 330.dp else 240.dp
 private val NUMBER = 52.dp
 private val DATE = 100.dp
-private val SITE = 330.dp
 /** How wide the column a field's name sits in is, which a review lines its own up with. */
 internal val LABEL = 130.dp
 private val SITES = 300.dp
