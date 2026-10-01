@@ -175,3 +175,77 @@ class DeleteAskedTest {
         assertNull(deleteWarned(alone, setOf("cy")))
     }
 }
+
+/*
+ * The add, edit and delete buttons on the tab row. See ../../../../../../gui/doc.md — `GUI-53`.
+ */
+class RibbonTest {
+
+    private val home = TABS.first { it.name == "Home" }
+    private val dives = TABS.first { it.name == "Dives" }
+    private val places = TABS.first { it.name == "Locations" }
+    private val held = set(
+        "region.json" to """{"egypt": {"name": "Egypt"}}""",
+        "dive_site.json" to """{"elph": {"name": "Elphinstone", "regions": ["@egypt"]}}""",
+        "dive/2026-06-01#0.json" to """{"rating": 4}""",
+        "dive/2026-06-02#0.json" to """{"rating": 5}""",
+    )
+
+    @Test
+    fun `a tab holding no items greys all three, and says why`() {
+        val ribbon = ribbonOf(home, Kept())
+        assertTrue(ribbon.makeable.isEmpty())
+        assertNull(ribbon.edited)
+        assertTrue(ribbon.deleted.isEmpty())
+        assertTrue(ribbon.addWhy != null && ribbon.editWhy != null && ribbon.deleteWhy != null)
+    }
+
+    @Test
+    fun `with nothing chosen only plus can be pressed`() {
+        val ribbon = ribbonOf(dives, Kept())
+        assertNull(ribbon.addWhy)
+        assertEquals(Types.DIVE, ribbon.makeable.first())
+        assertEquals("Choose something to edit.", ribbon.editWhy)
+        assertEquals("Choose something to delete.", ribbon.deleteWhy)
+    }
+
+    @Test
+    fun `the chosen item is what the pencil and the bin act on`() {
+        val kept = Kept().apply { chosen = chosen(held, "2026-06-01#0") }
+        val ribbon = ribbonOf(dives, kept)
+        assertEquals("2026-06-01#0", ribbon.edited?.id)
+        assertEquals(setOf("2026-06-01#0"), ribbon.deleted)
+    }
+
+    @Test
+    fun `several dives are deleted together and edited one at a time`() {
+        val kept = Kept().apply { chosenMany = setOf("2026-06-01#0", "2026-06-02#0") }
+        val ribbon = ribbonOf(dives, kept)
+        assertNull(ribbon.edited)
+        assertTrue("Choose one" in ribbon.editWhy!!, ribbon.editWhy)
+        assertEquals(setOf("2026-06-01#0", "2026-06-02#0"), ribbon.deleted)
+    }
+
+    @Test
+    fun `on Locations the site chosen comes before the region it is in`() {
+        val kept = Kept().apply { place = chosen(held, "egypt") }
+        assertEquals("egypt", ribbonOf(places, kept).edited?.id, "the region where nothing else is")
+        kept.chosen = chosen(held, "elph")
+        assertEquals("elph", ribbonOf(places, kept).edited?.id)
+        assertEquals(setOf("elph"), ribbonOf(places, kept).deleted)
+    }
+
+    @Test
+    fun `an open form keeps all three waiting`() {
+        val editing = Kept().apply {
+            chosen = chosen(held, "2026-06-01#0")
+            this.editing = "2026-06-01#0"
+        }
+        val making = Kept().apply { this.making = Types.DIVE }
+        for (kept in listOf(editing, making)) {
+            val ribbon = ribbonOf(dives, kept)
+            assertTrue(ribbon.makeable.isEmpty() && ribbon.edited == null && ribbon.deleted.isEmpty())
+            assertEquals("Save or cancel the form first.", ribbon.addWhy)
+        }
+    }
+}

@@ -255,6 +255,12 @@ internal class Kept {
      */
     var making: ItemDescription? by mutableStateOf(null)
 
+    /** The item whose card is turned over into its edit form, by id. `GUI-53`. */
+    var editing: String? by mutableStateOf(null)
+
+    /** What the tab row's bin asked to delete, while the question is open. `GUI-53`. */
+    var deleting: Set<String> by mutableStateOf(emptySet())
+
     /** Calculations' boxes, and which calculation is chosen. `GUI-43`. */
     val working: Working = Working()
 
@@ -441,6 +447,8 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     tabs = tabs,
                     chosen = tab,
                     onChoose = { tab = it },
+                    kept = kept.getValue(tab),
+                    ribbon = ribbonOf(tab, kept.getValue(tab)),
                     download = reading.stage,
                     unasked = unasked,
                     asking = talking,
@@ -549,6 +557,9 @@ private fun Tabs(
     tabs: List<Tab>,
     chosen: Tab,
     onChoose: (Tab) -> Unit,
+    /** What the chosen tab holds on to, which the add, edit and delete buttons act on. */
+    kept: Kept,
+    ribbon: Ribbon,
     /** How far a download has got, which the home tab's icon shows from every tab. `GUI-52`. */
     download: Stage,
     /** Why the agent cannot be asked, or absent where it can. */
@@ -591,6 +602,9 @@ private fun Tabs(
                     )
                 }
             }
+            // Add, edit and delete stand here for every tab rather than on each card, so they
+            // are in one place whatever the tab shows. `GUI-53`.
+            Buttons(ribbon, kept)
             // On every tab rather than on home, since a question comes up wherever the reader
             // is. An icon, so the row stays the tabs' own; what pressing it would do is said over
             // it while the pointer rests there, and the reason instead while it is greyed. The
@@ -1437,20 +1451,17 @@ private fun Subject(
         // minted from what was typed rather than from an item saying nothing. `GUI-35`.
         val add: ((ItemDescription) -> Unit)? =
             if (makeable.isEmpty()) null else { type -> kept.making = type }
-        var asking by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
-        var deleteRefused by remember(chosen, kept.chosenMany) { mutableStateOf<String?>(null) }
-        var clearing by remember(chosen, kept.chosenMany) { mutableStateOf(false) }
-        // Locations has two cards, a region and what is at it, so what a bin asks about is what
-        // it was pressed on rather than whatever the tab has chosen. `GUI-35`.
-        var pressed by remember(chosen, kept.chosenMany) { mutableStateOf(emptySet<String>()) }
-        val ask = { ids: Set<String> ->
-            pressed = ids
-            asking = true
+        // An edit left unsaved is given up when the reader chooses something else, there being
+        // no card left on screen to save or cancel it from. `GUI-53`.
+        LaunchedEffect(chosen?.id, kept.place?.id) {
+            if (kept.editing != null && kept.editing != chosen?.id && kept.editing != kept.place?.id) {
+                kept.editing = null
+            }
         }
-        val going = pressed.ifEmpty {
-            if (kept.chosenMany.size > 1) kept.chosenMany else setOfNotNull(chosen?.id)
-        }
-        if (asking) {
+        val going = kept.deleting
+        var deleteRefused by remember(going) { mutableStateOf<String?>(null) }
+        var clearing by remember(going) { mutableStateOf(false) }
+        if (going.isNotEmpty()) {
             deleteAsked(set, going)?.let { asked ->
                 Confirm(
                     asked = asked,
@@ -1459,16 +1470,12 @@ private fun Subject(
                         .joinToString("\n\n").ifEmpty { null },
                     clearing = clearing,
                     onClearing = { clearing = it },
-                    onNo = {
-                        asking = false
-                        deleteRefused = null
-                    },
+                    onNo = { kept.deleting = emptySet() },
                     onYes = {
                         when (val done = changer.change(going.map { Change.Delete(it, clearing) })) {
                             is Outcome.Refused -> deleteRefused = done.reason
                             is Outcome.Done -> {
-                                asking = false
-                                deleteRefused = null
+                                kept.deleting = emptySet()
                                 kept.chosen = null
                                 kept.chosenMany = emptySet()
                                 // A region deleted from its own card takes the card with it.
@@ -1506,20 +1513,14 @@ private fun Subject(
                             place = kept.place,
                             chosen = chosen,
                             onFollow = onFollow,
-                            makeable = makeable,
-                            onAdd = add,
-                            onDelete = { id -> ask(setOf(id)) },
+                            kept = kept,
                         )
                     }
-                    kept.chosenMany.size > 1 -> {
-                        ManyView(set, kept.chosenMany, onFollow) { asking = true }
-                    }
+                    kept.chosenMany.size > 1 -> ManyView(set, kept.chosenMany, onFollow)
                     chosen != null -> ItemView(
                         chosen = chosen,
                         onFollow = onFollow,
-                        makeable = makeable,
-                        onAdd = add,
-                        onDelete = { ask(emptySet()) },
+                        kept = kept,
                         onOwn = if (owningOf(chosen.item, user, set)) ({ changer.own(chosen.id) }) else null,
                     )
                     // Where nothing is chosen the middle still offers to make one, which is the
@@ -2171,10 +2172,8 @@ internal fun Line(
 private fun ItemView(
     chosen: Chosen,
     onFollow: (String) -> Unit,
-    makeable: List<ItemDescription> = emptyList(),
-    onAdd: ((ItemDescription) -> Unit)? = null,
-    onDelete: (() -> Unit)? = null,
-    opensEditing: Boolean = false,
+    /** The tab's, which says whether this card is turned over. `GUI-53`. */
+    kept: Kept,
     /** Makes this person the user, offered on a person who is not. `GUI-51`. */
     onOwn: (() -> Outcome)? = null,
 ) {
@@ -2184,10 +2183,7 @@ private fun ItemView(
         chosen = chosen,
         onFollow = onFollow,
         scrolls = true,
-        makeable = makeable,
-        onAdd = onAdd,
-        onDelete = onDelete,
-        opensEditing = opensEditing,
+        kept = kept,
         onOwn = onOwn,
     ) {
         // A trip is both an item and a set of dives, and shows as both. `GUI-23`.
@@ -2215,26 +2211,16 @@ private fun divesOf(trip: Item): List<Item> =
  * order, so a reader who knows where one dive's depth sits knows where all of theirs sits.
  */
 @Composable
-private fun ManyView(
-    set: ItemSet,
-    ids: Set<String>,
-    onFollow: (String) -> Unit,
-    onDelete: (() -> Unit)? = null,
-) {
+private fun ManyView(set: ItemSet, ids: Set<String>, onFollow: (String) -> Unit) {
     val dives = remember(set, ids) { ids.mapNotNull { set[it] } }
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        StatsCard("${dives.size} dives", dives, onFollow, onDelete)
+        StatsCard("${dives.size} dives", dives, onFollow)
     }
 }
 
 /** What [items] say together, on a card titled [title]. */
 @Composable
-private fun StatsCard(
-    title: String,
-    items: List<Item>,
-    onFollow: (String) -> Unit,
-    onDelete: (() -> Unit)? = null,
-) {
+private fun StatsCard(title: String, items: List<Item>, onFollow: (String) -> Unit) {
     val stats = remember(items) { listOfNotNull(listedOf(items)) + statisticsOf(items) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -2242,17 +2228,11 @@ private fun StatsCard(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(GAP * 2)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = GAP),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                onDelete?.let { Deleter(it) }
-            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = GAP),
+            )
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
             if (stats.isEmpty()) Aside("No values")
             for (pair in stats.chunked(COLUMNS)) {
@@ -2283,9 +2263,7 @@ private fun PlaceView(
     place: Chosen?,
     chosen: Chosen?,
     onFollow: (String) -> Unit,
-    makeable: List<ItemDescription> = emptyList(),
-    onAdd: ((ItemDescription) -> Unit)? = null,
-    onDelete: ((String) -> Unit)? = null,
+    kept: Kept,
 ) {
     if (place == null && chosen == null) {
         Middle("choose a region on the left")
@@ -2302,23 +2280,9 @@ private fun PlaceView(
             }
             val frame = remember(set, place, edition) { frameOf(place.item, dots) }
             if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)
-            ItemCard(
-                chosen = place,
-                onFollow = onFollow,
-                makeable = makeable,
-                onAdd = onAdd,
-                onDelete = onDelete?.let { delete -> { delete(place.id) } },
-            )
+            ItemCard(chosen = place, onFollow = onFollow, kept = kept)
         }
-        if (chosen != null) {
-            ItemCard(
-                chosen = chosen,
-                onFollow = onFollow,
-                makeable = makeable,
-                onAdd = onAdd,
-                onDelete = onDelete?.let { delete -> { delete(chosen.id) } },
-            )
-        }
+        if (chosen != null) ItemCard(chosen = chosen, onFollow = onFollow, kept = kept)
     }
 }
 
@@ -2475,19 +2439,49 @@ private fun Adder(makeable: List<ItemDescription>, onAdd: (ItemDescription) -> U
 }
 
 @Composable
-private fun Deleter(onDelete: () -> Unit) {
+private fun Deleter(onDelete: () -> Unit, enabled: Boolean = true) {
     val interaction = remember { MutableInteractionSource() }
     val over by interaction.collectIsHoveredAsState()
-    IconButton(onClick = onDelete, interactionSource = interaction) {
+    IconButton(onClick = onDelete, enabled = enabled, interactionSource = interaction) {
         Icon(
             imageVector = Icons.Filled.Delete,
             contentDescription = "delete",
-            tint = if (over) {
+            tint = if (over && enabled) {
                 MaterialTheme.colorScheme.error
             } else {
                 LocalContentColor.current
             },
         )
+    }
+}
+
+/**
+ * Add, edit and delete on the tab row, acting on what the tab has in front of the reader.
+ *
+ * Greyed rather than left out where they cannot be pressed, with the reason over them, so the row
+ * keeps its shape from tab to tab. `GUI-53`.
+ */
+@Composable
+private fun Buttons(ribbon: Ribbon, kept: Kept) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (ribbon.addWhy == null && ribbon.makeable.isNotEmpty()) {
+            Adder(ribbon.makeable) { type -> kept.making = type }
+        } else {
+            Explained(ribbon.addWhy) {
+                IconButton(onClick = {}, enabled = false) {
+                    Icon(Icons.Filled.Add, contentDescription = "add another")
+                }
+            }
+        }
+        val edited = ribbon.edited
+        Explained(ribbon.editWhy ?: "Edit ${edited?.title.orEmpty()}") {
+            IconButton(onClick = { kept.editing = edited?.id }, enabled = edited != null) {
+                Icon(Icons.Filled.Edit, contentDescription = "edit")
+            }
+        }
+        Explained(ribbon.deleteWhy ?: "Delete") {
+            Deleter(onDelete = { kept.deleting = ribbon.deleted }, enabled = ribbon.deleted.isNotEmpty())
+        }
     }
 }
 
@@ -2538,8 +2532,8 @@ private fun Confirm(
 }
 
 /**
- * One item on a card, with a pencil on its title line that turns the card over into the edit
- * form, where the title line carries Cancel and Save instead. `GUI-29`.
+ * One item on a card, turned over into the edit form by the pencil on the tab row, where the
+ * card's title line carries Cancel and Save. `GUI-29`, `GUI-53`.
  *
  * Where the card [scrolls], it fills what it is given and its fields scroll under the title
  * line, which stays put; otherwise it is as tall as what it says, for a card stacked among
@@ -2550,19 +2544,15 @@ private fun ItemCard(
     chosen: Chosen,
     onFollow: (String) -> Unit,
     scrolls: Boolean = false,
-    /** The types the tab can make, the one being looked at first. `GUI-35`. */
-    makeable: List<ItemDescription> = emptyList(),
-    onAdd: ((ItemDescription) -> Unit)? = null,
-    onDelete: (() -> Unit)? = null,
-    /** Whether the card opens turned over, which an item made a moment ago does. `GUI-35`. */
-    opensEditing: Boolean = false,
+    /** The tab's, whose `editing` says whether this card is turned over. `GUI-53`. */
+    kept: Kept,
     /** Makes this person the user. Absent on everything that is not a person, and on the user. */
     onOwn: (() -> Outcome)? = null,
     after: @Composable ColumnScope.() -> Unit = {},
 ) {
     val changer = LocalChanger.current
     val edition = changer.edition
-    var editing by remember(chosen) { mutableStateOf(opensEditing) }
+    val editing = kept.editing == chosen.id
     var refused by remember(chosen) { mutableStateOf<String?>(null) }
     val draft = remember(chosen) { Draft() }
     Surface(
@@ -2585,14 +2575,14 @@ private fun ItemCard(
                     EditActions(
                         draft = draft,
                         onCancel = {
-                            editing = false
+                            kept.editing = null
                             refused = null
                             draft.clear()
                         },
                         onSave = {
                             when (val outcome = changer.change(draft.writes())) {
                                 is Outcome.Done -> {
-                                    editing = false
+                                    kept.editing = null
                                     refused = null
                                     draft.clear()
                                 }
@@ -2601,9 +2591,6 @@ private fun ItemCard(
                         },
                     )
                 } else {
-                    if (onAdd != null && makeable.isNotEmpty()) {
-                        Adder(makeable, onAdd)
-                    }
                     // The glyph the list marks the user with, so pressing it puts the mark here.
                     onOwn?.let { own ->
                         Explained("This is me") {
@@ -2613,10 +2600,6 @@ private fun ItemCard(
                             }
                         }
                     }
-                    IconButton(onClick = { editing = true }) {
-                        Icon(Icons.Filled.Edit, contentDescription = "edit")
-                    }
-                    onDelete?.let { Deleter(it) }
                 }
             }
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))

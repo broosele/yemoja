@@ -48,6 +48,61 @@ internal fun startedOf(type: ItemDescription, branch: String?): Map<String, Stri
     }
 }
 
+/**
+ * Ribbon is what the add, edit and delete buttons on the tab row act on, and why any of them is
+ * greyed.
+ *
+ * Worked out from the tab and what it has chosen, so the buttons stand in one place whatever the
+ * tab shows. `GUI-53`. A reason is absent where its button can be pressed. Immutable.
+ */
+internal class Ribbon(
+    /** The types **+** offers, the one being looked at first. */
+    val makeable: List<ItemDescription>,
+    val addWhy: String?,
+    /** The item the pencil turns over into its form. */
+    val edited: Chosen?,
+    val editWhy: String?,
+    /** What the bin asks about: one item, or every dive chosen. */
+    val deleted: Set<String>,
+    val deleteWhy: String?,
+)
+
+/**
+ * What the tab row's buttons act on in [tab], given what [kept] has chosen.
+ *
+ * **The item in front of the reader.** On Locations that is the site or wreck chosen, and the
+ * region where none is. Several dives chosen are deleted together and edited one at a time.
+ * While a form is open, for a new item or an edited one, all three wait for it to be saved or
+ * cancelled, since each would take the form's place and lose what was typed. `GUI-53`.
+ */
+internal fun ribbonOf(tab: Tab, kept: Kept): Ribbon {
+    if (tab.types.isEmpty()) {
+        return Ribbon(emptyList(), NOTHING_HERE, null, NOTHING_HERE, emptySet(), NOTHING_HERE)
+    }
+    val here = kept.chosen ?: kept.place.takeIf { tab.shape == Shape.PLACES }
+    val busy = kept.making != null || (kept.editing != null && kept.editing == here?.id)
+    if (busy) return Ribbon(emptyList(), FORM_OPEN, null, FORM_OPEN, emptySet(), FORM_OPEN)
+    val many = kept.chosenMany.size > 1
+    val edited = here.takeIf { !many }
+    val deleted = if (many) kept.chosenMany else setOfNotNull(here?.id)
+    return Ribbon(
+        makeable = makeableIn(tab, kept.chosen),
+        addWhy = null,
+        edited = edited,
+        editWhy = when {
+            many -> "Several dives are chosen. Choose one to edit it."
+            edited == null -> "Choose something to edit."
+            else -> null
+        },
+        deleted = deleted,
+        deleteWhy = if (deleted.isEmpty()) "Choose something to delete." else null,
+    )
+}
+
+private const val NOTHING_HERE = "Nothing on this tab is added, edited or deleted."
+
+private const val FORM_OPEN = "Save or cancel the form first."
+
 /** What the button that makes one is called: *Add a dive*, *Add a person*. */
 internal fun makeSaid(type: ItemDescription): String = "Add a " + labelOf(type).lowercase()
 

@@ -121,7 +121,7 @@ what it means is argued there; what is here is where it goes on a large screen.
 - **DESK-11 — The edit form's frame.** *Settled:* **two columns and the insets with their tabs, as
   the item view has them, with *Save* and *Cancel* on the title line.**
 
-  The title line, with its pencil or its Save and Cancel, stays put while the fields scroll under
+  The title line, with its Save and Cancel, stays put while the fields scroll under
   it, so what is being looked at and the way out of it are never scrolled away. The text fields are
   the height of their text rather than the platform's fifty-six pixels: a form of twenty fields in
   tall boxes is one nobody scrolls to the end of. What a field is edited with, and what folds away, are `GUI-29`.

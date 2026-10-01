@@ -305,10 +305,11 @@ desktop the plain fields flow into two columns, an owned item is set into a box 
 shown in full, and a keyed one is such a box with a tab per entry. The manual is read in its
 tab, a chapter at a time. Every tab has a screen behind it; none is a placeholder.
 
-**An item's fields can be edited, and an item made and deleted.** A pencil on the item card
-turns it over into the edit form, which `GUI-29` describes, and an entry of a keyed collection
-can be taken out or added there. A **+** beside it makes another of the same type and a bin
-deletes, `GUI-35`. There is no journal to undo with.
+**An item's fields can be edited, and an item made and deleted.** A pencil on the tab row
+turns the chosen item's card over into the edit form, which `GUI-29` describes, and an entry of a
+keyed collection can be taken out or added there. A **+** beside it makes another of the same type
+and a bin deletes, `GUI-35`; all three stand left of the agent's button, `GUI-53`. There is no
+journal to undo with.
 
 It opens as `yemoja gui [<logbook folder>]`, beside the terminal front end, and unlike that one
 it can be run from the build, a window needing no console. The folder is optional: with none it
@@ -320,7 +321,7 @@ than the default violet, and nothing else is ours yet. `GUI-3`. Within that, the
 across the top, each with the platform's glyph for its subject beside its name, the dive table
 is headed and its trip cell is drawn as one cell down the run it spans, whatever is chosen is
 tinted rather than emboldened, a tree unfolds branch by branch, and the item view sits on a card
-with its labels ranged against its values — the form beneath the pencil being the same card with
+with its labels ranged against its values — the form the pencil opens being the same card with
 boxes where the values were.
 
 Three things it does badly, each of them an open question above rather than a bug:
@@ -383,6 +384,27 @@ that cannot edit.
 Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `GUI-2`
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
+
+- **GUI-53 — Where add, edit and delete stand.** *Settled:* **on the tab row, left of the
+  agent's button, acting on the item in front of the reader.**
+
+  They stood on each card's title line, `GUI-35`, which put them somewhere different on every
+  tab and twice on Locations, where a region's card and a site's are shown together. On the tab
+  row they are in one place whatever the tab shows.
+
+  **What they act on is the item chosen.** On Locations that is the site or wreck chosen, and the
+  region where none is. Several dives chosen are deleted together and edited one at a time, so
+  the pencil is greyed then. **+** is `GUI-35`'s, unchanged: another of what is being looked at,
+  and a list where the tab holds more than one type.
+
+  **Greyed rather than left out**, with the reason over the button, as the agent's button is:
+  on a tab that holds no items, with nothing chosen, and while a form is open. A form open for a
+  new item or an edited one keeps all three waiting, since each would put something else where
+  the form is and lose what was typed. Choosing another item gives an unsaved edit up, there
+  being no card left on screen to save it from.
+
+  *Save* and *Cancel* stay on the card's title line, `DESK-11`, being about the form rather than
+  the item, and so does the button that makes a person the user, `GUI-51`.
 
 - **GUI-52 — What the window allows while a download runs.** *Settled:* **everything, while the
   device is read; what it brought is staged when the user comes back to Home.**
@@ -1067,7 +1089,7 @@ once and corrected. The numbers stay unused rather than being given to something
    **What a pointer does with all this is `DESK-10`**, a drag and a click being a large screen's
    inputs.
 - **GUI-35 — How an item is made and unmade.** *Settled:* **two buttons beside the pencil, and
-   a question before anything is deleted.**
+   a question before anything is deleted.** *Where they stand moved to the tab row, `GUI-53`.*
 
    Reading and editing were reachable and the two ends were not: a logbook could be read and
    corrected from the window but not grown or pruned, and a new one could hold nothing at all.
@@ -1481,9 +1503,9 @@ once and corrected. The numbers stay unused rather than being given to something
   are written and kept, not read. The manual already said of each that it is not for reading,
   which is why the mark is the model's rather than a table here. Still open: whether a field
   needs a hint for how much room it takes.
-- **GUI-29 — How a field is edited.** *Settled:* **the item view turned over.** A pencil on
-  the card, between the buttons that make one and unmake one, `GUI-35`, turns it into the edit
-  form: the same fields in the same places, so a reader who knows where a field sits when reading
+- **GUI-29 — How a field is edited.** *Settled:* **the item view turned over.** A pencil,
+  between the buttons that make one and unmake one, `GUI-35`, turns the card into the edit
+  form, the pencil standing on the tab row since `GUI-53`: the same fields in the same places, so a reader who knows where a field sits when reading
   knows where it sits when editing. How a desktop frames that is `DESK-11`. Cancel puts the card back
   as it was; Save hands every field changed to the model as one change, and a refusal comes
   back to the field it was about.
@@ -1598,8 +1620,9 @@ once and corrected. The numbers stay unused rather than being given to something
   what is missing: the defects the review of 2026-10-01 left, and `GUI-52`, a download changing
   the logbook while the window went on editing it. Both are done.
 
-- **GUI-51 — How the user is chosen.** *Settled:* **a button on a person's card, beside the
-  pencil, which writes them into the manifest.**
+- **GUI-51 — How the user is chosen.** *Settled:* **a button on a person's card, which writes
+  them into the manifest.** It stood beside the pencil until the pencil moved to the tab row,
+  `GUI-53`, and stays on the card, being about a person rather than about any item.
 
   `JSON-22` settled that a logbook says whose it is in one place, `yemoja.json`, and nothing in
   the application wrote that place: the manual told a reader to add themselves on Community and

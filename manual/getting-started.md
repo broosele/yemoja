@@ -25,8 +25,8 @@ next opening is refused too: delete it and open again.
 
 **Tell Yemoja which person you are.** A new logbook names nobody, and until it knows, it cannot
 say which medical and which insurance are yours to be warned about, or which certifications are.
-Add yourself on the Community tab, then press the **person** button on your card, beside the
-pencil. It writes you into `yemoja.json` as the logbook's `user`, which
+Add yourself on the Community tab, then press the **person** button on your card. It writes
+you into `yemoja.json` as the logbook's `user`, which
 [data-format.md](data-format.md) describes; press it on somebody else to move it.
 
 ## Home
@@ -137,7 +137,11 @@ what it assumes, and what it cannot know.
 
 ## Changing things
 
-**The pencil** on a card turns it into a form. **Save** writes what you changed, and is greyed
+**Adding, editing and deleting** are the three buttons on the tab row, left of the agent's
+button. They act on whatever you have chosen, and are greyed with the reason shown over them
+when there is nothing for them to do.
+
+**The pencil** turns the chosen item's card into a form. **Save** writes what you changed, and is greyed
 until you change something; **Cancel** leaves the item as it was. Something that cannot be
 saved says why, in red, above the fields, and a field that will not read says so beneath it as
 you type.
@@ -177,9 +181,9 @@ anything that is not a cylinder. They are there under **more fields** when you n
 **Adding a tab** to something an item holds several of, or taking one away with its cross,
 happens at once rather than waiting for Save.
 
-**The + on a card** makes another item and opens it as a form. On Locations it offers **Add a
-region**, **Add a dive site** and **Add a wreck**, and the bin there deletes whichever card you
-press it on — the region, or the site or wreck at it. On a tab holding one kind it
+**The +** makes another item and opens it as a form. On Locations it offers **Add a region**,
+**Add a dive site** and **Add a wreck**; the pencil and the bin there act on the site or wreck
+you have chosen, and on the region when you have chosen neither. On a tab holding one kind it
 makes that kind straight away; on a tab holding several it offers them in a list, the kind you
 are looking at first — so the Dives tab offers **Add a dive** and **Add a dive trip**, which is
 how the first trip in a logbook is made. Nothing is made until you save, and the item's id is
