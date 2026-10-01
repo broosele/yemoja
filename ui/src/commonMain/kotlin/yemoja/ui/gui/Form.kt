@@ -146,7 +146,8 @@ internal fun Caption(text: String) {
 /** Fields in the flow of a form, two to a row, a wide one taking its own. */
 @Composable
 private fun Rows(fields: List<FieldDescription>, item: Item, draft: Draft) {
-    for (row in rowsOf(fields, ::wideOf)) {
+    val columns = columns()
+    for (row in rowsOf(fields, columns, ::wideOf)) {
         val wide = row.size == 1 && wideOf(row.first())
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -154,7 +155,7 @@ private fun Rows(fields: List<FieldDescription>, item: Item, draft: Draft) {
         ) {
             for (field in row) Box(modifier = Modifier.weight(1f)) { Editor(field, item, draft) }
             // A wide field spans the columns; a last row one short keeps its place in them.
-            if (!wide) repeat(COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+            if (!wide) repeat(columns - row.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
 }

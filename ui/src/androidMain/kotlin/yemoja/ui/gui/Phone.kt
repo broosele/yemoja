@@ -2,6 +2,7 @@ package yemoja.ui.gui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import yemoja.data.json.Lock
 import yemoja.data.json.LogbookReader
@@ -28,13 +30,16 @@ import java.io.File
  * The application on an Android screen, over the logbook in [folder].
  *
  * The folder is made into a logbook the first time. What this supplies is the platform: the
- * manual and the map read from the app, and whatever the phone opens a link with. Absent so far:
- * a folder the user picks, `AND-5`; a dive computer, `AND-6`; the phone's own layouts,
- * `PHONE-2`; and import and export, which wait on the folder picker.
+ * manual and the map read from the app, whatever the phone opens a link with, whether the screen
+ * is a phone's, and its back button. Absent so far: a folder the user picks, `AND-5`; a dive
+ * computer, `AND-6`; and import and export, which wait on the folder picker.
  */
 @Composable
 fun Yemoja(folder: String) {
     val context = LocalContext.current
+    // A phone where the screen's shorter side is under 600, which is where Android itself draws
+    // the line; a tablet is laid out as a desktop is. `PHONE-3`.
+    val compact = LocalConfiguration.current.smallestScreenWidthDp < TABLET
     val universe = remember(folder) {
         // Android ends an app without warning, so a lock is left behind every time it does. In
         // the app's own storage nothing else can reach the logbook, so a lock found here is one
@@ -43,7 +48,7 @@ fun Yemoja(folder: String) {
         if (File(folder, LogbookReader.MANIFEST).isFile) Universe.open(folder) else Universe.create(folder)
     }
     DisposableEffect(universe) { onDispose { universe.close() } }
-    val platform = remember {
+    val platform = remember(compact) {
         Platform(
             manual = CHAPTERS.map { file -> chapterOf(file, bundled("manual/$file")) },
             atlas = { Atlas.read { scale, layer -> bundled("libraries/map/$scale/$layer.txt") } },
@@ -53,6 +58,8 @@ fun Yemoja(folder: String) {
                 )
             },
             today = ::today,
+            compact = compact,
+            back = { enabled, onBack -> BackHandler(enabled, onBack) },
         )
     }
     // Light or dark as the system is set, in the application's own colours. `GUI-3`.
@@ -63,6 +70,9 @@ fun Yemoja(folder: String) {
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) { Application(universe, platform) }
     }
 }
+
+/** The shorter side of a tablet's screen at its least, in density-independent pixels. */
+private const val TABLET = 600
 
 /** A text the build put inside the app, read whole. */
 private fun bundled(path: String): String {

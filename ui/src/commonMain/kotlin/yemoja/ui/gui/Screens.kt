@@ -6,6 +6,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -220,6 +221,14 @@ internal class Platform(
      * where the platform scrolls without one, as a touch screen does. `GUI-43`.
      */
     val scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)? = null,
+    /** Whether the screen is a phone's, which shows one thing at a time. `PHONE-2`. */
+    val compact: Boolean = false,
+    /**
+     * The platform's own back, offered [enabled] and doing [onBack], or absent where it has none.
+     *
+     * A phone's back button or gesture, which steps back through a tab as the arrow does. `PHONE-2`.
+     */
+    val back: (@Composable (enabled: Boolean, onBack: () -> Unit) -> Unit)? = null,
 )
 
 /**
@@ -441,7 +450,14 @@ internal fun Application(universe: Universe?, platform: Platform) {
             tab = calculations
         }
     }
-    CompositionLocalProvider(LocalChanger provides changer, LocalPlanOpener provides opener) {
+    // A phone steps back through a tab one page at a time, by the arrow and by its own back.
+    val back = if (platform.compact) backOf(tab, kept.getValue(tab)) else null
+    platform.back?.invoke(back != null) { back?.invoke() }
+    CompositionLocalProvider(
+        LocalChanger provides changer,
+        LocalPlanOpener provides opener,
+        LocalCompact provides platform.compact,
+    ) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Tabs(
@@ -451,6 +467,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     kept = kept.getValue(tab),
                     ribbon = ribbonOf(tab, kept.getValue(tab)),
                     download = reading.stage,
+                    onBack = back,
                     unasked = unasked,
                     asking = talking,
                 ) { talking = !talking }
@@ -563,12 +580,18 @@ private fun Tabs(
     ribbon: Ribbon,
     /** How far a download has got, which the home tab's icon shows from every tab. `GUI-52`. */
     download: Stage,
+    /** One step back on a phone, or absent where there is nowhere back to go. `PHONE-2`. */
+    onBack: (() -> Unit)?,
     /** Why the agent cannot be asked, or absent where it can. */
     unasked: String?,
     /** Whether the panel is open, which is what the button would shut. */
     asking: Boolean,
     onAsk: () -> Unit,
 ) {
+    if (LocalCompact.current) {
+        CompactTabs(tabs, chosen, onChoose, kept, ribbon, download, onBack)
+        return
+    }
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             // Tabs as wide as their names, so the row's own rule would stop where they do. The
@@ -584,22 +607,7 @@ private fun Tabs(
                         selected = tab === chosen,
                         onClick = { onChoose(tab) },
                         text = { Text(tab.name) },
-                        icon = {
-                            val busy = busyOf(download).takeIf { tab.shape == Shape.HOME }
-                            when {
-                                busy == null -> Icon(tab.icon, contentDescription = null)
-                                download == Stage.READY -> Explained(busy) {
-                                    Icon(Icons.Filled.DownloadDone, contentDescription = busy)
-                                }
-
-                                else -> Explained(busy) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(TAB_ICON),
-                                        strokeWidth = 2.dp,
-                                    )
-                                }
-                            }
-                        },
+                        icon = { TabIcon(tab, download) },
                     )
                 }
             }
@@ -618,6 +626,79 @@ private fun Tabs(
                     modifier = Modifier.padding(horizontal = GAP),
                 ) { Icon(Icons.Filled.AutoAwesome, contentDescription = said) }
             }
+        }
+        HorizontalDivider()
+    }
+}
+
+/**
+ * A tab's glyph, or on Home what a download is doing: a spinner while it reads, a tick once it
+ * has finished. `GUI-52`.
+ */
+@Composable
+private fun TabIcon(tab: Tab, download: Stage) {
+    val busy = busyOf(download).takeIf { tab.shape == Shape.HOME }
+    when {
+        busy == null -> Icon(tab.icon, contentDescription = null)
+        download == Stage.READY -> Explained(busy) {
+            Icon(Icons.Filled.DownloadDone, contentDescription = busy)
+        }
+
+        else -> Explained(busy) {
+            CircularProgressIndicator(modifier = Modifier.size(TAB_ICON), strokeWidth = 2.dp)
+        }
+    }
+}
+
+/**
+ * The tab row as a phone has it: back, the tab open with a menu of the others, then add, edit and
+ * delete.
+ *
+ * Seven tabs do not fit across a phone, so they are a press away rather than in view, `PHONE-5`.
+ * The agent's button is not there, an agent being a program a phone cannot start. `PHONE-1`.
+ */
+@Composable
+private fun CompactTabs(
+    tabs: List<Tab>,
+    chosen: Tab,
+    onChoose: (Tab) -> Unit,
+    kept: Kept,
+    ribbon: Ribbon,
+    download: Stage,
+    onBack: (() -> Unit)?,
+) {
+    var choosing by remember { mutableStateOf(false) }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.clickable { choosing = true }.padding(GAP),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(HALF),
+                ) {
+                    TabIcon(chosen, download)
+                    Text(chosen.name, style = MaterialTheme.typography.titleMedium)
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = "other tabs")
+                }
+                Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
+                    for (tab in tabs) {
+                        DropdownMenuItem(
+                            text = { Text(tab.name) },
+                            leadingIcon = { TabIcon(tab, download) },
+                            onClick = {
+                                choosing = false
+                                onChoose(tab)
+                            },
+                        )
+                    }
+                }
+            }
+            Buttons(ribbon, kept)
         }
         HorizontalDivider()
     }
@@ -1149,9 +1230,10 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
         if (gathering.bars) fittedOf(set, across, up, gathering, steps) else 0
     }
     val stepAt = (kept.step ?: fitted).coerceIn(steps.indices)
-    Row(
+    // Onto further lines where the screen is too narrow for one, as on a phone.
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(bottom = HALF),
-        verticalAlignment = Alignment.CenterVertically,
+        itemVerticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
         Picked(Gathering.entries.map { it.label }, gathering.ordinal) { kept.gathering = it }
@@ -1201,7 +1283,7 @@ private fun sideOf(gathering: Gathering, up: Variable): String =
 
 /** One thing chosen from a list, its name being the box that chooses it. */
 @Composable
-private fun Picked(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
+internal fun Picked(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
     var picking by remember { mutableStateOf(false) }
     if (labels.isEmpty()) return
     val at = chosen.coerceIn(labels.indices)
@@ -1399,10 +1481,12 @@ private fun Subject(
     val tree = remember(set, kept.hideUnused, edition) { shownTreeOf(set, kept.hideUnused) }
     // What a tab opens on the first time: Locations on the widest root, which is the world, and
     // Community on the user, whose logbook this is.
+    val compact = LocalCompact.current
     remember(kept) {
         if (!kept.opened) {
             kept.opened = true
-            when (tab.shape) {
+            // A phone opens on the list, there being no room to show what is chosen beside it.
+            if (!compact) when (tab.shape) {
                 Shape.PLACES -> kept.place = widestRootIn(tree)
                 Shape.TYPES -> kept.chosen = user?.let { chosenOf(set, it) }
                 // The last dive, which is the first in a table kept newest first.
@@ -1419,8 +1503,12 @@ private fun Subject(
         Shape.TYPES -> SUBTABS
         else -> SELECTOR
     }
+    // A phone shows the list or what was chosen from it, never both. `PHONE-2`.
+    val page = if (compact) pageOf(tab, kept) else null
     Row(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.width(wide)) {
+        if (page == null || page == Page.LIST) Box(
+            modifier = if (page == null) Modifier.width(wide) else Modifier.fillMaxSize(),
+        ) {
             when (tab.shape) {
                 Shape.DIVES -> Selectable {
                     Dives(set, kept)
@@ -1436,6 +1524,7 @@ private fun Subject(
                     set = set,
                     tree = tree,
                     kept = kept,
+                    treeOnly = page != null,
                     onPlace = { region ->
                         kept.place = region
                         // What was chosen stays chosen while the new region still lists it.
@@ -1447,7 +1536,7 @@ private fun Subject(
                 Shape.MANUAL, Shape.HOME, Shape.CALCULATIONS -> Unit
             }
         }
-        VerticalDivider()
+        if (page == null) VerticalDivider()
         val changer = LocalChanger.current
         val making = remember(tab, chosen) { makingOf(tab, chosen) }
         val makeable = remember(tab, chosen) { makeableIn(tab, chosen) }
@@ -1490,7 +1579,7 @@ private fun Subject(
                 )
             }
         }
-        Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
+        if (page != Page.LIST) Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             Selectable {
                 when {
                     // A form being filled in comes before the tab's own view, Locations included:
@@ -1509,6 +1598,13 @@ private fun Subject(
                             },
                         )
                     }
+                    // A phone shows the site or wreck chosen on a page of its own, after the
+                    // page for the region it was chosen from.
+                    page == Page.ITEM && chosen != null && tab.shape == Shape.PLACES -> ItemView(
+                        chosen = chosen,
+                        onFollow = onFollow,
+                        kept = kept,
+                    )
                     tab.shape == Shape.PLACES -> {
                         PlaceView(
                             set = set,
@@ -1930,6 +2026,8 @@ private fun Places(
     set: ItemSet,
     tree: List<Branch>,
     kept: Kept,
+    /** The regions alone, filling the width, which is a phone's first page. `PHONE-2`. */
+    treeOnly: Boolean = false,
     onPlace: (Chosen) -> Unit,
     onChoose: (Chosen) -> Unit,
 ) {
@@ -1945,7 +2043,8 @@ private fun Places(
     val hideUnused = kept.hideUnused
     Row(modifier = Modifier.fillMaxSize()) {
         Selectable {
-            Column(modifier = Modifier.width(TREE).fillMaxHeight().padding(GAP)) {
+            val width = if (treeOnly) Modifier.fillMaxWidth() else Modifier.width(TREE)
+            Column(modifier = width.fillMaxHeight().padding(GAP)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().clickable { kept.hideUnused = !hideUnused },
                     verticalAlignment = Alignment.CenterVertically,
@@ -1978,6 +2077,7 @@ private fun Places(
                 }
             }
         }
+        if (treeOnly) return@Row
         VerticalDivider()
         val what = remember(set, place, kept.unplaced, hideUnused, LocalChanger.current.edition) {
             when {
@@ -1997,6 +2097,25 @@ private fun Places(
                     items(what.second, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
                 }
             }
+        }
+    }
+}
+
+/** What is at a place, sites then wrecks, as a phone lists it on the region's own page. */
+@Composable
+private fun PlaceEntries(
+    what: Pair<List<Chosen>, List<Chosen>>,
+    chosen: Chosen?,
+    onChoose: (Chosen) -> Unit,
+) {
+    Selectable {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Label("Sites", 0)
+            if (what.first.isEmpty()) Aside("No sites")
+            for (site in what.first) Entry(site, chosen, 1, onChoose)
+            Label("Wrecks", 0)
+            if (what.second.isEmpty()) Aside("No wrecks")
+            for (wreck in what.second) Entry(wreck, chosen, 1, onChoose)
         }
     }
 }
@@ -2239,7 +2358,8 @@ private fun StatsCard(title: String, items: List<Item>, onFollow: (String) -> Un
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = GAP))
             if (stats.isEmpty()) Aside("No values")
-            for (pair in stats.chunked(COLUMNS)) {
+            val columns = columns()
+            for (pair in stats.chunked(columns)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(GAP * 2),
@@ -2247,7 +2367,7 @@ private fun StatsCard(title: String, items: List<Item>, onFollow: (String) -> Un
                     for (field in pair) {
                         Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
                     }
-                    repeat(COLUMNS - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
+                    repeat(columns - pair.size) { Spacer(modifier = Modifier.weight(1f)) }
                 }
             }
         }
@@ -2269,23 +2389,30 @@ private fun PlaceView(
     onFollow: (String) -> Unit,
     kept: Kept,
 ) {
-    if (place == null && chosen == null) {
+    // A phone has no list beside this, so what is at the region is listed on it. `PHONE-2`.
+    val compact = LocalCompact.current
+    if (place == null && chosen == null && !(compact && kept.unplaced)) {
         Middle("choose a region on the left")
         return
     }
+    val edition = LocalChanger.current.edition
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(GAP),
     ) {
         if (place != null) {
-            val edition = LocalChanger.current.edition
             val dots = remember(set, place, hideUnused, edition) {
                 dotsOf(atPlaceIn(set, place.id, hideUnused).first)
             }
             val frame = remember(set, place, edition) { frameOf(place.item, dots) }
             if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)
-            ItemCard(chosen = place, onFollow = onFollow, kept = kept)
         }
+        if (compact) {
+            val at = place?.id ?: UNPLACED
+            val what = remember(set, at, hideUnused, edition) { atPlaceIn(set, at, hideUnused) }
+            PlaceEntries(what, chosen) { kept.chosen = it }
+        }
+        if (place != null) ItemCard(chosen = place, onFollow = onFollow, kept = kept)
         if (chosen != null) ItemCard(chosen = chosen, onFollow = onFollow, kept = kept)
     }
 }
@@ -2685,7 +2812,8 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
 /** Fields in the flow of a card, two to a row, a wide one taking its own. */
 @Composable
 private fun Flowing(shown: List<Shown>, onFollow: (String) -> Unit) {
-    for (row in rowsOf(shown) { it.wide }) {
+    val columns = columns()
+    for (row in rowsOf(shown, columns) { it.wide }) {
         val wide = row.size == 1 && row.first().wide
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2693,7 +2821,7 @@ private fun Flowing(shown: List<Shown>, onFollow: (String) -> Unit) {
         ) {
             for (field in row) Box(modifier = Modifier.weight(1f)) { Field(field, onFollow) }
             // A wide field spans the columns; a last row one short keeps its place in them.
-            if (!wide) repeat(COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+            if (!wide) repeat(columns - row.size) { Spacer(modifier = Modifier.weight(1f)) }
         }
     }
 }

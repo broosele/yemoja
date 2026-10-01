@@ -379,6 +379,12 @@ internal fun Calculations(
     /** The logbook a plan is saved into, or absent where none is open. */
     universe: Universe? = null,
 ) {
+    // A phone scrolls the warning away with the form, which it still heads; a third of a small
+    // screen held by it for good would leave the form no room. `PHONE-2`.
+    if (LocalCompact.current) {
+        Calculators(working, settings, scrollbar, universe)
+        return
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         Waiver()
         HorizontalDivider()
@@ -439,8 +445,10 @@ private fun Calculators(
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)?,
     universe: Universe?,
 ) {
+    // A phone chooses the calculation from a list above it rather than beside it. `PHONE-2`.
+    val compact = LocalCompact.current
     Row(modifier = Modifier.fillMaxSize()) {
-        Selectable {
+        if (!compact) Selectable {
             Column(modifier = Modifier.width(CALCULATIONS).fillMaxHeight().padding(GAP)) {
                 for (calculation in Calculation.entries) {
                     Line(
@@ -451,10 +459,17 @@ private fun Calculators(
                 }
             }
         }
-        VerticalDivider()
+        if (!compact) VerticalDivider()
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             Selectable {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    if (compact) {
+                        Waiver()
+                        val all = Calculation.entries
+                        Picked(all.map { it.label }, all.indexOf(working.calculation)) {
+                            working.calculation = all[it]
+                        }
+                    }
                     when (working.calculation) {
                         Calculation.SAC -> SacForm(working)
                         Calculation.NDL -> NdlForm(working, settings)

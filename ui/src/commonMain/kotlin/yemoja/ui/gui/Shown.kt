@@ -192,13 +192,13 @@ internal class Arranged(
 }
 
 /**
- * [held] in rows of [COLUMNS], except that one [wide] takes a row of its own.
+ * [held] in rows of [columns], except that one [wide] takes a row of its own.
  *
  * A paragraph of remarks, or a list of buddies stacked one box to a line, is as tall as the four
  * fields beside it and leaves a hole where three of them would have been. Given the row it fills
  * the hole goes, and the fields after it line up again. `GUI-16`.
  */
-internal fun <T> rowsOf(held: List<T>, wide: (T) -> Boolean): List<List<T>> {
+internal fun <T> rowsOf(held: List<T>, columns: Int = COLUMNS, wide: (T) -> Boolean): List<List<T>> {
     val rows = ArrayList<List<T>>()
     var row = ArrayList<T>()
     for (one in held) {
@@ -211,7 +211,7 @@ internal fun <T> rowsOf(held: List<T>, wide: (T) -> Boolean): List<List<T>> {
             continue
         }
         row += one
-        if (row.size == COLUMNS) {
+        if (row.size == columns) {
             rows += row
             row = ArrayList()
         }

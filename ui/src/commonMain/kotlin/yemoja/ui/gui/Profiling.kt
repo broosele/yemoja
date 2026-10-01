@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -991,6 +992,26 @@ internal fun PlanForm(
     Heading("Dive plan")
     saving()
     StartRow(shaping, universe, followedOf(planned, universe))
+    if (LocalCompact.current) {
+        // A phone stacks the three, each its own height, and the gases' table scrolls sideways,
+        // its columns being wider together than the screen. `PHONE-2`.
+        Caption("Runtime")
+        Scrolling(Modifier.fillMaxWidth().height(ZONE / 2).framed().padding(HALF), scrollbar) {
+            RuntimeLines(shaping, shaped, done, conditions)
+        }
+        Caption("Settings")
+        Framed { Conditions(shaping) }
+        Caption("Contingency")
+        Framed { Contingency(shaping, reckoned) }
+        Caption("Gases")
+        Column(
+            modifier = Modifier.fillMaxWidth().framed().padding(HALF)
+                .horizontalScroll(rememberScrollState()),
+        ) {
+            CylinderHeadings()
+            Cylinders(shaping, conditions, done, reckoned)
+        }
+    } else {
     // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
     // two columns end on one line however many cylinders there are.
     Row(
@@ -1017,6 +1038,7 @@ internal fun PlanForm(
             }
         }
     }
+    }
     if (done != null) Figures(done.evaluated)
     when {
         shaped is Shaped.Wrong -> Refused(shaped.reason)
@@ -1032,6 +1054,23 @@ internal fun PlanForm(
         }
     }
     if (done != null) Graph(done, shaping)
+}
+
+/** Two columns of settings side by side, or one above the other on a phone. `PHONE-2`. */
+@Composable
+private fun Halves(first: @Composable ColumnScope.() -> Unit, second: @Composable ColumnScope.() -> Unit) {
+    val spaced = Arrangement.spacedBy(GAP)
+    if (LocalCompact.current) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = spaced) {
+            first()
+            second()
+        }
+        return
+    }
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = spaced) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = spaced, content = first)
+        Column(modifier = Modifier.weight(1f), verticalArrangement = spaced, content = second)
+    }
 }
 
 /** One line of what the model objects to, in the error colour where it is a fault. */
@@ -1254,8 +1293,8 @@ private fun Modifier.framed(): Modifier = border(FRAME, MaterialTheme.colorSchem
 @Composable
 private fun Conditions(shaping: Shaping) {
     val none = shaping.safetyMinutes.trim().toDoubleOrNull() == 0.0
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GAP)) {
+    Halves(
+        first = {
             Section("General") {
                 Setting("Descent rate", PlannerTips.DESCENT_RATE, shaping.descentRate, "m/min") { shaping.descentRate = it }
                 Setting("Ascent rate", PlannerTips.ASCENT_RATE, shaping.ascentRate, "m/min") { shaping.ascentRate = it }
@@ -1276,8 +1315,8 @@ private fun Conditions(shaping: Shaping) {
                 Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it }
                 Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it }
             }
-        }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GAP)) {
+        },
+        second = {
             Section("Algorithm") {
                 // Bühlmann is the only model until another can be chosen here.
                 Labelled("Model", PlannerTips.MODEL) {
@@ -1291,8 +1330,8 @@ private fun Conditions(shaping: Shaping) {
                 Setting("Safety stop depth", PlannerTips.SAFETY_DEPTH, shaping.safetyDepth, "m", enabled = !none) { shaping.safetyDepth = it }
                 Setting("Safety stop duration", PlannerTips.SAFETY_DURATION, shaping.safetyMinutes, "min") { shaping.safetyMinutes = it }
             }
-        }
-    }
+        },
+    )
 }
 
 /**

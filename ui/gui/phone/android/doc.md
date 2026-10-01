@@ -18,19 +18,31 @@ form factor.
 
 ## What is built
 
-**It builds and it starts, and that is all so far.** `./gradlew :android:assembleDebug` writes a
-debug app. It opens on a logbook in the app's own storage, made the first time, and shows the
-desktop's screens as they are, the Home tab's buttons wrapping onto more lines where the screen
-is narrow. Tried on the SDK's emulator, Android 16, and on no phone yet.
+**It builds, it starts, and a phone is laid out as one.** `./gradlew :android:assembleDebug`
+writes a debug app. It opens on a logbook in the app's own storage, made the first time. Tried on
+the SDK's emulator, Android 16, and on no phone yet.
+
+**On a phone, one page at a time**, `PHONE-2`. The tab row is the open tab with a menu of the
+others, back, and add, edit and delete; the agent's button is not there, `PHONE-1`. A tab shows
+its list, and choosing opens the item full-screen. Locations goes from the regions to a region's
+own page, its map, what is at it and the region itself, and from there to a site or wreck. Back,
+the arrow or the phone's own, steps out one page at a time, cancelling a form on the way. Fields
+stand one to a row. Calculations is chosen from a list above the form, the planner's runtime,
+settings and gases stand one under another with the gases' table scrolling sideways, and the
+model's warning scrolls with the form it heads. A tablet keeps the desktop's layout, `PHONE-3`,
+told apart by the shorter side of its screen, 600 or more.
+
+Rough still: the runtime's gas column is narrow, and the contingency's last tick sits at the
+screen's edge.
 
 The app is one activity in `android/`, which hands the screen to `Yemoja` in `ui/src/androidMain`;
 everything the platform supplies is there. The manual and the map travel inside the app as they do
 in the desktop's jar.
 
 **Not yet:** a folder the user picks, `AND-5`, and with it import and export; reading a dive
-computer, `AND-6`, with the permissions and the notification it needs, `AND-2` and `AND-3`; the
-phone's own layouts, `PHONE-2`; a signed release, `AND-1`; and a long press for what a tooltip
-says.
+computer, `AND-6`, with the permissions and the notification it needs, `AND-2` and `AND-3`; and
+a signed release, `AND-1`. What a tooltip says over a greyed button is said on a long press, the
+toolkit's own answer on a touch screen.
 
 **The lock is let go at start.** Android ends an app without warning, so the edit lock, `JSON-27`,
 is left behind each time. In the app's own storage nothing else reaches the logbook, so a lock found

@@ -53,6 +53,11 @@ kotlin {
             // either is fine here. `GUI-38`.
             implementation("com.agentclientprotocol:acp:0.30.1")
         }
+        androidMain.dependencies {
+            // The phone's back button, handed to the screens so it steps back as their arrow
+            // does. The same library the app takes its window from. `PHONE-2`.
+            implementation("androidx.activity:activity-compose:1.13.0")
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
