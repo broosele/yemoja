@@ -2,6 +2,7 @@ package yemoja.ui.gui
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import yemoja.data.json.FileStore
@@ -119,17 +120,66 @@ internal class GrantedFileStore(
         return DocumentsContract.getDocumentId(made)
     }
 
-    private fun childrenOf(folder: String): Map<String, Entry> = listed.getOrPut(folder) {
+    private fun childrenOf(folder: String): Map<String, Entry> = listed.getOrPut(folder) { listedIn(folder) }
+
+    /**
+     * Every child of [folder], however the provider hands them over.
+     *
+     * **A cloud provider answers in parts.** Google Drive's gives the first files it has and marks
+     * the answer as still loading, or gives one page of a longer list. Taking the first answer as
+     * the whole folder read a logbook of 347 dives as one of 200. So the list is asked for again
+     * while it is loading, and page after page while it holds fewer than the provider counts.
+     * A folder that is still loading after [PATIENCE] is refused, a part of a logbook being worse
+     * than none. `AND-5`.
+     */
+    private fun listedIn(folder: String): Map<String, Entry> {
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, folder)
-        val asked = arrayOf(Document.COLUMN_DISPLAY_NAME, Document.COLUMN_DOCUMENT_ID, Document.COLUMN_MIME_TYPE)
-        val found = HashMap<String, Entry>()
-        resolver.query(children, asked, null, null, null)?.use { rows ->
-            while (rows.moveToNext()) {
-                val folder = rows.getString(2) == Document.MIME_TYPE_DIR
-                found[rows.getString(0)] = Entry(rows.getString(1), folder)
+        var waited = 0L
+        while (true) {
+            val found = HashMap<String, Entry>()
+            val first = pageOf(children, 0, found)
+            if (!first.loading) {
+                var total = first.total
+                var offset = found.size
+                // Further pages, where the provider counts more than it gave.
+                while (total > found.size) {
+                    val page = pageOf(children, offset, found)
+                    if (page.rows == 0) break
+                    offset += page.rows
+                    total = maxOf(total, page.total)
+                }
+                return found
             }
+            if (waited >= PATIENCE) {
+                throw FileStoreMissing("the folder was still being listed after ${PATIENCE / 1000} s, so it was not read")
+            }
+            Thread.sleep(STEP)
+            waited += STEP
         }
-        found
+    }
+
+    /** What one answer about a folder said: how many rows, whether more is coming, how many in all. */
+    private class Page(val rows: Int, val loading: Boolean, val total: Int)
+
+    /** The children from [offset] on, added to [into]. */
+    private fun pageOf(children: Uri, offset: Int, into: MutableMap<String, Entry>): Page {
+        val asked = arrayOf(Document.COLUMN_DISPLAY_NAME, Document.COLUMN_DOCUMENT_ID, Document.COLUMN_MIME_TYPE)
+        val paging = if (offset == 0) null else Bundle().apply { putInt(ContentResolver.QUERY_ARG_OFFSET, offset) }
+        val rows = resolver.query(children, asked, paging, null) ?: return Page(0, false, -1)
+        rows.use {
+            var count = 0
+            while (it.moveToNext()) {
+                val folder = it.getString(2) == Document.MIME_TYPE_DIR
+                into[it.getString(0)] = Entry(it.getString(1), folder)
+                count += 1
+            }
+            val extras = it.extras
+            return Page(
+                rows = count,
+                loading = extras?.getBoolean(DocumentsContract.EXTRA_LOADING) == true,
+                total = extras?.getInt(ContentResolver.EXTRA_TOTAL_COUNT, -1) ?: -1,
+            )
+        }
     }
 
     private fun uriOf(id: String): Uri = DocumentsContract.buildDocumentUriUsingTree(tree, id)
@@ -140,6 +190,12 @@ internal class GrantedFileStore(
          * `dive.json` already carries and the lock's name must not be given.
          */
         const val MIME = "application/octet-stream"
+
+        /** How long a folder may go on being listed before it is refused, in milliseconds. */
+        const val PATIENCE = 120_000L
+
+        /** How long between one asking and the next while a folder is listed. */
+        const val STEP = 250L
     }
 }
 

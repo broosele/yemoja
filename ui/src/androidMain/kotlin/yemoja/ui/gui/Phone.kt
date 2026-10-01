@@ -10,20 +10,31 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import yemoja.data.json.DiskFileStore
@@ -58,24 +69,30 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     val devices = remember { FoundDevices() }
     var held by remember { mutableStateOf<Universe?>(null) }
     var refused by remember { mutableStateOf<String?>(null) }
+    // Whether a logbook is being read, which a folder on a cloud drive can make take a while.
+    var opening by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    // Read off the screen's own thread, so the app draws at once and says what it is doing rather
+    // than staying blank while the files come in. `AND-5`.
     fun take(tree: Uri) {
         held = null
-        when (val opened = openedIn(context, tree, devices)) {
-            is Opening.Done -> {
-                held = opened.universe
-                remembered.edit().putString(FOLDER, tree.toString()).apply()
-            }
+        opening = true
+        scope.launch {
+            val opened = withContext(Dispatchers.IO) { openedIn(context, tree, devices) }
+            opening = false
+            when (opened) {
+                is Opening.Done -> {
+                    held = opened.universe
+                    remembered.edit().putString(FOLDER, tree.toString()).apply()
+                }
 
-            is Opening.Refused -> refused = opened.reason
+                is Opening.Refused -> refused = opened.reason
+            }
         }
     }
-    // The folder picked last time, opened again; a grant that lapsed leaves the welcome.
-    remember {
-        remembered.getString(FOLDER, null)?.let { kept ->
-            (openedIn(context, Uri.parse(kept), devices) as? Opening.Done)?.let { held = it.universe }
-        }
-        true
-    }
+    // The folder picked last time, opened again. One that will not open says why and leaves the
+    // welcome, from which another can be picked.
+    LaunchedEffect(Unit) { remembered.getString(FOLDER, null)?.let { take(Uri.parse(it)) } }
     DisposableEffect(Unit) {
         onDispose { devices.close() }
     }
@@ -129,7 +146,9 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     // Android draws an app under its status and navigation bars, so the window keeps clear of
     // them itself.
     MaterialTheme(colorScheme = scheme) {
-        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) { Application(held, platform) }
+        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            if (opening) BeingOpened() else Application(held, platform)
+        }
         refused?.let { said ->
             AlertDialog(
                 onDismissRequest = { refused = null },
@@ -137,6 +156,19 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
                 text = { Text(said) },
             )
         }
+    }
+}
+
+/** What the screen shows while a logbook is read. */
+@Composable
+private fun BeingOpened() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CircularProgressIndicator()
+        Text("Opening the logbook…", modifier = Modifier.padding(top = 16.dp))
     }
 }
 

@@ -25,7 +25,14 @@ writes a debug app. Tried on the SDK's emulator, Android 16, and on no phone yet
 which folder, asked through Android's own picker; a folder holding a logbook is opened, and one
 that holds none is made into one. The grant is kept and the folder remembered, so the app opens
 on it again. It is reached through the storage access framework, by `GrantedFileStore`, whose
-answers about a folder's children are kept until something in it changes. The libraries the app
+answers about a folder's children are kept until something in it changes. **A folder is listed
+whole**: a cloud provider such as Google Drive's answers in parts, marking the list as still
+loading or giving one page of a longer one, and the first answer taken as the whole once read a
+logbook of 347 dives as 200. So the list is asked for again while it is loading, and page after
+page while it holds fewer than the provider counts, and a folder still loading after two minutes
+is refused rather than read in part. **A logbook is opened off the screen's thread**, the screen
+saying so meanwhile, since reading one from a cloud drive can take a while and a blank screen
+reads as a broken app. The libraries the app
 ships are read from inside it, and since a folder inside an app cannot be listed the build writes
 an index of them, which is how a new logbook learns what to declare. A review and an agent's
 changes are staged in the app's own storage, the grant reaching nothing beside the folder. No
