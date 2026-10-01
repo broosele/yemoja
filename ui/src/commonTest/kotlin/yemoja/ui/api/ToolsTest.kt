@@ -264,7 +264,7 @@ class ListTest {
         val tools = Tools(sites)
         assertEquals(0L, read(tools.list("dive_site")).leaf("revision"))
         sites.change(Operation.EDIT, Change.Write(sites.logbook["site_02"]!!, "name", "Renamed"))
-        assertEquals(1L, read(tools.describe("wreck")).leaf("revision"))
+        assertEquals(1L, read(tools.describe("operator")).leaf("revision"))
         assertEquals(1L, read(tools.get("nobody")).leaf("revision"), "a refusal too")
     }
 }

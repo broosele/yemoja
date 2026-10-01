@@ -64,7 +64,7 @@ class ExportedFixtureTest {
     @Test
     fun `every item the importer reads comes back, and the libraries stay behind`() {
         assertEquals(made(logbook).size, back.allOf(Types.DIVE).size, "the dives that were made")
-        for (type in listOf(Types.GEAR, Types.DIVE_SITE, Types.WRECK, Types.PERSON)) {
+        for (type in listOf(Types.GEAR, Types.DIVE_SITE, Types.PERSON)) {
             assertEquals(logbook.allOf(type).size, back.allOf(type).size, type.name)
         }
         assertEquals(logbook.allOf(Types.OPERATOR).size, back.allOf(Types.OPERATOR).size)

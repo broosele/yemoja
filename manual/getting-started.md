@@ -70,10 +70,9 @@ you made each month, widening the bars where there would be too many to read.
   the top.
 - **Community** holds people, operators and certifications, each on a small tab of its own. You
   are marked among the people, and the tab opens on you.
-- **Locations** holds the regions of the world as a tree, the sites in the one chosen with the
-  wrecks at them listed below, and a map of it with your sites marked. The tree ends with **No
-  region** where a site names none, which is where a site you have just made waits until you say
-  where it is. A wreck no site names waits there too. **Hide
+- **Locations** holds the regions of the world as a tree, the sites in the one chosen, and a
+  map of it with your sites marked. The tree ends with **No region** where a site names none,
+  which is where a site you have just made waits until you say where it is. **Hide
   unused**, which is on to begin with, leaves out the sites none of your dives were at, and the
   regions left with nothing in them.
 - **Calculations** gives a number from figures you type, with no dive to read them from.
@@ -180,9 +179,9 @@ anything that is not a cylinder. They are there under **more fields** when you n
 **Adding a tab** to something an item holds several of, or taking one away with its cross,
 happens at once rather than waiting for Save.
 
-**The +** makes another item and opens it as a form. On Locations it offers **Add a region**,
-**Add a dive site** and **Add a wreck**; the pencil and the bin there act on the site or wreck
-you have chosen, and on the region when you have chosen neither. On a tab holding one kind it
+**The +** makes another item and opens it as a form. On Locations it offers **Add a region**
+and **Add a dive site**; the pencil and the bin there act on the site you have chosen, and on
+the region when you have chosen none. On a tab holding one kind it
 makes that kind straight away; on a tab holding several it offers them in a list, the kind you
 are looking at first — so the Dives tab offers **Add a dive** and **Add a dive trip**, which is
 how the first trip in a logbook is made. Nothing is made until you save, and the item's id is

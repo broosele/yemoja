@@ -84,7 +84,6 @@ logic/
                   DiveTrip.kt   ... nine of them, and every field worked out from each
                   Certification.kt
                   Operator.kt
-                  Wreck.kt
                   Region.kt
                   Vocabularies.kt  what more than one type is described with
                   References.kt    the far side of a reference, for children and parts
@@ -1240,7 +1239,7 @@ To settle when we discuss architecture and features:
    a dive holds — its environment, its gear, its profiles, its gas sources. Beyond that it
    creates one thing, a `dive_site`, and only after `LOGIC-18` has asked.
 
-   **No gear, no person, no operator, no trip, no region, no wreck, no certification.** What
+   **No gear, no person, no operator, no trip, no region, no certification.** What
    separates the site from the rest is that a fix *proposes* a place even though it is not one.
    Nothing in a download proposes a cylinder — a tank has no identity at all — and nothing in
    it mentions a buddy, an operator or a trip.

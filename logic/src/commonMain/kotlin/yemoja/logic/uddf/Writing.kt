@@ -308,29 +308,9 @@ internal class Writer(private val set: ItemSet) {
         tag("sitedata") {
             say("maximumdepth", number(site, "max_depth"))
             say("bottom", text(site, "substrate"))
-            // One wreck to a site there. The first goes, and the rest are not written. `uddf.md`.
-            pointedAll(site, "wrecks").firstOrNull()?.let { tag("wreck") { wreckOut(it) } }
         }
         rated(said(site, "rating"))
         notes(text(site, "remarks"))
-    }
-
-    private fun Built.wreckOut(wreck: Item) {
-        say("name", text(wreck, "name"))
-        for (alias in texts(wreck, "alternative_names")) say("aliasname", alias)
-        say("shiptype", text(wreck, "ship_type"))
-        say("nationality", text(wreck, "nationality"))
-        tag("built") {
-            say("shipyard", text(wreck, "shipyard"))
-            dated("launchingdate", said(wreck, "launched"))
-        }
-        tag("shipdimension") {
-            for (name in listOf("length", "beam", "draught", "displacement")) {
-                say(name, number(wreck, name))
-            }
-        }
-        dated("sunk", said(wreck, "sunk"))
-        notes(text(wreck, "remarks"))
     }
 
     private fun Built.mixOut(id: String, gas: Gas) {

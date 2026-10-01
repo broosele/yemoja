@@ -520,7 +520,7 @@ To settle when we discuss architecture:
 
 - **JSON-21 — How a logbook's own files are found.** *Settled:* by **convention, not by
   declaration.** Each kind of item lives under **its own name** — `dive`, `person`,
-  `region`, `dive_site`, `wreck`, `gear`, `certification`, `operator`, `dive_trip` — as
+  `region`, `dive_site`, `gear`, `certification`, `operator`, `dive_trip` — as
   either a folder of one file per item or a single file of them all, and the application
   uses whichever is there. Both at once is the one case it cannot resolve, and it says so
   rather than choosing.

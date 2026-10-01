@@ -284,9 +284,8 @@ internal fun regionTreeOf(set: ItemSet): List<Branch> {
     val lost = all.filter { it.id !in placed }
     val circular = lost.map { Branch(it.id, it.title + CIRCULAR, held = listOf(it)) }
     // A site naming no region is under no region, and a tree is the only way into one. So the
-    // sites that hang nowhere hang here instead, rather than being unreachable. `GUI-25`. So do
-    // the wrecks no site names, a wreck having no region of its own. `GUI-20`.
-    val loose = looseSitesIn(set) + looseWrecksIn(set)
+    // sites that hang nowhere hang here instead, rather than being unreachable. `GUI-25`.
+    val loose = looseSitesIn(set)
     val unplaced = if (loose.isEmpty()) emptyList() else listOf(Branch(UNPLACED, "No region"))
     return tree + circular + unplaced
 }
@@ -296,14 +295,6 @@ internal fun looseSitesIn(set: ItemSet): List<Chosen> {
     val regions = entriesOf(set, Types.REGION).map { it.id }.toHashSet()
     return entriesOf(set, Types.DIVE_SITE)
         .filter { site -> pointedAtAll(site.item, "regions").none { it in regions } }
-}
-
-/** The wrecks no dive site names, which no region would show. `GUI-20`. */
-internal fun looseWrecksIn(set: ItemSet): List<Chosen> {
-    val named = entriesOf(set, Types.DIVE_SITE)
-        .flatMap { pointedAtAll(it.item, "wrecks") }
-        .toHashSet()
-    return entriesOf(set, Types.WRECK).filter { it.id !in named }
 }
 
 /** The branch holding the sites that name no region. Not a region, and named by nothing else. */
@@ -331,35 +322,23 @@ private fun parentsOf(region: Item): List<String> = pointedAtAll(region, "parent
 private fun childrenOf(region: Item): List<String> = pointedAtAll(region, "children")
 
 /**
- * What is at a place: the dive sites in [region] or anywhere inside it, and the wrecks lying at
- * those sites.
+ * What is at a place: the dive sites in [region] or anywhere inside it.
  *
  * Inside it, because a site in Zeeland is in the Netherlands and in Europe, and a reader who
- * opens Europe is asking what there is to dive there. One list for sites and wrecks, because a
- * wreck has no place of its own — it has no region and no position, and a site names the wrecks
- * at it. `GUI-20`. So a wreck at no site is under no region, and one named by two sites is under
- * both.
+ * opens Europe is asking what there is to dive there.
  */
 internal fun atPlaceIn(
     set: ItemSet,
     region: String,
     hideUnused: Boolean = false,
-): Pair<List<Chosen>, List<Chosen>> {
+): List<Chosen> {
     val within = withinOf(set, region)
     val used = if (hideUnused) usedSitesIn(set) else null
     // A site nobody has dived yet is one somebody has just made, so the branch that holds what
     // hangs nowhere shows them all. `GUI-26`.
-    val sites = if (region == UNPLACED) looseSitesIn(set) else entriesOf(set, Types.DIVE_SITE)
+    return if (region == UNPLACED) looseSitesIn(set) else entriesOf(set, Types.DIVE_SITE)
         .filter { used == null || it.id in used }
         .filter { pointedAtAll(it.item, "regions").any { named -> named in within } }
-    val wrecks = LinkedHashMap<String, Chosen>()
-    for (site in sites) {
-        for (id in pointedAtAll(site.item, "wrecks")) {
-            set[id]?.let { wrecks.getOrPut(id) { Chosen(id, titleOf(it), it) } }
-        }
-    }
-    if (region == UNPLACED) for (wreck in looseWrecksIn(set)) wrecks.getOrPut(wreck.id) { wreck }
-    return sites to wrecks.values.toList()
 }
 
 /** [region] and every region inside it, however deep. A cycle is walked once. `LOGIC-8`. */
@@ -419,22 +398,17 @@ private fun prunedOf(branch: Branch, direct: Map<String, Int>): List<Branch> {
 
 /**
  * The region a site is best looked at on: the most specific of the ones it names, which is the
- * one with the smallest frame. A wreck is looked at on the first site it lies at.
+ * one with the smallest frame.
  *
  * A site in Egypt and in the Red Sea has no one region, and a map of either would hold it; the
  * smaller is the closer look, and a region with no frame at all comes last. Absent where the
  * item names no region. `GUI-28`.
  */
 internal fun homeOf(set: ItemSet, item: Item): String? {
-    val regions = when (item.description) {
-        Types.DIVE_SITE -> pointedAtAll(item, "regions")
-        Types.WRECK -> pointedAtAll(item, "dive_sites").firstOrNull()
-            ?.let { set[it] }?.let { pointedAtAll(it, "regions") }.orEmpty()
-        else -> emptyList()
-    }
+    val regions = if (item.description == Types.DIVE_SITE) pointedAtAll(item, "regions") else emptyList()
     return regions.minByOrNull { id ->
         val region = set[id] ?: return@minByOrNull Double.MAX_VALUE
-        val frame = frameOf(region, dotsOf(atPlaceIn(set, id).first))
+        val frame = frameOf(region, dotsOf(atPlaceIn(set, id)))
         frame?.let { it.width * it.height } ?: Double.MAX_VALUE
     }
 }

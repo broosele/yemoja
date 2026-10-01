@@ -56,7 +56,6 @@ Each kind of item has a name, and everything of that kind lives under it:
 | Person | `person` |
 | Region | `region` |
 | Dive site | `dive_site` |
-| Wreck | `wreck` |
 | Gear | `gear` |
 | Certification | `certification` |
 | Operator | `operator` |

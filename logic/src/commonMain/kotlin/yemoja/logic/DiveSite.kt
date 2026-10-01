@@ -72,7 +72,6 @@ internal val DIVE_SITE: ItemDescription = ItemDescription(
         WholeNumberDescription("rating", range = 1..10),
         // A description rather than a classification, so no list to choose from.
         TextDescription("substrate"),
-        ReferenceDescription("wrecks", targetType = "wreck", cardinality = Cardinality.LIST),
         TextDescription("facilities", cardinality = Cardinality.LIST, suggestedSet = FACILITIES),
         // The height of the water above sea level, which changes how a dive is worked out.
         NumberDescription("elevation", Dimension.LENGTH),

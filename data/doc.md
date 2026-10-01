@@ -926,6 +926,19 @@ To settle when we discuss architecture:
 
 ## Settled and relocated
 
+- **DATA-127 — Whether a wreck is an item.** *Settled:* **no; what is known of a ship is said in
+  its site's `remarks`.** Decided on 2026-10-01, at the author's word.
+
+  A wreck was a type of its own, a ship with a history that a site pointed at, so that one ship
+  could be dived from two moorings and one site could hold a debris field. In use it added
+  nothing: the logbook it was meant for named its wreck dives after the ships, as sites, and
+  never made a wreck. A site named after the ship and the `wreck` tag on a dive say what a
+  logbook needs, and a type, its field reference, its UDDF mapping and its place on Locations
+  were the cost of saying the rest.
+
+  So the type and a site's `wrecks` are gone, and `DATA-62`, `DATA-63` and `GUI-20` are marked
+  with it. A UDDF wreck is read into its site's remarks, in UDDF's own words, `logic/uddf.md`.
+
 - **DATA-57 — Whether a dive plan is an item, and what it holds.** *Settled:* **a plan is a
   profile, under `profiles` on a dive, marked `planned`.** No tenth type, and no type of its
   own beside the profile.
@@ -1605,7 +1618,8 @@ To settle when we discuss architecture:
   keep the order they were written in.
 
 - **DATA-63 — Which items carry `alternative_names`.** *Settled:* dive site, wreck and
-  **operator**. Not person, not dive trip, not gas mix, whatever UDDF does.
+  **operator**. Not person, not dive trip, not gas mix, whatever UDDF does. *The wreck has since
+  gone, `DATA-127`: a ship's former names are said in its site's remarks.*
 
   UDDF puts `aliasname` on nearly everything, which is a format's caution rather than a
   model. The test applied here is whether a thing is *known* by more than one name, as
@@ -1619,7 +1633,8 @@ To settle when we discuss architecture:
   Neither gets a field that would sit empty in every logbook, and an imported `aliasname`
   on one of them folds into `remarks` rather than being dropped silently.
 
-- **DATA-62 — How a wreck's `displacement` is written.** *Settled:* a **number, in the
+- **DATA-62 — How a wreck's `displacement` is written.** *Withdrawn with the wreck, `DATA-127`;
+  kept for the reasoning about units, which still holds.* *As it stood:* a **number, in the
   file's mass unit**, and no tonne is added to `DATA-8`. A ship reads in kilograms, so a
   fifty-thousand-tonne liner is written 50000000.
 
@@ -1919,7 +1934,8 @@ Kept with their identifiers so earlier discussion still resolves.
   `displaced_volume` — the outside of the cylinder against the inside. Both were once
   called volume, which is how they came to hold the same numbers. The name says its
   dimension on purpose: a ship's `displacement` is a *mass*, and the two words would
-  otherwise collide across `Wreck` and `Buoyancy` with different dimensions behind them.
+  otherwise have collided across `Wreck`, since withdrawn, and `Buoyancy` with different
+  dimensions behind them.
   A ship keeps `displacement` because that is the term of art and `tonnage` means
   something else — gross tonnage is a volume — so the field this project invented is the
   one that moved. See the note under `DATA-52`

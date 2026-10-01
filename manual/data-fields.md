@@ -15,7 +15,6 @@ Yemoja stores these kinds of item:
 - **Gear** — a piece of equipment. A dive computer is gear like anything else you own.
 - **Region** — a part of the world.
 - **Dive site** — a place you dive.
-- **Wreck** — a ship on the bottom, which is not the same thing as the site it lies at.
 - **Person** — someone who appears in your logbook, including yourself.
 - **Operator** — a dive school or dive centre.
 - **Certification** — a diving qualification, such as an agency's open water award.
@@ -781,8 +780,6 @@ A place you dive.
   not a classification, so write what you saw rather than looking for the nearest word.
   The word covers a quarry floor and a lake bed as readily as a seabed, and keeps clear of
   `bottom` on a gas source, which is the gas you breathed at depth.
-- `wrecks` (list of references) — the ships lying there, if any. A site may hold more
-  than one; a wreck may be reachable from more than one site.
 - `facilities` (list of text) — what is there. Anything you like; the usual ones are
   `parking`, `filling station`, `nitrox`, `trimix`, `300bar`, `toilets`, `showers`,
   `changing rooms`, `rinse tanks`, `gear rental` and `food`, and what you have written on other
@@ -793,41 +790,9 @@ A place you dive.
 - `dives` (list of references, derived) — the dives made here. You never list them: each
   dive names its site, and this follows from that.
 - `remarks` (multiline text) — how to dive the place: entries, hazards, where to
-  park, what the tide does.
-
-### Wreck
-
-A ship on the bottom. Kept apart from the dive site because the two are not the same
-thing: a site is a place with coordinates, a wreck is a vessel with a history, and one
-site may hold several while one large wreck may be dived from more than one.
-
-- `name` (text) — what she was called. The item's id is derived from it.
-- `alternative_names` (list of text) — other names she went by, before a rename or a
-  change of owner.
-- `ship_type` (text) — what she was: `freighter`, `tanker`, `warship`, `hospital ship`.
-- `nationality` (text) — where she was registered.
-- `shipyard` (text) — who built her.
-- `launched` (date) — when she went into the water the first time.
-- `sunk` (date) — and when she went under for good.
-- `length`, `beam`, `draught` (number) — how big she was.
-
-- `displacement` (number) — what she weighed, which for a ship means the weight of water
-  she pushed aside. A mass like any other, so it is in kilograms unless the file says
-  otherwise: a large ship runs to eight digits.
-
-  Wreck books quote tonnages that will not say which kind they are — long tons, tonnes,
-  or gross register tonnage, which is a volume and not a weight at all. Where you cannot
-  tell, leave this empty and put what the book said in `remarks`. A figure you had to
-  guess the units of is worse than no figure.
-
-- `dive_sites` (list of references, derived) — the sites she can be dived from, which
-  follows from each site's `wrecks`.
-- `remarks` (multiline text) — her history, and whatever a book said that no field
-  here can hold.
-
-Most of this is not diving. Where she was built and what flag she flew make no
-difference underwater, and they are here because a wreck diver wants to know — the ship
-is half the reason for the dive.
+  park, what the tide does. At a wreck, what is known of the ship goes here too: what she
+  was, when she sank, how big she is. Where a book quotes a tonnage that will not say which
+  kind it is, give it in the book's own words rather than guessing a unit.
 
 ### Person
 

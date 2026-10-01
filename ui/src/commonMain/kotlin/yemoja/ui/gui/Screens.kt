@@ -1565,8 +1565,8 @@ private fun Subject(
                     onPlace = { region ->
                         kept.place = region
                         // What was chosen stays chosen while the new region still lists it.
-                        val (sites, wrecks) = atPlaceIn(set, region.id, kept.hideUnused)
-                        if ((sites + wrecks).none { it.id == chosen?.id }) kept.chosen = null
+                        val sites = atPlaceIn(set, region.id, kept.hideUnused)
+                        if (sites.none { it.id == chosen?.id }) kept.chosen = null
                     },
                     onChoose = { kept.chosen = it },
                 )
@@ -1635,7 +1635,7 @@ private fun Subject(
                             },
                         )
                     }
-                    // A phone shows the site or wreck chosen on a page of its own, after the
+                    // A phone shows the site chosen on a page of its own, after the
                     // page for the region it was chosen from.
                     page == Page.ITEM && chosen != null && tab.shape == Shape.PLACES -> ItemView(
                         chosen = chosen,
@@ -2060,7 +2060,7 @@ private val YOU = Mark(Icons.Filled.AccountCircle, "you")
  * A tree of regions, and what is at the chosen one.
  *
  * A region under every parent that names it, so one in two larger places is reachable twice.
- * `GUI-22`. What is at it is its sites and the wrecks lying at them, in one list. `GUI-20`.
+ * `GUI-22`. What is at it is its sites.
  * The arrow opens a branch and the name chooses it, which are two acts and are two targets.
  *
  * Only the roots open unfolded. The library's regions put the world under this tree, and a
@@ -2135,32 +2135,22 @@ private fun Places(
                 LazyColumn(state = kept.list, modifier = Modifier.fillMaxSize().padding(GAP)) {
                     if (what == null) return@LazyColumn
                     item(key = "sites") { Label("Sites", 0) }
-                    if (what.first.isEmpty()) item(key = "nosite") { Aside("No sites") }
-                    items(what.first, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
-                    item(key = "wrecks") { Label("Wrecks", 0) }
-                    if (what.second.isEmpty()) item(key = "nowreck") { Aside("No wrecks") }
-                    items(what.second, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
+                    if (what.isEmpty()) item(key = "nosite") { Aside("No sites") }
+                    items(what, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
                 }
             }
         }
     }
 }
 
-/** What is at a place, sites then wrecks, as a phone lists it on the region's own page. */
+/** The sites at a place, as a phone lists them on the region's own page. */
 @Composable
-private fun PlaceEntries(
-    what: Pair<List<Chosen>, List<Chosen>>,
-    chosen: Chosen?,
-    onChoose: (Chosen) -> Unit,
-) {
+private fun PlaceEntries(sites: List<Chosen>, chosen: Chosen?, onChoose: (Chosen) -> Unit) {
     Selectable {
         Column(modifier = Modifier.fillMaxWidth()) {
             Label("Sites", 0)
-            if (what.first.isEmpty()) Aside("No sites")
-            for (site in what.first) Entry(site, chosen, 1, onChoose)
-            Label("Wrecks", 0)
-            if (what.second.isEmpty()) Aside("No wrecks")
-            for (wreck in what.second) Entry(wreck, chosen, 1, onChoose)
+            if (sites.isEmpty()) Aside("No sites")
+            for (site in sites) Entry(site, chosen, 1, onChoose)
         }
     }
 }
@@ -2447,7 +2437,7 @@ private fun PlaceView(
     ) {
         if (place != null) {
             val dots = remember(set, place, hideUnused, edition) {
-                dotsOf(atPlaceIn(set, place.id, hideUnused).first)
+                dotsOf(atPlaceIn(set, place.id, hideUnused))
             }
             val frame = remember(set, place, edition) { frameOf(place.item, dots) }
             if (frame != null) RegionMap(atlas?.layerFor(frame), frame, dots, chosen?.id)

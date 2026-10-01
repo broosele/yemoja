@@ -204,11 +204,10 @@ class RegionTreeTest {
             "red_sea": {"name": "Red Sea", "parents": ["@africa", "@europe"]}
         }""",
         "dive_site.json" to """{
-            "blue_hole": {"name": "Blue Hole", "regions": ["@egypt"], "wrecks": ["@thistlegorm"]},
+            "blue_hole": {"name": "Blue Hole", "regions": ["@egypt"]},
             "elphinstone": {"name": "Elphinstone", "regions": ["@egypt"]},
             "zeelandbrug": {"name": "Zeelandbrug", "regions": ["@europe"]}
         }""",
-        "wreck.json" to """{"thistlegorm": {"name": "SS Thistlegorm"}}""",
     )
 
     private val tree = regionTreeOf(set)
@@ -244,23 +243,8 @@ class RegionTreeTest {
     }
 
     @Test
-    fun `what is at a place is its sites and the wrecks lying at them`() {
-        val (sites, wrecks) = atPlaceIn(set, "egypt")
-        assertEquals(listOf("Blue Hole", "Elphinstone"), sites.map { it.title })
-        assertEquals(listOf("SS Thistlegorm"), wrecks.map { it.title })
-    }
-
-    @Test
-    fun `a wreck no site names hangs where the sites with no region do`() {
-        val held = logbook(
-            "region.json" to """{"egypt": {"name": "Egypt"}}""",
-            "dive_site.json" to """{"reef": {"name": "Reef", "regions": ["@egypt"],
-                "wrecks": ["@named"]}}""",
-            "wreck.json" to """{"named": {"name": "Named"}, "loose": {"name": "Loose"}}""",
-        )
-        assertEquals("No region", regionTreeOf(held).last().label, "the branch is there for it")
-        assertEquals(listOf("Loose"), atPlaceIn(held, UNPLACED).second.map { it.title })
-        assertEquals(listOf("Named"), atPlaceIn(held, "egypt").second.map { it.title })
+    fun `what is at a place is its sites`() {
+        assertEquals(listOf("Blue Hole", "Elphinstone"), atPlaceIn(set, "egypt").map { it.title })
     }
 
     @Test
@@ -268,17 +252,15 @@ class RegionTreeTest {
         // A site in Egypt is in Africa, and in the world.
         assertEquals(
             listOf("Blue Hole", "Elphinstone"),
-            atPlaceIn(set, "africa").first.map { it.title },
+            atPlaceIn(set, "africa").map { it.title },
         )
-        assertEquals(3, atPlaceIn(set, "world").first.size)
+        assertEquals(3, atPlaceIn(set, "world").size)
         assertEquals(setOf("world", "europe", "africa", "egypt", "red_sea"), withinOf(set, "world"))
     }
 
     @Test
     fun `a region with nothing inside it has nothing at it`() {
-        val (sites, wrecks) = atPlaceIn(set, "red_sea")
-        assertEquals(emptyList(), sites.map { it.title })
-        assertEquals(emptyList(), wrecks.map { it.title })
+        assertEquals(emptyList(), atPlaceIn(set, "red_sea").map { it.title })
     }
 
     @Test
@@ -456,9 +438,9 @@ class HideUnusedTest {
     fun `on, a region lists only the sites dives name`() {
         assertEquals(
             listOf("Blue Hole", "Thistlegorm", "Zeelandbrug"),
-            atPlaceIn(set, "world", hideUnused = true).first.map { it.title },
+            atPlaceIn(set, "world", hideUnused = true).map { it.title },
         )
-        assertEquals(4, atPlaceIn(set, "world").first.size, "off, every site")
+        assertEquals(4, atPlaceIn(set, "world").size, "off, every site")
     }
 }
 
@@ -478,7 +460,7 @@ class UnplacedSitesTest {
         assertEquals(listOf("Nionplas"), looseSitesIn(set).map { it.title })
         val tree = shownTreeOf(set, hideUnused = false)
         assertEquals(listOf("Zeeland", "No region"), tree.map { it.label })
-        assertEquals(listOf("Nionplas"), atPlaceIn(set, UNPLACED).first.map { it.title })
+        assertEquals(listOf("Nionplas"), atPlaceIn(set, UNPLACED).map { it.title })
     }
 
     @Test
@@ -489,7 +471,7 @@ class UnplacedSitesTest {
         assertEquals(listOf("Zeeland", "No region"), tree.map { it.label })
         assertEquals(
             listOf("Nionplas"),
-            atPlaceIn(set, UNPLACED, hideUnused = true).first.map { it.title },
+            atPlaceIn(set, UNPLACED, hideUnused = true).map { it.title },
         )
     }
 
@@ -523,19 +505,13 @@ class HomeTest {
         "dive_site.json" to """{
             "blue_hole": {"name": "Blue Hole", "regions": ["@red_sea", "@egypt"]},
             "lost": {"name": "Lost", "regions": ["@nowhere"]},
-            "wrecked": {"name": "Wrecked", "regions": ["@red_sea"], "wrecks": ["@thistlegorm"]}
+            "wrecked": {"name": "Wrecked", "regions": ["@red_sea"]}
         }""",
-        "wreck.json" to """{"thistlegorm": {"name": "Thistlegorm"}}""",
     )
 
     @Test
     fun `a site is at home in the most specific region it names, by the smallest frame`() {
         assertEquals("egypt", homeOf(set, set["blue_hole"]!!))
-    }
-
-    @Test
-    fun `a wreck is at home where its first site is`() {
-        assertEquals("red_sea", homeOf(set, set["thistlegorm"]!!))
     }
 
     @Test
@@ -567,7 +543,7 @@ class MapTest {
 
     @Test
     fun `a site without a position is not a dot`() {
-        val dots = dotsOf(atPlaceIn(set, "bare").first)
+        val dots = dotsOf(atPlaceIn(set, "bare"))
         assertEquals(listOf("A", "B"), dots.map { it.title })
     }
 
@@ -580,7 +556,7 @@ class MapTest {
 
     @Test
     fun `a region without a box is framed round its dots, with room to spare`() {
-        val frame = frameOf(set["bare"]!!, dotsOf(atPlaceIn(set, "bare").first))!!
+        val frame = frameOf(set["bare"]!!, dotsOf(atPlaceIn(set, "bare")))!!
         assertTrue(frame.west < 3.0 && frame.east > 4.0, "${frame.west}..${frame.east}")
         assertTrue(frame.south < 51.0 && frame.north > 52.0, "${frame.south}..${frame.north}")
     }

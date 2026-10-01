@@ -12,32 +12,37 @@ import yemoja.data.Stored
  * See ../../../../../../doc.md.
  */
 
-/** A `wreck`, which sits inside a site there and is an item of its own here. */
-internal fun wreckIn(tag: Tag): Map<String, Stored> {
-    val fields = LinkedHashMap<String, Stored>()
-    fields.put("name", tag.said("name"))
-    fields.putAll("alternative_names", aliasesIn(tag))
-    fields.put("ship_type", tag.said("shiptype"))
-    fields.put("nationality", tag.said("nationality"))
-    fields.put("shipyard", tag.find("built", APART)?.said("shipyard"))
-    fields.put("launched", tag.find("built", APART)?.date("launchingdate"))
-    // The hour a ship went down is rarely known and never matters underwater, so the date only.
-    fields.put("sunk", tag.date("sunk"))
+/**
+ * What a `wreck` inside a site says, as a paragraph for the site's remarks.
+ *
+ * There is no wreck here: a ship is a thing a site is dived for, and what is known of it is said
+ * where the site is. Each part is written as UDDF names it, with its value as written there, so a
+ * reader can judge what a figure means. `uddf.md`.
+ */
+internal fun wreckSaid(tag: Tag): String? {
+    val built = tag.find("built", APART)
     val size = tag.find("shipdimension", APART)
-    for (name in listOf("length", "beam", "draught", "displacement")) {
-        fields.put(name, size?.said(name))
-    }
-    // `tonnage` is defined in kilograms and glossed as a ship's tonnage, which in the world is a
-    // volume. Either it is displacement again or it is a volume in a mass unit, so it goes where
-    // a reader can judge it rather than into a field. `uddf.md`.
-    val tonnage = tag.said("tonnage")?.let { "tonnage: $it" }
-    val said = listOfNotNull(tag.prose("notes"), tonnage).joinToString("\n")
-    fields.put("remarks", said.ifEmpty { null })
-    return fields
+    val parts = listOfNotNull(
+        tag.said("name")?.let { "Wreck: $it" },
+        aliasesIn(tag).takeIf { it.isNotEmpty() }?.let { "also called ${it.joinToString(", ")}" },
+        tag.said("shiptype")?.let { "ship type $it" },
+        tag.said("nationality")?.let { "nationality $it" },
+        built?.said("shipyard")?.let { "built by $it" },
+        built?.date("launchingdate")?.let { "launched $it" },
+        tag.date("sunk")?.let { "sunk $it" },
+        size?.said("length")?.let { "length $it m" },
+        size?.said("beam")?.let { "beam $it m" },
+        size?.said("draught")?.let { "draught $it m" },
+        size?.said("displacement")?.let { "displacement $it kg" },
+        tag.said("tonnage")?.let { "tonnage $it" },
+    )
+    val notes = tag.prose("notes")
+    val said = listOfNotNull(parts.joinToString(", ").ifEmpty { null }, notes).joinToString("\n")
+    return said.ifEmpty { null }
 }
 
-/** A `site`, whose wreck is an item here and is pointed at rather than held. */
-internal fun siteIn(tag: Tag, wreck: String?): Map<String, Stored> {
+/** A `site`, the wreck it holds said in its remarks. */
+internal fun siteIn(tag: Tag): Map<String, Stored> {
     val fields = LinkedHashMap<String, Stored>()
     fields.put("name", tag.said("name"))
     fields.putAll("alternative_names", aliasesIn(tag))
@@ -49,8 +54,9 @@ internal fun siteIn(tag: Tag, wreck: String?): Map<String, Stored> {
     fields.put("max_depth", tag.said("maximumdepth"))
     fields.put("substrate", tag.said("bottom"))
     fields.put("rating", ratingIn(tag))
-    fields.put("remarks", tag.prose("notes"))
-    if (wreck != null) fields["wrecks"] = Stored.Elements(listOf(Stored.Leaf("@$wreck")))
+    val wreck = tag.find("wreck", APART)?.let { wreckSaid(it) }
+    val said = listOfNotNull(tag.prose("notes"), wreck).joinToString("\n\n")
+    fields.put("remarks", said.ifEmpty { null })
     return fields
 }
 

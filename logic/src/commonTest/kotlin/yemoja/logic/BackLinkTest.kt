@@ -13,7 +13,7 @@ import kotlin.test.assertIs
 
 /*
  * The far side of a reference, worked out on the item pointed at: a site's dives, a person's,
- * an operator's, a wreck's sites, a region's, a piece of gear's dives.
+ * an operator's, a region's sites, a piece of gear's dives.
  *
  * See ../../../../../doc.md — the layer's own document is logic/doc.md.
  */
@@ -23,11 +23,9 @@ class BackLinkTest {
         MemoryFileStore(
             mapOf(
                 "region.json" to """{"egypt": {"name": "Egypt"}}""",
-                "wreck.json" to """{"thistlegorm": {"name": "Thistlegorm"}}""",
                 "dive_site.json" to """{
                     "blue_hole": {"name": "Blue Hole", "regions": ["@egypt"]},
-                    "shaab_ali": {"name": "Shaab Ali", "regions": ["@egypt"],
-                                  "wrecks": ["@thistlegorm"]}
+                    "shaab_ali": {"name": "Shaab Ali", "regions": ["@egypt"]}
                 }""",
                 "person.json" to
                     """{"anna": {"first_name": "Anna"}, "bram": {"first_name": "Bram"}}""",
@@ -75,11 +73,6 @@ class BackLinkTest {
     fun `an operator holds the dives and the trips naming it`() {
         assertEquals(listOf("2026-06-01#0"), named(set["rse"]!!, "dives"))
         assertEquals(listOf("egypt_2026"), named(set["rse"]!!, "dive_trips"))
-    }
-
-    @Test
-    fun `a wreck holds the sites it lies at`() {
-        assertEquals(listOf("shaab_ali"), named(set["thistlegorm"]!!, "dive_sites"))
     }
 
     @Test

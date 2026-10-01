@@ -201,15 +201,11 @@ after an import.
 
 ## Wrecks
 
-**Kept, both ways.** Her name and former names, what she was, her flag, her yard and
-launch, when she sank, her dimensions and displacement, and your notes.
-
-**Two structural differences.** UDDF allows **one wreck per site**, so a debris field of
-three vessels cannot be written out as three. And a wreck there **cannot be shared**: a
-large ship reachable from two moorings becomes two copies of the same vessel, and reading
-that back gives you two wrecks where you had one.
-
-If the sites you dive have more than one wreck on them, that is the thing to watch.
+**Read into the site's remarks.** Yemoja keeps no wreck of its own: what is known of a ship is
+said where its site is. A wreck in a UDDF file, its name and former names, what she was, her
+flag, her yard and launch, when she sank and her dimensions, becomes a paragraph in the remarks
+of the site it lies at, after the site's own notes. Nothing goes back out as a wreck: what you
+wrote about her travels in the site's notes.
 
 ## People
 
@@ -302,8 +298,7 @@ If what you want is a logbook that survives a round trip exactly, the honest ans
 that UDDF is not that, and no interchange format is. Export it, read this chapter, and
 know which four or five things you will have to put back.
 
-What is safe: one computer per dive, no wrecks shared between sites, and a note of what
-your computer's water setting was.
+What is safe: one computer per dive, and a note of what your computer's water setting was.
 
 ---
 

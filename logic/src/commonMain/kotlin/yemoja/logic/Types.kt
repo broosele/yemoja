@@ -53,9 +53,6 @@ object Types {
     /** Described in `Operator.kt`, with everything worked out from it. */
     val OPERATOR: ItemDescription = yemoja.logic.OPERATOR
 
-    /** Described in `Wreck.kt`, with everything worked out from it. */
-    val WRECK: ItemDescription = yemoja.logic.WRECK
-
     /** Described in `Region.kt`, with everything worked out from it. */
     val REGION: ItemDescription = yemoja.logic.REGION
 
@@ -64,7 +61,7 @@ object Types {
      *
      * In the order an interface offers them: the dive, then the trip it was made on and the
      * gear it was made in; then where, from the largest thing to the smallest, a region holding
-     * sites and a site holding wrecks; then who, and what they award. A front end takes this
+     * sites; then who, and what they award. A front end takes this
      * order as given. `UI-3`.
      */
     val ALL: List<ItemDescription> = listOf(
@@ -73,7 +70,6 @@ object Types {
         GEAR,
         REGION,
         DIVE_SITE,
-        WRECK,
         PERSON,
         OPERATOR,
         CERTIFICATION,

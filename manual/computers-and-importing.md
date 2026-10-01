@@ -88,7 +88,7 @@ A dive that arrives with its own dive number keeps it.
 ## Exporting
 
 Press **Export to UDDF** on the home screen and name a file. The whole logbook goes: every dive
-you have made, and the sites, wrecks, people, gear, trips and operators they refer to. Nothing in
+you have made, and the sites, people, gear, trips and operators they refer to. Nothing in
 your logbook changes. When it is written, Yemoja says how many dives went, how many were recorded
 on more than one computer and so went with one recording only, and how many planned dives were
 left behind.

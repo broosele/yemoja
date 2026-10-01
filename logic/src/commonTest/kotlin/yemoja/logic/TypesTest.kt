@@ -70,8 +70,8 @@ class EveryTypeTest {
     fun `a type is named as its files are`() {
         assertEquals(
             listOf(
-                "dive", "dive_trip", "gear", "region", "dive_site", "wreck", "person",
-                "operator", "certification",
+                "dive", "dive_trip", "gear", "region", "dive_site", "person", "operator",
+                "certification",
             ),
             Types.ALL.map { it.name },
         )
@@ -94,7 +94,7 @@ class EveryTypeTest {
         // Owned items included. The manual gives one to every kind of item, and an owned item
         // is a kind of item: a note about a medical has nowhere else to go.
         val types = everyType()
-        assertEquals(19, types.size, "nine stored types and ten owned")
+        assertEquals(18, types.size, "eight stored types and ten owned")
         for (type in types) {
             assertIs<MultilineTextDescription>(type["remarks"], type.name)
         }
@@ -382,10 +382,10 @@ class DiveTest {
     @Test
     fun `every item type the manual names is described`() {
         // The manual's own list, in its own order.
-        assertEquals(9, Types.ALL.size)
+        assertEquals(8, Types.ALL.size)
         for (name in listOf(
-            "dive", "person", "region", "dive_site", "wreck", "gear", "certification",
-            "operator", "dive_trip",
+            "dive", "person", "region", "dive_site", "gear", "certification", "operator",
+            "dive_trip",
         )) {
             assertTrue(Types.ALL.any { it.name == name }, "$name should be described")
         }

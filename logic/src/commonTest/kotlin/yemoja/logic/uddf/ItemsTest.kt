@@ -39,54 +39,53 @@ class ReadWreckTest {
 
     private val wrecked = """
         <divesite><site id="s1"><name>Reef</name>
+          <notes><para>A sandy slope.</para></notes>
           <wreck id="w1">
-            <name>Thistlegorm</name><shiptype>freighter</shiptype>
+            <name>Thistlegorm</name><aliasname>Blue Thistle</aliasname><shiptype>freighter</shiptype>
             <nationality>British</nationality>
             <built><shipyard>Sunderland</shipyard>
               <launchingdate><datetime>1940-04-09</datetime></launchingdate></built>
             <shipdimension><length>126.5</length><beam>17.7</beam></shipdimension>
             <sunk><datetime>1941-10-06T01:30:00</datetime></sunk>
+            <tonnage>4898</tonnage>
+            <notes><para>Bombed at anchor.</para></notes>
           </wreck>
         </site></divesite>
     """
 
-    @Test
-    fun `a wreck inside a site is an item of its own`() {
-        val wreck = one(document(wrecked), Types.WRECK)
-        assertEquals("Thistlegorm", said(wreck, "name"))
-        assertEquals("freighter", said(wreck, "ship_type"))
-        assertEquals("Sunderland", said(wreck, "shipyard"))
-    }
+    private fun remarks(): String = said(one(document(wrecked), Types.DIVE_SITE), "remarks").orEmpty()
 
     @Test
-    fun `the site points at it rather than holding it`() {
-        // One wreck per site there; here a debris field is three items and one may be shared.
+    fun `a wreck is said in its site's remarks, there being no wreck item`() {
         val set = document(wrecked)
-        val site = one(set, Types.DIVE_SITE)
-        val held = site.list<Reference>("wrecks") as Result.Usable
-        val first = (held.value.first() as Element.Usable).value as Reference.Identified
-        assertEquals("thistlegorm", first.id)
-        assertTrue(set[first.id] != null)
+        assertEquals(1, set.allOf(Types.DIVE_SITE).size)
+        assertEquals(setOf(Types.DIVE_SITE), set.descriptions.filter { set.allOf(it).isNotEmpty() }.toSet())
+        val said = remarks()
+        assertTrue(said.startsWith("A sandy slope."), "the site's own notes come first: $said")
+        assertTrue("Wreck: Thistlegorm" in said, said)
+        assertTrue("also called Blue Thistle" in said, said)
+        assertTrue("ship type freighter" in said && "nationality British" in said, said)
+        assertTrue("built by Sunderland" in said && "launched 1940-04-09" in said, said)
+        assertTrue("Bombed at anchor." in said, "and the wreck's own notes")
     }
 
     @Test
-    fun `only the day a ship went down is kept`() {
+    fun `only the day a ship went down is said`() {
         // The hour is rarely known and never matters underwater.
-        val wreck = one(document(wrecked), Types.WRECK)
-        assertEquals("1941-10-06", (wreck.read("sunk") as Result.Usable).value.toString())
+        assertTrue("sunk 1941-10-06," in remarks(), remarks())
+    }
+
+    @Test
+    fun `figures keep the units UDDF writes them in, tonnage among them`() {
+        // Tonnage is defined in kilograms and means a volume in the world, so a reader judges it.
+        val said = remarks()
+        assertTrue("length 126.5 m" in said && "beam 17.7 m" in said, said)
+        assertTrue("tonnage 4898" in said, said)
     }
 
     @Test
     fun `a wreck's own name is not read as its site's`() {
         assertEquals("Reef", said(one(document(wrecked), Types.DIVE_SITE), "name"))
-    }
-
-    @Test
-    fun `tonnage goes to the remarks with its number`() {
-        // It is defined in kilograms and means a volume in the world, so a reader judges it.
-        val set = document("""<divesite><site><wreck><name>A</name>
-            <tonnage>4898</tonnage></wreck></site></divesite>""")
-        assertTrue("4898" in said(one(set, Types.WRECK), "remarks").orEmpty())
     }
 }
 
@@ -124,12 +123,11 @@ class ReadSiteTest {
     }
 
     @Test
-    fun `a wreck in the site's data is the one the site points at`() {
-        // Where the specification puts it, and a wreck there carries no id to link by.
+    fun `a wreck in the site's data is said in the site's remarks`() {
+        // Where the specification puts it.
         val set = document("""<divesite><site id="s1"><name>Reef</name>
             <sitedata><wreck><name>Thistlegorm</name></wreck></sitedata></site></divesite>""")
-        val held = one(set, Types.DIVE_SITE).list<Reference>("wrecks") as Result.Usable
-        assertEquals(1, held.value.size)
+        assertEquals("Wreck: Thistlegorm", said(one(set, Types.DIVE_SITE), "remarks"))
     }
 
     @Test

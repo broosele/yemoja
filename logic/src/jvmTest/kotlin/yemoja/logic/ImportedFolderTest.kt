@@ -87,7 +87,7 @@ class ImportedFolderTest {
         assertIs<Outcome.Done>(universe.importFrom("../fixtures/cousteau"))
         val import = universe.importing
         assertTrue(import != null, "there is an import to review")
-        assertEquals(536, import.incoming.size)
+        assertEquals(534, import.incoming.size)
         assertTrue(staging.isDirectory, "${staging.path} was not written")
         assertTrue(!File(here, "region.json").exists(), "and nothing has gone into the logbook")
     }

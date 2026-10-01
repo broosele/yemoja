@@ -39,7 +39,7 @@ There are seven:
 - **Dives** — dives and dive trips.
 - **Gear** — equipment.
 - **Community** — people, operators and certifications.
-- **Locations** — regions, dive sites and wrecks.
+- **Locations** — regions and dive sites.
 - **Calculations** — what a diver works out on a slate, with no dive to read it from. `GUI-43`.
 - **Manuals** — the documentation, read inside the application.
 
@@ -91,8 +91,7 @@ question had to be asked per tab.
   logbook names as its own, is marked among the people and is what the tab opens on. A person
   who is not the user has a button on their card that makes them so, `GUI-51`.
 - **Locations** — a tree of regions, and beside it the dive sites in whichever region is chosen
-  or in any region inside it, with the wrecks at those sites in the same list and marked apart
-  from them. A region and a site are chosen at once, and the item view shows a map of the
+  or in any region inside it. A region and a site are chosen at once, and the item view shows a map of the
   region above the two of them. `GUI-25`. A box, *Hide unused*, on by default, takes out what
   no dive touches. `GUI-26`.
 - **Manuals** — a tree of two levels: the chapters, and the sections of each. A chapter is
@@ -392,7 +391,7 @@ once and corrected. The numbers stay unused rather than being given to something
   tab and twice on Locations, where a region's card and a site's are shown together. On the tab
   row they are in one place whatever the tab shows.
 
-  **What they act on is the item chosen.** On Locations that is the site or wreck chosen, and the
+  **What they act on is the item chosen.** On Locations that is the site chosen, and the
   region where none is. Several dives chosen are deleted together and edited one at a time, so
   the pencil is greyed then. **+** is `GUI-35`'s, unchanged: another of what is being looked at,
   and a list where the tab holds more than one type.
@@ -1109,9 +1108,8 @@ once and corrected. The numbers stay unused rather than being given to something
 
    *Amended:* **Locations has both buttons too**, having had neither. It shows two cards, a region
    and what is at it, so the bin asks about the card it was pressed on rather than about whatever
-   the tab has chosen. Its list is *Add a region*, *Add a dive site* and *Add a wreck*, which is
-   the only way to make a first wreck: a wreck is reached through the site that names it, and a
-   logbook with none had none to reach. Deleting a region the supplied library holds is refused
+   the tab has chosen. Its list is *Add a region* and *Add a dive site*; it held *Add a wreck* too
+   until the wreck was withdrawn, `GUI-20`. Deleting a region the supplied library holds is refused
    where it is written, the libraries being read-only, and the reason is what the card says.
 
    **A branch of the gear tree chosen fills the form's first fields.** A reader looking at the
@@ -1754,8 +1752,7 @@ once and corrected. The numbers stay unused rather than being given to something
   since a line in a folded year is not there to scroll to. A site sets the region as well, since the
   map would otherwise show wherever Locations was left: a site names several regions and none
   of them is *the* one, so the map goes to the most specific, which is the one with the
-  smallest frame — Egypt rather than the Red Sea, Zeeland rather than the Netherlands. A wreck
-  goes through the first site it lies at. That holds in every item view, so a site's
+  smallest frame — Egypt rather than the Red Sea, Zeeland rather than the Netherlands. That holds in every item view, so a site's
   dives lead to the dives and each dive's site leads back; the back-links the model works out
   are what make the second direction exist. The dive table's site column is not a link, since
   `DESK-7` gave a click there to the dive.
@@ -1816,8 +1813,9 @@ once and corrected. The numbers stay unused rather than being given to something
 
   It is also the shape Locations uses, a tree beside a list, so the application has one way of
   narrowing something down that is used twice rather than two ways used once each.
-- **GUI-20 — How a wreck is reached.** *Settled:* **in the site list, marked apart from the
-  sites.** A wreck is a ship rather than a place: it has no region and no position of its own,
+- **GUI-20 — How a wreck is reached.** *Withdrawn with the wreck on 2026-10-01, `DATA-127`:
+  there is none to reach, and Locations lists sites alone.* *As it stood:* **in the site list,
+  marked apart from the sites.** A wreck is a ship rather than a place: it has no region and no position of its own,
   and a site names the wrecks that lie at it. So the list under a region is the sites in that
   region and the wrecks at those sites, which is one place to look for *what is there to dive*
   and lets a wreck be opened without first opening the site it lies at.

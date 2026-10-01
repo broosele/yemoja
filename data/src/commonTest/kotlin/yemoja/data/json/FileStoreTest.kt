@@ -40,8 +40,8 @@ abstract class FileStoreTest {
     fun `what is not there is neither`() {
         // Asking is how a logbook is found, so it answers rather than throwing. JSON-21.
         val store = storeOf(logbook)
-        assertFalse(store.isFile("wrecks.json"))
-        assertFalse(store.isFolder("wrecks"))
+        assertFalse(store.isFile("operators.json"))
+        assertFalse(store.isFolder("operators"))
     }
 
     @Test
@@ -69,9 +69,9 @@ abstract class FileStoreTest {
     fun `asking a file for its contents, or nothing for anything, is a fault`() {
         val store = storeOf(logbook)
         assertFailsWith<FileStoreMissing> { store.namesIn("yemoja.json") }
-        assertFailsWith<FileStoreMissing> { store.namesIn("wrecks") }
+        assertFailsWith<FileStoreMissing> { store.namesIn("operators") }
         assertFailsWith<FileStoreMissing> { store.readText("dives") }
-        assertFailsWith<FileStoreMissing> { store.readText("wrecks.json") }
+        assertFailsWith<FileStoreMissing> { store.readText("operators.json") }
     }
 
     @Test
@@ -91,18 +91,18 @@ abstract class FileStoreTest {
     @Test
     fun `what is written is there, and reads back as it was written`() {
         val store = storeOf(logbook)
-        store.writeText("wrecks.json", """{"zeelandbrug": {}}""")
-        assertTrue(store.isFile("wrecks.json"))
-        assertEquals("""{"zeelandbrug": {}}""", store.readText("wrecks.json"))
+        store.writeText("operators.json", """{"zeelandbrug": {}}""")
+        assertTrue(store.isFile("operators.json"))
+        assertEquals("""{"zeelandbrug": {}}""", store.readText("operators.json"))
     }
 
     @Test
     fun `writing makes the folders it needs`() {
         // Nothing declares a folder, so writing a file into one that is not there creates it.
         val store = storeOf(logbook)
-        store.writeText("wreck/zeelandbrug.json", "{}")
-        assertTrue(store.isFolder("wreck"))
-        assertEquals(listOf("zeelandbrug.json"), store.namesIn("wreck"))
+        store.writeText("operator/zeelandbrug.json", "{}")
+        assertTrue(store.isFolder("operator"))
+        assertEquals(listOf("zeelandbrug.json"), store.namesIn("operator"))
     }
 
     @Test
@@ -204,7 +204,7 @@ abstract class GetPathsTest : FileStoreTest() {
 
     @Test
     fun `a type nothing holds gives no files at all`() {
-        assertEquals(emptyList(), storeOf(mapOf("dive.json" to "{}")).getPaths("wreck"))
+        assertEquals(emptyList(), storeOf(mapOf("dive.json" to "{}")).getPaths("operator"))
     }
 
     @Test

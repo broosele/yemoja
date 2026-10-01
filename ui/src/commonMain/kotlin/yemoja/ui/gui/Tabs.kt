@@ -53,7 +53,7 @@ internal enum class Shape {
  * Tab is one subject the application is divided into.
  *
  * **A subject is not an item type.** A dive and the trip it was made on are one subject; a
- * region, a site and a wreck are one place. What the application does to a logbook as a whole
+ * region and the sites in it are one place. What the application does to a logbook as a whole
  * is not a subject at all and is not a tab: it sits under the greeting on Home, where a reader
  * meets it before they have chosen anything. `GUI-30`.
  */
@@ -94,7 +94,7 @@ internal val TABS: List<Tab> = listOf(
     ),
     Tab(
         "Locations", Icons.Filled.Map,
-        listOf(Types.REGION, Types.DIVE_SITE, Types.WRECK), Shape.PLACES,
+        listOf(Types.REGION, Types.DIVE_SITE), Shape.PLACES,
     ),
     Tab("Calculations", Icons.Filled.Calculate, shape = Shape.CALCULATIONS),
     Tab("Manuals", Icons.Filled.MenuBook, shape = Shape.MANUAL),

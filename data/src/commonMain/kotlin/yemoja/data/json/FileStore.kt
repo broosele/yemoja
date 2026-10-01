@@ -93,7 +93,7 @@ interface FileStore {
      * not name is left alone, and a named one the installation has not got is passed over.
      *
      * A type the logbook holds neither way contributes nothing from it, which is how a logbook
-     * with no wrecks in it reads.
+     * with no operators in it reads.
      *
      * Throws [FileStoreAmbiguous] where the logbook holds the type both ways at once.
      *

@@ -72,7 +72,7 @@ OPAQUE = {'pressures'}
 TYPE_NAMES = {
     'region': 'Region', 'gear': 'Gear', 'certification': 'Certification',
     'dive_site': 'Dive site', 'person': 'Person', 'operator': 'Operator',
-    'dive_trip': 'Dive trip', 'dive': 'Dive', 'wreck': 'Wreck',
+    'dive_trip': 'Dive trip', 'dive': 'Dive',
 }
 
 

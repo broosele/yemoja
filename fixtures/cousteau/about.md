@@ -1,8 +1,8 @@
 # The cousteau fixture
 
 A complete logbook: 22 dives, two of them not yet made, 11 people, 10 dive sites, 12 gear
-items, 3 regions, 1 certification, 5 operators, 6 trips and 2 wrecks. All of it is
-invented except the two wrecks, which are real ships — see *Real data, deliberately*
+items, 3 regions, 1 certification, 5 operators and 6 trips. All of it is invented except
+two ships, said in the remarks of two sites, which are real — see *Real data, deliberately*
 below.
 
 It exists to be a *realistic whole* rather than a minimal case, so that anything reading
@@ -111,12 +111,12 @@ Each of these is here because it is awkward, not because it is typical.
 
 **Real data, deliberately**
 
-- The two wrecks are real ships and the facts about them are meant to be true: the
-  *Thistlegorm*, bombed in 1941 and dived by Cousteau in the fifties, and the *Britannic*,
-  which he located in 1975. Everything else in this fixture is invented.
-- The sites they hang from are not real, so no pairing here is a claim about where
-  anything lies. A wreck is its own item precisely because a site and a ship are
-  different things; the fixture uses that to keep true facts and invented ones apart.
+- Two ships are real and the facts about them are meant to be true: the *Thistlegorm*,
+  bombed in 1941 and dived by Cousteau in the fifties, and the *Britannic*, which he located
+  in 1975. They are said in the remarks of `windlass_wreck` and `the_copper_barge`, there
+  being no wreck item. Everything else in this fixture is invented.
+- The sites they are said at are not real, so no pairing here is a claim about where
+  anything lies.
 - Cylinder weights and displaced volumes are meant to behave correctly: aluminium
   floats when empty, steel does not, and a twin set is heavily negative. They were
   worked back from published empty-buoyancy figures rather than measured, so they are
@@ -124,11 +124,11 @@ Each of these is here because it is awkward, not because it is typical.
   specification.
 - `northshore_diving` is the only operator with `alternative_names`, holding the Dutch
   name it traded under before it was bought. It is there so the field is exercised on an
-  operator and not only on sites and wrecks — and the older dives at that centre are
+  operator and not only on sites — and the older dives at that centre are
   logged against the item, not the name, which is the point of `DATA-63`.
-- Neither wreck carries a `displacement`, on purpose. The figures the books give for both
-  are gross tonnages, which are volumes and not weights, and `DATA-62` says a figure you
-  had to guess the units of is worse than no figure. The fixture takes its own advice.
+- Neither ship's remarks give a displacement, on purpose. The figures the books give for
+  both are gross tonnages, which are volumes and not weights, and `DATA-62` says a figure
+  you had to guess the units of is worse than no figure. The fixture takes its own advice.
 - The three dives of 30 May 2025 and the one of 21 June 2026 carry a `time_zone_offset` of
   7200: summer time in Provence and in the North Sea alike, both two hours ahead of GMT. All
   three of a chained day carry it, so their surface intervals come out as their local times

@@ -414,37 +414,16 @@ lossless reading.
 
 ## Wrecks
 
-UDDF puts a `wreck` inside `sitedata`, optional and single. This model makes it an item
-of its own that a dive site points at, so the mapping is close but not flat.
+UDDF puts a `wreck` inside `sitedata`, optional and single. This model keeps no wreck: a ship is
+what a site is dived for, and what is known of it is said in the site's `remarks`. Reading writes
+a paragraph after the site's own notes, beginning *Wreck:* and her name, then each part UDDF
+gives in its own words and with the value as written there: `aliasname`, `shiptype`,
+`nationality`, the `built` yard and launch, `sunk`, the four of `shipdimension`, `tonnage`, and
+the wreck's own `notes`. A figure goes with UDDF's unit for it, metres or kilograms, and
+`tonnage` with none, since gross tonnage in the world is a volume and UDDF defines it as a mass;
+a reader judges it. UDDF's `sunk` carries a time as well as a date, and only the date is said.
 
-| Ours | UDDF |
-|---|---|
-| `name` | `name` |
-| `alternative_names` | `aliasname` |
-| `ship_type` | `shiptype` |
-| `nationality` | `nationality` |
-| `shipyard`, `launched` | `built` |
-| `length`, `beam`, `draught`, `displacement` | `shipdimension`, and its four like-named children |
-| `sunk` | `sunk` |
-| `remarks` | `notes` |
-
-Two differences follow from where it sits. **UDDF allows one wreck per site**, so a
-debris field of three vessels cannot be described there and can here. And **a wreck
-cannot be shared** between sites in UDDF, where a large ship reachable from two moorings
-is two copies of the same vessel; here it is one item referred to twice.
-
-`displacement` maps exactly: UDDF writes it as a real number in kilograms — *"the
-displacement of the ship in kg as a real number"* — and so do we (`DATA-62`).
-
-**`tonnage` is not modelled.** UDDF has it beside `displacement` and defines it in
-kilograms too, glossed only as "the tonnage of a ship". Gross tonnage in the real world
-is a *volume*, so either the element means displacement again under a second name or it
-means a volume written in a mass unit; neither is worth a field. An imported value goes to
-`remarks` with its number, where a reader can judge it.
-
-UDDF's `sunk` carries a time as well as a date. This model records the date only — the
-hour a ship went down is rarely known and never matters underwater — so that much is
-dropped on import.
+Nothing is written back as a `wreck`. What a site's remarks say of a ship leaves in its `notes`.
 
 ## Dive trips
 
@@ -721,11 +700,12 @@ already taken.
 
 **Every type in this document is read, and written.** `logic/uddf/` holds an XML document read into a tree,
 one file of shared reading, the equipment table, and a mapping per type. Dives, their recordings
-and their gas; sites and the wrecks in them; people, whether owner or buddy; equipment; trips;
+and their gas; sites, a wreck in one said in its remarks; people, whether owner or buddy;
+equipment; trips;
 and operators.
 
 **Items are read in the order they point in**, so a reference resolves by the time something
-needs it: a wreck before the site that names it, an operator before the trip, and dives last,
+needs it: a site before the dive at it, an operator before the trip, and dives last,
 since a dive points at almost everything. A `link`'s `ref` is looked up in what has been read so
 far and becomes this model's own reference — which is the direct mapping this document predicted,
 the parent element supplying the role and the `ref` only saying which item.
@@ -793,8 +773,6 @@ both and compares dive by dive.
   site is. Reading had copied UDDF's words in, which the fields then refused.
 - **A computer a recording names is a `divecomputer`** whatever its kind says, since the table
   cannot tell one from a kind of `wrist`.
-- **A wreck goes in the site's `sitedata`**, where the specification puts it, and reading finds
-  it there.
 
 **Not written yet**, though this document maps each of them: a person's insurance, gear's
 maintenance, where a trip went, a site's regions as `geography`, and a site's water type as a

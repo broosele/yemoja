@@ -113,13 +113,10 @@
     "water_type": "salt",
     "entry": "boat",
     "environment_type": "sea",
-    "wrecks": [
-      "@britannic"
-    ],
     "facilities": [
       "boat access"
     ],
-    "remarks": "Barge on her side in 34 metres. Nets on the stern."
+    "remarks": "Barge on her side in 34 metres. Nets on the stern.\n\nWreck: HMHS Britannic, also called Gigantic, a hospital ship of the United Kingdom, built by Harland & Wolff, launched 1914-02-26, sunk 1916-11-21, length 269 m. The third of her class, and the largest of the three. Located and dived by Cousteau in 1975."
   },
   "windlass_wreck": {
     "name": "Windlass Wreck",
@@ -133,12 +130,10 @@
     "entry": "boat",
     "rating": 7,
     "environment_type": "sea",
-    "wrecks": [
-      "@thistlegorm"
-    ],
     "facilities": [
       "boat access"
-    ]
+    ],
+    "remarks": "Wreck: SS Thistlegorm, an armed merchant ship of the United Kingdom, built by Joseph L. Thompson & Sons, sunk 1941-10-06, length 126.5 m. Bombed at anchor while carrying military stores. Found and dived by Cousteau in the mid-fifties, and largely forgotten again until the nineties."
   },
   "silt_harbour": {
     "name": "Silt Harbour",

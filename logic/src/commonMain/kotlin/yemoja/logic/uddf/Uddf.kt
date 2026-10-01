@@ -26,7 +26,7 @@ import yemoja.logic.untilSurfaced
  * and the arithmetic is the one the model already does. What is left here is names and shape.
  *
  * **Items are read in the order they point in**, so that a reference is resolved by the time
- * something needs it: a wreck before the site that names it, an operator before the trip, and
+ * something needs it: a site before the dive at it, an operator before the trip, and
  * dives last, since a dive points at almost everything. A `link`'s `ref` is looked up in what has
  * been read so far and becomes this model's own reference.
  */
@@ -53,14 +53,8 @@ object Uddf {
         val set = ItemSet(Types.ALL)
         // What this reader called each thing the document names, by the name the document used.
         val ours = HashMap<String, String>()
-        // A wreck carries no id of its own there, so a site finds its wreck by the tag itself.
-        val wrecks = HashMap<Tag, String>()
-        for (tag in root.everywhere("wreck")) {
-            put(Types.WRECK, wreckIn(tag), tag, set, ours)?.let { wrecks[tag] = it }
-        }
         for (tag in root.everywhere("site")) {
-            val wreck = tag.find("wreck", APART)?.let { wrecks[it] }
-            put(Types.DIVE_SITE, siteIn(tag, wreck), tag, set, ours)
+            put(Types.DIVE_SITE, siteIn(tag), tag, set, ours)
         }
         for (tag in root.everywhere("divebase")) {
             put(Types.OPERATOR, operatorIn(tag), tag, set, ours)

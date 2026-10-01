@@ -13,7 +13,7 @@ class TabsTest {
     @Test
     fun `every type the model holds belongs to exactly one tab`() {
         // The check that matters: a type in no tab is unreachable and nothing else would say
-        // so. Wrecks were exactly that until somebody noticed by eye.
+        // so. A type once was exactly that until somebody noticed by eye.
         val placed = TABS.flatMap { it.types }
         assertEquals(Types.ALL.size, placed.size, "placed: ${placed.map { it.name }}")
         assertEquals(Types.ALL.toSet(), placed.toSet())
@@ -50,7 +50,7 @@ class TabsTest {
             TABS.first { it.name == "Dives" }.types.map { it.name },
         )
         assertEquals(
-            listOf("region", "dive_site", "wreck"),
+            listOf("region", "dive_site"),
             TABS.first { it.name == "Locations" }.types.map { it.name },
         )
     }

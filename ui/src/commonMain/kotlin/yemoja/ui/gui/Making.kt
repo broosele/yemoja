@@ -70,7 +70,7 @@ internal class Ribbon(
 /**
  * What the tab row's buttons act on in [tab], given what [kept] has chosen.
  *
- * **The item in front of the reader.** On Locations that is the site or wreck chosen, and the
+ * **The item in front of the reader.** On Locations that is the site chosen, and the
  * region where none is. Several dives chosen are deleted together and edited one at a time.
  * While a form is open, for a new item or an edited one, all three wait for it to be saved or
  * cancelled, since each would take the form's place and lose what was typed. `GUI-53`.

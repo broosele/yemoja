@@ -91,7 +91,7 @@ them.
   the same calculation through `plan`, and stages one through `create_plan`. `API-9`.
 - **FEAT-7 — Import from other applications' logbooks.** The reconciliation machinery is
   built; see [logic/reconciliation.md](logic/reconciliation.md). UDDF is read — the dive, its
-  recording, and the sites, wrecks, people, gear, trips and operators it names — and how far it
+  recording, and the sites, people, gear, trips and operators it names — and how far it
   goes is under *What is built* in [logic/uddf.md](logic/uddf.md).
 - **FEAT-8 — Statistics over the logbook.** Totals, counts and summaries, each reported
   with what it was based on.
