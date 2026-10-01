@@ -43,7 +43,8 @@ deep, and which computer recorded it. Each has three choices, one of them alread
   chosen to begin with wherever it applies, and greyed where it does not.
 - **Import as dive N** takes it in as a new dive. The number follows from the boxes above: a
   merged dive takes none, a skipped one takes none, so change one and the numbers below move.
-- **Skip** leaves it waiting, to be looked at another time.
+- **Skip** leaves it out. A skipped dive is offered again each time you come back to Home, until
+  the download is closed. After that, a later download does not bring it back.
 
 A box also says when a dive was pieced together from several recordings, because the computer
 cut it in two, and when it is a dive this logbook already holds.

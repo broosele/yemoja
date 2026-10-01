@@ -155,6 +155,15 @@ them.
   under *What is built* in [logic/uddf.md](logic/uddf.md). No other format is written.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).
+- **FEAT-28 — Getting a skipped dive back.** A downloaded dive the review was told to skip, or
+  left undecided when the review was closed, is at present gone for good. The next download
+  resumes after the newest dive the logbook holds, `DATA-90`, so a dive older than one taken in
+  never comes across again, and nothing reopens what was staged in the `.import` folder. Only a
+  full download from an emptied resume point would bring it back. Wanted: a way to see what was
+  passed over and take it in after all. Open: whether the staging folder is kept and offered
+  again, or the download resumes from the oldest dive not taken in rather than the newest one held.
+  Within one session a finished download is offered again on each visit to Home, `GUI-52`; this
+  is what lies past that.
 - **FEAT-10 — A buoyancy calculator.** How much lead a dive needs, worked out from the kit taken
   and the water it is taken into: the suit, the cylinders full and nearly empty, everything else
   carried, in salt water or fresh. A calculator beside the others in the Calculations tab, and the
