@@ -71,9 +71,10 @@ you made each month, widening the bars where there would be too many to read.
   the top.
 - **Community** holds people, operators and certifications, each on a small tab of its own. You
   are marked among the people, and the tab opens on you.
-- **Locations** holds the regions of the world as a tree, the sites and wrecks in the one chosen,
-  and a map of it with your sites marked. The tree ends with **No region** where a site names
-  none, which is where a site you have just made waits until you say where it is. **Hide
+- **Locations** holds the regions of the world as a tree, the sites in the one chosen with the
+  wrecks at them listed below, and a map of it with your sites marked. The tree ends with **No
+  region** where a site names none, which is where a site you have just made waits until you say
+  where it is. A wreck no site names waits there too. **Hide
   unused**, which is on to begin with, leaves out the sites none of your dives were at, and the
   regions left with nothing in them.
 - **Calculations** gives a number from figures you type, with no dive to read them from.

@@ -281,8 +281,9 @@ internal fun regionTreeOf(set: ItemSet): List<Branch> {
     val lost = all.filter { it.id !in placed }
     val circular = lost.map { Branch(it.id, it.title + CIRCULAR, held = listOf(it)) }
     // A site naming no region is under no region, and a tree is the only way into one. So the
-    // sites that hang nowhere hang here instead, rather than being unreachable. `GUI-25`.
-    val loose = looseSitesIn(set)
+    // sites that hang nowhere hang here instead, rather than being unreachable. `GUI-25`. So do
+    // the wrecks no site names, a wreck having no region of its own. `GUI-20`.
+    val loose = looseSitesIn(set) + looseWrecksIn(set)
     val unplaced = if (loose.isEmpty()) emptyList() else listOf(Branch(UNPLACED, "No region"))
     return tree + circular + unplaced
 }
@@ -292,6 +293,14 @@ internal fun looseSitesIn(set: ItemSet): List<Chosen> {
     val regions = entriesOf(set, Types.REGION).map { it.id }.toHashSet()
     return entriesOf(set, Types.DIVE_SITE)
         .filter { site -> pointedAtAll(site.item, "regions").none { it in regions } }
+}
+
+/** The wrecks no dive site names, which no region would show. `GUI-20`. */
+internal fun looseWrecksIn(set: ItemSet): List<Chosen> {
+    val named = entriesOf(set, Types.DIVE_SITE)
+        .flatMap { pointedAtAll(it.item, "wrecks") }
+        .toHashSet()
+    return entriesOf(set, Types.WRECK).filter { it.id !in named }
 }
 
 /** The branch holding the sites that name no region. Not a region, and named by nothing else. */
@@ -346,6 +355,7 @@ internal fun atPlaceIn(
             set[id]?.let { wrecks.getOrPut(id) { Chosen(id, titleOf(it), it) } }
         }
     }
+    if (region == UNPLACED) for (wreck in looseWrecksIn(set)) wrecks.getOrPut(wreck.id) { wreck }
     return sites to wrecks.values.toList()
 }
 

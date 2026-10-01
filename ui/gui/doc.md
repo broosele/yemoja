@@ -1798,6 +1798,11 @@ once and corrected. The numbers stay unused rather than being given to something
   Two things follow from a wreck having no place of its own. One at no site appears under no
   region, and one named by two sites appears under both, which is right where the sites are two
   moorings on one hull and misleading where they are not.
+
+  *Amended:* **the wrecks have a heading whether or not there are any**, saying *No wrecks* as the
+  sites say *No sites*, so a reader looking for them finds where they would be. **And a wreck no
+  site names hangs under *No region***, beside the sites that name no region, `GUI-25`. Without
+  it a wreck made with **+** and not yet named by a site could not be found again.
 - **GUI-19 — How a dive trip is reached.** *Relocated to [desktop/doc.md](desktop/doc.md) as
   `DESK-7`.* A table with a spanning cell is a large screen's answer, and a phone will need
   another.

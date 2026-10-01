@@ -1987,8 +1987,8 @@ private fun Places(
                     item(key = "sites") { Label("Sites", 0) }
                     if (what.first.isEmpty()) item(key = "nosite") { Aside("No sites") }
                     items(what.first, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
-                    if (what.second.isEmpty()) return@LazyColumn
                     item(key = "wrecks") { Label("Wrecks", 0) }
+                    if (what.second.isEmpty()) item(key = "nowreck") { Aside("No wrecks") }
                     items(what.second, key = { it.id }) { Entry(it, chosen, 1, onChoose) }
                 }
             }

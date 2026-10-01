@@ -251,6 +251,19 @@ class RegionTreeTest {
     }
 
     @Test
+    fun `a wreck no site names hangs where the sites with no region do`() {
+        val held = logbook(
+            "region.json" to """{"egypt": {"name": "Egypt"}}""",
+            "dive_site.json" to """{"reef": {"name": "Reef", "regions": ["@egypt"],
+                "wrecks": ["@named"]}}""",
+            "wreck.json" to """{"named": {"name": "Named"}, "loose": {"name": "Loose"}}""",
+        )
+        assertEquals("No region", regionTreeOf(held).last().label, "the branch is there for it")
+        assertEquals(listOf("Loose"), atPlaceIn(held, UNPLACED).second.map { it.title })
+        assertEquals(listOf("Named"), atPlaceIn(held, "egypt").second.map { it.title })
+    }
+
+    @Test
     fun `a region holds what is anywhere inside it`() {
         // A site in Egypt is in Africa, and in the world.
         assertEquals(
