@@ -2,13 +2,13 @@ package yemoja.ui.api
 
 import yemoja.data.Stored
 import kotlin.math.roundToInt
+import yemoja.logic.Breathed
 import yemoja.logic.NumberSetting
+import yemoja.logic.Planned
+import yemoja.logic.Role
+import yemoja.logic.Segment
 import yemoja.logic.Settings
-import yemoja.ui.gui.Breathed
-import yemoja.ui.gui.Planned
-import yemoja.ui.gui.Role
-import yemoja.ui.gui.Segment
-import yemoja.ui.gui.clockOf
+import yemoja.logic.clockOf
 import yemoja.ui.gui.shownOf
 
 /*
@@ -103,12 +103,13 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
         )
     }
     val beyond = segments.withIndex().firstOrNull { (_, line) ->
-        line.gas != null && line.gas >= gases.ifEmpty { listOf(Breathed()) }.size
+        val gas = line.gas
+        gas != null && gas >= gases.ifEmpty { listOf(Breathed()) }.size
     }
     if (beyond != null) {
         return Made.Wrong(
             "$name line ${beyond.index + 1} gas should be one of the ${gases.size.coerceAtLeast(1)} " +
-                "cylinders, not ${beyond.value.gas!! + 1}",
+                    "cylinders, not ${beyond.value.gas!! + 1}",
         )
     }
     // Written as a logbook writes the field and the setting, and turned into what the form takes: a
@@ -127,7 +128,7 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
         if (written.toDoubleOrNull()?.let { it in held.range } != true) {
             return Made.Wrong(
                 "$name $key should be ${plainOf(held.range.start)} to ${plainOf(held.range.endInclusive)}, " +
-                    "but was $written",
+                        "but was $written",
             )
         }
     }

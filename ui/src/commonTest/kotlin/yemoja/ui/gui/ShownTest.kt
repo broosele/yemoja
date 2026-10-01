@@ -4,6 +4,7 @@ import yemoja.data.Item
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
+import yemoja.logic.titleOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -140,7 +141,7 @@ class ShownTest {
         val held = logbook(
             "dive_trip.json" to """{"egypt": {"name": "Egypt", "start_date": "2026-06-01"}}""",
             "dive/2026-06-21#0.json" to
-                """{"dive_trip": "@egypt", "start_date": "2026-06-21"}""",
+                    """{"dive_trip": "@egypt", "start_date": "2026-06-21"}""",
         )["egypt"]!!
         val dates = Types.DIVE_TRIP.fields.filter { it.name in setOf("start_date", "end_date") }
         val shown = shownAllOf(dates, held).single()

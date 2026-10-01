@@ -14,6 +14,7 @@ import yemoja.data.TextDescription
 import yemoja.data.TimeDescription
 import yemoja.data.Units
 import yemoja.data.WholeNumberDescription
+import yemoja.logic.titleOf
 import kotlin.math.roundToInt
 
 /*
@@ -52,12 +53,14 @@ private fun statisticOf(field: FieldDescription, items: List<Item>): Shown? {
         field.cardinality == Cardinality.LIST -> {
             named(field, values.flatMap { listedIn(it) }, items)
         }
+
         field.cardinality != Cardinality.SINGLE -> return null
         field is NumberDescription || field is WholeNumberDescription -> numbers(field, values)
         field is DateDescription || field is TimeDescription -> range(field, values)
         field is BooleanDescription -> {
             listOf(Part("${values.count { it == true }} of ${values.size}"))
         }
+
         field is ReferenceDescription || field is TextDescription -> named(field, values, items)
         else -> return null
     }
@@ -116,6 +119,7 @@ private fun named(field: FieldDescription, values: List<Any>, items: List<Item>)
         val part = when (value) {
             is Reference.Identified -> set[value.id]?.let { Part(titleOf(it), leadsTo = value.id) }
                 ?: Part(value.toString())
+
             else -> Part(numberOf(field, value))
         }
         distinct.putIfAbsent(part.text, part)

@@ -9,6 +9,7 @@ import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.inOrder
 import yemoja.logic.Types
+import yemoja.logic.titleOf
 import yemoja.logic.wasMade
 
 /*
@@ -166,7 +167,7 @@ internal class Branch(
  */
 internal fun owningOf(item: Item, user: ReferenceableItem?, set: ItemSet): Boolean =
     item.description == Types.PERSON &&
-        (item as? ReferenceableItem)?.let { set.idOf(it) } != user?.let { set.idOf(it) }
+            (item as? ReferenceableItem)?.let { set.idOf(it) } != user?.let { set.idOf(it) }
 
 /**
  * The paths a tree opens with: its roots, and nothing under them.

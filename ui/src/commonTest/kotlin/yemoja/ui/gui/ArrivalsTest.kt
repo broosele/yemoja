@@ -6,6 +6,7 @@ import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Matching
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import yemoja.logic.titleOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

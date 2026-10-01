@@ -147,6 +147,7 @@ import yemoja.logic.Settings
 import yemoja.logic.Types
 import yemoja.logic.Universe
 import yemoja.logic.evaluate
+import yemoja.logic.titleOf
 
 /*
  * The application's screens, which are one definition for both form factors.
@@ -208,7 +209,7 @@ internal class Platform(
      * part way through. `GUI-38`, `API-5`.
      */
     val conversing:
-        ((writing: () -> Boolean, direct: () -> Boolean, online: () -> Boolean) -> Conversation)? =
+    ((writing: () -> Boolean, direct: () -> Boolean, online: () -> Boolean) -> Conversation)? =
         null,
     /**
      * What this platform can do to a logbook as a whole, by deed.
@@ -419,6 +420,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     there.place = chosen
                     unfold(universe.logbook, there, id)
                 }
+
                 to.shape == Shape.PLACES -> {
                     there.chosen = chosen
                     // The map follows the site: a site in Egypt is looked at on Egypt. A site
@@ -434,10 +436,12 @@ internal fun Application(universe: Universe?, platform: Platform) {
                         }
                     }
                 }
+
                 to.shape == Shape.TYPES -> {
                     there.chosen = chosen
                     there.subtab = to.types.indexOf(item.description)
                 }
+
                 else -> there.chosen = chosen
             }
             tab = to
@@ -505,7 +509,12 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 Manuals(platform.manual, platform.open, kept.getValue(tab))
 
                             tab.shape == Shape.CALCULATIONS ->
-                                Calculations(kept.getValue(tab).working, universe?.settings, platform.scrollbar, universe)
+                                Calculations(
+                                    kept.getValue(tab).working,
+                                    universe?.settings,
+                                    platform.scrollbar,
+                                    universe
+                                )
 
                             universe == null -> Unit
                             else -> Subject(
@@ -781,7 +790,7 @@ private fun Home(
     // review left half done meets the logbook as it is now. `GUI-52`. It waits while a file's
     // import is under review, the two sharing the one staging.
     val ready = reading.read != null &&
-        (reading.stage == Stage.READY || reading.stage == Stage.DONE)
+            (reading.stage == Stage.READY || reading.stage == Stage.DONE)
     LaunchedEffect(universe, ready, taking.open) {
         if (ready && universe != null && !taking.open) arrive(universe, reading, changer)
     }
@@ -1005,7 +1014,7 @@ private fun take(universe: Universe, platform: Platform, taking: Taking, changer
             taking.arrived = arrivedIn(import)
             taking.said = if (import == null || taking.arrived == 0) {
                 "Yemoja found nothing to import in $from. It reads a logbook folder " +
-                    "and a UDDF file."
+                        "and a UDDF file."
             } else {
                 summaryOf(countedIn(import))
             }
@@ -1234,7 +1243,7 @@ private fun Deeds(deeds: Map<Deed, () -> Unit>) {
     if (Deed.entries.any { it !in deeds }) {
         Aside(
             "The greyed-out actions need a logbook open, or this platform cannot offer them, or " +
-                "one is already under way.",
+                    "one is already under way.",
         )
     }
 }
@@ -1367,56 +1376,58 @@ private fun Scatter(spots: List<Spot>, across: String, up: String, joined: Boole
     Spacer(
         modifier = Modifier.fillMaxWidth().height(PLOT).padding(bottom = HALF)
             .drawWithCache {
-            val left = AXIS.toPx()
-            val right = size.width - HALF.toPx()
-            val bottom = size.height - FOOT.toPx()
-            val top = HEAD.toPx()
-            val alongs = rangeOf(spots.map { it.across })
-            val ups = rangeOf(spots.map { it.up })
-            fun x(value: Double): Float {
-                val part = (value - alongs.start) / (alongs.endInclusive - alongs.start)
-                return (left + (right - left) * part).toFloat()
-            }
-            fun y(value: Double): Float {
-                val part = (value - ups.start) / (ups.endInclusive - ups.start)
-                return (bottom - (bottom - top) * part).toFloat()
-            }
-            val along = ticksOf(alongs.start, alongs.endInclusive, 6)
-            val side = ticksOf(ups.start, ups.endInclusive, 5)
-            onDrawBehind {
-                for (tick in side) {
-                    val at = y(tick)
-                    drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
-                    val laid = measurer.measure(shortOf(tick), label)
-                    val corner = Offset(
-                        x = left - laid.size.width - HALF.toPx(),
-                        y = at - laid.size.height / 2f,
-                    )
-                    drawText(laid, topLeft = corner)
+                val left = AXIS.toPx()
+                val right = size.width - HALF.toPx()
+                val bottom = size.height - FOOT.toPx()
+                val top = HEAD.toPx()
+                val alongs = rangeOf(spots.map { it.across })
+                val ups = rangeOf(spots.map { it.up })
+                fun x(value: Double): Float {
+                    val part = (value - alongs.start) / (alongs.endInclusive - alongs.start)
+                    return (left + (right - left) * part).toFloat()
                 }
-                for (tick in along) {
-                    drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
-                    val laid = measurer.measure(shortOf(tick), label)
-                    drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
+
+                fun y(value: Double): Float {
+                    val part = (value - ups.start) / (ups.endInclusive - ups.start)
+                    return (bottom - (bottom - top) * part).toFloat()
                 }
-                if (joined) {
-                    val path = Path()
-                    for ((at, spot) in spots.withIndex()) {
-                        val point = Offset(x(spot.across), y(spot.up))
-                        if (at == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+
+                val along = ticksOf(alongs.start, alongs.endInclusive, 6)
+                val side = ticksOf(ups.start, ups.endInclusive, 5)
+                onDrawBehind {
+                    for (tick in side) {
+                        val at = y(tick)
+                        drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
+                        val laid = measurer.measure(shortOf(tick), label)
+                        val corner = Offset(
+                            x = left - laid.size.width - HALF.toPx(),
+                            y = at - laid.size.height / 2f,
+                        )
+                        drawText(laid, topLeft = corner)
                     }
-                    drawPath(path, ink, style = Stroke(width = LINE_WIDTH.toPx()))
-                } else {
-                    for (spot in spots) {
-                        drawCircle(ink, DOT.toPx(), Offset(x(spot.across), y(spot.up)))
+                    for (tick in along) {
+                        drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
+                        val laid = measurer.measure(shortOf(tick), label)
+                        drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
                     }
+                    if (joined) {
+                        val path = Path()
+                        for ((at, spot) in spots.withIndex()) {
+                            val point = Offset(x(spot.across), y(spot.up))
+                            if (at == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+                        }
+                        drawPath(path, ink, style = Stroke(width = LINE_WIDTH.toPx()))
+                    } else {
+                        for (spot in spots) {
+                            drawCircle(ink, DOT.toPx(), Offset(x(spot.across), y(spot.up)))
+                        }
+                    }
+                    val upward = measurer.measure(up, title)
+                    drawText(upward, topLeft = Offset(left + HALF.toPx(), 0f))
+                    val onward = measurer.measure(across, title)
+                    drawText(onward, topLeft = Offset(right - onward.size.width, 0f))
                 }
-                val upward = measurer.measure(up, title)
-                drawText(upward, topLeft = Offset(left + HALF.toPx(), 0f))
-                val onward = measurer.measure(across, title)
-                drawText(onward, topLeft = Offset(right - onward.size.width, 0f))
-            }
-        },
+            },
     )
 }
 
@@ -1438,59 +1449,61 @@ private fun Bars(bars: List<Bar>, across: String, up: String) {
     Spacer(
         modifier = Modifier.fillMaxWidth().height(PLOT).padding(bottom = HALF)
             .drawWithCache {
-            val left = AXIS.toPx()
-            val right = size.width - HALF.toPx()
-            val bottom = size.height - FOOT.toPx()
-            val top = HEAD.toPx()
-            val from = bars.minOf { it.from }
-            val to = bars.maxOf { it.to }
-            val high = maxOf(bars.maxOf { it.value }, 0.0)
-            val low = minOf(bars.minOf { it.value }, 0.0)
-            val ups = if (high > low) low..high else low..(low + 1.0)
-            fun x(value: Double): Float {
-                val part = if (to > from) (value - from) / (to - from) else 0.5
-                return (left + (right - left) * part).toFloat()
-            }
-            fun y(value: Double): Float {
-                val part = (value - ups.start) / (ups.endInclusive - ups.start)
-                return (bottom - (bottom - top) * part).toFloat()
-            }
-            val along = ticksOf(from, to, 6)
-            val side = ticksOf(ups.start, ups.endInclusive, 5)
-            onDrawBehind {
-                for (tick in side) {
-                    val at = y(tick)
-                    drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
-                    val laid = measurer.measure(shortOf(tick), label)
-                    val corner = Offset(
-                        x = left - laid.size.width - HALF.toPx(),
-                        y = at - laid.size.height / 2f,
-                    )
-                    drawText(laid, topLeft = corner)
+                val left = AXIS.toPx()
+                val right = size.width - HALF.toPx()
+                val bottom = size.height - FOOT.toPx()
+                val top = HEAD.toPx()
+                val from = bars.minOf { it.from }
+                val to = bars.maxOf { it.to }
+                val high = maxOf(bars.maxOf { it.value }, 0.0)
+                val low = minOf(bars.minOf { it.value }, 0.0)
+                val ups = if (high > low) low..high else low..(low + 1.0)
+                fun x(value: Double): Float {
+                    val part = if (to > from) (value - from) / (to - from) else 0.5
+                    return (left + (right - left) * part).toFloat()
                 }
-                for (tick in along) {
-                    drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
-                    val laid = measurer.measure(shortOf(tick), label)
-                    drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
+
+                fun y(value: Double): Float {
+                    val part = (value - ups.start) / (ups.endInclusive - ups.start)
+                    return (bottom - (bottom - top) * part).toFloat()
                 }
-                val ground = y(0.0)
-                for (bar in bars) {
-                    val begins = x(bar.from)
-                    val ends = x(bar.to)
-                    val wide = maxOf(ends - begins - THIN.toPx(), 1f)
-                    val reaches = y(bar.value)
-                    drawRect(
-                        color = ink,
-                        topLeft = Offset(begins, minOf(ground, reaches)),
-                        size = Size(wide, maxOf(kotlin.math.abs(reaches - ground), THIN.toPx())),
-                    )
+
+                val along = ticksOf(from, to, 6)
+                val side = ticksOf(ups.start, ups.endInclusive, 5)
+                onDrawBehind {
+                    for (tick in side) {
+                        val at = y(tick)
+                        drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
+                        val laid = measurer.measure(shortOf(tick), label)
+                        val corner = Offset(
+                            x = left - laid.size.width - HALF.toPx(),
+                            y = at - laid.size.height / 2f,
+                        )
+                        drawText(laid, topLeft = corner)
+                    }
+                    for (tick in along) {
+                        drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
+                        val laid = measurer.measure(shortOf(tick), label)
+                        drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
+                    }
+                    val ground = y(0.0)
+                    for (bar in bars) {
+                        val begins = x(bar.from)
+                        val ends = x(bar.to)
+                        val wide = maxOf(ends - begins - THIN.toPx(), 1f)
+                        val reaches = y(bar.value)
+                        drawRect(
+                            color = ink,
+                            topLeft = Offset(begins, minOf(ground, reaches)),
+                            size = Size(wide, maxOf(kotlin.math.abs(reaches - ground), THIN.toPx())),
+                        )
+                    }
+                    val upward = measurer.measure(up, title)
+                    drawText(upward, topLeft = Offset(left + HALF.toPx(), 0f))
+                    val onward = measurer.measure(across, title)
+                    drawText(onward, topLeft = Offset(right - onward.size.width, 0f))
                 }
-                val upward = measurer.measure(up, title)
-                drawText(upward, topLeft = Offset(left + HALF.toPx(), 0f))
-                val onward = measurer.measure(across, title)
-                drawText(onward, topLeft = Offset(right - onward.size.width, 0f))
-            }
-        },
+            },
     )
 }
 
@@ -1550,9 +1563,11 @@ private fun Subject(
                 Shape.DIVES -> Selectable {
                     Dives(set, kept)
                 }
+
                 Shape.GEAR -> Selectable {
                     Gear(set, chosen, kept) { kept.chosen = it }
                 }
+
                 Shape.TYPES -> Selectable {
                     Types(set, tab, user, chosen, kept) { kept.chosen = it }
                 }
@@ -1570,6 +1585,7 @@ private fun Subject(
                     },
                     onChoose = { kept.chosen = it },
                 )
+
                 Shape.MANUAL, Shape.HOME, Shape.CALCULATIONS -> Unit
             }
         }
@@ -1642,6 +1658,7 @@ private fun Subject(
                         onFollow = onFollow,
                         kept = kept,
                     )
+
                     tab.shape == Shape.PLACES -> {
                         PlaceView(
                             set = set,
@@ -1653,6 +1670,7 @@ private fun Subject(
                             kept = kept,
                         )
                     }
+
                     kept.chosenMany.size > 1 -> ManyView(set, kept.chosenMany, onFollow)
                     chosen != null -> ItemView(
                         chosen = chosen,
@@ -1709,11 +1727,13 @@ private fun Dives(set: ItemSet, kept: Kept) {
                     kept.chosenMany = order.subList(minOf(from, to), maxOf(from, to) + 1).toSet()
                 }
             }
+
             keys.isCtrlPressed -> {
                 val was = if (many.isEmpty() && chosen != null) setOf(chosen.id) else many
                 kept.chosenMany = if (dive.id in was) was - dive.id else was + dive.id
                 kept.chosen = dive
             }
+
             else -> {
                 kept.chosenMany = emptySet()
                 kept.chosen = dive
@@ -1769,7 +1789,7 @@ private fun Dives(set: ItemSet, kept: Kept) {
                     Row(modifier = Modifier.fillMaxWidth().height(LINE)) {
                         TripCell(row, spanned[index], chosen, chooseTrip)
                         val here = row.dive.id in many ||
-                            (many.isEmpty() && row.dive.id == chosen?.id)
+                                (many.isEmpty() && row.dive.id == chosen?.id)
                         Row(
                             modifier = Modifier.fillMaxHeight().clip(SHAPE).background(tint(here))
                                 .clickable { choose(row.dive) },
@@ -2187,7 +2207,7 @@ private fun LazyListScope.branchesIn(
                 depth = depth,
                 open = if (branch.children.isEmpty()) null else key in open,
                 chosen = branch.held.any { it.id == chosen?.id } ||
-                    (branch.held.isEmpty() && branch.key == keyChosen),
+                        (branch.held.isEmpty() && branch.key == keyChosen),
                 onToggle = { onToggle(key) },
                 // A branch with no region of its own is still a place to stand: the one that
                 // gathers the sites naming no region. `GUI-25`.
@@ -2483,11 +2503,13 @@ private fun RegionMap(layer: Layer?, frame: Frame, dots: List<Dot>, marked: Stri
                     val (x, y) = frame.place(latitude, longitude, wide, high)
                     return Offset(x.toFloat(), y.toFloat())
                 }
+
                 val shown = frame.shown(wide, high)
                 fun paths(shapes: List<Outline>?, closed: Boolean): List<Path> =
                     shapes.orEmpty()
                         .filter { shown.overlaps(it.west, it.east, it.south, it.north) }
                         .map { pathOf(it, closed, frame, wide, high) }
+
                 val lands = paths(layer?.land, closed = true)
                 val lakes = paths(layer?.lakes, closed = true)
                 val rivers = paths(layer?.rivers, closed = false)
@@ -2495,7 +2517,7 @@ private fun RegionMap(layer: Layer?, frame: Frame, dots: List<Dot>, marked: Stri
                 val rank = ranksNamedIn(frame)
                 val towns = layer?.cities.orEmpty().filter {
                     it.rank <= rank &&
-                        shown.overlaps(it.longitude, it.longitude, it.latitude, it.latitude)
+                            shown.overlaps(it.longitude, it.longitude, it.latitude, it.latitude)
                 }
                 val thin = Stroke(THIN.toPx())
                 onDrawBehind {
@@ -2752,6 +2774,7 @@ private fun ItemCard(
                                     refused = null
                                     draft.clear()
                                 }
+
                                 is Outcome.Refused -> refused = outcome.reason
                             }
                         },
@@ -3143,7 +3166,7 @@ private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?, 
     val planned = isPlanned(profile)
     val overlays = remember(dive, profile, evaluated) {
         overlaysOf(dive, profile) +
-            evaluated?.let { workedOverlaysOf(dive, profile, it) }.orEmpty()
+                evaluated?.let { workedOverlaysOf(dive, profile, it) }.orEmpty()
     }
     val events = remember(dive, profile) { eventsOf(dive, profile) }
     Graphed(depth, overlays, events, planned, chosenFor = profile, span = span)
@@ -3247,111 +3270,117 @@ private fun Chart(
     Spacer(
         modifier = Modifier.fillMaxWidth().height(DEPTH_GRAPH).padding(bottom = HALF)
             .drawWithCache {
-            val left = AXIS.toPx()
-            val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
-            val bottom = size.height - FOOT.toPx()
-            val top = HEAD.toPx()
-            val all = depth.flatMap { it.points } +
-                overlay?.lines?.flatMap { it.points }.orEmpty()
-            val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, span?.minutes ?: 0.0, 1.0)
-            val deepest = maxOf(depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0, span?.deepest ?: 0.0)
-            val depthHigh = maxOf(deepest * (1.0 + AXIS_ROOM), 1.0)
-            fun x(minute: Double): Float = (left + (right - left) * (minute / lastMinute)).toFloat()
-            fun yDepth(value: Double): Float =
-                (top + (bottom - top) * (value / depthHigh)).toFloat()
-            val overPoints = overlay?.lines?.flatMap { it.points }.orEmpty()
-            val over = rangeOf(overPoints.map { it.value } + overlay?.let { span?.readings?.get(it.title) }.orEmpty())
-            val overLow = over.start
-            val overHigh = over.endInclusive
-            fun yOver(value: Double): Float {
-                val fraction = (value - overLow) / (overHigh - overLow)
-                return (bottom - (bottom - top) * fraction).toFloat()
-            }
-            val depthPaths = depth.map { pathOf(it, ::x, ::yDepth) }
-            val overPaths = overlay?.lines?.map { pathOf(it, ::x, ::yOver) }.orEmpty()
-            val main = depth.firstOrNull { it.main }?.takeIf { it.points.isNotEmpty() }
-            // The water between a line and the surface: over the dive, what it was under, and
-            // over a deco stop, what the diver may not ascend into.
-            fun areaOf(line: Line): Path? {
-                if (line.points.isEmpty()) return null
-                return Path().apply {
-                    addPath(pathOf(line, ::x, ::yDepth))
-                    lineTo(x(line.points.last().minute), yDepth(0.0))
-                    lineTo(x(line.points.first().minute), yDepth(0.0))
-                    close()
+                val left = AXIS.toPx()
+                val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
+                val bottom = size.height - FOOT.toPx()
+                val top = HEAD.toPx()
+                val all = depth.flatMap { it.points } +
+                        overlay?.lines?.flatMap { it.points }.orEmpty()
+                val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, span?.minutes ?: 0.0, 1.0)
+                val deepest =
+                    maxOf(depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0, span?.deepest ?: 0.0)
+                val depthHigh = maxOf(deepest * (1.0 + AXIS_ROOM), 1.0)
+                fun x(minute: Double): Float = (left + (right - left) * (minute / lastMinute)).toFloat()
+                fun yDepth(value: Double): Float =
+                    (top + (bottom - top) * (value / depthHigh)).toFloat()
+
+                val overPoints = overlay?.lines?.flatMap { it.points }.orEmpty()
+                val over =
+                    rangeOf(overPoints.map { it.value } + overlay?.let { span?.readings?.get(it.title) }.orEmpty())
+                val overLow = over.start
+                val overHigh = over.endInclusive
+                fun yOver(value: Double): Float {
+                    val fraction = (value - overLow) / (overHigh - overLow)
+                    return (bottom - (bottom - top) * fraction).toFloat()
                 }
-            }
-            val fill = main?.let { areaOf(it) }
-            val ceilings = depth.filter { !it.main }.mapNotNull { areaOf(it) }
-            val minutes = ticksOf(0.0, lastMinute, 6)
-            val depths = ticksOf(0.0, depthHigh, 5)
-            val overs = if (overlay == null) emptyList() else ticksOf(overLow, overHigh, 4)
-            val thin = Stroke(THIN.toPx())
-            val dashes = LINE_WIDTH.toPx() * 3
-            val thick = if (!planned) Stroke(LINE_WIDTH.toPx()) else Stroke(
-                width = LINE_WIDTH.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashes, dashes)),
-            )
-            onDrawBehind {
-                for (tick in depths) {
-                    val at = yDepth(tick)
-                    drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
-                    val laid = measurer.measure(shortOf(tick), label)
-                    val corner = Offset(
-                        x = left - laid.size.width - HALF.toPx(),
-                        y = yDepth(tick) - laid.size.height / 2f,
-                    )
-                    drawText(laid, topLeft = corner)
+
+                val depthPaths = depth.map { pathOf(it, ::x, ::yDepth) }
+                val overPaths = overlay?.lines?.map { pathOf(it, ::x, ::yOver) }.orEmpty()
+                val main = depth.firstOrNull { it.main }?.takeIf { it.points.isNotEmpty() }
+
+                // The water between a line and the surface: over the dive, what it was under, and
+                // over a deco stop, what the diver may not ascend into.
+                fun areaOf(line: Line): Path? {
+                    if (line.points.isEmpty()) return null
+                    return Path().apply {
+                        addPath(pathOf(line, ::x, ::yDepth))
+                        lineTo(x(line.points.last().minute), yDepth(0.0))
+                        lineTo(x(line.points.first().minute), yDepth(0.0))
+                        close()
+                    }
                 }
-                for (tick in minutes) {
-                    drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
-                    val laid = measurer.measure(shortOf(tick), label)
-                    drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
-                }
-                // The unit along the bottom, once, at the end where the marks run out.
-                val unit = measurer.measure("min", label)
-                drawText(unit, topLeft = Offset(right - unit.size.width, bottom + 2f))
-                for (tick in overs) {
-                    val laid = measurer.measure(shortOf(tick), label.copy(color = other))
-                    val corner = Offset(right + HALF.toPx(), yOver(tick) - laid.size.height / 2f)
-                    drawText(laid, topLeft = corner)
-                }
-                fill?.let { drawPath(it, water) }
-                for (ceiling in ceilings) drawPath(ceiling, forbidden)
-                for ((index, line) in depth.withIndex()) {
-                    val colour = if (line.main) ink else stop
-                    drawPath(depthPaths[index], colour, style = if (line.main) thick else thin)
-                }
-                for (path in overPaths) drawPath(path, other, style = thin)
-                // A switch is a dot on the line and an alarm a triangle, each with its word
-                // above, in the colour of the deco stops and of the right axis respectively.
-                main?.let { line ->
-                    for (event in events) {
-                        val at = depthAt(line, event.minute) ?: continue
-                        val centre = Offset(x(event.minute), yDepth(at))
-                        val colour = if (event.marking == Marking.SWITCH) stop else other
-                        if (event.marking == Marking.SWITCH) {
-                            drawCircle(colour, MARKED.toPx(), centre)
-                        } else {
-                            drawPath(triangleAt(centre, MARKED.toPx() * 1.4f), colour)
-                        }
-                        val style = if (event.marking == Marking.SWITCH) switched else alarmed
-                        val laid = measurer.measure(event.label, style)
-                        // Kept inside the plot: a switch at the start would otherwise put its
-                        // word over the depth axis, and one at the surface over the title.
-                        val above = centre.y - MARKED.toPx() * 2 - laid.size.height
+
+                val fill = main?.let { areaOf(it) }
+                val ceilings = depth.filter { !it.main }.mapNotNull { areaOf(it) }
+                val minutes = ticksOf(0.0, lastMinute, 6)
+                val depths = ticksOf(0.0, depthHigh, 5)
+                val overs = if (overlay == null) emptyList() else ticksOf(overLow, overHigh, 4)
+                val thin = Stroke(THIN.toPx())
+                val dashes = LINE_WIDTH.toPx() * 3
+                val thick = if (!planned) Stroke(LINE_WIDTH.toPx()) else Stroke(
+                    width = LINE_WIDTH.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashes, dashes)),
+                )
+                onDrawBehind {
+                    for (tick in depths) {
+                        val at = yDepth(tick)
+                        drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
+                        val laid = measurer.measure(shortOf(tick), label)
                         val corner = Offset(
-                            x = (centre.x - laid.size.width / 2f)
-                                .coerceIn(left, right - laid.size.width),
-                            y = if (above >= top) above else centre.y + MARKED.toPx() * 2,
+                            x = left - laid.size.width - HALF.toPx(),
+                            y = yDepth(tick) - laid.size.height / 2f,
                         )
                         drawText(laid, topLeft = corner)
                     }
+                    for (tick in minutes) {
+                        drawLine(grid, Offset(x(tick), top), Offset(x(tick), bottom), THIN.toPx())
+                        val laid = measurer.measure(shortOf(tick), label)
+                        drawText(laid, topLeft = Offset(x(tick) - laid.size.width / 2f, bottom + 2f))
+                    }
+                    // The unit along the bottom, once, at the end where the marks run out.
+                    val unit = measurer.measure("min", label)
+                    drawText(unit, topLeft = Offset(right - unit.size.width, bottom + 2f))
+                    for (tick in overs) {
+                        val laid = measurer.measure(shortOf(tick), label.copy(color = other))
+                        val corner = Offset(right + HALF.toPx(), yOver(tick) - laid.size.height / 2f)
+                        drawText(laid, topLeft = corner)
+                    }
+                    fill?.let { drawPath(it, water) }
+                    for (ceiling in ceilings) drawPath(ceiling, forbidden)
+                    for ((index, line) in depth.withIndex()) {
+                        val colour = if (line.main) ink else stop
+                        drawPath(depthPaths[index], colour, style = if (line.main) thick else thin)
+                    }
+                    for (path in overPaths) drawPath(path, other, style = thin)
+                    // A switch is a dot on the line and an alarm a triangle, each with its word
+                    // above, in the colour of the deco stops and of the right axis respectively.
+                    main?.let { line ->
+                        for (event in events) {
+                            val at = depthAt(line, event.minute) ?: continue
+                            val centre = Offset(x(event.minute), yDepth(at))
+                            val colour = if (event.marking == Marking.SWITCH) stop else other
+                            if (event.marking == Marking.SWITCH) {
+                                drawCircle(colour, MARKED.toPx(), centre)
+                            } else {
+                                drawPath(triangleAt(centre, MARKED.toPx() * 1.4f), colour)
+                            }
+                            val style = if (event.marking == Marking.SWITCH) switched else alarmed
+                            val laid = measurer.measure(event.label, style)
+                            // Kept inside the plot: a switch at the start would otherwise put its
+                            // word over the depth axis, and one at the surface over the title.
+                            val above = centre.y - MARKED.toPx() * 2 - laid.size.height
+                            val corner = Offset(
+                                x = (centre.x - laid.size.width / 2f)
+                                    .coerceIn(left, right - laid.size.width),
+                                y = if (above >= top) above else centre.y + MARKED.toPx() * 2,
+                            )
+                            drawText(laid, topLeft = corner)
+                        }
+                    }
+                    val heading = measurer.measure("Depth (m)", title)
+                    drawText(heading, topLeft = Offset(left + HALF.toPx(), 0f))
                 }
-                val heading = measurer.measure("Depth (m)", title)
-                drawText(heading, topLeft = Offset(left + HALF.toPx(), 0f))
-            }
-        },
+            },
     )
 }
 
@@ -3375,6 +3404,7 @@ private fun pathOf(line: Line, x: (Double) -> Float, y: (Double) -> Float): Path
                 path.lineTo(x(point.minute), y(before.value))
                 path.lineTo(x(point.minute), y(point.value))
             }
+
             else -> path.lineTo(x(point.minute), y(point.value))
         }
         previous = point
@@ -3535,6 +3565,7 @@ private fun tripWidth(): Dp = if (LocalCompact.current) 80.dp else 170.dp
 private fun siteWidth(): Dp = if (LocalCompact.current) 330.dp else 240.dp
 private val NUMBER = 52.dp
 private val DATE = 100.dp
+
 /** How wide the column a field's name sits in is, which a review lines its own up with. */
 internal val LABEL = 130.dp
 private val SITES = 300.dp
@@ -3567,4 +3598,4 @@ private const val CLOSE_THE_AGENT = "Close the agent panel"
 /** What a download says where the phone was not allowed to use Bluetooth. `AND-2`. */
 internal const val REFUSED_BLUETOOTH: String =
     "Yemoja was not allowed to use Bluetooth, which reading a dive computer needs. It can be " +
-        "allowed in the phone's settings, under the app's permissions."
+            "allowed in the phone's settings, under the app's permissions."

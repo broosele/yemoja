@@ -3,12 +3,12 @@ package yemoja.ui.api
 import yemoja.data.Result
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import yemoja.logic.Breathed
+import yemoja.logic.Planned
+import yemoja.logic.Role
+import yemoja.logic.Segment
 import yemoja.logic.Types
 import yemoja.logic.Universe
-import yemoja.ui.gui.Breathed
-import yemoja.ui.gui.Planned
-import yemoja.ui.gui.Role
-import yemoja.ui.gui.Segment
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -160,7 +160,7 @@ class SavedTest {
     fun `a plan written onto a dive sits beside what that dive already holds`() {
         val universe = logbook(
             "dive/2026-06-21#0.json" to
-                """{"profiles": {"p": {"depth": [[0, 0], [60, 12.0], [120, 0]]}}}""",
+                    """{"profiles": {"p": {"depth": [[0, 0], [60, 12.0], [120, 0]]}}}""",
         )
         val done = assertIs<Saved.Done>(saved(universe, table(), dive = "2026-06-21#0"))
         assertEquals("2026-06-21#0", done.dive)

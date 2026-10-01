@@ -8,6 +8,7 @@ import yemoja.data.OwnedItem
 import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.logic.Types
+import yemoja.logic.titleOf
 
 /*
  * Making an item and unmaking one, worked out without a screen.

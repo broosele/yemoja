@@ -1,8 +1,8 @@
 package yemoja.ui.api
 
 import yemoja.data.json.Json
+import yemoja.logic.Role
 import yemoja.logic.Settings
-import yemoja.ui.gui.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -41,7 +41,8 @@ class CasesTest {
         val quoted = oneOf(
             """[{"lines": [{"depth": "40", "duration": "600"}], "gradient_factor_low": "1", "gradient_factor_high": "1"}]""",
         )
-        val plain = oneOf("""[{"lines": [{"depth": 40, "duration": 600}], "gradient_factor_low": 1, "gradient_factor_high": 1}]""")
+        val plain =
+            oneOf("""[{"lines": [{"depth": 40, "duration": 600}], "gradient_factor_low": 1, "gradient_factor_high": 1}]""")
         assertEquals(quoted.planned.segments, plain.planned.segments)
         assertEquals(quoted.planned.gradientLow, plain.planned.gradientLow)
     }
@@ -110,9 +111,9 @@ class CasesTest {
         assertTrue("has no lines" in assertIs<Read.Wrong>(read("""[{"lines": []}]""")).reason)
         assertTrue(
             "not bottom, deco or bailout" in
-                assertIs<Read.Wrong>(
-                    read("""[{"lines": [{"depth": 10}], "gases": [{"gas": "air", "role": "spare"}]}]"""),
-                ).reason,
+                    assertIs<Read.Wrong>(
+                        read("""[{"lines": [{"depth": 10}], "gases": [{"gas": "air", "role": "spare"}]}]"""),
+                    ).reason,
         )
     }
 }

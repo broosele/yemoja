@@ -41,95 +41,58 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import yemoja.data.Element
-import yemoja.data.Gas
-import yemoja.data.ValueFormatException
-import yemoja.logic.Ascended
+import yemoja.logic.Breathed
+import yemoja.logic.Conditions
+import yemoja.logic.Direction
 import yemoja.logic.Evaluated
-import yemoja.logic.Reserve
+import yemoja.logic.Following
+import yemoja.logic.Leg
 import yemoja.logic.NumberSetting
-import yemoja.logic.Run
-import yemoja.logic.SafetyStop
-import yemoja.logic.Universe
+import yemoja.logic.Planned
+import yemoja.logic.Reckoned
+import yemoja.logic.Reckoning
+import yemoja.logic.Role
+import yemoja.logic.Scenario
+import yemoja.logic.Segment
 import yemoja.logic.Settings
-import yemoja.logic.Source
-import yemoja.logic.completeAscent
-import yemoja.logic.densityOfWater
-import yemoja.logic.evaluate
-import yemoja.logic.lostGasReserve
-import yemoja.logic.sharedGasReserve
-import yemoja.logic.maximumOperatingDepth
-import yemoja.logic.minimumOperatingDepth
-import kotlin.math.abs
-import kotlin.math.ceil
-import kotlin.math.floor
+import yemoja.logic.Shaped
+import yemoja.logic.Universe
+import yemoja.logic.Worked
+import yemoja.logic.aboveCeilingAt
+import yemoja.logic.breaksCeiling
+import yemoja.logic.clockOf
+import yemoja.logic.conditionsOf
+import yemoja.logic.deepestSaid
+import yemoja.logic.followedOf
+import yemoja.logic.gasChoiceOf
+import yemoja.logic.gasIndexOf
+import yemoja.logic.gasKeyOf
+import yemoja.logic.gasLabelOf
+import yemoja.logic.gasWrongFor
+import yemoja.logic.isShort
+import yemoja.logic.lostGasTried
+import yemoja.logic.lostIndex
+import yemoja.logic.minimumSaid
+import yemoja.logic.plain
+import yemoja.logic.prettyGasOf
+import yemoja.logic.rateSaid
+import yemoja.logic.reckonedOf
+import yemoja.logic.runtimeSaid
+import yemoja.logic.scenarioSaid
+import yemoja.logic.shapedOf
+import yemoja.logic.shortfallSaid
+import yemoja.logic.uncheckedSaid
+import yemoja.logic.workedOf
 import kotlin.math.roundToInt
 
 /*
- * A dive planned in the Calculations tab, belonging to no dive: segments, settings and gases in,
- * the way up and what it costs out.
- *
- * The model is the logic layer's, `LOGIC-37`, reached through a `Run` rather than through an item,
- * so a plan typed here and a plan on a dive are answered by one walk. Nothing here is stored.
+ * The plan form while the tab holds it: the lines, the settings and the cylinders. The model
+ * itself — segments, settings and gases in, the way up and what it costs out — moved to the logic
+ * layer, `LOGIC-37` and `GUI-43`, so that something other than this window can ask for the same
+ * calculation. What stays here is Compose state (so typing redraws) and the screen that edits it.
  *
  * See ../../../../../../gui/doc.md — `GUI-43`.
  */
-
-/**
- * Segment is one line of a planned run as it is typed: a change of depth, or a stay at one.
- *
- * A line that changes depth is timed by its duration or by its rate, whichever was typed last, and
- * the other is worked out from it. Both blank takes the rate from the settings. A line that stays
- * has a duration and no rate.
- *
- * Immutable.
- */
-internal data class Segment(
-    val depth: String = "",
-    /** Minutes and seconds, as `2:13`, or whole minutes, as `25`. */
-    val duration: String = "",
-    /** Metres a minute. */
-    val rate: String = "",
-    /** The cylinder by its place in the list, or null to breathe what the line above breathes. */
-    val gas: Int? = null,
-)
-
-/**
- * Role is what a cylinder is carried for, which decides the oxygen it is held to and whether the
- * way up may switch to it by itself.
- */
-internal enum class Role(val label: String) {
-
-    /** Held to *pO₂ max bottom*, and chosen by the ascent where it is the best mix allowed. */
-    BOTTOM("Bottom"),
-
-    /** Held to *pO₂ max deco*, and chosen by the ascent where it is the best mix allowed. */
-    DECO("Deco"),
-
-    /**
-     * Held to *pO₂ max bottom*, and never chosen by the ascent: breathed only where a line names
-     * it. Bottom rather than deco because a bailout is breathed in trouble, at the effort that
-     * brought the trouble on.
-     */
-    BAILOUT("Bailout"),
-}
-
-/**
- * Breathed is one cylinder as it is typed: what is in it, what it is carried for, what it holds,
- * and how fast it is breathed.
- *
- * Immutable.
- */
-internal data class Breathed(
-    val gas: String = Gas.AIR.toString(),
-    val role: Role = Role.BOTTOM,
-    /** Litres of water it holds. */
-    val size: String = "",
-    /** Bar it was filled to. */
-    val fill: String = "",
-    /** Litres a minute at the surface. */
-    val sac: String = "",
-)
 
 /**
  * Shaping is the plan form while the tab holds it: the lines, the settings and the cylinders.
@@ -204,40 +167,6 @@ internal fun Shaping.prefill(settings: Settings?) {
     water = settings?.choice(Settings.DEFAULT_WATER_TYPE) ?: Settings.DEFAULT_WATER_TYPE.default
     prefilled = true
 }
-
-/** What the cylinder at [index] is called, which is what a reader sees of a key. */
-internal fun gasLabelOf(index: Int): String = "Gas ${index + 1}"
-
-/**
- * What a line of the runtime calls the cylinder at [index]: its number in the list and what is in
- * it, so a reader choosing one need not look across at the gases.
- *
- * Example: `2: EAN50`, or `2` alone while its mix is still blank.
- */
-internal fun gasChoiceOf(shaping: Planned, index: Int): String {
-    val typed = shaping.gases.getOrNull(index)?.gas?.trim().orEmpty()
-    val mix = gasOf(typed)?.toString() ?: typed
-    return if (mix.isEmpty()) "${index + 1}" else "${index + 1}: $mix"
-}
-
-/**
- * [typed] as the application writes a gas where it says the same thing in another case, and as
- * typed otherwise.
- *
- * Only the case is changed, so the text under a reader's cursor never moves while they type:
- * `ean50` becomes `EAN50`, while `tmx 21/35`, which would lose its space, is left alone until a
- * line shows it.
- */
-internal fun prettyGasOf(typed: String): String {
-    val written = gasOf(typed)?.toString() ?: return typed
-    return if (written.equals(typed, ignoreCase = true)) written else typed
-}
-
-/** The key the cylinder at [index] sits under, as a dive's own cylinders sit under keys. */
-internal fun gasKeyOf(index: Int): String = "g${index + 1}"
-
-/** Which cylinder [key] is, by its place in the list the keys were minted from. */
-internal fun gasIndexOf(key: String): Int = (key.removePrefix("g").toIntOrNull() ?: 1) - 1
 
 // --- Changing the lists.
 
@@ -329,635 +258,6 @@ private fun Shaping.renumber(moved: (Int) -> Int?) {
 private fun isBlank(segment: Segment): Boolean =
     segment.depth.isBlank() && segment.duration.isBlank() && segment.rate.isBlank()
 
-// --- Reading what was typed.
-
-/** Direction is which way a line goes, which the arrow before it says. */
-internal enum class Direction(val arrow: String) {
-    DOWN("↓"),
-    UP("↑"),
-    STAY("→"),
-}
-
-/**
- * Leg is one line of a run once read: from where to where, from when and for how long, on what.
- *
- * A typed line is a leg at [index] in the list typed. A line of the worked-out ascent has no place
- * there, and its [index] is `-1`.
- *
- * Immutable.
- */
-internal data class Leg(
-    val index: Int,
-    val from: Double,
-    val to: Double,
-    val begins: Int,
-    val seconds: Int,
-    val gas: Int,
-    /** Whether the gas follows from the line above rather than being named on this one. */
-    val inherited: Boolean,
-    /**
-     * The rate the line was timed by, typed or taken from the settings, or null where a duration
-     * timed it. Kept because the seconds are counted up to a whole one, and the rate worked back
-     * from them would read as *17.9* where the reader chose 18.
-     */
-    val timedBy: Double? = null,
-) {
-    val ends: Int get() = begins + seconds
-
-    val direction: Direction
-        get() = when {
-            to > from -> Direction.DOWN
-            to < from -> Direction.UP
-            else -> Direction.STAY
-        }
-
-    /** Metres a minute, or null for a stay, which has none. */
-    val rate: Double?
-        get() = when {
-            direction == Direction.STAY -> null
-            timedBy != null -> timedBy
-            else -> abs(to - from) / (seconds / SECONDS_IN_MINUTE)
-        }
-}
-
-/**
- * The legs [segments] lay out, and why the first that will not read does not, or null.
- *
- * A line that times itself by neither a duration nor a rate travels at [descentRate] or
- * [ascentRate]. Those are null where the settings will not read, and such a line is then untimed:
- * the settings say why, so the line need not.
- */
-internal fun laidOf(
-    segments: List<Segment>,
-    gases: Int,
-    descentRate: Double?,
-    ascentRate: Double?,
-): Pair<List<Leg>, String?> {
-    val legs = ArrayList<Leg>()
-    var from = 0.0
-    var second = 0
-    var gas = 0
-    for ((index, segment) in segments.withIndex()) {
-        if (isBlank(segment)) {
-            segment.gas?.takeIf { it in 0..<gases }?.let { gas = it }
-            continue
-        }
-        val line = "Line ${index + 1}"
-        val to = segment.depth.trim().toDoubleOrNull()?.takeIf { it >= 0 }
-            ?: return legs to if (segment.depth.isBlank()) {
-                "$line needs a depth"
-            } else {
-                "$line depth should be 0 m or more, not ${said(segment.depth)}"
-            }
-        var timedBy: Double? = null
-        val seconds = if (to == from) {
-            if (segment.duration.isBlank()) return legs to "$line needs a duration, because it stays at ${plain(to)} m"
-            durationOf(segment.duration) ?: return legs to durationWrong(line, segment.duration)
-        } else if (segment.duration.isNotBlank()) {
-            durationOf(segment.duration) ?: return legs to durationWrong(line, segment.duration)
-        } else {
-            val rate = if (segment.rate.isNotBlank()) {
-                segment.rate.trim().toDoubleOrNull()?.takeIf { it > 0 }
-                    ?: return legs to "$line rate should be more than 0 m/min, not ${said(segment.rate)}"
-            } else {
-                (if (to > from) descentRate else ascentRate) ?: return legs to null
-            }
-            timedBy = rate
-            maxOf(ceil(abs(to - from) / rate * SECONDS_IN_MINUTE).toInt(), 1)
-        }
-        val named = segment.gas?.takeIf { it in 0..<gases }
-        gas = named ?: gas.coerceIn(0, gases - 1)
-        legs += Leg(index, from, to, second, seconds, gas, inherited = named == null, timedBy = timedBy)
-        second += seconds
-        from = to
-    }
-    return legs to null
-}
-
-/**
- * Seconds a duration [typed] says, as `2:13` or as minutes, or null where it says none worth a
- * line. Read as every clock in the application is read.
- */
-internal fun durationOf(typed: String): Int? = secondsOf(typed.trim())?.takeIf { it > 0 }?.toInt()
-
-private fun durationWrong(line: String, typed: String): String =
-    "$line duration should be m:ss or minutes, such as 2:13 or 25, not ${said(typed)}"
-
-/**
- * Conditions are the plan's settings once read.
- *
- * Immutable.
- */
-internal class Conditions(
-    val gradientLow: Double,
-    val gradientHigh: Double,
-    val bottomOxygen: Double,
-    val decoOxygen: Double,
-    /** The least oxygen any cylinder is breathed at, in bar. */
-    val leastOxygen: Double,
-    val descentRate: Double,
-    val ascentRate: Double,
-    val safetyDepth: Double,
-    /** Nought where there is no safety stop. */
-    val safetySeconds: Int,
-    val lastStop: Double,
-    /** Kilograms a cubic metre. */
-    val density: Double,
-)
-
-/** The plan's settings, or why the first that will not read does not. */
-internal fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
-    val low = percentageOf(shaping.gradientLow) ?: return null to factorWrong("low", shaping.gradientLow)
-    val high = percentageOf(shaping.gradientHigh) ?: return null to factorWrong("high", shaping.gradientHigh)
-    if (low > high) return null to "GF low should not be higher than GF high"
-    val bottom = positiveOf(shaping.bottomOxygen)
-        ?: return null to numberWrong("pO₂ max bottom", "more than 0 bar", shaping.bottomOxygen)
-    val deco = positiveOf(shaping.decoOxygen)
-        ?: return null to numberWrong("pO₂ max deco", "more than 0 bar", shaping.decoOxygen)
-    val least = positiveOf(shaping.leastOxygen)
-        ?: return null to numberWrong("pO₂ min", "more than 0 bar", shaping.leastOxygen)
-    val descent = positiveOf(shaping.descentRate)
-        ?: return null to numberWrong("Descent rate", "more than 0 m/min", shaping.descentRate)
-    val ascent = positiveOf(shaping.ascentRate)
-        ?: return null to numberWrong("Ascent rate", "more than 0 m/min", shaping.ascentRate)
-    val minutes = shaping.safetyMinutes.trim().toDoubleOrNull()?.takeIf { it >= 0 }
-        ?: return null to numberWrong("Safety stop duration", "0 min or more", shaping.safetyMinutes)
-    val safety = if (minutes == 0.0) {
-        0.0
-    } else {
-        positiveOf(shaping.safetyDepth)
-            ?: return null to numberWrong("Safety stop depth", "more than 0 m", shaping.safetyDepth)
-    }
-    val last = shaping.lastStop.trim().toDoubleOrNull()?.takeIf { it >= 0 }
-        ?: return null to numberWrong("Last stop", "0 m or more", shaping.lastStop)
-    val density = densityOfWater(shaping.water)
-        ?: return null to "Water should be salt or fresh"
-    return Conditions(
-        gradientLow = low,
-        gradientHigh = high,
-        bottomOxygen = bottom,
-        decoOxygen = deco,
-        leastOxygen = least,
-        descentRate = descent,
-        ascentRate = ascent,
-        safetyDepth = safety,
-        safetySeconds = (minutes * SECONDS_IN_MINUTE).roundToInt(),
-        lastStop = last,
-        density = density,
-    ) to null
-}
-
-/** The source the cylinder [breathed] is, held to the limit its role gives it under [conditions]. */
-internal fun sourceOf(breathed: Breathed, gas: Gas, conditions: Conditions): Source = Source(
-    gas = gas,
-    sac = breathed.sac.trim().toDoubleOrNull(),
-    volume = breathed.size.trim().toDoubleOrNull(),
-    fill = breathed.fill.trim().toDoubleOrNull(),
-    mostOxygen = limitOf(breathed.role, conditions),
-    ascentMayChoose = breathed.role != Role.BAILOUT,
-    leastOxygen = conditions.leastOxygen,
-)
-
-/** The most oxygen a cylinder of [role] is breathed at under [conditions], in bar. */
-internal fun limitOf(role: Role, conditions: Conditions): Double =
-    if (role == Role.DECO) conditions.decoOxygen else conditions.bottomOxygen
-
-/** Shaped is a run built from what was typed, or why there is none yet, with the lines read so far. */
-internal sealed class Shaped {
-
-    abstract val legs: List<Leg>
-
-    /** A run to complete and evaluate, holding the typed lines alone. */
-    class Ready(val run: Run, override val legs: List<Leg>, val conditions: Conditions) : Shaped()
-
-    /** Nothing is typed, so the form waits rather than complains. */
-    class Waiting(override val legs: List<Leg>) : Shaped()
-
-    class Wrong(val reason: String, override val legs: List<Leg>) : Shaped()
-}
-
-/**
- * The run [shaping] describes, down to the end of its last typed line.
- *
- * **The switches are where the gas changes between lines**, and the first is always at nought:
- * a run that says nothing about what it went in on is refused, and rightly. `LOGIC-37`.
- *
- * The run carries nothing: a plan in the calculations belongs to no dive and so follows none.
- */
-internal fun shapedOf(shaping: Planned, universe: Universe? = null): Shaped {
-    val (conditions, unreadable) = conditionsOf(shaping)
-    val (legs, wrong) = laidOf(
-        shaping.segments,
-        shaping.gases.size,
-        conditions?.descentRate ?: positiveOf(shaping.descentRate),
-        conditions?.ascentRate ?: positiveOf(shaping.ascentRate),
-    )
-    if (wrong != null) return Shaped.Wrong(wrong, legs)
-    if (unreadable != null || conditions == null) return Shaped.Wrong(unreadable ?: "", legs)
-    if (legs.isEmpty()) return Shaped.Waiting(legs)
-    val sources = LinkedHashMap<String, Source>()
-    for ((index, breathed) in shaping.gases.withIndex()) {
-        val gas = gasOf(breathed.gas) ?: return Shaped.Wrong(
-            if (breathed.gas.isBlank()) {
-                "${gasLabelOf(index)} is missing its mix"
-            } else {
-                "${gasLabelOf(index)} should be a mix such as AIR, EAN32 or TMX18/45, not ${said(breathed.gas)}"
-            },
-            legs,
-        )
-        sources[gasKeyOf(index)] = sourceOf(breathed, gas, conditions)
-    }
-    // A start that will not read, or a run followed that cannot be, is the plan's fault as a
-    // setting that will not read is: the model cannot say what the dive starts from.
-    val followed = followedOf(shaping, universe)
-    if (followed is Followed.Wrong) return Shaped.Wrong(followed.reason, legs)
-    (startOf(shaping) as? Start.Wrong)?.let { return Shaped.Wrong(it.reason, legs) }
-    val left = (followed as? Followed.After)?.residual
-    val points = listOf(0 to 0.0) + legs.map { it.ends to it.to }
-    val switches = ArrayList<Pair<Int, String>>()
-    for (leg in legs) {
-        val key = gasKeyOf(leg.gas)
-        if (switches.lastOrNull()?.second != key) switches += (if (switches.isEmpty()) 0 else leg.begins) to key
-    }
-    return Shaped.Ready(
-        Run(
-            depth = points,
-            sources = sources,
-            gradientFactorLow = conditions.gradientLow,
-            gradientFactorHigh = conditions.gradientHigh,
-            switches = switches,
-            density = conditions.density,
-            safetyStop = if (conditions.safetySeconds > 0) {
-                SafetyStop(conditions.safetyDepth, conditions.safetySeconds)
-            } else {
-                null
-            },
-            ascentRate = conditions.ascentRate,
-            carried = left?.tissues,
-            oxygenCarried = left?.oxygen,
-        ),
-        legs,
-        conditions,
-    )
-}
-
-/** Worked is what the model makes of a ready run: the way up it adds, and the whole dive evaluated. */
-internal sealed class Worked {
-
-    class Done(val tail: List<Leg>, val whole: Run, val evaluated: Evaluated.Done) : Worked()
-
-    class Refused(val reason: String) : Worked()
-}
-
-/** The ascent [ready] is completed with, and what the model makes of the dive with it on the end. */
-internal fun workedOf(ready: Shaped.Ready): Worked {
-    val conditions = ready.conditions
-    val ascended = when (val ascent = completeAscent(ready.run, conditions.ascentRate, conditions.lastStop)) {
-        is Ascended.Refused -> return Worked.Refused(ascent.reason)
-        is Ascended.Done -> ascent
-    }
-    val whole = withAscent(ready.run, ascended)
-    return when (val evaluated = evaluate(whole)) {
-        is Evaluated.Refused -> Worked.Refused(evaluated.reason)
-        is Evaluated.Done -> Worked.Done(tailOf(ready.run, ascended), whole, evaluated)
-    }
-}
-
-/**
- * The cylinder the lost-gas scenario loses: the one chosen, or the first deco cylinder where none
- * is, or null where there is neither.
- */
-internal fun Planned.lostIndex(): Int? =
-    lostGas?.takeIf { it in gases.indices } ?: gases.indexOfFirst { it.role == Role.DECO }.takeIf { it >= 0 }
-
-/**
- * Whether the lost-gas scenario is tried: a cylinder is lost, and *None* was not chosen. A plan with
- * no deco gas and nothing chosen loses none, so its reserve has no lost-gas scenario to try.
- */
-internal fun Planned.lostGasTried(): Boolean = lostGasScenario && lostIndex() != null
-
-/** Scenario is one way a dive can go wrong that the gas reserve is kept back for. `LOGIC-40`. */
-internal enum class Scenario(val label: String, val tip: String) {
-
-    /** The cylinders ticked *Lost* are gone, and the way up is to the surface at the usual rate. */
-    LOST_GAS("Lost", PlannerTips.LOST_GAS),
-
-    /** A buddy has lost their bottom gas, and the two share this diver's up to a deco gas. */
-    SHARED("Buddy out of gas", PlannerTips.SHARED),
-}
-
-/** Reckoning is what one scenario of the gas reserve came to, or why it came to nothing. */
-internal sealed class Reckoning {
-
-    class Done(val reserve: Reserve.Done) : Reckoning()
-
-    class Wrong(val reason: String) : Reckoning()
-}
-
-/**
- * Reckoned is what each scenario of the gas reserve came to, with null for one switched off.
- *
- * Immutable.
- */
-internal class Reckoned(val scenarios: Map<Scenario, Reckoning?>) {
-
-    /** The scenarios that were worked out, each with its reserve. */
-    val done: Map<Scenario, Reserve.Done>
-        get() = scenarios.mapNotNull { (scenario, it) -> (it as? Reckoning.Done)?.let { scenario to it.reserve } }.toMap()
-}
-
-/**
- * The gas [done] must keep back in each scenario [shaping] has switched on.
- *
- * The stress factor is read apart from the other settings, so one typed wrong leaves the shared
- * scenario unsaid and everything else answered. `LOGIC-40`.
- */
-internal fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Reckoned {
-    fun reckoning(reserve: Reserve): Reckoning = when (reserve) {
-        is Reserve.Done -> Reckoning.Done(reserve)
-        // A cylinder named is one whose rate is missing: said with everything else it lacks, and
-        // for every cylinder lacking a rate, so one fix is not followed by the next complaint.
-        is Reserve.Refused -> Reckoning.Wrong(
-            if (reserve.source == null) reserve.reason else missingSaid(shaping) ?: reserve.reason,
-        )
-    }
-    val keys = shaping.gases.indices
-    // Both scenarios begin with it, so one typed wrong leaves both unsaid.
-    val problem = problemSecondsOf(shaping)
-    if (problem == null) {
-        val wrong = Reckoning.Wrong(numberWrong("Problem solving time", "0 minutes or more", shaping.problemMinutes))
-        return Reckoned(
-            mapOf(
-                Scenario.LOST_GAS to wrong.takeIf { shaping.lostGasTried() },
-                Scenario.SHARED to wrong.takeIf { shaping.sharedScenario },
-            ),
-        )
-    }
-    val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
-    val lostGas = lost?.let {
-        reckoning(lostGasReserve(done.whole, setOf(gasKeyOf(it)), conditions.ascentRate, conditions.lastStop, problem))
-    }
-    val shared = if (shaping.sharedScenario) {
-        val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
-        if (factor == null) {
-            Reckoning.Wrong(numberWrong("Panic stress factor", "1 or more", shaping.panicFactor))
-        } else {
-            val deco = keys.filter { shaping.gases[it].role == Role.DECO }.map { gasKeyOf(it) }.toSet()
-            reckoning(sharedGasReserve(done.whole, deco, factor, conditions.ascentRate, conditions.lastStop, problem))
-        }
-    } else {
-        null
-    }
-    return Reckoned(mapOf(Scenario.LOST_GAS to lostGas, Scenario.SHARED to shared))
-}
-
-/**
- * What the cylinder under [key] must still hold: the most any scenario switched on asks of it at
- * its own worst moment, since the cylinder has to meet each of them.
- *
- * In bar, rounded up, or in litres where nobody said how big it is. Nothing for a cylinder no
- * scenario breathes from.
- */
-internal fun minimumSaid(reckoned: Reckoned, key: String): String {
-    val done = reckoned.done.values
-    done.mapNotNull { it.reserve[key] }.maxOrNull()?.let { return "${ceil(it).toInt()} bar" }
-    return done.mapNotNull { it.needed[key] }.maxOrNull()?.let { "${ceil(it).toInt()} L" }.orEmpty()
-}
-
-/** Whether the cylinder under [key] falls short in any scenario switched on. */
-internal fun isShort(reckoned: Reckoned, key: String): Boolean =
-    reckoned.done.values.any { it.shortfall?.source == key }
-
-/** When a scenario's worst moment is, and how deep. */
-internal fun worstSaid(reserve: Reserve.Done): String =
-    "${clockOf(reserve.worst)} (${plain(reserve.worstMetres)} m)"
-
-/**
- * Why no reserve can be worked out: every cylinder the reserve may breathe that has no rate, each
- * with everything it lacks. Null where none lacks a rate.
- *
- * Example: `Cannot be calculated (missing for Gas 1: SAC, volume, start pressure)`.
- */
-internal fun missingSaid(shaping: Planned): String? {
-    val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
-    val missing = shaping.gases.withIndex().filter { (index, breathed) ->
-        index != lost && breathed.sac.trim().toDoubleOrNull() == null
-    }.map { (index, breathed) -> "${gasLabelOf(index)}: ${lackedBy(breathed).joinToString(", ")}" }
-    if (missing.isEmpty()) return null
-    return "Cannot be calculated (missing for ${missing.joinToString("; ")})"
-}
-
-/** What of its rate, its volume and its start pressure [breathed] does not say. */
-private fun lackedBy(breathed: Breathed): List<String> = listOfNotNull(
-    "SAC".takeIf { breathed.sac.trim().toDoubleOrNull() == null },
-    "volume".takeIf { breathed.size.trim().toDoubleOrNull() == null },
-    "start pressure".takeIf { breathed.fill.trim().toDoubleOrNull() == null },
-)
-
-/**
- * What one scenario came to, in a sentence: what each cylinder needs, when, and what it assumes.
- *
- * A scenario that needs nothing says so, and why where the reason is a deco gas the buddy can go
- * to at once, rather than a worst moment at the surface that means nothing.
- *
- * Example: `Gas 1 needs 54 bar at 25:00 (40 m), surfacing without Gas 2 at normal SAC`.
- */
-internal fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): String {
-    val needs = reserve.needed.filterValues { it > 0 }.keys.map { key ->
-        val held = reserve.reserve[key]?.let { "${ceil(it).toInt()} bar" }
-            ?: "${ceil(reserve.needed.getValue(key)).toInt()} L"
-        "${gasLabelOf(gasIndexOf(key))} needs $held"
-    }
-    if (needs.isEmpty()) {
-        return when (scenario) {
-            Scenario.LOST_GAS -> "No reserve needed"
-            Scenario.SHARED -> decoReachedSaid(shaping)
-                ?.let { "No sharing needed: each diver switches to $it at once" } ?: "No sharing needed"
-        }
-    }
-    val held = problemSecondsOf(shaping)?.takeIf { it > 0 }?.let { clockOf(it) }
-    val assumed = when (scenario) {
-        Scenario.LOST_GAS -> {
-            val lost = shaping.lostIndex()?.let { gasLabelOf(it) } ?: "the lost gas"
-            (held?.let { "$it at depth, then " } ?: "") + "surfacing without $lost at normal SAC"
-        }
-        Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
-            "${upToSaid(reserve.upTo)}, each at ${shaping.panicFactor.trim()} × SAC"
-    }
-    return "${needs.joinToString(" and ")} at ${worstSaid(reserve)}, $assumed"
-}
-
-/** The problem-solving time [shaping] asks for, in whole seconds, or null where it will not read. */
-internal fun problemSecondsOf(shaping: Planned): Int? =
-    shaping.problemMinutes.trim().toDoubleOrNull()?.takeIf { it >= 0 }?.let { (it * SECONDS_IN_MINUTE).roundToInt() }
-
-/** The deco cylinder a buddy goes to first, being the one breathable deepest, as its line names it. */
-private fun decoReachedSaid(shaping: Planned): String? {
-    val conditions = conditionsOf(shaping).first ?: return null
-    return shaping.gases.withIndex().filter { it.value.role == Role.DECO }
-        .maxByOrNull { (_, breathed) ->
-            gasOf(breathed.gas)?.let {
-                maximumOperatingDepth(it, most = conditions.decoOxygen, density = conditions.density)
-            } ?: -1.0
-        }?.let { gasChoiceOf(shaping, it.index) }
-}
-
-// To a tenth, as the MOD beside the deco gas is, so the two read as the same depth.
-private fun upToSaid(metres: Double?): String =
-    if (metres == null || metres <= 0) "to the surface" else "to ${plain((metres * 10).roundToInt() / 10.0)} m"
-
-/** Where a cylinder first holds less than [scenario] needs from there, or null where none does. */
-internal fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? = reserve.shortfall?.let {
-    // A gauge the plan has already run below nought is empty, not a negative pressure.
-    val held = floor(it.left).toInt().coerceAtLeast(0)
-    val needs = ceil(it.needed).toInt()
-    val why = when (scenario) {
-        Scenario.LOST_GAS -> "surfacing without the lost gas"
-        Scenario.SHARED -> "two divers sharing ${upToSaid(it.upTo)}"
-    }
-    "${clockOf(it.second)} ${gasLabelOf(gasIndexOf(it.source))}: $held bar should be at least $needs bar ($why)"
-}
-
-/** The cylinders a reserve breathes that have no size or no start pressure, so cannot be checked. */
-internal fun uncheckedSaid(reckoned: Reckoned, shaping: Planned): String? {
-    val unchecked = reckoned.done.values.filter { !it.judged }.flatMap { it.needed.keys }
-        .map { gasIndexOf(it) }.distinct().sorted().filter {
-            val breathed = shaping.gases[it]
-            breathed.size.trim().toDoubleOrNull() == null || breathed.fill.trim().toDoubleOrNull() == null
-        }
-    if (unchecked.isEmpty()) return null
-    return unchecked.joinToString("; ") { index ->
-        val lacked = lackedBy(shaping.gases[index]).filter { it != "SAC" }
-        "${gasLabelOf(index)}: reserve in litres only (missing: ${lacked.joinToString(", ")})"
-    }
-}
-
-/** [run] with [ascent] on the end of it, and nothing else about it changed. */
-internal fun withAscent(run: Run, ascent: Ascended.Done): Run = Run(
-    depth = run.depth + ascent.depth,
-    sources = run.sources,
-    gradientFactorLow = run.gradientFactorLow,
-    gradientFactorHigh = run.gradientFactorHigh,
-    switches = run.switches + ascent.switches,
-    density = run.density,
-    surface = run.surface,
-    carried = run.carried,
-    oxygenCarried = run.oxygenCarried,
-    safetyStop = run.safetyStop,
-    ascentRate = run.ascentRate,
-)
-
-/**
- * The lines the worked-out [ascent] is shown as, below the typed ones.
- *
- * **The ascent does not repeat the point it leaves from**, so the run's own last point begins the
- * first line. The model writes a point a minute while it holds a stop, and those minutes are one
- * line. A rise through several depths is one line too, unless a gas is switched on the way, since
- * a switch is what a reader has to see.
- */
-internal fun tailOf(run: Run, ascent: Ascended.Done): List<Leg> {
-    val start = run.depth.lastOrNull() ?: return emptyList()
-    val points = listOf(start) + ascent.depth
-    val switches = run.switches + ascent.switches
-    val legs = ArrayList<Leg>()
-    for (at in 1..<points.size) {
-        val (began, from) = points[at - 1]
-        val (ends, to) = points[at]
-        if (ends <= began) continue
-        val key = switches.lastOrNull { it.first <= began }?.second ?: continue
-        val leg = Leg(-1, from, to, began, ends - began, gasIndexOf(key), inherited = true)
-        val last = legs.lastOrNull()
-        val switched = ascent.switches.any { it.first == began }
-        if (last != null && !switched && last.gas == leg.gas && last.direction == leg.direction) {
-            legs[legs.lastIndex] = last.copy(to = to, seconds = last.seconds + leg.seconds)
-        } else {
-            legs += leg
-        }
-    }
-    return legs
-}
-
-/**
- * Whether [leg] goes deeper than its cylinder may be breathed, at the limit its role gives under
- * [conditions]. A mix with no oxygen may be breathed nowhere, so any line on one is too deep.
- */
-internal fun tooDeepFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean {
-    if (conditions == null) return false
-    val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
-    val gas = gasOf(breathed.gas) ?: return false
-    val deepest = maximumOperatingDepth(gas, most = limitOf(breathed.role, conditions), density = conditions.density)
-        ?: return true
-    return maxOf(leg.from, leg.to) > deepest
-}
-
-/**
- * Whether [leg] comes shallower than its cylinder may be breathed, where the mix is hypoxic and its
- * oxygen falls below the plan's *pO₂ min*. A mix with no oxygen is caught by [tooDeepFor] already.
- */
-internal fun tooShallowFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean {
-    if (conditions == null) return false
-    val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
-    val gas = gasOf(breathed.gas) ?: return false
-    val shallowest = minimumOperatingDepth(gas, least = conditions.leastOxygen, density = conditions.density) ?: return false
-    return minOf(leg.from, leg.to) < shallowest
-}
-
-/** Whether [leg] breathes its cylinder anywhere it may not be breathed, too deep or too shallow. */
-internal fun gasWrongFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean =
-    tooDeepFor(leg, shaping, conditions) || tooShallowFor(leg, shaping, conditions)
-
-/**
- * The seconds at which [run] is above the ceiling [evaluated] worked out for it.
- *
- * Compared at the run's own points, as the model compares them when it warns, so a line shown in
- * red and the warning under the plan are one judgement. `LOGIC-37`.
- */
-internal fun aboveCeilingAt(run: Run, evaluated: Evaluated.Done): Set<Int> {
-    val ceilings = HashMap<Int, Double>()
-    for (at in 0..<evaluated.ceiling.size) {
-        val value = (evaluated.ceiling.valueAt(at) as? Element.Usable)?.value as? Number ?: continue
-        ceilings[evaluated.ceiling.secondAt(at)] = value.toDouble()
-    }
-    return run.depth.filter { (second, metres) -> metres < (ceilings[second] ?: 0.0) }.map { it.first }.toSet()
-}
-
-/**
- * Whether [leg] is above the ceiling at any of [above]: at a point it reaches, or for a stay at the
- * point it begins from too. A rise begun from a point above the ceiling leaves the fault with the
- * line that reached it.
- */
-internal fun breaksCeiling(leg: Leg, above: Set<Int>): Boolean = above.any {
-    it in (leg.begins + 1)..leg.ends || (leg.direction == Direction.STAY && it == leg.begins)
-}
-
-/** The runtime a line is shown with: the whole minute it ends in, counted up. */
-internal fun runtimeSaid(leg: Leg): String = "${ceil(leg.ends / SECONDS_IN_MINUTE).toInt()}:"
-
-/** A length of time as a clock reads it, minutes and seconds. */
-internal fun clockOf(seconds: Int): String =
-    "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
-
-/** A rate to a tenth of a metre a minute. */
-internal fun rateSaid(rate: Double): String = plain((rate * 10).roundToInt() / 10.0)
-
-/** How deep [breathed] may be breathed under [conditions], as the table says it, or nothing. */
-internal fun deepestSaid(breathed: Breathed, conditions: Conditions?): String {
-    val gas = gasOf(breathed.gas) ?: return ""
-    if (conditions == null) return ""
-    val most = limitOf(breathed.role, conditions)
-    val deepest = maximumOperatingDepth(gas, most = most, density = conditions.density) ?: return ""
-    return "${plain((deepest * 10).roundToInt() / 10.0)} m"
-}
-
-/** The cylinder [typed] names, or null where it names none. */
-private fun gasOf(typed: String): Gas? = try {
-    Gas.parse(typed)
-} catch (refused: ValueFormatException) {
-    null
-} catch (refused: IllegalArgumentException) {
-    null
-}
-
 // --- The form.
 
 /**
@@ -1012,32 +312,32 @@ internal fun PlanForm(
             Cylinders(shaping, conditions, done, reckoned)
         }
     } else {
-    // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
-    // two columns end on one line however many cylinders there are.
-    Row(
-        modifier = Modifier.fillMaxWidth().height(ZONE),
-        horizontalArrangement = Arrangement.spacedBy(GAP * 2),
-    ) {
-        Column(modifier = Modifier.width(RUNTIME_BOX).fillMaxHeight()) {
-            Caption("Runtime")
-            Scrolling(Modifier.weight(1f).fillMaxWidth().framed().padding(HALF), scrollbar) {
-                RuntimeLines(shaping, shaped, done, conditions)
+        // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
+        // two columns end on one line however many cylinders there are.
+        Row(
+            modifier = Modifier.fillMaxWidth().height(ZONE),
+            horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+        ) {
+            Column(modifier = Modifier.width(RUNTIME_BOX).fillMaxHeight()) {
+                Caption("Runtime")
+                Scrolling(Modifier.weight(1f).fillMaxWidth().framed().padding(HALF), scrollbar) {
+                    RuntimeLines(shaping, shaped, done, conditions)
+                }
             }
-        }
-        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Caption("Settings")
-            Framed { Conditions(shaping) }
-            Caption("Contingency")
-            Framed { Contingency(shaping, reckoned) }
-            Caption("Gases")
-            Column(modifier = Modifier.weight(1f).fillMaxWidth().framed().padding(HALF)) {
-                CylinderHeadings()
-                Scrolling(Modifier.weight(1f).fillMaxWidth(), scrollbar) {
-                    Cylinders(shaping, conditions, done, reckoned)
+            Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                Caption("Settings")
+                Framed { Conditions(shaping) }
+                Caption("Contingency")
+                Framed { Contingency(shaping, reckoned) }
+                Caption("Gases")
+                Column(modifier = Modifier.weight(1f).fillMaxWidth().framed().padding(HALF)) {
+                    CylinderHeadings()
+                    Scrolling(Modifier.weight(1f).fillMaxWidth(), scrollbar) {
+                        Cylinders(shaping, conditions, done, reckoned)
+                    }
                 }
             }
         }
-    }
     }
     if (done != null) Figures(done.evaluated)
     when {
@@ -1209,13 +509,23 @@ private fun TypedLine(
         }
         Explained(PlannerTips.ADD_LINE) {
             IconButton(onClick = { shaping.addSegment(index) }, modifier = Modifier.size(BUTTON)) {
-                Icon(Icons.Filled.Add, contentDescription = "Add a line below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = "Add a line below",
+                    modifier = Modifier.size(DENSE_GLYPH),
+                    tint = MaterialTheme.colorScheme.outline
+                )
             }
         }
         if (shaping.segments.size > 1) {
             Explained(PlannerTips.REMOVE_LINE) {
                 IconButton(onClick = { shaping.removeSegment(index) }, modifier = Modifier.size(BUTTON)) {
-                    Icon(Icons.Filled.Close, contentDescription = "Take out this line", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Take out this line",
+                        modifier = Modifier.size(DENSE_GLYPH),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
                 }
             }
         }
@@ -1247,7 +557,13 @@ private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBro
             Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, if (ceilingBroken) error else italic)
             Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
             Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
-            Cell(gasChoiceOf(shaping.described(), leg.gas), GAS, TextAlign.Start, if (gasWrong) error else italic, padding = GAP)
+            Cell(
+                gasChoiceOf(shaping.described(), leg.gas),
+                GAS,
+                TextAlign.Start,
+                if (gasWrong) error else italic,
+                padding = GAP
+            )
         }
     }
 }
@@ -1296,7 +612,9 @@ private fun Conditions(shaping: Shaping) {
     Halves(
         first = {
             Section("General") {
-                Setting("Descent rate", PlannerTips.DESCENT_RATE, shaping.descentRate, "m/min") { shaping.descentRate = it }
+                Setting("Descent rate", PlannerTips.DESCENT_RATE, shaping.descentRate, "m/min") {
+                    shaping.descentRate = it
+                }
                 Setting("Ascent rate", PlannerTips.ASCENT_RATE, shaping.ascentRate, "m/min") { shaping.ascentRate = it }
                 Labelled("Water", PlannerTips.WATER) {
                     // As wide as the boxes above it, a setting being a setting whether it is
@@ -1311,7 +629,12 @@ private fun Conditions(shaping: Shaping) {
                 }
             }
             Section("Gas") {
-                Setting("pO₂ max bottom", PlannerTips.BOTTOM_OXYGEN, shaping.bottomOxygen, "bar") { shaping.bottomOxygen = it }
+                Setting(
+                    "pO₂ max bottom",
+                    PlannerTips.BOTTOM_OXYGEN,
+                    shaping.bottomOxygen,
+                    "bar"
+                ) { shaping.bottomOxygen = it }
                 Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it }
                 Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it }
             }
@@ -1327,8 +650,19 @@ private fun Conditions(shaping: Shaping) {
             }
             Section("Stops") {
                 Setting("Last stop", PlannerTips.LAST_STOP, shaping.lastStop, "m") { shaping.lastStop = it }
-                Setting("Safety stop depth", PlannerTips.SAFETY_DEPTH, shaping.safetyDepth, "m", enabled = !none) { shaping.safetyDepth = it }
-                Setting("Safety stop duration", PlannerTips.SAFETY_DURATION, shaping.safetyMinutes, "min") { shaping.safetyMinutes = it }
+                Setting(
+                    "Safety stop depth",
+                    PlannerTips.SAFETY_DEPTH,
+                    shaping.safetyDepth,
+                    "m",
+                    enabled = !none
+                ) { shaping.safetyDepth = it }
+                Setting(
+                    "Safety stop duration",
+                    PlannerTips.SAFETY_DURATION,
+                    shaping.safetyMinutes,
+                    "min"
+                ) { shaping.safetyMinutes = it }
             }
         },
     )
@@ -1344,8 +678,18 @@ private fun Conditions(shaping: Shaping) {
 private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
         Column {
-            Setting("Panic stress factor", PlannerTips.PANIC_FACTOR, shaping.panicFactor, "× SAC") { shaping.panicFactor = it }
-            Setting("Problem solving time", PlannerTips.PROBLEM_SOLVING, shaping.problemMinutes, "min") { shaping.problemMinutes = it }
+            Setting(
+                "Panic stress factor",
+                PlannerTips.PANIC_FACTOR,
+                shaping.panicFactor,
+                "× SAC"
+            ) { shaping.panicFactor = it }
+            Setting(
+                "Problem solving time",
+                PlannerTips.PROBLEM_SOLVING,
+                shaping.problemMinutes,
+                "min"
+            ) { shaping.problemMinutes = it }
         }
         Scenarios(reckoned, shaping, Modifier.weight(1f))
     }
@@ -1366,7 +710,14 @@ private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) 
 }
 
 @Composable
-private fun Setting(label: String, tip: String, value: String, after: String, enabled: Boolean = true, onChange: (String) -> Unit) {
+private fun Setting(
+    label: String,
+    tip: String,
+    value: String,
+    after: String,
+    enabled: Boolean = true,
+    onChange: (String) -> Unit
+) {
     Labelled(label, tip) {
         Box(modifier = Modifier.width(SETTING)) {
             Compact(value = value, onChange = onChange, after = after, enabled = enabled, dense = true)
@@ -1412,7 +763,10 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
         ) {
             Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX, TextAlign.End) }
             Tipped(PlannerTips.MIX, MIX) {
-                Compact(dense = true, value = breathed.gas, onChange = { shaping.gases[index] = breathed.copy(gas = prettyGasOf(it)) })
+                Compact(
+                    dense = true,
+                    value = breathed.gas,
+                    onChange = { shaping.gases[index] = breathed.copy(gas = prettyGasOf(it)) })
             }
             Tipped(PlannerTips.ROLE, ROLE) {
                 Pick(
@@ -1422,18 +776,38 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                 ) { shaping.gases[index] = breathed.copy(role = Role.entries[it]) }
             }
             Tipped(PlannerTips.VOLUME, VOLUME) {
-                Compact(dense = true, value = breathed.size, onChange = { shaping.gases[index] = breathed.copy(size = it) }, after = "L")
+                Compact(
+                    dense = true,
+                    value = breathed.size,
+                    onChange = { shaping.gases[index] = breathed.copy(size = it) },
+                    after = "L"
+                )
             }
             Tipped(PlannerTips.START, PRESSURE) {
-                Compact(dense = true, value = breathed.fill, onChange = { shaping.gases[index] = breathed.copy(fill = it) }, after = "bar")
+                Compact(
+                    dense = true,
+                    value = breathed.fill,
+                    onChange = { shaping.gases[index] = breathed.copy(fill = it) },
+                    after = "bar"
+                )
             }
             Tipped(PlannerTips.SAC, SAC) {
-                Compact(dense = true, value = breathed.sac, onChange = { shaping.gases[index] = breathed.copy(sac = it) }, after = "L/min")
+                Compact(
+                    dense = true,
+                    value = breathed.sac,
+                    onChange = { shaping.gases[index] = breathed.copy(sac = it) },
+                    after = "L/min"
+                )
             }
             val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
             Explained(PlannerTips.MOD) { Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked) }
             Explained(PlannerTips.USED) {
-                Cell(done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(), FIGURED, TextAlign.End, worked)
+                Cell(
+                    done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(),
+                    FIGURED,
+                    TextAlign.End,
+                    worked
+                )
             }
             Explained(PlannerTips.END) {
                 Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
@@ -1450,7 +824,12 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
             }
             Explained(PlannerTips.ADD_GAS) {
                 IconButton(onClick = { shaping.addGas(index) }, modifier = Modifier.size(BUTTON)) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add a gas below", modifier = Modifier.size(DENSE_GLYPH), tint = MaterialTheme.colorScheme.outline)
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = "Add a gas below",
+                        modifier = Modifier.size(DENSE_GLYPH),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
                 }
             }
             // Why a gas cannot be taken out, where a line breathes it.
@@ -1461,7 +840,11 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     enabled = kept == null,
                     modifier = Modifier.size(BUTTON),
                 ) {
-                    Icon(Icons.Filled.Close, contentDescription = "Take out ${gasLabelOf(index)}", modifier = Modifier.size(DENSE_GLYPH))
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Take out ${gasLabelOf(index)}",
+                        modifier = Modifier.size(DENSE_GLYPH)
+                    )
                 }
             }
         }
@@ -1474,7 +857,12 @@ private fun CylinderHeadings() {
     Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
         for ((heading, width, tip) in CYLINDER_COLUMNS) {
             Explained(tip) {
-                Cell(heading, width, TextAlign.Start, MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.outline))
+                Cell(
+                    heading,
+                    width,
+                    TextAlign.Start,
+                    MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.outline)
+                )
             }
         }
     }
@@ -1490,8 +878,17 @@ private fun Figures(evaluated: Evaluated.Done) {
         Figure("CNS", "${evaluated.oxygen.percentCns.toInt()}%", PlannerTips.CNS)
         Figure("OTU", "${evaluated.oxygen.otu.toInt()}", PlannerTips.OTU)
         Figure("No-fly time", evaluated.noFlight?.let { waitSaid(it) } ?: "more than a day", PlannerTips.NO_FLY)
-        Figure("Desaturation time", evaluated.desaturation?.let { waitSaid(it) } ?: "more than a day", PlannerTips.DESATURATION)
+        Figure(
+            "Desaturation time",
+            evaluated.desaturation?.let { waitSaid(it) } ?: "more than a day",
+            PlannerTips.DESATURATION)
     }
+}
+
+/** The tip shown beside a scenario's name: the window's own copy, kept out of `logic`. */
+internal fun tipOf(scenario: Scenario): String = when (scenario) {
+    Scenario.LOST_GAS -> PlannerTips.LOST_GAS
+    Scenario.SHARED -> PlannerTips.SHARED
 }
 
 /**
@@ -1518,7 +915,7 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                     horizontalArrangement = Arrangement.spacedBy(HALF),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Explained(scenario.tip) {
+                    Explained(tipOf(scenario)) {
                         Text(scenario.label, style = MaterialTheme.typography.bodySmall)
                     }
                     Box {
@@ -1532,13 +929,19 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                                         dense = true,
                                         chosen = planned.lostIndex()?.takeIf { planned.lostGasTried() }
                                             ?.let { gasChoiceOf(planned, it) } ?: NO_GAS_LOST,
-                                        options = listOf(NO_GAS_LOST) + planned.gases.indices.map { gasChoiceOf(planned, it) },
+                                        options = listOf(NO_GAS_LOST) + planned.gases.indices.map {
+                                            gasChoiceOf(
+                                                planned,
+                                                it
+                                            )
+                                        },
                                     ) { chosen ->
                                         shaping.lostGasScenario = chosen > 0
                                         if (chosen > 0) shaping.lostGas = chosen - 1
                                     }
                                 }
                             }
+
                             Scenario.SHARED ->
                                 CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
                                     Checkbox(
@@ -1598,28 +1001,9 @@ private fun Graph(done: Worked.Done, shaping: Shaping) {
     Graphed(depth, runOverlaysOf(done.evaluated, tanks), events, planned = true, chosenFor = null)
 }
 
-// --- Reading a setting.
-
-/** A percentage from 1 to 100 as a proportion, or absent where [typed] is not one. `GUI-41`. */
-private fun percentageOf(typed: String): Double? =
-    typed.trim().removeSuffix("%").trim().toDoubleOrNull()?.takeIf { it >= 1 && it <= PERCENT }
-        ?.let { it / PERCENT }
-
-private fun positiveOf(typed: String): Double? = typed.trim().toDoubleOrNull()?.takeIf { it > 0 }
-
-/** What to say of a gradient factor that will not do. */
-private fun factorWrong(which: String, typed: String): String = numberWrong("GF $which", "1 to 100 %", typed)
-
-/** What to say of a setting that will not do: that it is missing, or what it should be instead. */
-private fun numberWrong(what: String, rule: String, typed: String): String =
-    if (typed.isBlank()) "$what is missing" else "$what should be $rule, not ${said(typed)}"
-
-/** Something typed, quoted, or *nothing* where nothing was. */
-private fun said(typed: String): String = if (typed.isBlank()) "nothing" else "\"${typed.trim()}\""
-
+// A kept, local copy: the same 60.0 the model's own file uses, for the one place left here that
+// turns a second into a minute for the graph's own axis.
 private const val SECONDS_IN_MINUTE = 60.0
-
-private const val PERCENT = 100.0
 
 /**
  * How tall the top of the plan is: about eighteen lines of the runtime, and about four cylinders

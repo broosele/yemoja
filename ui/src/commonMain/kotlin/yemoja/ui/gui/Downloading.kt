@@ -18,6 +18,7 @@ import yemoja.logic.Operation
 import yemoja.logic.Outcome
 import yemoja.logic.Types
 import yemoja.logic.divecomputer.DiveComputer
+import yemoja.logic.titleOf
 import kotlin.math.sqrt
 import kotlin.math.cos
 import kotlin.math.PI
@@ -60,7 +61,8 @@ internal fun sayingOf(stage: Stage, computer: String?): String? = when (stage) {
     Stage.CHOOSING -> "More than one dive computer is within reach. Which one should be read?"
     Stage.READING ->
         "Reading ${computer ?: "the dive computer"}. This can take several minutes, depending on " +
-            "how many dives are on it. The rest of the logbook can be used meanwhile."
+                "how many dives are on it. The rest of the logbook can be used meanwhile."
+
     else -> null
 }
 
@@ -114,7 +116,7 @@ internal fun emptyOf(readable: Boolean): String =
         "No dive computer was found. Switch yours on, put it into Bluetooth mode, and try again."
     } else {
         "This installation cannot read a dive computer. The libdivecomputer library is " +
-            "missing, so no computer can be found whatever you do."
+                "missing, so no computer can be found whatever you do."
     }
 
 /** How many dives a staged import holds, which is what a download brought. */
@@ -170,12 +172,12 @@ internal fun apartOf(metres: Double): String =
  * reader judge what a threshold would have judged for them. `LOGIC-18`.
  */
 internal fun nearestTo(into: ItemSet, latitude: Double, longitude: Double, most: Int = 3):
-    List<Near> = into.allOf(Types.DIVE_SITE).mapNotNull { site ->
-        val there = numberOf(site, "latitude") ?: return@mapNotNull null
-        val across = numberOf(site, "longitude") ?: return@mapNotNull null
-        val id = into.idOf(site as ReferenceableItem) ?: return@mapNotNull null
-        Near(id, titleOf(site), metresApart(latitude, longitude, there, across))
-    }.sortedBy { it.metres }.take(most)
+        List<Near> = into.allOf(Types.DIVE_SITE).mapNotNull { site ->
+    val there = numberOf(site, "latitude") ?: return@mapNotNull null
+    val across = numberOf(site, "longitude") ?: return@mapNotNull null
+    val id = into.idOf(site as ReferenceableItem) ?: return@mapNotNull null
+    Near(id, titleOf(site), metresApart(latitude, longitude, there, across))
+}.sortedBy { it.metres }.take(most)
 
 /**
  * How far apart two positions are, in metres.

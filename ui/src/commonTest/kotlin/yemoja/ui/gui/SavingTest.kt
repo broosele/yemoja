@@ -8,11 +8,18 @@ import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import yemoja.logic.Breathed
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
+import yemoja.logic.Role
+import yemoja.logic.Segment
+import yemoja.logic.Shaped
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import yemoja.logic.Worked
 import yemoja.logic.planName
+import yemoja.logic.shapedOf
+import yemoja.logic.workedOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -232,7 +239,12 @@ class SavingRoundTripTest {
         val shaping = shaping(*FORTY)
         val (_, done) = doneOf(shaping)
         val logbook = emptyLogbook()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", withoutLinesOf(shaping)).toTypedArray()))
+        val made = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *newDiveOf("Plan_A", withoutLinesOf(shaping)).toTypedArray()
+            )
+        )
         val dive = assertNotNull(logbook.logbook[made.added.single()])
         val plan = assertNotNull(profilesOf(dive)["Plan_A"])
         assertTrue(isPlanned(plan))
@@ -255,7 +267,12 @@ class SavingRoundTripTest {
     fun `a stop the model held a minute at a time comes back as one line`() {
         val shaping = shaping(*FORTY)
         val logbook = emptyLogbook()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", withoutLinesOf(shaping)).toTypedArray()))
+        val made = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *newDiveOf("Plan_A", withoutLinesOf(shaping)).toTypedArray()
+            )
+        )
         val dive = logbook.logbook[made.added.single()]!!
         val back = Shaping()
         back.prefill(null)
@@ -263,7 +280,8 @@ class SavingRoundTripTest {
         // Two stays running on at one depth, on one gas, would be a stop said twice.
         val depths = back.segments.map { it.depth }
         for (at in 2..<depths.size) {
-            val again = depths[at] == depths[at - 1] && depths[at - 1] == depths[at - 2] && back.segments[at].gas == null
+            val again =
+                depths[at] == depths[at - 1] && depths[at - 1] == depths[at - 2] && back.segments[at].gas == null
             assertTrue(!again, "${back.segments}")
         }
     }
@@ -277,11 +295,17 @@ class SavingRoundTripTest {
                 mapOf("p1" to Stored.Members(mapOf("start_date" to Stored.Leaf("2026-05-01")))),
             ),
         )
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, yemoja.logic.Change.Add(Types.DIVE, recording)))
+        val made =
+            assertIs<Outcome.Done>(logbook.change(Operation.EDIT, yemoja.logic.Change.Add(Types.DIVE, recording)))
         val id = made.added.single()
         val name = planNameOn(logbook.logbook[id])
         assertEquals("Plan A", name)
-        assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *onDiveOf(logbook.logbook[id]!!, yemoja.logic.planKeyOf(name), fieldsOf(shaping(*FORTY))).toTypedArray()))
+        assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *onDiveOf(logbook.logbook[id]!!, yemoja.logic.planKeyOf(name), fieldsOf(shaping(*FORTY))).toTypedArray()
+            )
+        )
         val dive = logbook.logbook[id]!!
         assertEquals(setOf("p1", "Plan_A"), profilesOf(dive).keys)
         val primary = (dive.read("primary_profile") as Result.Usable).value as KeyReference
@@ -292,7 +316,12 @@ class SavingRoundTripTest {
     @Test
     fun `a plan attached to a dive takes the name typed, or the next free one where it is taken`() {
         val logbook = emptyLogbook()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))
+        val made = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()
+            )
+        )
         val dive = logbook.logbook[made.added.single()]!!
         assertEquals("Night_dive", attachedKeyOf(dive, "Night dive"))
         assertEquals("Plan_B", attachedKeyOf(dive, "Plan A"), "attaching adds a plan and never saves over one")
@@ -302,13 +331,23 @@ class SavingRoundTripTest {
     @Test
     fun `a plan saved over keeps what else was written on it`() {
         val logbook = emptyLogbook()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))
+        val made = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()
+            )
+        )
         val id = made.added.single()
         val noted = onDiveOf(logbook.logbook[id]!!, "Plan_A", mapOf("start_date" to Stored.Leaf("2026-06-01")))
         assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *noted.toTypedArray()))
 
         val shallower = shaping(Segment("30"), Segment("30", duration = "20"))
-        assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *onDiveOf(logbook.logbook[id]!!, "Plan_A", fieldsOf(shallower)).toTypedArray()))
+        assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *onDiveOf(logbook.logbook[id]!!, "Plan_A", fieldsOf(shallower)).toTypedArray()
+            )
+        )
         val plan = profilesOf(logbook.logbook[id]!!).getValue("Plan_A")
         assertIs<Result.Usable<*>>(plan.read("start_date"), "written by hand, and kept")
         val back = Shaping()
@@ -338,7 +377,12 @@ class OpeningTest {
     @Test
     fun `adding a plan to a dive starts a blank one under the next free name`() {
         val logbook = chosen()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))
+        val made = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()
+            )
+        )
         val id = made.added.single()
         val working = Shaping()
         working.segments[0] = Segment("12")
@@ -361,7 +405,12 @@ class OpeningTest {
                 ),
             ),
         ).added.single()
-        val planned = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray())).added.single()
+        val planned = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()
+            )
+        ).added.single()
         val plans = plansIn(logbook)
         assertEquals(listOf("$planned: Plan A"), plans.map { it.second }, "the recording on $recorded is not a plan")
         assertEquals(Bound.Editing(planned, "Plan_A"), plans.single().first)
@@ -370,7 +419,12 @@ class OpeningTest {
     @Test
     fun `editing a plan loads it, under its own name`() {
         val logbook = chosen()
-        val made = assertIs<Outcome.Done>(logbook.change(Operation.EDIT, *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()))
+        val made = assertIs<Outcome.Done>(
+            logbook.change(
+                Operation.EDIT,
+                *newDiveOf("Plan_A", fieldsOf(shaping(*FORTY))).toTypedArray()
+            )
+        )
         val working = Shaping()
         val saving = Saving()
         working.gases.addAll(listOf(Breathed(), Breathed("EAN80", Role.DECO)))

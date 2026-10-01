@@ -3,6 +3,7 @@ package yemoja.ui.gui
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
+import yemoja.logic.titleOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -117,12 +118,12 @@ class DeleteAskedTest {
         // A reference to something deleted is left dangling rather than hunted down.
         assertEquals(
             "2 other items name it, and will be left naming something that is no longer here: 2026-06-21#0 and " +
-                "2026-06-22#0.",
+                    "2026-06-22#0.",
             deleteWarned(logbook, setOf("anna")),
         )
         assertEquals(
             "3 other items name them, and will be left naming something that is no longer here: 2026-06-21#0 and " +
-                "2026-06-22#0.",
+                    "2026-06-22#0.",
             deleteWarned(logbook, setOf("anna", "bo")),
             "two references in one dive is one name, not two",
         )

@@ -1,8 +1,52 @@
 package yemoja.ui.gui
 
-import yemoja.logic.Evaluated
-import yemoja.logic.maximumOperatingDepth
 import yemoja.data.Gas
+import yemoja.logic.Breathed
+import yemoja.logic.Conditions
+import yemoja.logic.Direction
+import yemoja.logic.Evaluated
+import yemoja.logic.Leg
+import yemoja.logic.Planned
+import yemoja.logic.Reckoned
+import yemoja.logic.Reckoning
+import yemoja.logic.Role
+import yemoja.logic.Scenario
+import yemoja.logic.Segment
+import yemoja.logic.Shaped
+import yemoja.logic.Worked
+import yemoja.logic.aboveCeilingAt
+import yemoja.logic.breaksCeiling
+import yemoja.logic.clockOf
+import yemoja.logic.conditionsOf
+import yemoja.logic.deepestSaid
+import yemoja.logic.durationOf
+import yemoja.logic.gasChoiceOf
+import yemoja.logic.gasIndexOf
+import yemoja.logic.gasKeyOf
+import yemoja.logic.gasLabelOf
+import yemoja.logic.gasWrongFor
+import yemoja.logic.isShort
+import yemoja.logic.lostGasTried
+import yemoja.logic.lostIndex
+import yemoja.logic.maximumOperatingDepth
+import yemoja.logic.minimumSaid
+import yemoja.logic.missingSaid
+import yemoja.logic.plain
+import yemoja.logic.prettyGasOf
+import yemoja.logic.problemSecondsOf
+import yemoja.logic.rateSaid
+import yemoja.logic.reckonedOf
+import yemoja.logic.runtimeSaid
+import yemoja.logic.scenarioSaid
+import yemoja.logic.shapedOf
+import yemoja.logic.shortfallSaid
+import yemoja.logic.tailOf
+import yemoja.logic.tooDeepFor
+import yemoja.logic.tooShallowFor
+import yemoja.logic.uncheckedSaid
+import yemoja.logic.withAscent
+import yemoja.logic.workedOf
+import yemoja.logic.worstSaid
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -482,7 +526,10 @@ class ReserveTest {
 
         assertTrue(reserve.upTo > 20, "EAN50 may be breathed from about 22 m: ${reserve.upTo}")
         assertTrue(said.startsWith("Gas 1 needs ") && said.endsWith(", each at 2 × SAC"), said)
-        assertTrue(Regex("sharing 2:00 at depth, then to [0-9]+([.][0-9])? m, each at").containsMatchIn(said), "to a tenth, as the MOD is: $said")
+        assertTrue(
+            Regex("sharing 2:00 at depth, then to [0-9]+([.][0-9])? m, each at").containsMatchIn(said),
+            "to a tenth, as the MOD is: $said"
+        )
         assertTrue(
             reserve.needed.getValue("g1") < scenario(shaping, Scenario.LOST_GAS).needed.getValue("g1"),
             "a short share to the deco gas costs less than every stop on bottom gas",
@@ -591,7 +638,10 @@ class ReserveTest {
         // A cylinder added as deco and left as air may be breathed at 40 m, so nothing is shared.
         val shaping = planned(*FORTY, gases = listOf(Breathed(sac = "20"), Breathed(role = Role.DECO, sac = "20")))
         val reserve = scenario(shaping, Scenario.SHARED)
-        assertEquals("No sharing needed: each diver switches to 2: AIR at once", scenarioSaid(Scenario.SHARED, reserve, shaping.described()))
+        assertEquals(
+            "No sharing needed: each diver switches to 2: AIR at once",
+            scenarioSaid(Scenario.SHARED, reserve, shaping.described())
+        )
     }
 
     @Test
@@ -600,7 +650,10 @@ class ReserveTest {
         val reckoned = reckoned(shaping)
 
         assertTrue(minimumSaid(reckoned, "g1").endsWith(" L"), minimumSaid(reckoned, "g1"))
-        assertEquals("Gas 1: reserve in litres only (missing: volume, start pressure)", uncheckedSaid(reckoned, shaping.described()))
+        assertEquals(
+            "Gas 1: reserve in litres only (missing: volume, start pressure)",
+            uncheckedSaid(reckoned, shaping.described())
+        )
     }
 
     @Test
@@ -612,7 +665,13 @@ class ReserveTest {
 
         assertTrue("g2" in reserve.needed.keys, "${reserve.needed}")
         assertTrue("g3" !in reserve.needed.keys, "the one lost is not")
-        assertTrue(scenarioSaid(Scenario.LOST_GAS, reserve, shaping.described()).endsWith("surfacing without Gas 3 at normal SAC"))
+        assertTrue(
+            scenarioSaid(
+                Scenario.LOST_GAS,
+                reserve,
+                shaping.described()
+            ).endsWith("surfacing without Gas 3 at normal SAC")
+        )
     }
 
     @Test
@@ -658,7 +717,10 @@ class WarnedLinesTest {
         assertTrue(tooShallowFor(first, shaping.described(), assertNotNull(conditionsOf(shaping.described()).first)))
 
         shaping.leastOxygen = "0.1"
-        assertTrue(!tooShallowFor(first, shaping.described(), assertNotNull(conditionsOf(shaping.described()).first)), "10/70 is 0.10 bar at the surface")
+        assertTrue(
+            !tooShallowFor(first, shaping.described(), assertNotNull(conditionsOf(shaping.described()).first)),
+            "10/70 is 0.10 bar at the surface"
+        )
 
         shaping.leastOxygen = ""
         assertEquals("pO₂ min is missing", conditionsOf(shaping.described()).second)
@@ -696,7 +758,11 @@ class WarnedLinesTest {
             gases = listOf(Breathed(), Breathed("EAN50", Role.DECO)),
         )
         val conditions = assertNotNull(conditionsOf(shaping.described()).first)
-        assertEquals(false, tooDeepFor(ready(shaping).legs[1], shaping.described(), conditions), "21 m is inside its 21.6")
+        assertEquals(
+            false,
+            tooDeepFor(ready(shaping).legs[1], shaping.described(), conditions),
+            "21 m is inside its 21.6"
+        )
     }
 
     @Test

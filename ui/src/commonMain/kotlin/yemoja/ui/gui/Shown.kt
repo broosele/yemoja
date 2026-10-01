@@ -22,6 +22,8 @@ import yemoja.data.Series
 import yemoja.data.TextDescription
 import yemoja.data.Units
 import yemoja.logic.Types
+import yemoja.logic.UNNAMED
+import yemoja.logic.titleOf
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -44,22 +46,8 @@ import kotlin.math.roundToLong
 internal fun labelOf(type: ItemDescription): String =
     type.name.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
-/**
- * What titles [item], which is what a link to it reads as.
- *
- * **Never its id.** An id names a file and is what a reference points at, and the interface does
- * not surface one. Every type has a name and every one of them works it out where nothing was
- * written, so an item with nothing to be called is a logbook that could not have been made here
- * rather than a case to design for. It still says something rather than showing a blank row.
- */
-internal fun titleOf(item: Item): String {
-    val named = item.description["name"] ?: return UNNAMED
-    val read = item.read(named.name)
-    return (read as? Result.Usable)?.value?.toString()?.ifBlank { null } ?: UNNAMED
-}
-
-/** An item with nothing to be called, which nothing in a logbook made here should be. */
-private const val UNNAMED = "(unnamed)"
+// titleOf moved to the logic layer, `LOGIC-37`, alongside the rest of the plan model that needed
+// it; imported above rather than redefined here.
 
 /**
  * The fields of [type] an item view shows: all of them but the ones the screen around it
@@ -75,10 +63,10 @@ internal fun fieldsShownOf(
 ): List<FieldDescription> =
     type.fields.filter {
         it.name !in ALREADY_SHOWN[type.name].orEmpty() &&
-            (editing || (!it.housekeeping && !it.source)) &&
-            // The card is titled with the name, so a card saying it again says it twice. A form
-            // keeps it where it can be typed: a site is renamed by writing in that box. `GUI-16`.
-            (it.name != NAME || (editing && it.role !is Role.Derived))
+                (editing || (!it.housekeeping && !it.source)) &&
+                // The card is titled with the name, so a card saying it again says it twice. A form
+                // keeps it where it can be typed: a site is renamed by writing in that box. `GUI-16`.
+                (it.name != NAME || (editing && it.role !is Role.Derived))
     }
 
 /** The field every card is titled by, which [titleOf] reads. */
@@ -432,7 +420,7 @@ internal fun shownOf(field: FieldDescription, read: Result<Any>, item: Item): Sh
  */
 internal fun labelOf(field: FieldDescription, read: Result<Any>): String {
     val dives = field is ReferenceDescription && field.targetType == DIVES_OF &&
-        field.cardinality == Cardinality.LIST
+            field.cardinality == Cardinality.LIST
     val many = ((read as? Result.Usable)?.value as? List<*>)?.size
     return if (dives && many != null) "${field.label} ($many)" else field.label
 }
@@ -511,6 +499,7 @@ private fun said(field: FieldDescription, value: Any, within: Item): List<Part> 
     field.cardinality == Cardinality.KEYED -> {
         plain(counted(keyedIn(value).size, "entry", "entries"))
     }
+
     field.cardinality == Cardinality.LIST -> listed(value, within)
     value is OwnedItem -> plain(counted(filledIn(value), "field"))
     value is KeyReference -> plain(prettyOf(value.key))

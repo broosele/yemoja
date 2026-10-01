@@ -42,12 +42,26 @@ internal fun slug(text: String): String {
     return out.toString().trim { it in EDGES }
 }
 
-/**
- * What an item with nothing to be named after is called: `unknown_person`, `unknown_dive_site`.
+/** What an item with nothing to be named after is called: `unknown_person`, `unknown_dive_site`.
  *
  * The type's own name, so nothing here lists the types. The manual promises this to users.
  */
 internal fun unknownOf(item: Item): String = "unknown_${item.description.name}"
+
+/**
+ * An item with nothing to be called, which nothing in a logbook made here should be.
+ *
+ * Not private: the `ui` module compares a title against this to tell a real name from the
+ * fallback, `GUI-26`.
+ */
+const val UNNAMED = "(unnamed)"
+
+/** What [item] is called: its `name` field, or [UNNAMED] where it has none or says nothing. */
+fun titleOf(item: Item): String {
+    val named = item.description["name"] ?: return UNNAMED
+    val read = item.read(named.name)
+    return (read as? Result.Usable)?.value?.toString()?.ifBlank { null } ?: UNNAMED
+}
 
 /**
  * The id proposed for an item named by its `name` field, which is eight of the nine types.

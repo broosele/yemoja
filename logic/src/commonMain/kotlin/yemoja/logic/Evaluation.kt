@@ -197,7 +197,7 @@ class Run(
         for (index in 1..<depth.size) {
             require(depth[index].first > depth[index - 1].first) {
                 "depths should run forwards, but ${depth[index].first} follows " +
-                    "${depth[index - 1].first}"
+                        "${depth[index - 1].first}"
             }
         }
     }
@@ -273,7 +273,10 @@ fun evaluate(profile: Item): Evaluated = evaluated(profile, emptySet())
  */
 fun evaluate(run: Run): Evaluated {
     val depths = pointsOf(run)
-        ?: return Evaluated.Refused("this recording holds no depths, so nothing can be worked out from it", Refusal.UNASKED)
+        ?: return Evaluated.Refused(
+            "this recording holds no depths, so nothing can be worked out from it",
+            Refusal.UNASKED
+        )
     // A run holding cylinders and saying nothing about which was breathed is a gap somebody can
     // close, unlike a recording that simply says nothing about the model.
     val breathed = breathedBy(run) ?: return Evaluated.Refused(
@@ -287,8 +290,8 @@ fun evaluate(run: Run): Evaluated {
         if (breathed.startsAt > under.second + STARTING_GAS_LATEST) {
             return Evaluated.Refused(
                 "nothing says what was breathed before the first gas switch, at " +
-                    "${clockOf(breathed.startsAt)}; the run was under water from " +
-                    clockOf(under.second),
+                        "${clockOf(breathed.startsAt)}; the run was under water from " +
+                        clockOf(under.second),
                 Refusal.FAULTY,
             )
         }
@@ -324,7 +327,10 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated =
  * arithmetic sees none of the reading.
  */
 private fun runOf(profile: Item, seen: Set<Item>): Read {
-    if (profile in seen) return Read.Refused("this dive is set to follow itself, so the gas it starts with cannot be worked out", Refusal.FAULTY)
+    if (profile in seen) return Read.Refused(
+        "this dive is set to follow itself, so the gas it starts with cannot be worked out",
+        Refusal.FAULTY
+    )
     val low = (profile.single<Double>("gradient_factor_low") as? Result.Usable)?.value
     val high = (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value
     // Both factors are needed. One of them is a setting half written down, and guessing the other
@@ -539,7 +545,7 @@ private fun safetyStopFinding(depths: List<Point>, safetyStop: SafetyStop?): Fin
         left.second,
         Severity.WARNING,
         "Safety stop at ${metres(safetyStop.metres)} should last ${clockOf(safetyStop.seconds)}, " +
-            "not ${clockOf(held)}",
+                "not ${clockOf(held)}",
     )
 }
 
@@ -664,7 +670,8 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
     val evaluated = evaluate(run)
     if (evaluated is Evaluated.Refused) return Ascended.Refused(evaluated.reason)
     val breathing = breathedBy(run) ?: return Ascended.Refused("nothing says what is breathed")
-    val depths = pointsOf(run) ?: return Ascended.Refused("this recording holds no depths, so nothing can be worked out from it")
+    val depths =
+        pointsOf(run) ?: return Ascended.Refused("this recording holds no depths, so nothing can be worked out from it")
     val end = depths.last()
     val climbed = climbed(
         From((evaluated as Evaluated.Done).surfacing, end.second, end.metres, breathing.keyAt(end.second)),
@@ -1061,8 +1068,13 @@ private fun owner(profile: Item): Item? = (profile as? OwnedItem)?.parent
 private fun seriesOf(seconds: List<Int>, values: List<Double>): Series =
     Series(seconds.toIntArray(), values.map { Element.Usable(it as Any) })
 
-/** Seconds into a run as a reader counts them, minutes and seconds: `24:00`. */
-internal fun clockOf(second: Int): String =
+/**
+ * Seconds into a run as a reader counts them, minutes and seconds: `24:00`.
+ *
+ * Not internal: the planner, `LOGIC-37`, reads a clock the same way from the `ui` module, and a
+ * second copy of six characters is not worth keeping apart.
+ */
+fun clockOf(second: Int): String =
     "${second / 60}:${(second % 60).toString().padStart(2, '0')}"
 
 /**

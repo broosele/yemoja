@@ -26,6 +26,7 @@ import yemoja.logic.Applied
 import yemoja.logic.Changed
 import yemoja.logic.Staged
 import yemoja.logic.Universe
+import yemoja.logic.titleOf
 
 /*
  * Looking at what an agent would change before any of it happens.

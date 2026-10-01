@@ -15,6 +15,7 @@ import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.WholeNumberDescription
 import yemoja.logic.Types
+import yemoja.logic.titleOf
 
 /*
  * What the home screen says, worked out without a screen.
@@ -102,8 +103,8 @@ internal fun tellingOf(user: ReferenceableItem?, greeting: Greeting?): String = 
         "Open the Community tab and mark one of its people as yourself, to be greeted by name."
 
     else -> "You have ${counted(greeting.dives, "logged dive")} on " +
-        "${counted(greeting.places, "different location")} for a total of " +
-        "${spanOf(greeting.underwater)} underwater."
+            "${counted(greeting.places, "different location")} for a total of " +
+            "${spanOf(greeting.underwater)} underwater."
 }
 
 /** When [user] was born, where the logbook says. */

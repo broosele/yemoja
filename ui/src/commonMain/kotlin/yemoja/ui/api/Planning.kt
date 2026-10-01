@@ -3,24 +3,24 @@ package yemoja.ui.api
 import yemoja.data.Element
 import yemoja.data.Series
 import yemoja.data.Stored
+import yemoja.logic.Direction
+import yemoja.logic.Leg
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
+import yemoja.logic.Planned
+import yemoja.logic.Shaped
+import yemoja.logic.Worked
+import yemoja.logic.gasKeyOf
 import yemoja.logic.planKeyOf
+import yemoja.logic.shapedOf
+import yemoja.logic.workedOf
 import yemoja.logic.Severity
 import yemoja.logic.Types
 import yemoja.logic.Universe
-import yemoja.ui.gui.Direction
-import yemoja.ui.gui.Leg
-import yemoja.ui.gui.Planned
-import yemoja.ui.gui.Shaped
-import yemoja.ui.gui.Worked
 import yemoja.ui.gui.diveFieldsOf
-import yemoja.ui.gui.gasKeyOf
 import yemoja.ui.gui.newDiveOf
 import yemoja.ui.gui.onDiveOf
 import yemoja.ui.gui.planFieldsOf
-import yemoja.ui.gui.shapedOf
-import yemoja.ui.gui.workedOf
 
 /*
  * The dive planner as functions: one that answers, and one that writes.

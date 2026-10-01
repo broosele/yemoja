@@ -5,11 +5,23 @@ import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import yemoja.logic.Breathed
 import yemoja.logic.Evaluated
+import yemoja.logic.Followed
+import yemoja.logic.Following
 import yemoja.logic.Outcome
+import yemoja.logic.Role
+import yemoja.logic.Segment
+import yemoja.logic.Shaped
+import yemoja.logic.Start
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import yemoja.logic.Worked
 import yemoja.logic.evaluate
+import yemoja.logic.followedOf
+import yemoja.logic.shapedOf
+import yemoja.logic.startOf
+import yemoja.logic.workedOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -88,7 +100,10 @@ class FollowingTest {
         assertTrue("carry" !in note, "said as what it is: $note")
 
         val later = afternoon(date = "2026-10-05")
-        assertNull(followedSaid(later.described(), universe, followedOf(later.described(), universe)), "two days later is not worth a note")
+        assertNull(
+            followedSaid(later.described(), universe, followedOf(later.described(), universe)),
+            "two days later is not worth a note"
+        )
     }
 
     @Test
@@ -97,7 +112,10 @@ class FollowingTest {
 
         assertEquals(listOf("plan_a"), offeredOf(afternoon().described(), universe).map { it.key })
         assertTrue(offeredOf(afternoon(time = "09:10").described(), universe).isEmpty(), "still in the water")
-        assertTrue(offeredOf(afternoon(date = "", time = "").described(), universe).isEmpty(), "no start, nothing to measure from")
+        assertTrue(
+            offeredOf(afternoon(date = "", time = "").described(), universe).isEmpty(),
+            "no start, nothing to measure from"
+        )
     }
 
     @Test
@@ -150,7 +168,11 @@ class SavedFollowingTest {
         shaping.following = Following("2026-10-03#0", "plan_a")
         val ready = assertIs<Shaped.Ready>(shapedOf(shaping.described(), universe))
         val done = assertIs<Worked.Done>(workedOf(ready))
-        val changes = newDiveOf("plan_b", planFieldsOf(shaping.described(), ready.conditions, done.whole), diveFieldsOf(shaping.described(), universe))
+        val changes = newDiveOf(
+            "plan_b",
+            planFieldsOf(shaping.described(), ready.conditions, done.whole),
+            diveFieldsOf(shaping.described(), universe)
+        )
         val added = assertIs<Outcome.Done>(universe.change(yemoja.logic.Operation.EDIT, *changes.toTypedArray()))
         val dive = universe.logbook[added.added.single()]!!
         val runs = (dive.keyed<OwnedItem>("profiles") as Result.Usable).value
@@ -181,7 +203,10 @@ class SavedFollowingTest {
         val clash = assertNotNull(followingClashOf(shaping.described(), universe.logbook["2026-10-03#1"]!!))
 
         assertTrue(clash.startsWith("After should be a run of 2026-10-02#0"), clash)
-        assertNull(followingClashOf(afternoon().described(), universe.logbook["2026-10-03#1"]!!), "a plan following nothing does not clash")
+        assertNull(
+            followingClashOf(afternoon().described(), universe.logbook["2026-10-03#1"]!!),
+            "a plan following nothing does not clash"
+        )
     }
 
     @Test
@@ -203,6 +228,9 @@ class SavedFollowingTest {
         val fields = planFieldsOf(shaping.described(), ready.conditions, assertIs<Worked.Done>(workedOf(ready)).whole)
 
         assertEquals("@2026-10-03#0*plan_a", (fields.getValue("previous_profile") as yemoja.data.Stored.Leaf).value)
-        assertEquals("@2026-10-03#0", (diveFieldsOf(shaping.described(), universe).getValue("previous_dive") as yemoja.data.Stored.Leaf).value)
+        assertEquals(
+            "@2026-10-03#0",
+            (diveFieldsOf(shaping.described(), universe).getValue("previous_dive") as yemoja.data.Stored.Leaf).value
+        )
     }
 }

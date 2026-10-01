@@ -7,6 +7,7 @@ import yemoja.data.ItemSet
 import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.logic.Types
+import yemoja.logic.titleOf
 
 /*
  * What the logbook owes, worked out without a screen.

@@ -2,6 +2,7 @@ package yemoja.ui.gui
 
 import yemoja.data.ItemSet
 import yemoja.data.mentionsIn
+import yemoja.logic.titleOf
 
 /*
  * Talking to an agent about the logbook, worked out without a screen.
@@ -90,6 +91,7 @@ internal fun sayingOf(stance: Stance, agent: String?): String? = when (stance) {
     Stance.STARTING -> "Starting ${agent ?: "the agent"}…"
     Stance.ANSWERING ->
         "Working on your question. One that covers the whole logbook can take a minute or more."
+
     else -> null
 }
 
@@ -102,7 +104,7 @@ internal fun sayingOf(stance: Stance, agent: String?): String? = when (stance) {
  */
 internal fun failedOf(command: String, why: String?): String =
     "$command could not be started: ${why ?: "it said nothing about why"}. " +
-        "An agent is a program you install yourself; Yemoja supplies none."
+            "An agent is a program you install yourself; Yemoja supplies none."
 
 /**
  * What to say of a request of the agent's own that was refused.
@@ -112,7 +114,7 @@ internal fun failedOf(command: String, why: String?): String =
  */
 internal fun refusalOf(what: String): String =
     "The agent asked to $what, and was refused. It reaches the logbook through Yemoja's tools " +
-        "and no other way."
+            "and no other way."
 
 /**
  * What an agent said, split into the text and the items it named.

@@ -37,16 +37,33 @@ import yemoja.data.Reference
 import yemoja.data.Time
 import yemoja.data.Date
 import yemoja.data.Units
+import yemoja.logic.Breathed
 import yemoja.logic.Change
+import yemoja.logic.Conditions
+import yemoja.logic.clockOf
+import yemoja.logic.Following
 import yemoja.logic.Outcome
+import yemoja.logic.Planned
+import yemoja.logic.Role
 import yemoja.logic.Run
 import yemoja.logic.NumberSetting
+import yemoja.logic.Segment
 import yemoja.logic.Settings
+import yemoja.logic.Shaped
+import yemoja.logic.Start
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import yemoja.logic.Worked
+import yemoja.logic.durationOf
 import yemoja.logic.freeName
+import yemoja.logic.gasIndexOf
+import yemoja.logic.problemSecondsOf
+import yemoja.logic.startOf
 import yemoja.logic.planKeyOf
 import yemoja.logic.planName
+import yemoja.logic.shapedOf
+import yemoja.logic.titleOf
+import yemoja.logic.workedOf
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -343,7 +360,8 @@ internal fun Shaping.loadFrom(profile: Item, dive: Item?, universe: Universe? = 
     val time = (profile.single<Time>("start_time") as? Result.Usable)?.value
         ?: (dive?.single<Time>("start_time") as? Result.Usable)?.value
     startDate = date?.toString().orEmpty()
-    startTime = time?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" }.orEmpty()
+    startTime =
+        time?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" }.orEmpty()
     following = (profile.single<KeyReference>("previous_profile") as? Result.Usable)?.value
         ?.let { reference -> reference.id?.let { Following(it, reference.key) } }
 
@@ -433,9 +451,11 @@ internal fun Saving.open(bound: Bound, universe: Universe?, shaping: Shaping) {
             shaping.startAfresh(universe?.settings)
             name = planNameOn(dive)
         }
+
         is Bound.Editing -> {
             shaping.startAfresh(universe?.settings)
-            val profile = dive?.let { keyedEntriesOf(it, "profiles").firstOrNull { (key, _) -> key == bound.key }?.second }
+            val profile =
+                dive?.let { keyedEntriesOf(it, "profiles").firstOrNull { (key, _) -> key == bound.key }?.second }
             if (profile != null) shaping.loadFrom(profile, dive, universe)
             name = prettyOf(bound.key)
         }
@@ -465,12 +485,20 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
         done == null -> "Fix the plan's errors before saving"
         else -> null
     }
+
     fun save(target: Bound?) {
         val fields = planFieldsOf(planned, ready!!.conditions, done!!.whole)
         val key = if (target is Bound.Editing) target.key else planKeyOf(saving.name)
         val outcome = when (target) {
             null -> changer.change(newDiveOf(key, fields, diveFieldsOf(planned, universe)))
-            else -> changer.change(onDiveOf(universe!!.logbook[target.dive]!!, key, fields, diveFieldsOf(planned, universe)))
+            else -> changer.change(
+                onDiveOf(
+                    universe!!.logbook[target.dive]!!,
+                    key,
+                    fields,
+                    diveFieldsOf(planned, universe)
+                )
+            )
         }
         saving.said = when (outcome) {
             is Outcome.Refused -> outcome.reason
@@ -481,11 +509,13 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
             }
         }
     }
+
     val nameWrong = when {
         planKeyOf(saving.name).isEmpty() -> "Name is missing"
         bound is Bound.Adding && dive != null &&
-            keyedEntriesOf(dive, PROFILES).any { (key, _) -> key == planKeyOf(saving.name) } ->
+                keyedEntriesOf(dive, PROFILES).any { (key, _) -> key == planKeyOf(saving.name) } ->
             "Name should be new on this dive: ${saving.name.trim()} exists"
+
         else -> null
     }
     Row(
@@ -497,7 +527,12 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
             Text(prettyOf(bound.key), style = MaterialTheme.typography.titleSmall)
         } else {
             Box(modifier = Modifier.width(NAME)) {
-                Compact(value = saving.name, onChange = { saving.name = it; saving.said = null }, dense = true, wrong = nameWrong != null)
+                Compact(
+                    value = saving.name,
+                    onChange = { saving.name = it; saving.said = null },
+                    dense = true,
+                    wrong = nameWrong != null
+                )
             }
         }
         val target = when (bound) {
@@ -524,7 +559,8 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
                 val key = attachedKeyOf(chosen, saving.name)
                 val fields = planFieldsOf(planned, ready!!.conditions, done!!.whole)
                 followingClashOf(planned, chosen)?.let { saving.said = it; return@Attach }
-                saving.said = when (val outcome = changer.change(onDiveOf(chosen, key, fields, diveFieldsOf(planned, universe)))) {
+                saving.said = when (val outcome =
+                    changer.change(onDiveOf(chosen, key, fields, diveFieldsOf(planned, universe)))) {
                     is Outcome.Refused -> outcome.reason
                     is Outcome.Done -> {
                         saving.bound = Bound.Editing(id, key)
