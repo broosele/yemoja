@@ -66,9 +66,17 @@ val bundledLibraries: CopySpec = copySpec {
 tasks.named<ProcessResources>("jvmProcessResources") { with(bundledLibraries) }
 
 // Android packs what a library's resource folders hold into the app, so the same files are put
-// in one of those for it.
+// in one of those for it. A folder inside an app cannot be listed, only a file read, so an index
+// of every file goes with them, which is what a new logbook learns the shipped libraries from.
 val androidLibraries = tasks.register<Sync>("androidLibraries") {
     with(bundledLibraries)
     into(layout.buildDirectory.dir("androidLibraries"))
+    doLast {
+        val files = destinationDir.walk().filter { it.isFile }
+            .map { it.relativeTo(destinationDir).invariantSeparatorsPath }
+            .sorted()
+            .toList()
+        destinationDir.resolve("libraries/index.txt").writeText(files.joinToString("\n") + "\n")
+    }
 }
 kotlin.sourceSets.named("androidMain") { resources.srcDir(androidLibraries) }

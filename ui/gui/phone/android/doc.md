@@ -19,8 +19,18 @@ form factor.
 ## What is built
 
 **It builds, it starts, and a phone is laid out as one.** `./gradlew :android:assembleDebug`
-writes a debug app. It opens on a logbook in the app's own storage, made the first time. Tried on
-the SDK's emulator, Android 16, and on no phone yet.
+writes a debug app. Tried on the SDK's emulator, Android 16, and on no phone yet.
+
+**A logbook lives in a folder the user picks**, `AND-5`. New and Open are one question on a phone,
+which folder, asked through Android's own picker; a folder holding a logbook is opened, and one
+that holds none is made into one. The grant is kept and the folder remembered, so the app opens
+on it again. It is reached through the storage access framework, by `GrantedFileStore`, whose
+answers about a folder's children are kept until something in it changes. The libraries the app
+ships are read from inside it, and since a folder inside an app cannot be listed the build writes
+an index of them, which is how a new logbook learns what to declare. A review and an agent's
+changes are staged in the app's own storage, the grant reaching nothing beside the folder. The
+lock is inside the folder, `JSON-27`, under a name this install makes up once, and a lock left by
+it is taken over.
 
 **On a phone, one page at a time**, `PHONE-2`. The tab row is the open tab with a menu of the
 others, back, and add, edit and delete; the agent's button is not there, `PHONE-1`. A tab shows
@@ -39,15 +49,10 @@ The app is one activity in `android/`, which hands the screen to `Yemoja` in `ui
 everything the platform supplies is there. The manual and the map travel inside the app as they do
 in the desktop's jar.
 
-**Not yet:** a folder the user picks, `AND-5`, and with it import and export; reading a dive
+**Not yet:** import and export, which need Android's pickers for a file; reading a dive
 computer, `AND-6`, with the permissions and the notification it needs, `AND-2` and `AND-3`; and
 a signed release, `AND-1`. What a tooltip says over a greyed button is said on a long press, the
 toolkit's own answer on a touch screen.
-
-**The lock is let go at start.** Android ends an app without warning, so the edit lock, `JSON-27`,
-is left behind each time. In the app's own storage nothing else reaches the logbook, so a lock found
-there at start is one this app left, and is deleted. A folder the user picks can be reached by
-other apps and needs an answer of its own, which `AND-5` owes.
 
 ## Settled
 
@@ -57,11 +62,10 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   folder of readable files, and that is the point of the format: the user can see it, copy it
   and sync it with whatever they already use. Android gives an app no free path to a shared
   folder, so the folder is reached through the storage access framework, as a tree the user
-  grants once. That needs a second file store beside the desktop's, and the edit lock,
-  `JSON-27`, reworked on top of it: Android ends an app without warning, so a lock is left behind
-  every time, which *What is built* says more of. App-private storage, reached by import and export, was the
-  cheaper answer and hides the logbook from the user, which is the one thing the format exists
-  not to do.
+  grants once. That needs a second file store beside the desktop's, and the edit lock, `JSON-27`,
+  moved inside the logbook so the grant reaches it. App-private storage, reached by import and
+  export, was the cheaper answer and hides the logbook from the user, which is the one thing the
+  format exists not to do.
 - **AND-1 — Distribution.** *Settled:* **an installable file published directly, first.** The
   same footing as the Windows installer, `WIN-1`: built here, published with the release, and
   signed with a key of the author's own, which Android requires of every app and which costs

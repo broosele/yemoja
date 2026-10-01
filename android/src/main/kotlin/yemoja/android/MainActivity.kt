@@ -16,9 +16,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // The logbook lives in the app's own storage until a folder the user picks is built,
-        // which is where it belongs. `AND-5`.
-        val logbook = filesDir.resolve("logbook").path
-        setContent { Yemoja(logbook) }
+        setContent { Yemoja() }
     }
 }
