@@ -118,6 +118,24 @@ class PlanToolTest {
     }
 
     @Test
+    fun `a plan staging refuses leaves nothing staged, and the logbook as it was`() {
+        // A collection the file spoils is one staging cannot reach into, so the plan's first
+        // field is refused.
+        val written = """{"rating": 4, "profiles": 5}"""
+        val store = MemoryFileStore(mapOf("dive/2026-06-21#0.json" to written))
+        val universe = Universe(
+            LogbookReader.read(store, Types.ALL), null, store, null, null, null,
+            MemoryFileStore(emptyMap()),
+        )
+        val reply = Tools(universe, writing = { true }).createPlan(plan(), "2026-06-21#0", "Plan A")
+        assertTrue(reply.refused, reply.text)
+        assertTrue(universe.staging?.staged.isNullOrEmpty(), "nothing waits to be applied")
+        assertEquals(written, store.readText("dive/2026-06-21#0.json"), "and the file is untouched")
+        val dive = assertNotNull(universe.logbook["2026-06-21#0"])
+        assertEquals("4", (dive.read("rating") as Result.Usable<*>).value.toString(), "nor the dive in memory")
+    }
+
+    @Test
     fun `a plan that will not calculate is refused rather than staged`() {
         val universe = universeOf()
         val tools = Tools(universe, writing = { true })

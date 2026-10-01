@@ -340,6 +340,25 @@ class StagingTest {
     }
 
     @Test
+    fun `an entry half staged and then refused is taken back whole, the logbook never touched`() {
+        // The order `create_plan` stages a plan in: a new entry field by field, then a field
+        // refused, then the dive dropped. `API-9`.
+        val written = """{"gas_sources": {"g1": {"usage": "bottom", "gas_type": "EAN32"}}}"""
+        val store = MemoryFileStore(mapOf("dive/2026-06-01#0.json" to written))
+        val universe = Universe(LogbookReader.read(store, Types.ALL), null, store, null, null)
+        val staging = stagingOf(universe)
+        assertEquals(Outcome.Done(), staging.set("2026-06-01#0", "gas_sources.g2.usage", "deco"))
+        assertEquals(Outcome.Done(), staging.set("2026-06-01#0", "gas_sources.g2.gas_type", "EAN50"))
+        assertIs<Outcome.Refused>(staging.set("2026-06-01#0", "gas_sources.g2.no_such_field", 1))
+        assertEquals(listOf("2026-06-01#0"), staging.staged.map { it.id }, "half an entry waits")
+        staging.drop("2026-06-01#0")
+        assertTrue(staging.empty, "and is gone once dropped")
+        val sources = read(universe, "2026-06-01#0", "gas_sources") as Map<*, *>
+        assertEquals(setOf("g1"), sources.keys, "the dive in memory never had it")
+        assertEquals(written, store.readText("dive/2026-06-01#0.json"), "nor did its file")
+    }
+
+    @Test
     fun `a proposal is read back from where it was staged`() {
         val universe = diving()
         val store = MemoryFileStore(emptyMap())
