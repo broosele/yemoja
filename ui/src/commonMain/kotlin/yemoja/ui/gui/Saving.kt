@@ -169,6 +169,7 @@ private fun plannerFieldsOf(shaping: Planned, conditions: Conditions, keys: List
         "descent_rate" to Stored.Leaf(conditions.descentRate),
         "ascent_rate" to Stored.Leaf(conditions.ascentRate),
         "last_stop" to Stored.Leaf(conditions.lastStop),
+        "gas_switch_stops" to Stored.Leaf(conditions.switchStops),
         "safety_stop_depth" to Stored.Leaf(conditions.safetyDepth),
         "safety_stop_duration" to Stored.Leaf(conditions.safetySeconds.toLong()),
     )
@@ -382,6 +383,7 @@ private fun Shaping.loadSettingsFrom(profile: Item, index: Map<String, Int>) {
     read("descent_rate", Settings.DEFAULT_DESCENT_RATE) { descentRate = it }
     read("ascent_rate", Settings.DEFAULT_ASCENT_RATE) { ascentRate = it }
     read("last_stop", Settings.DEFAULT_LAST_STOP) { lastStop = it }
+    (profile.single<Boolean>("gas_switch_stops") as? Result.Usable)?.value?.let { switchStops = it }
     read("safety_stop_depth", Settings.DEFAULT_SAFETY_STOP_DEPTH) { safetyDepth = it }
     read("safety_stop_duration", Settings.DEFAULT_SAFETY_STOP_DURATION) { safetyMinutes = it }
     read("panic_factor", Settings.DEFAULT_PANIC_FACTOR) { panicFactor = it }

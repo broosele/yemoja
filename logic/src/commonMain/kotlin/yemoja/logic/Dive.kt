@@ -368,6 +368,8 @@ private val PROFILE = ItemDescription(
         NumberDescription("descent_rate", Dimension.SPEED, housekeeping = true),
         NumberDescription("ascent_rate", Dimension.SPEED, housekeeping = true),
         NumberDescription("last_stop", Dimension.LENGTH, housekeeping = true),
+        // Whether the way up stops to switch gas where no deco stop is owed. `LOGIC-35`.
+        BooleanDescription("gas_switch_stops", housekeeping = true),
         NumberDescription("safety_stop_depth", Dimension.LENGTH, housekeeping = true),
         // Nought is no safety stop.
         NumberDescription("safety_stop_duration", Dimension.TIME, housekeeping = true),

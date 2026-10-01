@@ -792,3 +792,47 @@ class WarnedLinesTest {
         assertEquals(emptySet(), aboveCeilingAt(done.whole, done.evaluated))
     }
 }
+
+class GasSwitchStopsTest {
+
+    /** Forty metres at 30/70, whose first stop is shallower than EAN50's limit. */
+    private fun forty(): Shaping = planned(*FORTY, gases = BOTTOM_AND_DECO).also {
+        it.gradientLow = "30"
+        it.gradientHigh = "70"
+    }
+
+    @Test
+    fun `a new plan waits for a stop to switch gas`() {
+        assertEquals(false, planned().switchStops)
+    }
+
+    @Test
+    fun `ticked, the way up switches at the deepest stop depth the deco gas allows`() {
+        val shaping = forty()
+        shaping.switchStops = true
+        val unticked = done(forty()).tail.first { it.gas == 1 }
+        val ticked = done(shaping).tail
+        val first = ticked.first { it.gas == 1 }
+
+        assertTrue(unticked.from < 21.0, "${done(forty()).tail}")
+        assertEquals(21.0, first.from, "EAN50 is within 1.6 bar at twenty-one metres: $ticked")
+        assertEquals(60, first.seconds, "and held a minute there")
+    }
+
+    @Test
+    fun `the reserves climb as the plan does`() {
+        // With the EAN50 lost, EAN32 is still richer than air, and within its limit at thirty-nine
+        // metres, deeper than any stop this dive owes.
+        val shaping = forty()
+        shaping.gases.add(1, Breathed(gas = "EAN32", role = Role.DECO, size = "7", fill = "200", sac = "20"))
+        shaping.lostGas = 2
+        val passing = scenario(shaping, Scenario.LOST_GAS)
+        shaping.switchStops = true
+        val stopping = scenario(shaping, Scenario.LOST_GAS)
+
+        assertTrue(
+            stopping.needed.getValue("g1") < passing.needed.getValue("g1"),
+            "${stopping.needed} against ${passing.needed}",
+        )
+    }
+}

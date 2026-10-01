@@ -76,6 +76,7 @@ fun lostGasReserve(
     metresAMinute: Double,
     lastStop: Double,
     problemSolvingSeconds: Int = 0,
+    switchStops: Boolean = false,
 ): Reserve {
     checkAscent(metresAMinute, lastStop, problemSolvingSeconds)
     val breathing = breathedBy(run) ?: return Reserve.Refused("nothing says what is breathed")
@@ -95,7 +96,7 @@ fun lostGasReserve(
             breathed,
             emergency,
             run,
-            Ascending(metresAMinute, lastStop, problemSolvingSeconds),
+            Ascending(metresAMinute, lastStop, problemSolvingSeconds, switchStops),
             factor = 1.0,
             handoff = 0.0,
         )
@@ -129,6 +130,7 @@ fun sharedGasReserve(
     metresAMinute: Double,
     lastStop: Double,
     problemSolvingSeconds: Int = 0,
+    switchStops: Boolean = false,
 ): Reserve {
     require(stressFactor > 0) { "a stress factor should be more than nought, but was $stressFactor" }
     checkAscent(metresAMinute, lastStop, problemSolvingSeconds)
@@ -148,7 +150,7 @@ fun sharedGasReserve(
             shared,
             breathing.choosing(setOf(shared)),
             run,
-            Ascending(metresAMinute, lastStop, problemSolvingSeconds),
+            Ascending(metresAMinute, lastStop, problemSolvingSeconds, switchStops),
             factor = SHARING * stressFactor,
             handoff = handoff,
         )
@@ -156,7 +158,13 @@ fun sharedGasReserve(
 }
 
 /** Ascending is how a way up in trouble is made: how fast, how shallow the last stop, how long first. */
-private class Ascending(val metresAMinute: Double, val lastStop: Double, val problemSolvingSeconds: Int)
+private class Ascending(
+    val metresAMinute: Double,
+    val lastStop: Double,
+    val problemSolvingSeconds: Int,
+    /** Whether the way up stops to switch gas where no stop is owed, as the plan's own does. */
+    val switchStops: Boolean,
+)
 
 /**
  * What the way up from [metres] at [second] costs when it begins with the problem-solving time there.
@@ -194,6 +202,7 @@ private fun heldThenClimbed(
         ascending.metresAMinute,
         ascending.lastStop,
         before,
+        ascending.switchStops,
     ) ?: return Cost.Stuck
     val up = costOf((second + held) to metres, breathed, climbed, run, factor, handoff)
     if (up !is Cost.Litres || held == 0) return up

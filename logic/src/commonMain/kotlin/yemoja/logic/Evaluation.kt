@@ -662,7 +662,7 @@ fun completeAscent(profile: Item, metresAMinute: Double, lastStop: Double): Asce
     }
 
 /** [completeAscent] for a run that belongs to no dive, which is the other door to the same walk. */
-fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended {
+fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double, switchStops: Boolean = false): Ascended {
     require(metresAMinute > 0) {
         "an ascent rate should be more than nought, but was $metresAMinute"
     }
@@ -680,6 +680,7 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double): Ascended 
         metresAMinute,
         lastStop,
         run.depth,
+        switchStops,
     ) ?: return Ascended.Refused("No way up was found within 24 hours. Check the depths and the gases")
     return Ascended.Done(climbed.points, climbed.switches)
 }
@@ -697,6 +698,12 @@ internal class Climbed(val points: List<Pair<Int, Double>>, val switches: List<P
  * [before] is the run that led to [from], which says how much of the safety stop is already held.
  * The ascent a plan is completed with and the one a lost-gas reserve is costed on both come from
  * here, so they cannot disagree about where a stop goes.
+ *
+ * **A richer gas is switched to where the ascent stops anyway**: at a stop the model owes, or at
+ * the surface. Where [switchStops] says so, the ascent also stops at the deepest depth on the
+ * stops' grid where a richer gas it may choose comes within its own limit, switches there, and
+ * holds a minute for the switch unless a stop is owed there already. Without it a dive owing no
+ * stop deeper than that depth passes it and stays on its bottom gas. `LOGIC-35`.
  */
 internal fun climbed(
     from: From,
@@ -705,6 +712,7 @@ internal fun climbed(
     metresAMinute: Double,
     lastStop: Double,
     before: List<Pair<Int, Double>>,
+    switchStops: Boolean = false,
 ): Climbed? {
     val model = run.model
     val density = run.density
@@ -728,7 +736,14 @@ internal fun climbed(
         firstStop = firstStopAfter(tissues, firstStop, model, surface)
         val allowed = allowedDepthOf(tissues, firstStop, model, density, surface, lastStop)
         val stopping = safety != null && owed > 0 && metres >= safety.metres
-        val floor = if (safety != null && stopping) max(allowed, safety.metres) else allowed
+        val owedFloor = if (safety != null && stopping) max(allowed, safety.metres) else allowed
+        // A stop to switch gas, where one is asked for and lies between here and the next one owed.
+        val switching = if (switchStops) {
+            breathing.switchDepth(breathed, metres, owedFloor, STOP_STEP, density, surface)
+        } else {
+            null
+        }
+        val floor = switching ?: owedFloor
         val target = if (floor < metres) floor else metres
         val seconds = when {
             target < metres ->
@@ -748,11 +763,20 @@ internal fun climbed(
         metres = target
         points += second to metres
         val arrived = ambientAt(metres, density, surface)
+        var switched = false
         breathing.richestAt(arrived)?.let { richest ->
             if (richest != breathed && breathing.worthSwitching(breathed, richest, arrived)) {
                 switches += second to richest
                 breathed = richest
+                switched = true
             }
+        }
+        // A stop made for the switch alone is held for it; one owed there already holds anyway.
+        if (switched && switching != null && metres == switching) {
+            tissues = tissues.breathing(breathing.mixes[breathed] ?: Gas.AIR, arrived, arrived, SWITCH_SECONDS.toDouble())
+            second += SWITCH_SECONDS
+            points += second to metres
+            if (safety != null && metres == safety.metres) owed -= SWITCH_SECONDS
         }
     }
     return Climbed(points, switches)
@@ -891,6 +915,27 @@ internal class Breathing(
     /** The same sources and switches, with only [keys] open to an ascent's choice. */
     fun choosing(keys: Set<String>): Breathing =
         Breathing(mixes, switches, rates, fills, mostOxygen, keys, leastOxygen)
+
+    /**
+     * The deepest depth on a grid of [step] metres, shallower than [metres] and deeper than
+     * [shallowest], at which a source richer than [breathed] that an ascent may choose comes within
+     * its own oxygen limit, or null where none does.
+     */
+    fun switchDepth(
+        breathed: String,
+        metres: Double,
+        shallowest: Double,
+        step: Double,
+        density: Double,
+        surface: Double,
+    ): Double? {
+        val now = mixes[breathed]?.fractionO2 ?: return null
+        return mixes.filter { (key, mix) -> key in choosable && mix.fractionO2 > now }
+            .mapNotNull { (key, mix) -> maximumOperatingDepth(mix, mostOxygenOf(key), density, surface) }
+            .map { kotlin.math.floor(it / step) * step }
+            .filter { it < metres && it > shallowest }
+            .maxOrNull()
+    }
 
     /** The oxygen [key] is held to, in bar, and [MOST_OXYGEN] for a source nobody named. */
     fun mostOxygenOf(key: String): Double = mostOxygen[key] ?: MOST_OXYGEN
@@ -1141,6 +1186,9 @@ private const val CABIN = 0.7565
 
 /** The step a stop is taken on, in metres: three, six, nine, as a diver counts them. */
 private const val STOP_STEP = 3.0
+
+/** How long a stop made only to switch gas is held, in seconds. */
+private const val SWITCH_SECONDS = 60
 
 /** How long an ascent may take before it is called one that does not come up. */
 private const val LONGEST_ASCENT = 24 * 60 * 60

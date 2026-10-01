@@ -330,6 +330,13 @@ and a change here is for this plan only. A safety stop of 0 minutes means none. 
 held on the way up as a minimum, and a longer decompression stop at the same depth counts towards
 it.
 
+The way up switches to a richer gas only where it stops anyway, so a dive whose first stop is
+shallower than your deco gas's limit stays on its bottom gas past that depth. Tick **Gas switch
+stops** to stop there instead: the way up then halts at the deepest stop depth each richer gas
+may be breathed at, switches, and holds a minute for the switch. Where a deco stop falls on that
+depth anyway, the stop is the switch. A new plan starts with it unticked. The two gas reserves
+follow the same tick.
+
 Under the settings is **Contingency**, the gas reserve: what you must keep back in case something
 goes wrong. On its left are two settings, the panic stress factor and the problem-solving time,
 which also start from your Settings. Beside them is a line for each scenario, *Lost* and

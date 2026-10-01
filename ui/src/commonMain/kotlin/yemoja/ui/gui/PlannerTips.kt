@@ -34,6 +34,7 @@ internal object PlannerTips {
     const val SAFETY_DEPTH = "Depth of the safety stop"
     const val SAFETY_DURATION = "Minimum duration of the safety stop; 0 means none"
     const val LAST_STOP = "Depth of the shallowest deco stop"
+    const val SWITCH_STOPS = "Stop to switch to a richer gas at the deepest stop depth it may be breathed at, for a minute where no deco stop is owed there; off, a switch waits for a deco stop or the surface"
     const val WATER = "Salt or fresh water; salt water is denser, so the same depth is a higher pressure"
     const val PANIC_FACTOR = "Breathing rate multiplier for two divers sharing gas, in the buddy out of gas reserve"
     const val GAS_LOST = "Gas source missing in the lost gas reserve; None leaves that reserve out"

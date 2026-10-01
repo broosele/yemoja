@@ -132,6 +132,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             )
         }
     }
+    val switchStops = when (val written = (members["gas_switch_stops"] as? Stored.Leaf)?.value) {
+        null -> false
+        is Boolean -> written
+        else -> return Made.Wrong("$name gas_switch_stops should be true or false, but was $written")
+    }
     return Made.Plan(
         Planned(
             segments = segments,
@@ -146,6 +151,7 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             safetyDepth = setting("safety_stop_depth", Settings.DEFAULT_SAFETY_STOP_DEPTH),
             safetyMinutes = setting("safety_stop_duration", Settings.DEFAULT_SAFETY_STOP_DURATION),
             lastStop = setting("last_stop", Settings.DEFAULT_LAST_STOP),
+            switchStops = switchStops,
             water = textOf(members["water_type"]) ?: Settings.DEFAULT_WATER_TYPE.default,
         ),
     )

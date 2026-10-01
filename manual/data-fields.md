@@ -447,7 +447,7 @@ that is the only record of it.
 **What the planner was set to.** A plan saved from the planner keeps the settings it was made
 under and the lines you typed, so opening it again gives back the plan you saved rather than one
 under today's settings. A recording has none of these. They are shown when you edit a plan and
-not otherwise, being the planner's rather than yours to read. Each has a setting of the same name
+not otherwise, being the planner's rather than yours to read. Each number has a setting of the same name
 with `default_` in front, which is what a new plan starts from; [settings.md](settings.md) says
 what each does.
 
@@ -456,6 +456,9 @@ what each does.
 - `descent_rate`, `ascent_rate` (number) — in metres a minute, for a line that gives neither a
   duration nor a rate, and for the way up.
 - `last_stop` (number) — the depth the way up takes its shallowest stop at.
+- `gas_switch_stops` (true or false) — whether the way up stops to switch to a richer gas where
+  no deco stop is owed, rather than waiting for a stop or the surface. A new plan starts with it
+  off.
 - `safety_stop_depth`, `safety_stop_duration` (number) — the safety stop. A duration of 0 means
   none.
 - `panic_factor` (number) — how many times their usual SAC each of two divers sharing gas

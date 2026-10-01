@@ -609,6 +609,53 @@ class EvaluationTest {
     }
 
     @Test
+    fun `an ascent passes a deco gas's depth until it owes a stop, unless told to stop there`() {
+        // Twenty-five minutes at forty metres on air owes its first stop shallower than twenty-one
+        // metres, where EAN50 comes within 1.6 bar of oxygen.
+        val run = decoRun(Source(Gas.parse("EAN50")))
+        fun switchedAt(ascent: Ascended.Done): Double {
+            val second = ascent.switches.single { it.second == "g2" }.first
+            return ascent.depth.single { it.first == second }.second
+        }
+        val passing = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+        val stopping = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0, switchStops = true))
+
+        assertTrue(switchedAt(passing) < 21.0, "${passing.depth}")
+        assertEquals(21.0, switchedAt(stopping), "${stopping.depth}")
+        assertEquals(60, heldIn(run, stopping, 21.0), "held a minute for the switch")
+        assertTrue(
+            stopping.depth.last().first < passing.depth.last().first,
+            "the richer gas breathed sooner shortens the stops",
+        )
+    }
+
+    @Test
+    fun `a dive no deeper than a deco gas's limit makes no stop for it`() {
+        val run = Run(
+            depth = listOf(0 to 0.0, 60 to 18.0, 1200 to 18.0),
+            sources = mapOf("g1" to Source(Gas.AIR), "g2" to Source(Gas.parse("EAN50"))),
+            gradientFactorLow = 1.0,
+            gradientFactorHigh = 1.0,
+            switches = listOf(0 to "g1"),
+        )
+
+        assertEquals(
+            assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0)).depth,
+            assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0, switchStops = true)).depth,
+        )
+    }
+
+    @Test
+    fun `an ascent never stops for a bailout`() {
+        val bailout = decoRun(Source(Gas.parse("EAN50"), ascentMayChoose = false))
+
+        assertEquals(
+            assertIs<Ascended.Done>(completeAscent(bailout, 9.0, 3.0)).depth,
+            assertIs<Ascended.Done>(completeAscent(bailout, 9.0, 3.0, switchStops = true)).depth,
+        )
+    }
+
+    @Test
     fun `an ascent never chooses a bailout`() {
         val chosen = assertIs<Ascended.Done>(
             completeAscent(decoRun(Source(Gas.parse("EAN50"))), 9.0, 3.0),

@@ -642,6 +642,15 @@ To settle when we discuss architecture and features:
   within that source's own limit, which is what a deco cylinder is carried for and what a planner
   is expected to do without being told twice.
 
+  *Amended:* **a switch is made where the ascent stops anyway, unless the plan asks for a stop to
+  switch.** Without the ask, a dive whose first owed stop is shallower than its deco gas's limit
+  passes that depth on its bottom gas. Planners differ here, and a user comparing one with another
+  needs the choice. With `switchStops`, the ascent also stops at the deepest three on which a
+  richer source it may choose is within its limit, switches, and holds sixty seconds. It does not
+  hold where a stop is owed at that depth, since the owed stop already covers the switch. A
+  plan keeps the choice as `gas_switch_stops`, beside `last_stop`, and the gas reserves' ascents
+  follow it so that they climb as the plan does. `DATA-129`, `LOGIC-40`.
+
   **A safety stop is a minimum, not an extra stop.** A plan can name one, a depth and a time, and
   the ascent holds at least that long at its depth. A deco stop there counts towards it, so a
   longer one is left alone and a shorter one is lengthened, and time the typed run already held

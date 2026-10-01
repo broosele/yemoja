@@ -206,7 +206,8 @@ does, and [data-fields.md](data-fields.md) lists every field of one under *Profi
 holds the descent, the bottom, the ascent and every stop as ordinary points. You can ask Yemoja to
 work the ascent out and write it in for you, giving it a rate to rise at and a depth to take the
 shallowest stop at; it puts the stops on the threes divers count in and moves you to the richest
-gas each depth allows.
+gas each depth allows where it stops. Asked to, it also stops for a switch where no stop is owed,
+at the deepest three a richer gas may be breathed at, and holds a minute there.
 
 **An ascent written that way is then fixed, like anything else you wrote.** Change a gas or a
 gradient factor afterwards and the stops do not move by themselves — but asking the model about the

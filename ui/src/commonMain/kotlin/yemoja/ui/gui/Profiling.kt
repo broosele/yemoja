@@ -117,6 +117,9 @@ internal class Shaping {
     var safetyDepth: String by mutableStateOf("")
     var safetyMinutes: String by mutableStateOf("")
     var lastStop: String by mutableStateOf("")
+
+    /** Whether the way up stops to switch gas where no deco stop is owed. */
+    var switchStops: Boolean by mutableStateOf(false)
     var panicFactor: String by mutableStateOf("")
 
     /** Minutes the gas reserve spends at the depth trouble starts before the way up begins. */
@@ -663,6 +666,15 @@ private fun Conditions(shaping: Shaping) {
                     shaping.safetyMinutes,
                     "min"
                 ) { shaping.safetyMinutes = it }
+                Labelled("Gas switch stops", PlannerTips.SWITCH_STOPS) {
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        Checkbox(
+                            checked = shaping.switchStops,
+                            onCheckedChange = { shaping.switchStops = it },
+                            modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
+                        )
+                    }
+                }
             }
         },
     )

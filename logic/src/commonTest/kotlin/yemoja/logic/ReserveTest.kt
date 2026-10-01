@@ -309,3 +309,26 @@ class ProblemSolvingTest {
     }
 }
 
+class SwitchStopsTest {
+
+    private val run = whole(40.0, 25, BOTTOM_AND_DECO)
+
+    @Test
+    fun `a way up that stops to switch breathes less bottom gas`() {
+        val passing = assertIs<Reserve.Done>(lostGasReserve(run, emptySet(), 9.0, 3.0))
+        val stopping = assertIs<Reserve.Done>(lostGasReserve(run, emptySet(), 9.0, 3.0, switchStops = true))
+
+        assertTrue(
+            stopping.needed.getValue("g1") < passing.needed.getValue("g1"),
+            "${stopping.needed} against ${passing.needed}",
+        )
+    }
+
+    @Test
+    fun `with the deco gas lost there is nothing to stop for`() {
+        assertEquals(
+            assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0)).needed,
+            assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, switchStops = true)).needed,
+        )
+    }
+}

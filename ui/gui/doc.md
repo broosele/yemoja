@@ -621,8 +621,9 @@ once and corrected. The numbers stay unused rather than being given to something
   sections stacked in two columns with space between them. On the left, *General* holds descent
   and ascent rate and water, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. On the right,
   *Algorithm* names the model, Bühlmann ZH-L16C, as a value that is shown rather than chosen until
-  there is a second model, above GF low and high, and *Stops* holds the last stop and the safety
-  stop's depth and duration. The gas reserve's settings are not among them: they have a box of their
+  there is a second model, above GF low and high, and *Stops* holds the last stop, the safety
+  stop's depth and duration, and the tick for stopping to switch gas, `LOGIC-35`. That tick starts
+  unticked in every plan, having no setting to start from, as the gas reserve's ticks do. The gas reserve's settings are not among them: they have a box of their
   own beside what they decide, below. Each starts
   from what the settings hold, `GUI-42`, and is changed here for this plan alone. A safety stop of nought minutes is none,
   and its depth is greyed. The safety stop is a minimum the ascent holds, with a longer deco stop

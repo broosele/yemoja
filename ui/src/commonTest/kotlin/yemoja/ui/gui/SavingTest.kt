@@ -173,6 +173,7 @@ class SavingRoundTripTest {
         shaping.descentRate = "15"
         shaping.ascentRate = "10"
         shaping.lastStop = "6"
+        shaping.switchStops = true
         shaping.safetyDepth = "5"
         shaping.safetyMinutes = "5"
         shaping.panicFactor = "3"
@@ -186,6 +187,7 @@ class SavingRoundTripTest {
         assertEquals("15", back.descentRate)
         assertEquals("10", back.ascentRate)
         assertEquals("6", back.lastStop)
+        assertEquals(true, back.switchStops)
         assertEquals("5", back.safetyDepth)
         assertEquals("5", back.safetyMinutes, "held in seconds, shown in minutes")
         assertEquals("3", back.panicFactor)
@@ -204,6 +206,7 @@ class SavingRoundTripTest {
         assertEquals(Stored.Leaf(180L), fields["safety_stop_duration"], "seconds")
         assertEquals(Stored.Leaf(1.4), fields["po2_max_bottom"])
         assertEquals(Stored.Leaf(false), fields["lost_gas_reserve"])
+        assertEquals(Stored.Leaf(false), fields["gas_switch_stops"], "written off as well as on")
         val lines = assertIs<Stored.Members>(fields["runtime"]).members
         assertEquals(listOf("1", "2"), lines.keys.toList(), "keyed by their place")
         val second = assertIs<Stored.Members>(lines["2"]).members

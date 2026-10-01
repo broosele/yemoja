@@ -101,6 +101,8 @@ data class Planned(
     val safetyDepth: String = "",
     val safetyMinutes: String = "",
     val lastStop: String = "",
+    /** Whether the way up stops to switch gas where no deco stop is owed. */
+    val switchStops: Boolean = false,
     val panicFactor: String = "",
     /** Minutes the gas reserve spends at the depth trouble starts before the way up begins. */
     val problemMinutes: String = "",
@@ -292,6 +294,8 @@ class Conditions(
     /** Nought where there is no safety stop. */
     val safetySeconds: Int,
     val lastStop: Double,
+    /** Whether the way up stops to switch gas where no deco stop is owed. */
+    val switchStops: Boolean,
     /** Kilograms a cubic metre. */
     val density: Double,
 )
@@ -334,6 +338,7 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
         safetyDepth = safety,
         safetySeconds = (minutes * SECONDS_IN_MINUTE).roundToInt(),
         lastStop = last,
+        switchStops = shaping.switchStops,
         density = density,
     ) to null
 }
@@ -443,7 +448,7 @@ sealed class Worked {
 /** The ascent [ready] is completed with, and what the model makes of the dive with it on the end. */
 fun workedOf(ready: Shaped.Ready): Worked {
     val conditions = ready.conditions
-    val ascended = when (val ascent = completeAscent(ready.run, conditions.ascentRate, conditions.lastStop)) {
+    val ascended = when (val ascent = completeAscent(ready.run, conditions.ascentRate, conditions.lastStop, conditions.switchStops)) {
         is Ascended.Refused -> return Worked.Refused(ascent.reason)
         is Ascended.Done -> ascent
     }
@@ -534,7 +539,16 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
     }
     val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
     val lostGas = lost?.let {
-        reckoning(lostGasReserve(done.whole, setOf(gasKeyOf(it)), conditions.ascentRate, conditions.lastStop, problem))
+        reckoning(
+            lostGasReserve(
+                done.whole,
+                setOf(gasKeyOf(it)),
+                conditions.ascentRate,
+                conditions.lastStop,
+                problem,
+                conditions.switchStops,
+            ),
+        )
     }
     val shared = if (shaping.sharedScenario) {
         val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
@@ -542,7 +556,17 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
             Reckoning.Wrong(numberWrong("Panic stress factor", "1 or more", shaping.panicFactor))
         } else {
             val deco = keys.filter { shaping.gases[it].role == Role.DECO }.map { gasKeyOf(it) }.toSet()
-            reckoning(sharedGasReserve(done.whole, deco, factor, conditions.ascentRate, conditions.lastStop, problem))
+            reckoning(
+                sharedGasReserve(
+                    done.whole,
+                    deco,
+                    factor,
+                    conditions.ascentRate,
+                    conditions.lastStop,
+                    problem,
+                    conditions.switchStops,
+                ),
+            )
         }
     } else {
         null

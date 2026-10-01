@@ -48,6 +48,19 @@ class CasesTest {
     }
 
     @Test
+    fun `a case may stop to switch gas, and is told so as true or false`() {
+        assertEquals(false, oneOf(FORTY).planned.switchStops)
+        assertEquals(
+            true,
+            oneOf("""[{"lines": [{"depth": 40, "duration": 600}], "gas_switch_stops": true}]""").planned.switchStops,
+        )
+        assertEquals(
+            "case 1 gas_switch_stops should be true or false, but was yes",
+            assertIs<Read.Wrong>(read("""[{"lines": [{"depth": 40}], "gas_switch_stops": "yes"}]""")).reason,
+        )
+    }
+
+    @Test
     fun `what a case leaves out the application answers`() {
         val case = oneOf(FORTY)
         assertEquals(

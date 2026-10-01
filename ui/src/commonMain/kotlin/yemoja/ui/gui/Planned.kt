@@ -25,6 +25,7 @@ internal fun Shaping.described(): Planned = Planned(
     safetyDepth = safetyDepth,
     safetyMinutes = safetyMinutes,
     lastStop = lastStop,
+    switchStops = switchStops,
     panicFactor = panicFactor,
     problemMinutes = problemMinutes,
     lostGasScenario = lostGasScenario,
