@@ -734,8 +734,23 @@ internal fun climbed(
         if (second - from.second > LONGEST_ASCENT) return null
         val ambient = ambientAt(metres, density, surface)
         firstStop = firstStopAfter(tissues, firstStop, model, surface)
-        val allowed = allowedDepthOf(tissues, firstStop, model, density, surface, lastStop)
         val stopping = safety != null && owed > 0 && metres >= safety.metres
+        val allowed = allowedDepthOf(tissues, firstStop, model, density, surface, lastStop).let { held ->
+            if (held < metres) return@let held
+            // A stop is left once the tissues would be within the ceiling on arriving at the next,
+            // counting the gas given off on the way up. That is the question evaluate asks of the
+            // point arrived at, and asking it of the tissues before the rise held each stop up to a
+            // minute longer than the model needs.
+            val above = stopAbove(metres, lastStop)
+            val reached = tissues.breathing(
+                breathing.mixes[breathed] ?: Gas.AIR,
+                ambient,
+                ambientAt(above, density, surface),
+                riseSeconds(metres, above, metresAMinute).toDouble(),
+            )
+            val anchored = firstStopAfter(reached, firstStop, model, surface)
+            if (allowedDepthOf(reached, anchored, model, density, surface, lastStop) <= above) above else held
+        }
         val owedFloor = if (safety != null && stopping) max(allowed, safety.metres) else allowed
         // A stop to switch gas, where one is asked for and lies between here and the next one owed.
         val switching = if (switchStops) {
@@ -746,8 +761,7 @@ internal fun climbed(
         val floor = switching ?: owedFloor
         val target = if (floor < metres) floor else metres
         val seconds = when {
-            target < metres ->
-                ceil((metres - target) / metresAMinute * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
+            target < metres -> riseSeconds(metres, target, metresAMinute)
             // Held for the safety stop alone, so for what it still needs rather than a minute.
             allowed < metres -> min(owed, SECONDS_IN_MINUTE.toInt())
             else -> SECONDS_IN_MINUTE.toInt()
@@ -832,6 +846,20 @@ private fun stopFor(ceiling: Double, lastStop: Double): Double {
     if (ceiling <= 0) return 0.0
     val stop = kotlin.math.ceil(ceiling / STOP_STEP) * STOP_STEP
     return if (stop < lastStop) lastStop else stop
+}
+
+/** How long rising from [metres] to [target] takes at [metresAMinute], never under a second. */
+private fun riseSeconds(metres: Double, target: Double, metresAMinute: Double): Int =
+    ceil((metres - target) / metresAMinute * SECONDS_IN_MINUTE).toInt().coerceAtLeast(1)
+
+/** The next depth an ascent held at [metres] may rise to: the stop above, or the surface from the last. */
+private fun stopAbove(metres: Double, lastStop: Double): Double {
+    val step = ceil(metres / STOP_STEP) * STOP_STEP - STOP_STEP
+    return when {
+        step >= lastStop -> step
+        metres > lastStop -> lastStop
+        else -> 0.0
+    }
 }
 
 /**

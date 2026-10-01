@@ -669,6 +669,11 @@ To settle when we discuss architecture and features:
   from is the run's own last one and is not repeated, so a dive owing no stop comes back as a
   single surfacing point rather than as nothing.
 
+  **A stop is left once the next one would be within the ceiling on arriving there**, counting the
+  gas given off on the way up. That is what `evaluate` asks of the point arrived at. The tissues as
+  they were before the rise held each stop up to a minute longer than the model needed, so an
+  evaluation could pass a last stop a minute shorter than the one the ascent wrote.
+
   **A generated ascent is frozen**, which is the cost of storing the profile rather than the
   recipe: change a gas afterwards and the stops do not move. Evaluating the plan says so at once,
   and that is how it is meant to be found — visibly, rather than by a schedule quietly rewriting
