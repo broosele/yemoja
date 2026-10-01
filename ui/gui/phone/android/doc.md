@@ -16,6 +16,27 @@ form factor.
   alive during a dive computer download.
 - Minimum and target API levels.
 
+## What is built
+
+**It builds and it starts, and that is all so far.** `./gradlew :android:assembleDebug` writes a
+debug app. It opens on a logbook in the app's own storage, made the first time, and shows the
+desktop's screens as they are, the Home tab's buttons wrapping onto more lines where the screen
+is narrow. Tried on the SDK's emulator, Android 16, and on no phone yet.
+
+The app is one activity in `android/`, which hands the screen to `Yemoja` in `ui/src/androidMain`;
+everything the platform supplies is there. The manual and the map travel inside the app as they do
+in the desktop's jar.
+
+**Not yet:** a folder the user picks, `AND-5`, and with it import and export; reading a dive
+computer, `AND-6`, with the permissions and the notification it needs, `AND-2` and `AND-3`; the
+phone's own layouts, `PHONE-2`; a signed release, `AND-1`; and a long press for what a tooltip
+says.
+
+**The lock is let go at start.** Android ends an app without warning, so the edit lock, `JSON-27`,
+is left behind each time. In the app's own storage nothing else reaches the logbook, so a lock found
+there at start is one this app left, and is deleted. A folder the user picks can be reached by
+other apps and needs an answer of its own, which `AND-5` owes.
+
 ## Settled
 
 Decided on 2026-10-01, before anything Android is built. Nothing below is built yet.
@@ -25,7 +46,8 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   and sync it with whatever they already use. Android gives an app no free path to a shared
   folder, so the folder is reached through the storage access framework, as a tree the user
   grants once. That needs a second file store beside the desktop's, and the edit lock,
-  `JSON-27`, reworked on top of it. App-private storage, reached by import and export, was the
+  `JSON-27`, reworked on top of it: Android ends an app without warning, so a lock is left behind
+  every time, which *What is built* says more of. App-private storage, reached by import and export, was the
   cheaper answer and hides the logbook from the user, which is the one thing the format exists
   not to do.
 - **AND-1 — Distribution.** *Settled:* **an installable file published directly, first.** The

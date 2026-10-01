@@ -4,6 +4,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 /** Where the application starts. Named once, since two places need it. */
@@ -12,9 +13,14 @@ val entry = "yemoja.ui.MainKt"
 kotlin {
     jvmToolchain(21)
 
-    // The only target this machine can build, for the reasons data/build.gradle.kts gives.
+    // The targets this machine can build, for the reasons data/build.gradle.kts gives.
     // No run task: Gradle gives a child process no terminal, so it cannot host this one.
     jvm()
+    android {
+        namespace = "yemoja.ui"
+        compileSdk = property("androidSdk").toString().toInt()
+        minSdk = property("androidOldest").toString().toInt()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -65,14 +71,12 @@ tasks.withType<Test>().configureEach {
     findProperty("logbook")?.let { environment("YEMOJA_LOGBOOK", it.toString()) }
 }
 
-// The version, said here once: the installer is numbered with it and the manual's App info
-// shows it. 0.1 while most of the application waits to be tried on real dives. `GUI-5`.
-val release = "0.1.0"
+// The version, from gradle.properties, where it is said once. `GUI-5`.
+val release = property("release").toString()
 
 // The manual, bundled so the Manuals tab can read it. Every chapter, and not the file about
 // writing them, which is internal.
-tasks.named<Copy>("jvmProcessResources") {
-    inputs.property("release", release)
+val bundledManual: CopySpec = copySpec {
     from(rootProject.file("manual")) {
         include("*.md")
         exclude("doc.md")
@@ -80,6 +84,19 @@ tasks.named<Copy>("jvmProcessResources") {
         filesMatching("app-info.md") { filter { line -> line.replace("{version}", release) } }
     }
 }
+
+tasks.named<Copy>("jvmProcessResources") {
+    inputs.property("release", release)
+    with(bundledManual)
+}
+
+// The same manual for Android, through one of the resource folders it packs into the app.
+val androidManual = tasks.register<Sync>("androidManual") {
+    inputs.property("release", release)
+    with(bundledManual)
+    into(layout.buildDirectory.dir("androidManual"))
+}
+kotlin.sourceSets.named("androidMain") { resources.srcDir(androidManual) }
 
 // Where libdivecomputer is on this machine, for what is run and tested from here. Absent is a
 // fine answer: nothing is told where it is, and nothing reads a dive computer. `LOGIC-27`.

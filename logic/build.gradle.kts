@@ -1,14 +1,25 @@
 plugins {
     kotlin("multiplatform")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
     jvmToolchain(21)
 
-    // The only target this machine can build, for the reasons data/build.gradle.kts gives.
+    // The targets this machine can build, for the reasons data/build.gradle.kts gives.
     jvm()
+    android {
+        namespace = "yemoja.logic"
+        compileSdk = property("androidSdk").toString().toInt()
+        minSdk = property("androidOldest").toString().toInt()
+    }
 
     sourceSets {
+        // What a JVM and Android share, both being Java underneath: the date, and in time the
+        // reach to a dive computer. Common Kotlin has neither.
+        val javaMain by creating { dependsOn(commonMain.get()) }
+        jvmMain.get().dependsOn(javaMain)
+        androidMain.get().dependsOn(javaMain)
         commonMain.dependencies {
             // The layer below, and the only one. Nothing here reaches a file or a screen.
             api(project(":data"))
@@ -44,10 +55,20 @@ tasks.withType<Test>().configureEach {
 // The supplied libraries travel inside the application, because there is no reliable way to ask
 // where it was installed and on a phone no such place exists. `LIB-6` in data/libraries.md.
 // The licence goes with them: they are published data, and its terms travel with the data.
-tasks.named<ProcessResources>("jvmProcessResources") {
+val bundledLibraries: CopySpec = copySpec {
     from(rootProject.file("libraries")) {
         // The name FileStore.LIBRARIES resolves under. A build script cannot see it.
         into("libraries")
         include("**/*.json", "map/**/*.txt", "LICENSE")
     }
 }
+
+tasks.named<ProcessResources>("jvmProcessResources") { with(bundledLibraries) }
+
+// Android packs what a library's resource folders hold into the app, so the same files are put
+// in one of those for it.
+val androidLibraries = tasks.register<Sync>("androidLibraries") {
+    with(bundledLibraries)
+    into(layout.buildDirectory.dir("androidLibraries"))
+}
+kotlin.sourceSets.named("androidMain") { resources.srcDir(androidLibraries) }

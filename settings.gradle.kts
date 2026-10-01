@@ -20,3 +20,6 @@ rootProject.name = "yemoja"
 include(":data")
 include(":logic")
 include(":ui")
+// The Android app, which is an activity hosting the window the ui layer already draws. A module of
+// its own because Android's plugin for an app and its plugin for a multiplatform layer do not mix.
+include(":android")

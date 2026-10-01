@@ -30,5 +30,8 @@ __pycache__/
 .gradle/
 build/
 
+# Where the Android SDK is on this machine, which the Android build reads and nobody else needs
+local.properties
+
 # Kotlin's own scratch space, beside the Gradle one
 .kotlin/

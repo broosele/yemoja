@@ -84,8 +84,18 @@ their fields, saves a dive plan, and writes what a download or an import brings 
 [ui/tui/doc.md](ui/tui/doc.md) and
 [ui/gui/doc.md](ui/gui/doc.md).
 
-Only the JVM target is built. The native targets need a C++ toolchain and Developer Mode,
-and Android needs its SDK; each joins when the platform it serves is worked on.
+**Android is built too**, as a first step: the app starts, keeps a logbook in its own storage
+and shows the desktop's screens, not yet laid out for a phone. It needs the Android SDK, which
+installs into any folder without elevation; tell the build where in a `local.properties` at the
+root, `sdk.dir=<folder>`, which git ignores. Then
+
+```
+./gradlew :android:assembleDebug      writes android/build/outputs/apk/debug/android-debug.apk
+```
+
+What it does and does not do yet is in [ui/gui/phone/android/doc.md](ui/gui/phone/android/doc.md).
+The native targets need a C++ toolchain and Developer Mode, and join when the platform they serve
+is worked on.
 
 Development prerequisites are per platform and are documented with each target — for
 the current first priority, see [ui/gui/desktop/windows/doc.md](ui/gui/desktop/windows/doc.md).
@@ -127,6 +137,7 @@ end goes through it; none of them opens a file or knows where anything is kept.
 data/         the data layer — see data/doc.md
 logic/        the logic layer — see logic/doc.md
 ui/           the front ends — see ui/doc.md
+android/      the Android app, an activity hosting what ui draws
 tool/         development scripts that check the documentation and the fixtures
 libraries/    reference data shipped with the application
 manual/       the user manual, bundled and shown in the application
@@ -135,7 +146,8 @@ fixtures/     fixture logbooks — see fixtures/doc.md
 
 Inside a module, source sits under `src/commonMain/kotlin` and tests under
 `src/commonTest/kotlin`, with a further source set per target where a layer needs one —
-in practice the interface, and the logic layer's JVM side, where libdivecomputer is reached. A layer's `doc.md` sits at the root of its
+in practice the interface, and the logic layer's JVM side, where libdivecomputer is reached.
+The logic layer also has `javaMain`, which the JVM and Android share. A layer's `doc.md` sits at the root of its
 module, above the source rather than inside it.
 
 **Modules are how the layering rule is kept.** A module declares what it depends on, so
@@ -179,6 +191,11 @@ installer is made, and installed on nothing. Its reciprocal terms reach changes 
 source files, which this project makes none of; the installer it writes compiles in WiX's standard
 dialogs and carries no WiX code to run. See `WIN-1` in
 [ui/gui/desktop/windows/doc.md](ui/gui/desktop/windows/doc.md).
+
+**Building for Android** takes Google's **Android Gradle Plugin**, Apache 2.0, the only way
+Gradle builds an Android app, and the app takes **androidx activity-compose**, Apache 2.0, which
+gives an activity a Compose window to draw in. `AND-7` in
+[ui/gui/phone/android/doc.md](ui/gui/phone/android/doc.md).
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.
