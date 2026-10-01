@@ -65,6 +65,11 @@ certificate names Yemoja and nobody else, since anyone can read it off the app. 
 only over an app signed with the same key, so that folder is kept and backed up. A debug build
 keeps Android's own debug key, and the two cannot be installed over each other.
 
+**The launcher icon is the window's drawing**, in Android's adaptive form: the tile's blue behind,
+the sea and the fish in front, and the same shapes alone for a phone that tints its icons.
+`tool/icons.py` writes it from `yemoja.svg`, drawn at a little over the part a launcher shows, so
+the sea reaches the mask's edges and the fish stays clear of them.
+
 **Not yet:** import and export, which need Android's pickers for a file. What a tooltip says over a greyed button is said on a long press, the
 toolkit's own answer on a touch screen.
 

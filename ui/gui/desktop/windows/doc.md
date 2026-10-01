@@ -27,7 +27,8 @@ Only Windows-specific matters belong here; everything else is in
   one of the application's resources there, `LOGIC-27`, the installer laying jars out differently
   from `installDist`. The launcher opens the window given no arguments and runs the command it is
   given otherwise, which is how an agent starts `yemoja api`; it has no console, so the terminal
-  front end is not run from it.
+  front end is not run from it. The installer, the exe and its shortcuts carry `ui/icons/yemoja.ico`,
+  which `tool/icons.py` makes from the window's own `yemoja.svg`; the window draws the SVG itself.
 - **WIN-2 — Code signing.** *Settled:* **none, for the first version.** Windows says on first run
   that the publisher is unknown, and *More info* then *Run anyway* starts it; README says so where
   it says how to install. Signing costs money every year and its warning fades only as an

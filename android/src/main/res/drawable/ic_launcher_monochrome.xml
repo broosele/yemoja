@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by tool/icons.py from ui/src/jvmMain/resources/yemoja.svg. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <group android:scaleX="0.72" android:scaleY="0.72" android:translateX="35.84" android:translateY="35.84">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M -20 160 c 40 -28 80 -28 120 0 s 80 28 120 0 s 80 -28 120 0 V 280 H -20 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M -20 188 c 40 -28 80 -28 120 0 s 80 28 120 0 s 80 -28 120 0 V 280 H -20 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M -20 216 c 40 -28 80 -28 120 0 s 80 28 120 0 s 80 -28 120 0 V 280 H -20 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M 52 104 C 82 70, 142 66, 178 104 C 142 142, 82 138, 52 104 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M 170 104 L 206 78 L 198 104 L 206 130 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M 73.0,98.0 a 5.0,5.0 0 1,0 10.0,0 a 5.0,5.0 0 1,0 -10.0,0 Z" />
+    </group>
+</vector>

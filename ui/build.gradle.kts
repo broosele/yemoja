@@ -214,6 +214,9 @@ compose.desktop {
             // out fails only when the code that needs it runs, which for Bluetooth is a download.
             includeAllModules = true
             windows {
+                // Made from the window's own yemoja.svg by tool/icons.py, which is run again when
+                // the drawing changes. The installer, the exe and its shortcuts all carry it.
+                iconFile.set(project.file("icons/yemoja.ico"))
                 menu = true
                 shortcut = true
                 dirChooser = true

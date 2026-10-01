@@ -17,6 +17,7 @@
 
     <application
         android:label="Yemoja"
+        android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
