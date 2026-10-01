@@ -128,7 +128,7 @@ fun calculated(planned: Planned): Calculated {
     val ready = when (val shaped = shapedOf(planned)) {
         is Shaped.Ready -> shaped
         is Shaped.Wrong -> return Calculated.Refused(shaped.reason)
-        is Shaped.Waiting -> return Calculated.Refused("the plan has no lines")
+        is Shaped.Waiting -> return Calculated.Refused("the runtime is empty")
     }
     val done = when (val worked = workedOf(ready)) {
         is Worked.Done -> worked

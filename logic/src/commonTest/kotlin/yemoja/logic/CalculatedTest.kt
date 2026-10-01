@@ -113,7 +113,7 @@ class CalculatedTest {
         val empty = assertIs<Calculated.Refused>(
             calculated(table().copy(segments = listOf(Segment()))),
         )
-        assertEquals("the plan has no lines", empty.reason)
+        assertEquals("the runtime is empty", empty.reason)
         val unmixed = assertIs<Calculated.Refused>(calculated(table(gases = listOf(Breathed("")))))
         assertTrue("missing its mix" in unmixed.reason, unmixed.reason)
     }

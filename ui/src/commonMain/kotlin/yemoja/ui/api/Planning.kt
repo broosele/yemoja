@@ -55,7 +55,7 @@ internal fun preparedOf(universe: Universe?, planned: Planned, name: String): Pr
     val ready = when (val shaped = shapedOf(planned, universe)) {
         is Shaped.Ready -> shaped
         is Shaped.Wrong -> return Prepared.Refused(shaped.reason)
-        is Shaped.Waiting -> return Prepared.Refused("the plan has no lines")
+        is Shaped.Waiting -> return Prepared.Refused("the runtime is empty")
     }
     val done = when (val worked = workedOf(ready)) {
         is Worked.Done -> worked
