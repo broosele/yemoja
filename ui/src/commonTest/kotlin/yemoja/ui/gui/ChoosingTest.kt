@@ -20,13 +20,13 @@ class EnteredTest {
 
     @Test
     fun `a gradient factor is typed as a percentage and held as a proportion`() {
-        assertEquals(Entered.Value(0.3), chosenOf(Settings.DEFAULT_GF_LOW, "30"))
-        assertEquals(Entered.Value(0.7), chosenOf(Settings.DEFAULT_GF_HIGH, "70 %"))
+        assertEquals(Entered.Value(0.3), chosenOf(Settings.DEFAULT_GRADIENT_FACTOR_LOW, "30"))
+        assertEquals(Entered.Value(0.7), chosenOf(Settings.DEFAULT_GRADIENT_FACTOR_HIGH, "70 %"))
     }
 
     @Test
     fun `a proportion typed for a gradient factor is refused rather than read as a fraction of one`() {
-        val said = assertIs<Entered.Wrong>(chosenOf(Settings.DEFAULT_GF_LOW, "0.3")).reason
+        val said = assertIs<Entered.Wrong>(chosenOf(Settings.DEFAULT_GRADIENT_FACTOR_LOW, "0.3")).reason
         assertTrue("percentage from 1 to 100" in said, said)
     }
 
@@ -44,7 +44,7 @@ class EnteredTest {
 
     @Test
     fun `an empty box takes the choice away`() {
-        assertEquals(Entered.Value(null), chosenOf(Settings.DEFAULT_GF_LOW, "  "))
+        assertEquals(Entered.Value(null), chosenOf(Settings.DEFAULT_GRADIENT_FACTOR_LOW, "  "))
     }
 
     @Test
@@ -63,18 +63,18 @@ class ShownSettingTest {
 
     @Test
     fun `a value is shown as a person writes it`() {
-        assertEquals("30", shownOf(Settings.DEFAULT_GF_LOW, 0.3))
+        assertEquals("30", shownOf(Settings.DEFAULT_GRADIENT_FACTOR_LOW, 0.3))
         assertEquals("18", shownOf(Settings.DEFAULT_DESCENT_RATE, 18.0))
         assertEquals("4.5", shownOf(Settings.DEFAULT_LAST_STOP, 4.5))
-        assertEquals("", shownOf(Settings.DEFAULT_GF_HIGH, null), "nothing chosen is an empty box")
+        assertEquals("", shownOf(Settings.DEFAULT_GRADIENT_FACTOR_HIGH, null), "nothing chosen is an empty box")
     }
 
     @Test
     fun `where a value came from is said beside it`() {
-        assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.DEFAULT_GF_LOW))
-        assertEquals("set in this logbook", answeredSaid(SettingsFile.LOGBOOK, Settings.DEFAULT_GF_LOW))
+        assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.DEFAULT_GRADIENT_FACTOR_LOW))
+        assertEquals("set in this logbook", answeredSaid(SettingsFile.LOGBOOK, Settings.DEFAULT_GRADIENT_FACTOR_LOW))
         assertEquals("the default", answeredSaid(null, Settings.DEFAULT_ASCENT_RATE))
-        assertEquals("not set", answeredSaid(null, Settings.DEFAULT_GF_LOW), "a factor has no default")
+        assertEquals("not set", answeredSaid(null, Settings.DEFAULT_GRADIENT_FACTOR_LOW), "a factor has no default")
         assertEquals("not set", answeredSaid(null, Settings.AGENT_COMMAND), "and nor has the command")
         assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.AGENT_COMMAND))
     }

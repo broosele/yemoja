@@ -336,7 +336,7 @@ private fun unitOf(setting: NumberSetting): String = if (isPercentage(setting)) 
 
 /** Whether [setting] is held as a proportion and typed as a percentage, which the factors are. */
 private fun isPercentage(setting: NumberSetting): Boolean =
-    setting == Settings.DEFAULT_GF_LOW || setting == Settings.DEFAULT_GF_HIGH
+    setting == Settings.DEFAULT_GRADIENT_FACTOR_LOW || setting == Settings.DEFAULT_GRADIENT_FACTOR_HIGH
 
 /** A number as a person writes it: `18`, not `18.0`, and `9.5` where there is a fraction. */
 internal fun plain(value: Double, decimals: Int = 3): String {

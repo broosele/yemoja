@@ -12,9 +12,9 @@ class SettingsFilesTest {
 
     @Test
     fun `a file that is there is read name by name`() {
-        val store = MemoryFileStore(mapOf("settings.json" to """{"default_gf_low": 0.3, "theme": "dark"}"""))
+        val store = MemoryFileStore(mapOf("settings.json" to """{"default_gradient_factor_low": 0.3, "theme": "dark"}"""))
         val read = SettingsFiles.read(store, SettingsFile.LOGBOOK)
-        assertEquals(Stored.Leaf(0.3), read["default_gf_low"])
+        assertEquals(Stored.Leaf(0.3), read["default_gradient_factor_low"])
         assertEquals(Stored.Leaf("dark"), read["theme"], "a setting is handed back whatever it means")
     }
 
@@ -40,17 +40,17 @@ class SettingsFilesTest {
 
     @Test
     fun `writing one setting keeps every other, including those nobody here knows`() {
-        val store = MemoryFileStore(mapOf("settings.json" to """{"from_a_newer_version": [1, 2], "default_gf_low": 0.2}"""))
-        SettingsFiles.write(store, SettingsFile.LOGBOOK, "default_gf_low", Stored.Leaf(0.3))
+        val store = MemoryFileStore(mapOf("settings.json" to """{"from_a_newer_version": [1, 2], "default_gradient_factor_low": 0.2}"""))
+        SettingsFiles.write(store, SettingsFile.LOGBOOK, "default_gradient_factor_low", Stored.Leaf(0.3))
         val read = SettingsFiles.read(store, SettingsFile.LOGBOOK)
-        assertEquals(Stored.Leaf(0.3), read["default_gf_low"])
+        assertEquals(Stored.Leaf(0.3), read["default_gradient_factor_low"])
         assertTrue("from_a_newer_version" in read, "a setting this version does not know is not lost")
     }
 
     @Test
     fun `writing nothing takes the setting out`() {
-        val store = MemoryFileStore(mapOf("settings.local.json" to """{"default_gf_low": 0.2}"""))
-        SettingsFiles.write(store, SettingsFile.LOCAL, "default_gf_low", null)
+        val store = MemoryFileStore(mapOf("settings.local.json" to """{"default_gradient_factor_low": 0.2}"""))
+        SettingsFiles.write(store, SettingsFile.LOCAL, "default_gradient_factor_low", null)
         assertEquals(emptyMap(), SettingsFiles.read(store, SettingsFile.LOCAL))
     }
 

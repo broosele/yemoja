@@ -632,8 +632,8 @@ To settle when we discuss architecture and features:
   **The rate and the last stop are asked for rather than stored.** They describe the moment the
   ascent was written, not the plan, and nothing reads them again: the plan holds the points, so it
   means the same thing to everything that reads it afterwards. Their defaults are the settings
-  `default_ascent_rate` and `default_last_stop`, beside `default_gf_low`, read by whatever writes an
-  ascent and passed in.
+  `default_ascent_rate` and `default_last_stop`, beside `default_gradient_factor_low`, read by
+  whatever writes an ascent and passed in.
 
   **Stops go on the threes a diver counts in**, and a run owing any takes its shallowest where it
   was asked to. The gas at each depth is the richest of the run's own sources whose oxygen stays
@@ -766,7 +766,7 @@ To settle when we discuss architecture and features:
   that**, once a crossing and naming the source, as it warns of one breathed deeper than its
   maximum: a hypoxic mix at the surface is as dangerous as a rich one too deep. A source carries its
   own minimum, `leastOxygen`, as it carries its maximum, and a plan gives every cylinder the one
-  from its *pO₂ min*, which starts from the setting `default_min_po2`. A recording names none and is
+  from its *pO₂ min*, which starts from the setting `default_po2_min`. A recording names none and is
   judged against `LEAST_OXYGEN`. It is public for the MOD
   calculation too, `GUI-43`.
 
@@ -1807,10 +1807,10 @@ To settle when we discuss architecture and features:
   `otu`: kept as recorded rather than recalculated. `deco` is the same kind of claim and
   now follows the same rule, which removes the exception rather than deciding it.
 
-  **Gradient factors therefore play no part in a logged dive at all.** They belong to
-  planning, where `default_gf_low` and `default_gf_high` are what a new plan starts from,
-  and changing them cannot alter what the application says about a dive done years ago —
-  which is what this question was worried about, now unable to happen.
+  **Gradient factors therefore play no part in a logged dive at all.** They belong to planning,
+  where `default_gradient_factor_low` and `default_gradient_factor_high` are what a new plan starts
+  from, and changing them cannot alter what the application says about a dive done years ago — which
+  is what this question was worried about, now unable to happen.
 
   A dive from a depth gauge gets no computed answer, and that is the point. Absent means
   nobody has said; it does not mean no. See `DATA-50` in

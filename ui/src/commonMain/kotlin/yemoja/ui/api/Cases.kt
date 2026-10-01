@@ -108,21 +108,37 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
     }
     fun setting(key: String, held: NumberSetting): String =
         textOf(members[key]) ?: shownOf(held, held.default)
+    // A gradient factor is a proportion in a file, as in a logbook, and the form takes a percentage.
+    val factors = mapOf(
+        "gradient_factor_low" to Settings.DEFAULT_GRADIENT_FACTOR_LOW,
+        "gradient_factor_high" to Settings.DEFAULT_GRADIENT_FACTOR_HIGH,
+    )
+    for ((key, held) in factors) {
+        val written = textOf(members[key]) ?: continue
+        if (written.toDoubleOrNull()?.let { it in held.range } != true) {
+            return Made.Wrong(
+                "$name $key should be ${plainOf(held.range.start)} to ${plainOf(held.range.endInclusive)}, " +
+                    "but was $written",
+            )
+        }
+    }
+    fun proportion(key: String): String =
+        textOf(members[key])?.let { shownOf(factors.getValue(key), it.toDouble()) }.orEmpty()
     return Made.Plan(
         Planned(
             segments = segments,
             gases = gases.ifEmpty { listOf(Breathed()) },
-            gradientLow = setting("gf_low", Settings.DEFAULT_GF_LOW),
-            gradientHigh = setting("gf_high", Settings.DEFAULT_GF_HIGH),
-            bottomOxygen = setting("po2_max_bottom", Settings.DEFAULT_BOTTOM_PO2),
-            decoOxygen = setting("po2_max_deco", Settings.DEFAULT_DECO_PO2),
-            leastOxygen = setting("po2_min", Settings.DEFAULT_MIN_PO2),
+            gradientLow = proportion("gradient_factor_low"),
+            gradientHigh = proportion("gradient_factor_high"),
+            bottomOxygen = setting("po2_max_bottom", Settings.DEFAULT_PO2_MAX_BOTTOM),
+            decoOxygen = setting("po2_max_deco", Settings.DEFAULT_PO2_MAX_DECO),
+            leastOxygen = setting("po2_min", Settings.DEFAULT_PO2_MIN),
             descentRate = setting("descent_rate", Settings.DEFAULT_DESCENT_RATE),
             ascentRate = setting("ascent_rate", Settings.DEFAULT_ASCENT_RATE),
             safetyDepth = setting("safety_stop_depth", Settings.DEFAULT_SAFETY_STOP_DEPTH),
             safetyMinutes = setting("safety_stop_duration", Settings.DEFAULT_SAFETY_STOP_DURATION),
             lastStop = setting("last_stop", Settings.DEFAULT_LAST_STOP),
-            water = textOf(members["water"]) ?: Settings.DEFAULT_WATER_TYPE.default,
+            water = textOf(members["water_type"]) ?: Settings.DEFAULT_WATER_TYPE.default,
         ),
     )
 }

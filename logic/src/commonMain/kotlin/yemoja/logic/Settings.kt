@@ -217,10 +217,10 @@ class Settings internal constructor(private val store: FileStore) {
     companion object {
 
         /** The low gradient factor a new plan starts with, from 0 to 1. None is assumed. */
-        val DEFAULT_GF_LOW = NumberSetting("default_gf_low", "GF low", "", null, 0.0..1.0)
+        val DEFAULT_GRADIENT_FACTOR_LOW = NumberSetting("default_gradient_factor_low", "GF low", "", null, 0.0..1.0)
 
         /** The high gradient factor a new plan starts with, from 0 to 1. None is assumed. */
-        val DEFAULT_GF_HIGH = NumberSetting("default_gf_high", "GF high", "", null, 0.0..1.0)
+        val DEFAULT_GRADIENT_FACTOR_HIGH = NumberSetting("default_gradient_factor_high", "GF high", "", null, 0.0..1.0)
 
         /** How fast a new plan descends, in metres a minute. */
         val DEFAULT_DESCENT_RATE =
@@ -234,16 +234,16 @@ class Settings internal constructor(private val store: FileStore) {
         val DEFAULT_LAST_STOP = NumberSetting("default_last_stop", "Last stop", "m", 3.0, 0.0..12.0)
 
         /** The most oxygen a new plan breathes a bottom gas at, in bar. */
-        val DEFAULT_BOTTOM_PO2 =
-            NumberSetting("default_bottom_po2", "pO₂ max bottom", "bar", 1.4, 0.5..2.0)
+        val DEFAULT_PO2_MAX_BOTTOM =
+            NumberSetting("default_po2_max_bottom", "pO₂ max bottom", "bar", 1.4, 0.5..2.0)
 
         /** The most oxygen a new plan breathes a deco gas at, in bar. */
-        val DEFAULT_DECO_PO2 =
-            NumberSetting("default_deco_po2", "pO₂ max deco", "bar", 1.6, 0.5..2.0)
+        val DEFAULT_PO2_MAX_DECO =
+            NumberSetting("default_po2_max_deco", "pO₂ max deco", "bar", 1.6, 0.5..2.0)
 
         /** The least oxygen a new plan breathes any gas at, in bar. `LOGIC-37`. */
-        val DEFAULT_MIN_PO2 =
-            NumberSetting("default_min_po2", "pO₂ min", "bar", LEAST_OXYGEN, 0.1..0.5)
+        val DEFAULT_PO2_MIN =
+            NumberSetting("default_po2_min", "pO₂ min", "bar", LEAST_OXYGEN, 0.1..0.5)
 
         /** How deep a new plan's safety stop is, in metres. */
         val DEFAULT_SAFETY_STOP_DEPTH =
@@ -287,14 +287,14 @@ class Settings internal constructor(private val store: FileStore) {
          * offers it beside these, kept to this device. `GUI-42`.
          */
         val OFFERED: List<NumberSetting> = listOf(
-            DEFAULT_GF_LOW,
-            DEFAULT_GF_HIGH,
+            DEFAULT_GRADIENT_FACTOR_LOW,
+            DEFAULT_GRADIENT_FACTOR_HIGH,
             DEFAULT_DESCENT_RATE,
             DEFAULT_ASCENT_RATE,
             DEFAULT_LAST_STOP,
-            DEFAULT_BOTTOM_PO2,
-            DEFAULT_DECO_PO2,
-            DEFAULT_MIN_PO2,
+            DEFAULT_PO2_MAX_BOTTOM,
+            DEFAULT_PO2_MAX_DECO,
+            DEFAULT_PO2_MIN,
             DEFAULT_SAFETY_STOP_DEPTH,
             DEFAULT_SAFETY_STOP_DURATION,
             DEFAULT_PANIC_FACTOR,

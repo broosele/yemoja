@@ -760,8 +760,8 @@ once and corrected. The numbers stay unused rather than being given to something
   and a number the application chose for the reader is a safety decision nobody made. They are typed
   as percentages, the way divers say 30/70, and a value below one is refused rather than read as a
   fraction of a percent: `0.7` is what somebody who knows the file's proportions types for seventy.
-  Where the user chose `default_gf_low` and `default_gf_high` in the settings, those start the two
-  boxes; where they chose nothing, the boxes start empty. `GUI-42`.
+  Where the user chose `default_gradient_factor_low` and `default_gradient_factor_high` in the
+  settings, those start the two boxes; where they chose nothing, the boxes start empty. `GUI-42`.
 
   **What it makes is written as a file writes a plan**: a dive holding one profile marked `planned`,
   its depths running down at the descent rate and holding the bottom, one gas source switched to at

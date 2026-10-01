@@ -40,15 +40,15 @@ The file holds a plan, or a list of them. A plan is an object:
       {"depth": 40, "duration": "22:46"}
     ],
     "gases": [{"gas": "air", "size": 24, "fill": 232, "sac": 20}],
-    "gf_low": 100,
-    "gf_high": 100
+    "gradient_factor_low": 1,
+    "gradient_factor_high": 1
   }
 ]
 ```
 
 **Only the lines are required.** Everything else Yemoja answers with its own default, which is
 why a file comparing four rows of a table is short. The gradient factors have no default and
-must be given.
+must be given, as proportions: `0.3` for 30, as a logbook writes them.
 
 Numbers may be written as numbers or as text: `40` and `"40"` say the same depth.
 
@@ -89,12 +89,12 @@ Each is the same setting the window has, and each may be left out.
 
 | Field | The window's name |
 |---|---|
-| `gf_low`, `gf_high` | GF low, GF high — **no default** |
+| `gradient_factor_low`, `gradient_factor_high` | GF low, GF high, from 0 to 1 — **no default** |
 | `descent_rate`, `ascent_rate` | Descent rate, Ascent rate |
 | `last_stop` | Last stop |
 | `safety_stop_depth`, `safety_stop_duration` | Safety stop depth, Safety stop duration |
 | `po2_max_bottom`, `po2_max_deco`, `po2_min` | pO₂ max bottom, pO₂ max deco, pO₂ min |
-| `water` | `salt` or `fresh` |
+| `water_type` | `salt` or `fresh` |
 
 [settings.md](settings.md) says what each of them does.
 

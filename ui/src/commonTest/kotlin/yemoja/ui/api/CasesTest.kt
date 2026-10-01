@@ -20,7 +20,7 @@ private fun oneOf(json: String): Case = assertIs<Read.Cases>(read(json)).cases.s
 private const val FORTY = """
     [{"name": "forty", "lines": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
       "gases": [{"gas": "air", "size": 24, "fill": 232, "sac": 20}],
-      "gf_low": 100, "gf_high": 100}]
+      "gradient_factor_low": 1, "gradient_factor_high": 1}]
 """
 
 class CasesTest {
@@ -39,9 +39,9 @@ class CasesTest {
     @Test
     fun `a number says what a string says, so a file need not remember which is quoted`() {
         val quoted = oneOf(
-            """[{"lines": [{"depth": "40", "duration": "10"}], "gf_low": "100", "gf_high": "100"}]""",
+            """[{"lines": [{"depth": "40", "duration": "10"}], "gradient_factor_low": "1", "gradient_factor_high": "1"}]""",
         )
-        val plain = oneOf("""[{"lines": [{"depth": 40, "duration": 10}], "gf_low": 100, "gf_high": 100}]""")
+        val plain = oneOf("""[{"lines": [{"depth": 40, "duration": 10}], "gradient_factor_low": 1, "gradient_factor_high": 1}]""")
         assertEquals(quoted.planned.segments, plain.planned.segments)
         assertEquals(quoted.planned.gradientLow, plain.planned.gradientLow)
     }
@@ -62,16 +62,31 @@ class CasesTest {
         val case = oneOf(
             """[{"lines": [{"depth": 21, "gas": 2, "duration": 5}],
                 "gases": [{"gas": "air"}, {"gas": "EAN50", "role": "deco"}],
-                "gf_low": 30, "gf_high": 70}]""",
+                "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}]""",
         )
         assertEquals(1, case.planned.segments.single().gas, "the second cylinder, counted from nought")
         assertEquals(Role.DECO, case.planned.gases[1].role)
     }
 
     @Test
+    fun `a gradient factor is a proportion, as a logbook writes it, and a percentage is refused`() {
+        val case = oneOf("""[{"lines": [{"depth": 20, "duration": 10}], "gradient_factor_low": 0.3}]""")
+        assertEquals("30", case.planned.gradientLow, "the form's percentage")
+        assertEquals(
+            "case 1 gradient_factor_low should be 0 to 1, but was 30",
+            assertIs<Read.Wrong>(read("""{"lines": [{"depth": 20}], "gradient_factor_low": 30}""")).reason,
+        )
+    }
+
+    @Test
+    fun `the water is written as water_type, as a logbook writes it`() {
+        assertEquals("fresh", oneOf("""{"lines": [{"depth": 20}], "water_type": "fresh"}""").planned.water)
+    }
+
+    @Test
     fun `a plan on its own is a file of one`() {
         val cases = assertIs<Read.Cases>(
-            read("""{"lines": [{"depth": 20, "duration": 10}], "gf_low": 30, "gf_high": 70}"""),
+            read("""{"lines": [{"depth": 20, "duration": 10}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),
         ).cases
         assertEquals(1, cases.size)
         assertEquals("case 1", cases.single().name, "and it is called by its place")

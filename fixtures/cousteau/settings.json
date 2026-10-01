@@ -1,4 +1,4 @@
 {
-  "default_gf_low": 0.2,
-  "default_gf_high": 0.8
+  "default_gradient_factor_low": 0.2,
+  "default_gradient_factor_high": 0.8
 }

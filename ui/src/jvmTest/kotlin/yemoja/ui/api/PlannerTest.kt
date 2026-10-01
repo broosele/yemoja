@@ -16,9 +16,9 @@ class PlannerTest {
         [
           {"name": "forty", "lines": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
            "gases": [{"gas": "air", "size": 24, "fill": 232, "sac": 20}],
-           "gf_low": 100, "gf_high": 100},
+           "gradient_factor_low": 1, "gradient_factor_high": 1},
           {"name": "broken", "lines": [{"depth": 40, "duration": "soon"}],
-           "gf_low": 100, "gf_high": 100}
+           "gradient_factor_low": 1, "gradient_factor_high": 1}
         ]
     """.trimIndent()
 

@@ -189,11 +189,11 @@ internal class Shaping {
 internal fun Shaping.prefill(settings: Settings?) {
     fun shown(setting: NumberSetting): String =
         shownOf(setting, if (settings == null) setting.default else settings.number(setting))
-    gradientLow = shown(Settings.DEFAULT_GF_LOW)
-    gradientHigh = shown(Settings.DEFAULT_GF_HIGH)
-    bottomOxygen = shown(Settings.DEFAULT_BOTTOM_PO2)
-    decoOxygen = shown(Settings.DEFAULT_DECO_PO2)
-    leastOxygen = shown(Settings.DEFAULT_MIN_PO2)
+    gradientLow = shown(Settings.DEFAULT_GRADIENT_FACTOR_LOW)
+    gradientHigh = shown(Settings.DEFAULT_GRADIENT_FACTOR_HIGH)
+    bottomOxygen = shown(Settings.DEFAULT_PO2_MAX_BOTTOM)
+    decoOxygen = shown(Settings.DEFAULT_PO2_MAX_DECO)
+    leastOxygen = shown(Settings.DEFAULT_PO2_MIN)
     descentRate = shown(Settings.DEFAULT_DESCENT_RATE)
     ascentRate = shown(Settings.DEFAULT_ASCENT_RATE)
     safetyDepth = shown(Settings.DEFAULT_SAFETY_STOP_DEPTH)

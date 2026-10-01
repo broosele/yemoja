@@ -13,6 +13,9 @@ SKIP_DIRS = {'.git', 'native', '.dart_tool', 'build', '.github'}
 # example, so it is dropped before parsing.
 FILENAME_COMMENT = re.compile(r'^\s*//[^\n]*\n')
 JSON_BLOCK = re.compile(r'```json\n(.*?)```', re.S)
+# Manuals whose examples are some other file than a logbook's, so their names are not fields. They
+# are still parsed.
+NOT_LOGBOOK = {'manual/planning-from-a-file.md'}
 LINK = re.compile(r'\[[^\]]+\]\(([^)]+)\)')
 
 
@@ -105,6 +108,8 @@ def check_json(root, files):
             except ValueError as exc:
                 print('INVALID JSON', rel, '-', exc)
                 bad += 1
+                continue
+            if rel.replace(os.sep, '/') in NOT_LOGBOOK:
                 continue
             stale = stale_names(parsed, fields, set())
             if stale:

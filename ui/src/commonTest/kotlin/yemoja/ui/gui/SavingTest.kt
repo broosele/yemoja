@@ -223,7 +223,7 @@ class SavingRoundTripTest {
 class OpeningTest {
 
     private fun chosen(): Universe = emptyLogbook(
-        mapOf("settings.json" to """{"default_gf_low": 0.3, "default_gf_high": 0.75}"""),
+        mapOf("settings.json" to """{"default_gradient_factor_low": 0.3, "default_gradient_factor_high": 0.75}"""),
     )
 
     @Test

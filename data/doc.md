@@ -926,6 +926,25 @@ To settle when we discuss architecture:
 
 ## Settled and relocated
 
+- **DATA-128 — What a setting for a plan is called.** *Settled:* **the name of the field it fills,
+  with `default_` before it, and a plan file uses the field's own name and scale.** Decided on
+  2026-10-01, at the author's word.
+
+  The same idea had grown three names. A profile held `gradient_factor_low`, a plan file wrote
+  `gf_low` and the settings `default_gf_low`; the settings said `default_bottom_po2` where a plan
+  file said `po2_max_bottom`, and a plan file's `water` was a profile's `water_type`. Saving a
+  plan's settings with it would have added a fourth. So each idea has one name: a
+  profile writes `po2_max_bottom`, a plan file reads it, and the setting a new plan starts from is
+  `default_po2_max_bottom`. Where a profile already had a field, its name won, being the one a
+  logbook already holds.
+
+  **A plan file writes a gradient factor as a logbook does**, from 0 to 1, and refuses `30` as out
+  of range rather than reading it as a percentage. A name meaning a proportion in one file and a
+  percentage in another is the confusion the merge was for.
+
+  Nothing reads the old names: a settings file still holding `default_gf_low` reads as one in which
+  the setting was never chosen.
+
 - **DATA-127 — Whether a wreck is an item.** *Settled:* **no; what is known of a ship is said in
   its site's `remarks`.** Decided on 2026-10-01, at the author's word.
 

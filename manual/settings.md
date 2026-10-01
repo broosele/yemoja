@@ -59,21 +59,21 @@ together without contradicting each other.
 The list will grow. At present, each in its own unit whatever units your logbook's files are
 written in — a settings file declares none:
 
-- `default_gf_low`, `default_gf_high` — the gradient factors a new dive plan starts
-  with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`; the *Settings*
-  form takes them as percentages, 20 and 80. **There is no default.** Until you choose them,
-  a new plan's boxes start empty: how conservative a plan is, is yours to decide.
+- `default_gradient_factor_low`, `default_gradient_factor_high` — the gradient factors a new dive
+  plan starts with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`; the
+  *Settings* form takes them as percentages, 20 and 80. **There is no default.** Until you choose
+  them, a new plan's boxes start empty: how conservative a plan is, is yours to decide.
 - `default_descent_rate` — how fast a new plan descends, in metres a minute, from 1 to 60.
   Without a choice, 18.
 - `default_ascent_rate` — how fast an ascent is written to rise, in metres a minute, from 1
   to 30. Without a choice, 9.
 - `default_last_stop` — the depth an ascent takes its shallowest stop at, in metres, from 0
   to 12. Without a choice, 3.
-- `default_bottom_po2` — the most oxygen a new dive plan breathes a bottom or bailout gas at, in
+- `default_po2_max_bottom` — the most oxygen a new dive plan breathes a bottom or bailout gas at, in
   bar, from 0.5 to 2. Without a choice, 1.4.
-- `default_deco_po2` — the most oxygen a new dive plan breathes a deco gas at, in bar, from 0.5
+- `default_po2_max_deco` — the most oxygen a new dive plan breathes a deco gas at, in bar, from 0.5
   to 2. Without a choice, 1.6.
-- `default_min_po2` — the least oxygen a new dive plan breathes any gas at, in bar, from 0.1 to
+- `default_po2_min` — the least oxygen a new dive plan breathes any gas at, in bar, from 0.1 to
   0.5. A hypoxic gas breathed shallower than this is warned of. Without a choice, 0.18.
 - `default_safety_stop_depth` — how deep a new dive plan's safety stop is, in metres, from 1 to
   12. Without a choice, 6.

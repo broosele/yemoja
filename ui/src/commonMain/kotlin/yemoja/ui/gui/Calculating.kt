@@ -534,7 +534,7 @@ private fun NdlForm(working: Working, settings: Settings?) {
     // The factor the user chose, the first time the form opens; typed over freely after that.
     remember(working, settings) {
         if (!working.prefilled && settings != null) {
-            working.gradientHigh = shownOf(Settings.DEFAULT_GF_HIGH, settings.number(Settings.DEFAULT_GF_HIGH))
+            working.gradientHigh = shownOf(Settings.DEFAULT_GRADIENT_FACTOR_HIGH, settings.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH))
             working.prefilled = true
         }
         working
@@ -580,10 +580,10 @@ private fun ModForm(working: Working, settings: Settings?) {
     // The limits the user chose, for a bottom gas and for any gas, the first time the form opens.
     remember(working, settings) {
         if (!working.mixPrefilled) {
-            val chosen = settings?.number(Settings.DEFAULT_BOTTOM_PO2) ?: Settings.DEFAULT_BOTTOM_PO2.default
-            working.mostOxygen = shownOf(Settings.DEFAULT_BOTTOM_PO2, chosen)
-            val least = settings?.number(Settings.DEFAULT_MIN_PO2) ?: Settings.DEFAULT_MIN_PO2.default
-            working.leastOxygen = shownOf(Settings.DEFAULT_MIN_PO2, least)
+            val chosen = settings?.number(Settings.DEFAULT_PO2_MAX_BOTTOM) ?: Settings.DEFAULT_PO2_MAX_BOTTOM.default
+            working.mostOxygen = shownOf(Settings.DEFAULT_PO2_MAX_BOTTOM, chosen)
+            val least = settings?.number(Settings.DEFAULT_PO2_MIN) ?: Settings.DEFAULT_PO2_MIN.default
+            working.leastOxygen = shownOf(Settings.DEFAULT_PO2_MIN, least)
             working.mixPrefilled = true
         }
         working

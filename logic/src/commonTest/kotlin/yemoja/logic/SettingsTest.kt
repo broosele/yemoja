@@ -31,52 +31,52 @@ class SettingsTest {
     @Test
     fun `the gradient factors have no default, the application choosing no conservatism`() {
         val (chosen, _) = settings()
-        assertNull(chosen.number(Settings.DEFAULT_GF_LOW))
-        assertNull(chosen.number(Settings.DEFAULT_GF_HIGH))
+        assertNull(chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
+        assertNull(chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH))
     }
 
     @Test
     fun `the logbook's file answers before the default`() {
-        val (chosen, _) = settings("settings.json" to """{"default_gf_low": 0.2, "default_ascent_rate": 10}""")
-        assertEquals(0.2, chosen.number(Settings.DEFAULT_GF_LOW))
+        val (chosen, _) = settings("settings.json" to """{"default_gradient_factor_low": 0.2, "default_ascent_rate": 10}""")
+        assertEquals(0.2, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
         assertEquals(10.0, chosen.number(Settings.DEFAULT_ASCENT_RATE), "a whole number reads as a number")
-        assertEquals(SettingsFile.LOGBOOK, chosen.answeredBy(Settings.DEFAULT_GF_LOW))
+        assertEquals(SettingsFile.LOGBOOK, chosen.answeredBy(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
     }
 
     @Test
     fun `this device's file answers before the logbook's`() {
         val (chosen, _) = settings(
-            "settings.json" to """{"default_gf_low": 0.2}""",
-            "settings.local.json" to """{"default_gf_low": 0.4}""",
+            "settings.json" to """{"default_gradient_factor_low": 0.2}""",
+            "settings.local.json" to """{"default_gradient_factor_low": 0.4}""",
         )
-        assertEquals(0.4, chosen.number(Settings.DEFAULT_GF_LOW))
-        assertEquals(SettingsFile.LOCAL, chosen.answeredBy(Settings.DEFAULT_GF_LOW))
+        assertEquals(0.4, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
+        assertEquals(SettingsFile.LOCAL, chosen.answeredBy(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
     }
 
     @Test
     fun `a value that will not do is ignored, and the next layer answers`() {
         val (chosen, _) = settings(
-            "settings.local.json" to """{"default_gf_low": "thirty", "default_ascent_rate": 900}""",
-            "settings.json" to """{"default_gf_low": 0.3}""",
+            "settings.local.json" to """{"default_gradient_factor_low": "thirty", "default_ascent_rate": 900}""",
+            "settings.json" to """{"default_gradient_factor_low": 0.3}""",
         )
-        assertEquals(0.3, chosen.number(Settings.DEFAULT_GF_LOW), "text where a number belongs")
+        assertEquals(0.3, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_LOW), "text where a number belongs")
         assertEquals(9.0, chosen.number(Settings.DEFAULT_ASCENT_RATE), "a number outside the range")
     }
 
     @Test
     fun `a choice nobody has made yet goes to the logbook's file, and so to every device`() {
         val (chosen, store) = settings()
-        assertIs<Outcome.Done>(chosen.choose(Settings.DEFAULT_GF_HIGH, 0.7))
-        assertEquals(0.7, chosen.number(Settings.DEFAULT_GF_HIGH), "read back at once")
+        assertIs<Outcome.Done>(chosen.choose(Settings.DEFAULT_GRADIENT_FACTOR_HIGH, 0.7))
+        assertEquals(0.7, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH), "read back at once")
         assertTrue(store.isFile("settings.json"))
         assertTrue(!store.isFile("settings.local.json"))
     }
 
     @Test
     fun `a choice already kept on this device stays on this device`() {
-        val (chosen, store) = settings("settings.local.json" to """{"default_gf_high": 0.8}""")
-        chosen.choose(Settings.DEFAULT_GF_HIGH, 0.75)
-        assertEquals(0.75, chosen.number(Settings.DEFAULT_GF_HIGH))
+        val (chosen, store) = settings("settings.local.json" to """{"default_gradient_factor_high": 0.8}""")
+        chosen.choose(Settings.DEFAULT_GRADIENT_FACTOR_HIGH, 0.75)
+        assertEquals(0.75, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH))
         assertTrue("0.75" in store.readText("settings.local.json"))
         assertTrue(!store.isFile("settings.json"), "the logbook's file is not touched")
     }
@@ -91,7 +91,7 @@ class SettingsTest {
     @Test
     fun `a value outside the range is refused rather than written`() {
         val (chosen, store) = settings()
-        val refused = assertIs<Outcome.Refused>(chosen.choose(Settings.DEFAULT_GF_LOW, 30.0))
+        val refused = assertIs<Outcome.Refused>(chosen.choose(Settings.DEFAULT_GRADIENT_FACTOR_LOW, 30.0))
         assertTrue("GF low should be 0.0 to 1.0, but was 30.0" in refused.reason, refused.reason)
         assertTrue(!store.isFile("settings.json"))
     }
@@ -130,14 +130,14 @@ class SettingsTest {
     fun `the numbers the form offers come first, the gradient factors first among them`() {
         assertEquals(
             listOf(
-                "default_gf_low",
-                "default_gf_high",
+                "default_gradient_factor_low",
+                "default_gradient_factor_high",
                 "default_descent_rate",
                 "default_ascent_rate",
                 "default_last_stop",
-                "default_bottom_po2",
-                "default_deco_po2",
-                "default_min_po2",
+                "default_po2_max_bottom",
+                "default_po2_max_deco",
+                "default_po2_min",
                 "default_safety_stop_depth",
                 "default_safety_stop_duration",
                 "default_panic_factor",
@@ -151,9 +151,9 @@ class SettingsTest {
     @Test
     fun `a new plan starts from the limits, the safety stop and the water a plan usually has`() {
         val (chosen, _) = settings()
-        assertEquals(1.4, chosen.number(Settings.DEFAULT_BOTTOM_PO2))
-        assertEquals(1.6, chosen.number(Settings.DEFAULT_DECO_PO2))
-        assertEquals(0.18, chosen.number(Settings.DEFAULT_MIN_PO2))
+        assertEquals(1.4, chosen.number(Settings.DEFAULT_PO2_MAX_BOTTOM))
+        assertEquals(1.6, chosen.number(Settings.DEFAULT_PO2_MAX_DECO))
+        assertEquals(0.18, chosen.number(Settings.DEFAULT_PO2_MIN))
         assertEquals(6.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DEPTH))
         assertEquals(3.0, chosen.number(Settings.DEFAULT_SAFETY_STOP_DURATION))
         assertEquals("salt", chosen.choice(Settings.DEFAULT_WATER_TYPE))
