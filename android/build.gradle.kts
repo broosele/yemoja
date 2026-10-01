@@ -13,7 +13,8 @@ android {
         applicationId = "app.yemoja"
         minSdk = property("androidOldest").toString().toInt()
         targetSdk = property("androidSdk").toString().toInt()
-        versionCode = 1
+        // Raised with every release: Android installs an update only over a lower number.
+        versionCode = 2
         versionName = property("release").toString()
         // The processors libdivecomputer is built for: a phone's, and the emulator's. Every phone
         // running Android 12 or later that is worth supporting is one of these. `AND-2`.
