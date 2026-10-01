@@ -256,8 +256,8 @@ which `FEAT-20` rules out along with everything else about money. `aliasname`.
 | `rating` | `rating` | 1 to 10 both sides |
 | `remarks` | `notes` | |
 
-**Ours with no counterpart.** `facilities` — what is there: parking, air fills, a
-slipway. UDDF has no equivalent.
+**Ours with no counterpart.** `facilities` — what is there: parking, a filling
+station, showers. UDDF has no equivalent.
 
 **UDDF's, with no counterpart here.**
 

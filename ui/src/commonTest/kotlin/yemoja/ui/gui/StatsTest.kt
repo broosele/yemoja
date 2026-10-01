@@ -64,7 +64,7 @@ class StatsTest {
         assertEquals("Elphinstone, Blue Hole (2 different)", site.text)
         assertEquals(listOf("elph", null, "blue", null), site.parts.map { it.leadsTo })
         assertEquals("Anna, Bram (2 different) (2 of 3)", about("Buddies").text)
-        assertEquals("wreck, deep, training (3 different) (2 of 3)", about("Tags").text)
+        assertEquals("Wreck, Deep, Training (3 different) (2 of 3)", about("Tags").text)
     }
 
     @Test

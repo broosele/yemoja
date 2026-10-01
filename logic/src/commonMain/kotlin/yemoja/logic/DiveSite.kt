@@ -46,16 +46,16 @@ private val ENTRIES = setOf(
 
 private val FACILITIES = setOf(
     "parking",
-    "air fills",
+    "filling station",
     "nitrox",
     "trimix",
+    "300bar",
     "toilets",
     "showers",
     "changing rooms",
     "rinse tanks",
     "gear rental",
-    "slipway",
-    "cafe",
+    "food",
 )
 
 internal val DIVE_SITE: ItemDescription = ItemDescription(

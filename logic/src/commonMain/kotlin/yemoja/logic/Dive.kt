@@ -523,6 +523,18 @@ private const val CYLINDER = "cylinder"
  *
  * Absent so far: nothing of its own.
  */
+private val TAGS = setOf(
+    "wreck",
+    "night",
+    "drift",
+    "course",
+    "teaching",
+    "training",
+    "cave",
+    "cavern",
+    "ice",
+)
+
 internal val DIVE: ItemDescription = ItemDescription(
     "dive",
     listOf(
@@ -574,7 +586,7 @@ internal val DIVE: ItemDescription = ItemDescription(
         ),
         ReferenceDescription("dive_trip", targetType = "dive_trip"),
         ReferenceDescription("operator", targetType = "operator"),
-        TextDescription("tags", cardinality = Cardinality.LIST),
+        TextDescription("tags", cardinality = Cardinality.LIST, suggestedSet = TAGS),
         OwnedItemDescription("environment", ENVIRONMENT),
         OwnedItemDescription("gear", DIVE_GEAR),
         OwnedItemDescription("profiles", PROFILE, cardinality = Cardinality.KEYED),

@@ -174,7 +174,7 @@ out again.
 **Kept, both ways.** The name, other names it goes by, its position, its height above sea
 level, how deep it gets, what the bottom is made of, your rating and your notes.
 
-**Lost on export.** What is there — parking, air fills, a slipway. UDDF has no equivalent.
+**Lost on export.** What is there — parking, a filling station, showers. UDDF has no equivalent.
 
 **Lost on import.** The shallowest the site gets, which this logbook deliberately does not
 record.

@@ -178,8 +178,9 @@ All three can be corrected where the calculation is wrong.
 - `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
   the leg: a trip's list of dives gathers its own and those of everything beneath it.
 - `operator` (reference) — who you dived with.
-- `tags` (list of text) — your own labels. Anything you like; `solo` and `wreck` are
-  examples.
+- `tags` (list of text) — your own labels. Anything you like; the usual ones are `wreck`,
+  `night`, `drift`, `course`, `teaching`, `training`, `cave`, `cavern` and `ice`, and what you
+  have written on other dives is offered too.
 - `environment` (owned item) — the conditions you found.
 - `gear` (owned item) — what you took, and how it performed. Described under *Dive gear*
   below.
@@ -783,9 +784,9 @@ A place you dive.
 - `wrecks` (list of references) — the ships lying there, if any. A site may hold more
   than one; a wreck may be reachable from more than one site.
 - `facilities` (list of text) — what is there. Anything you like; the usual ones are
-  `parking`, `air fills`, `nitrox`, `trimix`, `toilets`, `showers`, `changing rooms`,
-  `rinse tanks`, `gear rental`, `slipway` and `cafe`, and what you have written on other sites
-  is offered too.
+  `parking`, `filling station`, `nitrox`, `trimix`, `300bar`, `toilets`, `showers`,
+  `changing rooms`, `rinse tanks`, `gear rental` and `food`, and what you have written on other
+  sites is offered too.
 - `elevation` (number) — the height of the water above sea level. It matters for more
   than the map: diving at altitude changes how a dive is calculated.
 - `longitude`, `latitude` (number) — where it is, in degrees.
