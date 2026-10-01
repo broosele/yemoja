@@ -286,7 +286,8 @@ Decided and not built, or built and not proven. Each is here rather than in some
   Windows can be asked for a throughput-optimised connection interval, and neither Kable nor
   the btleplug it is built on exposes that, so there is nothing to call. Other applications
   being quicker is consistent with their asking. Whether it is worth reaching past Kable to the
-  platform for this is not decided; `TUI-8` owns the silence while it runs either way.
+  platform for this is not decided. The window shows how far a read has got and carries on
+  meanwhile, `GUI-52`; the terminal's silence is `TUI-8`'s.
 - **A second computer's dive is merged beside the application, not through it.** `RECON-7`.
 - **A link that drops keeps what it got.** The second session lost the connection after fifteen
   minutes and seventy-two dives, for no reason either side reported; the seventy-two were handed

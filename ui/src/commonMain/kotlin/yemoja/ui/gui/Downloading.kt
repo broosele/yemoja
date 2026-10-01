@@ -44,8 +44,11 @@ internal enum class Stage {
     /** More than one was found, and the reader says which. */
     CHOOSING,
 
-    /** Being read, which takes minutes. */
+    /** Being read, which takes minutes, while the user works on elsewhere. `GUI-52`. */
     READING,
+
+    /** Read, and waiting for the user to come back and review it. `GUI-52`. */
+    READY,
 
     /** Read, and what came of it is being shown. */
     DONE,
@@ -57,7 +60,31 @@ internal fun sayingOf(stage: Stage, computer: String?): String? = when (stage) {
     Stage.CHOOSING -> "More than one dive computer is within reach. Which one should be read?"
     Stage.READING ->
         "Reading ${computer ?: "the dive computer"}. This can take several minutes, depending on " +
-            "how many dives are on it."
+            "how many dives are on it. The rest of the logbook can be used meanwhile."
+    else -> null
+}
+
+/**
+ * How far a read has got, as the line under it says, or absent before the device has said.
+ *
+ * In kilobytes, which is what the device counts. A device that does not say how much there is
+ * gets the count alone.
+ */
+internal fun progressOf(done: Long, total: Long): String? = when {
+    total > 0 -> "${kilobytesOf(done)} of ${kilobytesOf(total)} kB read."
+    done > 0 -> "${kilobytesOf(done)} kB read so far."
+    else -> null
+}
+
+/** [bytes] in whole kilobytes, rounded up so that a started transfer never shows nought. */
+private fun kilobytesOf(bytes: Long): Long = (bytes + BYTES_A_KILOBYTE - 1) / BYTES_A_KILOBYTE
+
+private const val BYTES_A_KILOBYTE = 1000L
+
+/** What the home tab says of a download over its icon, or absent where there is none. */
+internal fun busyOf(stage: Stage): String? = when (stage) {
+    Stage.LOOKING, Stage.READING -> "A download is under way. Home shows how far it has got."
+    Stage.READY -> "A download has finished. Its dives are reviewed on Home."
     else -> null
 }
 

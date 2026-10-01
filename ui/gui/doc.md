@@ -340,14 +340,6 @@ that cannot edit.
 
 ## Open questions
 
-- **GUI-52 — What the window allows while a download runs.** A download reads the computer off
-   the window's thread and, as it goes, changes the Universe — an access code kept, an import
-   staged — while every other tab stays live, and an agent's tools can run too. `LOGIC-5` says one
-   operation at a time and that the interface refuses the rest meanwhile; the window does not.
-   Either the window refuses edits while a download runs, saying why, or what a download writes is
-   carried onto the window's thread and the rest waits its turn. `TUI-8` is the same question for
-   the terminal, where the screen simply stops.
-
 - **GUI-17 — Where the sync indicator lives.** Syncing is explicit, and the application
   must show at all times whether anything is owed in either direction — see
   [../../data/json/requirements.md](../../data/json/requirements.md). Putting it in the
@@ -391,6 +383,33 @@ that cannot edit.
 Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `GUI-2`
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
+
+- **GUI-52 — What the window allows while a download runs.** *Settled:* **everything, while the
+  device is read; what it brought is staged when the user comes back to Home.**
+
+  A download is two things of very different lengths. Reading the device takes minutes and needs
+  nothing written; staging what it brought takes a moment and writes. So the read runs off the
+  window's thread and every tab stays live while it does, including an agent's tools. What it
+  needs from the logbook, where the last download stopped and the access code kept for the
+  device, is gathered before it starts, so it never reads a logbook while it is being edited.
+  `LOGIC-5` records the exception this makes.
+
+  **While it reads**, Home shows how far it has got, in kilobytes as the device counts them, with
+  a bar where the device says how much there is, and a *Cancel* that gives it up. A read given up
+  keeps nothing. The download button is greyed meanwhile, since there is one at a time. Home's tab
+  shows a spinner in place of its icon from wherever the user is, and a tick once the read has
+  finished; resting the pointer on either says what it means.
+
+  **Staged on arrival, and again on every arrival after.** A finished read waits for the user to
+  come to Home and is staged there, on the window's thread, against the logbook as it is then.
+  The review can be left half done: coming back stages it afresh, so a dive site added meanwhile
+  is there to choose, and a dive taken in on the earlier visit is not offered again, its token
+  being in the logbook now. A choice made and not applied is not kept across a visit. *Close*
+  puts the read aside for good, and so does taking every dive in. An access code the device
+  handed over is kept on its gear item at the first staging, once.
+
+  `TUI-8` stays open: the terminal still reads in the foreground. The port now carries what an
+  answer there would need, progress and a cancel, on the session.
 
 - **GUI-47 — What the item view does with a start and an end.** *Settled:* **the pair is one
   line, a range, labelled by what they bracket.**
@@ -1575,9 +1594,9 @@ once and corrected. The numbers stay unused rather than being given to something
   for a later version, and their open questions with them. Scans of papers are not in it, `FEAT-25`, and neither is anything about
   keeping several logbooks to hand, which is rejected outright, `FEAT-15`.
 
-  **Nothing is added to reach it.** What is owed before it ships is what is broken rather than what
-  is missing: the defects the review of 2026-10-01 left, and `GUI-52`, a download changing the
-  logbook while the window goes on editing it, which is a correctness question and not a feature.
+  **Nothing is added to reach it.** What was owed before it ships was what is broken rather than
+  what is missing: the defects the review of 2026-10-01 left, and `GUI-52`, a download changing
+  the logbook while the window went on editing it. Both are done.
 
 - **GUI-51 — How the user is chosen.** *Settled:* **a button on a person's card, beside the
   pencil, which writes them into the manifest.**

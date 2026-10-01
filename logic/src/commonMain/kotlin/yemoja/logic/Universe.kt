@@ -27,7 +27,6 @@ import yemoja.data.json.LogbookWriter
 import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.Download
-import yemoja.logic.divecomputer.Session
 import yemoja.logic.uddf.Exported
 import yemoja.logic.uddf.Uddf
 import yemoja.logic.uddf.UddfFormatException
@@ -525,55 +524,59 @@ class Universe(
      * does bring across is proposed against what overlaps it in time.
      */
     fun downloadFrom(computer: DiveComputer, ask: (String) -> String? = { null }): Outcome {
-        val where = stagedIn(null)
-            ?: return Outcome.Refused("this logbook has nowhere to stage a download")
-        val session = Pairing(computer.name, ask)
-        val read = Download.read(computer.recordings(session), logbook)
-        // Kept once the device has said its serial, which is what says whose it is. `LOGIC-24`.
-        val handed = session.kept
-        val serial = session.serial
-        if (handed != null && serial != null) keepAccessCode(serial, handed)
-        if (read.allOf(Types.DIVE).isEmpty()) {
-            return Outcome.Refused(
-                "Nothing new to download. Every dive on ${computer.name} is in this logbook already.",
-            )
-        }
-        importFrom(read, where, Matching.NONE)
-        return Outcome.Done()
+        val read = readerOf(computer, ask)
+        read.run()
+        return arrive(read)
     }
 
     /**
-     * What a download asks while it runs, answered from this logbook. `LOGIC-23`, `LOGIC-24`.
+     * A read of [computer], ready to run on any thread while this logbook goes on being edited.
+     *
+     * Everything the read will ask of the logbook is gathered here, on the logbook's own thread:
+     * where each recording it holds stops, and the access codes its gear keeps. `GUI-52`.
      *
      * [ask] puts a question to the user, which only a front end can, and answers nothing where
      * none can: the download is then given up rather than read wrongly.
      */
-    private inner class Pairing(
-        private val called: String,
-        private val ask: (String) -> String?,
-    ) : Session {
-
-        /** The serial, once the device has said it. */
-        var serial: String? = null
-
-        /** An access code the device handed over, waiting for the serial to say whose it is. */
-        var kept: ByteArray? = null
-
-        override fun resume(serial: String?): String? {
-            if (serial != null) this.serial = serial
-            return Download.after(logbook, called, serial)
+    fun readerOf(computer: DiveComputer, ask: (String) -> String? = { null }): DeviceRead {
+        val codes = logbook.allOf(Types.GEAR).mapNotNull { gear ->
+            val serial = (gear.single<String>("serial") as? Result.Usable)?.value
+            val code = (gear.single<String>("access_code") as? Result.Usable)?.value
+            serial?.let { it to code }
         }
+        return DeviceRead(computer, Download.marksIn(logbook), codes, ask)
+    }
 
-        override fun accessCode(name: String): ByteArray? {
-            val gear = computerAdvertising(name) ?: return null
-            return bytesOf((gear.single<String>("access_code") as? Result.Usable)?.value)
+    /**
+     * Stage what [read] brought, against this logbook as it is now.
+     *
+     * May be called again for the same read, and stages afresh each time: a review the user
+     * leaves and comes back to meets the logbook they came back to. A recording whose token the
+     * logbook already holds is left out, so a dive taken in on an earlier visit is not offered
+     * twice. `GUI-52`.
+     */
+    fun arrive(read: DeviceRead): Outcome {
+        val where = stagedIn(null)
+            ?: return Outcome.Refused("this logbook has nowhere to stage a download")
+        // Kept once the device has said its serial, which is what says whose it is. `LOGIC-24`.
+        val handed = read.handed
+        val serial = read.serial
+        if (handed != null && serial != null && !read.kept) {
+            keepAccessCode(serial, handed)
+            read.kept = true
         }
-
-        override fun pin(name: String): String? = ask("type the code $name is showing:")
-
-        override fun keep(name: String, accessCode: ByteArray) {
-            kept = accessCode
+        val held = Download.tokensIn(logbook)
+        val fresh = read.recordings.filter { recording ->
+            recording.fingerprints.none { it in held }
         }
+        val staged = Download.read(fresh.asSequence(), logbook)
+        if (staged.allOf(Types.DIVE).isEmpty()) {
+            return Outcome.Refused(
+                "Nothing new to download. Every dive on ${read.name} is in this logbook already.",
+            )
+        }
+        importFrom(staged, where, Matching.NONE)
+        return Outcome.Done()
     }
 
     /** The gear item carrying [serial], or absent where none does. */
@@ -582,18 +585,6 @@ class Universe(
             val held = (gear.single<String>("serial") as? Result.Usable)?.value
             held != null && sameSerial(held, serial)
         }
-
-    /**
-     * The gear item the device advertising as [name] is, or absent where none can be told.
-     *
-     * Asked before the device has said its serial, so by the name: the gear item whose serial
-     * the name, or the digits in it, spells. `LOGIC-24`.
-     */
-    private fun computerAdvertising(name: String): ReferenceableItem? {
-        computerWith(name)?.let { return it }
-        val digits = name.filter { it.isDigit() }
-        return if (digits.isEmpty()) null else computerWith(digits)
-    }
 
     /** Put [accessCode] on the gear item carrying [serial], where one does. `LOGIC-24`. */
     private fun keepAccessCode(serial: String, accessCode: ByteArray) {

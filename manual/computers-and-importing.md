@@ -15,7 +15,10 @@ over USB or a serial cable, and for one advertising over Bluetooth.
 - **One found:** it is read straight away.
 - **Several found:** you are asked which, with a button for each.
 
-Reading a full computer takes several minutes, and the window says so while it works.
+Reading a full computer takes several minutes. Home shows how far it has got, and **Cancel**
+gives it up, keeping nothing. You can go to any other tab and carry on meanwhile. Home's tab shows
+a spinning circle in place of its icon while the computer is read, and a tick once it has
+finished.
 
 **Only dives this logbook has not seen come across.** Yemoja remembers where the last download
 from each computer stopped, so the next one brings only what you dived since.
@@ -26,6 +29,11 @@ asked again. Add the computer as a piece of gear, category `instruments`, with i
 the code is remembered there.
 
 ## Looking over what arrived
+
+A download's list is shown when you come to Home after it has finished, and it is made afresh
+each time you come back. Leave it half done to add a dive site, and on your return the site is
+there to choose; a dive you took in last time is not offered again. A choice you made and did
+not apply is not kept when you leave.
 
 Every dive that arrived is a box, oldest first, headed by when it started, how long it was, how
 deep, and which computer recorded it. Each has three choices, one of them already chosen:

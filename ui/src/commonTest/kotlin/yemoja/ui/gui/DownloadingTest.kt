@@ -34,6 +34,25 @@ class DownloadingTest {
         assertTrue(reading.startsWith("Reading Perdix 2."), reading)
         assertTrue("several minutes" in reading, "and how long to expect it to take")
         assertNull(sayingOf(Stage.DONE, null), "what came of it is said another way")
+        assertTrue("used meanwhile" in reading, "the logbook is not locked while it reads")
+        assertNull(sayingOf(Stage.READY, null), "the review says it, once the user is back")
+    }
+
+    @Test
+    fun `progress reads in kilobytes, and a device that gives no total gets the count alone`() {
+        assertNull(progressOf(0, 0), "nothing said before the device has")
+        assertEquals("1 of 120 kB read.", progressOf(1, 120_000), "a started transfer is never nought")
+        assertEquals("60 of 120 kB read.", progressOf(60_000, 120_000))
+        assertEquals("33 kB read so far.", progressOf(32_100, 0))
+    }
+
+    @Test
+    fun `the home tab speaks of a download only while there is one to speak of`() {
+        assertNull(busyOf(Stage.IDLE))
+        assertNull(busyOf(Stage.DONE), "the user is looking at it already")
+        assertTrue("under way" in busyOf(Stage.READING)!!)
+        assertTrue("under way" in busyOf(Stage.LOOKING)!!)
+        assertTrue("finished" in busyOf(Stage.READY)!!)
     }
 
     @Test

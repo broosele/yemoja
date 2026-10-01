@@ -1753,9 +1753,15 @@ To settle when we discuss architecture and features:
 - **LOGIC-5 — Concurrency.** *Settled:* **there is none.** One thread, one operation at a
   time, and a long operation takes the application over until it finishes.
 
-  Downloading a dive computer, importing a file, running a plan: each is exclusive. The
-  user is not browsing dives while forty come off their computer, because nobody needs to
-  and pretending otherwise buys a class of bugs for a convenience nobody asked for.
+  Importing a file, running a plan, staging a download: each is exclusive.
+
+  **Revised for one thing: reading a device.** `GUI-52`. Forty dives can take a quarter of an
+  hour to come off a computer over Bluetooth, and the user is browsing the logbook meanwhile
+  after all. The read is allowed beside the logbook because it touches none of it. What it needs,
+  where the last download stopped and which access code to offer, is gathered on the logbook's
+  thread before it starts, and what it brought is staged on that thread afterwards.
+  `Universe.readerOf` does the first, `DeviceRead` holds the read, and `Universe.arrive` does the
+  second. Nothing below reaches the logbook from two threads, so the rest of this stands.
 
   **What that removes is the whole question.** Two things reaching one logbook at once is
   the only reason any of the alternatives existed — copying it so readers see a consistent
@@ -1765,15 +1771,14 @@ To settle when we discuss architecture and features:
 
   It is also the one place where the change of language would otherwise have cost
   something: coroutines make a background download cheap to *start* and make the shared
-  logbook expensive to get right. Declining the first declines the second.
+  logbook expensive to get right. The read runs in the background; the logbook is still not
+  shared.
 
   **One implementation constraint, and it is not a softening of this.** Android kills an
   application whose interface stops answering for a few seconds, so *exclusive* cannot mean
   a frozen thread — the interface has to keep drawing to show that something is happening
-  and to offer a way to stop it. The work therefore runs off the interface's own thread
-  while the interface refuses everything else: one screen, a progress indication, a cancel,
-  and nothing reachable behind it. The rule stands as written — one operation at a time,
-  the application belongs to it — and only the mechanism has to respect the platform.
+  and to offer a way to stop it. The work therefore runs off the interface's own thread, and for
+  everything but a device read the interface refuses the rest meanwhile.
 
   Two things follow elsewhere. `LOGIC-4` gets easier: a live in-memory logbook has no
   observers racing it. And a large import is a single stretch of work rather than something

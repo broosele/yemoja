@@ -145,19 +145,81 @@ object Download {
      * which is already a slug, and a borrowed one by a plain name, which is not. Slugging all
      * of them is what makes *Reef Computer* and `reef_computer` the same answer.
      */
-    fun after(logbook: ItemSet, computer: String, serial: String? = null): String? {
-        var newest: Pair<String, String>? = null
+    fun after(logbook: ItemSet, computer: String, serial: String? = null): String? =
+        after(marksIn(logbook), computer, serial)
+
+    /** The same answer from [marks] taken earlier, which needs no logbook to hand. `GUI-52`. */
+    internal fun after(marks: List<Mark>, computer: String, serial: String? = null): String? =
+        marks.filter { it.madeBy(computer, serial) }.maxByOrNull { it.began }?.token
+
+    /**
+     * Mark is one recording a logbook holds, cut down to what [after] asks of it.
+     *
+     * Taken on the logbook's own thread before a download begins, so the download can ask where
+     * to stop from another thread while the logbook goes on being edited. `GUI-52`. Immutable.
+     */
+    internal class Mark(
+        val began: String,
+        val token: String,
+        /** The key the profile is filed under. */
+        val key: String,
+        /** The computer the profile names, as a slug. */
+        val named: String?,
+        /** The serial the profile carries itself. */
+        val serial: String?,
+        /** The serial of the gear item the profile names. */
+        val computerSerial: String?,
+    ) {
+        /** Whether this was recorded by [computer], with [serial]. */
+        fun madeBy(computer: String, serial: String?): Boolean {
+            if (serial == null) {
+                val slug = yemoja.logic.slug(computer)
+                return key == slug || named == slug
+            }
+            val own = this.serial
+            if (own != null && sameSerial(own, serial)) return true
+            return computerSerial != null && sameSerial(computerSerial, serial)
+        }
+    }
+
+    /** Every recording in [logbook] that carries a token and says when it was, as a [Mark]. */
+    internal fun marksIn(logbook: ItemSet): List<Mark> {
+        val marks = ArrayList<Mark>()
         for (dive in logbook.allOf(DIVE)) {
             val profiles = dive.keyed<OwnedItem>("profiles") as? Result.Usable ?: continue
+            val began = whenOf(dive) ?: continue
             for ((key, element) in profiles.value) {
                 val profile = (element as? Element.Usable)?.value ?: continue
-                if (!madeBy(logbook, key, profile, computer, serial)) continue
                 val held = lastTokenOf(profile) ?: continue
-                val began = whenOf(dive) ?: continue
-                if (newest == null || began > newest.first) newest = began to held
+                val names = (profile.single<Reference>("dive_computer") as? Result.Usable)?.value
+                val id = (names as? Reference.Identified)?.id
+                marks += Mark(
+                    began = began,
+                    token = held,
+                    key = key,
+                    named = nameOf(profile),
+                    serial = (profile.single<String>("serial") as? Result.Usable)?.value,
+                    computerSerial = id?.let {
+                        (logbook[it]?.single<String>("serial") as? Result.Usable)?.value
+                    },
+                )
             }
         }
-        return newest?.second
+        return marks
+    }
+
+    /** Every token a recording in [logbook] carries, which says what has been taken in already. */
+    internal fun tokensIn(logbook: ItemSet): Set<String> {
+        val tokens = HashSet<String>()
+        for (dive in logbook.allOf(DIVE)) {
+            val profiles = dive.keyed<OwnedItem>("profiles") as? Result.Usable ?: continue
+            for (element in profiles.value.values) {
+                val profile = (element as? Element.Usable)?.value ?: continue
+                val held = profile.list<String>("fingerprint") as? Result.Usable ?: continue
+                held.value.mapNotNullTo(tokens) { (it as? Element.Usable)?.value }
+            }
+        }
+        return tokens
     }
 
     /**
@@ -169,26 +231,6 @@ object Download {
     private fun lastTokenOf(profile: Item): String? {
         val held = (profile.list<String>("fingerprint") as? Result.Usable)?.value ?: return null
         return held.mapNotNull { (it as? Element.Usable)?.value }.lastOrNull()
-    }
-
-    /** Whether [profile], filed under [key], was recorded by [computer], with [serial]. */
-    private fun madeBy(
-        logbook: ItemSet,
-        key: String,
-        profile: Item,
-        computer: String,
-        serial: String?,
-    ): Boolean {
-        if (serial == null) {
-            val slug = yemoja.logic.slug(computer)
-            return key == slug || nameOf(profile) == slug
-        }
-        val own = (profile.single<String>("serial") as? Result.Usable)?.value
-        if (own != null && sameSerial(own, serial)) return true
-        val named = (profile.single<Reference>("dive_computer") as? Result.Usable)?.value
-        val id = (named as? Reference.Identified)?.id ?: return false
-        val held = (logbook[id]?.single<String>("serial") as? Result.Usable)?.value ?: return false
-        return sameSerial(held, serial)
     }
 
     /** What a profile says recorded it, as a slug, by id or by the plain name a one-off has. */

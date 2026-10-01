@@ -104,6 +104,8 @@ internal interface Libdivecomputer : Library {
         userdata: Pointer?,
     ): Int
 
+    fun dc_device_set_cancel(device: Pointer?, callback: CancelCallback, userdata: Pointer?): Int
+
     fun dc_device_foreach(device: Pointer?, callback: DiveCallback, userdata: Pointer?): Int
 
     fun dc_device_close(device: Pointer?): Int
@@ -143,6 +145,11 @@ internal interface Libdivecomputer : Library {
     /** `dc_sample_callback_t`: one reading, whose shape the type says. */
     fun interface SampleCallback : Callback {
         fun invoke(type: Int, value: Pointer, userdata: Pointer?)
+    }
+
+    /** `dc_cancel_callback_t`: asked between blocks, and non-zero gives the download up. */
+    fun interface CancelCallback : Callback {
+        fun invoke(userdata: Pointer?): Int
     }
 
     /** `dc_event_callback_t`: something the device said about itself, shaped as the event says. */
@@ -210,6 +217,9 @@ internal interface Libdivecomputer : Library {
 
         /** What `dc_iterator_next` answers when there is nothing more. */
         const val DONE: Int = 1
+
+        /** `DC_EVENT_PROGRESS`: how far the transfer has got, as two unsigned ints. */
+        const val PROGRESS: Int = 1 shl 1
 
         /** `DC_EVENT_DEVINFO`: the model, firmware and serial, said once before the dives. */
         const val DEVINFO: Int = 1 shl 2

@@ -5,6 +5,9 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.ScrollState
@@ -66,6 +69,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -111,6 +115,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import yemoja.data.Stored
@@ -127,6 +132,7 @@ import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.logic.DeviceRead
 import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.Change
 import yemoja.logic.Evaluated
@@ -352,6 +358,11 @@ internal fun Application(universe: Universe?, platform: Platform) {
     // logbook does not hold it. `GUI-27` keeps a tab's place, within one logbook.
     val kept = remember(universe) { TABS.associateWith { Kept() } }
     val changer = remember(universe) { Changer(universe) }
+    // A download outlives the tab it was started from, so it is held here and run in a scope that
+    // lasts as long as the window. Another logbook opened gives it up. `GUI-52`.
+    val reading = remember(universe) { Reading() }
+    val downloads = rememberCoroutineScope()
+    DisposableEffect(reading) { onDispose { reading.read?.cancelled = true } }
     // Absent until read, and a map drawn before then shows its sites on an empty frame.
     val atlas by produceState<Atlas?>(null, platform) {
         value = withContext(Dispatchers.Default) { platform.atlas() }
@@ -425,6 +436,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     tabs = tabs,
                     chosen = tab,
                     onChoose = { tab = it },
+                    download = reading.stage,
                     unasked = unasked,
                     asking = talking,
                 ) { talking = !talking }
@@ -435,6 +447,8 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 universe = universe,
                                 platform = platform,
                                 kept = kept.getValue(tab),
+                                reading = reading,
+                                downloads = downloads,
                                 onApplied = { said -> told = Told(said) },
                             )
 
@@ -530,6 +544,8 @@ private fun Tabs(
     tabs: List<Tab>,
     chosen: Tab,
     onChoose: (Tab) -> Unit,
+    /** How far a download has got, which the home tab's icon shows from every tab. `GUI-52`. */
+    download: Stage,
     /** Why the agent cannot be asked, or absent where it can. */
     unasked: String?,
     /** Whether the panel is open, which is what the button would shut. */
@@ -551,7 +567,22 @@ private fun Tabs(
                         selected = tab === chosen,
                         onClick = { onChoose(tab) },
                         text = { Text(tab.name) },
-                        icon = { Icon(tab.icon, contentDescription = null) },
+                        icon = {
+                            val busy = busyOf(download).takeIf { tab.shape == Shape.HOME }
+                            when {
+                                busy == null -> Icon(tab.icon, contentDescription = null)
+                                download == Stage.READY -> Explained(busy) {
+                                    Icon(Icons.Filled.DownloadDone, contentDescription = busy)
+                                }
+
+                                else -> Explained(busy) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(TAB_ICON),
+                                        strokeWidth = 2.dp,
+                                    )
+                                }
+                            }
+                        },
                     )
                 }
             }
@@ -614,17 +645,27 @@ private fun Home(
     universe: Universe?,
     platform: Platform,
     kept: Kept,
+    /** The download, which is the window's rather than this tab's. `GUI-52`. */
+    reading: Reading,
+    downloads: CoroutineScope,
     onApplied: (String) -> Unit = {},
 ) {
     val set = universe?.logbook
     val changer = LocalChanger.current
     val edition = changer.edition
     val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
-    val reading = remember(universe) { Reading() }
     val taking = remember(universe) { Taking() }
     val giving = remember(universe) { Giving() }
     val choosing = remember(universe) { Choosing() }
     val scope = rememberCoroutineScope()
+    // A finished read is staged on arriving here, and staged afresh on every arrival after, so a
+    // review left half done meets the logbook as it is now. `GUI-52`. It waits while a file's
+    // import is under review, the two sharing the one staging.
+    val ready = reading.read != null &&
+        (reading.stage == Stage.READY || reading.stage == Stage.DONE)
+    LaunchedEffect(universe, ready, taking.open) {
+        if (ready && universe != null && !taking.open) arrive(universe, reading, changer)
+    }
     Selectable {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -651,8 +692,11 @@ private fun Home(
             // what a platform adds is only the asking. `GUI-31`.
             val deeds = platform.deeds + buildMap {
                 if (universe != null) {
-                    put(Deed.DOWNLOAD) {
-                        scope.launch { look(universe, platform, reading, changer) }
+                    // One download at a time. Another started over a finished one replaces it.
+                    if (reading.stage != Stage.LOOKING && reading.stage != Stage.READING) {
+                        put(Deed.DOWNLOAD) {
+                            downloads.launch { look(universe, platform, reading) }
+                        }
                     }
                     put(Deed.SETTINGS) {
                         if (!choosing.open) choosing.fill(universe.settings)
@@ -675,7 +719,7 @@ private fun Home(
             }
             Inset("System") {
                 Deeds(deeds)
-                Reader(universe, platform, reading, changer, scope)
+                Reader(universe, platform, reading, changer, downloads)
                 Taker(universe, taking, changer)
                 // Said through the changer, so a command set here reaches the button on the tab
                 // row without a change to the logbook.
@@ -779,6 +823,20 @@ private class Reading {
     var reading: String? by mutableStateOf(null)
     var said: String? by mutableStateOf(null)
     var arrived: Int by mutableStateOf(0)
+
+    /** The read under way or finished, held until its dives are reviewed or it is put aside. */
+    var read: DeviceRead? by mutableStateOf(null)
+
+    /** How far the read has got, as the device counts. */
+    var done: Long by mutableStateOf(0L)
+    var total: Long by mutableStateOf(0L)
+
+    /** Give the read up, or put a finished one aside, and go back to the button. */
+    fun drop() {
+        read?.cancelled = true
+        read = null
+        stage = Stage.IDLE
+    }
 }
 
 /**
@@ -846,12 +904,7 @@ private suspend fun give(universe: Universe, to: String, giving: Giving) {
 }
 
 /** Look for what is within reach, and read it where exactly one thing is. */
-private suspend fun look(
-    universe: Universe,
-    platform: Platform,
-    reading: Reading,
-    changer: Changer,
-) {
+private suspend fun look(universe: Universe, platform: Platform, reading: Reading) {
     reading.stage = Stage.LOOKING
     reading.said = null
     val found = withContext(Dispatchers.Default) { universe.attached() }
@@ -862,27 +915,73 @@ private suspend fun look(
             reading.said = emptyOf(universe.readable)
         }
 
-        1 -> read(universe, platform, reading, changer, found.single())
+        1 -> read(universe, platform, reading, found.single())
         else -> reading.stage = Stage.CHOOSING
     }
 }
 
-/** Read [computer], which takes minutes, and say what came of it. */
+/**
+ * Read [computer], which takes minutes, off the window's thread and touching no logbook.
+ *
+ * What the read needs of the logbook is gathered first, here. The logbook stays open to editing
+ * while it runs, and nothing is staged until the user comes back to Home. `GUI-52`.
+ */
 private suspend fun read(
     universe: Universe,
     platform: Platform,
     reading: Reading,
-    changer: Changer,
     computer: DiveComputer,
 ) {
-    reading.stage = Stage.READING
+    val read = universe.readerOf(computer) { platform.ask(it) }
+    reading.read = read
     reading.reading = computer.name
-    val outcome = withContext(Dispatchers.Default) {
-        universe.downloadFrom(computer) { platform.ask(it) }
+    reading.said = null
+    reading.done = 0
+    reading.total = 0
+    reading.stage = Stage.READING
+    val failed = try {
+        coroutineScope {
+            // Progress is written on the window's thread, which is the one that redraws for it.
+            val window = this
+            withContext(Dispatchers.Default) {
+                read.run { done, total ->
+                    window.launch {
+                        reading.done = done
+                        reading.total = total
+                    }
+                }
+            }
+        }
+        null
+    } catch (stopped: Exception) {
+        // Nothing is waiting on this read but the window, so what stopped it is said there.
+        "The download from ${computer.name} stopped: ${stopped.message ?: stopped::class.simpleName}"
     }
+    // Given up meanwhile, or replaced by another: what came back is nobody's.
+    if (reading.read !== read) return
+    if (failed != null) {
+        reading.read = null
+        reading.said = failed
+        reading.stage = Stage.DONE
+        return
+    }
+    reading.stage = Stage.READY
+}
+
+/**
+ * Stage what a finished read brought and open the review on it, on the window's thread.
+ *
+ * Whatever an earlier visit staged is put down first, so what is shown is this visit's. A read
+ * that leaves nothing to review is let go, since coming back would find nothing either. `GUI-52`.
+ */
+private fun arrive(universe: Universe, reading: Reading, changer: Changer) {
+    val read = reading.read ?: return
+    universe.stopImporting()
+    val outcome = universe.arrive(read)
     reading.arrived = arrivedIn(universe.importing)
     reading.said = outcomeOf(outcome, reading.arrived)
     reading.stage = Stage.DONE
+    if (reading.arrived == 0) reading.read = null
     changer.changed()
 }
 
@@ -906,12 +1005,20 @@ private fun Reader(
             Row(horizontalArrangement = Arrangement.spacedBy(GAP)) {
                 for (computer in reading.found) {
                     Button(
-                        onClick = {
-                            scope.launch { read(universe, platform, reading, changer, computer) }
-                        },
+                        onClick = { scope.launch { read(universe, platform, reading, computer) } },
                     ) { Text(namedOf(computer)) }
                 }
             }
+        }
+        if (reading.stage == Stage.READING) {
+            if (reading.total > 0) {
+                LinearProgressIndicator(
+                    progress = { (reading.done.toFloat() / reading.total).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+                )
+            }
+            progressOf(reading.done, reading.total)?.let { Aside(it) }
+            TextButton(onClick = { reading.drop() }) { Text("Cancel") }
         }
         reading.said?.let { Aside(it) }
         if (reading.stage == Stage.DONE && reading.arrived > 0) {
@@ -920,13 +1027,16 @@ private fun Reader(
                 changer = changer,
                 after = { taken ->
                     reading.arrived = arrivedIn(universe.importing)
-                    if (reading.arrived == 0) universe.stopImporting()
+                    if (reading.arrived == 0) {
+                        universe.stopImporting()
+                        reading.read = null
+                    }
                     reading.said = taken.refusal ?: takenSaid(taken.many)
                 },
-                leave = { reading.stage = Stage.IDLE },
+                leave = { reading.drop() },
             )
         } else if (reading.stage == Stage.DONE) {
-            TextButton(onClick = { reading.stage = Stage.IDLE }) { Text("Close") }
+            TextButton(onClick = { reading.drop() }) { Text("Close") }
         }
     }
 }
@@ -981,7 +1091,10 @@ private fun Deeds(deeds: Map<Deed, () -> Unit>) {
         }
     }
     if (Deed.entries.any { it !in deeds }) {
-        Aside("The greyed-out actions need a logbook open, or this platform cannot offer them.")
+        Aside(
+            "The greyed-out actions need a logbook open, or this platform cannot offer them, or " +
+                "one is already under way.",
+        )
     }
 }
 
@@ -3249,6 +3362,9 @@ private fun onTint(chosen: Boolean): Color =
 internal val SHAPE = RoundedCornerShape(6.dp)
 internal val SELECTOR = 280.dp
 private val SUBTABS = 340.dp
+
+/** What a tab's icon is drawn at, which a spinner in its place matches. */
+private val TAB_ICON = 24.dp
 private val TABLE = 600.dp
 private val TREE = 220.dp
 private val TRIP = 170.dp

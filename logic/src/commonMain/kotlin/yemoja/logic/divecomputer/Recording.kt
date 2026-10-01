@@ -145,7 +145,8 @@ data class Recording(
  *
  * A download takes minutes, so what is read comes back as a sequence: an implementation *may*
  * hand dives over one at a time, and a caller *may* stop walking. Neither is promised. The JVM's
- * reads everything before it answers, and nothing cancels yet — `TUI-8`.
+ * reads everything before it answers. What says how far it has got, and gives it up, is the
+ * session's. `GUI-52`.
  *
  * **A fix is not carried, deliberately.** `LOGIC-18` decided what one is for and no review
  * question exists to land it in, so the port does not ask for it: a field every implementation
@@ -194,6 +195,21 @@ interface Session {
 
     /** An access code the device called [name] handed over, to be kept for next time. */
     fun keep(name: String, accessCode: ByteArray) {}
+
+    /**
+     * How far the transfer has got: [done] of [total], counted as the device counts.
+     *
+     * Bytes, for every device the library reads. [total] is zero where the device does not say.
+     */
+    fun progress(done: Long, total: Long) {}
+
+    /**
+     * Whether the user has given the download up.
+     *
+     * Asked from the thread doing the reading, between one block and the next, so it may be set
+     * from any other. A download given up hands back nothing, not what had arrived so far.
+     */
+    val cancelled: Boolean get() = false
 
     companion object {
         /** A session that answers nothing. */

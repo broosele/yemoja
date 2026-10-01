@@ -192,8 +192,14 @@ internal class Attached(
                 serial = serialOf(data)
                 stopAt(serial)
             }
+            if (event == Libdivecomputer.PROGRESS && data != null) {
+                session.progress(unsignedAt(data, 0), unsignedAt(data, PROGRESS_MAXIMUM))
+            }
         }
-        library.dc_device_set_events(device.value, Libdivecomputer.DEVINFO, events, null)
+        val asked = Libdivecomputer.DEVINFO or Libdivecomputer.PROGRESS
+        library.dc_device_set_events(device.value, asked, events, null)
+        val cancel = Libdivecomputer.CancelCallback { if (session.cancelled) 1 else 0 }
+        library.dc_device_set_cancel(device.value, cancel, null)
         val held = ArrayList<Recording>()
         val callback = Libdivecomputer.DiveCallback { data, size, fingerprint, fsize, _ ->
             val known = hexOf(fingerprint, fsize)
@@ -205,7 +211,12 @@ internal class Attached(
         library.dc_device_foreach(device.value, callback, null)
         library.dc_device_close(device.value)
         library.dc_iostream_close(stream)
-        return held.asSequence()
+        // The library holds the callbacks by address and the JVM only what it can see in use,
+        // so they are kept alive until the device that calls them is closed.
+        java.lang.ref.Reference.reachabilityFence(events)
+        java.lang.ref.Reference.reachabilityFence(cancel)
+        java.lang.ref.Reference.reachabilityFence(callback)
+        return if (session.cancelled) emptySequence() else held.asSequence()
     }
 }
 
@@ -228,8 +239,14 @@ private const val SALT: Int = 1
  * As a decimal number, which is how the library has it; what the maker prints is matched
  * either way above the port. `LOGIC-23`.
  */
-internal fun serialOf(devinfo: Pointer): String =
-    (devinfo.getInt(SERIAL_OFFSET).toLong() and UNSIGNED).toString()
+internal fun serialOf(devinfo: Pointer): String = unsignedAt(devinfo, SERIAL_OFFSET).toString()
+
+/** The C `unsigned int` [offset] bytes into [data]. */
+private fun unsignedAt(data: Pointer, offset: Long): Long =
+    data.getInt(offset).toLong() and UNSIGNED
+
+/** A `dc_event_progress_t` is `current` then `maximum`, four bytes apiece. */
+private const val PROGRESS_MAXIMUM: Long = 4
 
 /** Past `model` and `firmware`, four bytes apiece. */
 private const val SERIAL_OFFSET: Long = 8
