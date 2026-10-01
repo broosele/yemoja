@@ -98,6 +98,11 @@ internal fun usage(): String {
  */
 private fun findLibrary() {
     if (System.getProperty(LIBRARY_PATH) != null) return
+    // An installed copy keeps it among the application's resources, which the launcher names.
+    System.getProperty(RESOURCES)?.takeIf { it.isNotBlank() }?.let {
+        System.setProperty(LIBRARY_PATH, it)
+        return
+    }
     val at = Where::class.java.protectionDomain?.codeSource?.location ?: return
     // Through a Path rather than the URL's own text, which on Windows is `/D:/...` and is a
     // path to nothing.
@@ -120,6 +125,9 @@ internal fun besideOf(source: String?): String? {
     if (!within.endsWith("/$JARS")) return null
     return within.substringBeforeLast('/', "").ifEmpty { null }?.let { "$it/$NATIVE" }
 }
+
+/** Where an installer's launcher says the application's own resources are. `WIN-1`. */
+private const val RESOURCES = "compose.application.resources.dir"
 
 /** What a JVM is told, and what JNA reads, to find a library that is not on the usual path. */
 private const val LIBRARY_PATH = "jna.library.path"

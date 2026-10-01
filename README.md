@@ -43,8 +43,17 @@ built. Each is registered in features.md or in the layer document that owns it.
 
 ## Installing and running
 
-No packaged release exists yet. This section will cover, per platform, how to install one
-once there is. Building and running from source is below, and works today.
+No release has been published yet. The first will be a Windows installer, for Windows 10 and
+11; the Mac, Linux and the phone come later. Building one, and building and running from source,
+are below.
+
+**The installer** is built with `./gradlew :ui:packageMsi`, which writes
+`ui/build/compose/binaries/main/msi/Yemoja-<version>.msi`. It carries its own Java runtime and
+the dive computer library, so nothing else need be installed first. It is not signed, so Windows
+warns on first run that the publisher is unknown; *More info* then *Run anyway* starts it.
+`WIN-1`, `WIN-2`. The installed `Yemoja.exe` opens the window, and given a command it runs that
+command instead — `Yemoja.exe plan <file>` — except the terminal front end, which needs a
+console the installed launcher does not have: use `installDist` for that.
 
 **Building what exists** needs a JDK 21 and nothing else. The Gradle wrapper fetches its
 own Gradle, and Gradle fetches the Kotlin compiler, so `./gradlew build` from the root is
@@ -162,6 +171,14 @@ engine is declared since nothing is served over HTTP. Beside it, the **ACP Kotli
 agent the user installed, which is how their own account answers rather than one of ours: Apache
 2.0 in what it publishes, while the repository it comes from says MIT, and either suits. See
 `API-4` in [ui/api/doc.md](ui/api/doc.md) and `GUI-38` in [ui/gui/doc.md](ui/gui/doc.md).
+
+**Building the installer** uses Compose's own packaging, which calls the JDK's jpackage, and
+jpackage on Windows needs the **WiX toolset**: version 3, under the Microsoft Reciprocal License.
+It is a build tool, fetched by the Compose plugin into the build's own cache the first time an
+installer is made, and installed on nothing. Its reciprocal terms reach changes to WiX's own
+source files, which this project makes none of; the installer it writes compiles in WiX's standard
+dialogs and carries no WiX code to run. See `WIN-1` in
+[ui/gui/desktop/windows/doc.md](ui/gui/desktop/windows/doc.md).
 
 **Why, and against what.** The five targets are not equal — Android matters more than
 iPhone here — and Kotlin is Android's own language rather than a target it compiles to.

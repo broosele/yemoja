@@ -1,3 +1,5 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.compose")
@@ -138,3 +140,60 @@ tasks.register<Sync>("installDist") {
         }
     }
 }
+
+// The installer, which is how the first version reaches a user: Windows only, `WIN-1`, unsigned,
+// `WIN-2`. Compose's packaging makes it with the platform's jpackage, which needs the WiX toolset;
+// the plugin fetches WiX itself the first time, so nothing is installed on the machine that
+// builds. `./gradlew :ui:packageMsi` writes it under build/compose/binaries.
+//
+// The dive computer library travels as one of the application's resources rather than in a
+// folder beside the jars, the installer laying the jars out where `installDist` does not.
+// `findLibrary` looks for it there too. `LOGIC-27`.
+val nativeResources = layout.buildDirectory.dir("installerResources")
+
+val installerResources = tasks.register<Sync>("installerResources") {
+    description = "Puts the dive computer library where the installer takes resources from."
+    into(nativeResources)
+    libdivecomputer?.let { where ->
+        from(where) {
+            include("*.dll")
+            into("windows")
+        }
+    }
+    doFirst {
+        if (libdivecomputer == null) {
+            logger.quiet(
+                "No libdivecomputer given: the installer will not read a dive computer. " +
+                    "Set LIBDIVECOMPUTER, or pass -Plibdivecomputer=<folder>.",
+            )
+        }
+    }
+}
+
+compose.desktop {
+    application {
+        mainClass = entry
+        // Given no arguments the launcher opens the window. Given some, it is the command they
+        // name, which is how an agent starts `yemoja api` from an installed copy. `API-4`.
+        args += listOf("gui")
+        nativeDistributions {
+            targetFormats(TargetFormat.Msi)
+            packageName = "Yemoja"
+            packageVersion = "1.0.0"
+            description = "A dive logbook kept as readable files"
+            appResourcesRootDir.set(nativeResources)
+            // The whole runtime rather than a list of modules worked out by hand: a module left
+            // out fails only when the code that needs it runs, which for Bluetooth is a download.
+            includeAllModules = true
+            windows {
+                menu = true
+                shortcut = true
+                dirChooser = true
+                // Fixed for good: it is how Windows knows a later installer upgrades this one.
+                upgradeUuid = "4edab8bc-ba5c-4ead-94b9-f4821b831dab"
+            }
+        }
+    }
+}
+
+tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(installerResources) }
