@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1100,9 +1101,12 @@ private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
  */
 @Composable
 private fun Deeds(deeds: Map<Deed, () -> Unit>) {
-    Row(
+    // Wrapping onto a second line where the window is too narrow for one: a phone, or a desktop
+    // window made small.
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
         horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalArrangement = Arrangement.spacedBy(HALF),
     ) {
         for (deed in Deed.entries) {
             val act = deeds[deed]
