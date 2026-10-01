@@ -36,9 +36,9 @@ import kotlin.math.sqrt
  * things, and the review is where a user adds them. Nothing else is created at all — no gear, no
  * person, no operator, no trip, no region. `LOGIC-20`.
  *
- * **What is dropped is reported.** A device offers more than this model keeps, and inventing a
+ * **What is dropped is not reported.** A device offers more than this model keeps, and inventing a
  * field for each in order to lose nothing would be letting the devices decide what a dive is. So
- * it is dropped and the download says what it dropped. `LOGIC-10`.
+ * it is dropped, the same way on every download, and divecomputer.md lists what goes. `LOGIC-10`.
  */
 object Download {
 
