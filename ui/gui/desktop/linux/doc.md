@@ -16,6 +16,8 @@ form factor.
 
 ## Open questions
 
+Not in the first version, which is Windows alone, `GUI-5`; these wait for the version that adds it.
+
 - **LNX-1 — Packaging:** Flatpak, AppImage, Snap, native packages, or several. Determines
    how much the sandbox restricts file and Bluetooth access.
 - **LNX-2 — Which distributions are supported**, and what runtime dependencies may be

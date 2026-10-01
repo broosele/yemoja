@@ -1571,8 +1571,8 @@ once and corrected. The numbers stay unused rather than being given to something
   The first version is the application as it stands: the logbook and its items, the dive computer
   download, UDDF import and export, the planner and the calculations, statistics on the home
   screen, renewal warnings, the agent, and the terminal front end beside the window. It ships for
-  the desktop alone; the phone and its platform documents wait for a later version, and their open
-  questions with them. Scans of papers are not in it, `FEAT-25`, and neither is anything about
+  Windows alone, 10 and 11, as an installer, `WIN-1` and `WIN-3`; the Mac, Linux and the phone wait
+  for a later version, and their open questions with them. Scans of papers are not in it, `FEAT-25`, and neither is anything about
   keeping several logbooks to hand, which is rejected outright, `FEAT-15`.
 
   **Nothing is added to reach it.** What is owed before it ships is what is broken rather than what

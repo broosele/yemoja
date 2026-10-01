@@ -61,14 +61,6 @@ behaviour of its own, that behaviour is in the wrong place.
    or a local server. These serve different users and are not mutually exclusive.
    *Answered for an agent by `API-4`:* a local MCP server, run inside the application.
 
-- **API-10 — Where an agent works, and what that tells it.** The agent is started in the
-   logbook's path with `.agent` after it, `API-5`, so its own working folder names the logbook
-   whether or not *Allow raw file access* is ticked. `Tools.files` says the path is told there and
-   nowhere else, and the manual says Yemoja never tells the agent where the logbook is; both are
-   untrue as built. Either the working folder moves somewhere that does not derive from the
-   logbook — which loses it being found beside the logbook it belongs to — or the two texts say
-   what is true: the agent can know where the logbook is, and is asked not to look.
-
 ## Settled
 
 - **API-3 — Whether something may run against a logbook the window has open.** *Settled:*
@@ -97,6 +89,13 @@ behaviour of its own, that behaviour is in the wrong place.
   calls can be renamed on a whim; one an outside script depends on cannot. So what is exposed is
   documented in `manual/` beside the data format, which is the other thing this project promises
   not to break, and anything not documented there is not part of the promise.
+
+- **API-10 — Whether an agent may know where the logbook is.** *Settled:* **yes, and the texts
+  say so.** The agent works in the logbook's path with `.agent` after it, `API-5`, so it can tell
+  where the logbook is whatever is ticked, and with *Allow raw file access* it is told outright.
+  Knowing where is not the protection; what it may do there is, and the boxes govern that. So the
+  promise that it is never told goes, and what is said instead is the truth: it can know, and it is
+  asked not to touch the files unless the box allows it.
 
 - **API-9 — What the planner offers an agent.** *Settled:* **`plan` to calculate, always
   allowed, and `create_plan` to stage one, allowed by the same box every other change is.**

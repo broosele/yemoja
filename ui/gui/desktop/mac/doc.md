@@ -15,6 +15,8 @@ form factor.
 
 ## Open questions
 
+Not in the first version, which is Windows alone, `GUI-5`; these wait for the version that adds it.
+
 - **MAC-1 — Distribution:** direct download with notarisation, or the App Store — the App
    Store imposes sandboxing constraints that may affect where a logbook can live.
 - **MAC-2 — Apple Developer Program membership** is required for notarisation.

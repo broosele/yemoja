@@ -226,7 +226,8 @@ question. **Stop** ends the conversation and leaves it to read; **Start** then b
 read a file, write one or run a command is refused, and the panel says so each time one is. What
 Yemoja can refuse is only what the agent asks it, though: the agent is a program of your own,
 running with your rights, and an agent that goes looking for files on its own is a matter between
-you and it. Yemoja never tells it where your logbook is, and asks it not to look.
+you and it. It can work out where your logbook is — it is started beside it — and it is asked
+not to touch the files unless you tick *Allow raw file access*.
 
 **It can propose changes, and you decide.** Tick *Allow logbook edits* and an agent can stage
 changes — correct a clock error across a trip, give one dive's gear to the others. Nothing it

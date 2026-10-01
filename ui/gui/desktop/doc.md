@@ -26,6 +26,20 @@ own doc.
 
 ## Settled
 
+- **DESK-1 — How many windows.** *Settled, as built:* **one.** The tabs across the top are the
+  navigation, a chosen item opens on the right of its tab, and the agent's panel opens beside the
+  tabs rather than in a window of its own, `GUI-38`. A dive cannot be opened beside the list in a
+  second window; following a link moves to the tab that holds it.
+- **DESK-2 — The menu bar.** *Settled, as built:* **there is none.** Everything lives in the
+  application's own controls — the deeds on the home screen, the buttons on a card — so the window
+  behaves the same on every desktop rather than differing where a platform expects a menu.
+- **DESK-3 — Density.** *Settled, as built:* **one density, and no compact mode.** A long logbook
+  is handled by the table folding by year and the tree folding by region rather than by drawing
+  everything smaller.
+- **DESK-4 — Whether editing opens a window.** *Settled, as built:* **never.** A card turns over
+  into its form in place, `GUI-29`, and a dialog is used only to confirm a deletion or to pick a
+  folder or a file.
+
 Each of these places something the shared register decides. The decision is named beside it, and
 what it means is argued there; what is here is where it goes on a large screen.
 
@@ -120,10 +134,3 @@ what it means is argued there; what is here is where it goes on a large screen.
 
 ## Open questions
 
-- **DESK-1 — Window model:** a single window with in-app navigation, or several windows —
-   e.g. a dive open beside the list?
-- **DESK-2 — Menu bar:** how much lives there versus in the application's own controls,
-   given macOS and Windows differ in expectation.
-- **DESK-3 — Density:** whether to offer a compact mode for people with thousands of dives.
-- **DESK-4 — Whether an edit view is ever a separate window** on desktop, or always an
-   inline panel or dialog within the main window.
