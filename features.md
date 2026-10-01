@@ -117,7 +117,7 @@ them.
   the first of them: `calculated` and `saved`, `yemoja plan` over a file of cases, and the agent's
   `plan` and `create_plan`. `API-7`, `API-8`, `API-9`. What is owed is a way for something outside
   the application to *write* — `saved` is built and only the agent reaches it. `API-3` now says how
-  a command may open a logbook, with the lock `JSON-27` gives it, so nothing blocks it but the work.
+  a command may open a logbook, and nothing blocks it but the work.
 - **FEAT-18 — An AI agent over the logbook.** Asking for something in ordinary language
   and having it answered or done, where doing it by hand would be many reads or many edits:
   how often a stage richer than 36% was breathed, a clock error set across a trip, one dive's

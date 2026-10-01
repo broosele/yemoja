@@ -77,7 +77,6 @@ class RealAgentTest {
             for (line in hosted.complained) println("AGENT: $line")
             hosted.close()
             socket.close()
-            universe.close()
             scope.cancel()
             watching.interrupt()
         }
@@ -127,7 +126,6 @@ class RealAgentTest {
             println("REVISION: ${universe.revision}")
             hosted.close()
             socket.close()
-            universe.close()
             scope.cancel()
             watching.interrupt()
         }
@@ -186,7 +184,6 @@ class RealAgentFilesTest {
             println("RELOAD: ${universe.reload()}")
             hosted.close()
             socket.close()
-            universe.close()
             scope.cancel()
             watching.interrupt()
         }
@@ -255,7 +252,6 @@ class RealAgentInterruptTest {
             println("SECOND: $second")
             hosted.close()
             socket.close()
-            universe.close()
             scope.cancel()
             watching.interrupt()
         }

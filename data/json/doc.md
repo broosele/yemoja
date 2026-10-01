@@ -348,8 +348,16 @@ To settle when we discuss architecture:
    Nulls are never stored and absent means absent, so `null` is not available to mean
    "this field did not exist". Adding a field and changing one must still be told
    apart.
-- **JSON-27 — How a logbook says it is open for editing.** *Settled:* **a file inside it,
-  `.yemoja.lock`, that says what took it.** *Revised from a folder beside it, below.*
+- **JSON-27 — How a logbook says it is open for editing.** *Settled, for now:* **it does not.**
+  *Withdrawn on 2026-10-01; what follows records the lock as it was, for when it returns.*
+
+  The lock was taken out at the author's word. Nothing keeps two windows, or a window and a phone
+  sharing a synced folder, from having one logbook open at once, and where both write, the last
+  file written is the one kept. A lock left behind had been refusing the next opening after every
+  crash, and on a phone after every time Android ended the app.
+
+  *As it stood:* **a file inside it, `.yemoja.lock`, that says what took it.** *Revised from a
+  folder beside it, below.*
 
   *Revised:* **inside the logbook, so a sync carries it.** A phone is granted the folder it is
   given and nothing beside it, so a lock beside the logbook was out of its reach, `AND-5`. And a

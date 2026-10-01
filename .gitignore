@@ -24,9 +24,6 @@ __pycache__/
 *.agent/
 *.proposed/
 
-# And the one thing it writes inside one: the lock held while a logbook is open. `JSON-27`.
-.yemoja.lock
-
 # Gradle build output
 .gradle/
 build/

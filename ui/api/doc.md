@@ -63,9 +63,12 @@ behaviour of its own, that behaviour is in the wrong place.
 
 ## Settled
 
-- **API-3 — Whether something may run against a logbook the window has open.** *Settled:*
-  **a lock for editing.** Whoever opens a logbook to change it takes a lock beside it, and a
-  second opener is refused and told what has it and where the lock is. Reading needs no lock:
+- **API-3 — Whether something may run against a logbook the window has open.** *Settled, then
+  withdrawn with the lock, `JSON-27`:* nothing is refused now, and what was decided is kept below
+  for when a lock returns.
+
+  *As it stood:* **a lock for editing.** Whoever opens a logbook to change it takes a lock beside
+  it, and a second opener is refused and told what has it and where the lock is. Reading needs no lock:
   `yemoja plan` opens no logbook at all, and a future reading command opens one without taking
   the lock. What the lock is and where it lives is the format's, `JSON-27`.
 
@@ -127,7 +130,7 @@ behaviour of its own, that behaviour is in the wrong place.
   It opens no logbook, which is what makes it the surface the reading half deserves: a plan is
   arithmetic over what the file says, so nothing has to be open and nothing can be spoilt. It is
   also why the writing half is not here — `saved` needs a logbook, and a command that opens one
-  takes the lock `API-3` settles, which is work not yet done.
+  for writing is work not yet done.
 
   **A file rather than switches.** The question this answers is *how do these compare*, and a
   comparison is thirty cases rather than one. Switches would make a caller write a loop in a shell

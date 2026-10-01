@@ -18,12 +18,9 @@ buttons.
 
 The folder can also be named when Yemoja is started, and it then opens straight away.
 
-**A logbook is open in one window at a time.** Opening it for editing puts a file called
-`.yemoja.lock` in its folder, and a second window is refused and told so, even on another
-computer or a phone that shares the folder through a sync. If Yemoja stopped without closing — a
-crash, a machine switched off — that file is left behind and the next opening is refused too:
-delete it and open again. A phone takes over the lock it left itself, so this never happens to
-the Android app on its own.
+**Keep a logbook open in one place at a time.** Nothing stops two windows, or a computer and a
+phone sharing the folder through a sync, from having it open together, and where both change it,
+the one that saves a file last is what is kept.
 
 **Tell Yemoja which person you are.** A new logbook names nobody, and until it knows, it cannot
 say which medical and which insurance are yours to be warned about, or which certifications are.

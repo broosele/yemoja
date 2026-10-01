@@ -110,8 +110,6 @@ fun gui(folder: String? = null): Int {
                     Deed.NEW to {
                         chosen("New logbook", "Create")?.let { where ->
                             made(where)?.let {
-                                // The logbook being left is let go, so another window may have it.
-                                held?.close()
                                 at = where
                                 held = it
                             }
@@ -119,13 +117,7 @@ fun gui(folder: String? = null): Int {
                     },
                     Deed.OPEN to {
                         chosen("Open logbook", "Open")?.let { where ->
-                            // The logbook already open is already open: opening it again would be
-                            // refused by this window's own lock, as though another window had it.
-                            if (at != null && java.io.File(where).canonicalPath == java.io.File(at!!).canonicalPath) {
-                                return@let
-                            }
                             opened(where)?.let {
-                                held?.close()
                                 at = where
                                 held = it
                             }
@@ -138,10 +130,7 @@ fun gui(folder: String? = null): Int {
         val density = LocalDensity.current
         val icon = remember { useResource("yemoja.svg") { loadSvgPainter(it, density) } }
         Window(
-            onCloseRequest = {
-                held?.close()
-                exitApplication()
-            },
+            onCloseRequest = ::exitApplication,
             title = if (at == null) "Yemoja" else "Yemoja — $at",
             icon = icon,
             state = rememberWindowState(size = DpSize(1650.dp, 1140.dp)),

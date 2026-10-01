@@ -28,12 +28,7 @@ fun tui(folder: String): Int {
         System.err.println("$folder could not be read: ${refused.message}")
         return 1
     }
-    // The lock is let go however the terminal stops, or the next window is refused. `JSON-27`.
-    return try {
-        show(universe)
-    } finally {
-        universe.close()
-    }
+    return show(universe)
 }
 
 /**

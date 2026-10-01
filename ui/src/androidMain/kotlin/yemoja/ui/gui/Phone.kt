@@ -28,12 +28,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import yemoja.data.json.DiskFileStore
 import yemoja.data.json.LogbookReader
-import yemoja.logic.Holder
 import yemoja.logic.Universe
 import yemoja.logic.today
 import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.FoundDevices
-import java.util.UUID
 
 /*
  * The window the screens are shown in on Android, which is the one part per platform.
@@ -61,7 +59,6 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     var held by remember { mutableStateOf<Universe?>(null) }
     var refused by remember { mutableStateOf<String?>(null) }
     fun take(tree: Uri) {
-        held?.close()
         held = null
         when (val opened = openedIn(context, tree, devices)) {
             is Opening.Done -> {
@@ -80,10 +77,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
         true
     }
     DisposableEffect(Unit) {
-        onDispose {
-            held?.close()
-            devices.close()
-        }
+        onDispose { devices.close() }
     }
     // What a download needs the user to allow, asked when one starts rather than when the app
     // does, so the question comes with its reason in front of the user. `AND-2`.
@@ -163,32 +157,16 @@ private fun openedIn(context: Context, tree: Uri, devices: Devices): Opening {
     val called = tree.lastPathSegment?.substringAfterLast(':')?.ifBlank { null } ?: "this folder"
     val staging = DiskFileStore(context.filesDir.resolve("import").path)
     val proposing = DiskFileStore(context.filesDir.resolve("proposed").path)
-    val holder = holderOf(context)
     return try {
         val universe = if (store.isFile(LogbookReader.MANIFEST)) {
-            Universe.open(store, called, staging, proposing, holder, devices)
+            Universe.open(store, staging, proposing, devices)
         } else {
-            Universe.create(store, called, staging, proposing, holder, devices)
+            Universe.create(store, called, staging, proposing, devices)
         }
         Opening.Done(universe)
     } catch (refused: Exception) {
         Opening.Refused("$called could not be opened: ${refused.message}")
     }
-}
-
-/**
- * What takes a logbook's lock from this phone.
- *
- * Android runs one copy of the app and ends it without warning, so the lock it finds bearing this
- * install's name is its own, left over, and taken over. The name is made up once, at the first
- * opening, and says nothing about the phone. `JSON-27`.
- */
-private fun holderOf(context: Context): Holder {
-    val remembered = context.getSharedPreferences(KEPT, Context.MODE_PRIVATE)
-    val device = remembered.getString(DEVICE, null) ?: UUID.randomUUID().toString().also {
-        remembered.edit().putString(DEVICE, it).apply()
-    }
-    return Holder("Yemoja on ${Build.MODEL}", device = device, takesOver = true)
 }
 
 /** What reading a dive computer needs: to look for one, and to talk to it. Android 12 on. */
@@ -211,9 +189,6 @@ private const val KEPT = "yemoja"
 
 /** The folder picked last, as the grant's own link. */
 private const val FOLDER = "folder"
-
-/** The name this install takes locks under. */
-private const val DEVICE = "device"
 
 /** The shorter side of a tablet's screen at its least, in density-independent pixels. */
 private const val TABLET = 600

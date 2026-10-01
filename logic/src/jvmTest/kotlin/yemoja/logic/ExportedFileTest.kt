@@ -23,10 +23,8 @@ class ExportedFileTest {
 
     private val cousteau = Universe.open("../fixtures/cousteau")
 
-    // The fixture is shared by every test in the run, so its lock is let go after each. `JSON-27`.
     @AfterTest
     fun clean() {
-        cousteau.close()
         here.deleteRecursively()
     }
 

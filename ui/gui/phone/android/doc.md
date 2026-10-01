@@ -28,9 +28,8 @@ on it again. It is reached through the storage access framework, by `GrantedFile
 answers about a folder's children are kept until something in it changes. The libraries the app
 ships are read from inside it, and since a folder inside an app cannot be listed the build writes
 an index of them, which is how a new logbook learns what to declare. A review and an agent's
-changes are staged in the app's own storage, the grant reaching nothing beside the folder. The
-lock is inside the folder, `JSON-27`, under a name this install makes up once, and a lock left by
-it is taken over.
+changes are staged in the app's own storage, the grant reaching nothing beside the folder. No
+lock is taken, `JSON-27`.
 
 **On a phone, one page at a time**, `PHONE-2`. The tab row is the open tab with a menu of the
 others, back, and add, edit and delete; the agent's button is not there, `PHONE-1`. A tab shows
@@ -77,10 +76,9 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   folder of readable files, and that is the point of the format: the user can see it, copy it
   and sync it with whatever they already use. Android gives an app no free path to a shared
   folder, so the folder is reached through the storage access framework, as a tree the user
-  grants once. That needs a second file store beside the desktop's, and the edit lock, `JSON-27`,
-  moved inside the logbook so the grant reaches it. App-private storage, reached by import and
-  export, was the cheaper answer and hides the logbook from the user, which is the one thing the
-  format exists not to do.
+  grants once. That needs a second file store beside the desktop's. App-private storage, reached
+  by import and export, was the cheaper answer and hides the logbook from the user, which is the
+  one thing the format exists not to do.
 - **AND-1 — Distribution.** *Settled:* **an installable file published directly, first.** The
   same footing as the Windows installer, `WIN-1`: built here, published with the release, and
   signed with a key of the author's own, which Android requires of every app and which costs

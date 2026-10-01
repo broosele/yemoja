@@ -21,7 +21,6 @@ import yemoja.data.json.DiskFileStore
 import yemoja.data.json.FileStore
 import yemoja.data.json.Json
 import yemoja.data.json.LogbookFormatException
-import yemoja.data.json.Lock
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
 import yemoja.logic.divecomputer.DiveComputer
@@ -36,19 +35,6 @@ import yemoja.logic.uddf.UddfFormatException
  *
  * See ../../../../../doc.md — the layer's own document is logic/doc.md, under "The Universe".
  */
-
-/**
- * Holder is what takes a logbook's lock: what to call it, and which device it is on.
- *
- * [device] and [takesOver] matter only to a holder that runs once on its device, which may take
- * over a lock that device left behind. `JSON-27`. Immutable.
- */
-class Holder(val note: String, val device: String = "", val takesOver: Boolean = false) {
-    companion object {
-        /** A desktop window, of which a machine may have two open. */
-        val WINDOW: Holder = Holder("a Yemoja window")
-    }
-}
 
 /**
  * Universe is what is open: the logbook, and in time whatever else is being worked on.
@@ -98,8 +84,6 @@ class Universe(
      * each with a folder of its own. `RECON-8`.
      */
     private val proposing: FileStore? = null,
-    /** The lock held on the logbook's folder, or absent for a logbook nowhere on disk. */
-    private val lock: Lock? = null,
 ) {
 
     /**
@@ -137,17 +121,6 @@ class Universe(
         val refused = LogbookWriter.unitsOf(store, owner.description, id).refusal(field.dimension)
             ?: return null
         return "${change.field} cannot be saved: $refused. Correct the file's units block first"
-    }
-
-    /**
-     * Lets the logbook go, so another window may open it for editing.
-     *
-     * Nothing else is closed: what is held in memory stays readable, and a later change would
-     * write it. The window calls this before it opens another logbook and when it exits;
-     * a logbook nowhere on disk holds no lock and this does nothing. `JSON-27`.
-     */
-    fun close() {
-        lock?.release()
     }
 
     /**
@@ -730,57 +703,40 @@ class Universe(
             // A folder that is not there answers every question with no, so without this a
             // mistyped path opens as an empty logbook rather than as a mistake.
             require(store.isFolder("")) { "$path should be a folder, and is not" }
-            return opened(store, path, path, devices, Holder.WINDOW, null, null)
+            return opened(store, path, devices, null, null)
         }
 
         /**
-         * The logbook [store] holds, called [called] where a refusal names it.
+         * The logbook [store] holds.
          *
          * For a logbook reached otherwise than by a path, a folder a phone was granted. A review
          * is staged in [staging] and an agent's changes in [proposing], there being no folder
-         * beside such a logbook to put them in. [holder] is what takes its lock. `AND-5`.
+         * beside such a logbook to put them in. `AND-5`.
          */
         fun open(
             store: FileStore,
-            called: String,
             staging: FileStore,
             proposing: FileStore,
-            holder: Holder,
             devices: Devices? = null,
-        ): Universe = opened(store, called, null, devices, holder, staging, proposing)
+        ): Universe = opened(store, null, devices, staging, proposing)
 
+        /**
+         * The logbook [store] holds. No lock is taken: two windows on one logbook are not kept
+         * apart, and the last to write a file wins. `JSON-27`.
+         */
         private fun opened(
             store: FileStore,
-            called: String,
             path: String?,
             devices: Devices?,
-            holder: Holder,
             staging: FileStore?,
             proposing: FileStore?,
         ): Universe {
-            // Taken before anything is read, so two windows racing for one logbook get one
-            // window. A lock nobody released stays until a reader removes it, and the refusal
-            // says where it is. `JSON-27`.
-            val lock = Lock.take(store, holder.note, holder.device, holder.takesOver)
-                ?: throw IllegalStateException(
-                    "$called is open for editing elsewhere" +
-                        (Lock.holderOf(store)?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: "") +
-                        ". If nothing has it open, delete the file ${Lock.FILE} in it",
-                )
-            try {
-                val manifest = LogbookReader.manifest(store)
-                val items = LogbookReader.read(store, Types.ALL, manifest)
-                val user = manifest.user?.let { items[it.id] }
-                val owner = if (user?.description == Types.PERSON) user else null
-                return Universe(items, owner, store, path, devices, staging, proposing, lock)
-            } catch (refused: Exception) {
-                // A logbook that will not read is not held: the lock would outlive the window
-                // that never opened. Any failure, a file the disk will not give up included.
-                lock.release()
-                throw refused
-            }
+            val manifest = LogbookReader.manifest(store)
+            val items = LogbookReader.read(store, Types.ALL, manifest)
+            val user = manifest.user?.let { items[it.id] }
+            val owner = if (user?.description == Types.PERSON) user else null
+            return Universe(items, owner, store, path, devices, staging, proposing)
         }
-
 
         /**
          * A new logbook in the folder at [path], made and then opened.
@@ -808,11 +764,10 @@ class Universe(
             called: String,
             staging: FileStore,
             proposing: FileStore,
-            holder: Holder,
             devices: Devices? = null,
         ): Universe {
             made(store, called)
-            return open(store, called, staging, proposing, holder, devices)
+            return open(store, staging, proposing, devices)
         }
 
         /** Writes the manifest that makes [store] a logbook, refusing one that already is. */
