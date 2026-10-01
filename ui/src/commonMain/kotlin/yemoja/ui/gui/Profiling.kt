@@ -1017,11 +1017,8 @@ private fun Graph(done: Worked.Done, shaping: Shaping) {
 // turns a second into a minute for the graph's own axis.
 private const val SECONDS_IN_MINUTE = 60.0
 
-/**
- * How tall the top of the plan is: about eighteen lines of the runtime, and about four cylinders
- * under the settings, before either scrolls.
- */
-private val ZONE = 508.dp
+/** How tall the top of the plan is: eighteen lines of the runtime, and three cylinders under the settings. */
+private val ZONE = 520.dp
 
 /** How thick the line round each part of the form is. */
 private val FRAME = 1.dp
