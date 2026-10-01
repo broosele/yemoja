@@ -65,6 +65,15 @@ internal class Drafted(val shown: Any?, val given: Any?)
 internal class Draft {
     private val held: SnapshotStateMap<Slot, Drafted> = mutableStateMapOf()
 
+    /**
+     * Which tab of each keyed collection the form has open, by the type and the collection.
+     *
+     * Here rather than in the editor because adding or taking out an entry saves at once, and the
+     * form is drawn afresh after every save: held in the editor, the tab went back to the first,
+     * and the entry just added was not the one shown.
+     */
+    val tabs: SnapshotStateMap<String, Int> = mutableStateMapOf()
+
     /** The blocks this form began, which the item has none of until something is typed in. */
     private val begun: MutableList<Begun> = ArrayList()
 

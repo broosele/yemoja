@@ -403,15 +403,15 @@ private class Reader(private val text: String) {
             readDigits(atLeastOne = true)
         }
         val written = text.substring(start, at)
+        // A number this machine cannot hold is kept as the text it was written as rather than
+        // stopping the whole file: the field judges it, and the digits survive being written
+        // back. `DATA-77`.
         if (fractional) {
-            val value = written.toDoubleOrNull()
-                ?: fail("$written should be a number this machine can hold")
-            if (value.isInfinite()) fail("$written should be a number this machine can hold")
+            val value = written.toDoubleOrNull()?.takeIf { it.isFinite() }
+                ?: return Stored.Leaf(written)
             return Stored.Leaf(value)
         }
-        val value = written.toLongOrNull()
-            ?: fail("$written should be a whole number this machine can hold")
-        return Stored.Leaf(value)
+        return Stored.Leaf(written.toLongOrNull() ?: written)
     }
 
     private fun readDigits(atLeastOne: Boolean) {

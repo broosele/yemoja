@@ -118,10 +118,11 @@ class JsonNumberTest {
     }
 
     @Test
-    fun `a number too large to hold is refused rather than rounded`() {
+    fun `a number too large to hold is kept as written, for its field to judge`() {
+        // Stopping the file for it lost the whole logbook to one field. `DATA-77`.
         val huge = "9".repeat(30)
-        assertTrue(refused("""{"a": $huge}""").contains("whole number this machine can hold"))
-        assertTrue(refused("""{"a": 1e400}""").contains("number this machine can hold"))
+        assertEquals(Stored.Leaf(huge), (Json.parse("""{"a": $huge}""") as Stored.Members).members["a"])
+        assertEquals(Stored.Leaf("1e400"), (Json.parse("""{"a": 1e400}""") as Stored.Members).members["a"])
     }
 }
 

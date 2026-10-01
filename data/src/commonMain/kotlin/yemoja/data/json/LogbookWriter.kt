@@ -73,6 +73,24 @@ object LogbookWriter {
         store.writeText(file, fileOf(Stored.Members(held.members - id)))
     }
 
+    /**
+     * The units the file holding the item called [id] declares, or the defaults where it declares
+     * none or does not exist yet.
+     *
+     * Asked before a change lands, so a measurement is not written in a unit the file cannot say:
+     * a file declaring length in fathoms gives up its depths as unusable, `DATA-87`, and a depth
+     * typed into one in metres would otherwise be saved as metres under the fathom declaration.
+     */
+    fun unitsOf(store: FileStore, description: ItemDescription, id: String): Units {
+        val type = description.name
+        val path = if (store.isFolder(type)) "$type/$id.json" else "$type.json"
+        return try {
+            openedOr(store, path).second
+        } catch (unreadable: LogbookFormatException) {
+            Units.DEFAULT
+        }
+    }
+
     /** What is in the file at [path] now, or nothing where there is no file yet. */
     private fun openedOr(store: FileStore, path: String): Pair<Stored.Members, Units> {
         if (!store.isFile(path)) return Stored.Members(emptyMap()) to Units.DEFAULT

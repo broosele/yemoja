@@ -294,9 +294,12 @@ smaller half of a job already begun.
 **A whole number is told from a fraction.** `7` becomes a 64-bit integer and `7.0` a
 double, because a whole number field must refuse `7.0` while a number field accepts `7`,
 and the fixtures are full of whole-looking numbers in number fields. Nothing is needed to
-carry the distinction: the two are different types already. Holding the whole one as a
-64-bit integer also means a value too large for the model is refused where fields are
-judged rather than truncated in the reader.
+carry the distinction: the two are different types already. **A number this machine cannot
+hold** — a whole one past 64 bits, a fraction past the largest double — is kept as the text it
+was written as, so it is judged where fields are judged rather than stopping the file, and its
+digits go back unchanged. A field expecting a whole number refuses it; one expecting a number reads
+it if it can. It was refused in the reader once, which cost the whole logbook for one field,
+against `DATA-77`.
 
 **A null is carried, not refused**, as a leaf holding nothing. A reader does not know what
 a field is, so what a null means — most likely that the field is absent — belongs to

@@ -1,5 +1,6 @@
 package yemoja.logic
 
+import yemoja.data.NumberDescription
 import yemoja.data.OwnedItem
 import yemoja.data.Cardinality
 import yemoja.data.Element
@@ -105,6 +106,26 @@ class Universe(
     /** The logbook's owner, or absent where the manifest names nobody it holds. `JSON-22`. */
     var user: ReferenceableItem? = owner
         private set
+
+    /**
+     * Why [change] cannot be saved in the unit its file declares, or absent where it can.
+     *
+     * A file declaring a unit Yemoja does not know gives up that dimension's measurements as
+     * unusable, `DATA-87`; one typed in now would be saved in the model's unit under that
+     * declaration and read as unusable again. Clearing the field is allowed, since nothing is then
+     * written in any unit.
+     */
+    private fun unwritableIn(change: Change.Write, made: Result<Any>): String? {
+        if (made !is Result.Usable) return null
+        val field = change.item.description[change.field] as? NumberDescription ?: return null
+        var root: Item = change.item
+        while (root is OwnedItem) root = root.parent
+        val owner = root as? ReferenceableItem ?: return null
+        val id = logbook.idOf(owner) ?: return null
+        val refused = LogbookWriter.unitsOf(store, owner.description, id).refusal(field.dimension)
+            ?: return null
+        return "${change.field} cannot be saved: $refused. Correct the file's units block first"
+    }
 
     /**
      * Lets the logbook go, so another window may open it for editing.
@@ -231,6 +252,7 @@ class Universe(
                 is Change.Write -> {
                     val made = change.item.prepared(change.field, change.given, Units.DEFAULT)
                     if (made is Result.Unusable) return Outcome.Refused(made.reason)
+                    unwritableIn(change, made)?.let { return Outcome.Refused(it) }
                     writes += change to made
                 }
 

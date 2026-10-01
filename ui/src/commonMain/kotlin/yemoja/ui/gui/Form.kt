@@ -50,7 +50,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Cardinality
-import yemoja.data.Element
 import yemoja.data.FieldDescription
 import yemoja.data.Item
 import yemoja.data.ItemDescription
@@ -225,25 +224,25 @@ private fun Folded(fields: List<FieldDescription>, item: Item, draft: Draft) {
 private fun KeyedEditor(label: String, name: String, item: Item, draft: Draft) {
     val changer = LocalChanger.current
     val entries = shownEntriesOf(item, name)
-    var open by remember(item, name) { mutableStateOf(0) }
-    val at = open.coerceIn(0, maxOf(entries.size - 1, 0))
+    val tab = "${item.description.name}.$name"
+    val at = (draft.tabs[tab] ?: 0).coerceIn(0, maxOf(entries.size - 1, 0))
     val tabs: @Composable RowScope.() -> Unit = {
         SmallTabs(
             labels = entries.map { (key, entry) -> entryLabelOf(key, entry) },
             chosen = at,
             marked = pointedEntryOf(item, name),
-            onChoose = { open = it },
+            onChoose = { draft.tabs[tab] = it },
             onRemove = { index ->
                 entries.forEach { (_, entry) -> draft.dropAll(entry) }
                 val without = withoutEntry(item, name, entries[index].first)
                 changer.change(listOf(Change.Write(item, name, without)))
-                open = maxOf(index - 1, 0)
+                draft.tabs[tab] = maxOf(index - 1, 0)
             },
             onAdd = {
                 entries.forEach { (_, entry) -> draft.dropAll(entry) }
                 val (_, written) = withEntry(item, name)
                 changer.change(listOf(Change.Write(item, name, written)))
-                open = entries.size
+                draft.tabs[tab] = entries.size
             },
         )
     }
@@ -702,12 +701,9 @@ private fun ListEditor(field: FieldDescription, item: Item, draft: Draft, kind: 
                 }
                 IconButton(
                     onClick = {
-                        // Held by position, so every entry after this one moves up a place with
-                        // what it was given; left where it was, the third would take the second's.
-                        val after = givens.filterKeys { it > index }
-                        givens.remove(index)
-                        for (at in after.keys) givens.remove(at)
-                        for ((at, given) in after) givens[at - 1] = given
+                        val kept = withoutEntry(givens, index)
+                        givens.clear()
+                        givens.putAll(kept)
                         put(entries.filterIndexed { at, _ -> at != index })
                     },
                 ) {
@@ -725,6 +721,15 @@ private fun ListEditor(field: FieldDescription, item: Item, draft: Draft, kind: 
         }
     }
 }
+
+/**
+ * What each entry of a list was given, by position, once the entry at [index] is taken out.
+ *
+ * Every entry after it moves up a place and takes what it was given with it. Left where they were,
+ * taking out the first of three gave the third the second's value, and Save lost the third.
+ */
+internal fun withoutEntry(givens: Map<Int, Any?>, index: Int): Map<Int, Any?> =
+    givens.filterKeys { it != index }.mapKeys { (at, _) -> if (at > index) at - 1 else at }
 
 /** A closed set as a drop-down, with nothing as one of the choices. */
 @Composable

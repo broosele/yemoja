@@ -40,4 +40,21 @@ class ReviewedTest {
             read("""{"lines": [{"depth": 20, "duration": 10, "gas": 2}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]}"""),
         )
     }
+
+    @Test
+    fun `taking out a list entry moves what the ones after it were given up with them`() {
+        val givens = mapOf(0 to "@anna", 1 to "@bo", 2 to "@cy")
+        assertEquals(mapOf(0 to "@bo", 1 to "@cy"), withoutEntry(givens, 0), "the third is not lost")
+        assertEquals(mapOf(0 to "@anna", 1 to "@cy"), withoutEntry(givens, 1))
+        assertEquals(mapOf(0 to "@anna", 1 to "@bo"), withoutEntry(givens, 2))
+        assertEquals(mapOf(1 to "@cy"), withoutEntry(mapOf(2 to "@cy"), 0), "an entry never given keeps its gap")
+    }
+
+    @Test
+    fun `the tab a form has open is kept on the draft, which outlives a redraw`() {
+        val draft = Draft()
+        draft.tabs["dive.gas_sources"] = 2
+        assertEquals(2, draft.tabs["dive.gas_sources"])
+        assertEquals(null, draft.tabs["dive.profiles"], "each collection its own")
+    }
 }
