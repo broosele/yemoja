@@ -23,15 +23,20 @@ import yemoja.data.Units
 import yemoja.data.WholeNumberDescription
 import yemoja.data.inOrder
 import yemoja.data.json.Json
+import yemoja.logic.Calculated
 import yemoja.logic.Figured
 import yemoja.logic.Measure
 import yemoja.logic.Outcome
+import yemoja.logic.Read
 import yemoja.logic.Staging
 import yemoja.logic.Types
 import yemoja.ui.gui.PROFILES
 import yemoja.logic.Universe
+import yemoja.logic.calculated
+import yemoja.logic.casesOf
 import yemoja.logic.fieldAt
 import yemoja.logic.figureOf
+import yemoja.logic.saidOf
 
 /*
  * What an agent can ask of a logbook, before any protocol carries the asking.

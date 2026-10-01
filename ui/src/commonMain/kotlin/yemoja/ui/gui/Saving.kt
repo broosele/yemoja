@@ -63,6 +63,7 @@ import yemoja.logic.startOf
 import yemoja.logic.planKeyOf
 import yemoja.logic.planName
 import yemoja.logic.shapedOf
+import yemoja.logic.shownOf
 import yemoja.logic.titleOf
 import yemoja.logic.workedOf
 import kotlin.math.abs

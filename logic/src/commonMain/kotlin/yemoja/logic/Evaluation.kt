@@ -315,8 +315,8 @@ fun evaluate(run: Run): Evaluated {
 /** [evaluate] on a profile, remembering the ones already on the chain behind it. */
 private fun evaluated(profile: Item, seen: Set<Item>): Evaluated =
     when (val read = runOf(profile, seen)) {
-        is Read.Refused -> Evaluated.Refused(read.reason, read.why)
-        is Read.Run -> evaluate(read.run)
+        is RunResult.Refused -> Evaluated.Refused(read.reason, read.why)
+        is RunResult.Run -> evaluate(read.run)
     }
 
 /**
@@ -326,8 +326,8 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated =
  * what water, what air, what it breathed from, and what it carries from the run before it. The
  * arithmetic sees none of the reading.
  */
-private fun runOf(profile: Item, seen: Set<Item>): Read {
-    if (profile in seen) return Read.Refused(
+private fun runOf(profile: Item, seen: Set<Item>): RunResult {
+    if (profile in seen) return RunResult.Refused(
         "this dive is set to follow itself, so the gas it starts with cannot be worked out",
         Refusal.FAULTY
     )
@@ -336,26 +336,26 @@ private fun runOf(profile: Item, seen: Set<Item>): Read {
     // Both factors are needed. One of them is a setting half written down, and guessing the other
     // would put a number into a decompression answer that nobody chose.
     if (low == null || high == null) {
-        return Read.Refused(
+        return RunResult.Refused(
             "this recording should say which model it was calculated with and how conservative it was",
             Refusal.UNASKED,
         )
     }
     val named = (profile.single<String>("deco_model") as? Result.Usable)?.value ?: BUHLMANN
     if (named != BUHLMANN) {
-        return Read.Refused("$named is not the model built here, which is $BUHLMANN", Refusal.UNASKED)
+        return RunResult.Refused("$named is not the model built here, which is $BUHLMANN", Refusal.UNASKED)
     }
     val density = (profile.single<Double>("density") as? Result.Usable)?.value
-        ?: return Read.Refused(
+        ?: return RunResult.Refused(
             "this recording should say whether the water was salt or fresh, without which a depth is not a pressure",
             Refusal.UNASKED,
         )
     val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
         ?: SEA_LEVEL
     val carried = carriedInto(profile, surface, seen)
-    if (carried is Carried.Refused) return Read.Refused(carried.reason, Refusal.FAULTY)
+    if (carried is Carried.Refused) return RunResult.Refused(carried.reason, Refusal.FAULTY)
     carried as Carried.From
-    return Read.Run(
+    return RunResult.Run(
         Run(
             depth = depthOf(profile),
             sources = sourcesOf(profile),
@@ -370,10 +370,10 @@ private fun runOf(profile: Item, seen: Set<Item>): Read {
     )
 }
 
-/** Read is a profile turned into a run, or why it could not be. */
-private sealed class Read {
-    class Run(val run: yemoja.logic.Run) : Read()
-    class Refused(val reason: String, val why: Refusal) : Read()
+/** RunResult is a profile turned into a run, or why it could not be. */
+private sealed class RunResult {
+    class Run(val run: yemoja.logic.Run) : RunResult()
+    class Refused(val reason: String, val why: Refusal) : RunResult()
 }
 
 /** The walk itself, once everything it needs has been found. */
@@ -657,8 +657,8 @@ sealed class Ascended {
  */
 fun completeAscent(profile: Item, metresAMinute: Double, lastStop: Double): Ascended =
     when (val read = runOf(profile, emptySet())) {
-        is Read.Refused -> Ascended.Refused(read.reason)
-        is Read.Run -> completeAscent(read.run, metresAMinute, lastStop)
+        is RunResult.Refused -> Ascended.Refused(read.reason)
+        is RunResult.Run -> completeAscent(read.run, metresAMinute, lastStop)
     }
 
 /** [completeAscent] for a run that belongs to no dive, which is the other door to the same walk. */

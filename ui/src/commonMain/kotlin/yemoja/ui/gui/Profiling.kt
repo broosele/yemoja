@@ -81,6 +81,7 @@ import yemoja.logic.runtimeSaid
 import yemoja.logic.scenarioSaid
 import yemoja.logic.shapedOf
 import yemoja.logic.shortfallSaid
+import yemoja.logic.shownOf
 import yemoja.logic.uncheckedSaid
 import yemoja.logic.workedOf
 import kotlin.math.roundToInt

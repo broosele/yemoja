@@ -150,7 +150,7 @@ class Settings internal constructor(private val store: FileStore) {
         if (value != null && value !in setting.range) {
             return Outcome.Refused(
                 "${setting.label} should be ${setting.range.start} to " +
-                    "${setting.range.endInclusive}, but was $value",
+                        "${setting.range.endInclusive}, but was $value",
             )
         }
         write(setting, value?.let { Stored.Leaf(it) })
@@ -168,7 +168,7 @@ class Settings internal constructor(private val store: FileStore) {
         if (value != null && value !in setting.choices) {
             return Outcome.Refused(
                 "${setting.label} should be one of ${setting.choices.joinToString(", ")}, " +
-                    "but was $value",
+                        "but was $value",
             )
         }
         write(setting, value?.let { Stored.Leaf(it) })
@@ -305,3 +305,25 @@ class Settings internal constructor(private val store: FileStore) {
         val OFFERED_CHOICES: List<ChoiceSetting> = listOf(DEFAULT_WATER_TYPE)
     }
 }
+
+/**
+ * What [setting] holds, as a box showing it writes it: a percentage for a gradient factor,
+ * minutes for a time, and blank for none.
+ */
+fun shownOf(setting: NumberSetting, value: Double?): String = when {
+    value == null -> ""
+    isPercentage(setting) -> plain(value * PERCENT)
+    isMinutes(setting) -> plain(value / SECONDS_IN_MINUTE)
+    else -> plain(value)
+}
+
+/** Whether [setting] is held as a proportion and shown as a percentage, which the factors are. */
+fun isPercentage(setting: NumberSetting): Boolean =
+    setting == Settings.DEFAULT_GRADIENT_FACTOR_LOW || setting == Settings.DEFAULT_GRADIENT_FACTOR_HIGH
+
+/** Whether [setting] is held in seconds and shown in minutes, which every time is. */
+fun isMinutes(setting: NumberSetting): Boolean = setting.unit == "s"
+
+private const val SECONDS_IN_MINUTE = 60.0
+
+private const val PERCENT = 100.0

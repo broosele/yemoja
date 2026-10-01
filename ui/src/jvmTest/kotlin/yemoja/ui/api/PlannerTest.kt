@@ -3,6 +3,7 @@ package yemoja.ui.api
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
+import yemoja.logic.COLUMNS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

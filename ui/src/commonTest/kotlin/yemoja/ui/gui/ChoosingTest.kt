@@ -8,6 +8,7 @@ import yemoja.logic.Outcome
 import yemoja.logic.Settings
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import yemoja.logic.shownOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

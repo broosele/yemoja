@@ -1,7 +1,6 @@
-package yemoja.ui.api
+package yemoja.logic
 
 import yemoja.data.Stored
-import yemoja.ui.gui.plain
 
 /*
  * A calculated plan written out, as a table to compare and as the whole answer.
@@ -15,7 +14,7 @@ import yemoja.ui.gui.plain
  * A published air table has a column for stop minutes and one for the deepest stop, which is what
  * the first of these are for. The rest are what a second program would be asked for beside them.
  */
-internal val COLUMNS: List<String> = listOf(
+val COLUMNS: List<String> = listOf(
     "name",
     "max_depth_m",
     "bottom_minutes",
@@ -30,7 +29,7 @@ internal val COLUMNS: List<String> = listOf(
 )
 
 /** [schedule] as one row of the table, under [name], in the order [COLUMNS] gives. */
-internal fun rowOf(name: String, schedule: Schedule): List<String> = listOf(
+fun rowOf(name: String, schedule: Schedule): List<String> = listOf(
     name,
     plain(schedule.maxDepthMetres, 1),
     plain(bottomMinutesOf(schedule), 1),
@@ -46,7 +45,7 @@ internal fun rowOf(name: String, schedule: Schedule): List<String> = listOf(
 )
 
 /** A row for a plan that would not calculate: its name, nothing else, and the reason. */
-internal fun rowOf(name: String, refused: String): List<String> =
+fun rowOf(name: String, refused: String): List<String> =
     listOf(name) + List(COLUMNS.size - 2) { "" } + refused
 
 /**
@@ -61,7 +60,7 @@ private fun bottomMinutesOf(schedule: Schedule): Double {
 }
 
 /** [rows] as a comma-separated table, the headings first. */
-internal fun tableOf(rows: List<List<String>>): String =
+fun tableOf(rows: List<List<String>>): String =
     (listOf(COLUMNS) + rows).joinToString("\n") { row -> row.joinToString(",") { quoted(it) } }
 
 /** A field as a table writes it: quoted where it holds a comma, a quote or a line break. */
@@ -73,7 +72,7 @@ private fun quoted(field: String): String =
     }
 
 /** [schedule] as the whole answer, for a caller that wants every line of it. */
-internal fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
+fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
     mapOf(
         "name" to Stored.Leaf(name),
         "max_depth_m" to Stored.Leaf(schedule.maxDepthMetres),
@@ -127,7 +126,7 @@ internal fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
 )
 
 /** A plan that would not calculate, as the whole answer: its name and the reason. */
-internal fun saidOf(name: String, refused: String): Stored = Stored.Members(
+fun saidOf(name: String, refused: String): Stored = Stored.Members(
     mapOf("name" to Stored.Leaf(name), "refused" to Stored.Leaf(refused)),
 )
 

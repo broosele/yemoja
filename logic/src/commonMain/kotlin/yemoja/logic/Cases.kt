@@ -1,15 +1,7 @@
-package yemoja.ui.api
+package yemoja.logic
 
 import yemoja.data.Stored
 import kotlin.math.roundToInt
-import yemoja.logic.Breathed
-import yemoja.logic.NumberSetting
-import yemoja.logic.Planned
-import yemoja.logic.Role
-import yemoja.logic.Segment
-import yemoja.logic.Settings
-import yemoja.logic.clockOf
-import yemoja.ui.gui.shownOf
 
 /*
  * Plans written down as data, so a file of them can be asked for at once.
@@ -20,10 +12,10 @@ import yemoja.ui.gui.shownOf
  */
 
 /** Case is one plan in a file of them: what to call it, and the plan itself. */
-internal class Case(val name: String, val planned: Planned)
+class Case(val name: String, val planned: Planned)
 
 /** Read is a file of cases read, or why the first that will not read does not. */
-internal sealed class Read {
+sealed class Read {
 
     class Cases(val cases: List<Case>) : Read()
 
@@ -36,7 +28,7 @@ internal sealed class Read {
  * A case names its lines and its cylinders and may name any setting. What it does not name the
  * application answers, which is what makes a file of table comparisons short.
  */
-internal fun casesOf(stored: Stored): Read {
+fun casesOf(stored: Stored): Read {
     val held = when (stored) {
         is Stored.Elements -> stored.elements
         is Stored.Members -> listOf(stored)

@@ -1,8 +1,8 @@
 package yemoja.ui.gui
 
 import yemoja.data.json.Json
-import yemoja.ui.api.Read
-import yemoja.ui.api.casesOf
+import yemoja.logic.Read
+import yemoja.logic.casesOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

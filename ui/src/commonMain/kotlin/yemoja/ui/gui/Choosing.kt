@@ -28,6 +28,9 @@ import yemoja.logic.NumberSetting
 import yemoja.logic.Setting
 import yemoja.logic.Settings
 import yemoja.logic.Universe
+import yemoja.logic.isMinutes
+import yemoja.logic.isPercentage
+import yemoja.logic.shownOf
 import kotlin.math.pow
 import kotlin.math.roundToLong
 
@@ -327,17 +330,6 @@ internal fun chosenOf(setting: NumberSetting, typed: String): Entered {
     return Entered.Value(number)
 }
 
-/**
- * What a setting holds, as its box shows it: a percentage for a gradient factor, minutes for a
- * time, and blank for none.
- */
-internal fun shownOf(setting: NumberSetting, value: Double?): String = when {
-    value == null -> ""
-    isPercentage(setting) -> plain(value * PERCENT)
-    isMinutes(setting) -> plain(value / SECONDS_IN_MINUTE)
-    else -> plain(value)
-}
-
 /** Where a setting's value came from, as the form says it beside the box. */
 internal fun answeredSaid(file: SettingsFile?, setting: Setting): String = when (file) {
     SettingsFile.LOCAL -> "set on this device"
@@ -351,13 +343,6 @@ private fun unitOf(setting: NumberSetting): String = when {
     isMinutes(setting) -> "min"
     else -> setting.unit
 }
-
-/** Whether [setting] is held as a proportion and typed as a percentage, which the factors are. */
-private fun isPercentage(setting: NumberSetting): Boolean =
-    setting == Settings.DEFAULT_GRADIENT_FACTOR_LOW || setting == Settings.DEFAULT_GRADIENT_FACTOR_HIGH
-
-/** Whether [setting] is held in seconds and typed in minutes, which every time is. */
-private fun isMinutes(setting: NumberSetting): Boolean = setting.unit == "s"
 
 /** A number as a person writes it: `18`, not `18.0`, and `9.5` where there is a fraction. */
 internal fun plain(value: Double, decimals: Int = 3): String {

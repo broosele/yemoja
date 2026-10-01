@@ -2,6 +2,14 @@ package yemoja.ui.api
 
 import yemoja.data.Stored
 import yemoja.data.json.Json
+import yemoja.logic.Calculated
+import yemoja.logic.Case
+import yemoja.logic.Read
+import yemoja.logic.calculated
+import yemoja.logic.casesOf
+import yemoja.logic.rowOf
+import yemoja.logic.saidOf
+import yemoja.logic.tableOf
 import java.io.File
 
 /*

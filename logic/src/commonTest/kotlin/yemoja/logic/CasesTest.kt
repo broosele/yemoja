@@ -1,8 +1,6 @@
-package yemoja.ui.api
+package yemoja.logic
 
 import yemoja.data.json.Json
-import yemoja.logic.Role
-import yemoja.logic.Settings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -64,7 +62,7 @@ class CasesTest {
     fun `what a case leaves out the application answers`() {
         val case = oneOf(FORTY)
         assertEquals(
-            yemoja.ui.gui.shownOf(Settings.DEFAULT_ASCENT_RATE, Settings.DEFAULT_ASCENT_RATE.default),
+            shownOf(Settings.DEFAULT_ASCENT_RATE, Settings.DEFAULT_ASCENT_RATE.default),
             case.planned.ascentRate,
         )
         assertEquals(Settings.DEFAULT_WATER_TYPE.default, case.planned.water)

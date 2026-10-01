@@ -48,6 +48,7 @@ import yemoja.logic.LEAST_OXYGEN
 import yemoja.logic.maximumOperatingDepth
 import yemoja.logic.minimumOperatingDepth
 import yemoja.logic.noDecompressionLimit
+import yemoja.logic.shownOf
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToLong
