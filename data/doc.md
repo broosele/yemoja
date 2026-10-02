@@ -926,6 +926,20 @@ To settle when we discuss architecture:
 
 ## Settled and relocated
 
+- **DATA-130 — How a SQLite file is read.** *Settled:* **by a reader of our own, which reads
+  tables and nothing else.** Decided on 2026-10-02, at the author's word.
+
+  Diving Log keeps its logbook in a SQLite file, and reading one is what importing it needs,
+  `DLOG-1`. A library would do it, but every SQLite library for the JVM carries native code for
+  each platform, megabytes of it, and none reaches the browser the planner runs in. The file
+  format is published and in the public domain, and reading a table from it is a walk down one
+  kind of tree: a few hundred lines, with no dependency.
+
+  **It reads and does nothing else.** No query language, no writing, no index, and no journal: a
+  file is read as it lies on disk, so a database left mid-transaction by a program that crashed
+  is read as it was before that transaction. Every table is read whole, its rows in the order
+  their ids give, which is all an import asks of it.
+
 - **DATA-129 — What a plan keeps of the planner that made it.** *Settled:* **every setting the
   planner had, and the lines as they were typed, beside the points.** Decided on 2026-10-01, at
   the author's word.

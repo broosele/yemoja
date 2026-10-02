@@ -70,6 +70,7 @@ logic/
                     which packages the supplied libraries into the application
   reconciliation.md  merging an import into the logbook
   uddf.md         UDDF against this model, field by field
+  divinglog.md    Diving Log's database against this model, table by table
   divecomputer.md  a dive computer against this model, the same way
   src/commonMain/kotlin/yemoja/logic/
                   Universe.kt   what is open, and the one door a front end reaches

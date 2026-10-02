@@ -93,6 +93,10 @@ them.
   built; see [logic/reconciliation.md](logic/reconciliation.md). UDDF is read — the dive, its
   recording, and the sites, people, gear, trips and operators it names — and how far it
   goes is under *What is built* in [logic/uddf.md](logic/uddf.md).
+
+  *Planned:* **Diving Log's own file**, for a user moving from it, read through a SQLite reader of
+  our own (`DATA-130`). What it maps to, and what it leaves, is
+  [logic/divinglog.md](logic/divinglog.md).
 - **FEAT-8 — Statistics over the logbook.** Totals, counts and summaries, each reported
   with what it was based on.
 

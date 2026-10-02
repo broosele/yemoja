@@ -273,6 +273,7 @@ involved — see [data/json/doc.md](data/json/doc.md).
 | [logic/doc.md](logic/doc.md) | Application behaviour, planning, decompression |
 | [logic/reconciliation.md](logic/reconciliation.md) | Merging sync, dive computer and file import into the logbook |
 | [logic/uddf.md](logic/uddf.md) | UDDF field by field against this model: what maps, what is missing, what is declined |
+| [logic/divinglog.md](logic/divinglog.md) | Diving Log's database against this model: its tables, what maps, what is left |
 | [ui/doc.md](ui/doc.md) | Rules common to all front ends |
 | [ui/api/doc.md](ui/api/doc.md) · [ui/tui/doc.md](ui/tui/doc.md) · [ui/gui/doc.md](ui/gui/doc.md) | The individual front ends |
 | [manual/doc.md](manual/doc.md) | User manual — conventions and what is written |
