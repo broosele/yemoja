@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -191,7 +192,7 @@ private fun openedIn(context: Context, tree: Uri, devices: Devices): Opening {
     val granted = GrantedFileStore(context.contentResolver, tree)
     val copies = context.filesDir.resolve("copies").resolve(tree.toString().hashCode().toUInt().toString(16))
     val store = CachedFileStore(granted, granted::stamps, DiskFileStore(copies.path))
-    val called = tree.lastPathSegment?.substringAfterLast(':')?.ifBlank { null } ?: "this folder"
+    val called = nameOf(context, tree) ?: "this folder"
     val staging = DiskFileStore(context.filesDir.resolve("import").path)
     val proposing = DiskFileStore(context.filesDir.resolve("proposed").path)
     return try {
@@ -202,9 +203,30 @@ private fun openedIn(context: Context, tree: Uri, devices: Devices): Opening {
         }
         Opening.Done(universe)
     } catch (refused: Exception) {
-        Opening.Refused("$called could not be opened: ${refused.message}")
+        // The version is said with it, since a refusal is often sent back as a picture of itself.
+        Opening.Refused("$called could not be opened: ${refused.message} (Yemoja ${versionOf(context)})")
     }
 }
+
+/**
+ * What the granted folder [tree] is called, or absent where the provider will not say.
+ *
+ * Asked of the provider, since the tree's own id is the provider's: Google Drive's is a string of
+ * letters that names nothing to a reader, where a folder on the phone's own storage ends in its path.
+ */
+private fun nameOf(context: Context, tree: Uri): String? {
+    val document = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+    val asked = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+    return runCatching {
+        context.contentResolver.query(document, asked, null, null, null)?.use { rows ->
+            if (rows.moveToFirst() && !rows.isNull(0)) rows.getString(0) else null
+        }
+    }.getOrNull()?.ifBlank { null }
+}
+
+/** The app's version as installed, or a question mark where the phone will not say. */
+private fun versionOf(context: Context): String =
+    runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
 
 /** What reading a dive computer needs: to look for one, and to talk to it. Android 12 on. */
 private val BLUETOOTH = listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)

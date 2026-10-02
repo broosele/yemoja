@@ -48,6 +48,9 @@ internal class GrantedFileStore(
 
     private val root: String = DocumentsContract.getTreeDocumentId(tree)
 
+    /** Each folder's path in the logbook by its document, for saying which folder would not list. */
+    private val paths = HashMap<String, String>().apply { put(root, "the logbook's folder") }
+
     override fun isFile(path: String): Boolean =
         if (isLibrary(path)) libraries.isFile(path) else entryAt(path)?.folder == false
 
@@ -172,39 +175,58 @@ internal class GrantedFileStore(
      *
      * **The loading answer is held, not asked for again and again.** A provider fetches the list
      * for the answer it gave, and closing that answer may end the fetch, so asking every moment
-     * could ask for ever.
+     * could ask for ever. Each asking is at least [HOLD] after the one before.
+     *
+     * **A refusal says what was seen.** A phone's log is out of reach of most users, and the one
+     * message they can send back is the refusal itself, so it carries how often the folder was
+     * asked for, what the provider gave and counted, how often it said the list changed, and
+     * whatever else it put in its answer.
      */
     private fun listedIn(folder: String): Map<String, Entry> {
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, folder)
+        val path = paths[folder] ?: "a folder"
         val started = SystemClock.elapsedRealtime()
+        val watched = Watched()
         while (true) {
+            val asked = SystemClock.elapsedRealtime()
             val found = HashMap<String, Entry>()
-            val first = pageOf(children, 0, found) { waitWhileLoading(it, started) }
+            val first = pageOf(children, 0, found, path) { watched.changes += waitWhileLoading(it, started) }
+            watched.askings += 1
+            var total = first.total
+            var offset = found.size
+            // Further pages, where the provider counts more than it gave, loading or not, so that
+            // what is said of the listing is what the provider has.
+            while (total > found.size) {
+                val page = pageOf(children, offset, found, path)
+                if (page.rows == 0) break
+                offset += page.rows
+                total = maxOf(total, page.total)
+            }
+            watched.rows = found.size
+            watched.total = total
+            watched.extras = first.extras
+            val elapsed = SystemClock.elapsedRealtime() - started
             if (!first.loading) {
-                var total = first.total
-                var offset = found.size
-                // Further pages, where the provider counts more than it gave.
-                while (total > found.size) {
-                    val page = pageOf(children, offset, found)
-                    if (page.rows == 0) break
-                    offset += page.rows
-                    total = maxOf(total, page.total)
-                }
-                Log.i(TAG, "listed ${found.size} in ${SystemClock.elapsedRealtime() - started} ms")
+                Log.i(TAG, "$path listed, ${found.size} entries in $elapsed ms; $watched")
                 return found
             }
-            if (SystemClock.elapsedRealtime() - started >= PATIENCE) {
-                Log.w(TAG, "still loading after ${PATIENCE / 1000} s")
-                throw FileStoreMissing("the folder was still being listed after ${PATIENCE / 1000} s, so it was not read")
+            if (elapsed >= PATIENCE) {
+                Log.w(TAG, "$path still loading after $elapsed ms; $watched")
+                throw FileStoreMissing(
+                    "$path was still being listed after ${PATIENCE / 1000} s, so it was not read; $watched",
+                )
             }
+            val held = SystemClock.elapsedRealtime() - asked
+            if (held < HOLD) Thread.sleep(HOLD - held)
         }
     }
 
     /**
      * Holds [loading], an answer still being filled, open until the provider says it has changed,
-     * or [WAIT] has passed, or the folder's [PATIENCE] has run out.
+     * or [WAIT] has passed, or the folder's [PATIENCE] has run out. One where it said so, nought
+     * where the time ran out.
      */
-    private fun waitWhileLoading(loading: Cursor, started: Long) {
+    private fun waitWhileLoading(loading: Cursor, started: Long): Int {
         val changed = CountDownLatch(1)
         val observer = object : ContentObserver(null) {
             override fun onChange(selfChange: Boolean) = changed.countDown()
@@ -212,23 +234,42 @@ internal class GrantedFileStore(
         loading.registerContentObserver(observer)
         try {
             val left = PATIENCE - (SystemClock.elapsedRealtime() - started)
-            changed.await(minOf(WAIT, maxOf(left, 0L)), TimeUnit.MILLISECONDS)
+            return if (changed.await(minOf(WAIT, maxOf(left, 0L)), TimeUnit.MILLISECONDS)) 1 else 0
         } finally {
             loading.unregisterContentObserver(observer)
         }
     }
 
-    /** What one answer about a folder said: how many rows, whether more is coming, how many in all. */
-    private class Page(val rows: Int, val loading: Boolean, val total: Int)
+    /** Watched is what listing one folder saw, said in a refusal so that it can be understood from the message alone. */
+    private class Watched {
+        var askings = 0
+        var changes = 0
+        var rows = 0
+        var total = -1
+        var extras: String? = null
+
+        override fun toString(): String {
+            val counted = if (total >= 0) "of $total counted" else "and no count"
+            val said = extras?.let { ", and its answer carried $it" }.orEmpty()
+            return "asked $askings times, given $rows entries $counted, told of $changes changes$said"
+        }
+    }
 
     /**
-     * The children from [offset] on, added to [into]. Where the answer is still loading,
-     * [whileLoading] is given it before it is closed.
+     * What one answer about a folder said: how many rows, whether more is coming, how many in all,
+     * and everything else it carried, as text.
+     */
+    private class Page(val rows: Int, val loading: Boolean, val total: Int, val extras: String?)
+
+    /**
+     * The children of the folder at [path] from [offset] on, added to [into]. Where the answer is
+     * still loading, [whileLoading] is given it before it is closed.
      */
     private fun pageOf(
         children: Uri,
         offset: Int,
         into: MutableMap<String, Entry>,
+        path: String,
         whileLoading: (Cursor) -> Unit = {},
     ): Page {
         val asked = arrayOf(
@@ -239,7 +280,7 @@ internal class GrantedFileStore(
             Document.COLUMN_SIZE,
         )
         val paging = if (offset == 0) null else Bundle().apply { putInt(ContentResolver.QUERY_ARG_OFFSET, offset) }
-        val rows = resolver.query(children, asked, paging, null) ?: return Page(0, false, -1)
+        val rows = resolver.query(children, asked, paging, null) ?: return Page(0, false, -1, null)
         rows.use {
             var count = 0
             while (it.moveToNext()) {
@@ -249,7 +290,10 @@ internal class GrantedFileStore(
                 val modified = if (it.isNull(3)) 0L else it.getLong(3)
                 val size = if (it.isNull(4)) -1L else it.getLong(4)
                 val stamp = if (modified > 0 && size >= 0) "$modified/$size" else null
-                into[it.getString(0)] = Entry(it.getString(1), folder, stamp)
+                val name = it.getString(0)
+                val id = it.getString(1)
+                into[name] = Entry(id, folder, stamp)
+                if (folder) paths[id] = if (path.startsWith("the ")) name else "$path/$name"
                 count += 1
             }
             val extras = it.extras
@@ -259,6 +303,8 @@ internal class GrantedFileStore(
                 rows = count,
                 loading = loading,
                 total = extras?.getInt(ContentResolver.EXTRA_TOTAL_COUNT, -1) ?: -1,
+                // Read after the flags, which is what unpacks it so that it prints as its contents.
+                extras = extras?.toString()?.take(EXTRAS_SAID),
             )
         }
     }
@@ -274,6 +320,12 @@ internal class GrantedFileStore(
 
         /** How long a folder may go on being listed before it is refused, in milliseconds. */
         const val PATIENCE = 120_000L
+
+        /** The least time between one asking for a loading folder and the next, in milliseconds. */
+        const val HOLD = 1_000L
+
+        /** How much of an answer's extras a refusal repeats, which is enough to read a few flags. */
+        const val EXTRAS_SAID = 400
 
         /**
          * How long a loading answer is held before the folder is asked for again, should the
