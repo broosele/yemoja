@@ -1,10 +1,16 @@
 package yemoja.ui.gui
 
 import android.content.ContentResolver
+import android.database.ContentObserver
+import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
+import android.util.Log
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import yemoja.data.json.FileStore
 import yemoja.data.json.FileStoreMissing
 
@@ -159,17 +165,21 @@ internal class GrantedFileStore(
      *
      * **A cloud provider answers in parts.** Google Drive's gives the first files it has and marks
      * the answer as still loading, or gives one page of a longer list. Taking the first answer as
-     * the whole folder read a logbook of 347 dives as one of 200. So the list is asked for again
-     * while it is loading, and page after page while it holds fewer than the provider counts.
-     * A folder that is still loading after [PATIENCE] is refused, a part of a logbook being worse
-     * than none. `AND-5`.
+     * the whole folder read a logbook of 347 dives as one of 200. So while the answer is loading,
+     * it is held open until the provider says the list has changed, and then asked for again; and
+     * then page after page while it holds fewer than the provider counts. A folder that is still
+     * loading after [PATIENCE] is refused, a part of a logbook being worse than none. `AND-5`.
+     *
+     * **The loading answer is held, not asked for again and again.** A provider fetches the list
+     * for the answer it gave, and closing that answer may end the fetch, so asking every moment
+     * could ask for ever.
      */
     private fun listedIn(folder: String): Map<String, Entry> {
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, folder)
-        var waited = 0L
+        val started = SystemClock.elapsedRealtime()
         while (true) {
             val found = HashMap<String, Entry>()
-            val first = pageOf(children, 0, found)
+            val first = pageOf(children, 0, found) { waitWhileLoading(it, started) }
             if (!first.loading) {
                 var total = first.total
                 var offset = found.size
@@ -180,21 +190,47 @@ internal class GrantedFileStore(
                     offset += page.rows
                     total = maxOf(total, page.total)
                 }
+                Log.i(TAG, "listed ${found.size} in ${SystemClock.elapsedRealtime() - started} ms")
                 return found
             }
-            if (waited >= PATIENCE) {
+            if (SystemClock.elapsedRealtime() - started >= PATIENCE) {
+                Log.w(TAG, "still loading after ${PATIENCE / 1000} s")
                 throw FileStoreMissing("the folder was still being listed after ${PATIENCE / 1000} s, so it was not read")
             }
-            Thread.sleep(STEP)
-            waited += STEP
+        }
+    }
+
+    /**
+     * Holds [loading], an answer still being filled, open until the provider says it has changed,
+     * or [WAIT] has passed, or the folder's [PATIENCE] has run out.
+     */
+    private fun waitWhileLoading(loading: Cursor, started: Long) {
+        val changed = CountDownLatch(1)
+        val observer = object : ContentObserver(null) {
+            override fun onChange(selfChange: Boolean) = changed.countDown()
+        }
+        loading.registerContentObserver(observer)
+        try {
+            val left = PATIENCE - (SystemClock.elapsedRealtime() - started)
+            changed.await(minOf(WAIT, maxOf(left, 0L)), TimeUnit.MILLISECONDS)
+        } finally {
+            loading.unregisterContentObserver(observer)
         }
     }
 
     /** What one answer about a folder said: how many rows, whether more is coming, how many in all. */
     private class Page(val rows: Int, val loading: Boolean, val total: Int)
 
-    /** The children from [offset] on, added to [into]. */
-    private fun pageOf(children: Uri, offset: Int, into: MutableMap<String, Entry>): Page {
+    /**
+     * The children from [offset] on, added to [into]. Where the answer is still loading,
+     * [whileLoading] is given it before it is closed.
+     */
+    private fun pageOf(
+        children: Uri,
+        offset: Int,
+        into: MutableMap<String, Entry>,
+        whileLoading: (Cursor) -> Unit = {},
+    ): Page {
         val asked = arrayOf(
             Document.COLUMN_DISPLAY_NAME,
             Document.COLUMN_DOCUMENT_ID,
@@ -217,9 +253,11 @@ internal class GrantedFileStore(
                 count += 1
             }
             val extras = it.extras
+            val loading = extras?.getBoolean(DocumentsContract.EXTRA_LOADING) == true
+            if (loading) whileLoading(it)
             return Page(
                 rows = count,
-                loading = extras?.getBoolean(DocumentsContract.EXTRA_LOADING) == true,
+                loading = loading,
                 total = extras?.getInt(ContentResolver.EXTRA_TOTAL_COUNT, -1) ?: -1,
             )
         }
@@ -237,8 +275,14 @@ internal class GrantedFileStore(
         /** How long a folder may go on being listed before it is refused, in milliseconds. */
         const val PATIENCE = 120_000L
 
-        /** How long between one asking and the next while a folder is listed. */
-        const val STEP = 250L
+        /**
+         * How long a loading answer is held before the folder is asked for again, should the
+         * provider never say it changed.
+         */
+        const val WAIT = 5_000L
+
+        /** What the app's lines in the phone's log are marked with. */
+        const val TAG = "Yemoja"
     }
 }
 

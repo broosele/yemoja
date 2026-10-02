@@ -28,9 +28,11 @@ again. It is reached through the storage access framework, by `GrantedFileStore`
 about a folder's children are kept until something in it changes. **A folder is listed whole**: a
 cloud provider such as Google Drive's answers in parts, marking the list as still loading or giving
 one page of a longer one, and the first answer taken as the whole once read a logbook of 347 dives
-as 200. So the list is asked for again while it is loading, and page after page while it holds fewer
-than the provider counts, and a folder still loading after two minutes is refused rather than read
-in part. **Unchanged files come from a copy** in the app's own storage, the listing's date and size
+as 200. So while the list is loading its answer is held open until the provider says it changed,
+then asked for again, and page after page while it holds fewer than the provider counts; a folder
+still loading after two minutes is refused rather than read in part. The answer is held rather than
+asked for every quarter second, as 0.1.3 to 0.1.5 did: closing it may end the provider's fetch,
+which is the likeliest reason a phone timed out opening a Drive folder on those versions. **Unchanged files come from a copy** in the app's own storage, the listing's date and size
 saying which, `JSON-28`. **A logbook is opened off the screen's thread**, the screen saying so
 meanwhile, since reading one from a cloud drive can take a while and a blank screen reads as a
 broken app. The libraries the app ships are read from inside it, and since a folder inside an app
