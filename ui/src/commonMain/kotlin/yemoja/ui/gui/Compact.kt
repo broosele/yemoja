@@ -39,14 +39,15 @@ internal fun pageOf(tab: Tab, kept: Kept): Page = when {
  * What back does on a phone, or absent where the page is as far back as the tab goes.
  *
  * One step at a time: a form is left before the item it was opened over, the item before the
- * list, and on Locations what is at a region before the regions. A form left by back is
- * cancelled, as its Cancel would.
+ * list, on Locations what is at a region before the regions, and in Manuals a chapter before the
+ * chapters. A form left by back is cancelled, as its Cancel would.
  */
 internal fun backOf(tab: Tab, kept: Kept): (() -> Unit)? = when {
     kept.making != null -> ({ kept.making = null })
     kept.editing != null -> ({ kept.editing = null })
     kept.chosenMany.size > 1 -> ({ kept.chosenMany = emptySet() })
     kept.chosen != null -> ({ kept.chosen = null })
+    tab.shape == Shape.MANUAL && kept.inChapter -> ({ kept.inChapter = false })
     tab.shape == Shape.PLACES && (kept.place != null || kept.unplaced) -> ({
         kept.place = null
         kept.unplaced = false

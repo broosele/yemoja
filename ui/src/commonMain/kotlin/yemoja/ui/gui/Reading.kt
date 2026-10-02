@@ -80,12 +80,19 @@ internal fun Manuals(chapters: List<Chapter>, onOpen: (String) -> Unit, kept: Ke
         kept.chapter = chapter
         wanted = Wanted(chapter, block)
         kept.unfolded = unfolded + chapter.file
+        kept.inChapter = true
     }
+    // A phone shows the chapters or the chapter chosen, each the screen's whole width, and back
+    // leads from the chapter to the chapters. Side by side, the chapter was a word wide. `PHONE-2`.
+    val compact = LocalCompact.current
+    val listed = !compact || !kept.inChapter
+    val paged = !compact || kept.inChapter
+    val beside = if (compact) Modifier.fillMaxWidth() else Modifier.width(SELECTOR)
     Row(modifier = Modifier.fillMaxSize()) {
-        Selectable {
+        if (listed) Selectable {
             LazyColumn(
                 state = kept.tree,
-                modifier = Modifier.width(SELECTOR).fillMaxHeight().padding(GAP),
+                modifier = beside.fillMaxHeight().padding(GAP),
             ) {
                 for (chapter in chapters) {
                     item(key = chapter.file) {
@@ -115,9 +122,9 @@ internal fun Manuals(chapters: List<Chapter>, onOpen: (String) -> Unit, kept: Ke
                 }
             }
         }
-        VerticalDivider()
+        if (listed && paged) VerticalDivider()
         val chapter = shown
-        Selectable {
+        if (paged) Selectable {
             if (chapter == null) {
                 Middle("no manual is bundled")
             } else {

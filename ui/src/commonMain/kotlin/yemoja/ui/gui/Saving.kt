@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -548,10 +549,13 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
 
         else -> null
     }
-    Row(
+    // Wrapping on to a second line where one will not hold it, which a phone's never does: cut
+    // off, the deeds after the second could not be reached.
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(bottom = HALF),
-        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalArrangement = Arrangement.spacedBy(HALF),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         if (bound is Bound.Editing) {
             Text(prettyOf(bound.key), style = MaterialTheme.typography.titleSmall)

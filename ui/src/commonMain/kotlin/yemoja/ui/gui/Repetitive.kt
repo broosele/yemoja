@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -97,10 +98,13 @@ internal fun StartRow(shaping: Shaping, universe: Universe?, followed: Followed)
     val logbook = universe?.logbook
     fun labelOf(run: Following): String =
         logbook?.get(run.dive)?.let { runSaid(it, run.key) } ?: "${run.dive}, ${prettyOf(run.key)}"
-    Row(
+    // Wrapping where one line will not hold it, so that on a phone the dive followed keeps the
+    // width it needs to be named in full.
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(bottom = HALF),
-        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalArrangement = Arrangement.spacedBy(HALF),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         Explained(PlannerTips.DIVE_START) {
             Text("Start", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -124,16 +128,19 @@ internal fun StartRow(shaping: Shaping, universe: Universe?, followed: Followed)
                 wrong = wrongStart
             )
         }
-        Explained(PlannerTips.AFTER) {
-            Text("After", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-        }
-        // A dive is named in full, so this box is wider than a setting's and not the row's.
-        Box(modifier = Modifier.width(FOLLOWED)) {
-            Pick(
-                dense = true,
-                chosen = chosen?.let { labelOf(it) } ?: NO_EARLIER,
-                options = listOf(NO_EARLIER) + runs.map { labelOf(it) },
-            ) { picked -> shaping.following = if (picked == 0) null else runs[picked - 1] }
+        // The word and its box together, so that where the row wraps they go to the next line as one.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GAP)) {
+            Explained(PlannerTips.AFTER) {
+                Text("After", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            }
+            // A dive is named in full, so this box is wider than a setting's and not the row's.
+            Box(modifier = Modifier.width(FOLLOWED)) {
+                Pick(
+                    dense = true,
+                    chosen = chosen?.let { labelOf(it) } ?: NO_EARLIER,
+                    options = listOf(NO_EARLIER) + runs.map { labelOf(it) },
+                ) { picked -> shaping.following = if (picked == 0) null else runs[picked - 1] }
+            }
         }
         followedSaid(planned, universe, followed)?.let {
             Text(

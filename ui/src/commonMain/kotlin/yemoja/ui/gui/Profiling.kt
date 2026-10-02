@@ -5,6 +5,8 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -406,24 +408,86 @@ private fun tanksOf(shaping: Planned): Map<String, String> =
 @Composable
 private fun RuntimeLines(shaping: Shaping, shaped: Shaped, done: Worked.Done?, conditions: Conditions?) {
     val above = done?.let { aboveCeilingAt(it.whole, it.evaluated) }.orEmpty()
-    for ((index, segment) in shaping.segments.withIndex()) {
-        val leg = shaped.legs.firstOrNull { it.index == index }
-        TypedLine(
-            shaping,
-            index,
-            segment,
-            leg,
-            gasWrong = leg != null && gasWrongFor(leg, shaping.described(), conditions),
-            ceilingBroken = leg != null && breaksCeiling(leg, above),
-        )
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val widths = widthsFor(maxWidth)
+        Column {
+            if (widths.narrow) ColumnHeads(widths)
+            for ((index, segment) in shaping.segments.withIndex()) {
+                val leg = shaped.legs.firstOrNull { it.index == index }
+                TypedLine(
+                    shaping,
+                    index,
+                    segment,
+                    leg,
+                    gasWrong = leg != null && gasWrongFor(leg, shaping.described(), conditions),
+                    ceilingBroken = leg != null && breaksCeiling(leg, above),
+                    widths = widths,
+                )
+            }
+            for (leg in done?.tail.orEmpty()) {
+                WorkedLine(
+                    leg,
+                    shaping,
+                    gasWrong = gasWrongFor(leg, shaping.described(), conditions),
+                    ceilingBroken = breaksCeiling(leg, above),
+                    widths = widths,
+                )
+            }
+        }
     }
-    for (leg in done?.tail.orEmpty()) {
-        WorkedLine(
-            leg,
-            shaping,
-            gasWrong = gasWrongFor(leg, shaping.described(), conditions),
-            ceilingBroken = breaksCeiling(leg, above),
-        )
+}
+
+/**
+ * Widths is how wide each column of the runtime is drawn, and whether they were narrowed to fit.
+ *
+ * Narrowed, a box has no room for its unit beside its number, so the units stand over the columns
+ * instead, which also says what each column is where no pointer can rest on it to be told.
+ *
+ * Immutable.
+ */
+private class Widths(
+    val runtime: Dp,
+    val arrow: Dp,
+    val depth: Dp,
+    val duration: Dp,
+    val rate: Dp,
+    val gas: Dp,
+    val narrow: Boolean,
+)
+
+/**
+ * The runtime's columns for a box [available] wide: their own widths where a line fits, and
+ * otherwise what is left shared out among the four typed in, so that a line keeps its gas and its
+ * two buttons on a phone rather than running off the screen. `PHONE-2`.
+ */
+private fun widthsFor(available: Dp): Widths {
+    val around = BUTTON * 2 + HALF * COLUMN_GAPS
+    if (available >= RUNTIME + ARROW + DEPTH + DURATION + RATE + GAS + around) {
+        return Widths(RUNTIME, ARROW, DEPTH, DURATION, RATE, GAS, narrow = false)
+    }
+    val left = (available - around - NARROW_RUNTIME - NARROW_ARROW).coerceAtLeast(LEAST_LEFT)
+    return Widths(
+        NARROW_RUNTIME,
+        NARROW_ARROW,
+        left * DEPTH_SHARE,
+        left * DURATION_SHARE,
+        left * RATE_SHARE,
+        left * GAS_SHARE,
+        narrow = true,
+    )
+}
+
+/** What each column of a narrowed runtime holds, over the lines, the units no longer in the boxes. */
+@Composable
+private fun ColumnHeads(widths: Widths) {
+    Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
+        val style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.outline)
+        Cell("min", widths.runtime, TextAlign.End, style)
+        Cell("", widths.arrow, TextAlign.Center, style)
+        Cell("m", widths.depth, TextAlign.Center, style)
+        Cell("time", widths.duration, TextAlign.Center, style)
+        Cell("m/min", widths.rate, TextAlign.Center, style)
+        Cell("gas", widths.gas, TextAlign.Center, style)
     }
 }
 
@@ -458,6 +522,7 @@ private fun TypedLine(
     gasWrong: Boolean,
     /** Whether the dive is above the ceiling on this line. */
     ceilingBroken: Boolean,
+    widths: Widths,
 ) {
     val staying = leg?.direction == Direction.STAY
     Row(
@@ -465,18 +530,18 @@ private fun TypedLine(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        Explained(PlannerTips.RUNTIME) { Cell(leg?.let { runtimeSaid(it) }.orEmpty(), RUNTIME, TextAlign.End) }
-        Explained(PlannerTips.DIRECTION) { Cell(leg?.direction?.arrow.orEmpty(), ARROW, TextAlign.Center) }
-        Tipped(PlannerTips.DEPTH, DEPTH) {
+        Explained(PlannerTips.RUNTIME) { Cell(leg?.let { runtimeSaid(it) }.orEmpty(), widths.runtime, TextAlign.End) }
+        Explained(PlannerTips.DIRECTION) { Cell(leg?.direction?.arrow.orEmpty(), widths.arrow, TextAlign.Center) }
+        Tipped(PlannerTips.DEPTH, widths.depth) {
             Compact(
                 dense = true,
                 value = segment.depth,
                 onChange = { shaping.segments[index] = segment.copy(depth = it) },
-                after = "m",
+                after = if (widths.narrow) "" else "m",
                 wrong = ceilingBroken,
             )
         }
-        Tipped(PlannerTips.DURATION, DURATION) {
+        Tipped(PlannerTips.DURATION, widths.duration) {
             Compact(
                 dense = true,
                 value = segment.duration,
@@ -485,12 +550,12 @@ private fun TypedLine(
                 derived = true,
             )
         }
-        Tipped(PlannerTips.RATE, RATE) {
+        Tipped(PlannerTips.RATE, widths.rate) {
             Compact(
                 dense = true,
                 value = if (staying) "" else segment.rate,
                 onChange = { shaping.segments[index] = segment.copy(rate = it, duration = "") },
-                after = "m/min",
+                after = if (widths.narrow) "" else "m/min",
                 hint = leg?.rate?.takeIf { segment.rate.isBlank() }?.let { rateSaid(it) }.orEmpty(),
                 derived = true,
                 enabled = !staying,
@@ -499,7 +564,7 @@ private fun TypedLine(
         val planned = shaping.described()
         val above = gasAbove(planned, index)
         val shown = segment.gas?.takeIf { it in shaping.gases.indices } ?: above
-        Tipped(PlannerTips.GAS, GAS) {
+        Tipped(PlannerTips.GAS, widths.gas) {
             Pick(
                 dense = true,
                 chosen = gasChoiceOf(planned, shown),
@@ -547,7 +612,7 @@ internal fun gasAbove(shaping: Planned, index: Int): Int {
 
 /** One line of the way up the model adds: all of it worked out, so all of it in italics. */
 @Composable
-private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBroken: Boolean) {
+private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBroken: Boolean, widths: Widths) {
     Explained(PlannerTips.WORKED) {
         Row(
             modifier = Modifier.height(ROW),
@@ -555,15 +620,17 @@ private fun WorkedLine(leg: Leg, shaping: Shaping, gasWrong: Boolean, ceilingBro
             horizontalArrangement = Arrangement.spacedBy(HALF),
         ) {
             val italic = calculatedOf(MaterialTheme.typography.bodySmall)
-            Cell(runtimeSaid(leg), RUNTIME, TextAlign.End, italic)
-            Cell(leg.direction.arrow, ARROW, TextAlign.Center, italic)
+            Cell(runtimeSaid(leg), widths.runtime, TextAlign.End, italic)
+            Cell(leg.direction.arrow, widths.arrow, TextAlign.Center, italic)
             val error = italic.copy(color = MaterialTheme.colorScheme.error)
-            Cell("${plain(leg.to)} m", DEPTH, TextAlign.End, if (ceilingBroken) error else italic)
-            Cell(clockOf(leg.seconds), DURATION, TextAlign.End, italic)
-            Cell(leg.rate?.let { "(${rateSaid(it)} m/min)" }.orEmpty(), RATE, TextAlign.End, italic)
+            val metres = if (widths.narrow) plain(leg.to) else "${plain(leg.to)} m"
+            Cell(metres, widths.depth, TextAlign.End, if (ceilingBroken) error else italic)
+            Cell(clockOf(leg.seconds), widths.duration, TextAlign.End, italic)
+            val rate = leg.rate?.let { if (widths.narrow) "(${rateSaid(it)})" else "(${rateSaid(it)} m/min)" }
+            Cell(rate.orEmpty(), widths.rate, TextAlign.End, italic)
             Cell(
                 gasChoiceOf(shaping.described(), leg.gas),
-                GAS,
+                widths.gas,
                 TextAlign.Start,
                 if (gasWrong) error else italic,
                 padding = GAP
@@ -689,7 +756,7 @@ private fun Conditions(shaping: Shaping) {
  */
 @Composable
 private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
+    val settings = @Composable {
         Column {
             Setting(
                 "Stress factor",
@@ -704,6 +771,18 @@ private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
                 "min"
             ) { shaping.problemMinutes = it }
         }
+    }
+    // On a phone the scenarios go under the settings: beside them there was no room left for
+    // what each came to. `PHONE-2`.
+    if (LocalCompact.current) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(HALF)) {
+            settings()
+            Scenarios(reckoned, shaping, Modifier.fillMaxWidth())
+        }
+        return
+    }
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
+        settings()
         Scenarios(reckoned, shaping, Modifier.weight(1f))
     }
 }
@@ -881,12 +960,13 @@ private fun CylinderHeadings() {
     }
 }
 
-/** What the whole dive costs, on one line. */
+/** What the whole dive costs, on one line where it fits and wrapping where it does not. */
 @Composable
 private fun Figures(evaluated: Evaluated.Done) {
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(vertical = GAP),
         horizontalArrangement = Arrangement.spacedBy(GAP * 3),
+        verticalArrangement = Arrangement.spacedBy(HALF),
     ) {
         Figure("CNS", "${evaluated.oxygen.percentCns.toInt()}%", PlannerTips.CNS)
         Figure("OTU", "${evaluated.oxygen.otu.toInt()}", PlannerTips.OTU)
@@ -1038,6 +1118,22 @@ private val DURATION = 76.dp
 private val RATE = 110.dp
 private val GAS = 110.dp
 private val BUTTON = 22.dp
+
+/** How many gaps a typed line has between its eight parts. */
+private const val COLUMN_GAPS = 7
+
+/** How wide the runtime's first two columns are where a line has to be shrunk to fit. */
+private val NARROW_RUNTIME = 28.dp
+private val NARROW_ARROW = 12.dp
+
+/** The least the four typed columns are given together, below which a number could not be read. */
+private val LEAST_LEFT = 180.dp
+
+/** How a narrowed runtime shares what is left among the four typed columns, the gas named in full. */
+private const val DEPTH_SHARE = 0.21f
+private const val DURATION_SHARE = 0.23f
+private const val RATE_SHARE = 0.21f
+private const val GAS_SHARE = 0.35f
 
 private val SETTING_LABEL = 170.dp
 internal val SETTING = 104.dp

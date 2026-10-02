@@ -344,6 +344,9 @@ internal class Kept {
     var chapter: Chapter? by mutableStateOf(null)
     var unfolded: Set<String> by mutableStateOf(emptySet())
 
+    /** Whether a phone shows that chapter rather than the chapters, which it shows first. `PHONE-2`. */
+    var inChapter: Boolean by mutableStateOf(false)
+
     /** Where the selector's tree and list are scrolled to, and the page on the right. */
     val tree: LazyListState = LazyListState()
     val list: LazyListState = LazyListState()
