@@ -72,13 +72,19 @@ class PlanningTest {
     }
 
     @Test
-    fun `what the model works out says so, beside what a computer wrote`() {
-        val dive = planned(DEEP)
-        val titles = workedOverlaysOf(dive, profile(dive), done(dive)).map { it.title }
+    fun `what the model works out says so beside what a computer wrote, and nowhere else`() {
+        val plan = planned(DEEP)
+        val recorded = planned("$DEEP, \"cns\": [[0, 0], [1900, 20]]")
 
-        assertTrue(titles.all { "calculated" in it }, "$titles")
-        assertTrue(titles.any { it.startsWith("CNS") } && titles.any { it.startsWith("OTU") })
-        assertTrue(titles.any { it.startsWith("NDL") }, "$titles")
+        assertEquals(
+            listOf("NDL", "G1 pressure", "CNS", "OTU"),
+            workedOverlaysOf(plan, profile(plan), done(plan)).map { it.title },
+            "a plan has nothing recorded to tell them from",
+        )
+        assertEquals(
+            listOf("NDL", "G1 pressure", "CNS calculated", "OTU"),
+            workedOverlaysOf(recorded, profile(recorded), done(recorded)).map { it.title },
+        )
     }
 
     @Test

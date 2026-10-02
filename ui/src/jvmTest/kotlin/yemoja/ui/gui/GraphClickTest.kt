@@ -26,19 +26,20 @@ class GraphClickTest {
     private val overlays = listOf(Overlay("CNS", "%", Line("CNS", listOf(Point(0.0, 0.0), Point(12.0, 12.0)))))
 
     @Test
-    fun `a click on the plot opens a box beside it, and a click on the box closes it`() {
+    fun `a click on the plot opens a box beside it, and a click on the box or a right click closes it`() {
         val scene = ImageComposeScene(600, 300, Density(1f)) {
             MaterialTheme { Selectable { Graphed(depth, overlays, emptyList(), planned = true, chosenFor = null) } }
         }
         try {
             var ms = 0L
             fun frame(): Image { ms += 20; return scene.render(ms * 1_000_000) }
-            fun click(at: Offset) {
+            fun click(at: Offset, right: Boolean = false) {
                 scene.sendPointerEvent(PointerEventType.Move, at, timeMillis = ms)
                 frame()
-                scene.sendPointerEvent(PointerEventType.Press, at, timeMillis = ms, buttons = PointerButtons(isPrimaryPressed = true))
+                val pressed = if (right) PointerButtons(isSecondaryPressed = true) else PointerButtons(isPrimaryPressed = true)
+                scene.sendPointerEvent(PointerEventType.Press, at, timeMillis = ms, buttons = pressed)
                 frame()
-                scene.sendPointerEvent(PointerEventType.Release, at, timeMillis = ms, buttons = PointerButtons(isPrimaryPressed = false))
+                scene.sendPointerEvent(PointerEventType.Release, at, timeMillis = ms, buttons = PointerButtons())
                 repeat(10) { frame() }
             }
             // A point a little right of the click, where the box opens.
@@ -50,6 +51,10 @@ class GraphClickTest {
             assertNotEquals(before, open, "the box covers the plot beside the click")
             click(Offset(340f, 150f))
             assertEquals(before, beside(), "and is gone once clicked")
+            click(Offset(300f, 150f))
+            assertNotEquals(before, beside())
+            click(Offset(100f, 80f), right = true)
+            assertEquals(before, beside(), "a right click on the plot closes it too")
         } finally {
             scene.close()
         }

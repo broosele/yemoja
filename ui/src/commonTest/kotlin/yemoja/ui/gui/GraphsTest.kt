@@ -245,6 +245,8 @@ class ReadingsTest {
         Overlay("NDL", "min", listOf(Line("NDL", listOf(Point(0.0, 99.0), Point(6.0, 3.0))))),
         Overlay("CNS", "%", Line("CNS", listOf(Point(0.0, 0.0), Point(12.0, 12.0)))),
         Overlay("OTU", "", Line("OTU", listOf(Point(0.0, 0.0), Point(12.0, 24.0)))),
+        Overlay("Gas 1 pressure", "bar", Line("Gas 1", listOf(Point(0.0, 200.0), Point(12.0, 80.0))), gas = "Gas 1"),
+        Overlay("Gas 2 pressure", "bar", Line("Gas 2", listOf(Point(0.0, 200.0), Point(12.0, 180.0))), gas = "Gas 2"),
     )
     private val events = listOf(
         Event(0.0, "Gas 1", Marking.SWITCH),
@@ -256,9 +258,12 @@ class ReadingsTest {
         readingsAt(depth, overlays, events, minute).associate { it.label to it.said }
 
     @Test
-    fun `a click lists the time, the depth, the gas and every overlay, not only the one on the axis`() {
+    fun `a click lists the time, the depth and every overlay, not only the one on the axis`() {
         assertEquals(
-            mapOf("Time" to "1:00", "Depth" to "10 m", "Gas" to "Gas 1", "NDL" to "83 min", "CNS" to "1 %", "OTU" to "2"),
+            mapOf(
+                "Time" to "1:00", "Depth" to "10 m", "NDL" to "83 min", "CNS" to "1 %", "OTU" to "2",
+                "Gas 1 pressure" to "190 bar", "Gas 2 pressure" to "198.3 bar",
+            ),
             said(1.0),
         )
     }
@@ -272,9 +277,12 @@ class ReadingsTest {
     }
 
     @Test
-    fun `the gas is the last switched to, and an alarm is not a gas`() {
-        assertEquals("Gas 1", said(10.5)["Gas"])
-        assertEquals("Gas 2", said(11.0)["Gas"])
+    fun `the pressure underlined is the gas last switched to, and an alarm is not a gas`() {
+        fun underlined(minute: Double): List<String> =
+            readingsAt(depth, overlays, events, minute).filter { it.underlined }.map { it.label }
+        assertEquals(listOf("Gas 1 pressure"), underlined(10.5))
+        assertEquals(listOf("Gas 2 pressure"), underlined(11.0))
+        assertTrue(readingsAt(depth, overlays, events, 1.0).none { it.label == "Gas" }, "the gas has no line of its own")
     }
 
     @Test

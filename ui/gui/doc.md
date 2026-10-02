@@ -815,10 +815,16 @@ once and corrected. The numbers stay unused rather than being given to something
   drawing. It is left out where the run owes no stop, a flat line along the surface saying only
   that the graph has another line in it.
 
-  **Everything else the model works out is a right-axis overlay, and each says it was worked
-  out.** A recording may carry its computer's own beside it, and the two disagree on purpose:
-  `manual/decompression.md` tells a reader the device decided at the time with settings this
-  cannot reproduce. *NDL calculated* beside *NDL* is the difference stated where it is read.
+  **Everything else the model works out is a right-axis overlay, and says it was worked out where
+  the recording holds the same reading.** A recording may carry its computer's own beside it, and
+  the two disagree on purpose: `manual/decompression.md` tells a reader the device decided at the
+  time with settings this cannot reproduce. *NDL calculated* beside *NDL* is the difference stated
+  where it is read.
+
+  *Amended:* only there. A plan records nothing, so on a plan, and on a recording that lacks the
+  reading, the word distinguishes nothing and is left off. A cylinder's worked-out gauge is titled
+  *pressure*, as a recorded one is, so that the two collide and the recorded one wins the plain
+  title.
 
   **The figures and the findings read as fields.** What a run costs, the clocks and the two waits
   are shown as worked-out values under the run's own fields, and each finding is a line labelled
@@ -1520,11 +1526,12 @@ once and corrected. The numbers stay unused rather than being given to something
   size. Open: what a phone shows of this.
 
   **A click reads every line at one moment.** A click on the plot draws a line across it at that
-  minute and opens a box beside the click listing the time, each depth line, the gas last switched
-  to and every overlay, including those not on the right axis. One axis at a time keeps the drawing
+  minute and opens a box beside the click listing the time, each depth line and every overlay,
+  including those not on the right axis. The gas breathed has no line of its own: the pressure of
+  the gas last switched to is underlined instead. One axis at a time keeps the drawing
   legible, and the box gives the reader the rest without a choice. A ceiling or stop of nought is
   left out, and a reading that has stopped is not read past its last point. Another click moves the
-  box, and a click on the box closes it. The box is laid out inside the graph rather than in a popup
+  box, and a right click on the plot or any click on the box closes it. The box is laid out inside the graph rather than in a popup
   window, since a popup's text joined the selection around it and crashed a click, `GUI-36`. Every
   graph has the box: a recording, a plan on a dive, and the planner.
 - **GUI-6 — Whether shape is enough on its own.** *Settled in part:* **a field may be marked

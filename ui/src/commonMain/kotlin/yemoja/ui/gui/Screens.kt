@@ -93,7 +93,6 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.toSize
@@ -114,6 +113,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.font.FontWeight
@@ -3185,8 +3187,9 @@ private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?, 
  * moving to another dive meets that dive's graph as it opens rather than as the last one was left.
  *
  * A click on the plot marks that moment and opens a box beside it listing everything the graph
- * holds there, the overlays not on the right axis included. Another click moves it, and a click
- * on the box closes it. A plan typed into keeps the moment, so the box follows the typing. `GUI-4`.
+ * holds there, the overlays not on the right axis included. Another click moves it, and a right
+ * click anywhere on the plot, or any click on the box, closes it. A plan typed into keeps the
+ * moment, so the box follows the typing. `GUI-4`.
  */
 @Composable
 internal fun Graphed(
@@ -3204,7 +3207,9 @@ internal fun Graphed(
     var clicked by remember(chosenFor) { mutableStateOf<Pair<Double, Offset>?>(null) }
     val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
     Box(modifier = Modifier.fillMaxWidth()) {
-        Chart(depth, overlay, events, planned, span, clicked?.first) { minute, at -> clicked = minute to at }
+        Chart(depth, overlay, events, planned, span, clicked?.first) { minute, at ->
+            clicked = minute?.let { it to at }
+        }
         clicked?.let { (minute, at) ->
             ReadingsBox(readingsAt(depth, overlays, events, minute), at, Modifier.matchParentSize()) {
                 clicked = null
@@ -3270,8 +3275,8 @@ private fun Chart(
     span: Reach? = null,
     /** The minute a click marked, drawn as a line across the plot, or null for none. */
     marked: Double? = null,
-    /** Called with the minute clicked on the plot, and the point clicked. */
-    onClick: (minute: Double, at: Offset) -> Unit = { _, _ -> },
+    /** Called with the minute clicked on the plot and the point clicked, or a null minute for a right click. */
+    onClick: (minute: Double?, at: Offset) -> Unit = { _, _ -> },
 ) {
     val ink = MaterialTheme.colorScheme.primary
     val stop = MaterialTheme.colorScheme.tertiary
@@ -3292,10 +3297,19 @@ private fun Chart(
     Spacer(
         modifier = Modifier.fillMaxWidth().height(DEPTH_GRAPH).padding(bottom = HALF)
             .pointerInput(lastMinute, overlay == null) {
-                detectTapGestures { at ->
-                    val left = AXIS.toPx()
-                    val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
-                    if (at.x in left..right) clicks(lastMinute * (at.x - left) / (right - left), at)
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type != PointerEventType.Press) continue
+                        val at = event.changes.first().position
+                        if (event.buttons.isSecondaryPressed) {
+                            clicks(null, at)
+                            continue
+                        }
+                        val left = AXIS.toPx()
+                        val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
+                        if (at.x in left..right) clicks(lastMinute * (at.x - left) / (right - left), at)
+                    }
                 }
             }
             .drawWithCache {
@@ -3419,7 +3433,7 @@ private fun lastMinuteOf(depth: List<Line>, overlay: Overlay?, span: Reach?): Do
 
 /**
  * The box a click on a graph opens: each of [readings] on a line, beside the point clicked [at],
- * on its right unless there is no room there. A click on it closes it.
+ * on its right unless there is no room there. A click on it closes it, with either button.
  */
 @Composable
 private fun ReadingsBox(readings: List<GraphReading>, at: Offset, modifier: Modifier, onClose: () -> Unit) {
@@ -3427,21 +3441,33 @@ private fun ReadingsBox(readings: List<GraphReading>, at: Offset, modifier: Modi
         modifier = modifier,
         content = {
             Surface(
-                modifier = Modifier.clickable(onClick = onClose),
+                modifier = Modifier.pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.type == PointerEventType.Press) {
+                                event.changes.forEach { it.consume() }
+                                onClose()
+                            }
+                        }
+                    }
+                },
                 shape = SHAPE,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shadowElevation = 2.dp,
             ) {
                 Row(modifier = Modifier.padding(horizontal = GAP, vertical = HALF)) {
                     val quiet = MaterialTheme.colorScheme.outline
+                    // The pressure of the gas being breathed is underlined, there being no line naming it.
+                    val small = MaterialTheme.typography.bodySmall
+                    fun styleOf(reading: GraphReading): TextStyle =
+                        if (reading.underlined) small.copy(textDecoration = TextDecoration.Underline) else small
                     Column(horizontalAlignment = Alignment.End) {
-                        for (reading in readings) {
-                            Text(reading.label, style = MaterialTheme.typography.bodySmall, color = quiet)
-                        }
+                        for (reading in readings) Text(reading.label, style = styleOf(reading), color = quiet)
                     }
                     Spacer(modifier = Modifier.width(GAP))
                     Column {
-                        for (reading in readings) Text(reading.said, style = MaterialTheme.typography.bodySmall)
+                        for (reading in readings) Text(reading.said, style = styleOf(reading))
                     }
                 }
             }

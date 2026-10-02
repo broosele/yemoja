@@ -42,9 +42,15 @@ internal class Line(
  * Several lines rather than one, because a reading may stop existing part way through a dive
  * and start again, and a line drawn across that stretch is a reading nobody took. `GUI-4`.
  */
-internal class Overlay(val title: String, val unit: String, val lines: List<Line>) {
+internal class Overlay(
+    val title: String,
+    val unit: String,
+    val lines: List<Line>,
+    /** The gas source a pressure belongs to, named as its switches are, or null for any other reading. */
+    val gas: String? = null,
+) {
 
-    constructor(title: String, unit: String, line: Line) : this(title, unit, listOf(line))
+    constructor(title: String, unit: String, line: Line, gas: String? = null) : this(title, unit, listOf(line), gas)
 }
 
 /** What a mark on the depth line is: a gas switched to, or an alarm the computer gave. */
@@ -107,12 +113,18 @@ internal fun valueAt(line: Line, minute: Double): Double? {
     return depthAt(line, minute)
 }
 
-/** GraphReading is one line of the box a click on a graph opens: what it is, and what it read. */
-internal class GraphReading(val label: String, val said: String)
+/**
+ * GraphReading is one line of the box a click on a graph opens: what it is, what it read, and
+ * whether it is the pressure of the gas being breathed.
+ */
+internal class GraphReading(val label: String, val said: String, val underlined: Boolean = false)
 
 /**
- * Everything a graph holds at [minute], for the box a click opens: the time, every depth line, the
- * gas breathed, and every overlay, the ones not on the right axis included. `GUI-4`.
+ * Everything a graph holds at [minute], for the box a click opens: the time, every depth line, and
+ * every overlay, the ones not on the right axis included. `GUI-4`.
+ *
+ * The gas breathed has no line of its own. Its pressure is underlined instead, being the cylinder
+ * a reader is watching.
  *
  * A line beside the depth that reads nought is left out, since a ceiling or a deco stop of nought
  * is no stop. An overlay with no reading at that minute is left out too.
@@ -126,13 +138,11 @@ internal fun readingsAt(depth: List<Line>, overlays: List<Overlay>, events: List
         if (!line.main && value <= 0.0) continue
         readings += GraphReading(line.label, "${readingOf(value)} m")
     }
-    events.lastOrNull { it.marking == Marking.SWITCH && it.minute <= minute }?.let {
-        readings += GraphReading("Gas", it.label)
-    }
+    val breathed = events.lastOrNull { it.marking == Marking.SWITCH && it.minute <= minute }?.label
     for (overlay in overlays) {
         val value = overlay.lines.firstNotNullOfOrNull { valueAt(it, minute) } ?: continue
         val unit = if (overlay.unit.isEmpty()) "" else " ${overlay.unit}"
-        readings += GraphReading(overlay.title, readingOf(value) + unit)
+        readings += GraphReading(overlay.title, readingOf(value) + unit, breathed != null && overlay.gas == breathed)
     }
     return readings
 }
@@ -173,8 +183,9 @@ internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
     }
     val sources = keyedOf(dive, "gas_sources")
     for ((key, series) in keyedSeriesOf(profile, "pressures")) {
-        val tank = sources[key]?.let { entryLabelOf(key, it) } ?: key
-        overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)))
+        val source = sources[key]?.let { entryLabelOf(key, it) }
+        val tank = source ?: key
+        overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)), gas = source ?: prettyOf(key))
     }
     seriesOf(profile, "no_deco_time")?.let {
         val stops = seriesOf(profile, "decostop")?.let { series -> pointsOf(series) }.orEmpty()

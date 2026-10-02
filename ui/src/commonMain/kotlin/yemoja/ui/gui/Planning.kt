@@ -36,37 +36,42 @@ internal fun ceilingLineOf(evaluated: Evaluated.Done): Line? {
 }
 
 /**
- * What the model works out that the right axis can show, in the order offered.
+ * What the model works out that the right axis of a dive's graph can show, in the order offered.
  *
- * Each says it was worked out, because a recording may carry the computer's own beside it and the
- * two disagree on purpose. `manual/decompression.md` says why: the device decided at the time,
- * with settings this cannot reproduce, and this is a second opinion arrived at afterwards.
+ * One the recording also holds is titled *calculated*, so the two can be told apart. They disagree
+ * on purpose. `manual/decompression.md` says why: the device decided at the time, with settings
+ * this cannot reproduce, and this is a second opinion arrived at afterwards. One the recording does
+ * not hold, and every one on a plan, keeps the plain title.
  */
 internal fun workedOverlaysOf(dive: Item, profile: Item, evaluated: Evaluated.Done): List<Overlay> {
     val sources = sourcesOf(dive, profile)
+    val recorded = overlaysOf(dive, profile).map { it.title }.toSet()
     return runOverlaysOf(
         evaluated,
-        evaluated.pressures.keys.associateWith { key -> sources[key]?.let { entryLabelOf(key, it) } ?: key },
-    )
+        evaluated.pressures.keys.associateWith { key -> sources[key]?.let { entryLabelOf(key, it) } ?: prettyOf(key) },
+    ).map { if (it.title in recorded) Overlay("${it.title} calculated", it.unit, it.lines, it.gas) else it }
 }
 
-/** The overlays [evaluated] gives a run belonging to no dive, its cylinders named by [tanks]. */
+/**
+ * The overlays [evaluated] gives a run belonging to no dive, its cylinders named by [tanks], as
+ * its switches name them.
+ */
 internal fun runOverlaysOf(evaluated: Evaluated.Done, tanks: Map<String, String>): List<Overlay> {
     val overlays = ArrayList<Overlay>()
     val limits = pointsOf(evaluated.noDecompressionTime, 1.0 / 60.0)
     if (limits.isNotEmpty()) {
         overlays += Overlay(
-            "NDL calculated",
+            "NDL",
             "min",
-            Line("NDL calculated", limits.map { Point(it.minute, minOf(it.value, NO_DECO_CAP)) }),
+            Line("NDL", limits.map { Point(it.minute, minOf(it.value, NO_DECO_CAP)) }),
         )
     }
     for ((key, series) in evaluated.pressures) {
         val tank = tanks[key] ?: key
-        overlays += Overlay("$tank calculated", "bar", Line(tank, pointsOf(series)))
+        overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)), gas = tank)
     }
-    overlays += Overlay("CNS calculated", "%", Line("CNS", pointsOf(evaluated.cns)))
-    overlays += Overlay("OTU calculated", "", Line("OTU", pointsOf(evaluated.otu)))
+    overlays += Overlay("CNS", "%", Line("CNS", pointsOf(evaluated.cns)))
+    overlays += Overlay("OTU", "", Line("OTU", pointsOf(evaluated.otu)))
     return overlays
 }
 
