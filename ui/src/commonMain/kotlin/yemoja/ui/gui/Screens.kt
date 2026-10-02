@@ -89,6 +89,11 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import kotlin.math.roundToInt
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.toSize
@@ -3178,6 +3183,10 @@ private fun ProfileGraph(dive: Item, profile: Item, evaluated: Evaluated.Done?, 
  *
  * The right axis goes back to the first of [overlays] whenever [chosenFor] changes, so a reader
  * moving to another dive meets that dive's graph as it opens rather than as the last one was left.
+ *
+ * A click on the plot marks that moment and opens a box beside it listing everything the graph
+ * holds there, the overlays not on the right axis included. Another click moves it, and a click
+ * on the box closes it. A plan typed into keeps the moment, so the box follows the typing. `GUI-4`.
  */
 @Composable
 internal fun Graphed(
@@ -3191,9 +3200,16 @@ internal fun Graphed(
 ) {
     var picked by remember(chosenFor) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }
+    // The moment clicked, and where on the plot, or null with no box open.
+    var clicked by remember(chosenFor) { mutableStateOf<Pair<Double, Offset>?>(null) }
     val overlay = overlays.getOrNull(picked.coerceIn(0, maxOf(overlays.size - 1, 0)))
     Box(modifier = Modifier.fillMaxWidth()) {
-        Chart(depth, overlay, events, planned, span)
+        Chart(depth, overlay, events, planned, span, clicked?.first) { minute, at -> clicked = minute to at }
+        clicked?.let { (minute, at) ->
+            ReadingsBox(readingsAt(depth, overlays, events, minute), at, Modifier.matchParentSize()) {
+                clicked = null
+            }
+        }
         // The right axis's title is the box that chooses it: the label says what the red line
         // is, and clicking it says what else it could be.
         if (overlay != null) {
@@ -3252,6 +3268,10 @@ private fun Chart(
     planned: Boolean = false,
     /** How far to draw the axes at least, where this graph is one of several read side by side. */
     span: Reach? = null,
+    /** The minute a click marked, drawn as a line across the plot, or null for none. */
+    marked: Double? = null,
+    /** Called with the minute clicked on the plot, and the point clicked. */
+    onClick: (minute: Double, at: Offset) -> Unit = { _, _ -> },
 ) {
     val ink = MaterialTheme.colorScheme.primary
     val stop = MaterialTheme.colorScheme.tertiary
@@ -3267,16 +3287,22 @@ private fun Chart(
     val switched = MaterialTheme.typography.labelSmall.copy(color = stop)
     val alarmed = MaterialTheme.typography.labelSmall.copy(color = other)
     val measurer = rememberTextMeasurer()
+    val lastMinute = lastMinuteOf(depth, overlay, span)
+    val clicks by rememberUpdatedState(onClick)
     Spacer(
         modifier = Modifier.fillMaxWidth().height(DEPTH_GRAPH).padding(bottom = HALF)
+            .pointerInput(lastMinute, overlay == null) {
+                detectTapGestures { at ->
+                    val left = AXIS.toPx()
+                    val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
+                    if (at.x in left..right) clicks(lastMinute * (at.x - left) / (right - left), at)
+                }
+            }
             .drawWithCache {
                 val left = AXIS.toPx()
                 val right = size.width - (if (overlay == null) HALF.toPx() else AXIS.toPx())
                 val bottom = size.height - FOOT.toPx()
                 val top = HEAD.toPx()
-                val all = depth.flatMap { it.points } +
-                        overlay?.lines?.flatMap { it.points }.orEmpty()
-                val lastMinute = maxOf(all.maxOfOrNull { it.minute } ?: 0.0, span?.minutes ?: 0.0, 1.0)
                 val deepest =
                     maxOf(depth.firstOrNull { it.main }?.points?.maxOfOrNull { it.value } ?: 1.0, span?.deepest ?: 0.0)
                 val depthHigh = maxOf(deepest * (1.0 + AXIS_ROOM), 1.0)
@@ -3377,11 +3403,59 @@ private fun Chart(
                             drawText(laid, topLeft = corner)
                         }
                     }
+                    marked?.let { drawLine(quiet, Offset(x(it), top), Offset(x(it), bottom), THIN.toPx()) }
                     val heading = measurer.measure("Depth (m)", title)
                     drawText(heading, topLeft = Offset(left + HALF.toPx(), 0f))
                 }
             },
     )
+}
+
+/** How many minutes a graph's time axis runs to: the longest of its lines, [span], and one at least. */
+private fun lastMinuteOf(depth: List<Line>, overlay: Overlay?, span: Reach?): Double {
+    val all = depth.flatMap { it.points } + overlay?.lines?.flatMap { it.points }.orEmpty()
+    return maxOf(all.maxOfOrNull { it.minute } ?: 0.0, span?.minutes ?: 0.0, 1.0)
+}
+
+/**
+ * The box a click on a graph opens: each of [readings] on a line, beside the point clicked [at],
+ * on its right unless there is no room there. A click on it closes it.
+ */
+@Composable
+private fun ReadingsBox(readings: List<GraphReading>, at: Offset, modifier: Modifier, onClose: () -> Unit) {
+    Layout(
+        modifier = modifier,
+        content = {
+            Surface(
+                modifier = Modifier.clickable(onClick = onClose),
+                shape = SHAPE,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shadowElevation = 2.dp,
+            ) {
+                Row(modifier = Modifier.padding(horizontal = GAP, vertical = HALF)) {
+                    val quiet = MaterialTheme.colorScheme.outline
+                    Column(horizontalAlignment = Alignment.End) {
+                        for (reading in readings) {
+                            Text(reading.label, style = MaterialTheme.typography.bodySmall, color = quiet)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(GAP))
+                    Column {
+                        for (reading in readings) Text(reading.said, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        },
+    ) { measurables, constraints ->
+        val box = measurables.single().measure(constraints.copy(minWidth = 0, minHeight = 0))
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            val gap = GAP.roundToPx()
+            val x = at.x.roundToInt()
+            val beside = if (x + gap + box.width <= constraints.maxWidth) x + gap else x - gap - box.width
+            val y = (at.y.roundToInt() - box.height / 2).coerceIn(0, maxOf(constraints.maxHeight - box.height, 0))
+            box.place(beside.coerceAtLeast(0), y)
+        }
+    }
 }
 
 /** A triangle pointing up, [size] across, centred on [centre], which is what an alarm is. */

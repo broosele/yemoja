@@ -115,6 +115,12 @@ chosen from its title: the temperature, a cylinder's pressure,
 the no-decompression time as **NDL**, and oxygen loading as CNS and OTU. Gas switches are marked
 with the gas moved to, and alarms with red triangles.
 
+**Click anywhere on a graph** to see everything at that moment: a line marks it, and a box beside
+it lists the time, the depth, the ceiling or stop where there is one, the gas breathed, and every
+reading the right-hand axis could show, not only the one it shows. Click elsewhere to move it,
+and click the box to close it. This works the same on the planner's graph, where the box stays at
+its moment and its values change as you edit the plan.
+
 **What Yemoja's own model makes of it sits under the graph**, where it can be calculated: how deep
 the stops would start, what each cylinder gives up and ends at, the oxygen clocks, how long before
 you may fly, and how long before it is out of you. Anything it objects to — going above the

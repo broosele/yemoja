@@ -10,6 +10,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
+import kotlin.math.roundToLong
 
 /*
  * A recording as a graph: what is drawn, worked out here and holding no screen in it.
@@ -90,6 +91,58 @@ internal fun depthAt(line: Line, minute: Double): Double? {
     val b = points[after]
     if (b.minute == a.minute) return b.value
     return a.value + (b.value - a.value) * (minute - a.minute) / (b.minute - a.minute)
+}
+
+/**
+ * The value [line] reads at [minute], or null outside the minutes it covers.
+ *
+ * A stepped line holds each value until its next point, and any other line slopes between the
+ * points either side. Unlike [depthAt], nothing is read beyond either end, because a reading
+ * that has stopped did not go on at its last value.
+ */
+internal fun valueAt(line: Line, minute: Double): Double? {
+    val points = line.points
+    if (points.isEmpty() || minute < points.first().minute || minute > points.last().minute) return null
+    if (line.stepped) return points.last { it.minute <= minute }.value
+    return depthAt(line, minute)
+}
+
+/** GraphReading is one line of the box a click on a graph opens: what it is, and what it read. */
+internal class GraphReading(val label: String, val said: String)
+
+/**
+ * Everything a graph holds at [minute], for the box a click opens: the time, every depth line, the
+ * gas breathed, and every overlay, the ones not on the right axis included. `GUI-4`.
+ *
+ * A line beside the depth that reads nought is left out, since a ceiling or a deco stop of nought
+ * is no stop. An overlay with no reading at that minute is left out too.
+ */
+internal fun readingsAt(depth: List<Line>, overlays: List<Overlay>, events: List<Event>, minute: Double): List<GraphReading> {
+    val readings = ArrayList<GraphReading>()
+    val second = (minute * 60).roundToLong()
+    readings += GraphReading("Time", "${second / 60}:${(second % 60).toString().padStart(2, '0')}")
+    for (line in depth) {
+        val value = valueAt(line, minute) ?: continue
+        if (!line.main && value <= 0.0) continue
+        readings += GraphReading(line.label, "${readingOf(value)} m")
+    }
+    events.lastOrNull { it.marking == Marking.SWITCH && it.minute <= minute }?.let {
+        readings += GraphReading("Gas", it.label)
+    }
+    for (overlay in overlays) {
+        val value = overlay.lines.firstNotNullOfOrNull { valueAt(it, minute) } ?: continue
+        val unit = if (overlay.unit.isEmpty()) "" else " ${overlay.unit}"
+        readings += GraphReading(overlay.title, readingOf(value) + unit)
+    }
+    return readings
+}
+
+/** A reading to a tenth, its nought dropped where it is whole. */
+private fun readingOf(value: Double): String {
+    val tenths = (value * 10).roundToLong()
+    val whole = tenths / 10
+    val tenth = kotlin.math.abs(tenths % 10)
+    return if (tenth == 0L) "$whole" else "${if (tenths < 0 && whole == 0L) "-" else ""}$whole.$tenth"
 }
 
 /**

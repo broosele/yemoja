@@ -1518,6 +1518,15 @@ once and corrected. The numbers stay unused rather than being given to something
   throughout would otherwise draw its temperature as a second axis under the graph. What is
   worked out is worked out without a screen and tested; the drawing is paths built once per
   size. Open: what a phone shows of this.
+
+  **A click reads every line at one moment.** A click on the plot draws a line across it at that
+  minute and opens a box beside the click listing the time, each depth line, the gas last switched
+  to and every overlay, including those not on the right axis. One axis at a time keeps the drawing
+  legible, and the box gives the reader the rest without a choice. A ceiling or stop of nought is
+  left out, and a reading that has stopped is not read past its last point. Another click moves the
+  box, and a click on the box closes it. The box is laid out inside the graph rather than in a popup
+  window, since a popup's text joined the selection around it and crashed a click, `GUI-36`. Every
+  graph has the box: a recording, a plan on a dive, and the planner.
 - **GUI-6 — Whether shape is enough on its own.** *Settled in part:* **a field may be marked
   as not for reading, and the model marks it.** A type says which of its fields are kept for
   the machinery — a download's bookmark, a pairing key, which recording is worked from — and

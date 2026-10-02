@@ -234,3 +234,61 @@ class NoDecoStretchTest {
         assertEquals(listOf(99.0, 99.0), noDeco.lines[1].points.map { it.value })
     }
 }
+
+class ReadingsTest {
+
+    private val depth = listOf(
+        Line("Depth", listOf(Point(0.0, 0.0), Point(2.0, 20.0), Point(10.0, 20.0), Point(12.0, 0.0))),
+        Line("Ceiling", listOf(Point(0.0, 0.0), Point(8.0, 0.0), Point(10.0, 6.0), Point(12.0, 0.0)), main = false),
+    )
+    private val overlays = listOf(
+        Overlay("NDL", "min", listOf(Line("NDL", listOf(Point(0.0, 99.0), Point(6.0, 3.0))))),
+        Overlay("CNS", "%", Line("CNS", listOf(Point(0.0, 0.0), Point(12.0, 12.0)))),
+        Overlay("OTU", "", Line("OTU", listOf(Point(0.0, 0.0), Point(12.0, 24.0)))),
+    )
+    private val events = listOf(
+        Event(0.0, "Gas 1", Marking.SWITCH),
+        Event(5.0, "Ascent", Marking.ALARM),
+        Event(11.0, "Gas 2", Marking.SWITCH),
+    )
+
+    private fun said(minute: Double): Map<String, String> =
+        readingsAt(depth, overlays, events, minute).associate { it.label to it.said }
+
+    @Test
+    fun `a click lists the time, the depth, the gas and every overlay, not only the one on the axis`() {
+        assertEquals(
+            mapOf("Time" to "1:00", "Depth" to "10 m", "Gas" to "Gas 1", "NDL" to "83 min", "CNS" to "1 %", "OTU" to "2"),
+            said(1.0),
+        )
+    }
+
+    @Test
+    fun `a ceiling of nought is no ceiling, and a reading that has stopped is not read on`() {
+        val atNine = said(9.0)
+        assertEquals("3 m", atNine["Ceiling"])
+        assertTrue("NDL" !in atNine, "the limit ended at six minutes: $atNine")
+        assertTrue("Ceiling" !in said(4.0))
+    }
+
+    @Test
+    fun `the gas is the last switched to, and an alarm is not a gas`() {
+        assertEquals("Gas 1", said(10.5)["Gas"])
+        assertEquals("Gas 2", said(11.0)["Gas"])
+    }
+
+    @Test
+    fun `a stepped line holds its value until its next point`() {
+        val stop = Line("Deco stop", listOf(Point(0.0, 6.0), Point(2.0, 3.0)), main = false, stepped = true)
+        assertEquals(6.0, valueAt(stop, 1.9))
+        assertEquals(3.0, valueAt(stop, 2.0))
+        assertEquals(null, valueAt(stop, 2.5))
+    }
+
+    @Test
+    fun `a time is minutes and seconds, and a value a tenth at most`() {
+        val at = readingsAt(depth, overlays, events, 1.0 + 25.0 / 60.0).associate { it.label to it.said }
+        assertEquals("1:25", at["Time"])
+        assertEquals("14.2 m", at["Depth"])
+    }
+}
