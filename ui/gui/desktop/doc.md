@@ -137,5 +137,22 @@ what it means is argued there; what is here is where it goes on a large screen.
   dive holds one line. It rides on the run's last row and rises over the rows above,
   which are drawn before it. A single word wider than the column still breaks within itself.
 
+- **DESK-10 — Which of Java the installer carries.** *Settled:* **the modules the code uses, and
+  three it loads by name; not the whole runtime.** Decided on 2026-10-02, at the author's word.
+
+  The installer carried every module of the runtime, 156 MB of a 271 MB installation, because a
+  module left out fails only when the code needing it runs, and for Bluetooth that is halfway
+  through a download. What the shipped jars use is what `jdeps` finds over every one of them:
+  `java.base`, `java.desktop`, `java.instrument`, `java.logging`, `java.management` and
+  `jdk.unsupported`. Three more are loaded by name and so invisible to it: `jdk.crypto.ec` for
+  secure connections, `jdk.charsets` for text in other encodings, and `jdk.accessibility` for a
+  screen reader. The runtime is 79 MB with them, and the whole test suite passes on it.
+
+  **Locale data is left out**, 30 MB of it. Without it numbers are written the one way the code
+  assumes, with a point, whatever the machine's language: the code writes `1.5` and then trims
+  its zeros by looking for a point, which a comma would have defeated.
+
+  A new library means running `jdeps --print-module-deps` again over `ui/build/install/yemoja/lib`.
+
 ## Open questions
 

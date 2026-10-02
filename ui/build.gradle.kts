@@ -215,9 +215,13 @@ compose.desktop {
             packageVersion = release
             description = "A dive logbook kept as readable files"
             appResourcesRootDir.set(nativeResources)
-            // The whole runtime rather than a list of modules worked out by hand: a module left
-            // out fails only when the code that needs it runs, which for Bluetooth is a download.
-            includeAllModules = true
+            // The modules jdeps finds the shipped jars using, and three loaded by name that it
+            // cannot see. A new library means running jdeps again, since a module left out fails
+            // only when the code needing it runs. `DESK-10`.
+            modules(
+                "java.instrument", "java.management", "jdk.unsupported",
+                "jdk.crypto.ec", "jdk.charsets", "jdk.accessibility",
+            )
             windows {
                 // Made from the window's own yemoja.svg by tool/icons.py, which is run again when
                 // the drawing changes. The installer, the exe and its shortcuts all carry it.
