@@ -401,8 +401,8 @@ once and corrected. The numbers stay unused rather than being given to something
   starts only once that save has landed. *Don't save* empties it, and *Cancel* leaves it. A plan
   that cannot be saved says why under the question, and its *Save* is greyed.
 
-  *Open plan* replaces the plan without asking, as it did before. That is the same loss and is left
-  as it is until asked for.
+  **Opening a saved plan asks the same question**, since it replaces the plan just as surely: the
+  plan chosen from *Open plan* opens once the answer is given, and not at all on *Cancel*.
 
 - **GUI-53 — Where add, edit and delete stand.** *Settled:* **on the tab row, left of the
   agent's button, acting on the item in front of the reader.**

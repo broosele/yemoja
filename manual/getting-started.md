@@ -383,7 +383,7 @@ if the dive already has one by that name, the plan takes the next free letter. I
 planner from a dive, with **Add plan** or **Edit plan**, you can also save it back to that dive. **Open plan** lists every plan you have saved, by its
 dive and its name, and opens the one you choose the same way. **New plan** empties the planner
 for a plan of its own, on no dive and called *Plan A*; if the one you have has changes you have
-not saved, it asks first whether to save them. What is saved is the dive itself: every depth and gas switch, the way up included,
+not saved, it asks first whether to save them, and so does opening another plan. What is saved is the dive itself: every depth and gas switch, the way up included,
 and the cylinders. So is everything the planner was set to, and the lines you typed, so a plan
 you open again is the plan you saved, with the way up worked out again rather than your defaults
 of today. If the depths of a saved plan have been changed by hand since, it opens from those

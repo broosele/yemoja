@@ -600,17 +600,17 @@ internal fun SaveRow(saving: Saving, shaping: Shaping, universe: Universe?) {
                 }
             }
         }
-        OpenPlan(universe) { chosen -> saving.open(chosen, universe, shaping) }
         // Saved where Save would put it, and as a new dive where it has nowhere to go or cannot go there.
         val toBound = target != null && blocked == null
-        NewPlan(
+        val leaving = Leaving(
             changed = { saving.isChanged(shaping, universe?.settings) },
             name = saving.name.trim().ifEmpty { "the plan" },
             savedAs = if (toBound) "Save" else "Save as new dive",
             unsavable = if (toBound) null else blockedNew,
-            onSave = { save(if (toBound) bound else null) },
-            onNew = { saving.startNew(shaping, universe?.settings) },
+            save = { save(if (toBound) bound else null) },
         )
+        OpenPlan(universe, leaving) { chosen -> saving.open(chosen, universe, shaping) }
+        NewPlan(leaving) { saving.startNew(shaping, universe?.settings) }
         if (bound != null) {
             TextButton(
                 onClick = { saving.bound = null; saving.said = null },
@@ -643,56 +643,72 @@ private fun SmallButton(label: String, enabled: Boolean, quiet: Boolean = false,
 }
 
 /**
- * The deed that empties the planner for a new plan, asking first where the plan has changes not
- * saved: save them, leave them, or stay. A save that fails stays, its reason said in the row.
- * `GUI-54`.
+ * Leaving is what a deed that replaces the plan needs to ask first: whether it has changed, what
+ * it is called, and how it would be saved, or why it cannot be. `GUI-54`.
+ *
+ * Immutable.
+ */
+private class Leaving(
+    val changed: () -> Boolean,
+    val name: String,
+    /** The label of the deed that saves it: Save, or Save as new dive. */
+    val savedAs: String,
+    /** Why it cannot be saved as it is, or absent where it can. */
+    val unsavable: String?,
+    /** Saves it, and says whether that landed. */
+    val save: () -> Boolean,
+)
+
+/**
+ * The question asked before a plan with changes not saved is replaced: save them, leave them, or
+ * stay. [after] says what replaces it. A save that fails stays, its reason said in the row, and
+ * nothing is replaced. `GUI-54`.
  */
 @Composable
-private fun NewPlan(
-    changed: () -> Boolean,
-    name: String,
-    savedAs: String,
-    unsavable: String?,
-    onSave: () -> Boolean,
-    onNew: () -> Unit,
-) {
-    var asking by remember { mutableStateOf(false) }
-    SmallButton("New plan", enabled = true, quiet = true) { if (changed()) asking = true else onNew() }
-    if (!asking) return
+private fun SaveFirst(leaving: Leaving, after: String, onGo: () -> Unit, onStay: () -> Unit) {
     AlertDialog(
-        onDismissRequest = { asking = false },
-        title = { Text("Save $name first?") },
+        onDismissRequest = onStay,
+        title = { Text("Save ${leaving.name} first?") },
         text = {
             Text(
-                "It has changes that are not saved, and a new plan starts empty." +
+                "It has changes that are not saved, and $after." +
                     // The reason is a sentence of the row's own, which may or may not end in a stop.
-                    (unsavable?.let { "\n\n" + it.removeSuffix(".") + "." } ?: ""),
+                    (leaving.unsavable?.let { "\n\n" + it.removeSuffix(".") + "." } ?: ""),
             )
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    asking = false
-                    if (onSave()) onNew()
-                },
-                enabled = unsavable == null,
-            ) { Text(savedAs) }
+            TextButton(onClick = { if (leaving.save()) onGo() else onStay() }, enabled = leaving.unsavable == null) {
+                Text(leaving.savedAs)
+            }
         },
         dismissButton = {
             Row {
-                TextButton(onClick = { asking = false }) { Text("Cancel") }
-                TextButton(onClick = { asking = false; onNew() }) {
-                    Text("Don't save", color = MaterialTheme.colorScheme.error)
-                }
+                TextButton(onClick = onStay) { Text("Cancel") }
+                TextButton(onClick = onGo) { Text("Don't save", color = MaterialTheme.colorScheme.error) }
             }
         },
     )
 }
 
-/** The deed that opens a plan saved before: a menu of them, the one chosen loaded to be changed. */
+/** The deed that empties the planner for a new plan, asking first where that would lose changes. */
 @Composable
-private fun OpenPlan(universe: Universe?, onChoose: (Bound.Editing) -> Unit) {
+private fun NewPlan(leaving: Leaving, onNew: () -> Unit) {
+    var asking by remember { mutableStateOf(false) }
+    SmallButton("New plan", enabled = true, quiet = true) { if (leaving.changed()) asking = true else onNew() }
+    if (asking) {
+        SaveFirst(leaving, "a new plan starts empty", onGo = { asking = false; onNew() }, onStay = { asking = false })
+    }
+}
+
+/**
+ * The deed that opens a plan saved before: a menu of them, the one chosen loaded to be changed,
+ * asking first where that would lose changes to the plan there now.
+ */
+@Composable
+private fun OpenPlan(universe: Universe?, leaving: Leaving, onChoose: (Bound.Editing) -> Unit) {
     var choosing by remember { mutableStateOf(false) }
+    // The plan chosen while the one there has changes, waiting on the answer.
+    var waiting by remember { mutableStateOf<Pair<Bound.Editing, String>?>(null) }
     Box {
         SmallButton("Open plan", universe != null, quiet = true) { choosing = true }
         Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
@@ -705,11 +721,19 @@ private fun OpenPlan(universe: Universe?, onChoose: (Bound.Editing) -> Unit) {
                     text = { Text(said) },
                     onClick = {
                         choosing = false
-                        onChoose(bound)
+                        if (leaving.changed()) waiting = bound to said else onChoose(bound)
                     },
                 )
             }
         }
+    }
+    waiting?.let { (bound, said) ->
+        SaveFirst(
+            leaving,
+            "opening $said replaces it",
+            onGo = { waiting = null; onChoose(bound) },
+            onStay = { waiting = null },
+        )
     }
 }
 
