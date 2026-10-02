@@ -31,13 +31,13 @@ class ReviewedTest {
     fun `a case naming a cylinder it has not got is refused, not quietly breathed from the line above`() {
         fun read(json: String) = casesOf(Json.parse(json))
         val beyond = assertIs<Read.Wrong>(
-            read("""{"lines": [{"depth": 20, "duration": 10, "gas": 3}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]}"""),
+            read("""{"runtime": [{"depth": 20, "duration": 10, "gas": 3}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]}"""),
         )
         assertTrue("one of the 2 cylinders, not 3" in beyond.reason, beyond.reason)
-        val typo = assertIs<Read.Wrong>(read("""{"lines": [{"depth": 20, "duration": 10, "gas": "two"}]}"""))
+        val typo = assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 20, "duration": 10, "gas": "two"}]}"""))
         assertTrue("not two" in typo.reason, typo.reason)
         assertIs<Read.Cases>(
-            read("""{"lines": [{"depth": 20, "duration": 10, "gas": 2}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]}"""),
+            read("""{"runtime": [{"depth": 20, "duration": 10, "gas": 2}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]}"""),
         )
     }
 

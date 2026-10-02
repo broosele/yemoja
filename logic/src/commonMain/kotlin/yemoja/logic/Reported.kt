@@ -83,7 +83,7 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
         "otu" to Stored.Leaf(schedule.otu),
         "no_flight_seconds" to Stored.Leaf(schedule.noFlightSeconds),
         "desaturation_seconds" to Stored.Leaf(schedule.desaturationSeconds),
-        "lines" to Stored.Elements(
+        "runtime" to Stored.Elements(
             schedule.lines.map { line ->
                 Stored.Members(
                     mapOf(

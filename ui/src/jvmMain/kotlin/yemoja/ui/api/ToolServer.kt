@@ -226,7 +226,7 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
                     put("type", "object")
                     put(
                         "description",
-                        "The plan: lines, gases, and any setting it names. See the chapter " +
+                        "The plan: its runtime, gases, and any setting it names. See the chapter " +
                             "planning-from-a-file.md for every field.",
                     )
                 }

@@ -16,7 +16,7 @@ private fun read(json: String): Read = casesOf(Json.parse(json))
 private fun oneOf(json: String): Case = assertIs<Read.Cases>(read(json)).cases.single()
 
 private const val FORTY = """
-    [{"name": "forty", "lines": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
+    [{"name": "forty", "runtime": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
       "gases": [{"gas": "air", "size": 24, "fill": 232, "sac": 20}],
       "gradient_factor_low": 1, "gradient_factor_high": 1}]
 """
@@ -37,10 +37,10 @@ class CasesTest {
     @Test
     fun `a number says what a string says, so a file need not remember which is quoted`() {
         val quoted = oneOf(
-            """[{"lines": [{"depth": "40", "duration": "600"}], "gradient_factor_low": "1", "gradient_factor_high": "1"}]""",
+            """[{"runtime": [{"depth": "40", "duration": "600"}], "gradient_factor_low": "1", "gradient_factor_high": "1"}]""",
         )
         val plain =
-            oneOf("""[{"lines": [{"depth": 40, "duration": 600}], "gradient_factor_low": 1, "gradient_factor_high": 1}]""")
+            oneOf("""[{"runtime": [{"depth": 40, "duration": 600}], "gradient_factor_low": 1, "gradient_factor_high": 1}]""")
         assertEquals(quoted.planned.segments, plain.planned.segments)
         assertEquals(quoted.planned.gradientLow, plain.planned.gradientLow)
     }
@@ -50,11 +50,11 @@ class CasesTest {
         assertEquals(false, oneOf(FORTY).planned.switchStops)
         assertEquals(
             true,
-            oneOf("""[{"lines": [{"depth": 40, "duration": 600}], "gas_switch_stops": true}]""").planned.switchStops,
+            oneOf("""[{"runtime": [{"depth": 40, "duration": 600}], "gas_switch_stops": true}]""").planned.switchStops,
         )
         assertEquals(
             "case 1 gas_switch_stops should be true or false, but was yes",
-            assertIs<Read.Wrong>(read("""[{"lines": [{"depth": 40}], "gas_switch_stops": "yes"}]""")).reason,
+            assertIs<Read.Wrong>(read("""[{"runtime": [{"depth": 40}], "gas_switch_stops": "yes"}]""")).reason,
         )
     }
 
@@ -72,7 +72,7 @@ class CasesTest {
     @Test
     fun `a cylinder is named by its number on a line, as it is everywhere else`() {
         val case = oneOf(
-            """[{"lines": [{"depth": 21, "gas": 2, "duration": 300}],
+            """[{"runtime": [{"depth": 21, "gas": 2, "duration": 300}],
                 "gases": [{"gas": "air"}, {"gas": "EAN50", "role": "deco"}],
                 "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}]""",
         )
@@ -82,18 +82,18 @@ class CasesTest {
 
     @Test
     fun `a gradient factor is a proportion, as a logbook writes it, and a percentage is refused`() {
-        val case = oneOf("""[{"lines": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3}]""")
+        val case = oneOf("""[{"runtime": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3}]""")
         assertEquals("30", case.planned.gradientLow, "the form's percentage")
         assertEquals(
             "case 1 gradient_factor_low should be 0 to 1, but was 30",
-            assertIs<Read.Wrong>(read("""{"lines": [{"depth": 20}], "gradient_factor_low": 30}""")).reason,
+            assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 20}], "gradient_factor_low": 30}""")).reason,
         )
     }
 
     @Test
     fun `a time is in seconds, as a logbook writes it, and minutes and seconds still read`() {
         val case = oneOf(
-            """{"lines": [{"depth": 40}, {"depth": 40, "duration": 1366}, {"depth": 40, "duration": "2:00"}],
+            """{"runtime": [{"depth": 40}, {"depth": 40, "duration": 1366}, {"depth": 40, "duration": "2:00"}],
                 "safety_stop_duration": 300}""",
         )
         assertEquals("22:46", case.planned.segments[1].duration)
@@ -103,13 +103,13 @@ class CasesTest {
 
     @Test
     fun `the water is written as water_type, as a logbook writes it`() {
-        assertEquals("fresh", oneOf("""{"lines": [{"depth": 20}], "water_type": "fresh"}""").planned.water)
+        assertEquals("fresh", oneOf("""{"runtime": [{"depth": 20}], "water_type": "fresh"}""").planned.water)
     }
 
     @Test
     fun `a plan on its own is a file of one`() {
         val cases = assertIs<Read.Cases>(
-            read("""{"lines": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),
+            read("""{"runtime": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),
         ).cases
         assertEquals(1, cases.size)
         assertEquals("case 1", cases.single().name, "and it is called by its place")
@@ -119,11 +119,11 @@ class CasesTest {
     fun `a file that is not a list of plans says what one looks like`() {
         assertTrue("a plan or a list of them" in assertIs<Read.Wrong>(read("3")).reason)
         assertTrue("written as a list" in assertIs<Read.Wrong>(read("""[{"name": "x"}]""")).reason)
-        assertTrue("has no lines" in assertIs<Read.Wrong>(read("""[{"lines": []}]""")).reason)
+        assertTrue("runtime is empty" in assertIs<Read.Wrong>(read("""[{"runtime": []}]""")).reason)
         assertTrue(
             "not bottom, deco or bailout" in
                     assertIs<Read.Wrong>(
-                        read("""[{"lines": [{"depth": 10}], "gases": [{"gas": "air", "role": "spare"}]}]"""),
+                        read("""[{"runtime": [{"depth": 10}], "gases": [{"gas": "air", "role": "spare"}]}]"""),
                     ).reason,
         )
     }
@@ -146,7 +146,7 @@ class CasesTest {
 
     @Test
     fun `lost_gas names a cylinder by number, and lost_gas_reserve switches the scenario off`() {
-        val lines = """"lines": [{"depth": 20, "duration": 600}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]"""
+        val lines = """"runtime": [{"depth": 20, "duration": 600}], "gases": [{"gas": "air"}, {"gas": "EAN50"}]"""
         assertEquals(1, oneOf("""{$lines, "lost_gas": 2}""").planned.lostGas, "counted from nought")
         assertEquals(true, oneOf("""{$lines, "lost_gas": 2}""").planned.lostGasScenario)
         assertEquals(
@@ -172,17 +172,17 @@ class CasesTest {
     fun `shared_gas_reserve is true or false, as a logbook writes a tick`() {
         assertEquals(
             false,
-            oneOf("""{"lines": [{"depth": 20}], "shared_gas_reserve": false}""").planned.sharedScenario,
+            oneOf("""{"runtime": [{"depth": 20}], "shared_gas_reserve": false}""").planned.sharedScenario,
         )
         assertEquals(
             "case 1 shared_gas_reserve should be true or false, but was yes",
-            assertIs<Read.Wrong>(read("""{"lines": [{"depth": 20}], "shared_gas_reserve": "yes"}""")).reason,
+            assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 20}], "shared_gas_reserve": "yes"}""")).reason,
         )
     }
 
     @Test
     fun `a case may follow an earlier case, with the surface interval between them in seconds`() {
-        val lines = """"lines": [{"depth": 30, "duration": 1200}]"""
+        val lines = """"runtime": [{"depth": 30, "duration": 1200}]"""
         val cases = assertIs<Read.Cases>(
             read(
                 """[{"name": "first", $lines},
@@ -196,7 +196,7 @@ class CasesTest {
 
     @Test
     fun `following reaches earlier cases only, and never without saying how long the interval was`() {
-        val lines = """"lines": [{"depth": 20, "duration": 600}]"""
+        val lines = """"runtime": [{"depth": 20, "duration": 600}]"""
         assertEquals(
             "first follows second, which is no earlier case in this file",
             assertIs<Read.Wrong>(

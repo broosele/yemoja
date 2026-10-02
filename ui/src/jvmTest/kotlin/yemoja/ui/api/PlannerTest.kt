@@ -15,10 +15,10 @@ class PlannerTest {
 
     private val cases = """
         [
-          {"name": "forty", "lines": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
+          {"name": "forty", "runtime": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
            "gases": [{"gas": "air", "size": 24, "fill": 232, "sac": 20}],
            "gradient_factor_low": 1, "gradient_factor_high": 1},
-          {"name": "broken", "lines": [{"depth": 40, "duration": "soon"}],
+          {"name": "broken", "runtime": [{"depth": 40, "duration": "soon"}],
            "gradient_factor_low": 1, "gradient_factor_high": 1}
         ]
     """.trimIndent()

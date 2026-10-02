@@ -35,7 +35,7 @@ The file holds a plan, or a list of them. A plan is an object:
 [
   {
     "name": "40 m for 25 minutes, air",
-    "lines": [
+    "runtime": [
       {"depth": 40},
       {"depth": 40, "duration": "22:46"}
     ],
@@ -46,16 +46,17 @@ The file holds a plan, or a list of them. A plan is an object:
 ]
 ```
 
-**Only the lines are required.** Everything else Yemoja answers with its own default, which is
+**Only the runtime is required.** Everything else Yemoja answers with its own default, which is
 why a file comparing four rows of a table is short. The gradient factors, where given, are
 proportions: `0.3` for 30, as a logbook writes them.
 
 Numbers may be written as numbers or as text: `40` and `"40"` say the same depth.
 
-### The lines
+### The runtime
 
-One for each part of the dive you are describing, in order, the first leaving the surface. The
-way up is not written: Yemoja calculates it and adds it.
+A list with one line for each part of the dive you are describing, in order, the first leaving
+the surface, as the planner's runtime shows them. The way up is not written: Yemoja calculates it
+and adds it.
 
 | Field | What it says |
 |---|---|
@@ -112,9 +113,9 @@ nitrogen and the oxygen clock the first one leaves behind:
 
 ```json
 [
-  {"name": "first", "lines": [{"depth": 30}, {"depth": 30, "duration": "20:00"}]},
+  {"name": "first", "runtime": [{"depth": 30}, {"depth": 30, "duration": "20:00"}]},
   {"name": "second", "follows": "first", "surface_interval": 3600,
-   "lines": [{"depth": 30}, {"depth": 30, "duration": "20:00"}]}
+   "runtime": [{"depth": 30}, {"depth": 30, "duration": "20:00"}]}
 ]
 ```
 
@@ -153,9 +154,9 @@ are still answered. One bad case in fifty should not cost you the other forty-ni
 `--json` gives an array, one object a plan, holding everything the table holds and these as
 well:
 
-- `lines` — every part of the dive in one list, the ones you wrote and the ones Yemoja added,
-  each with `from_m`, `to_m`, `begins_at_seconds`, `seconds`, `direction`, `gas`, and `added`
-  saying which it is.
+- `runtime` — every part of the dive in one list, the lines you wrote and the ones Yemoja
+  added, each with `from_m`, `to_m`, `begins_at_seconds`, `seconds`, `direction`, `gas`, and
+  `added` saying which it is.
 - `stops` — each held depth in metres and seconds.
 - `ceiling`, `no_deco_seconds`, `cns_series`, `otu_series`, `pressures_bar` — what the model
   works out through the dive, each written as a series is written everywhere: pairs of a second

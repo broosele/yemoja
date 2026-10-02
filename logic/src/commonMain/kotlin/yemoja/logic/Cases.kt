@@ -83,9 +83,9 @@ private sealed class Made {
 }
 
 private fun plannedOf(members: Map<String, Stored>, name: String): Made {
-    val lines = (members["lines"] as? Stored.Elements)?.elements
-        ?: return Made.Wrong("$name should hold lines, written as a list")
-    if (lines.isEmpty()) return Made.Wrong("$name has no lines")
+    val lines = (members["runtime"] as? Stored.Elements)?.elements
+        ?: return Made.Wrong("$name should hold a runtime, written as a list of lines")
+    if (lines.isEmpty()) return Made.Wrong("$name's runtime is empty")
     val segments = ArrayList<Segment>()
     for ((index, line) in lines.withIndex()) {
         val held = (line as? Stored.Members)?.members

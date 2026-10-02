@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
  */
 
 private const val FORTY = """
-    {"name": "forty", "lines": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
+    {"name": "forty", "runtime": [{"depth": 40}, {"depth": 40, "duration": "22:46"}],
      "gases": [{"gas": "air", "size": 24, "fill": 232, "sac": 20}],
      "gradient_factor_low": 1, "gradient_factor_high": 1}
 """
@@ -52,7 +52,7 @@ class PlanToolTest {
     @Test
     fun `a plan that will not read is refused in the form's own words`() {
         val tools = Tools(universeOf())
-        val reply = tools.plan(plan("""{"lines": [{"depth": 40, "duration": "soon"}]}"""))
+        val reply = tools.plan(plan("""{"runtime": [{"depth": 40, "duration": "soon"}]}"""))
         assertTrue(reply.refused)
         assertTrue("2:13" in reply.text, reply.text)
     }
@@ -140,7 +140,7 @@ class PlanToolTest {
         val universe = universeOf()
         val tools = Tools(universe, writing = { true })
         val reply = tools.createPlan(
-            plan("""{"lines": [{"depth": 40, "duration": "soon"}]}"""),
+            plan("""{"runtime": [{"depth": 40, "duration": "soon"}]}"""),
             dive = null,
             name = "Plan A",
         )
