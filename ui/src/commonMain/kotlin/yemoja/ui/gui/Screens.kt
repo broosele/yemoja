@@ -1008,7 +1008,7 @@ private class Taking {
  */
 private fun take(universe: Universe, platform: Platform, taking: Taking, changer: Changer) {
     val pick = platform.pick ?: return
-    val from = pick("Import a logbook or a UDDF file") ?: return
+    val from = pick("Import a logbook, a UDDF file or a Diving Log database") ?: return
     taking.open = true
     when (val done = universe.importFrom(from)) {
         is Outcome.Refused -> {
@@ -1020,10 +1020,10 @@ private fun take(universe: Universe, platform: Platform, taking: Taking, changer
             val import = universe.importing
             taking.arrived = arrivedIn(import)
             taking.said = if (import == null || taking.arrived == 0) {
-                "Yemoja found nothing to import in $from. It reads a logbook folder " +
-                        "and a UDDF file."
+                "Yemoja found nothing to import in $from. It reads a logbook folder, " +
+                        "a UDDF file and a Diving Log database."
             } else {
-                summaryOf(countedIn(import))
+                listOfNotNull(summaryOf(countedIn(import)), universe.importNote).joinToString(" ")
             }
         }
     }

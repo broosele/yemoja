@@ -22,7 +22,7 @@ belongs to with its meaning unknown.
 | Table | Holds | One row is |
 |---|---|---|
 | `Logbook` | the dives | a dive, with its main cylinder and its profile |
-| `Tank` | cylinders beyond the main one | a cylinder of a dive, by `LogID` |
+| `Tank` | cylinders beyond the main one | a cylinder of a dive, by `LogID`, in three slots a row each |
 | `Place` | dive sites | a site, by `PlaceID` from a dive |
 | `Country`, `City` | where a site is | a country, a town |
 | `Buddy` | the people dived with | a person, by the ids in a dive's `BuddyIDs` |
@@ -80,8 +80,8 @@ interval after the start. A column is empty where the computer did not report it
 | | | 8–10 | a figure falling through the dive and resting at 239 near the surface, probably the computer's remaining gas time in minutes |
 | `Profile3` | | | empty throughout |
 | `Profile4` | 9 | 0–2 | the no-decompression limit in minutes |
-| | | 3–5 | the depth of the stop owed, in metres |
-| | | 6–8 | the stop's time in minutes |
+| | | 3–5 | the stop's time in minutes |
+| | | 6–8 | the depth of the stop owed, in metres |
 | `Profile5` | 19 | 13–15 | the CNS clock in hundredths of a percent |
 
 Three things are not what they look like.
@@ -94,6 +94,52 @@ is below its ceiling of 99; otherwise every dive that owed a stop would claim it
 
 **The CNS clock stops at 9.99 percent**, written `999`, and a reading there is the ceiling of the
 column rather than a measurement.
+
+## Where it goes
+
+Each row becomes the item it describes, and a row pointing at another by id points at the item
+that row became. What the import reports says the version and what was left, `DLOG-2` and
+`DLOG-3`. Built in `divinglog/DivingLog.kt`; nothing is matched to the logbook by id, `DLOG-4`.
+
+**A dive** keeps its number, its start, its greatest and average depth, its rating, its site,
+buddies, operator and trip, its kinds as tags in lower case, a decompression dive as `deco`, the
+air and the water's temperature, and the lead carried. With no samples, its logged time is its
+`duration`. Its own remarks come first, and after them a line for each of: visibility, entry,
+weather, current, surface, boat, divemaster, suit, altitude, pressure groups, CNS as logged, the
+fish seen, and every user-defined field filled in. An entry code whose meaning is unknown is
+written as its code.
+
+**Its cylinders** are the main one from the dive's own row and the others from `Tank`, keyed as a
+UDDF import keys them, `gas`, `gas#1`. A row of `Tank` with neither a mix, a size nor a pressure is
+a placeholder, and one the same in every value as an earlier row of the dive is a copy Diving Log
+keeps in its slots; neither is read. **Only the main cylinder and the first other are told apart
+by the profile**, so on a dive with two different cylinders beyond the main one, what the
+samples marked `1` is taken to be the first.
+
+**Its one recording** is filed as a UDDF import files one, `profile`, naming its computer as
+written. Depth and temperature are every sample; a temperature column that is nought throughout is
+a computer with no thermometer and is not read. The pressures are a series per cylinder, and the
+cylinder breathed gives the switches, the first saying what the dive began on, `LOGIC-31`. The
+limit, the stop and the CNS clock are written where they change, the limit and the stop never at
+the same moment. What came after the surfacing is cut, `LOGIC-30`.
+
+**A site** keeps its name, its position, its greatest depth and its rating. Its water is its own
+code, or failing that the water every dive there was logged in, where they agree. Its country, the
+name of its water, its altitude band and its difficulty go to its remarks: a country names no
+region, a site's regions being the supplied map's.
+
+**A person** keeps their names, birthday, address, e-mail and a phone, the mobile where both are
+given. **The user's own row** is a person too, with a medical holding the last check and the
+blood group, and a course for each certification, its level, agency and instructor in the
+course's remarks as a UDDF import writes them. Which person is the user is the logbook's to say.
+
+**An operator, a trip and gear** keep what their rows name: a dive centre's address, telephone,
+e-mail, website and rating; a trip's name, dates and dive centre; an item's name, maker and serial,
+with when and where it was bought in its remarks.
+
+**Left behind:** pictures, signatures and stamps, each counted; the first column's flag and
+`Profile2`'s remaining gas time, not understood; a cylinder's type and whether it was a twin set,
+whose codes are not; a profile bookmark; and Diving Log's own ids and sync records.
 
 ## Settled
 

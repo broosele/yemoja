@@ -132,7 +132,7 @@ class ImportScreenTest {
         val screen = screen()
         screen.press(Key.Typed('+'))
         assertTrue("import" in body(screen).first(), body(screen).toString())
-        assertTrue("a logbook folder or a UDDF file" in body(screen), body(screen).toString())
+        assertTrue("a logbook folder, a UDDF file or a Diving Log database" in body(screen), body(screen).toString())
         assertTrue("a dive computer" in body(screen), body(screen).toString())
     }
 
@@ -336,7 +336,7 @@ class ReadDeviceTest {
         screen.press(Key.DOWN)
         screen.press(Key.OPEN)
         screen.press(Key.CLOSE)
-        assertTrue("a logbook folder or a UDDF file" in body(screen), body(screen).toString())
+        assertTrue("a logbook folder, a UDDF file or a Diving Log database" in body(screen), body(screen).toString())
     }
 
     @Test

@@ -401,7 +401,7 @@ class Screen(
             is Outcome.Done -> {
                 editing = null
                 sourcing = null
-                message = null
+                message = universe.importNote
             }
         }
     }
@@ -1727,7 +1727,7 @@ class Screen(
         // on a short terminal. What is past them is reached by typing more of the id.
         // The two an import can come from. One row for two formats: a path is named and what
         // is there says how it is read. The other opens onto what is attached.
-        private val SOURCES = listOf("a logbook folder or a UDDF file", "a dive computer")
+        private val SOURCES = listOf("a logbook folder, a UDDF file or a Diving Log database", "a dive computer")
 
         private const val NO_DEVICE = "no dive computer is attached, or none can be reached."
 

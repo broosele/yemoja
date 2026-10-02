@@ -66,6 +66,35 @@ class ImportedFolderTest {
         assertTrue(universe.importing!!.staged.logbook["2024-06-15#0"] != null)
     }
 
+    /** A database written where the test can point at it, from the importer's invented ones. */
+    private fun database(encoded: String): String {
+        val at = File(here.parentFile, "yemoja-test.sql")
+        @OptIn(kotlin.io.encoding.ExperimentalEncodingApi::class)
+        at.writeBytes(kotlin.io.encoding.Base64.decode(encoded))
+        at.deleteOnExit()
+        return at.path
+    }
+
+    @Test
+    fun `a file beginning as a SQLite database is read as Diving Log's, and says what it was`() {
+        val universe = opened()
+        assertIs<Outcome.Done>(universe.importFrom(database(yemoja.logic.divinglog.DATABASE)))
+        assertEquals(3, universe.importing!!.staged.logbook.allOf(Types.DIVE).size)
+        assertEquals(
+            "A Diving Log 4.2.0 database: 3 dives, 2 profiles. Left out, being images: 1 picture.",
+            universe.importNote,
+        )
+        universe.stopImporting()
+        assertEquals(null, universe.importNote, "the note goes with the review it was about")
+    }
+
+    @Test
+    fun `a database that is not Diving Log's is refused by name`() {
+        val refused = opened().importFrom(database(yemoja.logic.divinglog.NOT_DIVING_LOG))
+        assertIs<Outcome.Refused>(refused)
+        assertTrue("not Diving Log's" in refused.reason, refused.reason)
+    }
+
     @Test
     fun `a file that is not XML is refused rather than thrown`() {
         val refused = opened().importFrom(uddf("not a document at all"))

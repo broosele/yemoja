@@ -26,6 +26,10 @@ import yemoja.data.json.LogbookWriter
 import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.Download
+import yemoja.data.sqlite.SqliteFormatException
+import yemoja.data.sqlite.isSqlite
+import yemoja.logic.divinglog.DivingLog
+import yemoja.logic.divinglog.DivingLogFormatException
 import yemoja.logic.uddf.Exported
 import yemoja.logic.uddf.Uddf
 import yemoja.logic.uddf.UddfFormatException
@@ -419,6 +423,13 @@ class Universe(
         private set
 
     /**
+     * What the source being reviewed says about itself, or absent where it says nothing: a Diving
+     * Log database names its version and what was left behind. `DLOG-2`, `DLOG-3`.
+     */
+    var importNote: String? = null
+        private set
+
+    /**
      * Stage [source] in [staging], to be reviewed and taken in.
      *
      * [matching] is the source's to say, and saying it wrong loses data: an id minted on the way
@@ -430,6 +441,7 @@ class Universe(
         matching: Matching = Matching.BY_ID,
     ) {
         importing = Import.begin(source, staging, this, matching)
+        importNote = null
     }
 
     /**
@@ -454,10 +466,10 @@ class Universe(
     /**
      * Stage whatever is at [from], beside this logbook.
      *
-     * **What is there says how it is read.** A folder is another Yemoja logbook and a file is a
-     * UDDF document, which is one question fewer to put to somebody who already knows what they
-     * are pointing at. Nothing after that differs: both arrive as a set of items and both are
-     * reviewed the same way.
+     * **What is there says how it is read.** A folder is another Yemoja logbook, a file beginning
+     * as a SQLite database does is Diving Log's, `DLOG-1`, and any other file is a UDDF document,
+     * which is one question fewer to put to somebody who already knows what they are pointing at.
+     * Nothing after that differs: each arrives as a set of items and each is reviewed the same way.
      *
      * The staging folder is this logbook's own with `.import` after it, which puts it outside the
      * logbook: what is being reviewed is not part of it and must not be read as though it were.
@@ -478,6 +490,23 @@ class Universe(
         }
         if (!store.isFile("")) {
             return Outcome.Refused("$from cannot be opened: it is neither a folder nor a file")
+        }
+        val bytes = store.readBytes("")
+        if (isSqlite(bytes)) {
+            val read = try {
+                DivingLog.read(bytes)
+            } catch (refused: DivingLogFormatException) {
+                return Outcome.Refused("$from is a database, but not Diving Log's: ${refused.message}")
+            } catch (refused: SqliteFormatException) {
+                return Outcome.Refused("$from cannot be read as a Diving Log database: ${refused.message}")
+            }
+            if (read.items.allOf(Types.DIVE).isEmpty()) {
+                return Outcome.Refused("$from holds no dives, so there is nothing to import from it")
+            }
+            // Nothing matches by id: Diving Log's ids are its own, and none is kept. `DLOG-4`.
+            importFrom(read.items, where, Matching.NONE)
+            importNote = read.said
+            return Outcome.Done()
         }
         val source = try {
             Uddf.read(store.readText(""))
@@ -604,6 +633,7 @@ class Universe(
     /** Put the review down, leaving whatever is staged where it is. */
     fun stopImporting() {
         importing = null
+        importNote = null
     }
 
     /**

@@ -66,6 +66,15 @@ internal class GrantedFileStore(
         return stream.bufferedReader().use { it.readText() }
     }
 
+    override fun readBytes(path: String): ByteArray {
+        if (isLibrary(path)) return libraries.readBytes(path)
+        val entry = entryAt(path)?.takeIf { !it.folder }
+            ?: throw FileStoreMissing("$path should be a file, and is not")
+        val stream = resolver.openInputStream(uriOf(entry.id))
+            ?: throw FileStoreMissing("$path could not be opened")
+        return stream.use { it.readBytes() }
+    }
+
     override fun writeText(path: String, text: String) {
         require(!isLibrary(path)) { "$path is a library, and libraries are not written" }
         val names = partsOf(path)

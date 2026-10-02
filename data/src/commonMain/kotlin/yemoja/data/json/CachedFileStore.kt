@@ -67,6 +67,9 @@ class CachedFileStore(
         return text
     }
 
+    // A file read as bytes is not a logbook's, so it is neither copied nor taken from the copy.
+    override fun readBytes(path: String): ByteArray = logbook.readBytes(path)
+
     override fun writeText(path: String, text: String) {
         logbook.writeText(path, text)
         written[path] = text

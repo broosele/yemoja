@@ -107,6 +107,7 @@ logic/
                   Hex.kt           bytes as text, for what a device hands back
                   divecomputer/    a device read, joined, thinned and recorded
                   uddf/            UDDF read and written
+                  divinglog/       a Diving Log database read into items
   src/javaMain/kotlin/yemoja/logic/
                   what the JVM and Android share, both being Java underneath
                   Today.kt      the machine's own date, a day needing a zone

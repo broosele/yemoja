@@ -67,7 +67,9 @@ after its name. It is not part of your logbook.
 Press **Import** on the home screen and choose either:
 
 - **a folder**, which is read as another Yemoja logbook; or
-- **a file**, which is read as UDDF, the open format most dive logs can write.
+- **a file**, which is read as UDDF, the open format most dive logs can write;
+- **a Diving Log database**, the `Logbook.sql` file Diving Log keeps its logbook in, which is
+  recognised by what is in it whatever it is called.
 
 The dives are listed for you to look over, exactly as a download is. Everything else that came
 with them — people, sites, gear, trips — is counted in a sentence above the list, such as *Also
@@ -84,6 +86,25 @@ offered **Merge**. Importing the same file twice, and taking everything as new b
 you everything twice.
 
 A dive that arrives with its own dive number keeps it.
+
+### From Diving Log
+
+Point the import at the file Diving Log keeps your logbook in, usually called `Logbook.sql`, and
+close Diving Log first, so the file is not halfway through being written. Your
+dives come across with their profiles, the depth, the temperature, each cylinder's pressure,
+when you switched gas, your no-decompression time, your stops and your CNS, and with them the
+sites, buddies, dive centres, trips and certifications they name. A rating of stars becomes one
+out of ten, two points a star.
+
+**What Diving Log has a box for and Yemoja does not goes into the dive's remarks**, one labelled
+line each, so nothing you typed is lost: visibility, how you got in, the weather, the boat, the
+divemaster, your suit, the fish you saw and your own fields. Pictures, signatures and stamps are
+left behind, and the import says how many. A site's country goes into its remarks too, since
+Yemoja's regions come from its own map rather than from what you named them.
+
+Only Diving Log 4.2's database has been checked. A file from another version is read the same
+way, and the import says which version it was. Importing the same file twice brings everything
+in twice for you to review; nothing remembers what came from Diving Log before.
 
 ## Exporting
 

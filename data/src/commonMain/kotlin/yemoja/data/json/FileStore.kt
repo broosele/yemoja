@@ -68,6 +68,15 @@ interface FileStore {
     fun readText(path: String): String
 
     /**
+     * The whole of [path] as it lies, which a file that is not text needs. Throws where it is not
+     * a file.
+     *
+     * A store that holds only text gives that text's bytes. A store over real files reads them
+     * raw, since decoding a database as text and encoding it again would change it. `DATA-130`.
+     */
+    fun readBytes(path: String): ByteArray = readText(path).encodeToByteArray()
+
+    /**
      * Puts [text] at [path], making whatever folders it needs and replacing whatever was there.
      *
      * **No temporary file and no rename.** A change interrupted part way through can leave one

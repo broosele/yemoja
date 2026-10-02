@@ -42,6 +42,11 @@ class DiskFileStore(root: String, libraryRoot: String? = null) : FileStore {
         return located(path).let { it.files.read(it.at) { readUtf8() } }
     }
 
+    override fun readBytes(path: String): ByteArray {
+        if (!isFile(path)) throw FileStoreMissing("$path should be a file, and is not")
+        return located(path).let { it.files.read(it.at) { readByteArray() } }
+    }
+
     override fun writeText(path: String, text: String) {
         refuseLibrary(path)
         val where = located(path)
