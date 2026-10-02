@@ -154,5 +154,20 @@ what it means is argued there; what is here is where it goes on a large screen.
 
   A new library means running `jdeps --print-module-deps` again over `ui/build/install/yemoja/lib`.
 
+- **DESK-11 — Where the icons the core set lacks come from.** *Settled:* **eleven are copied in,
+  under their own licence; the extended set is not shipped.** Decided on 2026-10-02, at the
+  author's word.
+
+  The window uses twenty-one Material icons. Ten are in Compose's core set; the other eleven, a
+  diver, a cylinder, a map and a book among them, were the only reason for the extended set, 37 MB
+  of some two thousand icons. Shrinking the build with ProGuard would have dropped the rest without
+  copying anything, but every library that loads a class by name, JNA, Bluetooth and the agent's
+  protocol among them, would need a rule, and a missing one fails only when its feature runs.
+
+  So the eleven are written out from the library's own drawing data into
+  `ui/src/commonMain/kotlin/yemoja/ui/icons/`, which keeps Google's copyright and the Apache
+  License beside it and is listed in `LICENSE` as not covered by the repository's own. A new icon
+  is taken from the core set where it has one, and copied the same way where it does not.
+
 ## Open questions
 

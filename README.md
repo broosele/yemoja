@@ -178,7 +178,8 @@ to ask for — see `TUI-4` in [ui/tui/doc.md](ui/tui/doc.md). The logic layer ta
 for reading UDDF, common Kotlin having no XML reader — Apache 2.0, and there rather than in the
 data layer, whose promise of no dependencies stands because a foreign format is not its business.
 The terminal front end also takes JNA, through Mordant's JVM side, and the window takes
-Compose's extended icon set. The logic layer's JVM and Android side takes **libdivecomputer** for reading dive
+Compose's core icon set, with eleven icons copied from the extended one rather than shipping it
+whole. The logic layer's JVM and Android side takes **libdivecomputer** for reading dive
 computers — LGPL-2.1,
 linked as a shared library so the rest of the application stays its own, which *Licensing* below
 turns on — and **JNA** to call it, Apache 2.0 under its dual licence. libdivecomputer leaves
@@ -295,12 +296,14 @@ and it never links back into the documents above. Its conventions are in
 
 ## Licensing
 
-Three files carry the actual terms; what follows explains them. Nothing here has been
+Four files carry the actual terms; what follows explains them. Nothing here has been
 checked by a lawyer.
 
 - [LICENSE](LICENSE) — the repository, all rights reserved.
 - [manual/LICENSE](manual/LICENSE) — the manuals, CC0.
 - [libraries/LICENSE](libraries/LICENSE) — the shipped data, CC0.
+- [ui/src/commonMain/kotlin/yemoja/ui/icons/LICENSE](ui/src/commonMain/kotlin/yemoja/ui/icons/LICENSE)
+  — eleven Material icons copied from Compose, Apache 2.0, as they came. `DESK-11`.
 
 Contributions are not accepted for the time being, so no terms are offered for them.
 

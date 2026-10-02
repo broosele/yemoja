@@ -21,8 +21,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.filled.StarOutline
+import yemoja.ui.icons.StarHalf
+import yemoja.ui.icons.StarOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon

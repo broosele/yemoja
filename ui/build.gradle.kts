@@ -32,9 +32,10 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
-            // The platform's glyphs, the whole set rather than the fifty in the core one, which
-            // has nothing for diving, a map or a book. Apache-2.0, the same publisher.
-            implementation(compose.materialIconsExtended)
+            // The platform's core glyphs. The eleven it has nothing for, diving, a map and a book
+            // among them, are copied into yemoja/ui/icons rather than shipping all the others.
+            // `DESK-11`.
+            implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
         }
         jvmMain.dependencies {
             // The desktop window and the event loop that owns it, which only a JVM has.

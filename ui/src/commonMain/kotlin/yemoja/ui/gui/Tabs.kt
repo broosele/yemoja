@@ -1,13 +1,13 @@
 package yemoja.ui.gui
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Groups
+import yemoja.ui.icons.Calculate
+import yemoja.ui.icons.Groups
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.PropaneTank
-import androidx.compose.material.icons.filled.ScubaDiving
+import yemoja.ui.icons.Map
+import yemoja.ui.icons.MenuBook
+import yemoja.ui.icons.PropaneTank
+import yemoja.ui.icons.ScubaDiving
 import androidx.compose.ui.graphics.vector.ImageVector
 import yemoja.data.ItemDescription
 import yemoja.logic.Types

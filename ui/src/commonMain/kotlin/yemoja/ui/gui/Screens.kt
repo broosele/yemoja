@@ -5,7 +5,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DownloadDone
+import yemoja.ui.icons.DownloadDone
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
@@ -44,12 +44,12 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowRight
-import androidx.compose.material.icons.filled.AutoAwesome
+import yemoja.ui.icons.ArrowRight
+import yemoja.ui.icons.AutoAwesome
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.filled.StarOutline
+import yemoja.ui.icons.StarHalf
+import yemoja.ui.icons.StarOutline
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu

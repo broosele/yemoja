@@ -34,6 +34,12 @@ The file format itself is disclaimed as well. No copyright is asserted over the 
 their arrangement or the syntax that holds them, and no patent. Reading, writing or
 implementing the format requires no permission from anyone.
 
+One directory holds code that is not the copyright holder's, under its own licence, the
+Apache License 2.0, whose full text is beside it:
+
+  ui/src/commonMain/kotlin/yemoja/ui/icons/   Material icons, copied from Google's
+                                              material-icons-extended for Compose
+
 The name "Yemoja" is not covered by any of the above.
 
 
