@@ -14,7 +14,7 @@ android {
         minSdk = property("androidOldest").toString().toInt()
         targetSdk = property("androidSdk").toString().toInt()
         // Raised with every release: Android installs an update only over a lower number.
-        versionCode = 5
+        versionCode = 6
         versionName = property("release").toString()
         // The processors libdivecomputer is built for: a phone's, and the emulator's. Every phone
         // running Android 12 or later that is worth supporting is one of these. `AND-2`.
