@@ -37,7 +37,7 @@ class PlannerTipsTest {
             PlannerTips.SAFETY_DURATION,
             PlannerTips.LAST_STOP,
             PlannerTips.WATER,
-            PlannerTips.PANIC_FACTOR,
+            PlannerTips.STRESS_FACTOR,
             PlannerTips.GAS_LOST,
             PlannerTips.PROBLEM_SOLVING,
             PlannerTips.NUMBER,

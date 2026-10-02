@@ -257,8 +257,8 @@ class Settings internal constructor(private val store: FileStore) {
          * How many times their usual rate each of two divers sharing gas breathes at, in a new
          * plan's reserve. Stress alone: the second diver is counted apart. `LOGIC-40`.
          */
-        val DEFAULT_PANIC_FACTOR =
-            NumberSetting("default_panic_factor", "Panic stress factor", "× SAC", 2.0, 1.0..10.0)
+        val DEFAULT_STRESS_FACTOR =
+            NumberSetting("default_stress_factor", "Stress factor", "× SAC", 2.0, 1.0..10.0)
 
         /**
          * How long a new plan's reserve spends at the depth trouble starts before the way up
@@ -297,7 +297,7 @@ class Settings internal constructor(private val store: FileStore) {
             DEFAULT_PO2_MIN,
             DEFAULT_SAFETY_STOP_DEPTH,
             DEFAULT_SAFETY_STOP_DURATION,
-            DEFAULT_PANIC_FACTOR,
+            DEFAULT_STRESS_FACTOR,
             DEFAULT_PROBLEM_SOLVING_TIME,
         )
 

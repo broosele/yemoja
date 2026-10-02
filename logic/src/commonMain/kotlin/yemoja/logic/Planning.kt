@@ -103,7 +103,7 @@ data class Planned(
     val lastStop: String = "",
     /** Whether the way up stops to switch gas where no deco stop is owed. */
     val switchStops: Boolean = false,
-    val panicFactor: String = "",
+    val stressFactor: String = "",
     /** Minutes the gas reserve spends at the depth trouble starts before the way up begins. */
     val problemMinutes: String = "",
     /** Whether the gas reserve tries losing a cylinder. */
@@ -551,9 +551,9 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
         )
     }
     val shared = if (shaping.sharedScenario) {
-        val factor = shaping.panicFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
+        val factor = shaping.stressFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 }
         if (factor == null) {
-            Reckoning.Wrong(numberWrong("Panic stress factor", "1 or more", shaping.panicFactor))
+            Reckoning.Wrong(numberWrong("Stress factor", "1 or more", shaping.stressFactor))
         } else {
             val deco = keys.filter { shaping.gases[it].role == Role.DECO }.map { gasKeyOf(it) }.toSet()
             reckoning(
@@ -646,7 +646,7 @@ fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): S
         }
 
         Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
-                "${upToSaid(reserve.upTo)}, each at ${shaping.panicFactor.trim()} × SAC"
+                "${upToSaid(reserve.upTo)}, each at ${shaping.stressFactor.trim()} × SAC"
     }
     return "${needs.joinToString(" and ")} at ${worstSaid(reserve)}, $assumed"
 }

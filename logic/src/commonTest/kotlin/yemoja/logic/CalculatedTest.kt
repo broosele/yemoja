@@ -134,7 +134,7 @@ class CalculatedTest {
             Breathed("EAN50", Role.DECO, size = "11", fill = "200", sac = "20"),
         )
         val schedule = assertIs<Calculated.Done>(
-            calculated(table(gases = gases).copy(panicFactor = "2", problemMinutes = "2")),
+            calculated(table(gases = gases).copy(stressFactor = "2", problemMinutes = "2")),
         ).schedule
         val lost = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.LOST_GAS))
         assertTrue(lost.neededLitres.getValue("1") > 0, "losing the deco gas costs the bottom gas something")
@@ -144,7 +144,7 @@ class CalculatedTest {
     @Test
     fun `a scenario switched off, or with no cylinder to try, is left out of the answer`() {
         val schedule = assertIs<Calculated.Done>(
-            calculated(table().copy(panicFactor = "2", problemMinutes = "2", sharedScenario = false)),
+            calculated(table().copy(stressFactor = "2", problemMinutes = "2", sharedScenario = false)),
         ).schedule
         assertEquals(null, schedule.reserves[Scenario.SHARED], "switched off")
         assertEquals(null, schedule.reserves[Scenario.LOST_GAS], "no deco cylinder to lose")
@@ -157,7 +157,7 @@ class CalculatedTest {
             Breathed("EAN50", Role.DECO, size = "11", fill = "200", sac = "20"),
         )
         val schedule = assertIs<Calculated.Done>(
-            calculated(table(gases = gases).copy(panicFactor = "2", problemMinutes = "2")),
+            calculated(table(gases = gases).copy(stressFactor = "2", problemMinutes = "2")),
         ).schedule
         val lost = assertIs<ReserveAnswer.Refused>(schedule.reserves.getValue(Scenario.LOST_GAS))
         assertTrue("SAC" in lost.reason, lost.reason)

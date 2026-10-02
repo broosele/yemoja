@@ -344,7 +344,7 @@ depth anyway, the stop is the switch. A new plan starts with it unticked. The tw
 follow the same tick.
 
 Under the settings is **Contingency**, the gas reserve: what you must keep back in case something
-goes wrong. On its left are two settings, the panic stress factor and the problem-solving time,
+goes wrong. On its left are two settings, the stress factor and the problem-solving time,
 which also start from your Settings. Beside them is a line for each scenario, *Lost* and
 *Buddy out of gas*: the scenario's name, its switch, and then what it asks each cylinder to hold,
 its worst moment, and what it assumes. The switch on the *Lost* line is a choice of which gas is

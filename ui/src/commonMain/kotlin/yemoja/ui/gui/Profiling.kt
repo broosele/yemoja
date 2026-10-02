@@ -121,7 +121,7 @@ internal class Shaping {
 
     /** Whether the way up stops to switch gas where no deco stop is owed. */
     var switchStops: Boolean by mutableStateOf(false)
-    var panicFactor: String by mutableStateOf("")
+    var stressFactor: String by mutableStateOf("")
 
     /** Minutes the gas reserve spends at the depth trouble starts before the way up begins. */
     var problemMinutes: String by mutableStateOf("")
@@ -166,7 +166,7 @@ internal fun Shaping.prefill(settings: Settings?) {
     safetyDepth = shown(Settings.DEFAULT_SAFETY_STOP_DEPTH)
     safetyMinutes = shown(Settings.DEFAULT_SAFETY_STOP_DURATION)
     lastStop = shown(Settings.DEFAULT_LAST_STOP)
-    panicFactor = shown(Settings.DEFAULT_PANIC_FACTOR)
+    stressFactor = shown(Settings.DEFAULT_STRESS_FACTOR)
     problemMinutes = shown(Settings.DEFAULT_PROBLEM_SOLVING_TIME)
     water = settings?.choice(Settings.DEFAULT_WATER_TYPE) ?: Settings.DEFAULT_WATER_TYPE.default
     prefilled = true
@@ -692,11 +692,11 @@ private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
         Column {
             Setting(
-                "Panic stress factor",
-                PlannerTips.PANIC_FACTOR,
-                shaping.panicFactor,
+                "Stress factor",
+                PlannerTips.STRESS_FACTOR,
+                shaping.stressFactor,
                 "× SAC"
-            ) { shaping.panicFactor = it }
+            ) { shaping.stressFactor = it }
             Setting(
                 "Problem solving time",
                 PlannerTips.PROBLEM_SOLVING,

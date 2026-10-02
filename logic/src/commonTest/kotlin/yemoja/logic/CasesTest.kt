@@ -132,8 +132,8 @@ class CasesTest {
     fun `the gas reserve's own settings default like every other`() {
         val case = oneOf(FORTY)
         assertEquals(
-            shownOf(Settings.DEFAULT_PANIC_FACTOR, Settings.DEFAULT_PANIC_FACTOR.default),
-            case.planned.panicFactor,
+            shownOf(Settings.DEFAULT_STRESS_FACTOR, Settings.DEFAULT_STRESS_FACTOR.default),
+            case.planned.stressFactor,
         )
         assertEquals(
             shownOf(Settings.DEFAULT_PROBLEM_SOLVING_TIME, Settings.DEFAULT_PROBLEM_SOLVING_TIME.default),

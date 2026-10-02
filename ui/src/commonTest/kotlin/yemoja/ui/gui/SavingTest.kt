@@ -176,7 +176,7 @@ class SavingRoundTripTest {
         shaping.switchStops = true
         shaping.safetyDepth = "5"
         shaping.safetyMinutes = "5"
-        shaping.panicFactor = "3"
+        shaping.stressFactor = "3"
         shaping.problemMinutes = "1.5"
         shaping.lostGas = 1
         shaping.sharedScenario = false
@@ -190,7 +190,7 @@ class SavingRoundTripTest {
         assertEquals(true, back.switchStops)
         assertEquals("5", back.safetyDepth)
         assertEquals("5", back.safetyMinutes, "held in seconds, shown in minutes")
-        assertEquals("3", back.panicFactor)
+        assertEquals("3", back.stressFactor)
         assertEquals("1.5", back.problemMinutes)
         assertEquals(true, back.lostGasScenario)
         assertEquals(1, back.lostGas, "the cylinder by its place, saved as its key")

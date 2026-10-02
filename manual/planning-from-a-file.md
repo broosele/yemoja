@@ -98,7 +98,7 @@ factor as a proportion.
 | `safety_stop_depth`, `safety_stop_duration` | Safety stop depth, Safety stop duration |
 | `po2_max_bottom`, `po2_max_deco`, `po2_min` | pO₂ max bottom, pO₂ max deco, pO₂ min |
 | `water_type` | `salt` or `fresh` |
-| `panic_factor`, `problem_solving_time` | Panic stress factor, Problem-solving time |
+| `stress_factor`, `problem_solving_time` | Stress factor, Problem-solving time |
 | `lost_gas_reserve`, `lost_gas` | The *Lost* scenario's switch, and which cylinder it loses by number, left out for the first deco cylinder |
 | `shared_gas_reserve` | The *Buddy out of gas* scenario's switch |
 

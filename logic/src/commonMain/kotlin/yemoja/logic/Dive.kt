@@ -374,7 +374,7 @@ private val PROFILE = ItemDescription(
         // Nought is no safety stop.
         NumberDescription("safety_stop_duration", Dimension.TIME, housekeeping = true),
         // Times the usual SAC each of two divers sharing gas breathes at. `LOGIC-40`.
-        NumberDescription("panic_factor", Dimension.DIMENSIONLESS, housekeeping = true),
+        NumberDescription("stress_factor", Dimension.DIMENSIONLESS, housekeeping = true),
         NumberDescription("problem_solving_time", Dimension.TIME, housekeeping = true),
         BooleanDescription("lost_gas_reserve", housekeeping = true),
         // Absent for the first deco cylinder, which is what the reserve loses unless told.

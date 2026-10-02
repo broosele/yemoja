@@ -461,7 +461,7 @@ what each does.
   off.
 - `safety_stop_depth`, `safety_stop_duration` (number) — the safety stop. A duration of 0 means
   none.
-- `panic_factor` (number) — how many times their usual SAC each of two divers sharing gas
+- `stress_factor` (number) — how many times their usual SAC each of two divers sharing gas
   breathes at, in the gas reserve.
 - `problem_solving_time` (number) — how long the gas reserve spends at the depth trouble starts
   before the way up begins.

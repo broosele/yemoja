@@ -660,7 +660,7 @@ once and corrected. The numbers stay unused rather than being given to something
   in it are worked out beside it.
 
   **The gas reserve has a box of its own, between the settings and the gases.** *Contingency* holds
-  the reserve's two settings on the left, the panic stress factor and the problem-solving time,
+  the reserve's two settings on the left, the stress factor and the problem-solving time,
   and beside them a line for each scenario, `LOGIC-40`, each beginning with its own switch. The settings and what they decide sit
   together, so a reader changing one sees the other move; the user moved them out of the settings
   and from under the clocks for that. What each cylinder must still hold is also a column of the
@@ -692,7 +692,7 @@ once and corrected. The numbers stay unused rather than being given to something
   whether anything is lost are one decision, so the user merged the scenario's tick into it. A plan
   with no deco gas and nothing chosen shows *None* too, rather than asking for a choice. It is
   a setting rather than a fourth role, since losing a bottom gas is a scenario a reader may want to
-  try without changing what the cylinder is for. The panic stress factor is read apart from the
+  try without changing what the cylinder is for. The stress factor is read apart from the
   other settings, so a factor typed wrong leaves the sharing scenario unsaid and everything else
   answered. The problem-solving time is read the same way, and being where both scenarios begin, a
   time typed wrong leaves both unsaid. The scenario's sentence names the hold, as *1:00 at depth,

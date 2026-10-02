@@ -62,7 +62,7 @@
       "last_stop": 3,
       "safety_stop_depth": 6,
       "safety_stop_duration": 180,
-      "panic_factor": 2,
+      "stress_factor": 2,
       "problem_solving_time": 120,
       "lost_gas_reserve": true,
       "lost_gas": "*g2",

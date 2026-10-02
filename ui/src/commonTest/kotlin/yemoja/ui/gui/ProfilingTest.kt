@@ -445,7 +445,7 @@ class ReserveTest {
 
     @Test
     fun `a new plan's divers sharing gas breathe at twice their usual rate`() {
-        assertEquals("2", planned().panicFactor)
+        assertEquals("2", planned().stressFactor)
     }
 
     @Test
@@ -606,9 +606,9 @@ class ReserveTest {
     }
 
     @Test
-    fun `a panic factor typed wrong leaves the rest answered`() {
+    fun `a stress factor typed wrong leaves the rest answered`() {
         val shaping = planned(*FORTY, gases = BOTTOM_AND_DECO)
-        shaping.panicFactor = "0.5"
+        shaping.stressFactor = "0.5"
 
         assertIs<Worked.Done>(workedOf(ready(shaping)), "the plan is still worked out")
         val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[Scenario.SHARED])

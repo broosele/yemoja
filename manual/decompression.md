@@ -243,7 +243,7 @@ Yemoja answers it with two things that can go wrong, and keeps back enough for t
 - **Buddy out of gas.** Your buddy has lost their bottom gas, and the two of you breathe from yours
   until you are shallow enough for your deco gas. There each of you switches to your own. Two
   people are breathing from one cylinder, and both are stressed, so it costs twice your SAC times
-  the *panic stress factor*, which is 2 unless you change it. Any stop deeper than your deco gas's
+  the *stress factor*, which is 2 unless you change it. Any stop deeper than your deco gas's
   depth is shared too. With no deco gas planned you share all the way to the surface.
 
 Both scenarios begin with **problem-solving time**, two minutes unless you change it: you stay at the

@@ -140,7 +140,7 @@ class SettingsTest {
                 "default_po2_min",
                 "default_safety_stop_depth",
                 "default_safety_stop_duration",
-                "default_panic_factor",
+                "default_stress_factor",
                 "default_problem_solving_time",
             ),
             Settings.OFFERED.map { it.name },
@@ -168,7 +168,7 @@ class SettingsTest {
     @Test
     fun `a new plan's divers sharing gas breathe at twice their usual rate`() {
         val (chosen, _) = settings()
-        assertEquals(2.0, chosen.number(Settings.DEFAULT_PANIC_FACTOR))
+        assertEquals(2.0, chosen.number(Settings.DEFAULT_STRESS_FACTOR))
     }
 
     @Test

@@ -197,7 +197,7 @@ private fun plannerFieldsOf(shaping: Planned, conditions: Conditions, keys: List
         "safety_stop_depth" to Stored.Leaf(conditions.safetyDepth),
         "safety_stop_duration" to Stored.Leaf(conditions.safetySeconds.toLong()),
     )
-    numberOf(shaping.panicFactor)?.let { fields["panic_factor"] = Stored.Leaf(it) }
+    numberOf(shaping.stressFactor)?.let { fields["stress_factor"] = Stored.Leaf(it) }
     problemSecondsOf(shaping)?.let { fields["problem_solving_time"] = Stored.Leaf(it.toLong()) }
     fields["lost_gas_reserve"] = Stored.Leaf(shaping.lostGasScenario)
     shaping.lostGas?.let { keys.getOrNull(it) }?.let { fields["lost_gas"] = Stored.Leaf("*$it") }
@@ -410,7 +410,7 @@ private fun Shaping.loadSettingsFrom(profile: Item, index: Map<String, Int>) {
     (profile.single<Boolean>("gas_switch_stops") as? Result.Usable)?.value?.let { switchStops = it }
     read("safety_stop_depth", Settings.DEFAULT_SAFETY_STOP_DEPTH) { safetyDepth = it }
     read("safety_stop_duration", Settings.DEFAULT_SAFETY_STOP_DURATION) { safetyMinutes = it }
-    read("panic_factor", Settings.DEFAULT_PANIC_FACTOR) { panicFactor = it }
+    read("stress_factor", Settings.DEFAULT_STRESS_FACTOR) { stressFactor = it }
     read("problem_solving_time", Settings.DEFAULT_PROBLEM_SOLVING_TIME) { problemMinutes = it }
     (profile.single<Boolean>("lost_gas_reserve") as? Result.Usable)?.value?.let { lostGasScenario = it }
     (profile.single<KeyReference>("lost_gas") as? Result.Usable)?.value?.let { lostGas = index[it.key] }

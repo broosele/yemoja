@@ -36,7 +36,7 @@ internal object PlannerTips {
     const val LAST_STOP = "Depth of the shallowest deco stop"
     const val SWITCH_STOPS = "Stop to switch to a richer gas at the deepest stop depth it may be breathed at, for a minute where no deco stop is owed there; off, a switch waits for a deco stop or the surface"
     const val WATER = "Salt or fresh water; salt water is denser, so the same depth is a higher pressure"
-    const val PANIC_FACTOR = "Breathing rate multiplier for two divers sharing gas, in the buddy out of gas reserve"
+    const val STRESS_FACTOR = "Breathing rate multiplier for two divers sharing gas, in the buddy out of gas reserve"
     const val GAS_LOST = "Gas source missing in the lost gas reserve; None leaves that reserve out"
     const val PROBLEM_SOLVING = "Time at depth solving the problem before the ascent, in both reserves; 0 means none"
 
@@ -62,5 +62,5 @@ internal object PlannerTips {
 
     // The reserve.
     const val LOST_GAS = "Reserve for losing the gas source chosen as lost, at the worst moment"
-    const val SHARED = "Reserve for sharing your gas with a buddy from the worst moment until a deco gas, each at the panic stress factor"
+    const val SHARED = "Reserve for sharing your gas with a buddy from the worst moment until a deco gas, each at the stress factor"
 }
