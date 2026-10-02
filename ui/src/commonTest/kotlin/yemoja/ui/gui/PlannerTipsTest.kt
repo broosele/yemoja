@@ -49,7 +49,7 @@ class PlannerTipsTest {
             PlannerTips.MOD,
             PlannerTips.USED,
             PlannerTips.END,
-            PlannerTips.MINIMUM,
+            PlannerTips.RESERVE,
             PlannerTips.CNS,
             PlannerTips.OTU,
             PlannerTips.NO_FLY,

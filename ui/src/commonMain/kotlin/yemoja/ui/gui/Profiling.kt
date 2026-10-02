@@ -72,7 +72,7 @@ import yemoja.logic.gasWrongFor
 import yemoja.logic.isShort
 import yemoja.logic.lostGasTried
 import yemoja.logic.lostIndex
-import yemoja.logic.minimumSaid
+import yemoja.logic.keptSaid
 import yemoja.logic.plain
 import yemoja.logic.prettyGasOf
 import yemoja.logic.rateSaid
@@ -825,11 +825,11 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
             Explained(PlannerTips.END) {
                 Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
             }
-            // Red where this is the cylinder that falls short, as a line too deep for its gas is.
+            // Red where the cylinder ends with less than this, as a line too deep for its gas is.
             val short = reckoned != null && isShort(reckoned, key)
-            Explained(PlannerTips.MINIMUM) {
+            Explained(PlannerTips.RESERVE) {
                 Cell(
-                    reckoned?.let { minimumSaid(it, key) }.orEmpty(),
+                    reckoned?.let { keptSaid(it, key) }.orEmpty(),
                     FIGURED,
                     TextAlign.End,
                     if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked,
@@ -1071,5 +1071,5 @@ private val CYLINDER_COLUMNS: List<Triple<String, Dp, String>> = listOf(
     Triple("MOD", FIGURED, PlannerTips.MOD),
     Triple("Used", FIGURED, PlannerTips.USED),
     Triple("End", FIGURED, PlannerTips.END),
-    Triple("Minimum", FIGURED, PlannerTips.MINIMUM),
+    Triple("Reserve", FIGURED, PlannerTips.RESERVE),
 )

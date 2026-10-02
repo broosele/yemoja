@@ -663,21 +663,23 @@ once and corrected. The numbers stay unused rather than being given to something
   the reserve's two settings on the left, the stress factor and the problem-solving time,
   and beside them a line for each scenario, `LOGIC-40`, each beginning with its own switch. The settings and what they decide sit
   together, so a reader changing one sees the other move; the user moved them out of the settings
-  and from under the clocks for that. What each cylinder must still hold is also a column of the
-  gases, *Minimum*: the most any scenario switched on asks of it, red on a cylinder that falls short
-  in any of them. Each line gives the scenario's name, *Lost* or *Buddy out of gas*, then its
+  and from under the clocks for that. What each cylinder must still hold at the end is also a
+  column of the gases, *Reserve*, beside *End* so the two are read against each other: the most any
+  scenario switched on keeps of it, red where the plan ends with less. It was *Minimum*, the
+  pressure at the worst moment, which a reader took for a floor the gauge must never pass; the
+  user asked for the gas to keep at the end, `LOGIC-40`. Each line gives the scenario's name, *Lost* or *Buddy out of gas*, then its
   switch, then what it came to. The lost-gas line's switch is the choice of gas lost, below, and
   the sharing line's a tick that switches it off, both shown before the plan can be worked out as
   well. The name and its switch sit close together, as wide as the widest pair needs, in a slot of
   one width for both lines: the results line up, and the width a fixed slot for each part would take
   is left to them. Each line says what
   it asks each cylinder
-  to hold, its own worst moment, and what it assumes, in one sentence: *Gas 1 needs 28 bar at 25:00
-  (40 m), two divers sharing to 21.6 m, each at 2 × SAC*: *each* is there because a bare *2 × SAC*
+  to keep at the end, its own worst moment, and what it assumes, in one sentence: *Gas 1 keeps
+  28 bar at the end, worst at 25:00 (40 m); two divers sharing to 21.6 m, each at 2 × SAC*: *each* is there because a bare *2 × SAC*
   read as both divers together, and the multiple is given as it is rather than by the setting's
   name. A scenario that asks nothing says why, as *No
   sharing needed: each diver switches to 2: EAN50 at once*, rather than a worst moment at the
-  surface that would mean nothing. The lines are where a reader sees which scenario set a minimum, and the
+  surface that would mean nothing. The lines are where a reader sees which scenario set a reserve, and the
   phrase is the rule said once, where it applies, rather than in a paragraph they would have to go
   looking for. Both start on, since a reserve nobody asked for protects nobody.
 

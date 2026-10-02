@@ -8,36 +8,21 @@ import yemoja.data.Element
  */
 
 /**
- * Reserve is the gas a plan must keep back to reach safety in one scenario at the worst moment, or
- * why that cannot be worked out.
+ * Reserve is the gas a plan must still hold at its end, for one scenario going wrong at its worst
+ * moment, or why that cannot be worked out.
  */
 sealed class Reserve {
 
     /**
-     * Done is the reserve at the worst moment, and whether the plan keeps it throughout.
+     * Done is what each source must still hold when the run ends, for the sources the scenario
+     * needs something from.
      *
      * Immutable.
      */
     class Done(
-        /** The moment the scenario costs the most gas, in seconds from the start. */
-        val worst: Int,
-        /** How deep the run is at [worst], in metres. */
-        val worstMetres: Double,
-        /** How deep the way up from [worst] is costed to, in metres: nought for the surface. */
-        val upTo: Double,
-        /** The litres at the surface each source gives up on the way up from [worst]. */
-        val needed: Map<String, Double>,
-        /** The same on each cylinder's gauge, in bar, for the sources that say how big they are. */
-        val reserve: Map<String, Double>,
-        /**
-         * The first moment a source holds less than the way up from there needs, or null where every
-         * moment has enough.
-         *
-         * Only a source with a gauge can be judged, so null says nothing about one without.
-         * [judged] says whether any was left out.
-         */
-        val shortfall: Shortfall?,
-        /** Whether every source a way up breathes from has a size and a fill to judge it by. */
+        /** By source key, each with the moment that sets it. A source needing nothing is absent. */
+        val kept: Map<String, Kept>,
+        /** Whether every source in [kept] has a size and a fill, so that its gauge can be judged. */
         val judged: Boolean,
     ) : Reserve()
 
@@ -46,21 +31,44 @@ sealed class Reserve {
 }
 
 /**
- * Shortfall is a moment a source holds less than the way up from there would need.
+ * Kept is what one source must still hold when a run ends, and the moment that asks it.
  *
- * Both pressures are in bar on that source's gauge, and [upTo] is how deep that way up is costed
- * to, in metres.
+ * **It is extra gas, measured at the end.** At [second] the way up in trouble takes [needed] litres
+ * from the source, and the plan itself would still have breathed some of that from there to the
+ * surface. What it would not have breathed is [litres], and a source surfacing with at least that
+ * much held enough at every moment. A plan's gauge at any moment is its end pressure plus what it
+ * breathes after, which is why the one comparison at the end does. `LOGIC-40`.
+ *
+ * Immutable.
  */
-class Shortfall(val second: Int, val source: String, val left: Double, val needed: Double, val upTo: Double)
+class Kept(
+    /** Litres at the surface to keep at the end. */
+    val litres: Double,
+    /** The same on the source's gauge, in bar, or null where nobody said how big it is. */
+    val bar: Double?,
+    /** What the plan leaves on the source's gauge at the end, in bar, or null where it has no gauge. */
+    val end: Double?,
+    /** Whether the plan surfaces with less than [bar]. Never true where [bar] or [end] is unknown. */
+    val short: Boolean,
+    /** The moment that asks the most extra of this source, in seconds from the start. */
+    val second: Int,
+    /** How deep the run is at [second], in metres. */
+    val metres: Double,
+    /** How deep the way up from [second] is costed to, in metres: nought for the surface. */
+    val upTo: Double,
+    /** Litres the way up from [second] takes from the source, before what the plan breathes is taken off. */
+    val needed: Double,
+)
 
 /**
- * What [run] must keep back to reach the surface if the sources in [lost] fail at its worst moment,
- * each remaining source breathed at its own `sac`.
+ * What [run] must still hold at its end to reach the surface if the sources in [lost] fail at its
+ * worst moment, each remaining source breathed at its own `sac`.
  *
  * **Every moment is tried.** At each point of the run the lost sources are gone, and the way up is
  * worked out from the tissues at that moment as [completeAscent] works one out: rising at
- * [metresAMinute], taking the last stop at [lastStop], and holding the run's safety stop. The worst
- * moment is the one whose way up costs the most gas altogether.
+ * [metresAMinute], taking the last stop at [lastStop], and holding the run's safety stop. A source's
+ * worst moment is the one whose way up takes most from it beyond what the plan breathes from it
+ * after, as [Kept] says.
  *
  * **A bailout is open to that ascent's choice**, being carried for exactly this. Where the source
  * breathed at the moment is lost, the way up starts on the richest remaining source its own limit
@@ -83,7 +91,7 @@ fun lostGasReserve(
     val kept = run.sources.keys - lost
     if (kept.isEmpty()) return Reserve.Refused("At least one gas should remain")
     val emergency = breathing.choosing(kept)
-    return reserveOver(run, breathing) { index, second, metres, tissues ->
+    return reserveOver(run, breathing) { index, second, metres, tissues, anchor ->
         val ambient = ambientAt(metres, run.density, run.surface)
         val breathed = breathing.keyAt(second).takeIf { it in kept }
             ?: emergency.richestAt(ambient)
@@ -93,6 +101,7 @@ fun lostGasReserve(
             metres,
             index,
             tissues,
+            anchor,
             breathed,
             emergency,
             run,
@@ -104,7 +113,7 @@ fun lostGasReserve(
 }
 
 /**
- * What [run] must keep back for a buddy who has lost their bottom gas at its worst moment: the two
+ * What [run] must still hold at its end for a buddy who has lost their bottom gas at its worst moment: the two
  * of them breathe from the source breathed at that moment until a source in [deco] may be breathed,
  * each at their own `sac` times [stressFactor].
  *
@@ -139,7 +148,7 @@ fun sharedGasReserve(
     val handoff = deco.mapNotNull { key ->
         run.sources[key]?.let { maximumOperatingDepth(it.gas, it.mostOxygen, run.density, run.surface) }
     }.maxOrNull()?.coerceAtLeast(0.0) ?: 0.0
-    return reserveOver(run, breathing) { index, second, metres, tissues ->
+    return reserveOver(run, breathing) { index, second, metres, tissues, anchor ->
         if (metres <= handoff) return@reserveOver Cost.Litres(emptyMap(), metres)
         val shared = breathing.keyAt(second)
         heldThenClimbed(
@@ -147,6 +156,7 @@ fun sharedGasReserve(
             metres,
             index,
             tissues,
+            anchor,
             shared,
             breathing.choosing(setOf(shared)),
             run,
@@ -173,13 +183,15 @@ private class Ascending(
  * so a minute more at forty metres can owe a stop more. The climb is worked out from where it leaves
  * them, choosing among [choosing]'s sources, and costed to [handoff]. [index] is the moment's place
  * in [run], which says how much of a safety stop is already held; the time itself counts towards
- * one where the problem happens at its depth.
+ * one where the problem happens at its depth. [anchor] is where the run's gradient factors are
+ * anchored so far, which the climb keeps.
  */
 private fun heldThenClimbed(
     second: Int,
     metres: Double,
     index: Int,
     tissues: Tissues,
+    anchor: Double,
     breathed: String,
     choosing: Breathing,
     run: Run,
@@ -196,7 +208,7 @@ private fun heldThenClimbed(
     }
     val before = run.depth.subList(0, index + 1) + if (held > 0) listOf(second + held to metres) else emptyList()
     val climbed = climbed(
-        From(loaded, second + held, metres, breathed),
+        From(loaded, second + held, metres, breathed, anchor),
         choosing,
         run,
         ascending.metresAMinute,
@@ -226,24 +238,26 @@ private fun checkAscent(metresAMinute: Double, lastStop: Double, problemSolvingS
 }
 
 /**
- * The reserve [run] needs, trying [cost] at every point and keeping the worst.
+ * The reserve [run] needs, trying [cost] at every point and keeping, for each source, the moment
+ * that asks most beyond what the plan breathes from there.
  *
- * [cost] is given the point's place, its second and depth, and the tissues there, and says what a
- * way up from that moment takes from each source.
+ * [cost] is given the point's place, its second and depth, the tissues there and the depth the
+ * gradient factors are anchored at so far, and says what a way up from that moment takes from
+ * each source.
  */
 private fun reserveOver(
     run: Run,
     breathing: Breathing,
-    cost: (index: Int, second: Int, metres: Double, tissues: Tissues) -> Cost,
+    cost: (index: Int, second: Int, metres: Double, tissues: Tissues, anchor: Double) -> Cost,
 ): Reserve {
     val evaluated = when (val answer = evaluate(run)) {
         is Evaluated.Refused -> return Reserve.Refused(answer.reason)
         is Evaluated.Done -> answer
     }
+    val after = usedAfter(run, breathing)
     var tissues = run.carried ?: Tissues.saturated(run.surface)
-    var worst: Moment? = null
-    var shortfall: Shortfall? = null
-    var judged = true
+    var anchor = 0.0
+    val kept = LinkedHashMap<String, Moment>()
     for ((index, point) in run.depth.withIndex()) {
         val (second, metres) = point
         if (index > 0) {
@@ -255,7 +269,8 @@ private fun reserveOver(
                 (second - was).toDouble(),
             )
         }
-        val litres = when (val answer = cost(index, second, metres, tissues)) {
+        anchor = firstStopAfter(tissues, anchor, run.model, run.surface)
+        val litres = when (val answer = cost(index, second, metres, tissues, anchor)) {
             is Cost.Litres -> answer
             is Cost.Unknown -> return Reserve.Refused(
                 "Cannot be calculated: SAC missing",
@@ -265,42 +280,70 @@ private fun reserveOver(
                 "No way up from ${clockOf(second)} within 24 hours",
             )
         }
-        // A tie goes to the later moment, since the cylinder holds least then: from anywhere on a
-        // flat bottom the way up to a deco gas can cost the same.
-        val total = litres.litres.values.sum()
-        val most = worst?.needed?.values?.sum()
-        if (most == null || total > most || (total > 0 && total >= most - TIE)) {
-            worst = Moment(second, metres, litres.upTo, litres.litres)
-        }
         for ((key, needed) in litres.litres) {
-            val volume = run.sources.getValue(key).volume
-            val gauge = evaluated.pressures[key]?.valueAt(index) as? Element.Usable
-            if (volume == null || volume <= 0 || gauge == null) {
-                if (needed > 0) judged = false
-                continue
-            }
-            val left = gauge.value as Double
-            if (shortfall == null && left < needed / volume) {
-                shortfall = Shortfall(second, key, left, needed / volume, litres.upTo)
+            val extra = needed - (after[index][key] ?: 0.0)
+            if (extra <= TIE) continue
+            val most = kept[key]?.extra
+            // A tie goes to the later moment, being nearer the end the reserve is held at.
+            if (most == null || extra >= most - TIE) {
+                kept[key] = Moment(second, metres, litres.upTo, needed, extra)
             }
         }
     }
-    val at = worst ?: return Reserve.Refused("this recording holds no depths, so nothing can be worked out from it")
-    return Reserve.Done(
-        worst = at.second,
-        worstMetres = at.metres,
-        upTo = at.upTo,
-        needed = at.needed,
-        reserve = at.needed.mapNotNull { (key, litres) ->
-            run.sources.getValue(key).volume?.takeIf { it > 0 }?.let { key to litres / it }
-        }.toMap(),
-        shortfall = shortfall,
-        judged = judged,
-    )
+    if (run.depth.isEmpty()) {
+        return Reserve.Refused("this recording holds no depths, so nothing can be worked out from it")
+    }
+    var judged = true
+    val answer = kept.mapValues { (key, moment) ->
+        val volume = run.sources.getValue(key).volume?.takeIf { it > 0 }
+        val end = evaluated.pressures[key]?.let { series ->
+            (series.valueAt(series.size - 1) as? Element.Usable)?.value as? Double
+        }
+        if (volume == null || end == null) judged = false
+        val bar = volume?.let { moment.extra / it }
+        Kept(
+            litres = moment.extra,
+            bar = bar,
+            end = end,
+            short = bar != null && end != null && end < bar,
+            second = moment.second,
+            metres = moment.metres,
+            upTo = moment.upTo,
+            needed = moment.needed,
+        )
+    }
+    return Reserve.Done(answer, judged)
 }
 
-/** Moment is one point of a run, and what a way up from it would cost each source. */
-private class Moment(val second: Int, val metres: Double, val upTo: Double, val needed: Map<String, Double>)
+/**
+ * The litres the plan itself breathes from each source after each point of [run], as `evaluate`
+ * counts them: each stretch at its source's rate and the mean of the pressures at its ends.
+ */
+private fun usedAfter(run: Run, breathing: Breathing): List<Map<String, Double>> {
+    val stretches = run.depth.zipWithNext().map { (from, to) ->
+        val key = breathing.keyAt(from.first)
+        val rate = breathing.rates[key]
+        val litres = if (rate == null) 0.0 else {
+            val minutes = (to.first - from.first) / SECONDS_IN_MINUTE
+            rate * minutes * (ambientAt(from.second, run.density, run.surface) + ambientAt(to.second, run.density, run.surface)) / 2
+        }
+        key to litres
+    }
+    val after = ArrayList<Map<String, Double>>(run.depth.size)
+    var running = HashMap<String, Double>()
+    after += running.toMap()
+    for ((key, litres) in stretches.asReversed()) {
+        running = HashMap(running).apply { this[key] = (this[key] ?: 0.0) + litres }
+        after += running.toMap()
+    }
+    return after.asReversed()
+}
+
+/**
+ * Moment is one point of a run, what a way up from it takes from one source, and how much of that
+ * the plan would not have breathed anyway.
+ */
+private class Moment(val second: Int, val metres: Double, val upTo: Double, val needed: Double, val extra: Double)
 
 /** Cost is what a way up takes from each source, or why it cannot be counted. */
 private sealed class Cost {

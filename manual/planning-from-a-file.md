@@ -139,9 +139,10 @@ well:
   and how serious it is.
 - `no_flight_seconds` and `desaturation_seconds`.
 - `reserve` — the gas reserve, keyed `lost_gas` and `shared_gas`; a scenario switched off is left
-  out. Each holds `worst_seconds` and `worst_m`, the moment it costs the most; `needed_litres` and
-  `reserve_bar`, what each cylinder must give up at that moment, by its number; and `shortfall`,
-  the first moment a cylinder's own gauge would run short, or nothing where none does. A scenario
+  out. Each holds `kept`, what each cylinder should still hold at the end of the dive, by its
+  number, leaving out a cylinder that needs nothing: `litres`, `bar` on its own gauge, `end_bar`
+  what the plan leaves on it, `short` where that is less, and `worst_seconds` and `worst_m`, the
+  moment that asks it. A scenario
   that cannot be worked out — a cylinder with no SAC, most often — is an object with only a
   `refused`, the rest of the plan answered regardless.
 

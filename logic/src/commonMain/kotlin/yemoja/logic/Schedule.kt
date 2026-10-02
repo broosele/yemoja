@@ -68,28 +68,29 @@ class Schedule(
 sealed class ReserveAnswer {
 
     class Done(
-        /** The moment the scenario costs the most gas, in seconds from the start. */
-        val worstSeconds: Int,
-        val worstMetres: Double,
-        /** Litres each cylinder gives up at the worst moment, by its number. */
-        val neededLitres: Map<String, Double>,
-        /** The same on each cylinder's own gauge, in bar, for the ones that say how big they are. */
-        val reserveBar: Map<String, Double>,
-        /** The first moment a cylinder holds less than the way up from there needs, or absent. */
-        val shortfall: ReserveShortfall?,
+        /** What each cylinder must still hold at the end of the dive, by its number. A cylinder needing nothing is absent. */
+        val kept: Map<String, ReserveKept>,
     ) : ReserveAnswer()
 
     class Refused(val reason: String) : ReserveAnswer()
 }
 
-/** A moment a cylinder holds less than the way up from there would need. Immutable. */
-class ReserveShortfall(
-    val second: Int,
-    /** The cylinder short, by its number. */
-    val cylinder: String,
-    /** Both pressures are on that cylinder's own gauge, in bar. */
-    val leftBar: Double,
-    val neededBar: Double,
+/**
+ * ReserveKept is what one cylinder must still hold at the end of the dive, and the moment that asks it.
+ *
+ * Immutable.
+ */
+class ReserveKept(
+    val litres: Double,
+    /** On the cylinder's own gauge, or absent where it does not say how big it is. */
+    val bar: Double?,
+    /** What the plan leaves on the gauge, or absent where the cylinder has no size or fill. */
+    val endBar: Double?,
+    /** Whether the plan ends with less than [bar]. */
+    val short: Boolean,
+    /** The moment that asks the most of this cylinder, in seconds from the start, and how deep. */
+    val worstSeconds: Int,
+    val worstMetres: Double,
 )
 
 /**
@@ -168,14 +169,16 @@ private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done, reckoned: Reckone
 private fun reserveAnswerOf(reckoning: Reckoning): ReserveAnswer = when (reckoning) {
     is Reckoning.Wrong -> ReserveAnswer.Refused(reckoning.reason)
     is Reckoning.Done -> {
-        val reserve = reckoning.reserve
         ReserveAnswer.Done(
-            worstSeconds = reserve.worst,
-            worstMetres = reserve.worstMetres,
-            neededLitres = reserve.needed.mapKeys { numberedOf(it.key) },
-            reserveBar = reserve.reserve.mapKeys { numberedOf(it.key) },
-            shortfall = reserve.shortfall?.let {
-                ReserveShortfall(it.second, numberedOf(it.source), it.left, it.needed)
+            reckoning.reserve.kept.entries.associate { (key, kept) ->
+                numberedOf(key) to ReserveKept(
+                    litres = kept.litres,
+                    bar = kept.bar,
+                    endBar = kept.end,
+                    short = kept.short,
+                    worstSeconds = kept.second,
+                    worstMetres = kept.metres,
+                )
             },
         )
     }

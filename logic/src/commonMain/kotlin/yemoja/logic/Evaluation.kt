@@ -686,7 +686,20 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double, switchStop
 }
 
 /** From is where an ascent begins: the tissues, the moment, the depth, and the source breathed. */
-internal class From(val tissues: Tissues, val second: Int, val metres: Double, val breathed: String)
+internal class From(
+    val tissues: Tissues,
+    val second: Int,
+    val metres: Double,
+    val breathed: String,
+    /**
+     * The depth the gradient factors are anchored at so far, or nought where nothing has been owed.
+     *
+     * An ascent begun part-way through a dive takes the dive's anchor. Started from nought, it
+     * would anchor at its own starting point, shallower than the dive's first stop, and hold
+     * longer than the dive it branches from.
+     */
+    val firstStop: Double = 0.0,
+)
 
 /** Climbed is an ascent's points and switches, each a second and a value. */
 internal class Climbed(val points: List<Pair<Int, Double>>, val switches: List<Pair<Int, String>>)
@@ -721,7 +734,7 @@ internal fun climbed(
     var second = from.second
     var metres = from.metres
     var breathed = from.breathed
-    var firstStop = 0.0
+    var firstStop = from.firstStop
     val points = ArrayList<Pair<Int, Double>>()
     val switches = ArrayList<Pair<Int, String>>()
     // What the safety stop still needs, counting what the run already held at its depth.
@@ -872,7 +885,7 @@ private fun stopAbove(metres: Double, lastStop: Double): Double {
  * left on a dive that owed nothing. A computer holds the low factor back until a stop exists, and
  * so does this. `LOGIC-37`.
  */
-private fun firstStopAfter(tissues: Tissues, firstStop: Double, model: Model, surface: Double): Double {
+internal fun firstStopAfter(tissues: Tissues, firstStop: Double, model: Model, surface: Double): Double {
     if (firstStop <= surface && tissues.ceiling(model.high) <= surface) return firstStop
     val held = tissues.ceiling(model.low)
     return if (held > firstStop) held else firstStop

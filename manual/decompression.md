@@ -256,10 +256,18 @@ cannot use your bailout. Leave either scenario out where it does not apply: the 
 dive, by unticking it, and the first where losing your deco gas is not something you plan for, by
 choosing *None* as the gas lost.
 
-Every moment of the plan is tried, in each scenario, and the worst is reported: when it is, how
-deep you are, and how much each cylinder must still hold then, in bar. A cylinder's reserve is the
-larger of the two. If at any moment a cylinder holds less than a scenario would need from there,
-Yemoja says which cylinder, when, and in which scenario. A bailout cylinder is breathed on the way
+**The reserve is what each cylinder should still hold when you surface**, in bar. Every moment of
+the plan is tried, in each scenario. At each one, the way up in trouble costs some gas, and part of
+that is gas the plan would have breathed from there anyway. What is left over is extra, and the
+moment with the most extra is that cylinder's worst moment. Surface with at least that much, and
+the cylinder held enough at every moment of the dive; your gauge reads more than that during the
+dive, by what the rest of the plan still breathes. A cylinder's reserve is the larger of the two
+scenarios'. If a cylinder ends with less, Yemoja says which, what it ends with, and in which
+scenario.
+
+The worst moment is often the end of the bottom. Losing your deco gas just before you would have
+switched to it can be worse: from there the plan breathes no more bottom gas, but without the deco
+gas the whole way up is on it. A bailout cylinder is breathed on the way
 up when gas is lost, since trouble is what it is carried for. A cylinder with no SAC cannot be
 costed, and one with no size or fill can be costed in litres but not checked against what it holds.
 

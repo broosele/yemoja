@@ -137,7 +137,7 @@ class CalculatedTest {
             calculated(table(gases = gases).copy(stressFactor = "2", problemMinutes = "2")),
         ).schedule
         val lost = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.LOST_GAS))
-        assertTrue(lost.neededLitres.getValue("1") > 0, "losing the deco gas costs the bottom gas something")
+        assertTrue(lost.kept.getValue("1").litres > 0, "losing the deco gas leaves the bottom gas something to keep")
         assertTrue(Scenario.SHARED in schedule.reserves, "switched on by default")
     }
 

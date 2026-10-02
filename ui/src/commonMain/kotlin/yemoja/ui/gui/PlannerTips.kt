@@ -50,7 +50,7 @@ internal object PlannerTips {
     const val MOD = "Maximum operating depth, at the oxygen limit for this gas's role"
     const val USED = "Gas used by the plan, in litres at the surface"
     const val END = "Cylinder pressure at the end of the dive"
-    const val MINIMUM = "Pressure the cylinder must still hold at the reserve's worst moment; red where the plan leaves less"
+    const val RESERVE = "Pressure to keep at the end of the dive for the gas reserve; red where the plan ends with less"
     const val ADD_GAS = "Add a gas source below"
     const val REMOVE_GAS = "Take out this gas source"
 

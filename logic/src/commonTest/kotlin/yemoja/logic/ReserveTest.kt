@@ -50,6 +50,9 @@ private val BOTTOM_AND_DECO = mapOf("g1" to cylinder("AIR"), "g2" to cylinder("E
 
 private val AIR_ONLY = mapOf("g1" to cylinder("AIR"))
 
+/** What [this] keeps of [key] at the end, in litres, and nought where it keeps nothing. */
+private fun Reserve.Done.litres(key: String): Double = kept[key]?.litres ?: 0.0
+
 private fun lost(run: Run, lost: Set<String> = setOf("g2")): Reserve.Done =
     assertIs<Reserve.Done>(lostGasReserve(run, lost, 9.0, 3.0))
 
@@ -59,20 +62,24 @@ private fun shared(run: Run, deco: Set<String> = setOf("g2"), stress: Double = 2
 class LostGasReserveTest {
 
     @Test
-    fun `losing the deco gas is worst at the end of the bottom`() {
-        val done = lost(whole(40.0, 25, BOTTOM_AND_DECO))
+    fun `losing the deco gas is worst where the plan would have switched to it`() {
+        // From there the plan breathes no more air, and the way up without the deco gas breathes
+        // nothing else, so every litre of it is extra.
+        val run = whole(40.0, 25, BOTTOM_AND_DECO)
+        val air = lost(run).kept.getValue("g1")
 
-        assertEquals(1500, done.worst, "the last moment on the bottom, most loaded and deepest")
-        assertEquals(40.0, done.worstMetres)
-        assertEquals(0.0, done.upTo, "the way up is to the surface")
+        assertEquals(run.switches.single { it.second == "g2" }.first, air.second)
+        assertEquals(0.0, air.upTo, "the way up is to the surface")
+        assertEquals(air.needed, air.litres, 1e-6, "all of it kept")
     }
 
     @Test
     fun `with the deco gas lost the reserve is bottom gas alone`() {
         val done = lost(whole(40.0, 25, BOTTOM_AND_DECO))
 
-        assertEquals(setOf("g1"), done.needed.keys)
-        assertEquals(done.needed.getValue("g1") / 12.0, done.reserve.getValue("g1"), 1e-9)
+        assertEquals(setOf("g1"), done.kept.keys)
+        val air = done.kept.getValue("g1")
+        assertEquals(air.litres / 12.0, assertNotNull(air.bar), 1e-9)
     }
 
     @Test
@@ -81,8 +88,7 @@ class LostGasReserveTest {
         val gone = lost(run, lost = setOf("g2"))
         val kept = lost(run, lost = emptySet())
 
-        assertTrue((kept.needed["g2"] ?: 0.0) > 0, "${kept.needed}")
-        assertTrue(kept.needed.getValue("g1") < gone.needed.getValue("g1"))
+        assertTrue(kept.litres("g1") < gone.litres("g1"), "${kept.litres("g1")} against ${gone.litres("g1")}")
     }
 
     @Test
@@ -95,7 +101,7 @@ class LostGasReserveTest {
         val done = lost(run, lost = emptySet())
 
         assertTrue(run.switches.none { it.second == "g2" }, "the plan itself never breathes it")
-        assertTrue((done.needed["g2"] ?: 0.0) > 0, "but the way up in trouble does: ${done.needed}")
+        assertTrue(done.litres("g2") > 0, "but the way up in trouble does, so all of it is kept: ${done.kept.keys}")
     }
 
     @Test
@@ -103,43 +109,73 @@ class LostGasReserveTest {
         val sources = mapOf("g1" to cylinder("EAN32"), "g2" to cylinder("AIR"))
         val done = lost(whole(30.0, 30, sources), lost = setOf("g1"))
 
-        assertEquals(setOf("g2"), done.needed.keys)
+        assertEquals(setOf("g2"), done.kept.keys)
     }
 
     @Test
-    fun `a plan with enough gas has no shortfall`() {
+    fun `a plan with enough gas is not short`() {
         val done = lost(whole(18.0, 20, AIR_ONLY), lost = emptySet())
 
-        assertNull(done.shortfall, "${done.shortfall?.left} against ${done.shortfall?.needed}")
+        assertTrue(done.kept.values.none { it.short }, "${done.kept.values.map { it.end to it.bar }}")
         assertTrue(done.judged)
     }
 
     @Test
-    fun `a plan short of its reserve says where and which cylinder`() {
-        val done = lost(whole(40.0, 25, BOTTOM_AND_DECO))
-        val short = assertNotNull(done.shortfall, "twelve litres cannot do a forty-metre dive's stops")
+    fun `a plan short of its reserve ends with less than it keeps`() {
+        val air = lost(whole(40.0, 25, BOTTOM_AND_DECO)).kept.getValue("g1")
 
-        assertEquals("g1", short.source)
-        assertTrue(short.left < short.needed, "${short.left} against ${short.needed}")
-        assertTrue(short.second <= done.worst, "it runs short no later than the worst moment")
+        assertTrue(air.short, "twelve litres cannot do a forty-metre dive's stops")
+        assertTrue(assertNotNull(air.end) < assertNotNull(air.bar), "${air.end} against ${air.bar}")
+    }
+
+    @Test
+    fun `what is kept is the way up's cost less what the plan breathes after that moment`() {
+        // Two divers sharing to the surface, so the way up costs more than the plan's own.
+        val run = whole(40.0, 25, AIR_ONLY)
+        val air = shared(run, deco = emptySet()).kept.getValue("g1")
+        val before = Run(
+            depth = run.depth.takeWhile { it.first <= air.second },
+            sources = AIR_ONLY,
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+        )
+        fun used(of: Run): Double = assertIs<Evaluated.Done>(evaluate(of)).gasUsed.getValue("g1")
+        val after = used(run) - used(before)
+
+        assertEquals(air.needed - after, air.litres, 1e-6)
+    }
+
+    @Test
+    fun `a cylinder ending with what it keeps held enough at the worst moment`() {
+        // The gauge at any moment is the end pressure plus what the plan breathes after it, so a
+        // cylinder ending on exactly its reserve met the worst moment's need there to the litre.
+        val run = whole(40.0, 25, AIR_ONLY)
+        val air = shared(run, deco = emptySet()).kept.getValue("g1")
+        val gauge = assertIs<Evaluated.Done>(evaluate(run)).pressures.getValue("g1")
+        val at = run.depth.indexOfFirst { it.first == air.second }
+        val then = (gauge.valueAt(at) as yemoja.data.Element.Usable).value as Double
+
+        assertEquals(air.needed / 12.0, then - assertNotNull(air.end) + assertNotNull(air.bar), 1e-6)
     }
 
     @Test
     fun `the way up in trouble holds the safety stop too`() {
-        val without = lost(whole(18.0, 20, AIR_ONLY), lost = emptySet())
-        val with = lost(whole(18.0, 20, AIR_ONLY, SafetyStop(6.0, 180)), lost = emptySet())
+        val without = shared(whole(18.0, 20, AIR_ONLY), deco = emptySet())
+        val with = shared(whole(18.0, 20, AIR_ONLY, SafetyStop(6.0, 180)), deco = emptySet())
 
-        assertTrue(with.needed.getValue("g1") > without.needed.getValue("g1"))
+        assertTrue(with.kept.getValue("g1").needed > without.kept.getValue("g1").needed)
     }
 
     @Test
     fun `a cylinder with no size is counted and not judged`() {
-        val done = lost(whole(18.0, 20, mapOf("g1" to cylinder("AIR", volume = null))), lost = emptySet())
+        val done = shared(whole(18.0, 20, mapOf("g1" to cylinder("AIR", volume = null))), deco = emptySet())
 
-        assertTrue(done.needed.getValue("g1") > 0)
-        assertTrue("g1" !in done.reserve)
+        val air = done.kept.getValue("g1")
+        assertTrue(air.litres > 0)
+        assertNull(air.bar)
         assertTrue(!done.judged)
-        assertNull(done.shortfall)
+        assertTrue(!air.short)
     }
 
     @Test
@@ -162,11 +198,11 @@ class LostGasReserveTest {
     }
 
     @Test
-    fun `the reserve at a moment is what the way up from there costs at the usual rate`() {
+    fun `the way up at a moment costs two divers' usual rate, sharing`() {
         val run = whole(40.0, 25, AIR_ONLY)
-        val done = lost(run, lost = emptySet())
+        val air = shared(run, deco = emptySet(), stress = 1.0).kept.getValue("g1")
         val upTo = Run(
-            depth = run.depth.takeWhile { it.first <= done.worst },
+            depth = run.depth.takeWhile { it.first <= air.second },
             sources = AIR_ONLY,
             gradientFactorLow = 0.3,
             gradientFactorHigh = 0.7,
@@ -178,11 +214,11 @@ class LostGasReserveTest {
         for (point in ascent.depth) {
             val mean = (ambientAt(previous.second, upTo.density, upTo.surface) +
                 ambientAt(point.second, upTo.density, upTo.surface)) / 2
-            litres += 20.0 * (point.first - previous.first) / 60.0 * mean
+            litres += 2 * 20.0 * (point.first - previous.first) / 60.0 * mean
             previous = point
         }
 
-        assertTrue(abs(litres - done.needed.getValue("g1")) < 1e-6, "$litres against ${done.needed}")
+        assertTrue(abs(litres - air.needed) < 1e-6, "$litres against ${air.needed}")
     }
 }
 
@@ -194,9 +230,10 @@ class SharedGasReserveTest {
         val done = shared(run)
         val deepest = assertNotNull(maximumOperatingDepth(Gas.parse("EAN50"), 1.6, run.density, run.surface))
 
-        assertEquals(deepest, done.upTo, 1e-9)
-        assertEquals(1500, done.worst, "the end of the bottom, deepest and most loaded")
-        assertEquals(setOf("g1"), done.needed.keys, "only the gas being shared is costed")
+        assertEquals(setOf("g1"), done.kept.keys, "only the gas being shared is costed")
+        val air = done.kept.getValue("g1")
+        assertEquals(deepest, air.upTo, 1e-9)
+        assertEquals(1500, air.second, "the end of the bottom, deepest and most loaded")
     }
 
     @Test
@@ -212,24 +249,27 @@ class SharedGasReserveTest {
             switches = listOf(0 to "g1"),
         )
 
-        assertTrue(shared(early).upTo > 20, "${shared(early).upTo}")
+        val upTo = shared(early).kept.getValue("g1").upTo
+        assertTrue(upTo > 20, "$upTo")
     }
 
     @Test
     fun `with no deco gas the two share to the surface`() {
-        assertEquals(0.0, shared(whole(30.0, 20, AIR_ONLY), deco = emptySet()).upTo)
+        assertEquals(0.0, shared(whole(30.0, 20, AIR_ONLY), deco = emptySet()).kept.getValue("g1").upTo)
     }
 
     @Test
-    fun `sharing costs twice the way up one diver makes, times the stress`() {
-        // With nothing to switch to, the shared way up is the one a diver alone would make.
+    fun `sharing costs in proportion to the stress, and alone the way up is the plan's`() {
+        // With nothing to switch to, the shared way up is the one a diver alone would make, which
+        // is the plan's own: alone, nothing beyond it is kept.
         val run = whole(30.0, 20, AIR_ONLY, SafetyStop(6.0, 180))
-        val alone = lost(run, lost = emptySet())
-        val calm = shared(run, deco = emptySet(), stress = 1.0)
-        val stressed = shared(run, deco = emptySet(), stress = 2.0)
+        val calm = shared(run, deco = emptySet(), stress = 1.0).kept.getValue("g1")
+        val stressed = shared(run, deco = emptySet(), stress = 2.0).kept.getValue("g1")
 
-        assertEquals(alone.needed.getValue("g1") * 2, calm.needed.getValue("g1"), 1e-6)
-        assertEquals(calm.needed.getValue("g1") * 2, stressed.needed.getValue("g1"), 1e-6)
+        val alone = lost(run, lost = emptySet()).kept
+        assertTrue(alone.isEmpty(), "alone, the way up is the plan's: ${alone.mapValues { it.value.litres }}")
+        assertEquals(calm.second, stressed.second, "the same moment is the worst")
+        assertEquals(calm.needed * 2, stressed.needed, 1e-6)
     }
 
     @Test
@@ -237,29 +277,28 @@ class SharedGasReserveTest {
         // EAN50 may be breathed from about twenty-two metres, so a buddy at eighteen switches at once.
         val done = shared(whole(18.0, 30, BOTTOM_AND_DECO))
 
-        assertEquals(0.0, done.needed.values.sum())
-        assertNull(done.shortfall)
+        assertTrue(done.kept.isEmpty(), "${done.kept.keys}")
     }
 
     @Test
     fun `sharing to a deco gas asks far less than losing it`() {
         val run = whole(40.0, 25, BOTTOM_AND_DECO)
 
-        assertTrue(shared(run).needed.getValue("g1") < lost(run).needed.getValue("g1"))
+        assertTrue(shared(run).litres("g1") < lost(run).litres("g1"))
     }
 
     @Test
     fun `a shortfall in sharing says how far the sharing went`() {
         val sources = mapOf("g1" to cylinder("AIR", volume = 3.0), "g2" to cylinder("EAN50", volume = 7.0))
-        val short = assertNotNull(shared(whole(40.0, 25, sources)).shortfall)
+        val air = shared(whole(40.0, 25, sources)).kept.getValue("g1")
 
-        assertEquals("g1", short.source)
-        assertTrue(short.upTo > 0, "the sharing ends at the deco gas, not the surface")
+        assertTrue(air.short)
+        assertTrue(air.upTo > 0, "the sharing ends at the deco gas, not the surface")
     }
 
     @Test
     fun `a deco gas the run does not carry is passed over`() {
-        assertEquals(0.0, shared(whole(30.0, 20, AIR_ONLY), deco = setOf("g9")).upTo)
+        assertEquals(0.0, shared(whole(30.0, 20, AIR_ONLY), deco = setOf("g9")).kept.getValue("g1").upTo)
     }
 }
 
@@ -275,8 +314,8 @@ class ProblemSolvingTest {
         val minute = 20.0 * 2 * 2 * atForty
 
         assertTrue(
-            held.needed.getValue("g1") >= prompt.needed.getValue("g1") + minute - 1e-6,
-            "${held.needed} against ${prompt.needed} and a minute of $minute",
+            held.litres("g1") >= prompt.litres("g1") + minute - 1e-6,
+            "${held.litres("g1")} against ${prompt.litres("g1")} and a minute of $minute",
         )
     }
 
@@ -287,8 +326,8 @@ class ProblemSolvingTest {
         val minute = 20.0 * atForty
 
         assertTrue(
-            held.needed.getValue("g1") > prompt.needed.getValue("g1") + minute,
-            "a minute more on the bottom loads the tissues: ${held.needed} against ${prompt.needed}",
+            held.litres("g1") > prompt.litres("g1") + minute,
+            "a minute more on the bottom loads the tissues: ${held.litres("g1")} against ${prompt.litres("g1")}",
         )
     }
 
@@ -297,7 +336,7 @@ class ProblemSolvingTest {
         val shallow = whole(18.0, 30, BOTTOM_AND_DECO)
         val held = assertIs<Reserve.Done>(sharedGasReserve(shallow, setOf("g2"), 2.0, 9.0, 3.0, problemSolvingSeconds = 120))
 
-        assertEquals(0.0, held.needed.values.sum(), "the buddy goes on to their own deco gas at once")
+        assertTrue(held.kept.isEmpty(), "the buddy goes on to their own deco gas at once")
     }
 
     @Test
@@ -305,7 +344,7 @@ class ProblemSolvingTest {
         val prompt = assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0))
         val none = assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, problemSolvingSeconds = 0))
 
-        assertEquals(prompt.needed, none.needed)
+        assertEquals(prompt.litres("g1"), none.litres("g1"))
     }
 }
 
@@ -314,21 +353,25 @@ class SwitchStopsTest {
     private val run = whole(40.0, 25, BOTTOM_AND_DECO)
 
     @Test
-    fun `a way up that stops to switch breathes less bottom gas`() {
-        val passing = assertIs<Reserve.Done>(lostGasReserve(run, emptySet(), 9.0, 3.0))
-        val stopping = assertIs<Reserve.Done>(lostGasReserve(run, emptySet(), 9.0, 3.0, switchStops = true))
+    fun `a way up that stops to switch takes a bailout deeper`() {
+        // The plan never breathes its EAN36 bailout. With the EAN50 lost the way up may, from
+        // thirty-three metres, where it stops for it only when told to.
+        val bailout = Source(Gas.parse("EAN36"), sac = 20.0, volume = 7.0, fill = 200.0, ascentMayChoose = false)
+        val three = whole(40.0, 25, BOTTOM_AND_DECO + ("g3" to bailout))
+        val passing = assertIs<Reserve.Done>(lostGasReserve(three, setOf("g2"), 9.0, 3.0))
+        val stopping = assertIs<Reserve.Done>(lostGasReserve(three, setOf("g2"), 9.0, 3.0, switchStops = true))
 
         assertTrue(
-            stopping.needed.getValue("g1") < passing.needed.getValue("g1"),
-            "${stopping.needed} against ${passing.needed}",
+            stopping.litres("g3") > passing.litres("g3"),
+            "switched to deeper, more of it is breathed: ${stopping.litres("g3")} against ${passing.litres("g3")}",
         )
     }
 
     @Test
     fun `with the deco gas lost there is nothing to stop for`() {
         assertEquals(
-            assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0)).needed,
-            assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, switchStops = true)).needed,
+            assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0)).kept.mapValues { it.value.litres },
+            assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, switchStops = true)).kept.mapValues { it.value.litres },
         )
     }
 }

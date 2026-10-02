@@ -557,18 +557,36 @@ To settle when we discuss architecture and features:
 
   **Every moment rather than the end of the bottom.** The end of the bottom is usually the worst.
   A deco gas lost just before the switch to it can cost more, and a multi-level plan has no single
-  bottom to name, so every point is tried, which costs about a millisecond. A tie goes to the later
-  moment, since the cylinder holds least then: from anywhere on a flat bottom the way up to a deco
-  gas can cost the same.
+  bottom to name, so every point is tried, which costs about a millisecond.
+
+  *Amended:* **a reserve is gas kept at the end of the dive, and each cylinder has its own worst
+  moment.** The reserve was what a cylinder must hold at the moment the way up cost most, which
+  read as a minimum the gauge must never go below, though a plan surfaces with less as a matter of
+  course. The user asked for the gas to keep at the end instead. A plan's gauge at any moment is
+  what it ends with plus what it breathes after that moment, so a cylinder must end with the way
+  up's cost less what the plan itself breathes from there. The worst moment is the one where that
+  difference is largest, found for each cylinder apart, since a bottom gas and a deco gas are
+  stressed at different times. Losing a deco gas just before the switch to it now shows as the
+  worst moment wherever it is: from there the plan breathes no more bottom gas, and the way up
+  without the deco gas breathes nothing else. Ending with the reserve then means holding enough at
+  every moment, so the separate check of every moment against its own way up is the same
+  comparison and was folded into it. A way up no dearer than the plan's own keeps nothing. A tie
+  goes to the later moment, being nearer the end.
+
+  **A way up begun part-way keeps the dive's gradient-factor anchor.** The low factor is anchored
+  at the dive's first stop. A way up worked out from a moment on the ascent used to anchor afresh
+  where it began, shallower than that, and held longer than the plan it branched from. Reckoned
+  as extra gas, that showed as a reserve where the way up was the plan's own. The anchor is now
+  carried into it, as the time the safety stop has already been held is.
 
   **A bailout is open to the lost-gas way up.** The plan's own ascent never switches to one,
   `LOGIC-35`, because it is carried for trouble; this is the trouble. Where the source breathed at
   the moment is itself lost, the way up starts on the richest remaining one its limit allows there.
 
-  **Whether the plan has enough is judged at every moment too.** A cylinder whose gauge at some
-  moment reads less than the way up from there needs is a shortfall, and the first one is given
-  with its cylinder, its time, and how far that way up was costed. A cylinder with no size or no
-  fill can be costed in litres and not judged, and the answer says so rather than calling it enough.
+  **Whether the plan has enough is judged at the end.** A cylinder that ends with less than it
+  keeps is short, and is given with what it ends with and how far its way up was costed. A cylinder
+  with no size or no fill can be costed in litres and not judged, and the answer says so rather
+  than calling it enough.
 
   A cylinder nobody gave a `sac` is refused by name rather than counted as free. Built in
   `Reserve.kt`, with the ascent's loop shared with `completeAscent` so the two cannot disagree

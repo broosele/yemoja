@@ -347,8 +347,8 @@ follow the same tick.
 Under the settings is **Contingency**, the gas reserve: what you must keep back in case something
 goes wrong. On its left are two settings, the stress factor and the problem-solving time,
 which also start from your Settings. Beside them is a line for each scenario, *Lost* and
-*Buddy out of gas*: the scenario's name, its switch, and then what it asks each cylinder to hold,
-its worst moment, and what it assumes. The switch on the *Lost* line is a choice of which gas is
+*Buddy out of gas*: the scenario's name, its switch, and then what each cylinder should keep at
+the end of the dive, its worst moment, and what it assumes. The switch on the *Lost* line is a choice of which gas is
 lost, your first deco gas unless you choose another; choose *None* to leave that scenario out.
 The switch on the *Buddy out of gas* line is a tick; untick it to leave that one out. Change a setting and the lines change
 with it. [The decompression model](decompression.md#planning-a-dive) explains both scenarios.
@@ -366,9 +366,10 @@ plan takes from the cylinder and leaves in it. The role says what the cylinder i
 
 A cylinder that one of your lines breathes cannot be taken out until you change that line.
 
-Beside each cylinder, *Minimum* is its share of the gas reserve: what it must still hold at the
-worst moment of the dive, in whichever scenario asks more. It is red on a cylinder that falls
-short.
+Beside each cylinder, *Reserve* is what it should still hold when you surface, in whichever
+scenario asks more. Compare it with *End*, what the plan leaves in it: it is red when the plan ends
+with less. [The decompression model](decompression.md#planning-a-dive) explains why a reserve at
+the end covers every moment of the dive.
 
 Under all that is a line with the oxygen clocks, the no-fly time and the desaturation time. Then
 comes anything Yemoja objects to, such as going above the ceiling, rising faster than your ascent

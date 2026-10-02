@@ -138,20 +138,20 @@ private fun reserveSaid(answer: ReserveAnswer): Stored = when (answer) {
     is ReserveAnswer.Refused -> Stored.Members(mapOf("refused" to Stored.Leaf(answer.reason)))
     is ReserveAnswer.Done -> Stored.Members(
         mapOf(
-            "worst_seconds" to Stored.Leaf(answer.worstSeconds.toLong()),
-            "worst_m" to Stored.Leaf(answer.worstMetres),
-            "needed_litres" to Stored.Members(answer.neededLitres.mapValues { Stored.Leaf(it.value) }),
-            "reserve_bar" to Stored.Members(answer.reserveBar.mapValues { Stored.Leaf(it.value) }),
-            "shortfall" to answer.shortfall?.let {
-                Stored.Members(
-                    mapOf(
-                        "second" to Stored.Leaf(it.second.toLong()),
-                        "cylinder" to Stored.Leaf(it.cylinder),
-                        "left_bar" to Stored.Leaf(it.leftBar),
-                        "needed_bar" to Stored.Leaf(it.neededBar),
-                    ),
-                )
-            }.let { it ?: Stored.Leaf(null) },
+            "kept" to Stored.Members(
+                answer.kept.mapValues { (_, kept) ->
+                    Stored.Members(
+                        mapOf(
+                            "litres" to Stored.Leaf(kept.litres),
+                            "bar" to Stored.Leaf(kept.bar),
+                            "end_bar" to Stored.Leaf(kept.endBar),
+                            "short" to Stored.Leaf(kept.short),
+                            "worst_seconds" to Stored.Leaf(kept.worstSeconds.toLong()),
+                            "worst_m" to Stored.Leaf(kept.worstMetres),
+                        ),
+                    )
+                },
+            ),
         ),
     )
 }

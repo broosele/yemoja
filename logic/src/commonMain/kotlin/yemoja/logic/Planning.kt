@@ -575,25 +575,25 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
 }
 
 /**
- * What the cylinder under [key] must still hold: the most any scenario switched on asks of it at
- * its own worst moment, since the cylinder has to meet each of them.
+ * What the cylinder under [key] must still hold at the end of the dive: the most any scenario
+ * switched on asks of it, since the cylinder has to meet each of them.
  *
  * In bar, rounded up, or in litres where nobody said how big it is. Nothing for a cylinder no
- * scenario breathes from.
+ * scenario needs anything from.
  */
-fun minimumSaid(reckoned: Reckoned, key: String): String {
-    val done = reckoned.done.values
-    done.mapNotNull { it.reserve[key] }.maxOrNull()?.let { return "${ceil(it).toInt()} bar" }
-    return done.mapNotNull { it.needed[key] }.maxOrNull()?.let { "${ceil(it).toInt()} L" }.orEmpty()
+fun keptSaid(reckoned: Reckoned, key: String): String {
+    val kept = reckoned.done.values.mapNotNull { it.kept[key] }
+    kept.mapNotNull { it.bar }.maxOrNull()?.let { return "${ceil(it).toInt()} bar" }
+    return kept.maxOfOrNull { it.litres }?.let { "${ceil(it).toInt()} L" }.orEmpty()
 }
 
-/** Whether the cylinder under [key] falls short in any scenario switched on. */
+/** Whether the cylinder under [key] ends the dive with less than any scenario switched on keeps. */
 fun isShort(reckoned: Reckoned, key: String): Boolean =
-    reckoned.done.values.any { it.shortfall?.source == key }
+    reckoned.done.values.any { it.kept[key]?.short == true }
 
-/** When a scenario's worst moment is, and how deep. */
-fun worstSaid(reserve: Reserve.Done): String =
-    "${clockOf(reserve.worst)} (${plain(reserve.worstMetres)} m)"
+/** When the moment that sets a reserve is, and how deep. */
+fun worstSaid(kept: Kept): String =
+    "${clockOf(kept.second)} (${plain(kept.metres)} m)"
 
 /**
  * Why no reserve can be worked out: every cylinder the reserve may breathe that has no rate, each
@@ -618,25 +618,28 @@ private fun lackedBy(breathed: Breathed): List<String> = listOfNotNull(
 )
 
 /**
- * What one scenario came to, in a sentence: what each cylinder needs, when, and what it assumes.
+ * What one scenario came to, in a sentence: what each cylinder keeps at the end, the moment that
+ * sets it, and what the scenario assumes.
  *
  * A scenario that needs nothing says so, and why where the reason is a deco gas the buddy can go
  * to at once, rather than a worst moment at the surface that means nothing.
  *
- * Example: `Gas 1 needs 54 bar at 25:00 (40 m), surfacing without Gas 2 at normal SAC`.
+ * Example: `Gas 1 keeps 54 bar at the end, worst at 25:00 (40 m); surfacing without Gas 2 at
+ * normal SAC`.
  */
 fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): String {
-    val needs = reserve.needed.filterValues { it > 0 }.keys.map { key ->
-        val held = reserve.reserve[key]?.let { "${ceil(it).toInt()} bar" }
-            ?: "${ceil(reserve.needed.getValue(key)).toInt()} L"
-        "${gasLabelOf(gasIndexOf(key))} needs $held"
-    }
-    if (needs.isEmpty()) {
+    val kept = reserve.kept.entries.sortedBy { gasIndexOf(it.key) }
+    if (kept.isEmpty()) {
         return when (scenario) {
             Scenario.LOST_GAS -> "No reserve needed"
             Scenario.SHARED -> decoReachedSaid(shaping)
                 ?.let { "No sharing needed: each diver switches to $it at once" } ?: "No sharing needed"
         }
+    }
+    val keeps = kept.mapIndexed { index, (key, it) ->
+        val held = it.bar?.let { bar -> "${ceil(bar).toInt()} bar" } ?: "${ceil(it.litres).toInt()} L"
+        "${gasLabelOf(gasIndexOf(key))} keeps $held" + (if (index == 0) " at the end" else "") +
+            ", worst at ${worstSaid(it)}"
     }
     val held = problemSecondsOf(shaping)?.takeIf { it > 0 }?.let { clockOf(it) }
     val assumed = when (scenario) {
@@ -646,9 +649,9 @@ fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): S
         }
 
         Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
-                "${upToSaid(reserve.upTo)}, each at ${shaping.stressFactor.trim()} × SAC"
+                "${upToSaid(kept.maxOf { it.value.upTo })}, each at ${shaping.stressFactor.trim()} × SAC"
     }
-    return "${needs.joinToString(" and ")} at ${worstSaid(reserve)}, $assumed"
+    return "${keeps.joinToString(" and ")}; $assumed"
 }
 
 /** The problem-solving time [shaping] asks for, in whole seconds, or null where it will not read. */
@@ -670,21 +673,29 @@ private fun decoReachedSaid(shaping: Planned): String? {
 private fun upToSaid(metres: Double?): String =
     if (metres == null || metres <= 0) "to the surface" else "to ${plain((metres * 10).roundToInt() / 10.0)} m"
 
-/** Where a cylinder first holds less than [scenario] needs from there, or null where none does. */
-fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? = reserve.shortfall?.let {
-    // A gauge the plan has already run below nought is empty, not a negative pressure.
-    val held = floor(it.left).toInt().coerceAtLeast(0)
-    val needs = ceil(it.needed).toInt()
+/**
+ * The cylinders that end the dive with less than [scenario] keeps, and what they end with, or null
+ * where none does.
+ *
+ * Example: `Gas 1 ends at 40 bar, should keep 60 bar (surfacing without the lost gas)`.
+ */
+fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? {
+    val short = reserve.kept.entries.filter { it.value.short }.sortedBy { gasIndexOf(it.key) }
+    if (short.isEmpty()) return null
     val why = when (scenario) {
         Scenario.LOST_GAS -> "surfacing without the lost gas"
-        Scenario.SHARED -> "two divers sharing ${upToSaid(it.upTo)}"
+        Scenario.SHARED -> "two divers sharing ${upToSaid(short.maxOf { it.value.upTo })}"
     }
-    "${clockOf(it.second)} ${gasLabelOf(gasIndexOf(it.source))}: $held bar should be at least $needs bar ($why)"
+    return short.joinToString("; ") { (key, kept) ->
+        // A gauge the plan has already run below nought is empty, not a negative pressure.
+        val left = floor(kept.end ?: 0.0).toInt().coerceAtLeast(0)
+        "${gasLabelOf(gasIndexOf(key))} ends at $left bar, should keep ${ceil(kept.bar ?: 0.0).toInt()} bar"
+    } + " ($why)"
 }
 
 /** The cylinders a reserve breathes that have no size or no start pressure, so cannot be checked. */
 fun uncheckedSaid(reckoned: Reckoned, shaping: Planned): String? {
-    val unchecked = reckoned.done.values.filter { !it.judged }.flatMap { it.needed.keys }
+    val unchecked = reckoned.done.values.filter { !it.judged }.flatMap { it.kept.keys }
         .map { gasIndexOf(it) }.distinct().sorted().filter {
             val breathed = shaping.gases[it]
             breathed.size.trim().toDoubleOrNull() == null || breathed.fill.trim().toDoubleOrNull() == null
