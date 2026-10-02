@@ -74,7 +74,7 @@ given one or opened without.
 yemoja tui <logbook folder>           with that bin directory on the path
 yemoja gui [<logbook folder>]         the window, the folder being optional
 
-./gradlew :ui:gui -Pargs=<folder>     the window straight from the build
+./gradlew :ui:gui --args="<folder>"   the window straight from the build, spaces and all
 ```
 
 **Reading a dive computer needs libdivecomputer**, which is not built here. Tell the build

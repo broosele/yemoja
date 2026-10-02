@@ -118,9 +118,14 @@ tasks.register<JavaExec>("gui") {
         kotlin.jvm().compilations.getByName("main").runtimeDependencyFiles,
     )
     args = listOf("gui")
-    // Whatever follows --args, so the folder is named where every other command names one.
-    (providers.gradleProperty("args").orNull ?: "").split(" ").filter { it.isNotBlank() }
-        .let { args = listOf("gui") + it }
+    // The window takes one argument, a folder. Gradle's --args replaces the arguments set here and
+    // splits on spaces, which a folder's name may hold, as `My Drive` does; so `gui` is put back in
+    // front and what Gradle split is joined into the one path again.
+    val property = providers.gradleProperty("args").orNull.orEmpty()
+    doFirst {
+        val given = (args.orEmpty().dropWhile { it == "gui" } + property.split(" ")).filter { it.isNotBlank() }
+        args = listOf("gui") + listOfNotNull(given.joinToString(" ").ifEmpty { null })
+    }
     // Run from here there is no installation to look beside, so it is told. `LOGIC-27`.
     libdivecomputer?.let { systemProperty("jna.library.path", it) }
 }
