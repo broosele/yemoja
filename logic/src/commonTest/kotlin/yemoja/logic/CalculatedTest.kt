@@ -123,6 +123,9 @@ class CalculatedTest {
         assertTrue(schedule.otuSeries.last().value > 0)
         val gauge = schedule.pressures.getValue("1")
         assertTrue(gauge.first().value > gauge.last().value, "a gauge runs down as the dive breathes")
+        assertTrue(schedule.timeToSurfaceSeconds.any { it.value > 0 }, "the bottom owes a way up")
+        assertEquals(0.0, schedule.timeToSurfaceSeconds.last().value, "nothing is owed at the surface")
+        assertTrue(schedule.gradientFactorNow.any { it.value > 0 }, "the way up loads the compartments")
     }
 
     @Test

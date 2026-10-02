@@ -62,6 +62,10 @@ class Schedule(
     val ceiling: List<SchedulePoint>,
     /** How much longer the dive could stay at each moment, in seconds; a stretch owing a stop is left out. */
     val noDecompressionSeconds: List<SchedulePoint>,
+    /** How long the way up from each moment would take, in seconds. */
+    val timeToSurfaceSeconds: List<SchedulePoint>,
+    /** GF99 through the dive: the excess over ambient as a share of the M-value's, as a percentage. */
+    val gradientFactorNow: List<SchedulePoint>,
     /** The central nervous system's clock through the dive, as a percentage. */
     val cnsSeries: List<SchedulePoint>,
     /** Oxygen tolerance units taken through the dive. */
@@ -211,6 +215,8 @@ private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done, reckoned: Reckone
         }.toMap(),
         ceiling = ceilingOf(done.evaluated.ceiling),
         noDecompressionSeconds = sampledOf(done.evaluated.noDecompressionTime),
+        timeToSurfaceSeconds = sampledOf(done.evaluated.timeToSurface),
+        gradientFactorNow = sampledOf(done.evaluated.gradientFactorNow),
         cnsSeries = sampledOf(done.evaluated.cns),
         otuSeries = sampledOf(done.evaluated.otu),
         pressures = done.evaluated.pressures.entries.associate { (key, series) ->

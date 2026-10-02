@@ -158,13 +158,14 @@ well:
   added, each with `from_m`, `to_m`, `begins_at_seconds`, `seconds`, `direction`, `gas`, and
   `added` saying which it is.
 - `stops` — each held depth in metres and seconds.
-- `ceiling`, `no_deco_seconds`, `cns_series`, `otu_series`, `pressures_bar` — what the model
-  works out through the dive, each written as a series is written everywhere: pairs of a second
-  and the value then. The ceiling is the shallowest allowed depth in metres, and is empty where
-  the dive owes none. The no-decompression time is in seconds, the stretches already owing a stop
-  left out. The two oxygen clocks run as a percentage and a count. The pressures are each
-  cylinder's gauge in bar, by its number, for the cylinders that say how big they are and what
-  they were filled to.
+- `ceiling`, `no_deco_seconds`, `tts_seconds`, `gf99_series`, `cns_series`, `otu_series`,
+  `pressures_bar` — what the model works out through the dive, each written as a series is
+  written everywhere: pairs of a second and the value then. The ceiling is the shallowest allowed
+  depth in metres, and is empty where the dive owes none. The no-decompression time is in
+  seconds, the stretches already owing a stop left out. The time to surface is in seconds. GF99
+  is a percentage and may run below nought while a compartment is still taking gas on. The two
+  oxygen clocks run as a percentage and a count. The pressures are each cylinder's gauge in bar,
+  by its number, for the cylinders that say how big they are and what they were filled to.
 - `warnings` — what the model has to say against the plan, each with the second it happened at
   and how serious it is.
 - `no_flight_seconds` and `desaturation_seconds`.
