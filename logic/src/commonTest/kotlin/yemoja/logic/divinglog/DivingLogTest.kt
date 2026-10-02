@@ -88,6 +88,7 @@ class DivingLogTest {
         assertTrue("Fish seen: Pretend wrasse" in third, third)
         assertTrue("Solo: yes" in third, third)
         assertTrue("Visibility" !in third, "nought is no visibility given")
+        assertTrue("Entry" !in third, "an entry code of unknown meaning is not guessed at")
     }
 
     @Test

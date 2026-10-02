@@ -13,8 +13,8 @@ up to reach each rule it follows:
   two being copies; a stop at 6 m while the limit sits at one minute, which stays in its column
   after it clears; a switch to the deco gas; a CNS clock that reaches its ceiling; and samples
   after surfacing, which are cut.
-- dive 3, with no profile, so the logged time is its duration; a user-defined field, a fish
-  seen, and a picture, which is counted and left.
+- dive 3, with no profile, so the logged time is its duration; an entry code nobody knows the
+  meaning of; a user-defined field, a fish seen, and a picture, which is counted and left.
 - the user, with a medical, a blood group and one certification.
 
 A second database has no Logbook table, and is not Diving Log's.
@@ -143,7 +143,7 @@ def build(path):
 
     # Dive 3: no samples at all, so its logged time is its duration.
     db.execute('INSERT INTO Logbook (ID, Number, Divedate, Entrytime, PlaceID, Divetime, Depth, Water, '
-               'Visibility, Tanksize, O2) VALUES (13, 3, \'2030-05-03\', \'14:00\', 2, 42, 18.5, 1, 0, 12, 32)')
+               'Visibility, Entry, Tanksize, O2) VALUES (13, 3, \'2030-05-03\', \'14:00\', 2, 42, 18.5, 1, 0, 5, 12, 32)')
     db.execute("INSERT INTO Userdefined (LogID, Solo, Field2) VALUES (13, 'yes', NULL)")
     db.execute('INSERT INTO FishRel (LogID, FishID) VALUES (13, 1)')
     db.execute("INSERT INTO Pictures (LogID, Path) VALUES (13, 'C:\\\\nowhere\\\\picture.jpg')")

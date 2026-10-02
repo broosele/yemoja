@@ -106,8 +106,8 @@ buddies, operator and trip, its kinds as tags in lower case, a decompression div
 air and the water's temperature, and the lead carried. With no samples, its logged time is its
 `duration`. Its own remarks come first, and after them a line for each of: visibility, entry,
 weather, current, surface, boat, divemaster, suit, altitude, pressure groups, CNS as logged, the
-fish seen, and every user-defined field filled in. An entry code whose meaning is unknown is
-written as its code.
+fish seen, and every user-defined field filled in. An entry code whose meaning is unknown is not
+read, since what it says would be a guess.
 
 **Its cylinders** are the main one from the dive's own row and the others from `Tank`, keyed as a
 UDDF import keys them, `gas`, `gas#1`. A row of `Tank` with neither a mix, a size nor a pressure is

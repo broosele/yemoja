@@ -268,7 +268,7 @@ object DivingLog {
                 row.text("Comments"),
                 lines(
                     "Visibility" to VISIBILITIES[row.number("Visibility")],
-                    "Entry" to row.number("Entry")?.let { ENTRIES[it] ?: "code $it" },
+                    "Entry" to row.number("Entry")?.let { ENTRIES[it] },
                     "Weather" to row.text("Weather"),
                     "Current" to row.text("UWCurrent"),
                     "Surface" to row.text("Surface"),
@@ -427,7 +427,7 @@ object DivingLog {
     /** How clear the water was, by Diving Log's code; nought is not given. */
     private val VISIBILITIES: Map<Long?, String> = mapOf(1L to "good", 2L to "medium", 3L to "poor")
 
-    /** How the water was entered, by the codes whose meaning is known. */
+    /** How the water was entered, by the codes whose meaning is known; the others are not read. */
     private val ENTRIES: Map<Long, String> = mapOf(0L to "shore", 2L to "boat")
 
     /** The columns of `Userdefined` that hold what a user typed, under the names Diving Log gives them. */
