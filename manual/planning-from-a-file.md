@@ -105,6 +105,28 @@ factor as a proportion.
 [settings.md](settings.md) says what each of them does, and
 [decompression.md](decompression.md#planning-a-dive) what the two gas-reserve scenarios are.
 
+### Following an earlier case
+
+A case may follow an earlier case in the same file, so a repetitive dive is planned with the
+nitrogen and the oxygen clock the first one leaves behind:
+
+```json
+[
+  {"name": "first", "lines": [{"depth": 30}, {"depth": 30, "duration": "20:00"}]},
+  {"name": "second", "follows": "first", "surface_interval": 3600,
+   "lines": [{"depth": 30}, {"depth": 30, "duration": "20:00"}]}
+]
+```
+
+| Field | What it says |
+|---|---|
+| `follows` | The `name` of an earlier case in the same file. |
+| `surface_interval` | Seconds spent on the surface between the two, breathing air. Required with `follows`. |
+
+The case followed must come earlier in the file, and must itself calculate: a case following one
+that was refused is refused with it. Chains may be as long as the file: a third case may follow
+the second.
+
 ## The table
 
 One row a plan, with these columns:
@@ -135,6 +157,13 @@ well:
   each with `from_m`, `to_m`, `begins_at_seconds`, `seconds`, `direction`, `gas`, and `added`
   saying which it is.
 - `stops` — each held depth in metres and seconds.
+- `ceiling`, `no_deco_seconds`, `cns_series`, `otu_series`, `pressures_bar` — what the model
+  works out through the dive, each written as a series is written everywhere: pairs of a second
+  and the value then. The ceiling is the shallowest allowed depth in metres, and is empty where
+  the dive owes none. The no-decompression time is in seconds, the stretches already owing a stop
+  left out. The two oxygen clocks run as a percentage and a count. The pressures are each
+  cylinder's gauge in bar, by its number, for the cylinders that say how big they are and what
+  they were filled to.
 - `warnings` — what the model has to say against the plan, each with the second it happened at
   and how serious it is.
 - `no_flight_seconds` and `desaturation_seconds`.
@@ -150,6 +179,6 @@ A plan that will not calculate is an object with its `name` and a `refused`.
 
 ## What it does not do
 
-It cannot follow an earlier dive. A plan that starts with gas still in you needs the dive it
-follows, which is a dive in a logbook, and this command opens none. Use the Calculations tab for
-that.
+It cannot follow a dive in your logbook. A plan that starts from a dive you actually made needs
+the logbook that dive is in, and this command opens none. It can follow an earlier case in the
+same file — see above — and for a logged dive there is the Calculations tab.

@@ -107,6 +107,25 @@ class CalculatedTest {
     }
 
     @Test
+    fun `the ceiling comes back with the schedule, and is empty where it never rises`() {
+        val owing = assertIs<Calculated.Done>(calculated(table())).schedule
+        assertTrue(owing.ceiling.any { it.value > 0 }, "forty metres for twenty-five minutes owes a ceiling")
+        assertEquals(owing.ceiling.map { it.second }.sorted(), owing.ceiling.map { it.second })
+        val free = assertIs<Calculated.Done>(calculated(table("12", stay = "30"))).schedule
+        assertTrue(free.ceiling.isEmpty(), "a dive owing nothing says nothing")
+    }
+
+    @Test
+    fun `the clocks and the gauges run through the dive, not just to its end`() {
+        val schedule = assertIs<Calculated.Done>(calculated(table())).schedule
+        assertTrue(schedule.noDecompressionSeconds.isNotEmpty())
+        assertTrue(schedule.cnsSeries.last().value > 0)
+        assertTrue(schedule.otuSeries.last().value > 0)
+        val gauge = schedule.pressures.getValue("1")
+        assertTrue(gauge.first().value > gauge.last().value, "a gauge runs down as the dive breathes")
+    }
+
+    @Test
     fun `a plan that will not read is refused in the words the form refuses it in`() {
         val wrong = assertIs<Calculated.Refused>(calculated(table(stay = "soon")))
         assertTrue("2:13" in wrong.reason, wrong.reason)
@@ -161,5 +180,54 @@ class CalculatedTest {
         ).schedule
         val lost = assertIs<ReserveAnswer.Refused>(schedule.reserves.getValue(Scenario.LOST_GAS))
         assertTrue("SAC" in lost.reason, lost.reason)
+    }
+
+    @Test
+    fun `a case following an earlier one owes more than the same dive fresh`() {
+        val answers = calculatedAll(
+            listOf(
+                Case("first", table()),
+                Case("second", table(), Follows(0, intervalSeconds = 3600.0)),
+            ),
+        )
+        val first = assertIs<Calculated.Done>(answers[0]).schedule
+        val second = assertIs<Calculated.Done>(answers[1]).schedule
+        assertEquals(
+            assertIs<Calculated.Done>(calculated(table())).schedule.stopSeconds,
+            first.stopSeconds,
+            "the first case starts fresh",
+        )
+        assertTrue(
+            second.stopSeconds > first.stopSeconds,
+            "an hour after the first dive owes ${second.stopSeconds}s against a fresh ${first.stopSeconds}s",
+        )
+    }
+
+    @Test
+    fun `a longer interval leaves less behind, so the follower owes less`() {
+        fun stopsAfter(seconds: Double): Int = assertIs<Calculated.Done>(
+            calculatedAll(
+                listOf(Case("first", table()), Case("second", table(), Follows(0, seconds))),
+            )[1],
+        ).schedule.stopSeconds
+        assertTrue(
+            stopsAfter(6 * 60 * 60.0) < stopsAfter(30 * 60.0),
+            "six hours should owe less than half an hour",
+        )
+    }
+
+    @Test
+    fun `a case following one that was refused is refused with it`() {
+        val answers = calculatedAll(
+            listOf(
+                Case("first", table(stay = "soon")),
+                Case("second", table(), Follows(0, intervalSeconds = 3600.0)),
+            ),
+        )
+        assertIs<Calculated.Refused>(answers[0])
+        assertEquals(
+            "second follows first, which did not calculate",
+            assertIs<Calculated.Refused>(answers[1]).reason,
+        )
     }
 }

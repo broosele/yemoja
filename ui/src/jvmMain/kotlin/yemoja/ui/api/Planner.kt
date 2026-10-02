@@ -5,7 +5,7 @@ import yemoja.data.json.Json
 import yemoja.logic.Calculated
 import yemoja.logic.Case
 import yemoja.logic.Read
-import yemoja.logic.calculated
+import yemoja.logic.calculatedAll
 import yemoja.logic.casesOf
 import yemoja.logic.rowOf
 import yemoja.logic.saidOf
@@ -48,7 +48,7 @@ internal fun planned(path: String, arguments: List<String>): Int {
         }
         is Read.Cases -> read.cases
     }
-    val answers = cases.map { it to calculated(it.planned) }
+    val answers = cases.zip(calculatedAll(cases))
     println(if (asJson) jsonOf(answers) else tableOf(answers.map { (case, answer) -> rowOf(case, answer) }))
     // A case that would not calculate is reported, not fatal: what it says is in the output.
     return 0

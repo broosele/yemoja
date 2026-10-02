@@ -11,8 +11,14 @@ import kotlin.math.roundToInt
  * lines a case rather than twenty.
  */
 
-/** Case is one plan in a file of them: what to call it, and the plan itself. */
-class Case(val name: String, val planned: Planned)
+/** Case is one plan in a file of them: what to call it, the plan itself, and what it comes after. */
+class Case(val name: String, val planned: Planned, val follows: Follows? = null)
+
+/**
+ * Follows is which earlier case a case comes after, by its position in the file, and the surface
+ * interval between the two in seconds. `LOGIC-43`.
+ */
+class Follows(val earlier: Int, val intervalSeconds: Double)
 
 /** Read is a file of cases read, or why the first that will not read does not. */
 sealed class Read {
@@ -39,9 +45,30 @@ fun casesOf(stored: Stored): Read {
         val members = (one as? Stored.Members)?.members
             ?: return Read.Wrong("case ${index + 1} should be a plan, written as an object")
         val name = textOf(members["name"]) ?: "case ${index + 1}"
+        // Only a case already read can be followed, so order and existence are one check.
+        val named = textOf(members["follows"])
+        val interval = textOf(members["surface_interval"])
+        val follows: Follows?
+        if (named == null) {
+            if (interval != null) {
+                return Read.Wrong("$name has a surface_interval but no follows, so there is nothing it comes after")
+            }
+            follows = null
+        } else {
+            val earlier = cases.indexOfFirst { it.name == named }
+            if (earlier < 0) return Read.Wrong("$name follows $named, which is no earlier case in this file")
+            if (interval == null) {
+                return Read.Wrong("$name follows $named, but nothing says how long the surface interval was")
+            }
+            val seconds = interval.toDoubleOrNull()
+            if (seconds == null || seconds < 0) {
+                return Read.Wrong("$name surface_interval should be 0 seconds or more, but was $interval")
+            }
+            follows = Follows(earlier, seconds)
+        }
         when (val read = plannedOf(members, name)) {
             is Made.Wrong -> return Read.Wrong(read.reason)
-            is Made.Plan -> cases += Case(name, read.planned)
+            is Made.Plan -> cases += Case(name, read.planned, follows)
         }
     }
     return Read.Cases(cases)

@@ -1147,6 +1147,28 @@ fun residualAfter(earlier: Item, intervalSeconds: Double, surface: Double = SEA_
     }
 }
 
+/**
+ * What a run that came to [ran] leaves after [intervalSeconds] on the surface breathing air at
+ * [surface] bar, for a later run that belongs to no dive either.
+ *
+ * The same crossing as a saved plan's, for a run that was never saved: a chained case of a plan
+ * file comes here, its earlier case already evaluated, so nothing is evaluated twice. `LOGIC-43`.
+ */
+fun residualAfter(ran: Evaluated.Done, surface: Double, intervalSeconds: Double): Residual.Done {
+    require(intervalSeconds >= 0) {
+        "a surface interval should be 0 seconds or more, but was $intervalSeconds"
+    }
+    return Residual.Done(
+        ran.surfacing.breathing(Gas.AIR, surface, surface, intervalSeconds),
+        // The clock runs backwards on the surface, which is what a surface interval is for.
+        ran.oxygen.breathing(
+            surface * Gas.AIR.fractionO2,
+            surface * Gas.AIR.fractionO2,
+            intervalSeconds,
+        ),
+    )
+}
+
 /** The dive a profile belongs to, or null where it belongs to nothing. */
 private fun owner(profile: Item): Item? = (profile as? OwnedItem)?.parent
 

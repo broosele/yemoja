@@ -179,6 +179,53 @@ class CasesTest {
             assertIs<Read.Wrong>(read("""{"lines": [{"depth": 20}], "shared_gas_reserve": "yes"}""")).reason,
         )
     }
+
+    @Test
+    fun `a case may follow an earlier case, with the surface interval between them in seconds`() {
+        val lines = """"lines": [{"depth": 30, "duration": 1200}]"""
+        val cases = assertIs<Read.Cases>(
+            read(
+                """[{"name": "first", $lines},
+                    {"name": "second", "follows": "first", "surface_interval": 3600, $lines}]""",
+            ),
+        ).cases
+        assertEquals(null, cases[0].follows)
+        assertEquals(0, cases[1].follows?.earlier)
+        assertEquals(3600.0, cases[1].follows?.intervalSeconds)
+    }
+
+    @Test
+    fun `following reaches earlier cases only, and never without saying how long the interval was`() {
+        val lines = """"lines": [{"depth": 20, "duration": 600}]"""
+        assertEquals(
+            "first follows second, which is no earlier case in this file",
+            assertIs<Read.Wrong>(
+                read(
+                    """[{"name": "first", "follows": "second", "surface_interval": 60, $lines},
+                        {"name": "second", $lines}]""",
+                ),
+            ).reason,
+        )
+        assertEquals(
+            "second follows first, but nothing says how long the surface interval was",
+            assertIs<Read.Wrong>(
+                read("""[{"name": "first", $lines}, {"name": "second", "follows": "first", $lines}]"""),
+            ).reason,
+        )
+        assertEquals(
+            "second surface_interval should be 0 seconds or more, but was -60",
+            assertIs<Read.Wrong>(
+                read(
+                    """[{"name": "first", $lines},
+                        {"name": "second", "follows": "first", "surface_interval": -60, $lines}]""",
+                ),
+            ).reason,
+        )
+        assertEquals(
+            "case 1 has a surface_interval but no follows, so there is nothing it comes after",
+            assertIs<Read.Wrong>(read("""[{"surface_interval": 60, $lines}]""")).reason,
+        )
+    }
 }
 
 class ReportedTest {

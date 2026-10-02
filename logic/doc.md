@@ -1121,6 +1121,12 @@ To settle when we discuss architecture and features:
   yemoja_website repository. The window's `Shaping` and its `PlanForm` screen stay where they are
   and call what moved rather than holding a copy.
 
+  **A case may follow an earlier case of its own file.** `calculatedAll` answers a file in order,
+  carrying what a followed case left across the named surface interval by `residualAfter`, so a
+  repetitive dive is planned with no logbook anywhere — the run followed is in the same file.
+  What may be followed stays inside the file: following a logged dive needs a universe and is the
+  window's, `API-7`.
+
   **Not `LOGIC-37`.** That settles what `evaluate` answers about a profile, which this calls
   rather than duplicates; the two were cited as one for a while, which this corrects.
 

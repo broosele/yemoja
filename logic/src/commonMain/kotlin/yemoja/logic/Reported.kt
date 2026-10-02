@@ -108,6 +108,11 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
                 )
             },
         ),
+        "ceiling" to pairsOf(schedule.ceiling),
+        "no_deco_seconds" to pairsOf(schedule.noDecompressionSeconds),
+        "cns_series" to pairsOf(schedule.cnsSeries),
+        "otu_series" to pairsOf(schedule.otuSeries),
+        "pressures_bar" to Stored.Members(schedule.pressures.mapValues { pairsOf(it.value) }),
         "gas_litres" to Stored.Members(
             schedule.gasUsedLitres.mapValues { Stored.Leaf(it.value) },
         ),
@@ -155,6 +160,11 @@ private fun reserveSaid(answer: ReserveAnswer): Stored = when (answer) {
         ),
     )
 }
+
+/** [points] as a series is written everywhere here: pairs of a second and the value then. */
+private fun pairsOf(points: List<SchedulePoint>): Stored = Stored.Elements(
+    points.map { Stored.Elements(listOf(Stored.Leaf(it.second.toLong()), Stored.Leaf(it.value))) },
+)
 
 /** A plan that would not calculate, as the whole answer: its name and the reason. */
 fun saidOf(name: String, refused: String): Stored = Stored.Members(

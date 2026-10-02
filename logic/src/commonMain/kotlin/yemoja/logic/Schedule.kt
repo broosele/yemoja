@@ -58,7 +58,20 @@ class Schedule(
     val warnings: List<Warning>,
     /** What each gas-reserve scenario asks of the cylinders, absent where it is switched off. */
     val reserves: Map<Scenario, ReserveAnswer>,
+    /** The decompression ceiling through the dive in metres, empty where it never leaves the surface. */
+    val ceiling: List<SchedulePoint>,
+    /** How much longer the dive could stay at each moment, in seconds; a stretch owing a stop is left out. */
+    val noDecompressionSeconds: List<SchedulePoint>,
+    /** The central nervous system's clock through the dive, as a percentage. */
+    val cnsSeries: List<SchedulePoint>,
+    /** Oxygen tolerance units taken through the dive. */
+    val otuSeries: List<SchedulePoint>,
+    /** Each cylinder's gauge through the dive in bar, by its number, for the ones that say how big they are. */
+    val pressures: Map<String, List<SchedulePoint>>,
 )
+
+/** SchedulePoint is one moment of a worked-out series: the second it belongs to, and the value then. Immutable. */
+class SchedulePoint(val second: Int, val value: Double)
 
 /**
  * ReserveAnswer is what one gas-reserve scenario came to, or why it could not be worked out.
@@ -122,21 +135,54 @@ class Warning(val second: Int, val severity: Severity, val said: String)
  * The plan [planned] describes, calculated.
  *
  * **Nothing is read and nothing is written.** No logbook is needed and none is touched: a plan is
- * arithmetic over what the description says. A plan that follows an earlier run is the one
- * exception and is not answered here, the run it follows being a dive in a logbook. `API-7`.
+ * arithmetic over what the description says. A plan that follows a dive in a logbook is the one
+ * exception and is not answered here; one that follows an earlier case of the same file is, by
+ * `calculatedAll`. `API-7`.
  */
-fun calculated(planned: Planned): Calculated {
-    val ready = when (val shaped = shapedOf(planned)) {
+fun calculated(planned: Planned): Calculated = answeredOf(planned, null).answer
+
+/**
+ * Every case in [cases], in file order, a follower starting from what the case it follows left.
+ *
+ * The one list comes back in the same order, a refusal where a case has no answer. A case
+ * following one that was refused is refused with it: what it would start from cannot be worked
+ * out. `LOGIC-43`.
+ */
+fun calculatedAll(cases: List<Case>): List<Calculated> {
+    val answered = ArrayList<Answered>(cases.size)
+    for (case in cases) {
+        val follows = case.follows
+        if (follows == null) {
+            answered += answeredOf(case.planned, null)
+            continue
+        }
+        val earlier = answered[follows.earlier].done
+        if (earlier == null) {
+            val reason = "${case.name} follows ${cases[follows.earlier].name}, which did not calculate"
+            answered += Answered(Calculated.Refused(reason), null)
+            continue
+        }
+        val left = residualAfter(earlier.evaluated, earlier.whole.surface, follows.intervalSeconds)
+        answered += answeredOf(case.planned, left)
+    }
+    return answered.map { it.answer }
+}
+
+/** One plan answered, with the completed run kept so a case following it can start from it. */
+private class Answered(val answer: Calculated, val done: Worked.Done?)
+
+private fun answeredOf(planned: Planned, residual: Residual.Done?): Answered {
+    val ready = when (val shaped = shapedOf(planned, residual = residual)) {
         is Shaped.Ready -> shaped
-        is Shaped.Wrong -> return Calculated.Refused(shaped.reason)
-        is Shaped.Waiting -> return Calculated.Refused("the runtime is empty")
+        is Shaped.Wrong -> return Answered(Calculated.Refused(shaped.reason), null)
+        is Shaped.Waiting -> return Answered(Calculated.Refused("the runtime is empty"), null)
     }
     val done = when (val worked = workedOf(ready)) {
         is Worked.Done -> worked
-        is Worked.Refused -> return Calculated.Refused(worked.reason)
+        is Worked.Refused -> return Answered(Calculated.Refused(worked.reason), null)
     }
     val reckoned = reckonedOf(planned, done, ready.conditions)
-    return Calculated.Done(scheduleOf(ready, done, reckoned))
+    return Answered(Calculated.Done(scheduleOf(ready, done, reckoned)), done)
 }
 
 /** The schedule [done] came to, with the lines [ready] was asked for marked as the caller's. */
@@ -163,7 +209,28 @@ private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done, reckoned: Reckone
         reserves = reckoned.scenarios.mapNotNull { (scenario, reckoning) ->
             reckoning?.let { scenario to reserveAnswerOf(it) }
         }.toMap(),
+        ceiling = ceilingOf(done.evaluated.ceiling),
+        noDecompressionSeconds = sampledOf(done.evaluated.noDecompressionTime),
+        cnsSeries = sampledOf(done.evaluated.cns),
+        otuSeries = sampledOf(done.evaluated.otu),
+        pressures = done.evaluated.pressures.entries.associate { (key, series) ->
+            numberedOf(key) to sampledOf(series)
+        },
     )
+}
+
+/** [series] as points, keeping the moments it holds and passing over anything unusable. */
+private fun sampledOf(series: Series): List<SchedulePoint> =
+    (0..<series.size).mapNotNull { at ->
+        val value = ((series.valueAt(at) as? Element.Usable)?.value as? Number)?.toDouble()
+            ?: return@mapNotNull null
+        SchedulePoint(series.secondAt(at), value)
+    }
+
+/** The ceiling as points, or empty where it never rises: a flat nought along the surface says nothing. */
+private fun ceilingOf(series: Series): List<SchedulePoint> {
+    val points = sampledOf(series)
+    return if (points.any { it.value > 0 }) points else emptyList()
 }
 
 private fun reserveAnswerOf(reckoning: Reckoning): ReserveAnswer = when (reckoning) {

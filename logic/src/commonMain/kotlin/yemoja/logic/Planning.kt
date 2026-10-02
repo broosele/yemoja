@@ -378,9 +378,10 @@ sealed class Shaped {
  * **The switches are where the gas changes between lines**, and the first is always at nought:
  * a run that says nothing about what it went in on is refused, and rightly. `LOGIC-37`.
  *
- * The run carries nothing: a plan in the calculations belongs to no dive and so follows none.
+ * The run carries nothing unless [residual] hands it something: a chained case of a plan file
+ * starts from what its earlier case left. `LOGIC-43`.
  */
-fun shapedOf(shaping: Planned, universe: Universe? = null): Shaped {
+fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Done? = null): Shaped {
     val (conditions, unreadable) = conditionsOf(shaping)
     val (legs, wrong) = laidOf(
         shaping.segments,
@@ -408,7 +409,7 @@ fun shapedOf(shaping: Planned, universe: Universe? = null): Shaped {
     val followed = followedOf(shaping, universe)
     if (followed is Followed.Wrong) return Shaped.Wrong(followed.reason, legs)
     (startOf(shaping) as? Start.Wrong)?.let { return Shaped.Wrong(it.reason, legs) }
-    val left = (followed as? Followed.After)?.residual
+    val left = (followed as? Followed.After)?.residual ?: residual
     val points = listOf(0 to 0.0) + legs.map { it.ends to it.to }
     val switches = ArrayList<Pair<Int, String>>()
     for (leg in legs) {

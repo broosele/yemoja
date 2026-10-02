@@ -149,6 +149,13 @@ behaviour of its own, that behaviour is in the wrong place.
   reason in it and the command still succeeds. Fifty cases with one typo in them is the ordinary
   way a comparison file is written, and losing forty-nine answers to it would be the wrong trade.
 
+  **A case may follow an earlier case in the same file.** `follows` names it and
+  `surface_interval` says how long passed between the two, so a repetitive dive is planned with
+  the nitrogen and the oxygen clock the first one left — still with no logbook anywhere, because
+  the run followed is in the same file. `calculatedAll` carries it across, and a case following
+  one that was refused is refused with it. Following a dive in a logbook stays the window's,
+  which is `API-7`'s open note.
+
   **The table's columns are chosen for the comparison that prompted this**: `bottom_minutes` and
   `stop_minutes` are what a published air table's row and column say, and `stops` reads as
   `18@1 15@2 12@3` so that a whole schedule fits in one cell. The rest are what a second program
@@ -179,9 +186,11 @@ behaviour of its own, that behaviour is in the wrong place.
   under. The key is the file format's, `JSON-19`, and a caller describing gases as a list should
   not have to learn a second name for the first of them.
 
-  Open: a plan that follows an earlier run. `calculated` cannot answer one, the run it follows
-  being a dive in a logbook it has not got; `saved` can, having a universe. Whether the reading
-  half grows a way to say *and this is what I surfaced with* is not settled.
+  Open: a plan that follows a dive in a logbook. `calculated` cannot answer one, the run it
+  follows being in a logbook it has not got; `saved` can, having a universe. A case of a plan
+  file may follow an earlier case of the same file instead, `API-8`, which answers the
+  repetitive-dive question without opening anything. Whether the reading half also grows a way
+  to say *and this is what I surfaced with* is not settled.
 
 - **API-6 — How a plan is described to something with no window.** *Settled:* **an immutable
   description holding the same text the form holds.**
