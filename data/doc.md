@@ -839,6 +839,7 @@ data/
                   json/LogbookReader.kt  a folder of them, read into a set of items
                   json/LogbookWriter.kt  a change, written back into those files
                   json/SettingsFiles.kt  where the settings of a logbook are kept
+                  sqlite/Sqlite.kt  a SQLite database read table by table, `DATA-130`
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```
