@@ -648,6 +648,22 @@ class EvaluationTest {
     }
 
     @Test
+    fun `an ascent finished from part-way up is the rest of the one begun at the bottom`() {
+        // The low factor is anchored at the dive's first stop. Anchored afresh where the typed
+        // lines stop, the rest of the way up would hold longer than the ascent it continues.
+        val bottom = decoRun(Source(Gas.parse("EAN50")))
+        val whole = assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0))
+        for (cut in 1..<whole.depth.size - 1) {
+            val typed = bottom.withDepth(
+                bottom.depth + whole.depth.take(cut),
+                bottom.switches + whole.switches.filter { it.first <= whole.depth[cut - 1].first },
+            )
+            val rest = assertIs<Ascended.Done>(completeAscent(typed, 9.0, 3.0))
+            assertEquals(whole.depth.drop(cut), rest.depth, "typed to ${whole.depth[cut - 1]}")
+        }
+    }
+
+    @Test
     fun `an ascent never stops for a bailout`() {
         val bailout = decoRun(Source(Gas.parse("EAN50"), ascentMayChoose = false))
 

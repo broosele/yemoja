@@ -674,7 +674,13 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double, switchStop
         pointsOf(run) ?: return Ascended.Refused("this recording holds no depths, so nothing can be worked out from it")
     val end = depths.last()
     val climbed = climbed(
-        From((evaluated as Evaluated.Done).surfacing, end.second, end.metres, breathing.keyAt(end.second)),
+        From(
+            (evaluated as Evaluated.Done).surfacing,
+            end.second,
+            end.metres,
+            breathing.keyAt(end.second),
+            anchorOf(run, breathing),
+        ),
         breathing,
         run,
         metresAMinute,
@@ -683,6 +689,31 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double, switchStop
         switchStops,
     ) ?: return Ascended.Refused("No way up was found within 24 hours. Check the depths and the gases")
     return Ascended.Done(climbed.points, climbed.switches)
+}
+
+/**
+ * Where [run]'s gradient factors are anchored by its last point, walked as [evaluate] walks it, or
+ * nought where nothing has been owed.
+ *
+ * An ascent finished from part-way up takes this, so it is the rest of the ascent the run began.
+ */
+internal fun anchorOf(run: Run, breathing: Breathing): Double {
+    var tissues = run.carried ?: Tissues.saturated(run.surface)
+    var anchor = 0.0
+    for ((index, point) in run.depth.withIndex()) {
+        val (second, metres) = point
+        if (index > 0) {
+            val (was, from) = run.depth[index - 1]
+            tissues = tissues.breathing(
+                breathing.mixAt(was),
+                ambientAt(from, run.density, run.surface),
+                ambientAt(metres, run.density, run.surface),
+                (second - was).toDouble(),
+            )
+        }
+        anchor = firstStopAfter(tissues, anchor, run.model, run.surface)
+    }
+    return anchor
 }
 
 /** From is where an ascent begins: the tissues, the moment, the depth, and the source breathed. */

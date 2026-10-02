@@ -669,6 +669,13 @@ To settle when we discuss architecture and features:
   plan keeps the choice as `gas_switch_stops`, beside `last_stop`, and the gas reserves' ascents
   follow it so that they climb as the plan does. `DATA-129`, `LOGIC-40`.
 
+  *Amended:* **an ascent finished from part-way up is the rest of the one begun at the bottom.** The
+  low gradient factor is anchored at the dive's first stop. Where the typed lines already rose part
+  of the way, the ascent used to anchor afresh where they stopped, shallower than that, and held
+  longer than the ascent it continued: a plan typed to eighteen metres and finished there owed more
+  than the same plan finished from the bottom. It now takes the anchor the run reached, walked as
+  `evaluate` walks it, as the gas reserve's ways up do, `LOGIC-40`.
+
   **A safety stop is a minimum, not an extra stop.** A plan can name one, a depth and a time, and
   the ascent holds at least that long at its depth. A deco stop there counts towards it, so a
   longer one is left alone and a shorter one is lengthened, and time the typed run already held
