@@ -456,7 +456,10 @@ To settle when we discuss architecture:
   copy is one file kept outside the logbook, in the user's application data on a desktop and in
   the app's own storage on a phone, one per logbook; losing it costs one slower opening.
 
-  `CachedFileStore` does it over any store, and each platform supplies the listing. Reading the
+  `CachedFileStore` does it over any store, and each platform supplies the listing. It also says
+  which files a reading will ask the logbook for, so that a store able to fetch several at once
+  does so before the reading begins, as the phone's does: a first opening from a cloud drive is
+  hundreds of requests, and one after another they took minutes. Reading the
   logbook again after an agent's turn forgets the stamps first, since what changed was changed by
   other hands.
 

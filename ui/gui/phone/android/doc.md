@@ -41,7 +41,9 @@ how often it was asked for, how many entries the provider gave and how many it c
 it said the list had changed, and whatever else its answer carried, with the app's version after
 it. A phone's log is out of most users' reach, and the refusal is the one message they can send
 back. **Unchanged files come from a copy** in the app's own storage, the listing's date and size
-saying which, `JSON-28`. **A logbook is opened off the screen's thread**, the screen saying so
+saying which, `JSON-28`. **What the copy lacks is fetched eight files at a time** before the reading
+asks for each in turn, the screen counting them as they come: a first opening from Google Drive is
+some hundreds of requests to Drive's own app, and one after another they took minutes. **A logbook is opened off the screen's thread**, the screen saying so
 meanwhile, since reading one from a cloud drive can take a while and a blank screen reads as a
 broken app. The libraries the app ships are read from inside it, and since a folder inside an app
 cannot be listed the build writes an index of them, which is how a new logbook learns what to

@@ -98,4 +98,22 @@ class CachedFileStoreTest {
         assertEquals("""{"a": {}}""", store().readText("gear.json"))
         assertEquals(listOf("gear.json"), logbook.reads)
     }
+
+    @Test
+    fun `what a reading will ask the logbook for is what the copy lacks or holds stale`() {
+        assertEquals(listOf("gear.json", "person.json"), store().wanting(), "nothing copied yet, in path order")
+        store().apply { readText("gear.json"); readText("person.json"); keep() }
+        assertEquals(emptyList(), store().wanting(), "all of it copied as it now is")
+        stamps = stamps + ("gear.json" to "2/9")
+        assertEquals(listOf("gear.json"), store().wanting(), "one changed since")
+    }
+
+    @Test
+    fun `a file with no stamp is not wanted ahead, and neither is one written here`() {
+        stamps = mapOf("person.json" to "1/2")
+        val store = store()
+        assertEquals(listOf("person.json"), store.wanting(), "gear.json says no stamp, so nothing knows it")
+        store.writeText("person.json", "{}")
+        assertEquals(emptyList(), store.wanting(), "what was written here is read back from memory")
+    }
 }

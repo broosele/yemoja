@@ -9,7 +9,10 @@ import android.os.SystemClock
 import android.util.Log
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import yemoja.data.json.FileStore
 import yemoja.data.json.FileStoreMissing
@@ -66,8 +69,44 @@ internal class GrantedFileStore(
         return childrenOf(folder).keys.toList()
     }
 
+    /** What [fetchAhead] has fetched and no reading has yet asked for, by path. */
+    private val ahead = ConcurrentHashMap<String, String>()
+
+    /**
+     * Fetches [paths] several at a time and holds what came, so that the reading that follows
+     * finds each here instead of asking for them one after another.
+     *
+     * A logbook opened for the first time from a cloud drive is some hundreds of files, each a
+     * request to the drive's own app, and one at a time that took minutes. [told] hears how many
+     * have come and of how many, in order. A file that will not come is left for the reading to
+     * ask for again, which is where its failure is said. `AND-5`.
+     */
+    fun fetchAhead(paths: List<String>, told: (done: Int, of: Int) -> Unit) {
+        // Found here, on the one thread: the listings are not kept for several threads to read.
+        val wanted = paths.mapNotNull { path -> entryAt(path)?.takeIf { !it.folder }?.let { path to it.id } }
+        if (wanted.isEmpty()) return
+        val started = SystemClock.elapsedRealtime()
+        val done = AtomicInteger(0)
+        val pool = Executors.newFixedThreadPool(AT_ONCE)
+        for ((path, id) in wanted) {
+            pool.execute {
+                try {
+                    resolver.openInputStream(uriOf(id))?.bufferedReader()?.use { ahead[path] = it.readText() }
+                } catch (failed: Exception) {
+                    Log.w(TAG, "$path was not fetched ahead: ${failed.message}")
+                }
+                synchronized(done) { told(done.incrementAndGet(), wanted.size) }
+            }
+        }
+        pool.shutdown()
+        // A fetch that never ends is given up on here, and the reading asks for what is missing.
+        if (!pool.awaitTermination(FETCHING, TimeUnit.MILLISECONDS)) pool.shutdownNow()
+        Log.i(TAG, "fetched ${ahead.size} of ${wanted.size} files ahead in ${SystemClock.elapsedRealtime() - started} ms")
+    }
+
     override fun readText(path: String): String {
         if (isLibrary(path)) return libraries.readText(path)
+        ahead.remove(path)?.let { return it }
         val entry = entryAt(path)?.takeIf { !it.folder }
             ?: throw FileStoreMissing("$path should be a file, and is not")
         val stream = resolver.openInputStream(uriOf(entry.id))
@@ -86,6 +125,7 @@ internal class GrantedFileStore(
 
     override fun writeText(path: String, text: String) {
         require(!isLibrary(path)) { "$path is a library, and libraries are not written" }
+        ahead.remove(path)
         val names = partsOf(path)
         var folder = root
         for (name in names.dropLast(1)) folder = folderIn(folder, name)
@@ -103,6 +143,7 @@ internal class GrantedFileStore(
     /** The folders are listed again when next asked, having perhaps changed by other hands. */
     override fun forget() {
         listed.clear()
+        ahead.clear()
     }
 
     /**
@@ -125,6 +166,7 @@ internal class GrantedFileStore(
 
     override fun delete(path: String) {
         require(!isLibrary(path)) { "$path is a library, and libraries are not deleted" }
+        ahead.remove(path)
         val names = partsOf(path)
         val folder = folderId(names.dropLast(1).joinToString("/")) ?: return
         val entry = childrenOf(folder)[names.last()] ?: return
@@ -366,6 +408,12 @@ internal class GrantedFileStore(
 
         /** The most pages a folder is asked for in one go, which no logbook comes near. */
         const val MOST_PAGES = 100
+
+        /** How many files are fetched ahead at once. */
+        const val AT_ONCE = 8
+
+        /** How long fetching ahead may take before the reading goes on without it, in milliseconds. */
+        const val FETCHING = 600_000L
 
         /**
          * Where a provider says it will notify changes to a folder's list, as Google Drive's puts

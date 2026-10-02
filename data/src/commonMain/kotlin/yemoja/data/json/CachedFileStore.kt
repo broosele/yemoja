@@ -67,6 +67,18 @@ class CachedFileStore(
         return text
     }
 
+    /**
+     * The files a reading will have to ask the logbook for, in the order of their paths: those
+     * the listing stamps that the copy does not hold as they now are.
+     *
+     * For a store that can fetch several files at once, to do so before the reading asks for each
+     * in turn. `JSON-28`.
+     */
+    fun wanting(): List<String> {
+        val stamped = listed ?: stamps().also { listed = it }
+        return stamped.filter { (path, stamp) -> path !in written && held[path]?.stamp != stamp }.keys.sorted()
+    }
+
     // A file read as bytes is not a logbook's, so it is neither copied nor taken from the copy.
     override fun readBytes(path: String): ByteArray = logbook.readBytes(path)
 
