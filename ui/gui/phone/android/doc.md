@@ -28,11 +28,15 @@ again. It is reached through the storage access framework, by `GrantedFileStore`
 about a folder's children are kept until something in it changes. **A folder is listed whole**: a
 cloud provider such as Google Drive's answers in parts, marking the list as still loading or giving
 one page of a longer one, and the first answer taken as the whole once read a logbook of 347 dives
-as 200. So while the list is loading its answer is held open until the provider says it changed,
-then asked for again, and page after page while it holds fewer than the provider counts; a folder
-still loading after two minutes is refused rather than read in part. The answer is held rather than
-asked for every quarter second, as 0.1.3 to 0.1.5 did, since closing it may end the provider's
-fetch. A phone still timed out on 0.1.6, so **a refusal says what the listing saw**: which folder,
+as 200. So the list is asked for page after page, while the provider counts more than it gave and
+otherwise until a page adds nothing, Drive giving pages of 200 and no count; and while the list is
+loading its answer is held open until the provider says it changed, then asked for again, the old
+answer closed only once the new one is open, as Android's own file browser does. A folder still
+loading after two minutes is refused rather than read in part. Asking afresh every quarter second,
+as 0.1.3 to 0.1.5 did, and closing the answer before asking again, as 0.1.6 and 0.1.7 did, each
+timed out on a phone: Drive said the list had changed every three seconds and gave the same 200
+each time, as a provider would that starts its fetch over for every new question. A refusal, since
+0.1.7, **says what the listing saw**: which folder,
 how often it was asked for, how many entries the provider gave and how many it counted, how often
 it said the list had changed, and whatever else its answer carried, with the app's version after
 it. A phone's log is out of most users' reach, and the refusal is the one message they can send
