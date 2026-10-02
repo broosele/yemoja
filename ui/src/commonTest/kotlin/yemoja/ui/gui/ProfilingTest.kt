@@ -231,10 +231,12 @@ class ConditionsOfTest {
         assertEquals("6", shaping.safetyDepth)
         assertEquals("3", shaping.safetyMinutes)
         assertEquals("salt", shaping.water)
-        assertEquals("", shaping.gradientLow, "no conservatism is chosen for anybody")
+        assertEquals("30", shaping.gradientLow)
+        assertEquals("70", shaping.gradientHigh)
         shaping.segments[0] = Segment("18")
-        val wrong = assertIs<Shaped.Wrong>(shapedOf(shaping.described()))
-        assertEquals("GF low is missing", wrong.reason)
+        assertIs<Shaped.Ready>(shapedOf(shaping.described()), "a new plan needs nothing chosen to calculate")
+        shaping.gradientLow = ""
+        assertEquals("GF low is missing", assertIs<Shaped.Wrong>(shapedOf(shaping.described())).reason)
     }
 
     @Test

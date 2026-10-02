@@ -368,13 +368,14 @@ class OpeningTest {
     )
 
     @Test
-    fun `a plan starts from the factors the user chose, and empty where nobody chose any`() {
+    fun `a plan starts from the factors the user chose, and 30 and 70 where nobody chose any`() {
         val shaping = Shaping()
         shaping.prefill(chosen().settings)
         assertEquals("30", shaping.gradientLow)
         assertEquals("75", shaping.gradientHigh)
         shaping.prefill(null)
-        assertEquals("", shaping.gradientLow, "no conservatism is chosen for anybody")
+        assertEquals("30", shaping.gradientLow)
+        assertEquals("70", shaping.gradientHigh)
     }
 
     @Test

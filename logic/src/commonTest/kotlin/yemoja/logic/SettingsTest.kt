@@ -29,10 +29,11 @@ class SettingsTest {
     }
 
     @Test
-    fun `the gradient factors have no default, the application choosing no conservatism`() {
+    fun `the gradient factors are 30 and 70 until somebody chooses others`() {
         val (chosen, _) = settings()
-        assertNull(chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
-        assertNull(chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH))
+        assertEquals(0.3, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
+        assertEquals(0.7, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH))
+        assertNull(chosen.answeredBy(Settings.DEFAULT_GRADIENT_FACTOR_LOW), "the application's, not a file's")
     }
 
     @Test

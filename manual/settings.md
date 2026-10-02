@@ -63,8 +63,9 @@ settings file cannot declare any. Each is named after the field of a plan it fil
 
 - `default_gradient_factor_low`, `default_gradient_factor_high` — the gradient factors a new dive
   plan starts with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`; the
-  *Settings* form takes them as percentages, 20 and 80. **There is no default.** Until you choose
-  them, a new plan's boxes start empty: how conservative a plan is, is yours to decide.
+  *Settings* form takes them as percentages, 20 and 80. Without a choice, 30 and 70: a common
+  middle setting, and not a recommendation. How conservative a plan is, is yours to decide, so
+  set your own.
 - `default_descent_rate` — how fast a new plan descends, in metres a minute, from 1 to 60.
   Without a choice, 18.
 - `default_ascent_rate` — how fast an ascent is written to rise, in metres a minute, from 1

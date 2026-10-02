@@ -138,8 +138,8 @@ behaviour of its own, that behaviour is in the wrong place.
 
   **What a case leaves out, the application answers.** A row of an air table is a depth and a
   bottom time; making a caller write eleven settings beside it to say *the ordinary ones* would be
-  eleven chances to write a comparison that was not comparing what it claimed. The gradient factors
-  have no default and must be given, which is `GUI-42`'s position and not this decision's.
+  eleven chances to write a comparison that was not comparing what it claimed. That includes the
+  gradient factors, whose default is `GUI-42`'s.
 
   **A number reads as its text.** `40` and `"40"` say the same depth, because a caller writing a
   case file by hand should not have to learn which fields this application quotes. Everything

@@ -746,8 +746,12 @@ once and corrected. The numbers stay unused rather than being given to something
   ignored when read and refused when chosen, as a number outside its range is.
 
   **The gradient factors are typed as percentages**, as the plan form takes them and for the same
-  reason, `GUI-41`, and held as the proportions the file writes. They have no default, and say *not
-  set* until somebody sets them.
+  reason, `GUI-41`, and held as the proportions the file writes.
+
+  *Amended:* **they default to 30/70.** They had no default, so that the application chose no
+  conservatism for anybody, and a new plan's boxes started empty. A first plan then refused to
+  calculate until the reader found the setting, and the user asked for a starting point instead.
+  30/70 is a common middle setting. The manual says it is not a recommendation.
 
   **The agent's command is in the form, with how to set it up under its box.** It is text rather
   than a number and belongs to one device, which the form says beside it as it says of any setting.

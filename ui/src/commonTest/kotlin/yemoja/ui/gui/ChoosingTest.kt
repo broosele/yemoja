@@ -86,8 +86,8 @@ class ShownSettingTest {
         assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.DEFAULT_GRADIENT_FACTOR_LOW))
         assertEquals("set in this logbook", answeredSaid(SettingsFile.LOGBOOK, Settings.DEFAULT_GRADIENT_FACTOR_LOW))
         assertEquals("the default", answeredSaid(null, Settings.DEFAULT_ASCENT_RATE))
-        assertEquals("not set", answeredSaid(null, Settings.DEFAULT_GRADIENT_FACTOR_LOW), "a factor has no default")
-        assertEquals("not set", answeredSaid(null, Settings.AGENT_COMMAND), "and nor has the command")
+        assertEquals("the default", answeredSaid(null, Settings.DEFAULT_GRADIENT_FACTOR_LOW))
+        assertEquals("not set", answeredSaid(null, Settings.AGENT_COMMAND), "the command has no default")
         assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.AGENT_COMMAND))
     }
 

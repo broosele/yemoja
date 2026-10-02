@@ -393,7 +393,7 @@ saved as a new dive.
 
 **NDL** is how long you may stay at a depth, from leaving the surface, before you owe a
 decompression stop: type the depth, and the gas if it is not air. The high gradient factor starts
-as the default you chose in [Settings](settings.md). Only that one is asked for: a stop becomes
+from [Settings](settings.md), 70 unless you chose another. Only that one is asked for: a stop becomes
 owed when the high factor is reached, while the low factor says how deep a first stop is taken
 once you already owe one. It assumes salt water at sea level, and the descent rate from Settings.
 Read [decompression.md](decompression.md) before you trust any of it: this is the same model as

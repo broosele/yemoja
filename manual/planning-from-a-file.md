@@ -47,8 +47,8 @@ The file holds a plan, or a list of them. A plan is an object:
 ```
 
 **Only the lines are required.** Everything else Yemoja answers with its own default, which is
-why a file comparing four rows of a table is short. The gradient factors have no default and
-must be given, as proportions: `0.3` for 30, as a logbook writes them.
+why a file comparing four rows of a table is short. The gradient factors, where given, are
+proportions: `0.3` for 30, as a logbook writes them.
 
 Numbers may be written as numbers or as text: `40` and `"40"` say the same depth.
 
@@ -91,7 +91,7 @@ factor as a proportion.
 
 | Field | The window's name |
 |---|---|
-| `gradient_factor_low`, `gradient_factor_high` | GF low, GF high, from 0 to 1 — **no default** |
+| `gradient_factor_low`, `gradient_factor_high` | GF low, GF high, from 0 to 1; 0.3 and 0.7 if left out |
 | `descent_rate`, `ascent_rate` | Descent rate, Ascent rate |
 | `last_stop` | Last stop |
 | `gas_switch_stops` | Gas switches between stops, `true` or `false`; `false` if left out |
