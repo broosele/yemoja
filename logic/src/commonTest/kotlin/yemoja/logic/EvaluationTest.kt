@@ -664,6 +664,61 @@ class EvaluationTest {
     }
 
     @Test
+    fun `the time to surface on a planned ascent is the time the ascent has left`() {
+        val bottom = decoRun(Source(Gas.parse("EAN50"))).withRate(9.0)
+        val whole = bottom.withDepth(
+            bottom.depth + assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0)).depth,
+            bottom.switches + assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0)).switches,
+        )
+        val tts = done(whole).timeToSurface
+        val end = whole.depth.last().first
+
+        for (at in 0..<tts.size) {
+            val second = tts.secondAt(at)
+            if (second < bottom.depth.last().first) continue
+            assertEquals((end - second).toDouble(), (tts.valueAt(at) as Element.Usable).value as Double, 1e-9, "at $second")
+        }
+    }
+
+    @Test
+    fun `the time to surface is nought at the surface and longer the more is owed`() {
+        val tts = done(decoRun(Source(Gas.parse("EAN50")))).timeToSurface
+        val values = (0..<tts.size).map { tts.secondAt(it) to ((tts.valueAt(it) as Element.Usable).value as Double) }
+
+        assertEquals(0.0, values.first().second, "on the surface before the dive")
+        assertTrue(values.last().second > values[1].second, "the end of the bottom owes more than its start: $values")
+    }
+
+    @Test
+    fun `a recording's time to surface rises at nine metres a minute to a three-metre last stop`() {
+        val recording = decoRun(Source(Gas.parse("EAN50")))
+        val tts = done(recording).timeToSurface
+        val ascent = assertIs<Ascended.Done>(completeAscent(recording, TTS_METRES_A_MINUTE, TTS_LAST_STOP))
+
+        assertEquals(
+            (ascent.depth.last().first - recording.depth.last().first).toDouble(),
+            (tts.valueAt(tts.size - 1) as Element.Usable).value as Double,
+            1e-9,
+        )
+    }
+
+    @Test
+    fun `the gradient factor now is below nought on the bottom and within the high factor on surfacing`() {
+        val bottom = decoRun(Source(Gas.parse("EAN50")))
+        val ascent = assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0))
+        val whole = bottom.withDepth(bottom.depth + ascent.depth, bottom.switches + ascent.switches)
+        val factors = done(whole).gradientFactorNow
+        fun at(second: Int): Double {
+            val index = (0..<factors.size).first { factors.secondAt(it) == second }
+            return (factors.valueAt(index) as Element.Usable).value as Double
+        }
+
+        assertTrue(at(bottom.depth.last().first) < 0, "still taking gas on at forty metres")
+        val surfacing = at(whole.depth.last().first)
+        assertTrue(surfacing > 0 && surfacing <= 70.0 + 1e-6, "between nought and GF high on surfacing: $surfacing")
+    }
+
+    @Test
     fun `an ascent never stops for a bailout`() {
         val bailout = decoRun(Source(Gas.parse("EAN50"), ascentMayChoose = false))
 

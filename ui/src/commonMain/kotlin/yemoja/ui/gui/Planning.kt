@@ -70,6 +70,13 @@ internal fun runOverlaysOf(evaluated: Evaluated.Done, tanks: Map<String, String>
         val tank = tanks[key] ?: key
         overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)), gas = tank)
     }
+    overlays += Overlay("TTS", "min", Line("TTS", pointsOf(evaluated.timeToSurface, 1.0 / 60.0)))
+    // Below nought is a compartment still taking gas on, which a computer shows as nought too.
+    overlays += Overlay(
+        "GF99",
+        "%",
+        Line("GF99", pointsOf(evaluated.gradientFactorNow).map { Point(it.minute, maxOf(it.value, 0.0)) }),
+    )
     overlays += Overlay("CNS", "%", Line("CNS", pointsOf(evaluated.cns)))
     overlays += Overlay("OTU", "", Line("OTU", pointsOf(evaluated.otu)))
     return overlays

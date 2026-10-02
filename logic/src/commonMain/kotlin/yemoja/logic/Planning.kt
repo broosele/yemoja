@@ -430,6 +430,7 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
                 null
             },
             ascentRate = conditions.ascentRate,
+            lastStop = conditions.lastStop,
             carried = left?.tissues,
             oxygenCarried = left?.oxygen,
         ),
@@ -721,6 +722,7 @@ fun withAscent(run: Run, ascent: Ascended.Done): Run = Run(
     oxygenCarried = run.oxygenCarried,
     safetyStop = run.safetyStop,
     ascentRate = run.ascentRate,
+    lastStop = run.lastStop,
 )
 
 /**

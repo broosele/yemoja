@@ -718,6 +718,16 @@ To settle when we discuss architecture and features:
   profile itself, and the times are the profile's own, so the answer and the recording share an
   axis without anything being resampled.
 
+  *Amended:* **it also gives the time to surface and the gradient factor now, at every moment.**
+  The time to surface is an ascent worked out from each moment as `completeAscent` works one out,
+  from the tissues and the gradient-factor anchor there, and its length. A run names its ascent
+  rate and last stop when it is a plan. A recording names neither, and gets nine metres a minute
+  and a three-metre last stop, `TTS_METRES_A_MINUTE` and `TTS_LAST_STOP`: fixed figures rather
+  than settings, for the reason the factors are not read from settings below. The gradient factor
+  now is the most loaded compartment's excess over the ambient pressure as a share of its M-value's,
+  what divers call GF99. Neither is stored. A computer's own time to surface stays dropped,
+  `LOGIC-13`.
+
   **A stretch where a stop is already owed reports no time left**, rather than nought. That is how
   a computer writes its own `no_deco_time`, and `manual/data-fields.md` says a graph leaves the
   gap blank rather than drawing a line through it.

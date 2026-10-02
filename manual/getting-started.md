@@ -127,7 +127,9 @@ the stops would start, what each cylinder gives up and ends at, the oxygen clock
 you may fly, and how long before it is out of you. Anything it objects to — going above the
 ceiling, a cylinder that runs dry, a mix too rich or too lean for the depth it is breathed at — is listed in
 red with the minute it happened at, and the ceiling itself is drawn over the graph with the water
-above it shaded. Its own NDL, gauges and clocks can be chosen on the right-hand axis. Where your computer
+above it shaded. Its own NDL, time to surface (**TTS**), **GF99**, gauges and clocks can be
+chosen on the right-hand axis, and [the decompression model](decompression.md)
+says what TTS and GF99 are. Where your computer
 recorded the same reading, Yemoja's is marked *calculated* so you can tell the two apart.
 
 Most recordings say nothing about it, and then nothing is shown: a computer has to have written

@@ -196,6 +196,20 @@ being an option.
 It is not a countdown to danger. It is the boundary between an ascent you may make at
 your own pace and one the model wants you to interrupt.
 
+### Time to surface and GF99
+
+**Time to surface**, TTS, is how long the way up would take if you started it now: every stop
+the model asks for, and the rise between them. A plan's TTS rises at the plan's own ascent rate
+and takes its own last stop. Your computer's recording says neither, so Yemoja assumes nine
+metres a minute and a last stop at three metres. Those are fixed figures rather than your
+settings, so what Yemoja says about a dive you have done does not change when a setting does.
+
+**GF99** is how close your most loaded compartment is to its limit at your current depth, as a
+gradient factor: 0 % is no excess pressure at all, and 100 % is the M-value itself. On the
+bottom it reads 0 %, because your tissues are still taking gas on. It rises on the way up, and
+a stop holds it near the gradient factor the plan uses there. A figure past your GF high means
+you are closer to the limit than you chose to go.
+
 ## Planning a dive
 
 A plan is a profile you write instead of one your computer wrote: the depths against time, the

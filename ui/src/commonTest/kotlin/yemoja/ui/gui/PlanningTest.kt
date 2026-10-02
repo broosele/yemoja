@@ -72,17 +72,31 @@ class PlanningTest {
     }
 
     @Test
+    fun `the time to surface is drawn in minutes and GF99 from nought up`() {
+        val dive = planned(DEEP)
+        val overlays = workedOverlaysOf(dive, profile(dive), done(dive)).associateBy { it.title }
+        val tts = overlays.getValue("TTS")
+        val gf99 = overlays.getValue("GF99")
+
+        assertEquals("min", tts.unit)
+        assertTrue(tts.lines.single().points.maxOf { it.value } in 10.0..120.0, "half an hour at forty owes minutes, not seconds")
+        assertEquals("%", gf99.unit)
+        assertTrue(gf99.lines.single().points.all { it.value >= 0.0 }, "nothing below nought is drawn")
+        assertTrue(gf99.lines.single().points.any { it.value > 0.0 }, "the way up is supersaturated somewhere")
+    }
+
+    @Test
     fun `what the model works out says so beside what a computer wrote, and nowhere else`() {
         val plan = planned(DEEP)
         val recorded = planned("$DEEP, \"cns\": [[0, 0], [1900, 20]]")
 
         assertEquals(
-            listOf("NDL", "G1 pressure", "CNS", "OTU"),
+            listOf("NDL", "G1 pressure", "TTS", "GF99", "CNS", "OTU"),
             workedOverlaysOf(plan, profile(plan), done(plan)).map { it.title },
             "a plan has nothing recorded to tell them from",
         )
         assertEquals(
-            listOf("NDL", "G1 pressure", "CNS calculated", "OTU"),
+            listOf("NDL", "G1 pressure", "TTS", "GF99", "CNS calculated", "OTU"),
             workedOverlaysOf(recorded, profile(recorded), done(recorded)).map { it.title },
         )
     }

@@ -92,7 +92,29 @@ sealed class Evaluated {
         val pressures: Map<String, Series>,
         /** What the model has to say against the profile, earliest first. */
         val findings: List<Finding>,
-    ) : Evaluated()
+        /** Works out [timeToSurface] the first time it is asked for. */
+        timeToSurfaceOf: () -> Series,
+        /**
+         * The gradient factor the compartments stand at in each moment's own water, as a
+         * percentage: what divers call GF99. Nought or below is no supersaturation. `LOGIC-37`.
+         */
+        val gradientFactorNow: Series,
+    ) : Evaluated() {
+
+        /**
+         * How long the way up would take from each moment, in seconds: the time to surface.
+         *
+         * Each is an ascent worked out as `completeAscent` works one out, rising at the run's own
+         * rate and taking its own last stop, or at [TTS_METRES_A_MINUTE] and [TTS_LAST_STOP] where
+         * it names neither, as a recording does. A moment within [TTS_EVERY] seconds of the last
+         * one worked out is passed over, and so is one from which no way up is found within a day.
+         *
+         * **Worked out when first read**, an ascent a moment being the dearest thing here: what
+         * reads only the rest of the answer, a dive followed or a gas reserve, does not pay for it.
+         * `LOGIC-37`.
+         */
+        val timeToSurface: Series by lazy(timeToSurfaceOf)
+    }
 
     /** Refused is nothing worked out, why, and whether the why is somebody's mistake. */
     data class Refused(val reason: String, val why: Refusal) : Evaluated()
@@ -182,6 +204,8 @@ class Run(
     val oxygenCarried: OxygenClock? = null,
     val safetyStop: SafetyStop? = null,
     val ascentRate: Double? = null,
+    /** The depth a plan's way up takes its shallowest stop at, in metres, or null for a recording. */
+    val lastStop: Double? = null,
 ) {
 
     init {
@@ -301,6 +325,7 @@ fun evaluate(run: Run): Evaluated {
         run.oxygenCarried ?: OxygenClock.CLEAR,
     )
     return walked(
+        run,
         depths,
         breathed,
         carried,
@@ -378,6 +403,7 @@ private sealed class RunResult {
 
 /** The walk itself, once everything it needs has been found. */
 private fun walked(
+    run: Run,
     depths: List<Point>,
     breathing: Breathing,
     carried: Carried.From,
@@ -396,6 +422,9 @@ private fun walked(
     val seconds = ArrayList<Int>()
     val ceilings = ArrayList<Double>()
     val limits = ArrayList<Pair<Int, Double>>()
+    // The moments a time to surface is worked out from, kept for when it is asked for.
+    val surfacingFrom = ArrayList<Triple<Int, Tissues, Double>>()
+    val factorsNow = ArrayList<Double>()
     val findings = ArrayList<Finding>()
     val used = HashMap<String, Double>()
     val gauges = breathing.fills.mapValues { ArrayList<Double>() }
@@ -451,6 +480,9 @@ private fun walked(
         )
         seconds += point.second
         ceilings += allowed
+        factorsNow += tissues.gradientFactorIn(ambient) * PERCENT
+        val sinceLast = point.second - (surfacingFrom.lastOrNull()?.let { depths[it.first].second } ?: Int.MIN_VALUE / 2)
+        if (sinceLast >= TTS_EVERY || index == depths.lastIndex) surfacingFrom += Triple(index, tissues, firstStop)
 
         if (allowed <= 0) {
             tissues.noDecompressionSeconds(breathing.mixAt(point.second), ambient, surface, factor)
@@ -525,8 +557,60 @@ private fun walked(
         used,
         gauges.mapValues { (_, left) -> seriesOf(seconds, left) },
         findings.sortedBy { it.second },
+        {
+            val surfacings = surfacingFrom.mapNotNull { (index, at, anchor) ->
+                timeToSurfaceFrom(run, breathing, depths, index, at, anchor)?.let { depths[index].second to it }
+            }
+            seriesOf(surfacings.map { it.first }, surfacings.map { it.second })
+        },
+        seriesOf(seconds, factorsNow),
     )
 }
+
+/**
+ * How long the way up from the point at [index] of [depths] would take, in seconds, with [tissues]
+ * as they stand there and the gradient factors anchored at [anchor]. Nought at the surface, and
+ * null where no way up is found within a day.
+ */
+private fun timeToSurfaceFrom(
+    run: Run,
+    breathing: Breathing,
+    depths: List<Point>,
+    index: Int,
+    tissues: Tissues,
+    anchor: Double,
+): Double? {
+    val point = depths[index]
+    if (point.metres <= SURFACE) return 0.0
+    val climbed = climbed(
+        From(tissues, point.second, point.metres, breathing.keyAt(point.second), anchor),
+        breathing,
+        run,
+        run.ascentRate ?: TTS_METRES_A_MINUTE,
+        run.lastStop ?: TTS_LAST_STOP,
+        depths.subList(0, index + 1).map { it.second to it.metres },
+    ) ?: return null
+    return (climbed.points.lastOrNull()?.first?.minus(point.second) ?: 0).toDouble()
+}
+
+/**
+ * The ascent rate a time to surface assumes where the run names none, as a recording does: nine
+ * metres a minute, the rate Bühlmann's tables were made with. A fixed figure rather than a
+ * setting, so what is said about a dive already done does not move when a setting does.
+ */
+const val TTS_METRES_A_MINUTE = 9.0
+
+/** The last stop a time to surface assumes where the run names none: three metres. */
+const val TTS_LAST_STOP = 3.0
+
+/**
+ * The fewest seconds between two moments a time to surface is worked out from: ten, so a computer
+ * sampling every two seconds costs a fifth of the ascents, and a plan, whose points lie further
+ * apart, loses none.
+ */
+const val TTS_EVERY = 10
+
+private const val PERCENT = 100.0
 
 /**
  * What [depths] owe [safetyStop] and did not hold, or null where they owe nothing or held it.

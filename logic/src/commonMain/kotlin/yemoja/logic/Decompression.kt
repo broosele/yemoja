@@ -95,6 +95,27 @@ class Tissues private constructor(
     }
 
     /**
+     * The gradient factor these tissues stand at in [ambient] bar: how far the most loaded
+     * compartment is from the ambient pressure towards its M-value, as a fraction.
+     *
+     * Nought is no supersaturation and one is the M-value itself. A negative figure is a
+     * compartment still taking gas on, and is the answer rather than an error. Divers call this
+     * GF99 when it is read at the current depth.
+     */
+    fun gradientFactorIn(ambient: Double): Double {
+        var most = Double.NEGATIVE_INFINITY
+        for (index in 0..<COMPARTMENTS) {
+            val total = nitrogen[index] + helium[index]
+            if (total <= 0) continue
+            val a = (A_N2[index] * nitrogen[index] + A_HE[index] * helium[index]) / total
+            val b = (B_N2[index] * nitrogen[index] + B_HE[index] * helium[index]) / total
+            val factor = (total - ambient) / (a + ambient / b - ambient)
+            if (factor > most) most = factor
+        }
+        return most
+    }
+
+    /**
      * How long these tissues may go on breathing [gas] at [ambient] bar before their ceiling
      * passes [surface], in seconds, or null where a day of it would not.
      *

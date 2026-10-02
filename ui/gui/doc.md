@@ -832,6 +832,9 @@ once and corrected. The numbers stay unused rather than being given to something
   *pressure*, as a recorded one is, so that the two collide and the recorded one wins the plain
   title.
 
+  The time to surface is drawn in minutes, and GF99 in percent from nought up. Below nought, a
+  compartment is still taking gas on, and a computer shows that as nought too. `LOGIC-37`.
+
   **The figures and the findings read as fields.** What a run costs, the clocks and the two waits
   are shown as worked-out values under the run's own fields, and each finding is a line labelled
   with the minute it happened at, in the error colour. A finding is a value that would not read,

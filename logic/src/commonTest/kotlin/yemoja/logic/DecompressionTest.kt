@@ -45,6 +45,23 @@ private fun near(expected: Double, actual: Double, what: String = "") {
 class DecompressionTest {
 
     @Test
+    fun `the gradient factor at the ceiling is the factor the ceiling was asked for`() {
+        // The ceiling is where the leading compartment stands at that factor, so reading the
+        // factor back there gives it again.
+        val loaded = Tissues.saturated(SURFACE).breathing(Gas.AIR, DEEP, DEEP, 25 * MINUTE)
+        val ceiling = loaded.ceiling(0.7)
+
+        assertEquals(0.7, loaded.gradientFactorIn(ceiling), 1e-9)
+    }
+
+    @Test
+    fun `tissues still taking gas on stand at a factor below nought`() {
+        assertTrue(Tissues.saturated(SURFACE).gradientFactorIn(SURFACE) < 0, "settled air is short of the surface's pressure")
+        val loading = Tissues.saturated(SURFACE).breathing(Gas.AIR, DEEP, DEEP, 10 * MINUTE)
+        assertTrue(loading.gradientFactorIn(DEEP) < 0, "${loading.gradientFactorIn(DEEP)}")
+    }
+
+    @Test
     fun `tissues start settled at the pressure they have been breathing`() {
         val settled = Tissues.saturated(SURFACE)
         for (number in 1..Tissues.COMPARTMENTS) {
