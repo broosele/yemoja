@@ -9,9 +9,12 @@ import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import yemoja.data.ownedOrWorked
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -227,6 +230,57 @@ class PlannedTest {
         val coldest = assertIs<Result.Usable<*>>(environment.read("bottom_temperature"))
         assertEquals(11.0, coldest.value, "the primary's, not the other computer's")
         assertEquals(Result.Origin.DERIVED, coldest.origin)
+    }
+
+    @Test
+    fun `a recording's water at the surface is its last sample, and its coldest the least`() {
+        // In warm from the air, down to nine degrees, and up into seventeen.
+        val dive = dive(""""profiles": {"p1": {"temperature": [[0, 24], [600, 9], [1800, 17]]}}""")
+        val recording = entry(dive, "profiles", "p1")
+        val surface = assertIs<Result.Usable<*>>(recording.read("surface_temperature"))
+        assertEquals(17.0, surface.value, "not the first, which is the computer's own warmth")
+        assertEquals(Result.Origin.DERIVED, surface.origin)
+        assertEquals(9.0, assertIs<Result.Usable<*>>(recording.read("bottom_temperature")).value)
+    }
+
+    @Test
+    fun `a computer's own figure for the surface stands over its samples`() {
+        val dive = dive(
+            """"profiles": {"p1": {"surface_temperature": 18.0,
+               "temperature": [[0, 24], [1800, 17]]}}""",
+        )
+        val surface = assertIs<Result.Usable<*>>(entry(dive, "profiles", "p1").read("surface_temperature"))
+        assertEquals(18.0, surface.value)
+    }
+
+    @Test
+    fun `a dive nobody wrote conditions for still says what its recording sampled`() {
+        val dive = dive(""""profiles": {"p1": {"temperature": [[0, 24], [600, 9], [1800, 17]]}}""")
+        assertEquals(Result.Absent, dive.read("environment"), "nothing is stored, and reading says so")
+        val conditions = assertNotNull(dive.ownedOrWorked("environment"))
+        assertEquals(9.0, assertIs<Result.Usable<*>>(conditions.read("bottom_temperature")).value)
+        assertEquals(17.0, assertIs<Result.Usable<*>>(conditions.read("surface_temperature")).value)
+        assertEquals(Result.Absent, conditions.read("visibility"), "and nothing that nobody wrote")
+        assertEquals(Result.Absent, dive.read("environment"), "asking wrote nothing")
+    }
+
+    @Test
+    fun `nothing stands in where nothing is worked out`() {
+        val bare = dive(""""dive_number": 38""")
+        assertNull(bare.ownedOrWorked("environment"), "no recording to read a temperature from")
+        assertNull(bare.ownedOrWorked("gear"))
+        assertNull(bare.ownedOrWorked("profiles"), "a collection is not one owned item")
+        assertNull(bare.ownedOrWorked("dive_number"), "nor is a number")
+    }
+
+    @Test
+    fun `conditions that were written are the ones given`() {
+        val dive = dive(
+            """"environment": {"visibility": 5},
+               "profiles": {"p1": {"temperature": [[0, 24], [1800, 17]]}}""",
+        )
+        val stored = assertIs<Result.Usable<*>>(dive.read("environment")).value
+        assertSame<Any?>(stored, dive.ownedOrWorked("environment"))
     }
 }
 

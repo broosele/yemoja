@@ -10,6 +10,7 @@ import yemoja.data.NumberDescription
 import yemoja.data.OwnedItemDescription
 import yemoja.data.Result
 import yemoja.data.WholeNumberDescription
+import yemoja.data.ownedOrWorked
 import kotlin.math.sqrt
 
 /*
@@ -235,7 +236,13 @@ private fun walk(
     val at = "@$id ${here.joinToString(".")}"
     val read = item.read(name)
     if (read is Result.Absent) {
-        skipped += Skipped(at, "holds nothing")
+        // An owned item nobody wrote may still hold what is worked out. `DATA-124`.
+        val standIn = item.ownedOrWorked(name)
+        if (standIn != null && index < segments.lastIndex) {
+            walk(standIn, id, segments, index + 1, keys, here, found, skipped)
+        } else {
+            skipped += Skipped(at, "holds nothing")
+        }
         return
     }
     if (read is Result.Unusable) {

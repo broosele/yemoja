@@ -143,6 +143,7 @@ import yemoja.data.OwnedItemDescription
 import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
+import yemoja.data.ownedOrWorked
 import yemoja.logic.DeviceRead
 import yemoja.logic.divecomputer.DiveComputer
 import yemoja.logic.Change
@@ -2910,7 +2911,10 @@ private fun ItemCard(
 private fun Fields(item: Item, onFollow: (String) -> Unit) {
     val arranged = remember(item.description) { arrangedOf(item.description) }
     val shown = shownAllOf(arranged.plain, item)
-    val insets = arranged.insets.filter { item.read(it.name) is Result.Usable }
+    // An owned item nobody wrote is shown where it holds something worked out. `DATA-124`.
+    val insets = arranged.insets.filter {
+        item.read(it.name) is Result.Usable || item.ownedOrWorked(it.name) != null
+    }
     val foot = arranged.foot.mapNotNull { shownOf(it, item) }
     val sections = arranged.sections.map { it.section to shownAllOf(it.fields, item) }
         .filter { (_, shown) -> shown.isNotEmpty() }
@@ -2937,9 +2941,8 @@ private fun Fields(item: Item, onFollow: (String) -> Unit) {
     for (inset in insets) {
         when (inset.cardinality) {
             Cardinality.KEYED -> KeyedInset(inset, item, onFollow)
-            else -> {
-                val owned = (item.read(inset.name) as? Result.Usable)?.value as? OwnedItem
-                if (owned != null) Inset(inset.label) { Fields(owned, onFollow) }
+            else -> item.ownedOrWorked(inset.name)?.let { owned ->
+                Inset(inset.label) { Fields(owned, onFollow) }
             }
         }
     }

@@ -152,3 +152,32 @@ class FiguresTest {
         assertNull(fieldAt(Types.DIVE, "nothing.here"))
     }
 }
+
+/*
+ * A figure over an owned item nobody wrote, where what it holds is worked out. `DATA-124`.
+ */
+class WorkedFiguresTest {
+
+    private val held: ItemSet = LogbookReader.read(
+        MemoryFileStore(
+            mapOf(
+                "dive/written#0.json" to """{"environment": {"bottom_temperature": 18}}""",
+                "dive/sampled#0.json" to
+                    """{"profiles": {"p1": {"temperature": [[0, 24], [600, 10], [1800, 16]]}}}""",
+                "dive/bare#0.json" to """{"dive_number": 3}""",
+            ),
+        ),
+        Types.ALL,
+    )
+
+    @Test
+    fun `a dive with a recording and no conditions written is counted, and a bare one skipped`() {
+        val ids = listOf("written#0", "sampled#0", "bare#0")
+        val taken = assertIs<Figured.Taken>(
+            figureOf(held, ids, "environment.bottom_temperature", Measure.MEAN, null),
+        ).figure
+        assertEquals(14.0, taken.value, "eighteen written and ten sampled")
+        assertEquals(2, taken.used)
+        assertEquals(1, taken.skipped.size, "the bare dive holds nothing to count")
+    }
+}

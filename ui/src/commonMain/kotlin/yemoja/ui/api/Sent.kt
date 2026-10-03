@@ -9,6 +9,7 @@ import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Stored
 import yemoja.data.Units
+import yemoja.data.ownedOrWorked
 
 /*
  * An item as an agent is sent it: every field it holds, worked-out values included.
@@ -31,7 +32,8 @@ internal fun sentOf(item: Item): Stored.Members {
     val members = LinkedHashMap<String, Stored>()
     for (field in item.description.fields) {
         when (val read = item.read(field.name)) {
-            Result.Absent -> Unit
+            // An owned item nobody wrote is sent where it holds something worked out. `DATA-124`.
+            Result.Absent -> item.ownedOrWorked(field.name)?.let { members[field.name] = sentOf(it) }
             is Result.Unusable -> members[field.name] = unusable(read.raw, read.reason)
             is Result.Usable -> members[field.name] = heldOf(field, read.value)
         }

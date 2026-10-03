@@ -274,13 +274,17 @@ private val PROFILE = ItemDescription(
         // own, a computer measuring it, and a plan writes what it assumes. `DATA-124`.
         NumberDescription("atmospheric_pressure", Dimension.PRESSURE),
         // The coldest water this run saw, and the water at the surface. A computer reports both,
-        // and the samples give the first where it does not.
+        // and the samples give each where it does not.
         NumberDescription(
             "bottom_temperature",
             Dimension.TEMPERATURE,
             role = Role.Overrideable(::profilesBottomTemperature),
         ),
-        NumberDescription("surface_temperature", Dimension.TEMPERATURE),
+        NumberDescription(
+            "surface_temperature",
+            Dimension.TEMPERATURE,
+            role = Role.Overrideable(::profilesSurfaceTemperature),
+        ),
         // What `decostop` and `no_deco_time` were computed with. Suggested rather than fixed: a
         // maker may run something none of the four names, and nothing exports this to a closed
         // list.
@@ -428,6 +432,20 @@ private fun profilesBottomTemperature(profile: Item): Result<Any> {
         ?: return Result.Absent
     val coldest = read.usable().filterIsInstance<Double>().minOrNull() ?: return Result.Absent
     return Result.Usable(coldest, Result.Origin.DERIVED)
+}
+
+/**
+ * The water at the surface as this run sampled it, or absent where it sampled none.
+ *
+ * The last sample, taken as the dive ends at the surface with the sensor an hour in the water.
+ * The first is not used: a computer goes in warm from the air, and its first reading is of
+ * itself. A computer that reports its own writes it and this is not consulted. `DATA-124`.
+ */
+private fun profilesSurfaceTemperature(profile: Item): Result<Any> {
+    val read = (profile.read("temperature") as? Result.Usable)?.value as? Series
+        ?: return Result.Absent
+    val last = read.usable().filterIsInstance<Double>().lastOrNull() ?: return Result.Absent
+    return Result.Usable(last, Result.Origin.DERIVED)
 }
 
 /** The coldest water the dive's primary run saw. */

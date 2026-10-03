@@ -284,3 +284,30 @@ class OwnedItem(
     // The owner's, by definition. Holding a second copy is a second thing to keep in step.
     override val set: ItemSet get() = parent.set
 }
+
+/**
+ * The owned item [name] holds: the one stored, or an empty one standing in where none is stored
+ * and one of its fields is worked out all the same.
+ *
+ * A dive with nothing written about its conditions holds no `environment`, and its recording still
+ * says how cold the water was. Reading the field gives absent, which is true of what is stored and
+ * hides what is worked out, so whatever shows, counts or exports an owned item asks here instead.
+ * **Nothing is written.** The stand-in exists for the reading and is made again each time.
+ *
+ * Null where nothing is stored and nothing is worked out, where what is stored will not read, and
+ * for a field holding more than one. `DATA-124`.
+ */
+fun Item.ownedOrWorked(name: String): OwnedItem? {
+    val field = description[name] as? OwnedItemDescription ?: return null
+    if (field.cardinality != Cardinality.SINGLE) return null
+    when (val stored = read(name)) {
+        is Result.Usable -> return stored.value as? OwnedItem
+        is Result.Unusable -> return null
+        Result.Absent -> Unit
+    }
+    val standIn = OwnedItem(field.description, emptyMap(), this)
+    val worked = field.description.fields.any {
+        it.role !is Role.Primary && standIn.read(it.name) is Result.Usable
+    }
+    return standIn.takeIf { worked }
+}

@@ -14,6 +14,7 @@ import yemoja.data.Reference
 import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.WholeNumberDescription
+import yemoja.data.ownedOrWorked
 import yemoja.logic.Types
 import yemoja.logic.titleOf
 
@@ -333,8 +334,7 @@ internal fun yearOf(date: Date): Double = date.epochDay / DAYS_IN_YEAR + 1970.0
 /** The Gregorian year, averaged over its cycle, which is what a fraction of one divides by. */
 private const val DAYS_IN_YEAR = 365.2425
 
-private fun ownedIn(dive: Item, name: String): OwnedItem? =
-    (dive.read(name) as? Result.Usable)?.value as? OwnedItem
+private fun ownedIn(dive: Item, name: String): OwnedItem? = dive.ownedOrWorked(name)
 
 /**
  * Which two variables the plot opens on, along the bottom and up the side.

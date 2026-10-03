@@ -2346,6 +2346,19 @@ Kept with their identifiers so earlier discussion still resolves.
   reader sees the conditions on the recording rather than beside the dive. That is the cost of not
   writing a copy nobody reads.
 
+  *Amended on 2026-10-03:* the cost was larger than it read. A dive whose conditions nobody
+  wrote showed no water temperature at all, which on the author's logbook was 167 of 347 dives,
+  and statistics, the UDDF export and an agent skipped them too. So whatever shows, counts or
+  exports an owned item asks `ownedOrWorked`, which gives the stored one and otherwise an empty
+  one standing in, where any of its fields is worked out. **Nothing is written**: the stand-in is
+  made for the reading and made again the next time, and a dive with no recording gets none.
+  Reading the field itself still says absent, which is true of what is stored.
+
+  The recording's `surface_temperature` is worked out too now, where the device reported none:
+  its last temperature sample, taken in the shallow water at the end of the dive. The first is
+  not used, a computer going in warm from the air. The author's logbook had it on no dive before
+  and has it on 218 after.
+
   *Extended:* the depths went the same way. `max_depth` and `average_depth` were the dive's alone,
   derived from the primary recording's samples, and a download wrote its own figures over them —
   so a second computer overwrote the first here too. The recording now carries both, derived from

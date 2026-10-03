@@ -13,6 +13,7 @@ import yemoja.data.ReferenceableItem
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Units
+import yemoja.data.ownedOrWorked
 import yemoja.logic.Types
 import yemoja.logic.primaryProfile
 import kotlin.math.abs
@@ -646,8 +647,8 @@ internal class Writer(private val set: ItemSet) {
         ((item.list<String>(field) as? Result.Usable)?.value.orEmpty())
             .mapNotNull { (it as? Element.Usable)?.value }
 
-    private fun owned(item: Item, field: String): OwnedItem? =
-        (item.single<OwnedItem>(field) as? Result.Usable)?.value
+    /** What is worked out goes too, where nothing is stored: a dive's coldest water, from its recording. */
+    private fun owned(item: Item, field: String): OwnedItem? = item.ownedOrWorked(field)
 
     private fun entries(item: Item, field: String): List<OwnedItem> =
         keyedEntries(item, field).map { it.second }

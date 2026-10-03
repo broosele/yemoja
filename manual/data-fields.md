@@ -358,7 +358,9 @@ that is the only record of it.
   their own readings.
 - `bottom_temperature` (number, derived) — the coldest water this recording sampled, from its
   own samples where the computer reported no figure of its own.
-- `surface_temperature` (number) — the water at the surface, as this computer reported it.
+- `surface_temperature` (number, derived) — the water at the surface, as this computer reported
+  it, or its last temperature sample where it reported none. The last rather than the first: a
+  computer goes in warm from the air, and its first reading is of itself.
 - `deco_model` (text) — which decompression model the computer was running: `buhlmann`,
   `vpm`, `rgbm` or `dciem`. Anything you like, since a maker may use something else.
 - `gradient_factor_low`, `gradient_factor_high` (number) — how conservative a Bühlmann
