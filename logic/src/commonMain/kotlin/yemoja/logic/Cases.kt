@@ -194,7 +194,7 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             lastStop = setting("last_stop", Settings.DEFAULT_LAST_STOP),
             switchStops = switchStops,
             water = textOf(members["water_type"]) ?: Settings.DEFAULT_WATER_TYPE.default,
-            atmosphericPressure = textOf(members["atmospheric_pressure"]) ?: SEA_LEVEL_SAID,
+            atmosphericPressure = setting("atmospheric_pressure", Settings.DEFAULT_ATMOSPHERIC_PRESSURE),
             stressFactor = setting("stress_factor", Settings.DEFAULT_STRESS_FACTOR),
             problemMinutes = setting("problem_solving_time", Settings.DEFAULT_PROBLEM_SOLVING_TIME),
             lostGasScenario = lostGasReserve,

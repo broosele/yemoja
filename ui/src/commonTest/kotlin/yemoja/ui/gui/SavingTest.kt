@@ -374,6 +374,17 @@ class OpeningTest {
     )
 
     @Test
+    fun `a plan starts at the atmospheric pressure the user chose, and one atmosphere where nobody did`() {
+        val shaping = Shaping()
+        shaping.prefill(null)
+        assertEquals(SEA_LEVEL_SAID, shaping.atmosphericPressure)
+
+        val chosen = emptyLogbook(mapOf("settings.json" to """{"default_atmospheric_pressure": 0.85}"""))
+        shaping.prefill(chosen.settings)
+        assertEquals("0.85", shaping.atmosphericPressure)
+    }
+
+    @Test
     fun `a plan starts from the factors the user chose, and 30 and 70 where nobody chose any`() {
         val shaping = Shaping()
         shaping.prefill(chosen().settings)

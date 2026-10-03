@@ -89,6 +89,9 @@ settings file cannot declare any. Each is named after the field of a plan it fil
   trouble starts before the way up begins, in seconds, from 0 to 600: the time to notice the
   problem and, when sharing, to find your buddy and get the gas going. 0 means none. Without a
   choice, 120. The *Settings* form shows it in minutes.
+- `default_atmospheric_pressure` — the air pressure a new dive plan is dived under, in bar,
+  from 0.4 to 1.1: less than one atmosphere for a lake at altitude. Without a choice, 1.01325,
+  one standard atmosphere.
 - `default_water_type` — the water a new dive plan is dived in: `salt` or `fresh`. Without a
   choice, `salt`.
 

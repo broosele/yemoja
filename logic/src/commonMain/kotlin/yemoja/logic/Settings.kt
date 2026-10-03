@@ -267,6 +267,14 @@ class Settings internal constructor(private val store: FileStore) {
         val DEFAULT_PROBLEM_SOLVING_TIME =
             NumberSetting("default_problem_solving_time", "Problem solving time", "s", 120.0, 0.0..600.0)
 
+        /**
+         * The air pressure a new plan is dived under, absolute, in bar: one standard atmosphere
+         * where nobody chose. The range runs from a lake well above 5,000 m to past any weather at
+         * sea level, so a pressure written in millibars is refused rather than read as bar.
+         */
+        val DEFAULT_ATMOSPHERIC_PRESSURE =
+            NumberSetting("default_atmospheric_pressure", "Atmospheric pressure", "bar", SEA_LEVEL, 0.4..1.1)
+
         /** The water a new plan is dived in, in the words `water_type` uses. */
         val DEFAULT_WATER_TYPE =
             ChoiceSetting("default_water_type", "Water", listOf("salt", "fresh"), "salt")
@@ -299,6 +307,7 @@ class Settings internal constructor(private val store: FileStore) {
             DEFAULT_SAFETY_STOP_DURATION,
             DEFAULT_STRESS_FACTOR,
             DEFAULT_PROBLEM_SOLVING_TIME,
+            DEFAULT_ATMOSPHERIC_PRESSURE,
         )
 
         /** Every setting holding one of a set of words that the settings form offers, after the numbers. */
@@ -314,7 +323,8 @@ fun shownOf(setting: NumberSetting, value: Double?): String = when {
     value == null -> ""
     isPercentage(setting) -> plain(value * PERCENT)
     isMinutes(setting) -> plain(value / SECONDS_IN_MINUTE)
-    else -> plain(value)
+    // To the fifth decimal, so one standard atmosphere is shown as it is held.
+    else -> plain(value, 5)
 }
 
 /** Whether [setting] is held as a proportion and shown as a percentage, which the factors are. */

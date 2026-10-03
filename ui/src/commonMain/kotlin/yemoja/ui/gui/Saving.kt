@@ -168,7 +168,7 @@ internal fun planFieldsOf(shaping: Planned, conditions: Conditions, whole: Run):
     return linkedMapOf(
         "planned" to Stored.Leaf(true),
         "water_type" to Stored.Leaf(shaping.water),
-        "atmospheric_pressure" to Stored.Leaf(conditions.surface),
+        "atmospheric_pressure" to Stored.Leaf(conditions.atmosphericPressure),
         "deco_model" to Stored.Leaf(MODEL),
         "gradient_factor_low" to Stored.Leaf(conditions.gradientLow),
         "gradient_factor_high" to Stored.Leaf(conditions.gradientHigh),

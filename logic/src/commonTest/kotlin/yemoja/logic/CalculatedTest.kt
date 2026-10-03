@@ -166,7 +166,7 @@ class CalculatedTest {
 
     @Test
     fun `a plan starts at one standard atmosphere`() {
-        assertEquals(SEA_LEVEL, assertNotNull(conditionsOf(table()).first).surface)
+        assertEquals(SEA_LEVEL, assertNotNull(conditionsOf(table()).first).atmosphericPressure)
     }
 
     @Test
@@ -184,9 +184,9 @@ class CalculatedTest {
     }
 
     @Test
-    fun `a surface pressure in millibars is refused rather than read as bar`() {
+    fun `an atmospheric pressure in millibars is refused rather than read as bar`() {
         assertEquals(
-            "Surface pressure should be more than 0 bar and at most 1.1 bar, not \"1013\"",
+            "Atmospheric pressure should be 0.4 to 1.1 bar, not \"1013\"",
             conditionsOf(table().copy(atmosphericPressure = "1013")).second,
         )
     }

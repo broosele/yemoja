@@ -29,6 +29,13 @@ class SettingsTest {
     }
 
     @Test
+    fun `the atmospheric pressure is one atmosphere until somebody chooses another, and millibars are refused`() {
+        val (chosen, _) = settings()
+        assertEquals(SEA_LEVEL, chosen.number(Settings.DEFAULT_ATMOSPHERIC_PRESSURE))
+        assertIs<Outcome.Refused>(chosen.choose(Settings.DEFAULT_ATMOSPHERIC_PRESSURE, 1013.0))
+    }
+
+    @Test
     fun `the gradient factors are 30 and 70 until somebody chooses others`() {
         val (chosen, _) = settings()
         assertEquals(0.3, chosen.number(Settings.DEFAULT_GRADIENT_FACTOR_LOW))
@@ -143,6 +150,7 @@ class SettingsTest {
                 "default_safety_stop_duration",
                 "default_stress_factor",
                 "default_problem_solving_time",
+                "default_atmospheric_pressure",
             ),
             Settings.OFFERED.map { it.name },
         )

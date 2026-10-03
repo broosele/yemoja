@@ -99,7 +99,7 @@ factor as a proportion.
 | `safety_stop_depth`, `safety_stop_duration` | Safety stop depth, Safety stop duration |
 | `po2_max_bottom`, `po2_max_deco`, `po2_min` | pO₂ max bottom, pO₂ max deco, pO₂ min |
 | `water_type` | `salt` or `fresh` |
-| `atmospheric_pressure` | Surface pressure, in bar; 1.01325 if left out |
+| `atmospheric_pressure` | Atmospheric pressure, in bar |
 | `stress_factor`, `problem_solving_time` | Stress factor, Problem-solving time |
 | `lost_gas_reserve`, `lost_gas` | The *Lost* scenario's switch, and which cylinder it loses by number, left out for the first deco cylinder |
 | `shared_gas_reserve` | The *Buddy out of gas* scenario's switch |

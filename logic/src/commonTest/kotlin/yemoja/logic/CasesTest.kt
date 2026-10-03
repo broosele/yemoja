@@ -107,7 +107,7 @@ class CasesTest {
     }
 
     @Test
-    fun `the surface pressure is written as atmospheric_pressure, and is one atmosphere if left out`() {
+    fun `the atmospheric pressure is written as atmospheric_pressure, and is one atmosphere if left out`() {
         assertEquals("0.85", oneOf("""{"runtime": [{"depth": 20}], "atmospheric_pressure": 0.85}""").planned.atmosphericPressure)
         assertEquals(SEA_LEVEL_SAID, oneOf("""{"runtime": [{"depth": 20}]}""").planned.atmosphericPressure)
     }
