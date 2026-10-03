@@ -83,21 +83,7 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
         "otu" to Stored.Leaf(schedule.otu),
         "no_flight_seconds" to Stored.Leaf(schedule.noFlightSeconds),
         "desaturation_seconds" to Stored.Leaf(schedule.desaturationSeconds),
-        "runtime" to Stored.Elements(
-            schedule.lines.map { line ->
-                Stored.Members(
-                    mapOf(
-                        "from_m" to Stored.Leaf(line.fromMetres),
-                        "to_m" to Stored.Leaf(line.toMetres),
-                        "begins_at_seconds" to Stored.Leaf(line.beginsAt.toLong()),
-                        "seconds" to Stored.Leaf(line.seconds.toLong()),
-                        "direction" to Stored.Leaf(line.direction),
-                        "gas" to Stored.Leaf(line.gas),
-                        "added" to Stored.Leaf(line.added),
-                    ),
-                )
-            },
-        ),
+        "runtime" to runtimeSaid(schedule.lines),
         "stops" to Stored.Elements(
             schedule.stops.map {
                 Stored.Members(
@@ -174,6 +160,39 @@ private fun pairsOf(points: List<SchedulePoint>): Stored = Stored.Elements(
 /** A plan that would not calculate, as the whole answer: its name and the reason. */
 fun saidOf(name: String, refused: String): Stored = Stored.Members(
     mapOf("name" to Stored.Leaf(name), "refused" to Stored.Leaf(refused)),
+)
+
+/**
+ * A plan that would not calculate, as the whole answer: its name, the reason, the lines laid before
+ * the one at fault, and every line that stays at its depth without a duration, by its number. The
+ * last two are left out where they are empty.
+ */
+fun saidOf(name: String, refused: Calculated.Refused): Stored = Stored.Members(
+    mapOf("name" to Stored.Leaf(name), "refused" to Stored.Leaf(refused.reason)) +
+        (if (refused.lines.isEmpty()) emptyMap() else mapOf("runtime" to runtimeSaid(refused.lines))) +
+        (
+            if (refused.needsDuration.isEmpty()) {
+                emptyMap()
+            } else {
+                mapOf("needs_duration" to Stored.Elements(refused.needsDuration.map { Stored.Leaf(it.toLong()) }))
+            }
+        ),
+)
+
+private fun runtimeSaid(lines: List<Line>): Stored = Stored.Elements(
+    lines.map { line ->
+        Stored.Members(
+            mapOf(
+                "from_m" to Stored.Leaf(line.fromMetres),
+                "to_m" to Stored.Leaf(line.toMetres),
+                "begins_at_seconds" to Stored.Leaf(line.beginsAt.toLong()),
+                "seconds" to Stored.Leaf(line.seconds.toLong()),
+                "direction" to Stored.Leaf(line.direction),
+                "gas" to Stored.Leaf(line.gas),
+                "added" to Stored.Leaf(line.added),
+            ),
+        )
+    },
 )
 
 private const val SECONDS_A_MINUTE = 60.0

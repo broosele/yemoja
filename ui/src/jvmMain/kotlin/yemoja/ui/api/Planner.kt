@@ -64,7 +64,7 @@ private fun jsonOf(answers: List<Pair<Case, Calculated>>): String = Json.write(
         answers.map { (case, answer) ->
             when (answer) {
                 is Calculated.Done -> saidOf(case.name, answer.schedule)
-                is Calculated.Refused -> saidOf(case.name, answer.reason)
+                is Calculated.Refused -> saidOf(case.name, answer)
             }
         },
     ),

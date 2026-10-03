@@ -1,5 +1,6 @@
 package yemoja.logic
 
+import yemoja.data.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -275,6 +276,23 @@ class CalculatedTest {
         assertTrue(
             stopsAfter(6 * 60 * 60.0) < stopsAfter(30 * 60.0),
             "six hours should owe less than half an hour",
+        )
+    }
+
+    @Test
+    fun `a line at fault still leaves the lines above it laid out`() {
+        val planned = table().copy(
+            segments = listOf(Segment("30"), Segment("30", duration = "20:00"), Segment("30")),
+        )
+        val refused = assertIs<Calculated.Refused>(calculated(planned))
+        assertEquals("Line 3 needs a duration, because it stays at 30 m", refused.reason)
+        assertEquals(listOf(100, 1200), refused.lines.map { it.seconds }, "the descent at 18 m/min, then the stay")
+        assertTrue("\"runtime\"" in Json.write(saidOf("x", refused)))
+        assertEquals(listOf(3), refused.needsDuration)
+        assertTrue("\"needs_duration\": [3]" in Json.write(saidOf("x", refused)), Json.write(saidOf("x", refused)))
+        assertTrue(
+            "\"runtime\"" !in Json.write(saidOf("x", Calculated.Refused("the runtime is empty"))),
+            "nothing laid, nothing written",
         )
     }
 

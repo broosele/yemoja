@@ -20,7 +20,13 @@ sealed class Calculated {
 
     class Done(val schedule: Schedule) : Calculated()
 
-    class Refused(val reason: String) : Calculated()
+    class Refused(
+        val reason: String,
+        /** The lines laid before the one at fault, as a form shows them while it is corrected. */
+        val lines: List<Line> = emptyList(),
+        /** Every line, by its number counted from 1, that stays at its depth and gives no duration. */
+        val needsDuration: List<Int> = emptyList(),
+    ) : Calculated()
 }
 
 /**
@@ -191,7 +197,14 @@ private class Answered(val answer: Calculated, val done: Worked.Done?)
 private fun answeredOf(planned: Planned, residual: Residual.Done?): Answered {
     val ready = when (val shaped = shapedOf(planned, residual = residual)) {
         is Shaped.Ready -> shaped
-        is Shaped.Wrong -> return Answered(Calculated.Refused(shaped.reason), null)
+        is Shaped.Wrong -> return Answered(
+            Calculated.Refused(
+                shaped.reason,
+                shaped.legs.map { lineOf(it, added = false) },
+                planned.segments.indices.filter { needsDuration(planned.segments, it) }.map { it + 1 },
+            ),
+            null,
+        )
         is Shaped.Waiting -> return Answered(Calculated.Refused("the runtime is empty"), null)
     }
     val done = when (val worked = workedOf(ready)) {

@@ -38,7 +38,7 @@ fun calculatePlan(json: String): String {
         Stored.Elements(
             cases.zip(answers).map { (case, answer) ->
                 when (answer) {
-                    is Calculated.Refused -> saidOf(case.name, answer.reason)
+                    is Calculated.Refused -> saidOf(case.name, answer)
                     is Calculated.Done -> saidOf(case.name, answer.schedule)
                 }
             },

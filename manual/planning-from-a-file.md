@@ -182,7 +182,11 @@ well:
   that cannot be worked out — a cylinder with no SAC, most often — is an object with only a
   `refused`, the rest of the plan answered regardless.
 
-A plan that will not calculate is an object with its `name` and a `refused`.
+A plan that will not calculate is an object with its `name` and a `refused`. Where the fault is
+in a line of the runtime, it also holds `runtime` with the lines above that one, each as above,
+so a form can still show what they come to while the faulty line is put right, and
+`needs_duration`, the number of every line that stays at its depth without a duration, so each
+can be marked at once rather than one at a time.
 
 ## What it does not do
 
