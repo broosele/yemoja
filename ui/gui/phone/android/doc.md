@@ -55,13 +55,10 @@ others, back, and add, edit and delete; the agent's button is not there, `PHONE-
 its list, and choosing opens the item full-screen. Locations goes from the regions to a region's
 own page, its map, what is at it and the region itself, and from there to a site. Back,
 the arrow or the phone's own, steps out one page at a time, cancelling a form on the way. Fields
-stand one to a row. Calculations is chosen from a list above the form, the planner's runtime,
-settings and gases stand one under another with the gases' table scrolling sideways, and the
-model's warning scrolls with the form it heads. A tablet keeps the desktop's layout, `PHONE-3`,
+stand one to a row. Calculations is chosen from a list above the form, the planner's settings,
+gases, runtime and contingency stand one under another with the gases' table scrolling sideways,
+and the model's warning scrolls with the form it heads. A tablet keeps the desktop's layout, `PHONE-3`,
 told apart by the shorter side of its screen, 600 or more.
-
-Rough still: the runtime's gas column is narrow, and the contingency's last tick sits at the
-screen's edge.
 
 The app is one activity in `android/`, which hands the screen to `Yemoja` in `ui/src/androidMain`;
 everything the platform supplies is there. The manual and the map travel inside the app as they do

@@ -52,7 +52,9 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
 
   **The planner's four parts stand in the order a plan is made**, settings, gases, runtime,
   contingency, and each folds away under its caption at a press, so that the one column need not
-  hold all four at once. A box that holds a number asks the phone for its number keys.
+  hold all four at once. **The runtime is as tall as its lines** and no taller: the page scrolls,
+  and a box of a fixed height scrolling inside it was mostly empty for a short dive and a second
+  thing to scroll for a long one. A box that holds a number asks the phone for its number keys.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.

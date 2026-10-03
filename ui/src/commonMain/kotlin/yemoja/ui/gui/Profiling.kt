@@ -320,11 +320,9 @@ internal fun PlanForm(
                 Cylinders(shaping, conditions, done, reckoned)
             }
         }
-        Folding("Runtime", shaping.folded) {
-            Scrolling(Modifier.fillMaxWidth().height(ZONE / 2).framed().padding(HALF), scrollbar) {
-                RuntimeLines(shaping, shaped, done, conditions)
-            }
-        }
+        // As tall as its lines: the page scrolls, and a box scrolling inside it would be mostly
+        // empty for a short dive and a second thing to scroll for a long one.
+        Folding("Runtime", shaping.folded) { Framed { RuntimeLines(shaping, shaped, done, conditions) } }
         Folding("Contingency", shaping.folded) { Framed { Contingency(shaping, reckoned) } }
     } else {
         // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
