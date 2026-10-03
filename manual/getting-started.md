@@ -338,7 +338,7 @@ On the right are the plan's settings, in four groups: *General*, *Gas*, *Algorit
 They start from what you chose in [Settings](settings.md),
 and a change here is for this plan only. A safety stop of 0 minutes means none. The safety stop is
 held on the way up as a minimum, and a longer decompression stop at the same depth counts towards
-it. *Atmospheric pressure*, under *Water*, is the air pressure where you dive, in bar: 1.01325 at
+it. *Atmospheric pressure*, under *Water*, is the air pressure where you dive, in bar: 1.013 at
 sea level, less at altitude, where the same dive owes longer stops. A saved plan keeps it.
 
 The way up switches to a richer gas only where it stops anyway, so a dive whose first stop is

@@ -9,7 +9,6 @@ import yemoja.data.Stored
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.SEA_LEVEL_SAID
-import yemoja.logic.SEA_LEVEL
 import yemoja.logic.Breathed
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
@@ -211,8 +210,8 @@ class SavingRoundTripTest {
         assertEquals(Stored.Leaf(1.4), fields["po2_max_bottom"])
         assertEquals(Stored.Leaf(false), fields["lost_gas_reserve"])
         assertEquals(Stored.Leaf(false), fields["gas_switch_stops"], "written off as well as on")
-        assertEquals(Stored.Leaf(SEA_LEVEL), fields["atmospheric_pressure"], "the profile's own field, one atmosphere")
-        assertEquals(SEA_LEVEL_SAID, reopened(fields).atmosphericPressure, "and back to the fifth decimal")
+        assertEquals(Stored.Leaf(1.013), fields["atmospheric_pressure"], "the profile's own field, one atmosphere to three decimals")
+        assertEquals(SEA_LEVEL_SAID, reopened(fields).atmosphericPressure, "and back as it was shown")
         val lines = assertIs<Stored.Members>(fields["runtime"]).members
         assertEquals(listOf("1", "2"), lines.keys.toList(), "keyed by their place")
         val second = assertIs<Stored.Members>(lines["2"]).members

@@ -281,7 +281,7 @@ class ConditionsOfTest {
     fun `how deep a cylinder may go is the model's figure at its role's limit`() {
         val shaping = planned(*FORTY)
         val conditions = assertNotNull(conditionsOf(shaping.described()).first)
-        val deco = maximumOperatingDepth(Gas.parse("EAN50"), most = 1.6, density = 1030.0)!!
+        val deco = maximumOperatingDepth(Gas.parse("EAN50"), most = 1.6, density = 1030.0, surface = conditions.atmosphericPressure)!!
         assertEquals("${rateSaid(deco)} m", deepestSaid(Breathed("EAN50", Role.DECO), conditions))
         assertTrue(deepestSaid(Breathed("EAN50", Role.DECO), conditions).startsWith("21."))
         assertTrue(deepestSaid(Breathed("EAN50", Role.BOTTOM), conditions).startsWith("17."), "held to 1.4")

@@ -323,8 +323,7 @@ fun shownOf(setting: NumberSetting, value: Double?): String = when {
     value == null -> ""
     isPercentage(setting) -> plain(value * PERCENT)
     isMinutes(setting) -> plain(value / SECONDS_IN_MINUTE)
-    // To the fifth decimal, so one standard atmosphere is shown as it is held.
-    else -> plain(value, 5)
+    else -> plain(value)
 }
 
 /** Whether [setting] is held as a proportion and shown as a percentage, which the factors are. */

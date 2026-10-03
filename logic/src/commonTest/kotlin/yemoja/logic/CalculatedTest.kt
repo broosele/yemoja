@@ -166,7 +166,7 @@ class CalculatedTest {
 
     @Test
     fun `a plan starts at one standard atmosphere`() {
-        assertEquals(SEA_LEVEL, assertNotNull(conditionsOf(table()).first).atmosphericPressure)
+        assertEquals(1.013, assertNotNull(conditionsOf(table()).first).atmosphericPressure)
     }
 
     @Test

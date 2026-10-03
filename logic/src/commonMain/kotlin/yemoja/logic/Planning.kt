@@ -305,7 +305,7 @@ class Conditions(
 )
 
 /** One standard atmosphere, as a plan's atmospheric pressure starts where nothing else says. */
-const val SEA_LEVEL_SAID = "1.01325"
+const val SEA_LEVEL_SAID = "1.013"
 
 /** The plan's settings, or why the first that will not read does not. */
 fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
