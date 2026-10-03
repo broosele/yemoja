@@ -505,6 +505,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
         tabs.firstOrNull { it.shape == Shape.CALCULATIONS }?.let { calculations ->
             val working = kept.getValue(calculations).working
             working.calculation = Calculation.PLAN
+            working.inForm = true
             working.saving.open(bound, universe, working.shaping)
             tab = calculations
         }

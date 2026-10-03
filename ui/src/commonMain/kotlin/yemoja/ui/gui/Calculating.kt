@@ -119,6 +119,9 @@ internal enum class Figure(val label: String, val unit: String) {
 internal class Working {
     var calculation: Calculation by mutableStateOf(Calculation.PLAN)
 
+    /** Whether a phone shows that calculation's form rather than the list of them, which it shows first. `PHONE-2`. */
+    var inForm: Boolean by mutableStateOf(false)
+
     /** The SAC form's six boxes, by figure. */
     val figures = mutableStateMapOf<Figure, String>()
 
@@ -466,8 +469,23 @@ private fun Calculators(
     tides: List<TideCalculator>,
     today: () -> Date,
 ) {
-    // A phone chooses the calculation from a list above it rather than beside it. `PHONE-2`.
+    // A phone shows the list or the form chosen from it, each the screen's whole width, and back
+    // leads from the form to the list. A chooser over the form was tried first and was not found.
+    // `PHONE-2`.
     val compact = LocalCompact.current
+    if (compact && !working.inForm) {
+        Selectable {
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(GAP)) {
+                for (calculation in Calculation.entries) {
+                    Line(text = calculation.label, depth = 0, chosen = false) {
+                        working.calculation = calculation
+                        working.inForm = true
+                    }
+                }
+            }
+        }
+        return
+    }
     Row(modifier = Modifier.fillMaxSize()) {
         if (!compact) Selectable {
             Column(modifier = Modifier.width(CALCULATIONS).fillMaxHeight().padding(GAP)) {
@@ -484,13 +502,7 @@ private fun Calculators(
         Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(GAP)) {
             Selectable {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    if (compact) {
-                        Waiver()
-                        val all = Calculation.entries
-                        Picked(all.map { it.label }, all.indexOf(working.calculation)) {
-                            working.calculation = all[it]
-                        }
-                    }
+                    if (compact) Waiver()
                     when (working.calculation) {
                         Calculation.SAC -> SacForm(working)
                         Calculation.NDL -> NdlForm(working, settings)

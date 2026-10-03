@@ -42,6 +42,12 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   it at the screen's whole width, and back returns to the chapters. Side by side, as the desktop
   has them, the chapter was a column a word wide.
 
+  **Calculations folds the same way.** The tab opens on the list of what can be calculated, a
+  calculation opens at the screen's whole width, and back returns to the list with what was typed
+  kept. It was first a chooser over the form, a box naming the calculation shown with a menu of
+  the others. The author looked for the other calculations on a phone and did not find them: the
+  box sat under the model's warning and over the form's heading, and read as a title.
+
   **The planner's rows wrap rather than run off the screen**: the row a plan is saved from, whose
   later deeds could not be reached, the start and the dive it follows, and the figures under a
   plan. **Its runtime shares out the width there is.** Where a line does not fit with its gas and

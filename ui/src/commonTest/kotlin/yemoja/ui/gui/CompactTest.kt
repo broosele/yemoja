@@ -93,6 +93,20 @@ class CompactTest {
     }
 
     @Test
+    fun `Calculations opens on the list of them, and back leads from a form to the list`() {
+        val calculations = TABS.first { it.name == "Calculations" }
+        val kept = Kept()
+        assertNull(backOf(calculations, kept), "the list is as far back as the tab goes")
+        kept.working.calculation = Calculation.MIX
+        kept.working.inForm = true
+        kept.working.mixing.startPressure = "100"
+        assertNotNull(backOf(calculations, kept)).invoke()
+        assertEquals(false, kept.working.inForm)
+        assertEquals("100", kept.working.mixing.startPressure, "what was typed is kept")
+        assertNull(backOf(calculations, kept))
+    }
+
+    @Test
     fun `fields stand one to a row on a phone`() {
         val rows = rowsOf(listOf("a", "b", "c"), 1) { false }
         assertEquals(listOf(listOf("a"), listOf("b"), listOf("c")), rows)
