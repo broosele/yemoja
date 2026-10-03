@@ -116,3 +116,104 @@ class ConsumptionTest {
         assertEquals(Result.Origin.OVERRIDDEN, read.origin)
     }
 }
+
+/*
+ * A SAC from where a source started and ended, for a recording with no pressures through time.
+ * `LOGIC-33`.
+ */
+class FromEndsTest {
+
+    /** A recording that holds something through time, and no pressures. */
+    private val unpressured = """"temperature": [[0, 20]]"""
+
+    @Test
+    fun `a dive's only source is spread over the whole dive at its average depth`() {
+        // Sixty bar from a twelve-litre cylinder over thirty minutes, at ten metres.
+        val dive = dived(
+            """"g1": {"volume": 12, "start_pressure": 200, "end_pressure": 140}""",
+            unpressured,
+        )
+        near(60.0 * 12 / 30 / AMBIENT, sac(source(dive, "g1")))
+        val read = source(dive, "g1").read("sac") as Result.Usable
+        assertEquals(Result.Origin.DERIVED, read.origin)
+        assertEquals(Result.Absent, profile(dive).read("sac"), "the recording has none through time")
+    }
+
+    @Test
+    fun `pressures through time are used where there are any`() {
+        val dive = dived(
+            """"g1": {"volume": 12, "start_pressure": 200, "end_pressure": 100}""",
+            """"pressures": {"g1": [[0, 200], [600, 180]]}""",
+        )
+        near(20.0 * 12 / 10 / AMBIENT, sac(source(dive, "g1")))
+    }
+
+    @Test
+    fun `a figure written by hand stands`() {
+        val dive = dived(
+            """"g1": {"volume": 12, "start_pressure": 200, "end_pressure": 140, "sac": 14.5}""",
+            unpressured,
+        )
+        val read = source(dive, "g1").read("sac") as Result.Usable
+        assertEquals(14.5, read.value)
+        assertEquals(Result.Origin.OVERRIDDEN, read.origin)
+    }
+
+    @Test
+    fun `without a volume, an end pressure or a drop there is nothing`() {
+        for (held in listOf(
+            """{"start_pressure": 200, "end_pressure": 140}""",
+            """{"volume": 12, "start_pressure": 200}""",
+            """{"volume": 12, "start_pressure": 200, "end_pressure": 200}""",
+        )) {
+            assertEquals(Result.Absent, source(dived(""""g1": $held""", unpressured), "g1").read("sac"), held)
+        }
+    }
+
+    @Test
+    fun `among several sources the switches say which was breathed when`() {
+        val dive = dived(
+            """"back": {"volume": 24, "start_pressure": 200, "end_pressure": 150},
+               "stage": {"volume": 7, "start_pressure": 200, "end_pressure": 170}""",
+            """"gas_switches": [[10, "*back"], [1200, "*stage"]]""",
+        )
+        // The back gas from the start, the first switch saying what the dive began on, to twenty
+        // minutes; the stage for the ten minutes after.
+        near(50.0 * 24 / 20 / AMBIENT, sac(source(dive, "back")))
+        near(30.0 * 7 / 10 / AMBIENT, sac(source(dive, "stage")))
+    }
+
+    @Test
+    fun `several sources with no switches between them give nothing`() {
+        val dive = dived(
+            """"left": {"volume": 12, "start_pressure": 200, "end_pressure": 120},
+               "right": {"volume": 12, "start_pressure": 200, "end_pressure": 120}""",
+            unpressured,
+        )
+        assertEquals(Result.Absent, source(dive, "left").read("sac"))
+        assertEquals(Result.Absent, source(dive, "right").read("sac"))
+    }
+
+    @Test
+    fun `a source breathed at a time no switch records leaves every figure absent`() {
+        // The computer was left on one cylinder while both were breathed.
+        val dive = dived(
+            """"left": {"volume": 12, "start_pressure": 200, "end_pressure": 120},
+               "right": {"volume": 12, "start_pressure": 200, "end_pressure": 120}""",
+            """"gas_switches": [[0, "*left"]]""",
+        )
+        assertEquals(Result.Absent, source(dive, "left").read("sac"))
+        assertEquals(Result.Absent, source(dive, "right").read("sac"))
+    }
+
+    @Test
+    fun `a source carried and never breathed takes no time from the one that was`() {
+        val dive = dived(
+            """"back": {"volume": 12, "start_pressure": 200, "end_pressure": 140},
+               "pony": {"volume": 3, "start_pressure": 200, "end_pressure": 200}""",
+            """"gas_switches": [[0, "*back"]]""",
+        )
+        near(60.0 * 12 / 30 / AMBIENT, sac(source(dive, "back")))
+        assertEquals(Result.Absent, source(dive, "pony").read("sac"))
+    }
+}

@@ -563,9 +563,13 @@ A plan keeps entries of the same shape for the cylinders it assumes, under its o
   seeing. Writing a volume yourself settles it either way.
 - `sac` (number, derived) — how much gas you breathed from this source, as litres a minute at
   the surface's pressure, over the time you were breathing it. Taken from the primary profile's
-  `sac`, and counting a long stretch for more than a short one. Write it yourself where there is
-  no recording with pressures to give one. On a plan it is always yours to write, and it is what
-  the gas a plan needs is calculated from.
+  `sac`, and counting a long stretch for more than a short one. Where the recording holds no
+  pressures, it is calculated from the source's `start_pressure` and `end_pressure` instead: the
+  drop times the `volume`, over the dive's duration at its average depth. A dive on more than one
+  source needs its gas switches for that, to say which was breathed when, and gets no figure where
+  a source no switch names came back emptier than it went. Write it yourself where neither gives
+  one. On a plan it is always yours to write, and it is what the gas a plan needs is calculated
+  from.
 
   **What went in is an ideal gas.** A cylinder's drop in bar times its volume is taken as the
   gas it gave; a real gas at 200 bar holds a few percent more, which is not corrected for. Where

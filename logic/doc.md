@@ -988,6 +988,24 @@ To settle when we discuss architecture and features:
   one. It comes from the primary recording, and is overrideable, since a dive with no pressures
   logged still has a SAC somebody worked out by hand.
 
+  **A recording with no pressures through time is worked out from the source's two ends.** Added
+  on 2026-10-03, when the author found no SAC on dives that held everything one needs: most
+  dives are made with no transmitter, and have a `start_pressure`, an `end_pressure`, a `volume`
+  and a depth all the same. The drop times the volume, over the minutes the source was breathed,
+  each weighted by its ambient pressure. A dive's only source was breathed for all of it, at the
+  recording's `average_depth`, which is the SAC form of the Calculations tab done for the user.
+  Among several, the switches say which was breathed when, and the time before the first switch is
+  the source's that switch names, since a computer says what is breathed with its first sample.
+
+  **Every bar of the drop has to be accounted for**, which the series does not need. There a
+  stretch that cannot be placed is left out; here it would be gas with no minutes to spread it
+  over. So the figure is absent where several sources have no switches between them, and where a
+  source no switch names came back emptier than it went: it was breathed at a time nobody
+  recorded, sidemount on a computer left on one cylinder, and the time given to the others would
+  be too long and their SAC too low. A source carried and not breathed, a pony at the pressure it
+  went in with, takes nothing from the others. The recording's own `sac` stays a series from
+  pressures and is absent here, there being nothing through time to draw.
+
   **Litres a minute rather than bar a minute**, because a figure in bar belongs to one cylinder
   size and cannot be compared between a twin set and a stage; litres can. That needed a unit the
   model had no dimension for, and `flow` was added to `DATA-8`.

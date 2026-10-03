@@ -101,8 +101,11 @@ internal fun profilesSac(profile: Item): Result<Any> {
  * The gas it gave over every stretch it was breathed, divided by those stretches' minutes each
  * weighted by the ambient pressure they were breathed at. That is the recording's SAC averaged
  * the way a figure over time is, rather than a mean of its points, which would count a short
- * stretch as much as a long one. Absent where the recording gives none, for the user to write.
- * `LOGIC-33`.
+ * stretch as much as a long one.
+ *
+ * A recording with no pressures through time still has the source's `start_pressure` and
+ * `end_pressure`, and the figure is then worked out from those two, [fromEnds]. Absent where
+ * neither gives one, for the user to write. `LOGIC-33`.
  */
 internal fun sourcesSac(source: Item): Result<Any> {
     val owner = (source as? OwnedItem)?.parent ?: return Result.Absent
@@ -117,10 +120,75 @@ internal fun sourcesSac(source: Item): Result<Any> {
         owner
     }
     val mine = stretchesOf(profile).filter { it.key == key }
-    if (mine.isEmpty()) return Result.Absent
+    if (mine.isEmpty()) return fromEnds(source, key, profile)
     val litres = mine.sumOf { it.litres }
     val weighted = mine.sumOf { (it.to - it.from) / SECONDS_IN_MINUTE * it.ambient }
     return Result.Usable(litres / weighted, Result.Origin.DERIVED)
+}
+
+/**
+ * A gas source's SAC from the pressure it started at and the pressure it ended at, for a recording
+ * that holds no pressures through time.
+ *
+ * The drop times the source's `volume`, over the minutes it was breathed, each weighted by the
+ * ambient pressure it was breathed at. A dive's only source was breathed for all of it, at the
+ * recording's `average_depth`. Among several, the switches say which was breathed when, and the
+ * time before the first switch is the source's that switch names, a computer saying what is
+ * breathed with its first sample.
+ *
+ * **Every bar of the drop has to be accounted for**, which a series does not need: a stretch the
+ * series cannot place is left out, and here it would be gas with no minutes to spread it over. So
+ * the figure is absent where several sources have no switches between them, and where a source no
+ * switch names came back emptier than it went, since it was breathed at a time nobody recorded and
+ * the time given to the others is then too long. `LOGIC-33`.
+ */
+private fun fromEnds(source: Item, key: String, profile: Item): Result<Any> {
+    val sources = profile.rootOf("gas_sources")?.let { entriesOf(it, "gas_sources") }
+        ?: return Result.Absent
+    val drop = dropOf(source)?.takeIf { it > 0 } ?: return Result.Absent
+    val volume = (source.single<Double>("volume") as? Result.Usable)?.value ?: return Result.Absent
+    val ran = (profile.single<Double>("duration") as? Result.Usable)?.value?.toInt()
+        ?: return Result.Absent
+    val water = (profile.single<Double>("density") as? Result.Usable)?.value ?: NOMINAL_DENSITY
+    val surface = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
+        ?: SEA_LEVEL
+    val weighted = if (sources.size == 1) {
+        val metres = (profile.single<Double>("average_depth") as? Result.Usable)?.value
+            ?: return Result.Absent
+        ran / SECONDS_IN_MINUTE * ambientAt(metres, water, surface)
+    } else {
+        val switches = (profile.read("gas_switches") as? Result.Usable)?.value as? Series
+        val depth = (profile.read("depth") as? Result.Usable)?.value as? Series
+        if (switches == null || switches.size == 0 || depth == null) return Result.Absent
+        val named = (0..<switches.size).map {
+            ((switches.valueAt(it) as? Element.Usable)?.value as? KeyReference)?.key
+        }
+        if (sources.any { (other, held) -> other !in named && (dropOf(held) ?: 0.0) > 0 }) {
+            return Result.Absent
+        }
+        var sum = 0.0
+        for (at in 0..<switches.size) {
+            if (named[at] != key) continue
+            val from = if (at == 0) 0 else switches.secondAt(at)
+            val to = if (at + 1 < switches.size) switches.secondAt(at + 1) else ran
+            if (to <= from) continue
+            val metres = meanDepth(depth, from, to) ?: return Result.Absent
+            sum += (to - from) / SECONDS_IN_MINUTE * ambientAt(metres, water, surface)
+        }
+        sum
+    }
+    if (weighted <= 0.0) return Result.Absent
+    return Result.Usable(drop * volume / weighted, Result.Origin.DERIVED)
+}
+
+/**
+ * How far [source] fell from its `start_pressure` to its `end_pressure`, in bar, or null where it
+ * does not say both.
+ */
+private fun dropOf(source: Item): Double? {
+    val start = (source.single<Double>("start_pressure") as? Result.Usable)?.value ?: return null
+    val end = (source.single<Double>("end_pressure") as? Result.Usable)?.value ?: return null
+    return start - end
 }
 
 /**
