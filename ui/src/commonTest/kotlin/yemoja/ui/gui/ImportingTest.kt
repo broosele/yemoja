@@ -174,3 +174,25 @@ class ArrivingNumberTest {
         assertEquals(listOf(40, 8), held.map { it.number })
     }
 }
+
+/*
+ * What an import says of the file it was handed. `AND-9`.
+ */
+class CalledInTest {
+
+    @Test
+    fun `a refusal names the file as the reader knows it, not the copy it was read from`() {
+        val picked = Picked("/data/user/0/app.yemoja/cache/import/dives.uddf", "dives.uddf")
+        assertEquals(
+            "dives.uddf could not be read",
+            calledIn("/data/user/0/app.yemoja/cache/import/dives.uddf could not be read", picked),
+        )
+    }
+
+    @Test
+    fun `a file read where it is keeps its path`() {
+        val picked = Picked("D:/logs/dives.uddf")
+        assertEquals("D:/logs/dives.uddf", picked.called)
+        assertEquals("D:/logs/dives.uddf is empty", calledIn("D:/logs/dives.uddf is empty", picked))
+    }
+}

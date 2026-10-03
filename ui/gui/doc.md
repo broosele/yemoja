@@ -1340,7 +1340,12 @@ once and corrected. The numbers stay unused rather than being given to something
    **One dialog, folders and files both.** What is there says how it is read, so asking *which
    kind* first would be asking a reader something they answered by knowing what they were
    pointing at. The picker is the platform's, like the two that open and make a logbook, and the
-   deed is greyed where a platform has none.
+   deed is greyed where a platform has none. A phone's picker offers a file only, `AND-9`.
+
+   **What was picked is read off the interface's thread**, with a line saying so until the review
+   opens, and the deed is greyed meanwhile, as a download's is. A logbook of some hundreds of
+   dives is ten megabytes of UDDF, and a phone stops an app that reads that on the thread it
+   draws with.
 
    **The dives are reviewed with the machinery a download already has**, `GUI-31`: a box
    apiece, what each appears to be a second copy of, and a choice held until *Apply* of whether

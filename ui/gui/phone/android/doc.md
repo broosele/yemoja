@@ -89,8 +89,12 @@ the sea and the fish in front, and the same shapes alone for a phone that tints 
 `tool/icons.py` writes it from `yemoja.svg`, drawn at a little over the part a launcher shows, so
 the sea reaches the mask's edges and the fish stays clear of them.
 
-**Not yet:** import and export, which need Android's pickers for a file. What a tooltip says over a
-greyed button is said on a long press, the toolkit's own answer on a touch screen.
+**Import and export go through Android's pickers for a file**, `AND-9`. Tried on the emulator with
+a logbook of 347 dives: the export was written to a file named in the picker, ten megabytes of
+UDDF, and picking that file again opened the review with each dive matched to the one it came from.
+
+What a tooltip says over a greyed button is said on a long press, the toolkit's own answer on a
+touch screen.
 
 ## Settled
 
@@ -131,6 +135,32 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   permission. It is one the system grants at installation and never asks the user about, so it
   costs no prompt. What it costs is that the app could not reach a network at all before, and
   now can. What is sent is a station's code and a date; nothing of the logbook is.
+- **AND-9 — How a file is imported and exported.** *Settled:* **through Android's pickers for a
+  document, with a copy in the app's own storage in between.** Decided on 2026-10-03, when the
+  author found both deeds greyed on a phone.
+
+  **A picked document has no path.** It is reached through whichever app provides it, a file
+  manager or a cloud drive, and the logic layer reads and writes by path. So an import copies what
+  was picked into the app's cache and reads the copy, and an export is written into the cache and
+  copied out to the document the user named. The copy is under the document's own name, and what
+  the home screen says names that and not the path of the copy. The cache is the system's to
+  clear, and nothing is read from it twice: what an import staged is kept in the app's files.
+
+  **An import is a file, not a folder.** Android has one picker for a document and another for a
+  folder, and no picker for either. A UDDF file and a Diving Log database are files, and those are
+  what arrives on a phone. Another Yemoja logbook is a folder and is not offered here: it is
+  imported on a desktop, or opened as the logbook it is.
+
+  **Any file is offered, none filtered out.** Neither a UDDF document nor a Diving Log database
+  has a type Android knows, so a filter by type would hide exactly the files wanted. What is
+  picked says what it is when it is read, as on a desktop, `GUI-33`.
+
+  **An export is made untyped, as `logbook.uddf`** until the user names it otherwise. Made as XML,
+  some providers would put `.xml` after the name.
+
+  **Both run off the screen's thread.** Android stops an app that keeps its screen waiting five
+  seconds, and reading ten megabytes of UDDF takes longer than that. The home screen says
+  *Reading logbook.uddf…* until the review opens, and the Import deed is greyed meanwhile.
 - **AND-4 — Test devices.** *Settled:* **the author's phone and the SDK's emulator.** The
   emulator for the screens and the storage picker during development; the phone, on Android 12
   or later, for every download, since Bluetooth is proven only on real hardware.

@@ -170,6 +170,23 @@ import yemoja.logic.titleOf
  */
 
 /**
+ * Picked is what the reader chose to import: the path it is read at, and what they know it as.
+ *
+ * The two differ on a phone, where what was chosen is copied to where the app can read it.
+ * `AND-9`.
+ */
+internal class Picked(val path: String, val called: String = path)
+
+/**
+ * Named is where an export goes: the path it is written at, what the reader knows it as, and what
+ * the platform does once it is written.
+ *
+ * On a desktop the path is the file and nothing follows. A phone writes in its own storage and
+ * [written] carries that to the place the reader named, throwing where it cannot. `AND-9`.
+ */
+internal class Named(val path: String, val called: String = path, val written: () -> Unit = {})
+
+/**
  * Platform is what the screens are given by whatever hosts them, and know nothing of the source
  * of.
  */
@@ -196,21 +213,24 @@ internal class Platform(
      */
     val ask: (question: String) -> String? = { null },
     /**
-     * Asks the reader for a folder or a file to import, or nothing where they name none.
+     * Asks the reader for a folder or a file to import, and hands it to `picked` once they name one.
      *
      * One dialog for both, because what is there says how it is read — a folder is another
      * logbook and a file is a UDDF document — and the reader already knows which they have.
+     * A phone offers a file only. `AND-9`. `picked` is not called where they name nothing, and
+     * may be called after this returns: a phone's dialog is another screen, which answers later.
      * Absent where the platform cannot ask, and the deed is then greyed like any other.
      * `GUI-33`.
      */
-    val pick: ((asking: String) -> String?)? = null,
+    val pick: ((asking: String, picked: (Picked) -> Unit) -> Unit)? = null,
     /**
-     * Asks the reader for a file to write an export to, or nothing where they name none.
+     * Asks the reader for a file to write an export to, and hands it to `named` once they name one.
      *
-     * The platform's, like [pick], and absent where it cannot ask. A name typed without an
-     * extension is given `.uddf`, and a file already there is the reader's to confirm. `GUI-37`.
+     * The platform's, like [pick], answering as it does, and absent where it cannot ask. A name
+     * typed without an extension is given `.uddf`, and a file already there is the reader's to
+     * confirm. `GUI-37`.
      */
-    val save: ((asking: String) -> String?)? = null,
+    val save: ((asking: String, named: (Named) -> Unit) -> Unit)? = null,
     /**
      * A conversation with the agent the user has installed, or absent where the platform hosts
      * none.
@@ -862,15 +882,16 @@ private fun Home(
                         if (!choosing.open) choosing.fill(universe.settings)
                         choosing.open = true
                     }
-                    if (platform.pick != null) {
-                        put(Deed.IMPORT) { take(universe, platform, taking, changer) }
+                    // One import at a time, as a download is.
+                    if (platform.pick != null && !taking.reading) {
+                        put(Deed.IMPORT) { take(universe, platform, taking, changer, scope) }
                     }
                     platform.save?.let { save ->
                         put(Deed.EXPORT) {
                             // Asked here rather than inside the writing: a platform's dialog
                             // waits, and waiting inside a coroutine the window is running
                             // breaks the window's own machinery.
-                            save("Export this logbook to UDDF")?.let { to ->
+                            save("Export this logbook to UDDF") { to ->
                                 scope.launch { give(universe, to, giving) }
                             }
                         }
@@ -1010,6 +1031,9 @@ private class Taking {
     var open: Boolean by mutableStateOf(false)
     var said: String? by mutableStateOf(null)
     var arrived: Int by mutableStateOf(0)
+
+    /** Whether what was picked is still being read, which a large file takes a while over. */
+    var reading: Boolean by mutableStateOf(false)
 }
 
 /**
@@ -1018,29 +1042,56 @@ private class Taking {
  * What a folder or a file turns out to hold is the model's to say, and so is refusing it, so
  * what is here is the asking and the showing. `GUI-33`.
  */
-private fun take(universe: Universe, platform: Platform, taking: Taking, changer: Changer) {
+private fun take(
+    universe: Universe,
+    platform: Platform,
+    taking: Taking,
+    changer: Changer,
+    scope: CoroutineScope,
+) {
     val pick = platform.pick ?: return
-    val from = pick("Import a logbook, a UDDF file or a Diving Log database") ?: return
-    taking.open = true
-    when (val done = universe.importFrom(from)) {
-        is Outcome.Refused -> {
-            taking.said = done.reason
-            taking.arrived = 0
-        }
-
-        is Outcome.Done -> {
-            val import = universe.importing
-            taking.arrived = arrivedIn(import)
-            taking.said = if (import == null || taking.arrived == 0) {
-                "Yemoja found nothing to import in $from. It reads a logbook folder, " +
-                        "a UDDF file and a Diving Log database."
-            } else {
-                listOfNotNull(summaryOf(countedIn(import)), universe.importNote).joinToString(" ")
+    pick("Import a logbook, a UDDF file or a Diving Log database") { from ->
+        taking.open = true
+        taking.arrived = 0
+        taking.said = "Reading ${from.called}…"
+        taking.reading = true
+        scope.launch {
+            // Off the interface's thread: a logbook of some hundreds of dives is ten megabytes
+            // of UDDF, and a phone stops an app that reads that on the thread it draws with.
+            val done = withContext(Dispatchers.Default) {
+                try {
+                    universe.importFrom(from.path)
+                } catch (refused: Exception) {
+                    Outcome.Refused("${from.called} could not be read: ${refused.message}")
+                }
             }
+            taking.reading = false
+            when (done) {
+                is Outcome.Refused -> taking.said = calledIn(done.reason, from)
+
+                is Outcome.Done -> {
+                    val import = universe.importing
+                    taking.arrived = arrivedIn(import)
+                    taking.said = if (import == null || taking.arrived == 0) {
+                        "Yemoja found nothing to import in ${from.called}. It reads a logbook folder, " +
+                                "a UDDF file and a Diving Log database."
+                    } else {
+                        listOfNotNull(summaryOf(countedIn(import)), universe.importNote).joinToString(" ")
+                    }
+                }
+            }
+            changer.changed()
         }
     }
-    changer.changed()
 }
+
+/**
+ * [said] with the path [from] was read at given as what the reader knows it by.
+ *
+ * The model names what it refuses by the path it was handed, which on a phone is a copy in the
+ * app's own storage that the reader never saw.
+ */
+internal fun calledIn(said: String, from: Picked): String = said.replace(from.path, from.called)
 
 /** What the last export said, which stays under the deeds until the next. `GUI-37`. */
 private class Giving {
@@ -1052,13 +1103,15 @@ private class Giving {
  *
  * Nothing in the logbook changes, so there is nothing to review and nothing to refresh. `GUI-37`.
  */
-private suspend fun give(universe: Universe, to: String, giving: Giving) {
-    giving.said = "Writing $to…"
+private suspend fun give(universe: Universe, to: Named, giving: Giving) {
+    giving.said = "Writing ${to.called}…"
     giving.said = withContext(Dispatchers.Default) {
         try {
-            exportSaid(universe.exportTo(to), to)
+            val exported = universe.exportTo(to.path)
+            to.written()
+            exportSaid(exported, to.called)
         } catch (refused: Exception) {
-            "$to could not be written: ${refused.message}"
+            "${to.called} could not be written: ${refused.message}"
         }
     }
 }
@@ -1221,6 +1274,7 @@ private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
     if (universe == null || !taking.open) return
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
         taking.said?.let { Aside(it) }
+        if (taking.reading) return@Column
         if (taking.arrived > 0) {
             Arrived(
                 universe = universe,

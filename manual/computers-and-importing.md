@@ -71,6 +71,11 @@ Press **Import** on the home screen and choose either:
 - **a Diving Log database**, the `Logbook.sql` file Diving Log keeps its logbook in, which is
   recognised by what is in it whatever it is called.
 
+On a phone you choose a file, from the phone or from a cloud drive: a UDDF file or a Diving Log
+database. A folder cannot be chosen there, so another Yemoja logbook is imported on a computer.
+A large file takes a while to read on a phone, and the home screen says it is reading until the
+list appears.
+
 The dives are listed for you to look over, exactly as a download is. Everything else that came
 with them — people, sites, gear, trips — is counted in a sentence above the list, such as *Also
 arriving: 2 people, 3 dive sites (1 already held)*, and goes in with the dives.

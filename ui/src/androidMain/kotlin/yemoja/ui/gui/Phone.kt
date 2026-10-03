@@ -48,6 +48,7 @@ import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.FoundDevices
 import yemoja.logic.rijkswaterstaatCalculators
 import yemoja.logic.stationsOf
+import java.io.IOException
 
 /*
  * The window the screens are shown in on Android, which is the one part per platform.
@@ -64,7 +65,8 @@ import yemoja.logic.stationsOf
  * whatever the phone opens a link with, whether the screen is a phone's, its back button, and a
  * dive computer over Bluetooth, asked permission for when a download starts. `AND-6`. A read is
  * told to [onReading] while it runs, which is how the app keeps it alive in the background.
- * `AND-3`. Absent so far: import and export.
+ * `AND-3`. An import is a file picked and an export a file named, through Android's own pickers.
+ * `AND-9`.
  */
 @Composable
 fun Yemoja(onReading: (Underway?) -> Unit = {}) {
@@ -122,6 +124,31 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
         context.contentResolver.takePersistableUriPermission(tree, both)
         take(tree)
     }
+    // What an import and an export hand their file to, kept until the picker answers, which is
+    // after the deed that asked has returned. `AND-9`.
+    var picked by remember { mutableStateOf<((Picked) -> Unit)?>(null) }
+    val importing = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { document ->
+        val hand = picked
+        picked = null
+        if (document == null || hand == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            // Off the screen's thread, a file on a cloud drive taking a while to come.
+            val copied = withContext(Dispatchers.IO) { runCatching { copiedIn(context, document) } }
+            copied.fold(
+                onSuccess = { hand(it) },
+                onFailure = {
+                    refused = "${calledOf(context, document) ?: "The file"} could not be read: ${it.message}"
+                },
+            )
+        }
+    }
+    var named by remember { mutableStateOf<((Named) -> Unit)?>(null) }
+    val exporting = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(UNTYPED)) { document ->
+        val hand = named
+        named = null
+        if (document == null || hand == null) return@rememberLauncherForActivityResult
+        hand(namedFor(context, document))
+    }
     // A phone where the screen's shorter side is under 600, which is where Android itself draws
     // the line; a tablet is laid out as a desktop is. `PHONE-3`.
     val compact = LocalConfiguration.current.smallestScreenWidthDp < TABLET
@@ -137,6 +164,16 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
             },
             today = ::today,
             tides = { rijkswaterstaatCalculators(stationsOf(bundled("libraries/tides/rijkswaterstaat.txt"))) },
+            pick = { _, hand ->
+                picked = hand
+                // Any file: neither a UDDF document nor a Diving Log database has a type a
+                // phone knows, so a filter would hide them.
+                importing.launch(arrayOf(ANY))
+            },
+            save = { _, hand ->
+                named = hand
+                exporting.launch(EXPORT)
+            },
             compact = compact,
             back = { enabled, onBack -> BackHandler(enabled, onBack) },
             deeds = mapOf(Deed.NEW to choose, Deed.OPEN to choose),
@@ -237,8 +274,11 @@ private fun openedIn(context: Context, tree: Uri, devices: Devices, told: (done:
  * Asked of the provider, since the tree's own id is the provider's: Google Drive's is a string of
  * letters that names nothing to a reader, where a folder on the phone's own storage ends in its path.
  */
-private fun nameOf(context: Context, tree: Uri): String? {
-    val document = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+private fun nameOf(context: Context, tree: Uri): String? =
+    calledOf(context, DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree)))
+
+/** What [document] is called by its provider, or absent where the provider will not say. */
+private fun calledOf(context: Context, document: Uri): String? {
     val asked = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
     return runCatching {
         context.contentResolver.query(document, asked, null, null, null)?.use { rows ->
@@ -246,6 +286,55 @@ private fun nameOf(context: Context, tree: Uri): String? {
         }
     }.getOrNull()?.ifBlank { null }
 }
+
+/**
+ * The [document] the reader picked to import, copied to where the logbook can read it by path.
+ *
+ * A picked document is reached through its provider and has no path. The copy is in the app's
+ * cache under the document's own name, and the one before it is removed: what an import staged is
+ * kept elsewhere and does not read the copy again. Throws where the document cannot be read.
+ * `AND-9`.
+ */
+private fun copiedIn(context: Context, document: Uri): Picked {
+    val called = calledOf(context, document) ?: "import"
+    val folder = context.cacheDir.resolve("import")
+    folder.deleteRecursively()
+    folder.mkdirs()
+    val copy = folder.resolve(called.replace('/', '_'))
+    val from = context.contentResolver.openInputStream(document) ?: throw IOException("its provider gave nothing")
+    from.use { read -> copy.outputStream().use { read.copyTo(it) } }
+    return Picked(copy.path, called)
+}
+
+/**
+ * Where an export to the [document] the reader named is written, and how it gets there.
+ *
+ * Written in the app's cache, the logbook writing by path, and then copied into the document
+ * through its provider. `AND-9`.
+ */
+private fun namedFor(context: Context, document: Uri): Named {
+    val folder = context.cacheDir.resolve("export")
+    folder.mkdirs()
+    val written = folder.resolve(EXPORT)
+    return Named(written.path, calledOf(context, document) ?: "the file") {
+        val to = context.contentResolver.openOutputStream(document, "w")
+            ?: throw IOException("its provider would not take it")
+        to.use { write -> written.inputStream().use { it.copyTo(write) } }
+        written.delete()
+    }
+}
+
+/** Any type of file, which is what a picker is asked for where the type is one a phone has no name for. */
+private const val ANY = "*/*"
+
+/**
+ * The type an export is made as. A UDDF document has no type of its own, and one made as XML
+ * would be given `.xml` after its name by some providers.
+ */
+private const val UNTYPED = "application/octet-stream"
+
+/** What an export is called until the reader names it otherwise. */
+private const val EXPORT = "logbook.uddf"
 
 /** The app's version as installed, or a question mark where the phone will not say. */
 private fun versionOf(context: Context): String =

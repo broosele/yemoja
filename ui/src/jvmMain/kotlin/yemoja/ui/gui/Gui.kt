@@ -83,8 +83,8 @@ fun gui(folder: String? = null): Int {
                 today = ::today,
                 tides = { rijkswaterstaatCalculators(stationsOf(bundled("libraries/tides/rijkswaterstaat.txt"))) },
                 ask = ::asked,
-                pick = ::picked,
-                save = ::saved,
+                pick = { asking, picked -> picked(asking)?.let { picked(Picked(it)) } },
+                save = { asking, named -> saved(asking)?.let { named(Named(it)) } },
                 scrollbar = { state, modifier ->
                     VerticalScrollbar(rememberScrollbarAdapter(state), modifier)
                 },
