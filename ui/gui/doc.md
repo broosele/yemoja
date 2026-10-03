@@ -715,7 +715,7 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **The settings are the plan's own.** They sit in titled sections, each a single column, the
   sections stacked in two columns with space between them. On the left, *General* holds descent
-  and ascent rate and water, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. On the right,
+  and ascent rate, water and the surface pressure, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. On the right,
   *Algorithm* names the model, Bühlmann ZH-L16C, as a value that is shown rather than chosen until
   there is a second model, above GF low and high, and *Stops* holds the last stop, the safety
   stop's depth and duration, and the tick for stopping to switch gas, `LOGIC-35`. That tick starts

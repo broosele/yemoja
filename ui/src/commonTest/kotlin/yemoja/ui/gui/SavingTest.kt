@@ -8,6 +8,8 @@ import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import yemoja.logic.SEA_LEVEL_SAID
+import yemoja.logic.SEA_LEVEL
 import yemoja.logic.Breathed
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
@@ -174,6 +176,7 @@ class SavingRoundTripTest {
         shaping.ascentRate = "10"
         shaping.lastStop = "6"
         shaping.switchStops = true
+        shaping.atmosphericPressure = "0.85"
         shaping.safetyDepth = "5"
         shaping.safetyMinutes = "5"
         shaping.stressFactor = "3"
@@ -188,6 +191,7 @@ class SavingRoundTripTest {
         assertEquals("10", back.ascentRate)
         assertEquals("6", back.lastStop)
         assertEquals(true, back.switchStops)
+        assertEquals("0.85", back.atmosphericPressure)
         assertEquals("5", back.safetyDepth)
         assertEquals("5", back.safetyMinutes, "held in seconds, shown in minutes")
         assertEquals("3", back.stressFactor)
@@ -207,6 +211,8 @@ class SavingRoundTripTest {
         assertEquals(Stored.Leaf(1.4), fields["po2_max_bottom"])
         assertEquals(Stored.Leaf(false), fields["lost_gas_reserve"])
         assertEquals(Stored.Leaf(false), fields["gas_switch_stops"], "written off as well as on")
+        assertEquals(Stored.Leaf(SEA_LEVEL), fields["atmospheric_pressure"], "the profile's own field, one atmosphere")
+        assertEquals(SEA_LEVEL_SAID, reopened(fields).atmosphericPressure, "and back to the fifth decimal")
         val lines = assertIs<Stored.Members>(fields["runtime"]).members
         assertEquals(listOf("1", "2"), lines.keys.toList(), "keyed by their place")
         val second = assertIs<Stored.Members>(lines["2"]).members

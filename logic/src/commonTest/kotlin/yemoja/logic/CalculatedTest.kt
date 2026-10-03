@@ -165,6 +165,33 @@ class CalculatedTest {
     }
 
     @Test
+    fun `a plan starts at one standard atmosphere`() {
+        assertEquals(SEA_LEVEL, assertNotNull(conditionsOf(table()).first).surface)
+    }
+
+    @Test
+    fun `a plan at altitude owes longer stops, and its gases may be breathed deeper`() {
+        // At 0.8 bar, about 2,000 m up, the same depth leaves the tissues further from the surface.
+        val high = table(low = "30", high = "70").copy(atmosphericPressure = "0.8")
+        val sea = table(low = "30", high = "70")
+        fun stops(planned: Planned): Int = assertIs<Calculated.Done>(calculated(planned)).schedule.stopSeconds
+
+        assertTrue(stops(high) > stops(sea), "${stops(high)} s against ${stops(sea)} s")
+        val air = Breathed("air", Role.BOTTOM)
+        val atAltitude = deepestSaid(air, conditionsOf(high).first).removeSuffix(" m").toDouble()
+        val atSea = deepestSaid(air, conditionsOf(sea).first).removeSuffix(" m").toDouble()
+        assertTrue(atAltitude > atSea, "less air above, so more water before the oxygen limit: $atAltitude against $atSea")
+    }
+
+    @Test
+    fun `a surface pressure in millibars is refused rather than read as bar`() {
+        assertEquals(
+            "Surface pressure should be more than 0 bar and at most 1.1 bar, not \"1013\"",
+            conditionsOf(table().copy(atmosphericPressure = "1013")).second,
+        )
+    }
+
+    @Test
     fun `a warning and a reserve are whole sentences, the cylinder and the moment in them`() {
         // Ten litres of air cannot do forty metres for twenty-five minutes with its stops.
         val gases = listOf(

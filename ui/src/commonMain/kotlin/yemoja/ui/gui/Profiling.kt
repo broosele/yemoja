@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import yemoja.logic.SEA_LEVEL_SAID
 import yemoja.logic.Breathed
 import yemoja.logic.Conditions
 import yemoja.logic.Direction
@@ -147,6 +148,9 @@ internal class Shaping {
     /** In the words `water_type` uses. */
     var water: String by mutableStateOf(Settings.DEFAULT_WATER_TYPE.default)
 
+    /** The air pressure at the surface in bar, as typed. */
+    var atmosphericPressure: String by mutableStateOf(SEA_LEVEL_SAID)
+
     /** When the plan begins, as typed: a date such as `2026-10-03`, and a time such as `14:30`. */
     var startDate: String by mutableStateOf("")
     var startTime: String by mutableStateOf("")
@@ -178,6 +182,7 @@ internal fun Shaping.prefill(settings: Settings?) {
     stressFactor = shown(Settings.DEFAULT_STRESS_FACTOR)
     problemMinutes = shown(Settings.DEFAULT_PROBLEM_SOLVING_TIME)
     water = settings?.choice(Settings.DEFAULT_WATER_TYPE) ?: Settings.DEFAULT_WATER_TYPE.default
+    atmosphericPressure = SEA_LEVEL_SAID
     prefilled = true
 }
 
@@ -727,6 +732,9 @@ private fun Conditions(shaping: Shaping) {
                             options = Settings.DEFAULT_WATER_TYPE.choices.map { wordSaid(it) },
                         ) { shaping.water = Settings.DEFAULT_WATER_TYPE.choices[it] }
                     }
+                }
+                Setting("Surface pressure", PlannerTips.SURFACE_PRESSURE, shaping.atmosphericPressure, "bar") {
+                    shaping.atmosphericPressure = it
                 }
             }
             Section("Gas") {

@@ -107,6 +107,12 @@ class CasesTest {
     }
 
     @Test
+    fun `the surface pressure is written as atmospheric_pressure, and is one atmosphere if left out`() {
+        assertEquals("0.85", oneOf("""{"runtime": [{"depth": 20}], "atmospheric_pressure": 0.85}""").planned.atmosphericPressure)
+        assertEquals(SEA_LEVEL_SAID, oneOf("""{"runtime": [{"depth": 20}]}""").planned.atmosphericPressure)
+    }
+
+    @Test
     fun `a plan on its own is a file of one`() {
         val cases = assertIs<Read.Cases>(
             read("""{"runtime": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),

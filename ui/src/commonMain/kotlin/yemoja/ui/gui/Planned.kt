@@ -32,6 +32,7 @@ internal fun Shaping.described(): Planned = Planned(
     lostGas = lostGas,
     sharedScenario = sharedScenario,
     water = water,
+    atmosphericPressure = atmosphericPressure,
     startDate = startDate,
     startTime = startTime,
     following = following,

@@ -114,6 +114,8 @@ data class Planned(
     val sharedScenario: Boolean = true,
     /** In the words `water_type` uses. */
     val water: String = "salt",
+    /** The air pressure at the surface in bar, as `atmospheric_pressure` holds it. */
+    val atmosphericPressure: String = SEA_LEVEL_SAID,
     /** When the plan begins: a date such as `2026-10-03`, and a time such as `14:30`. */
     val startDate: String = "",
     val startTime: String = "",
@@ -298,7 +300,18 @@ class Conditions(
     val switchStops: Boolean,
     /** Kilograms a cubic metre. */
     val density: Double,
+    /** The air pressure at the surface, in bar. */
+    val surface: Double,
 )
+
+/** One standard atmosphere, as a plan's surface pressure starts. */
+const val SEA_LEVEL_SAID = "1.01325"
+
+/**
+ * The highest surface pressure a plan takes, in bar: above any air pressure at sea level, so a
+ * pressure typed in millibars is refused rather than read as a thousand bar.
+ */
+private const val HIGHEST_SURFACE = 1.1
 
 /** The plan's settings, or why the first that will not read does not. */
 fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
@@ -327,6 +340,12 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
         ?: return null to numberWrong("Last stop", "0 m or more", shaping.lastStop)
     val density = densityOfWater(shaping.water)
         ?: return null to "Water should be salt or fresh"
+    val surface = positiveOf(shaping.atmosphericPressure)?.takeIf { it <= HIGHEST_SURFACE }
+        ?: return null to numberWrong(
+            "Surface pressure",
+            "more than 0 bar and at most ${plain(HIGHEST_SURFACE)} bar",
+            shaping.atmosphericPressure,
+        )
     return Conditions(
         gradientLow = low,
         gradientHigh = high,
@@ -340,6 +359,7 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
         lastStop = last,
         switchStops = shaping.switchStops,
         density = density,
+        surface = surface,
     ) to null
 }
 
@@ -424,6 +444,7 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
             gradientFactorHigh = conditions.gradientHigh,
             switches = switches,
             density = conditions.density,
+            surface = conditions.surface,
             safetyStop = if (conditions.safetySeconds > 0) {
                 SafetyStop(conditions.safetyDepth, conditions.safetySeconds)
             } else {
@@ -668,7 +689,7 @@ private fun decoReachedSaid(shaping: Planned): String? {
     return shaping.gases.withIndex().filter { it.value.role == Role.DECO }
         .maxByOrNull { (_, breathed) ->
             gasOf(breathed.gas)?.let {
-                maximumOperatingDepth(it, most = conditions.decoOxygen, density = conditions.density)
+                maximumOperatingDepth(it, most = conditions.decoOxygen, density = conditions.density, surface = conditions.surface)
             } ?: -1.0
         }?.let { gasChoiceOf(shaping, it.index) }
 }
@@ -767,7 +788,12 @@ fun tooDeepFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean {
     if (conditions == null) return false
     val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
     val gas = gasOf(breathed.gas) ?: return false
-    val deepest = maximumOperatingDepth(gas, most = limitOf(breathed.role, conditions), density = conditions.density)
+    val deepest = maximumOperatingDepth(
+        gas,
+        most = limitOf(breathed.role, conditions),
+        density = conditions.density,
+        surface = conditions.surface,
+    )
         ?: return true
     return maxOf(leg.from, leg.to) > deepest
 }
@@ -781,7 +807,8 @@ fun tooShallowFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean 
     val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
     val gas = gasOf(breathed.gas) ?: return false
     val shallowest =
-        minimumOperatingDepth(gas, least = conditions.leastOxygen, density = conditions.density) ?: return false
+        minimumOperatingDepth(gas, least = conditions.leastOxygen, density = conditions.density, surface = conditions.surface)
+            ?: return false
     return minOf(leg.from, leg.to) < shallowest
 }
 
@@ -826,7 +853,8 @@ fun deepestSaid(breathed: Breathed, conditions: Conditions?): String {
     val gas = gasOf(breathed.gas) ?: return ""
     if (conditions == null) return ""
     val most = limitOf(breathed.role, conditions)
-    val deepest = maximumOperatingDepth(gas, most = most, density = conditions.density) ?: return ""
+    val deepest = maximumOperatingDepth(gas, most = most, density = conditions.density, surface = conditions.surface)
+        ?: return ""
     return "${plain((deepest * 10).roundToInt() / 10.0)} m"
 }
 

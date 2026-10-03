@@ -39,6 +39,7 @@ import yemoja.data.Reference
 import yemoja.data.Time
 import yemoja.data.Date
 import yemoja.data.Units
+import yemoja.logic.SEA_LEVEL_SAID
 import yemoja.logic.Breathed
 import yemoja.logic.Change
 import yemoja.logic.Conditions
@@ -167,6 +168,7 @@ internal fun planFieldsOf(shaping: Planned, conditions: Conditions, whole: Run):
     return linkedMapOf(
         "planned" to Stored.Leaf(true),
         "water_type" to Stored.Leaf(shaping.water),
+        "atmospheric_pressure" to Stored.Leaf(conditions.surface),
         "deco_model" to Stored.Leaf(MODEL),
         "gradient_factor_low" to Stored.Leaf(conditions.gradientLow),
         "gradient_factor_high" to Stored.Leaf(conditions.gradientHigh),
@@ -379,6 +381,9 @@ internal fun Shaping.loadFrom(profile: Item, dive: Item?, universe: Universe? = 
     (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value?.let { gradientHigh = plain(it * 100) }
     (profile.single<String>("water_type") as? Result.Usable)?.value
         ?.takeIf { it in Settings.DEFAULT_WATER_TYPE.choices }?.let { water = it }
+    // To the fifth decimal, so a standard atmosphere comes back as it went.
+    atmosphericPressure = (profile.single<Double>("atmospheric_pressure") as? Result.Usable)?.value
+        ?.let { plain(it, 5) } ?: SEA_LEVEL_SAID
 
     // The plan's own start where it has one, and its dive's otherwise.
     val date = (profile.single<Date>("start_date") as? Result.Usable)?.value
