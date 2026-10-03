@@ -166,8 +166,8 @@ well:
   is a percentage and may run below nought while a compartment is still taking gas on. The two
   oxygen clocks run as a percentage and a count. The pressures are each cylinder's gauge in bar,
   by its number, for the cylinders that say how big they are and what they were filled to.
-- `warnings` — what the model has to say against the plan, each with the second it happened at
-  and how serious it is.
+- `warnings` — what the model has to say against the plan, each with the second it happened at,
+  how serious it is, and the number of the cylinder it is about where it is about one.
 - `no_flight_seconds` and `desaturation_seconds`.
 - `reserve` — the gas reserve, keyed `lost_gas` and `shared_gas`; a scenario switched off is left
   out. Each holds `kept`, what each cylinder should still hold at the end of the dive, by its

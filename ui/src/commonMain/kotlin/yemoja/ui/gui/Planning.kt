@@ -139,8 +139,9 @@ internal fun runFiguresOf(
  * What the model objects to, each as a line: when it happened, and what it is.
  *
  * A finding about a cylinder is named by [tanks], falling back to the key the run holds it by,
- * which is what a reader of a dive already sees on its gas sources. Nothing where it objects to
- * nothing, which is what a plan is adjusted until it says. A warning reads as a value that would
+ * which is what a reader of a dive already sees on its gas sources. Each is labelled with what is
+ * wrong and says what to do and when, as *Deco ceiling violation: stay below 10.7 m at 26:01*.
+ * Nothing where it objects to nothing, which is what a plan is adjusted until it says. A warning reads as a value that would
  * not read does, in the error colour, because both are the screen telling a reader that something
  * here is wrong. `GUI-8`.
  */
@@ -149,10 +150,10 @@ internal fun findingsSaidOf(
     tanks: Map<String, String> = emptyMap(),
 ): List<Shown> =
     evaluated.findings.map { finding ->
-        val named = finding.source?.let { "${tanks[it] ?: it}: " }.orEmpty()
+        val named = finding.source?.let { "${tanks[it] ?: it} " }.orEmpty()
         Shown(
-            atSaid(finding.second),
-            listOf(Part(named + finding.said)),
+            named + finding.what,
+            listOf(Part("${finding.how} at ${atSaid(finding.second)}")),
             wrong = finding.severity == Severity.WARNING,
             worked = true,
         )

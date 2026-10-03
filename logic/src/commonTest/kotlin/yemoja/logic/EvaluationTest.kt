@@ -124,7 +124,7 @@ class EvaluationTest {
         val finding = evaluated.findings.first()
         assertEquals(1900, finding.second)
         assertEquals(Severity.WARNING, finding.severity)
-        assertTrue("the ceiling" in finding.said, finding.said)
+        assertTrue("Deco ceiling violation: stay below" in finding.said, finding.said)
     }
 
     @Test
@@ -251,7 +251,7 @@ class EvaluationTest {
                 sources = """"g1": {"gas_type": "EAN50"}""",
             ),
         )
-        val rich = evaluated.findings.single { "at most" in it.said }
+        val rich = evaluated.findings.single { "too high" in it.said }
 
         assertEquals(Severity.WARNING, rich.severity)
         assertTrue("2.4" in rich.said || "2.5" in rich.said, rich.said)
@@ -474,7 +474,7 @@ class EvaluationTest {
             ),
         )
         val dry = evaluated.findings.single { "empty" in it.said }
-        val rich = evaluated.findings.single { "at most" in it.said }
+        val rich = evaluated.findings.single { "too high" in it.said }
 
         assertEquals("g1", dry.source, "which cylinder, for whatever names cylinders")
         assertEquals("g1", rich.source)
@@ -584,7 +584,7 @@ class EvaluationTest {
                     gradientFactorHigh = 1.0,
                 ),
             ),
-        ).findings.filter { "at most" in it.said }
+        ).findings.filter { "too high" in it.said }
 
         assertTrue(oxygenFindings(MOST_OXYGEN).isEmpty(), "${oxygenFindings(MOST_OXYGEN)}")
         val held = oxygenFindings(1.4).single()
@@ -811,9 +811,9 @@ class EvaluationTest {
         ).withSafetyStop(6.0, 180)
 
         val none = done(skipped).findings.single { "Safety stop" in it.said }
-        assertTrue("should last 3:00, not 0:00" in none.said, none.said)
+        assertTrue("hold 6 m for 3:00, not 0:00" in none.said, none.said)
         val partly = done(short).findings.single { "Safety stop" in it.said }
-        assertTrue("should last 3:00, not 1:00" in partly.said, partly.said)
+        assertTrue("hold 6 m for 3:00, not 1:00" in partly.said, partly.said)
         assertEquals(1340, partly.second, "said where the stop is left")
     }
 
@@ -876,7 +876,7 @@ class EvaluationTest {
                     switches = switches,
                 ),
             ),
-        ).findings.filter { "at least" in it.said }
+        ).findings.filter { "too low" in it.said }
 
         val atTheSurface = leanFindings(listOf(0 to "g2")).single()
         assertEquals(0, atTheSurface.second)
@@ -897,7 +897,7 @@ class EvaluationTest {
                     gradientFactorHigh = 1.0,
                 ),
             ),
-        ).findings.filter { "should be at least" in it.said }
+        ).findings.filter { "too low" in it.said }
 
         assertEquals(1, leanAtTheSurface(LEAST_OXYGEN).size)
         assertTrue(leanAtTheSurface(0.08).isEmpty(), "${leanAtTheSurface(0.08)}")

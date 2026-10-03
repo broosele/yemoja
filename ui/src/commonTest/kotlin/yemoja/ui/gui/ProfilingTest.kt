@@ -514,7 +514,7 @@ class ReserveTest {
         assertEquals(setOf("g1"), reserve.kept.keys, "the deco gas is lost")
         val said = scenarioSaid(Scenario.LOST_GAS, reserve, shaping.described())
         assertTrue(
-            said.matches(Regex("Gas 1 keeps [0-9]+ bar at the end, worst at 25:00 [(]40 m[)]; 2:00 at depth, then surfacing without Gas 2 at normal SAC")),
+            said.matches(Regex("Gas 1 reserve needs to be [0-9]+ bar for 2:00 at depth, then surfacing without Gas 2 at normal SAC, worst at 25:00 [(]40 m[)]")),
             said,
         )
         assertEquals("25:00 (40 m)", worstSaid(reserve.kept.getValue("g1")), "two minutes at forty metres cost most")
@@ -534,7 +534,7 @@ class ReserveTest {
 
         val upTo = reserve.kept.getValue("g1").upTo
         assertTrue(upTo > 20, "EAN50 may be breathed from about 22 m: $upTo")
-        assertTrue(said.startsWith("Gas 1 keeps ") && said.endsWith(", each at 2 × SAC"), said)
+        assertTrue(said.startsWith("Gas 1 reserve needs to be ") && ", each at 2 × SAC, worst at " in said, said)
         assertTrue(
             Regex("sharing 2:00 at depth, then to [0-9]+([.][0-9])? m, each at").containsMatchIn(said),
             "to a tenth, as the MOD is: $said"
@@ -585,7 +585,7 @@ class ReserveTest {
         val reckoned = reckoned(shaping)
         val lost = assertNotNull(shortfallSaid(Scenario.LOST_GAS, reckoned.done.getValue(Scenario.LOST_GAS)))
 
-        assertTrue(lost.matches(Regex("Gas 1 ends at [0-9]+ bar, should keep [0-9]+ bar .*")), lost)
+        assertTrue(lost.matches(Regex("Gas 1 reserve violation: needs to be [0-9]+ bar, but [0-9]+ bar is left .*")), lost)
         assertTrue(lost.endsWith("(surfacing without the lost gas)"), lost)
         assertTrue("-" !in lost, "a gauge run dry is empty, not below nought: $lost")
         assertTrue(isShort(reckoned, "g1"))
@@ -679,7 +679,7 @@ class ReserveTest {
                 Scenario.LOST_GAS,
                 reserve,
                 shaping.described()
-            ).endsWith("surfacing without Gas 3 at normal SAC")
+            ).contains("surfacing without Gas 3 at normal SAC")
         )
     }
 

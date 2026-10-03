@@ -49,6 +49,10 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   line over the columns, which also says what each column is where no pointer can rest on it. The
   contingency's scenarios go under its settings, there being no room beside them for what each
   came to. Tried at 411 and at 360 wide, the widths phones mostly have.
+
+  **The planner's four parts stand in the order a plan is made**, settings, gases, runtime,
+  contingency, and each folds away under its caption at a press, so that the one column need not
+  hold all four at once. A box that holds a number asks the phone for its number keys.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.

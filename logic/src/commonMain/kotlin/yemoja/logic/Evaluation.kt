@@ -149,7 +149,10 @@ enum class Refusal {
 class Finding(
     val second: Int,
     val severity: Severity,
-    val said: String,
+    /** What is wrong, in a few words: `Deco ceiling violation`. */
+    val what: String,
+    /** What to do about it, or what the figures were: `stay below 10.7 m`. */
+    val how: String,
     /**
      * The cylinder it is about, under the key its run holds it by, or null where it is about the
      * dive rather than a cylinder.
@@ -161,6 +164,9 @@ class Finding(
      */
     val source: String? = null,
 ) {
+
+    /** The finding as one sentence, what is wrong and then what to do. */
+    val said: String get() = "$what: $how"
 
     override fun toString(): String =
         "${second}s $severity: ${source?.let { "$it " }.orEmpty()}$said"
@@ -463,7 +469,8 @@ private fun walked(
                     findings += Finding(
                         before.second,
                         Severity.WARNING,
-                        "Ascent ${metres(rate)}/min should be at most ${metres(ascentRate)}/min",
+                        "Ascent rate violation",
+                        "come up at most ${metres(ascentRate)}/min, not ${metres(rate)}/min",
                     )
                 }
                 hurried = rate > ascentRate
@@ -495,7 +502,8 @@ private fun walked(
                 findings += Finding(
                     point.second,
                     Severity.WARNING,
-                    "empty, it needs more volume, a higher start pressure or a lower SAC",
+                    "runs empty",
+                    "more volume, a higher start pressure or a lower SAC would keep it",
                     key,
                 )
             }
@@ -506,7 +514,8 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "CNS should stay below 100 %",
+                "CNS limit violation",
+                "the clock passes 100 %; shorten the dive or breathe a leaner gas",
             )
             burnt = true
         }
@@ -516,7 +525,8 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "Depth ${metres(point.metres)} should be at least ${metres(allowed)}, the ceiling",
+                "Deco ceiling violation",
+                "stay below ${metres(allowed)}",
             )
         }
         above = point.metres < allowed
@@ -526,7 +536,8 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "pO₂ ${bar(oxygen)} should be at most ${bar(most)}",
+                "pO₂ too high",
+                "${bar(oxygen)} against the ${bar(most)} allowed; stay shallower on it",
                 breathing.keyAt(point.second),
             )
         }
@@ -537,7 +548,8 @@ private fun walked(
             findings += Finding(
                 point.second,
                 Severity.WARNING,
-                "pO₂ ${bar(oxygen)} should be at least ${bar(least)}",
+                "pO₂ too low",
+                "${bar(oxygen)} against the ${bar(least)} needed; stay deeper on it",
                 breathing.keyAt(point.second),
             )
         }
@@ -628,8 +640,8 @@ private fun safetyStopFinding(depths: List<Point>, safetyStop: SafetyStop?): Fin
     return Finding(
         left.second,
         Severity.WARNING,
-        "Safety stop at ${metres(safetyStop.metres)} should last ${clockOf(safetyStop.seconds)}, " +
-                "not ${clockOf(held)}",
+        "Safety stop too short",
+        "hold ${metres(safetyStop.metres)} for ${clockOf(safetyStop.seconds)}, not ${clockOf(held)}",
     )
 }
 

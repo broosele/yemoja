@@ -125,7 +125,7 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
                         "second" to Stored.Leaf(it.second.toLong()),
                         "severity" to Stored.Leaf(it.severity.name.lowercase()),
                         "said" to Stored.Leaf(it.said),
-                    ),
+                    ) + (it.gas?.let { gas -> mapOf("gas" to Stored.Leaf(gas)) } ?: emptyMap()),
                 )
             },
         ),

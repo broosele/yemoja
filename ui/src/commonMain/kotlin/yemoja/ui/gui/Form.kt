@@ -1,5 +1,7 @@
 package yemoja.ui.gui
 
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -520,6 +522,8 @@ internal fun Compact(
     dense: Boolean = false,
     /** Whether what it holds is something the model objects to, which is said in the error colour. */
     wrong: Boolean = false,
+    /** Whether it holds a number, which a phone then offers the number keys for. */
+    number: Boolean = false,
 ) {
     val ink = if (wrong) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
     val type = if (dense) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
@@ -531,6 +535,7 @@ internal fun Compact(
         singleLine = lines == 1,
         minLines = lines,
         enabled = enabled,
+        keyboardOptions = if (number) KeyboardOptions(keyboardType = KeyboardType.Decimal) else KeyboardOptions.Default,
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         modifier = Modifier.fillMaxWidth().then(modifier),
         decorationBox = { inner ->

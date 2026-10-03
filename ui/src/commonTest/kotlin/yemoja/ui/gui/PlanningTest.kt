@@ -146,17 +146,18 @@ class PlanningTest {
     }
 
     @Test
-    fun `what the model objects to reads as a fault, at the minute it happened`() {
+    fun `what the model objects to reads as a fault, saying what to do and the minute it happened`() {
         val dive = planned(DEEP)
         val findings = findingsSaidOf(done(dive))
 
         assertTrue(findings.isNotEmpty(), "surfacing from forty metres owes stops it did not take")
         assertTrue(findings.all { it.wrong }, "a warning reads as a value that would not read")
-        assertTrue(findings.all { it.label.matches(Regex("[0-9]+:[0-9]{2}")) }, "${findings.map { it.label }}")
+        assertTrue(findings.all { it.text.matches(Regex(".* at [0-9]+:[0-9]{2}")) }, "${findings.map { it.text }}")
         // This plan runs its cylinder dry as well, and that is said first because it happens
         // first: the findings are in the order a diver would meet them.
-        assertTrue(findings.any { "ceiling" in it.text }, "${findings.map { it.text }}")
-        assertTrue("empty" in findings.first().text, findings.first().text)
+        assertTrue(findings.any { it.label == "Deco ceiling violation" }, "${findings.map { it.label }}")
+        assertTrue(findings.any { "stay below" in it.text }, "${findings.map { it.text }}")
+        assertTrue("empty" in findings.first().label, findings.first().label)
     }
 
     @Test
@@ -167,12 +168,12 @@ class PlanningTest {
                 "start_pressure": 200}""",
         )
         val evaluated = done(dive)
-        val named = findingsSaidOf(dive, profile(dive), evaluated).single { "empty" in it.text }
-        val bare = findingsSaidOf(evaluated).single { "empty" in it.text }
+        val named = findingsSaidOf(dive, profile(dive), evaluated).single { "empty" in it.label }
+        val bare = findingsSaidOf(evaluated).single { "empty" in it.label }
 
-        assertTrue(named.text.startsWith("G1: "), named.text)
+        assertEquals("G1 runs empty", named.label)
         // With nobody to supply a name, the key stands in rather than the line naming nothing.
-        assertTrue(bare.text.startsWith("g1: "), bare.text)
+        assertEquals("g1 runs empty", bare.label)
     }
 
     @Test

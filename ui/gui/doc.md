@@ -836,8 +836,11 @@ once and corrected. The numbers stay unused rather than being given to something
   compartment is still taking gas on, and a computer shows that as nought too. `LOGIC-37`.
 
   **The figures and the findings read as fields.** What a run costs, the clocks and the two waits
-  are shown as worked-out values under the run's own fields, and each finding is a line labelled
-  with the minute it happened at, in the error colour. A finding is a value that would not read,
+  are shown as worked-out values under the run's own fields, and each finding is a line in the
+  error colour labelled with what is wrong, saying what to do and the minute it happened at:
+  *Deco ceiling violation: stay below 10.7 m at 26:01*. It was labelled with the minute and said
+  what was expected against what arrived, which read as a fault in the figures rather than as
+  something to do about them. A finding is a value that would not read,
   in the sense `GUI-8` already gives the phrase: something here is wrong and the reason is the
   useful part.
 

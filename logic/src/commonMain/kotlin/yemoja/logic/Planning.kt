@@ -620,14 +620,15 @@ private fun lackedBy(breathed: Breathed): List<String> = listOfNotNull(
 )
 
 /**
- * What one scenario came to, in a sentence: what each cylinder keeps at the end, the moment that
- * sets it, and what the scenario assumes.
+ * What one scenario came to, in a sentence: what each cylinder's reserve needs to be, what the
+ * scenario assumes, and the moment that sets it.
  *
  * A scenario that needs nothing says so, and why where the reason is a deco gas the buddy can go
- * to at once, rather than a worst moment at the surface that means nothing.
+ * to at once, rather than a worst moment at the surface that means nothing. The worst moment is
+ * said once where every cylinder's is the same, and beside each where they differ.
  *
- * Example: `Gas 1 keeps 54 bar at the end, worst at 25:00 (40 m); surfacing without Gas 2 at
- * normal SAC`.
+ * Example: `Gas 1 reserve needs to be 54 bar for 2:00 at depth, then surfacing without Gas 2 at
+ * normal SAC, worst at 25:00 (40 m)`.
  */
 fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): String {
     val kept = reserve.kept.entries.sortedBy { gasIndexOf(it.key) }
@@ -638,10 +639,11 @@ fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): S
                 ?.let { "No sharing needed: each diver switches to $it at once" } ?: "No sharing needed"
         }
     }
-    val keeps = kept.mapIndexed { index, (key, it) ->
+    val worsts = kept.map { worstSaid(it.value) }.distinct()
+    val needs = kept.mapIndexed { index, (key, it) ->
         val held = it.bar?.let { bar -> "${ceil(bar).toInt()} bar" } ?: "${ceil(it.litres).toInt()} L"
-        "${gasLabelOf(gasIndexOf(key))} keeps $held" + (if (index == 0) " at the end" else "") +
-            ", worst at ${worstSaid(it)}"
+        "${gasLabelOf(gasIndexOf(key))} reserve" + (if (index == 0) " needs to be" else "") + " $held" +
+            (if (worsts.size > 1) ", worst at ${worstSaid(it)}" else "")
     }
     val held = problemSecondsOf(shaping)?.takeIf { it > 0 }?.let { clockOf(it) }
     val assumed = when (scenario) {
@@ -653,7 +655,7 @@ fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): S
         Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
                 "${upToSaid(kept.maxOf { it.value.upTo })}, each at ${shaping.stressFactor.trim()} × SAC"
     }
-    return "${keeps.joinToString(" and ")}; $assumed"
+    return "${needs.joinToString(" and ")} for $assumed" + worsts.singleOrNull()?.let { ", worst at $it" }.orEmpty()
 }
 
 /** The problem-solving time [shaping] asks for, in whole seconds, or null where it will not read. */
@@ -679,7 +681,8 @@ private fun upToSaid(metres: Double?): String =
  * The cylinders that end the dive with less than [scenario] keeps, and what they end with, or null
  * where none does.
  *
- * Example: `Gas 1 ends at 40 bar, should keep 60 bar (surfacing without the lost gas)`.
+ * Example: `Gas 1 reserve violation: needs to be 60 bar, but 40 bar is left (surfacing without
+ * the lost gas)`.
  */
 fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? {
     val short = reserve.kept.entries.filter { it.value.short }.sortedBy { gasIndexOf(it.key) }
@@ -691,7 +694,8 @@ fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? {
     return short.joinToString("; ") { (key, kept) ->
         // A gauge the plan has already run below nought is empty, not a negative pressure.
         val left = floor(kept.end ?: 0.0).toInt().coerceAtLeast(0)
-        "${gasLabelOf(gasIndexOf(key))} ends at $left bar, should keep ${ceil(kept.bar ?: 0.0).toInt()} bar"
+        "${gasLabelOf(gasIndexOf(key))} reserve violation: needs to be ${ceil(kept.bar ?: 0.0).toInt()} bar, " +
+            "but $left bar is left"
     } + " ($why)"
 }
 

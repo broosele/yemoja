@@ -349,8 +349,8 @@ follow the same tick.
 Under the settings is **Contingency**, the gas reserve: what you must keep back in case something
 goes wrong. On its left are two settings, the stress factor and the problem-solving time,
 which also start from your Settings. Beside them is a line for each scenario, *Lost* and
-*Buddy out of gas*: the scenario's name, its switch, and then what each cylinder should keep at
-the end of the dive, its worst moment, and what it assumes. The switch on the *Lost* line is a choice of which gas is
+*Buddy out of gas*: the scenario's name, its switch, and then what each cylinder's reserve needs
+to be, what the scenario assumes, and its worst moment. The switch on the *Lost* line is a choice of which gas is
 lost, your first deco gas unless you choose another; choose *None* to leave that scenario out.
 The switch on the *Buddy out of gas* line is a tick; untick it to leave that one out. Change a setting and the lines change
 with it. [The decompression model](decompression.md#planning-a-dive) explains both scenarios.

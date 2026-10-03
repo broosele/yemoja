@@ -133,7 +133,13 @@ class Line(
 class Stop(val metres: Double, val seconds: Int)
 
 /** Something the model has to say about a plan: when, how serious, and what. Immutable. */
-class Warning(val second: Int, val severity: Severity, val said: String)
+class Warning(
+    val second: Int,
+    val severity: Severity,
+    val said: String,
+    /** The cylinder it is about, by its number, or absent where it is about the dive. */
+    val gas: String?,
+)
 
 /**
  * The plan [planned] describes, calculated.
@@ -209,7 +215,7 @@ private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done, reckoned: Reckone
         noFlightSeconds = done.evaluated.noFlight,
         desaturationSeconds = done.evaluated.desaturation,
         gasUsedLitres = done.evaluated.gasUsed.mapKeys { numberedOf(it.key) },
-        warnings = done.evaluated.findings.map { Warning(it.second, it.severity, it.said) },
+        warnings = done.evaluated.findings.map { Warning(it.second, it.severity, it.said, it.source?.let(::numberedOf)) },
         reserves = reckoned.scenarios.mapNotNull { (scenario, reckoning) ->
             reckoning?.let { scenario to reserveAnswerOf(it) }
         }.toMap(),

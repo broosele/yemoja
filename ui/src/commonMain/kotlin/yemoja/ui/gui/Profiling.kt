@@ -1,5 +1,9 @@
 package yemoja.ui.gui
 
+import yemoja.ui.icons.ArrowRight
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.border
@@ -152,6 +156,9 @@ internal class Shaping {
 
     /** Whether the form has been opened before, which decides whether it takes the settings. */
     var prefilled: Boolean = false
+
+    /** Which parts of the form a phone has folded away, by caption. `PHONE-2`. */
+    val folded = mutableStateSetOf<String>()
 }
 
 /** Fills every setting of the plan from [settings], or from the defaults where there is no logbook. */
@@ -299,24 +306,26 @@ internal fun PlanForm(
     saving()
     StartRow(shaping, universe, followedOf(planned, universe))
     if (LocalCompact.current) {
-        // A phone stacks the three, each its own height, and the gases' table scrolls sideways,
-        // its columns being wider together than the screen. `PHONE-2`.
-        Caption("Runtime")
-        Scrolling(Modifier.fillMaxWidth().height(ZONE / 2).framed().padding(HALF), scrollbar) {
-            RuntimeLines(shaping, shaped, done, conditions)
+        // A phone stacks the four, each its own height and each folding away under its caption,
+        // in the order a plan is made: what it is dived under, what it is dived on, the dive, and
+        // what is kept back. The gases' table scrolls sideways, its columns being wider together
+        // than the screen. `PHONE-2`.
+        Folding("Settings", shaping.folded) { Framed { Conditions(shaping) } }
+        Folding("Gases", shaping.folded) {
+            Column(
+                modifier = Modifier.fillMaxWidth().framed().padding(HALF)
+                    .horizontalScroll(rememberScrollState()),
+            ) {
+                CylinderHeadings()
+                Cylinders(shaping, conditions, done, reckoned)
+            }
         }
-        Caption("Settings")
-        Framed { Conditions(shaping) }
-        Caption("Contingency")
-        Framed { Contingency(shaping, reckoned) }
-        Caption("Gases")
-        Column(
-            modifier = Modifier.fillMaxWidth().framed().padding(HALF)
-                .horizontalScroll(rememberScrollState()),
-        ) {
-            CylinderHeadings()
-            Cylinders(shaping, conditions, done, reckoned)
+        Folding("Runtime", shaping.folded) {
+            Scrolling(Modifier.fillMaxWidth().height(ZONE / 2).framed().padding(HALF), scrollbar) {
+                RuntimeLines(shaping, shaped, done, conditions)
+            }
         }
+        Folding("Contingency", shaping.folded) { Framed { Contingency(shaping, reckoned) } }
     } else {
         // The runtime's height is the zone's, and the gases take what the settings leave of it, so the
         // two columns end on one line however many cylinders there are.
@@ -351,7 +360,7 @@ internal fun PlanForm(
         worked is Worked.Refused -> Refused(worked.reason)
         done != null -> {
             for (finding in findingsSaidOf(done.evaluated, mixedTanksOf(planned))) {
-                Warning("${finding.label} ${finding.parts.joinToString("") { it.text }}", finding.wrong)
+                Warning("${finding.label}: ${finding.parts.joinToString("") { it.text }}", finding.wrong)
             }
             for ((scenario, reserve) in reckoned?.done.orEmpty()) {
                 shortfallSaid(scenario, reserve)?.let { Warning(it, wrong = true) }
@@ -360,6 +369,27 @@ internal fun PlanForm(
         }
     }
     if (done != null) Graph(done, shaping)
+}
+
+/**
+ * A part of the plan under its caption, which a press folds away and another brings back, so that
+ * a phone's one column need not hold all four at once. `PHONE-2`.
+ */
+@Composable
+private fun Folding(title: String, folded: MutableSet<String>, content: @Composable () -> Unit) {
+    val away = title in folded
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { if (away) folded -= title else folded += title },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (away) Icons.Filled.ArrowRight else Icons.Filled.ArrowDropDown,
+            contentDescription = if (away) "unfold" else "fold",
+            tint = MaterialTheme.colorScheme.outline,
+        )
+        Caption(title)
+    }
+    if (!away) content()
 }
 
 /** Two columns of settings side by side, or one above the other on a phone. `PHONE-2`. */
@@ -538,6 +568,7 @@ private fun TypedLine(
                 value = segment.depth,
                 onChange = { shaping.segments[index] = segment.copy(depth = it) },
                 after = if (widths.narrow) "" else "m",
+                number = true,
                 wrong = ceilingBroken,
             )
         }
@@ -556,6 +587,7 @@ private fun TypedLine(
                 value = if (staying) "" else segment.rate,
                 onChange = { shaping.segments[index] = segment.copy(rate = it, duration = "") },
                 after = if (widths.narrow) "" else "m/min",
+                number = true,
                 hint = leg?.rate?.takeIf { segment.rate.isBlank() }?.let { rateSaid(it) }.orEmpty(),
                 derived = true,
                 enabled = !staying,
@@ -812,7 +844,7 @@ private fun Setting(
 ) {
     Labelled(label, tip) {
         Box(modifier = Modifier.width(SETTING)) {
-            Compact(value = value, onChange = onChange, after = after, enabled = enabled, dense = true)
+            Compact(value = value, onChange = onChange, after = after, enabled = enabled, dense = true, number = true)
         }
     }
 }
@@ -872,7 +904,8 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     dense = true,
                     value = breathed.size,
                     onChange = { shaping.gases[index] = breathed.copy(size = it) },
-                    after = "L"
+                    after = "L",
+                    number = true,
                 )
             }
             Tipped(PlannerTips.START, PRESSURE) {
@@ -880,7 +913,8 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     dense = true,
                     value = breathed.fill,
                     onChange = { shaping.gases[index] = breathed.copy(fill = it) },
-                    after = "bar"
+                    after = "bar",
+                    number = true,
                 )
             }
             Tipped(PlannerTips.SAC, SAC) {
@@ -888,7 +922,8 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     dense = true,
                     value = breathed.sac,
                     onChange = { shaping.gases[index] = breathed.copy(sac = it) },
-                    after = "L/min"
+                    after = "L/min",
+                    number = true,
                 )
             }
             val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
