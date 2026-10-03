@@ -98,6 +98,19 @@ the build refuses.
 - **Anything requiring a device.** Reading a real dive computer over Bluetooth is not
   something a suite can do unattended; see `LOGIC-2` in
   [logic/doc.md](logic/doc.md).
+- **What a real logbook gets of each worked-out field.** `yemoja coverage <logbook folder>`
+  counts, for every field the model works out, on how many items it was worked out, written by
+  hand, absent, or would not read. A test checks that a field is worked out right from what an
+  example holds; it cannot say how often a real logbook holds what the working out asks for.
+
+  That is how a SAC went missing from most dives unnoticed: it was worked out only from
+  pressures through time, the tests gave it some, and the fixtures were written with
+  transmitters. A logbook kept without one has a start and an end pressure and no series, and on
+  the author's logbook 51 of 389 cylinders had a SAC. The same count found the water temperatures
+  shown on half its dives and the water at the surface on none. Run it against a real logbook
+  after a change to what is worked out; a field absent on most items is where to look.
+
+  Not in the suite, since the logbook that matters is the user's and is not in the repository.
 
 ## Open questions
 

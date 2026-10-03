@@ -75,6 +75,7 @@ given one or opened without.
 ./gradlew :ui:installDist             writes ui/build/install/yemoja
 yemoja tui <logbook folder>           with that bin directory on the path
 yemoja gui [<logbook folder>]         the window, the folder being optional
+yemoja coverage <logbook folder>      how often each worked-out field has a value, testing.md
 
 ./gradlew :ui:gui --args="<folder>"   the window straight from the build, spaces and all
 ```

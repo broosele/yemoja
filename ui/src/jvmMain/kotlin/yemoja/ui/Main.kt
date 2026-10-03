@@ -1,6 +1,7 @@
 package yemoja.ui
 
 import yemoja.ui.api.api
+import yemoja.ui.api.covered
 import yemoja.ui.api.planned
 import yemoja.ui.gui.gui
 import yemoja.ui.tui.tui
@@ -37,6 +38,10 @@ internal val COMMANDS: Map<String, Command> = mapOf(
         least = 1,
     ) {
         planned(it.first(), it.drop(1))
+    },
+    // A check rather than a front end: what a real logbook gets of each worked-out field.
+    "coverage" to Command(listOf("logbook folder"), "count how often each worked-out field has a value") {
+        covered(it.single())
     },
 )
 
