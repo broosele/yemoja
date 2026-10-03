@@ -406,6 +406,12 @@ columns mapped by the user rather than guessed.
   and costs more machinery — and the trade-off turned out not to exist. Incoming items
   are a logbook, so staging them costs nothing that is not already built, and every edit
   made while reviewing is saved as it is made. There is no unsaved state anywhere.
+
+  **The staged logbook keeps an item to a file**, whatever layout the source had, `JSON-21`
+  allowing either. Each item leaves the folder as it is decided, and taking one out of a shared
+  file writes the rest of it back: for a few hundred dives that was ten megabytes written once a
+  dive, and applying a review took minutes. Staging writes each type in one pass for the same
+  reason, and says how many items of how many it has written.
 - **RECON-2 — Whether an import can be accepted in part.** *Settled:* **it can, item by
   item.** Everything arrives accepted and declining is the decision, because what arrives
   cleanly is meant to land and the user vetoes rather than approves. What is declined is

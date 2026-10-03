@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -15,16 +16,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import yemoja.data.ItemSet
 import yemoja.logic.Import
 import yemoja.logic.Outcome
@@ -113,16 +121,23 @@ internal fun placingOf(dive: Arriving, reviewing: Reviewing): Placing =
  * Each dive is placed where it was said to be and then taken in as decided, or left where it is.
  * **Taking in stops at the first refusal** and says which dive it stopped at, so the rows after
  * it are still there to be looked at: what is in the folder is what has not been decided,
- * `RECON-1`.
+ * `RECON-1`. [told] hears how many dives of how many have been gone through.
  */
-internal fun applied(import: Import, into: ItemSet, reviewing: Reviewing): Taken {
+internal fun applied(
+    import: Import,
+    into: ItemSet,
+    reviewing: Reviewing,
+    told: (done: Int, of: Int) -> Unit = { _, _ -> },
+): Taken {
     reviewing.refusedAt = null
     reviewing.refusal = null
     var many = 0
-    for (id in arrivingIn(import, into, nextNumberIn(into)).map { it.id }) {
+    val ids = arrivingIn(import, into, nextNumberIn(into)).map { it.id }
+    for ((at, id) in ids.withIndex()) {
+        told(at, ids.size)
         // Read again once the dives before it have landed: the number it would take and the dive
         // it appears to be both depend on what the logbook holds by now.
-        val dive = arrivingIn(import, into, nextNumberIn(into)).firstOrNull { it.id == id } ?: continue
+        val dive = arrivingIn(import, into, nextNumberIn(into), only = id).firstOrNull() ?: continue
         val decision = decisionOf(dive, reviewing)
         if (decision == Decision.SKIP) continue
         val placed = if (dive.fix == null) Outcome.Done() else placed(import, dive, reviewing)
@@ -175,12 +190,40 @@ internal fun Arrived(
 ) {
     val import = universe.importing ?: return
     val reviewing = remember(import) { Reviewing() }
-    val arriving = remember(import, changer.edition) {
-        arrivingIn(import, universe.logbook, nextNumberIn(universe.logbook))
+    // Off the screen's thread, both: comparing a few hundred dives with a logbook takes seconds
+    // on a phone, and a phone stops an app whose screen waits that long.
+    val arriving by produceState<List<Arriving>?>(null, import, changer.edition) {
+        value = withContext(Dispatchers.Default) {
+            arrivingIn(import, universe.logbook, nextNumberIn(universe.logbook))
+        }
     }
-    val numbers = numbersOf(arriving, reviewing, nextNumberIn(universe.logbook))
+    var applying by remember(import) { mutableStateOf<Pair<Int, Int>?>(null) }
+    val scope = rememberCoroutineScope()
+    val shown = arriving
+    if (shown == null) {
+        Busy("Comparing with your logbook", null)
+        return
+    }
+    applying?.let { (done, of) ->
+        Busy("Taking in", done to of)
+        return
+    }
+    val numbers = numbersOf(shown, reviewing, nextNumberIn(universe.logbook))
+    // A few hundred rows drawn at once hold a phone's screen for seconds, so they come a batch a
+    // frame, and the screen answers between.
+    var drawn by remember(shown) { mutableStateOf(minOf(ROWS_AT_ONCE, shown.size)) }
+    LaunchedEffect(shown) {
+        while (drawn < shown.size) {
+            withFrameNanos {}
+            drawn = minOf(drawn + ROWS_AT_ONCE, shown.size)
+        }
+    }
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
-        for (dive in arriving) Arrival(dive, numbers.getValue(dive.id), reviewing)
+        for (dive in shown.take(drawn)) Arrival(dive, numbers.getValue(dive.id), reviewing)
+        if (drawn < shown.size) {
+            Busy("Listing", drawn to shown.size)
+            return@Column
+        }
         Row(
             modifier = Modifier.padding(top = GAP),
             horizontalArrangement = Arrangement.spacedBy(GAP),
@@ -188,12 +231,39 @@ internal fun Arrived(
         ) {
             Button(
                 onClick = {
-                    after(applied(import, universe.logbook, reviewing))
-                    changer.changed()
+                    applying = 0 to shown.size
+                    scope.launch {
+                        // What follows the dives, the rest of what arrived, is taken in there too.
+                        withContext(Dispatchers.Default) {
+                            after(applied(import, universe.logbook, reviewing) { done, of -> applying = done to of })
+                        }
+                        applying = null
+                        changer.changed()
+                    }
                 },
             ) { Text("Apply") }
             TextButton(onClick = leave) { Text("Close") }
-            Aside(appliedSaid(arriving, reviewing))
+            Aside(appliedSaid(shown, reviewing))
+        }
+    }
+}
+
+/** How many rows of a review are drawn in one frame. */
+private const val ROWS_AT_ONCE = 20
+
+/** A long piece of work under way: what it is, and how many of how many where that is known. */
+@Composable
+private fun Busy(said: String, counted: Pair<Int, Int>?) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
+        if (counted == null || counted.second <= 0) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = HALF))
+            Aside("$said…")
+        } else {
+            LinearProgressIndicator(
+                progress = { (counted.first.toFloat() / counted.second).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+            )
+            Aside("$said: ${counted.first} of ${counted.second} dives")
         }
     }
 }

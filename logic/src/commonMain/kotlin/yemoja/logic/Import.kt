@@ -292,7 +292,8 @@ class Import private constructor(
     companion object {
 
         /**
-         * Stage [incoming] in [staging], to go into [into].
+         * Stage [incoming] in [staging], to go into [into], telling [told] how many items of how
+         * many are staged as it goes.
          *
          * The items are written out as an ordinary logbook and read back from it, which is what
          * makes them resolvable in their own right: a dive that names a person finds that person
@@ -303,12 +304,18 @@ class Import private constructor(
             staging: FileStore,
             into: Universe,
             matching: Matching = Matching.BY_ID,
+            told: (done: Int, of: Int) -> Unit = { _, _ -> },
         ): Import {
-            for (description in incoming.descriptions) {
-                for (item in incoming.allOf(description)) {
-                    val id = incoming.idOf(item) ?: continue
-                    LogbookWriter.write(staging, description, id, item)
-                }
+            val byType = incoming.descriptions.associateWith { description ->
+                incoming.allOf(description).mapNotNull { item -> incoming.idOf(item)?.let { it to item } }
+            }
+            val of = byType.values.sumOf { it.size }
+            var done = 0
+            told(done, of)
+            for ((description, items) in byType) {
+                // A file an item: each is taken out of the folder as it is decided, and taking
+                // one out of a shared file writes the rest of it back.
+                LogbookWriter.writeAll(staging, description, items, apart = true) { told(++done, of) }
             }
             // Written once, beside the items: how they match is a fact about where they came
             // from, and a review taken up later has no other way to know it. Forgetting it would

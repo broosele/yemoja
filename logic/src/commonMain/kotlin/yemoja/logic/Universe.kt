@@ -434,13 +434,15 @@ class Universe(
      *
      * [matching] is the source's to say, and saying it wrong loses data: an id minted on the way
      * in names what this model would have called such an item rather than which item it is.
+     * [told] hears how many items of how many are staged.
      */
     fun importFrom(
         source: ItemSet,
         staging: FileStore,
         matching: Matching = Matching.BY_ID,
+        told: (done: Int, of: Int) -> Unit = { _, _ -> },
     ) {
-        importing = Import.begin(source, staging, this, matching)
+        importing = Import.begin(source, staging, this, matching, told)
         importNote = null
     }
 
@@ -474,8 +476,10 @@ class Universe(
      * The staging folder is this logbook's own with `.import` after it, which puts it outside the
      * logbook: what is being reviewed is not part of it and must not be read as though it were.
      * A logbook opened from nowhere in particular stages beside the source instead.
+     *
+     * [told] hears how many items of how many are staged, once what is at [from] has been read.
      */
-    fun importFrom(from: String): Outcome {
+    fun importFrom(from: String, told: (done: Int, of: Int) -> Unit = { _, _ -> }): Outcome {
         val store = fileStoreAt(from)
         val where = stagedIn(from)
             ?: return Outcome.Refused("this logbook has nowhere to stage an import")
@@ -485,7 +489,7 @@ class Universe(
             } catch (refused: LogbookFormatException) {
                 return Outcome.Refused(refused.message ?: "$from could not be read")
             }
-            importFrom(source, where)
+            importFrom(source, where, told = told)
             return Outcome.Done()
         }
         if (!store.isFile("")) {
@@ -504,7 +508,7 @@ class Universe(
                 return Outcome.Refused("$from holds no dives, so there is nothing to import from it")
             }
             // Nothing matches by id: Diving Log's ids are its own, and none is kept. `DLOG-4`.
-            importFrom(read.items, where, Matching.NONE)
+            importFrom(read.items, where, Matching.NONE, told)
             importNote = read.said
             return Outcome.Done()
         }
@@ -520,7 +524,7 @@ class Universe(
         }
         // Nothing matches: a UDDF file carries no ids of ours, so the ones its dives have were
         // minted while reading it and say nothing about which dive is which.
-        importFrom(source, where, Matching.NONE)
+        importFrom(source, where, Matching.NONE, told)
         return Outcome.Done()
     }
 

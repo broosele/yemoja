@@ -1350,7 +1350,8 @@ once and corrected. The numbers stay unused rather than being given to something
    **What was picked is read off the interface's thread**, with a line saying so until the review
    opens, and the deed is greyed meanwhile, as a download's is. A logbook of some hundreds of
    dives is ten megabytes of UDDF, and a phone stops an app that reads that on the thread it
-   draws with.
+   draws with. So is everything after it: comparing what arrived with the logbook, applying the
+   review, and taking in the rest. Each shows a bar with how far it is, `AND-9`.
 
    **The dives are reviewed with the machinery a download already has**, `GUI-31`: a box
    apiece, what each appears to be a second copy of, and a choice held until *Apply* of whether

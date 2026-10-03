@@ -54,6 +54,50 @@ object LogbookWriter {
     }
 
     /**
+     * Puts every one of [items] in the logbook, each under its id, telling [told] after each.
+     *
+     * What [write] does for one, done for many in one pass. A type stored in one file is read once
+     * and written once rather than once an item, which for a few hundred dives is the difference
+     * between a moment and minutes: each write of a shared file reads and writes all of it.
+     *
+     * [apart] puts each item in a file of its own where the type has no file yet, for a logbook
+     * whose items will be taken out one at a time: taking one out of a shared file writes the
+     * rest of it back. `JSON-21` reads either layout.
+     */
+    fun writeAll(
+        store: FileStore,
+        description: ItemDescription,
+        items: List<Pair<String, Item>>,
+        apart: Boolean = false,
+        told: () -> Unit = {},
+    ) {
+        if (items.isEmpty()) return
+        val type = description.name
+        if (store.isFolder(type)) {
+            for ((id, item) in items) {
+                write(store, description, id, item)
+                told()
+            }
+            return
+        }
+        if (apart && !store.isFile("$type.json")) {
+            for ((id, item) in items) {
+                store.writeText("$type/$id.json", fileOf(ItemWriter.write(item, Units.DEFAULT)))
+                told()
+            }
+            return
+        }
+        val file = "$type.json"
+        val (held, units) = openedOr(store, file)
+        val members = LinkedHashMap(held.members)
+        for ((id, item) in items) {
+            members[id] = ItemWriter.write(item, units)
+            told()
+        }
+        store.writeText(file, fileOf(Stored.Members(members)))
+    }
+
+    /**
      * Takes the item called [id] out of the logbook.
      *
      * A file of its own goes; a member of a shared file is removed and the file written back. The

@@ -44,8 +44,21 @@ class StagedImportTest {
         // Which is what makes reviewing one cost nothing new. `RECON-1`.
         val (_, into) = logbook("region.json" to "{}")
         val (staging, import) = staged(arrayOf("region.json" to """{"a": {"name": "A"}}"""), into)
-        assertTrue(staging.isFile("region.json"), staging.namesIn("").toString())
+        // A file an item, since each leaves the folder as it is decided.
+        assertTrue(staging.isFile("region/a.json"), staging.namesIn("").toString())
         assertEquals("A", nameOf(import.staged, "a"))
+    }
+
+    @Test
+    fun `staging says how many items of how many are written`() {
+        val (_, into) = logbook("region.json" to "{}")
+        val heard = ArrayList<Pair<Int, Int>>()
+        Import.begin(
+            arriving("region.json" to """{"a": {"name": "A"}, "b": {"name": "B"}}""", "dive/d#0.json" to "{}"),
+            MemoryFileStore(emptyMap()),
+            into,
+        ) { done, of -> heard += done to of }
+        assertEquals(listOf(0 to 3, 1 to 3, 2 to 3, 3 to 3), heard)
     }
 
     @Test
@@ -73,7 +86,7 @@ class StagedImportTest {
         val (staging, import) = staged(arrayOf("region.json" to """{"a": {"name": "A"}}"""), into)
         val region = import.staged.logbook["a"]!!
         import.staged.change(Operation.EDIT, Change.Write(region, "name", "Corrected"))
-        assertTrue("Corrected" in staging.readText("region.json"), staging.readText("region.json"))
+        assertTrue("Corrected" in staging.readText("region/a.json"), staging.readText("region/a.json"))
         import.apply()
         assertEquals("Corrected", nameOf(into, "a"))
     }
@@ -185,7 +198,7 @@ class DecidedImportTest {
         assertIs<Outcome.Done>(import.insert("a"))
         assertTrue(into.logbook["a"] != null)
         assertEquals(listOf("b"), import.incoming.map { import.staged.logbook.idOf(it) })
-        assertTrue("a" !in staging.readText("region.json"), staging.readText("region.json"))
+        assertTrue(!staging.isFile("region/a.json") && staging.isFile("region/b.json"), staging.namesIn("region").toString())
     }
 
     @Test

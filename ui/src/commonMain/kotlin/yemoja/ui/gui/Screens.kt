@@ -270,6 +270,14 @@ internal class Platform(
      */
     val permit: ((granted: (Boolean) -> Unit) -> Unit)? = null,
     /**
+     * Keeps the screen on for as long as it is shown, or absent where a screen does not sleep.
+     *
+     * Shown while a download, an import or an export runs. A phone left to sleep part way through
+     * one stops reaching a cloud drive, and a long one nobody is looking at is easily taken for
+     * one that has stopped.
+     */
+    val awake: (@Composable () -> Unit)? = null,
+    /**
      * Told of a read while it runs and once more, with absent, when it stops, or absent where the
      * platform has nothing to do about one. A phone keeps the read alive in the background with a
      * notification of its own. `AND-3`.
@@ -900,6 +908,9 @@ private fun Home(
                     }
                 }
             }
+            val busy = taking.reading || giving.writing ||
+                reading.stage == Stage.LOOKING || reading.stage == Stage.READING
+            if (busy) platform.awake?.invoke()
             Inset("System") {
                 Deeds(deeds)
                 Reader(universe, platform, reading, changer, downloads)
@@ -1036,6 +1047,10 @@ private class Taking {
 
     /** Whether what was picked is still being read, which a large file takes a while over. */
     var reading: Boolean by mutableStateOf(false)
+
+    /** How many items of how many are staged, once what was picked has been read. */
+    var done: Int by mutableStateOf(0)
+    var of: Int by mutableStateOf(0)
 }
 
 /**
@@ -1056,32 +1071,41 @@ private fun take(
         taking.open = true
         taking.arrived = 0
         taking.said = "Reading ${from.called}…"
+        taking.done = 0
+        taking.of = 0
         taking.reading = true
         scope.launch {
-            // Off the interface's thread: a logbook of some hundreds of dives is ten megabytes
-            // of UDDF, and a phone stops an app that reads that on the thread it draws with.
-            val done = withContext(Dispatchers.Default) {
-                try {
-                    universe.importFrom(from.path)
+            // Off the interface's thread, and what is said of it too: a logbook of some hundreds
+            // of dives is ten megabytes of UDDF, and a phone stops an app that reads that on the
+            // thread it draws with.
+            val (arrived, said) = withContext(Dispatchers.Default) {
+                val done = try {
+                    universe.importFrom(from.path) { done, of ->
+                        taking.done = done
+                        taking.of = of
+                        taking.said = "Staging what ${from.called} holds"
+                    }
                 } catch (refused: Exception) {
                     Outcome.Refused("${from.called} could not be read: ${refused.message}")
                 }
-            }
-            taking.reading = false
-            when (done) {
-                is Outcome.Refused -> taking.said = calledIn(done.reason, from)
+                when (done) {
+                    is Outcome.Refused -> 0 to calledIn(done.reason, from)
 
-                is Outcome.Done -> {
-                    val import = universe.importing
-                    taking.arrived = arrivedIn(import)
-                    taking.said = if (import == null || taking.arrived == 0) {
-                        "Yemoja found nothing to import in ${from.called}. It reads a logbook folder, " +
-                                "a UDDF file and a Diving Log database."
-                    } else {
-                        listOfNotNull(summaryOf(countedIn(import)), universe.importNote).joinToString(" ")
+                    is Outcome.Done -> {
+                        val import = universe.importing
+                        val arrived = arrivedIn(import)
+                        arrived to if (import == null || arrived == 0) {
+                            "Yemoja found nothing to import in ${from.called}. It reads a logbook folder, " +
+                                    "a UDDF file and a Diving Log database."
+                        } else {
+                            listOfNotNull(summaryOf(countedIn(import)), universe.importNote).joinToString(" ")
+                        }
                     }
                 }
             }
+            taking.arrived = arrived
+            taking.said = said
+            taking.reading = false
             changer.changed()
         }
     }
@@ -1098,6 +1122,9 @@ internal fun calledIn(said: String, from: Picked): String = said.replace(from.pa
 /** What the last export said, which stays under the deeds until the next. `GUI-37`. */
 private class Giving {
     var said: String? by mutableStateOf(null)
+
+    /** Whether an export is being written now. */
+    var writing: Boolean by mutableStateOf(false)
 }
 
 /**
@@ -1107,6 +1134,7 @@ private class Giving {
  */
 private suspend fun give(universe: Universe, to: Named, giving: Giving) {
     giving.said = "Writing ${to.called}…"
+    giving.writing = true
     giving.said = withContext(Dispatchers.Default) {
         try {
             val exported = universe.exportTo(to.path)
@@ -1116,6 +1144,7 @@ private suspend fun give(universe: Universe, to: Named, giving: Giving) {
             "${to.called} could not be written: ${refused.message}"
         }
     }
+    giving.writing = false
 }
 
 /** Look for what is within reach, and read it where exactly one thing is. */
@@ -1276,7 +1305,18 @@ private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
     if (universe == null || !taking.open) return
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
         taking.said?.let { Aside(it) }
-        if (taking.reading) return@Column
+        if (taking.reading) {
+            if (taking.of > 0) {
+                LinearProgressIndicator(
+                    progress = { (taking.done.toFloat() / taking.of).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+                )
+                Aside("${taking.done} of ${taking.of} items")
+            } else {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = HALF))
+            }
+            return@Column
+        }
         if (taking.arrived > 0) {
             Arrived(
                 universe = universe,

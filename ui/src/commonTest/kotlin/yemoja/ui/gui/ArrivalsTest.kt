@@ -214,3 +214,31 @@ class AppliedTest {
         assertEquals(Placing.Named, placingOf(fixed, reviewing))
     }
 }
+
+/*
+ * One arriving dive asked for alone, as applying asks for each in turn.
+ */
+class ArrivingOneTest {
+
+    @Test
+    fun `a dive asked for alone is the one the whole list holds, number and all`() {
+        val universe = review()
+        val import = universe.importing!!
+        val next = nextNumberIn(universe.logbook)
+        val whole = arrivingIn(import, universe.logbook, next)
+        for (dive in whole) {
+            val alone = arrivingIn(import, universe.logbook, next, only = dive.id).single()
+            assertEquals(dive.id, alone.id)
+            assertEquals(dive.number, alone.number, "${dive.id} numbered as in the list")
+            assertEquals(dive.onto, alone.onto)
+            assertEquals(dive.fix, alone.fix)
+        }
+    }
+
+    @Test
+    fun `a dive no longer waiting is not found`() {
+        val universe = review()
+        val import = universe.importing!!
+        assertTrue(arrivingIn(import, universe.logbook, 1, only = "nowhere#0").isEmpty())
+    }
+}

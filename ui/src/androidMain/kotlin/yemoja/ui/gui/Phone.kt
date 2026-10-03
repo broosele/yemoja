@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -42,6 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import yemoja.data.json.CachedFileStore
 import yemoja.data.json.DiskFileStore
 import yemoja.data.json.LogbookReader
@@ -82,8 +85,8 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     var refused by remember { mutableStateOf<String?>(null) }
     // Whether a logbook is being read, which a folder on a cloud drive can make take a while.
     var opening by remember { mutableStateOf(false) }
-    // How many of the files a first opening fetches have come, and of how many, once that is known.
-    var fetched by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    // How far the opening is: what it is doing, and how many of how many, once that is known.
+    var fetched by remember { mutableStateOf<Underway?>(null) }
     val scope = rememberCoroutineScope()
     // Read off the screen's own thread, so the app draws at once and says what it is doing rather
     // than staying blank while the files come in. `AND-5`.
@@ -93,7 +96,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
         opening = true
         scope.launch {
             val opened = withContext(Dispatchers.IO) {
-                openedIn(context, tree, devices) { done, of -> fetched = done to of }
+                openedIn(context, tree, devices) { said, done, of -> fetched = Underway(said, done.toLong(), of.toLong()) {} }
             }
             opening = false
             when (opened) {
@@ -197,6 +200,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
                 exporting.launch(EXPORT)
             },
             compact = compact,
+            awake = { Awake() },
             back = { enabled, onBack -> BackHandler(enabled, onBack) },
             deeds = mapOf(Deed.NEW to choose, Deed.OPEN to choose),
             permit = { granted ->
@@ -266,11 +270,14 @@ private fun Asked(question: String, onAnswer: (String?) -> Unit) {
 }
 
 /**
- * What the screen shows while a logbook is read: that it is, and, where files are being fetched
- * for a first opening, how many of them have come as [fetched] counts them.
+ * What the screen shows while a logbook is read: what it is doing, and how far, as [fetched] says.
+ *
+ * The screen is kept on meanwhile. A phone left to sleep part way through a first opening from a
+ * cloud drive stops it fetching, and the opening then waits on a phone nobody is looking at.
  */
 @Composable
-private fun BeingOpened(fetched: Pair<Int, Int>?) {
+private fun BeingOpened(fetched: Underway?) {
+    Awake()
     // On the theme's own surface, which is what gives the words a colour that shows in the dark.
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -278,11 +285,18 @@ private fun BeingOpened(fetched: Pair<Int, Int>?) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CircularProgressIndicator()
+            if (fetched == null || fetched.total <= 0) {
+                CircularProgressIndicator()
+            } else {
+                LinearProgressIndicator(
+                    progress = { (fetched.done.toFloat() / fetched.total).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth(BAR).padding(horizontal = 32.dp),
+                )
+            }
             val said = when {
                 fetched == null -> "Opening the logbook…"
-                fetched.first < fetched.second -> "Reading the logbook: ${fetched.first} of ${fetched.second} files"
-                else -> "Reading the logbook: all ${fetched.second} files are here"
+                fetched.total <= 0 -> fetched.name
+                else -> "${fetched.name}: ${minOf(fetched.done, fetched.total)} of ${fetched.total} files"
             }
             Text(said, modifier = Modifier.padding(top = 16.dp))
         }
@@ -301,19 +315,30 @@ private sealed class Opening {
  * Staged reviews and an agent's changes are kept in the app's own storage, there being no folder
  * beside a granted one that the grant reaches.
  */
-private fun openedIn(context: Context, tree: Uri, devices: Devices, told: (done: Int, of: Int) -> Unit): Opening {
+private fun openedIn(
+    context: Context,
+    tree: Uri,
+    devices: Devices,
+    told: (said: String, done: Int, of: Int) -> Unit,
+): Opening {
     // Read through a copy of the files kept in the app's own storage, so a folder on a cloud drive
     // gives up only what changed since the last opening. One copy per folder. `JSON-28`.
     val granted = GrantedFileStore(context.contentResolver, tree)
     val copies = context.filesDir.resolve("copies").resolve(tree.toString().hashCode().toUInt().toString(16))
-    val store = CachedFileStore(granted, granted::stamps, DiskFileStore(copies.path))
+    var read = 0
+    var files = 0
+    val store = CachedFileStore(granted, granted::stamps, DiskFileStore(copies.path)) { path ->
+        if (path.endsWith(".json") && files > 0) told(READING, ++read, files)
+    }
     val called = nameOf(context, tree) ?: "this folder"
     val staging = DiskFileStore(context.filesDir.resolve("import").path)
     val proposing = DiskFileStore(context.filesDir.resolve("proposed").path)
     return try {
         // What the copy lacks is fetched several files at a time, before the reading asks for
         // each in turn. A logbook's own files are all JSON, and nothing else is worth fetching.
-        granted.fetchAhead(store.wanting().filter { it.endsWith(".json") }, told)
+        granted.fetchAhead(store.wanting().filter { it.endsWith(".json") }) { done, of -> told(FETCHING, done, of) }
+        files = store.listedPaths().count { it.endsWith(".json") }
+        told(READING, 0, files)
         val universe = if (store.isFile(LogbookReader.MANIFEST)) {
             Universe.open(store, staging, proposing, devices)
         } else {
@@ -431,3 +456,27 @@ private fun bundled(path: String): String {
 
 /** Something to look up resources from. A function has no class of its own to ask. */
 private object Bundled
+
+/** What an opening says while it fetches the files its copy lacks. */
+private const val FETCHING = "Fetching the logbook"
+
+/** What an opening says while it reads the files, from its copy or from the folder. */
+private const val READING = "Reading the logbook"
+
+/** How much of the screen's width a bar of progress takes. */
+private const val BAR = 0.8f
+
+/**
+ * Keeps the screen on for as long as this is shown.
+ *
+ * A phone that sleeps part way through a long reading stops what reaches a cloud drive, and a
+ * reading nobody sees is easily mistaken for one that has stopped.
+ */
+@Composable
+internal fun Awake() {
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
+}

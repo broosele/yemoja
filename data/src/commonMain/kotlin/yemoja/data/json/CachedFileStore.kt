@@ -29,6 +29,8 @@ class CachedFileStore(
     /** Every file's stamp, by its path in the logbook, or absent for one that cannot say. */
     private val stamps: () -> Map<String, String>,
     private val copies: FileStore,
+    /** Told of every file read, from the copy or the logbook, for a caller showing how far a reading is. */
+    private val onRead: (path: String) -> Unit = {},
 ) : FileStore {
 
     /** The stamps as last listed, taken at the first reading and again after [forget]. */
@@ -52,6 +54,7 @@ class CachedFileStore(
     override fun namesIn(path: String): List<String> = logbook.namesIn(path)
 
     override fun readText(path: String): String {
+        onRead(path)
         written[path]?.let { return it }
         if (isLibrary(path)) return logbook.readText(path)
         val stamp = (listed ?: stamps().also { listed = it })[path]
@@ -74,8 +77,12 @@ class CachedFileStore(
      * For a store that can fetch several files at once, to do so before the reading asks for each
      * in turn. `JSON-28`.
      */
-    fun wanting(): List<String> {
-        val stamped = listed ?: stamps().also { listed = it }
+    fun wanting(): List<String> = wantingOf(listed ?: stamps().also { listed = it })
+
+    /** Every file the listing stamps, which is what a reading of the whole logbook reads at most. */
+    fun listedPaths(): Set<String> = (listed ?: stamps().also { listed = it }).keys
+
+    private fun wantingOf(stamped: Map<String, String>): List<String> {
         return stamped.filter { (path, stamp) -> path !in written && held[path]?.stamp != stamp }.keys.sorted()
     }
 

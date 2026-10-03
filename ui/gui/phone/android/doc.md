@@ -161,6 +161,16 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   **Both run off the screen's thread.** Android stops an app that keeps its screen waiting five
   seconds, and reading ten megabytes of UDDF takes longer than that. The home screen says
   *Reading logbook.uddf…* until the review opens, and the Import deed is greyed meanwhile.
+
+  *Extended on 2026-10-03, when the author found a phone asking to close the app, or going to
+  sleep, part way through:* **every long piece of work shows a bar and keeps the screen on.**
+  Opening says whether it is fetching or reading and how many files of how many; an import how
+  many items it has staged, then that it is comparing with the logbook; applying a review how
+  many dives it has taken in. While any of them, an export or a download runs, the screen is
+  kept on: a phone that sleeps part way through stops reaching a cloud drive, and work nobody can
+  see is easily taken for work that has stopped. The review's rows are drawn a batch a frame,
+  since a few hundred at once held the screen for seconds. Tried on the emulator with 347 dives:
+  no frame was held longer than a second, against two minutes and more before.
 - **AND-4 — Test devices.** *Settled:* **the author's phone and the SDK's emulator.** The
   emulator for the screens and the storage picker during development; the phone, on Android 12
   or later, for every download, since Bluetooth is proven only on real hardware.

@@ -187,13 +187,22 @@ private fun numberOf(item: Item, field: String): Double? =
  * Oldest first, and numbered in that order from [next] on. A logbook lists its dives newest
  * first, `DATA-89`, and that is the wrong way round here: a number counts up through a diver's
  * diving, so a list that hands them out has to run the same way.
+ *
+ * [only] asks for the one dive with that id, as it stands in the whole list, and the list is
+ * walked no further than it. The dives before it are still asked what they appear to be, which
+ * is what its number depends on. Applying a review asks for each dive in turn, and building the
+ * whole list each time made applying a few hundred dives take minutes.
  */
-internal fun arrivingIn(import: Import, into: ItemSet, next: Int): List<Arriving> {
+internal fun arrivingIn(import: Import, into: ItemSet, next: Int, only: String? = null): List<Arriving> {
     val out = ArrayList<Arriving>()
     var number = next
     for (item in import.incoming.filter { it.description == Types.DIVE }.sortedBy(::whenOf)) {
         val id = import.staged.logbook.idOf(item) ?: continue
         val onto = if (import.asked(id)) import.proposal(id) else null
+        if (only != null && id != only) {
+            if (onto == null && numberOf(item) == null) number++
+            continue
+        }
         val site = siteNamedBy(item)?.takeIf { import.staged.logbook[it] != null }
         // Where the dive was is a question only while the site it names has no name of its
         // own: that is a fix the device proposed and nobody has answered. A site arriving with
@@ -220,6 +229,7 @@ internal fun arrivingIn(import: Import, into: ItemSet, next: Int): List<Arriving
             },
         )
         if (onto == null && own == null) number++
+        if (only != null) break
     }
     return out
 }

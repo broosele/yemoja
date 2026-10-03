@@ -1,6 +1,7 @@
 package yemoja.data.json
 
 import yemoja.data.Dimension
+import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
 import yemoja.data.NumberDescription
@@ -218,5 +219,59 @@ class DeletedItemTest {
         LogbookWriter.delete(store, POSTBOX, "market_square")
         assertTrue(store.isFile("postbox.json"))
         assertEquals(0, LogbookReader.read(store, TYPES).size)
+    }
+}
+
+/*
+ * Many items put into a logbook in one pass.
+ */
+class WrittenTogetherTest {
+
+    /** A store that counts how often each file is written. */
+    private class Counting(files: Map<String, String>) : FileStore {
+        val writes = HashMap<String, Int>()
+        private val inner = MemoryFileStore(files)
+        override fun isFile(path: String): Boolean = inner.isFile(path)
+        override fun isFolder(path: String): Boolean = inner.isFolder(path)
+        override fun namesIn(path: String): List<String> = inner.namesIn(path)
+        override fun readText(path: String): String = inner.readText(path)
+        override fun writeText(path: String, text: String) {
+            writes[path] = (writes[path] ?: 0) + 1
+            inner.writeText(path, text)
+        }
+        override fun delete(path: String) = inner.delete(path)
+    }
+
+    private val set = opened(
+        "postbox.json" to """{"a": {"name": "A"}, "b": {"name": "B"}, "c": {"name": "C"}}""",
+    ).second
+
+    private val items: List<Pair<String, Item>> = listOf("a", "b", "c").map { it to set[it]!! }
+
+    @Test
+    fun `a type kept in one file is written once, however many items go into it`() {
+        val store = Counting(mapOf("postbox.json" to """{"z": {"name": "Z"}}"""))
+        var told = 0
+        LogbookWriter.writeAll(store, POSTBOX, items) { told++ }
+        assertEquals(mapOf("postbox.json" to 1), store.writes)
+        assertEquals(3, told, "told once an item")
+        val again = LogbookReader.read(store, TYPES)
+        assertEquals(listOf("A", "B", "C", "Z"), listOf("a", "b", "c", "z").map { text(again, it, "name") })
+    }
+
+    @Test
+    fun `apart, each item is a file of its own, and reads back the same`() {
+        val store = Counting(emptyMap())
+        LogbookWriter.writeAll(store, POSTBOX, items, apart = true)
+        assertEquals(setOf("postbox/a.json", "postbox/b.json", "postbox/c.json"), store.writes.keys)
+        val again = LogbookReader.read(store, TYPES)
+        assertEquals("B", text(again, "b", "name"))
+    }
+
+    @Test
+    fun `apart does not split a type that already has a file`() {
+        val store = Counting(mapOf("postbox.json" to """{"z": {"name": "Z"}}"""))
+        LogbookWriter.writeAll(store, POSTBOX, items, apart = true)
+        assertEquals(mapOf("postbox.json" to 1), store.writes)
     }
 }
