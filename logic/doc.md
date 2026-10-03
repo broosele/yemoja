@@ -25,6 +25,8 @@ layer for anything it *does* is a bug in the design.
   the logbook by the shared machinery in [reconciliation.md](reconciliation.md).
 - **Search and filtering** — the definitions of "recent", "deep", "with this buddy".
 - **Tides** at a dive site on a day, from whichever calculator covers the site. `LOGIC-44`.
+- **Gas mixing:** what a cylinder holds after a gas is added, and which gases make a mix.
+  `LOGIC-45`.
 - Unit handling for *display and entry*: what a user is shown and what they type. A file
   declares what its own numbers are written in and the data layer converts on the way in,
   so a value held here is in the model's own unit — see [../data/doc.md](../data/doc.md).
@@ -1213,6 +1215,61 @@ To settle when we discuss architecture and features:
   a JVM and on Android and so takes no library. The browser build has none and never asks. A
   calculator is handed the function, so every test hands it a recorded answer and none reaches the
   service.
+
+- **LOGIC-45 — How a gas mix in a cylinder is worked out.** *Settled:* **as amounts of oxygen,
+  nitrogen and helium, with the pressure worked out from them by a virial equation fitted to the
+  published reference equations.** Decided on 2026-10-03, at the author's word, who asked for real
+  gases. `FEAT-30`.
+
+  **Pressures do not add, amounts do.** At 200 bar and 20 °C oxygen is 6 % more gas than an ideal
+  gas at that pressure, nitrogen 5 % less and helium 9 % less. A trimix 18/45 filled by ideal
+  pressures gets its helium to 106 bar where the mix needs 101, and a half-used EAN32 topped up
+  with air is 26.7 % and not the 26.5 % the pressures suggest. So `Contents` holds moles of each
+  gas in a litre of cylinder, adding a gas adds to those, and a pressure is always worked out from
+  them. `contentsOf` turns a mix and a pressure into contents, `toppedUp` adds a gas until a
+  pressure is reached, and `blended` finds the gases to add.
+
+  **The equation is a virial one to the fourth order**, in the amount of each gas, with a
+  coefficient for every way two, three and four molecules of the three gases can meet: thirty-one
+  in all. Van der Waals was tried first and is 5 to 8 % out at 200 bar, which is no better than
+  an ideal gas for helium. The coefficients are fitted, not looked up. Each pure gas is fitted to
+  its reference equation of state: Schmidt and Wagner for oxygen, Span and others for nitrogen,
+  Ortiz-Vega and others for helium, which agree with NIST's tables to four figures. What two and
+  three gases share is then fitted to the GERG-2008 mixing rules of Kunz and Wagner, the pure
+  gases held. [tool/gasfit.py](../tool/gasfit.py) does it, with CoolProp computing the reference,
+  and prints how far the fit is off: within 0.1 % for a pure gas and 0.3 % for any mix. A gauge
+  read to a bar at 200 is 0.5 %.
+
+  **Twenty degrees Celsius, and up to 340 bar.** The coefficients are for one temperature,
+  `TEMPERATURE`, so every pressure is what the cylinder reads once it has cooled to that. A fill
+  read hot is an error no equation corrects. Past `MOST_PRESSURE` the
+  fit has nothing behind it and a pressure is refused. A temperature that can be chosen is not
+  built.
+
+  **A pressure is the gas's own, so an empty cylinder holds nothing.** A gauge reads a bar less
+  than the gas is at, and a cylinder at nought on a gauge still holds a bar of what was in it.
+  That bar is ignored, as every blending table ignores it: it is half a percent of a cylinder at
+  200 bar, and counting it would make heliox impossible in a cylinder that had held air.
+
+  **Air is 21 % oxygen and the rest nitrogen**, as `Gas` has it. The argon in air is counted as
+  nitrogen, which moves the pressure of air at 200 bar by 0.1 %.
+
+  **A blend is the amounts that leave exactly the mix wanted.** With three gases and three
+  components there is one answer, and it is found as the amounts and then turned into the
+  pressure the cylinder reads after each gas, in the order the gases are listed. The order
+  changes those pressures and not the amounts: helium first reads 84 bar where helium after the
+  oxygen reads 101. Where more gases are listed than the mix needs, the fewest are used and the
+  earlier listed preferred, so a banked nitrox that is the mix already is used alone.
+
+  **What the cylinder holds is used, and drained only as far as it must be.** Where it holds too
+  much of something, the answer names the highest pressure it can be let down to and still be
+  filled to the mix, which throws away the least gas. Where no amounts make the mix in an empty
+  cylinder either, a trimix with no helium to add, the answer is that it is impossible and
+  nothing nearer is offered.
+
+  **A mix is answered in fractions, and as a `Gas` beside them.** A `Gas` holds whole percentages,
+  and a top-up lands between them. `Contents` gives the fractions as they are and the
+  nearest `Gas`, and a front end shows both.
 
 - **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones
    something used, unless there is only one.**

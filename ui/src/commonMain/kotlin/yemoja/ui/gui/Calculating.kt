@@ -87,6 +87,9 @@ internal enum class Calculation(val label: String) {
     /** The depth of air as narcotic as a mix is at a depth. `LOGIC-41`. */
     END("END"),
 
+    /** What a cylinder holds after a top-up, and which gases make a mix. `GUI-56`. */
+    MIX("Gas mix"),
+
     /** High and low water at a dive site on a day. `GUI-55`. */
     TIDES("Tides"),
 }
@@ -152,6 +155,9 @@ internal class Working {
 
     /** Where the plan will be saved, and what the last save said. `GUI-44`. */
     val saving: Saving = Saving()
+
+    /** The Gas mix form's boxes and which of its two questions is asked. `GUI-56`. */
+    val mixing: Mixing = Mixing()
 
     /** The Tides form's choices and what was answered. `GUI-55`. */
     val tiding: Tiding = Tiding()
@@ -494,6 +500,7 @@ private fun Calculators(
                         Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar, universe) {
                             SaveRow(working.saving, working.shaping, universe)
                         }
+                        Calculation.MIX -> MixForm(working.mixing)
                         Calculation.TIDES -> TidesForm(working.tiding, universe, tides, today())
                     }
                 }

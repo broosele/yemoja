@@ -292,7 +292,7 @@ you and its provider.
 
 ## Calculations
 
-Seven things can be calculated: a dive plan, SAC, NDL, MOD, EAD, END and tides. The dive plan is
+Eight things can be calculated: a dive plan, SAC, NDL, MOD, EAD, END, a gas mix and tides. The dive plan is
 shown first. None but the tides needs a logbook open to calculate, though saving or opening a plan
 does, and what you type stays while you look at another tab.
 
@@ -415,6 +415,29 @@ narcotic as your mix. Helium is not narcotic. Whether oxygen is, agencies disagr
 tick for it: counting oxygen gives the deeper and more cautious depth, and it is on until you turn
 it off. The three share one gas box, and each assumes salt water at sea level. EAD and END are
 rounded up.
+
+**Gas mix** answers two questions about filling a cylinder, and you choose which at the top.
+
+*Mix after a top-up* is for a cylinder that still holds something: type what is in it and at what
+pressure, the gas you top it up with, and the pressure you fill to. A 12 L cylinder of EAN32 used
+down to 100 bar and topped up with air to 200 bar holds EAN27, 26.7 % oxygen.
+
+*Gases to add for a mix* is for blending: type what the cylinder holds now, with a start pressure
+of 0 for an empty one, the mix you want and its pressure, and the gases you have, separated by
+commas. They start as `O2, He, air`, and `EAN32` or any other mix can be listed too. The answer is
+a line for each gas, in the order you listed them, with the pressure to fill to. List them in the
+order you fill. Where the cylinder holds too much of something, the first line says how far to
+drain it, and that is as little as will do. Where your gases cannot make the mix at all, trimix
+with no helium to add, the form says so.
+
+Cylinder size may be left empty. With it, the form adds how many litres of each gas go in.
+
+**These are real gases, which is why the pressures differ from a blending table that adds
+pressures up.** Helium at 200 bar is nearly a tenth less gas than its pressure suggests, and oxygen is
+more. Trimix 18/45 in an empty cylinder takes helium to 101 bar after the oxygen, where adding
+pressures says 106. The pressures are for a cylinder at 20 °C, so let it cool between gases and
+before the last reading: a cylinder read warm holds less than it shows. Pressures up to 340 bar
+are worked out. **Always analyse a mix before you breathe it**, whatever the form said.
 
 **Tides** gives the high and low waters of a day near one of your dive sites. Choose the site, and
 the day if it is not today, written `2026-10-03`. Only sites that have a position, and that a tide

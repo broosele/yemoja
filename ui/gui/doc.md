@@ -564,9 +564,48 @@ once and corrected. The numbers stay unused rather than being given to something
   A dive with no profile before takes the plan as its primary one; a dive with a recording keeps
   the recording, and the plan sits beside it for comparing.
 
+- **GUI-56 — Gas mix, as a calculation.** *Settled:* **an eighth entry in the Calculations list,
+  before Tides: one form asking one of two questions, what a top-up comes to and which gases to
+  add for a mix.** Decided on 2026-10-03, at the author's word. `FEAT-30`.
+
+  **Two questions over the same boxes**, chosen by a bullet as SAC chooses what it works out.
+  Both start from a cylinder, its gas and its pressure, and both end at a pressure, so those boxes
+  stay where they are when the question changes and what was typed stays in them. *Mix after a
+  top-up* adds a box for the gas added and answers the mix. *Gases to add for a mix* adds the mix
+  wanted and the gases to add, and answers a line a gas with the pressure to fill to. The
+  arithmetic is the model's, `LOGIC-45`.
+
+  **The gases to add are one box, and its order is the filling order.** `O2, He, air` until
+  typed over: the three the author named, air last because a compressor tops a cylinder up. The
+  author asked to choose the order on the form, and a list typed in order is the least there is
+  to operate, on a phone as much as on a desktop: reordering is retyping three words. A gas the
+  mix needs none of gets no line.
+
+  **A cylinder that must be drained is told how far**, in a line before the gases: *Drain to
+  39.4 bar*, or *until empty*. A mix the gases cannot make says so and names them, in the colour
+  a box that will not read is said in.
+
+  **A mix is answered as divers write it and to a tenth of a percent**: *EAN27 (26.7 % O₂)*. The
+  name is the nearest whole mix and the figure is what an analyser would be held against.
+
+  **Cylinder size is asked for and not needed.** The mix and the pressures are the same in any
+  cylinder. With a size the form adds the litres of each gas, counted at one bar as SAC counts
+  them. The box says *optional* while it is empty.
+
+  **Helium is `He` here.** `Gas` writes pure helium as `TMX0/100`, there being no logbook that
+  breathes it, and reads neither `He` nor `helium`. The form reads both and writes `He`, for
+  itself only: the data format is unchanged.
+
+  **A number may be typed with a comma**, which the number keys of a phone set to Dutch give.
+  The other forms do not read one yet.
+
+  **A line under the answer says what it assumes**: real gases at 20 °C, so the cylinder is left
+  to cool before a pressure is read, and the mix is analysed before it is breathed. The tab's
+  waiver is about a decompression model and says neither.
+
 - **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
   the form for the one chosen on the right: a dive plan, SAC, NDL, MOD, EAD and END.** Tides
-  joined them later, `GUI-55`.
+  joined them later, `GUI-55`, and the gas mix, `GUI-56`.
 
   A calculation reads no dive: a diver on a boat wants a number from figures they have in their
   head, and the logbook is neither here nor there. So it is a tab of its own rather than a box

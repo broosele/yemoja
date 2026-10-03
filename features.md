@@ -142,6 +142,15 @@ them.
   to run is always refused. It reads, and it stages a change where the user allows one. What it
   staged is reviewed on the home screen field by field, with anything the logbook has moved under
   marked before it is taken in.
+- **FEAT-30 — Gas mixing.** What a cylinder holds after a top-up, and which gases to add to make
+  a mix in a cylinder that is not empty: a half-used nitrox topped up with air, or a trimix made
+  from oxygen, helium and air on top of what the last dive left. Worked out with real gases, since
+  helium at 200 bar is nearly a tenth less gas than its pressure says and a blend filled by ideal
+  pressures is off by several bar.
+
+  *Built:* a Gas mix calculation in the window, on the desktop and on a phone. `LOGIC-45`,
+  `GUI-56`. Not built: a temperature other than twenty degrees, a gas with argon in it, and the
+  same question from the command line or an agent.
 
 ## Future
 

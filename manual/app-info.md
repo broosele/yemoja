@@ -91,6 +91,10 @@ The map itself — coastlines, lakes, borders, rivers and cities — is Natural 
 The tides are Rijkswaterstaat's: the stations, and the measured, forecast and astronomical
 water levels Yemoja fetches from its WaterWebservices, which it publishes under CC0.
 
+The gas mix calculation is fitted to published equations of state: Schmidt and Wagner's for
+oxygen, Span and others' for nitrogen, Ortiz-Vega and others' for helium, and the GERG-2008
+mixing rules of Kunz and Wagner, all as the CoolProp library computes them.
+
 The decompression chapter explains the published Bühlmann ZH-L16C model. With thanks to
 Erik C. Baker, whose writing on gradient factors made it comprehensible to a generation of
 divers.
