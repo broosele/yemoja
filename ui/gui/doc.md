@@ -785,12 +785,15 @@ once and corrected. The numbers stay unused rather than being given to something
   **What the model objects to is a list under the clocks**, one sentence each. Some warnings have no
   line to blame, such as a cylinder running out, and one list holds them all.
 
-  **Two faults are also marked on the line itself, in the error colour.** A gas is red on a line
+  **Three faults are also marked on the line itself, in the error colour.** A gas is red on a line
   that goes deeper than its MOD at the limit its role gives, or shallower than a hypoxic mix's
   minimum depth. A depth is red on a line where the dive
   is above the ceiling, judged at the run's own points as the model judges it when it warns, so the
   mark and the warning are one judgement. A worked-out line can be red too: a way up that begins
-  above the ceiling stays there until the ceiling clears, and saying otherwise would hide it.
+  above the ceiling stays there until the ceiling clears, and saying otherwise would hide it. A
+  duration is red on a line that stays at the depth of the line before it and gives none, there
+  being nothing else to time it by. Every such line is marked, though the refusal beneath names
+  only the first, so a reader filling them in sees how many are left.
 
   **It reaches the model through a `Run` rather than an item**, `LOGIC-37`, so a plan typed here and
   a plan on a dive are answered by one walk and cannot disagree; and the figures are the same list

@@ -327,7 +327,8 @@ interval and the CNS you start with.
 Each line breathes the gas of the line above it, shown in italics, until you choose another.
 Choosing the gas above makes it follow again. **+** adds a line below, and **×** takes one out.
 A gas turns red on a line that takes it deeper than its limit, or shallower than a hypoxic mix may
-be breathed, and a depth turns red on a line that takes you above the ceiling.
+be breathed, a depth turns red on a line that takes you above the ceiling, and a duration turns
+red on a line that stays at the depth above it without one.
 
 Below your lines, in italics, is the way up Yemoja calculates from where you stopped typing: every
 stop, and every gas switch it makes. It changes as you type, and there is nothing to press. If you

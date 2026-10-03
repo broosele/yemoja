@@ -75,6 +75,7 @@ import yemoja.logic.gasChoiceOf
 import yemoja.logic.gasIndexOf
 import yemoja.logic.gasKeyOf
 import yemoja.logic.gasLabelOf
+import yemoja.logic.needsDuration
 import yemoja.logic.gasWrongFor
 import yemoja.logic.isShort
 import yemoja.logic.lostGasTried
@@ -582,6 +583,8 @@ private fun TypedLine(
                 onChange = { shaping.segments[index] = segment.copy(duration = it, rate = "") },
                 hint = if (segment.duration.isBlank() && leg != null) clockOf(leg.seconds) else "",
                 derived = true,
+                // A line staying at its depth has nothing else to time it by.
+                wrong = needsDuration(shaping.segments, index),
             )
         }
         Tipped(PlannerTips.RATE, widths.rate) {

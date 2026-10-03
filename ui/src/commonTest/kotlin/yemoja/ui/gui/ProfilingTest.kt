@@ -1,6 +1,7 @@
 package yemoja.ui.gui
 
 import yemoja.data.Gas
+import yemoja.logic.needsDuration
 import yemoja.logic.Breathed
 import yemoja.logic.Conditions
 import yemoja.logic.Direction
@@ -150,6 +151,26 @@ class LaidOfTest {
         val wrong = assertIs<Shaped.Wrong>(shapedOf(planned(Segment("40"), Segment("40")).described()))
         assertEquals("Line 2 needs a duration, because it stays at 40 m", wrong.reason)
         assertEquals(1, wrong.legs.size, "the lines above it are still read")
+    }
+
+    @Test
+    fun `every line staying at its depth without a duration is marked, not only the first`() {
+        val lines = listOf(Segment("40"), Segment("40"), Segment("40"), Segment("18"), Segment("18", duration = "3"))
+
+        assertEquals(
+            listOf(false, true, true, false, false),
+            lines.indices.map { needsDuration(lines, it) },
+            "the descent and a stay with its duration need nothing",
+        )
+    }
+
+    @Test
+    fun `a line needing a duration is judged against the last line written, from the surface`() {
+        val skipped = listOf(Segment("30"), Segment(), Segment("30"))
+        assertTrue(needsDuration(skipped, 2), "a blank line between is passed over")
+        assertTrue(needsDuration(listOf(Segment("0")), 0), "a first line at the surface stays there")
+        assertTrue(!needsDuration(listOf(Segment("40"), Segment("deep")), 1), "a depth that will not read is wrong for that")
+        assertTrue(!needsDuration(listOf(Segment("deep"), Segment("40")), 1), "and so is one before it")
     }
 
     @Test

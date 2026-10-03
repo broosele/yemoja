@@ -216,6 +216,23 @@ private fun isBlank(segment: Segment): Boolean =
     segment.depth.isBlank() && segment.duration.isBlank() && segment.rate.isBlank()
 
 /**
+ * Whether the line at [index] of [segments] stays at the depth of the line before it and gives no
+ * duration, which [laidOf] refuses.
+ *
+ * Every such line answers, not only the first, so a form can mark each box that wants filling. A
+ * line whose depth, or whose previous line's depth, will not read answers false: that line is
+ * wrong for another reason.
+ */
+fun needsDuration(segments: List<Segment>, index: Int): Boolean {
+    val segment = segments[index]
+    if (isBlank(segment) || segment.duration.isNotBlank()) return false
+    val to = segment.depth.trim().toDoubleOrNull() ?: return false
+    val before = segments.subList(0, index).lastOrNull { !isBlank(it) }
+    val from = if (before == null) 0.0 else before.depth.trim().toDoubleOrNull() ?: return false
+    return to == from
+}
+
+/**
  * The legs [segments] lay out, and why the first that will not read does not, or null.
  *
  * A line that times itself by neither a duration nor a rate travels at [descentRate] or
