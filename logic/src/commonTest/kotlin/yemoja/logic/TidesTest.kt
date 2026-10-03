@@ -24,6 +24,15 @@ private val STATIONS = """
     dalem	Dalem	51.822	5.016527	a
 """.trimIndent()
 
+/**
+ * Two waters as the library outlines them: a box over the delta and the coast of Holland, which
+ * holds all three stations, and a box of open sea beside it, which holds none.
+ */
+private val WATERS = """
+    Delta	3.0 51.0 5.5 51.0 5.5 52.5 3.0 52.5
+    Open sea	1.0 51.0 3.0 51.0 3.0 52.5 1.0 52.5
+""".trimIndent()
+
 /** Under the Zeelandbrug, nine kilometres west of Stavenisse. */
 private const val BRIDGE_LATITUDE = 51.62
 private const val BRIDGE_LONGITUDE = 3.88
@@ -49,14 +58,31 @@ private val TURNS = answered(
     measured("2026-10-04T02:22:00.000+01:00", -115),
 )
 
-/** The service's answers by the grouping asked for, which is how the two series are told apart. */
+/** The astronomical tide's computed extremes, its curve, the forecast and the gauge, as [service] names them. */
+private const val EXTREMES = "astronomisch/GETETBRKD2"
+private const val PREDICTED = "astronomisch/"
+private const val FORECAST = "verwachting/"
+private const val GAUGE = "meting/"
+
+/**
+ * The service's answers by what is asked for, as a process type and a grouping with a slash
+ * between, which is how its series are told apart. Anything else has no content.
+ */
 private fun service(vararg answers: Pair<String, Posted>): (String, String) -> Posted = { _, body ->
-    answers.firstOrNull { (grouping, _) -> "\"Groepering\":{\"Code\":\"$grouping\"}" in body }?.second
-        ?: Posted(204, "")
+    answers.firstOrNull { (asked, _) ->
+        val (process, grouping) = asked.split('/')
+        "\"Groepering\":{\"Code\":\"$grouping\"},\"ProcesType\":\"$process\"" in body
+    }?.second ?: Posted(204, "")
 }
 
 private fun calculators(post: (String, String) -> Posted): List<TideCalculator> =
-    rijkswaterstaatCalculators(stationsOf(STATIONS), post)
+    rijkswaterstaatCalculators(stationsOf(STATIONS), watersOf(WATERS), post)
+
+private fun forecast(post: (String, String) -> Posted): TideCalculator =
+    calculators(post).single { it.accuracy == Accuracy.FORECAST }
+
+private fun gauge(post: (String, String) -> Posted): TideCalculator =
+    calculators(post).single { it.accuracy == Accuracy.MEASURED }
 
 private fun astronomical(post: (String, String) -> Posted): TideCalculator =
     calculators(post).single { it.accuracy == Accuracy.LOCAL }
@@ -95,6 +121,53 @@ class StationsTest {
         assertFalse(forecast.coversDay(today.plusDays(FORECAST_DAYS + 1L), today))
         assertTrue(predicted.coversDay(Date(2020, 1, 1), today))
         assertTrue(predicted.coversDay(Date(2027, 12, 31), today))
+    }
+
+    @Test
+    fun `a site in none of the waters is not covered, however near a station stands`() {
+        // Two hundred metres from Stavenisse's gauge, in a list of waters that leaves it out.
+        val elsewhere = rijkswaterstaatCalculators(
+            stationsOf(STATIONS),
+            watersOf("Open sea\t1.0 51.0 3.0 51.0 3.0 52.5 1.0 52.5"),
+            service(),
+        )
+        for (calculator in elsewhere) assertFalse(calculator.covers(51.6, 4.004), calculator.name)
+    }
+
+    @Test
+    fun `a station answers only for the water it stands in`() {
+        // In the open sea a kilometre from the delta's edge, forty from Scheveningen, and no station of its own.
+        for (calculator in calculators(service())) assertFalse(calculator.covers(52.0, 2.99), calculator.name)
+    }
+}
+
+class WatersTest {
+
+    private val waters = watersOf(WATERS)
+
+    @Test
+    fun `a line is a water with its name and its outline`() {
+        assertEquals(listOf("Delta", "Open sea"), waters.map { it.name })
+    }
+
+    @Test
+    fun `a position is held by the outline it lies inside`() {
+        val (delta, sea) = waters
+        assertTrue(delta.holds(BRIDGE_LATITUDE, BRIDGE_LONGITUDE))
+        assertFalse(sea.holds(BRIDGE_LATITUDE, BRIDGE_LONGITUDE))
+        assertTrue(sea.holds(52.0, 2.0))
+        assertFalse(delta.holds(53.0, 4.0))
+        assertFalse(delta.holds(27.9, 34.3))
+    }
+
+    @Test
+    fun `an outline with a notch leaves out what stands in the notch`() {
+        // A square with a wedge cut into its north side, as a dam cuts a lake out of a coast.
+        val notched = Water("Notched", doubleArrayOf(0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 3.0, 4.0, 2.0, 1.0, 1.0, 4.0, 0.0, 4.0))
+        assertTrue(notched.holds(latitude = 0.5, longitude = 2.0))
+        assertFalse(notched.holds(latitude = 3.0, longitude = 2.0))
+        assertTrue(notched.holds(latitude = 3.0, longitude = 0.5))
+        assertTrue(notched.holds(latitude = 3.0, longitude = 3.5))
     }
 }
 
@@ -180,7 +253,7 @@ class RijkswaterstaatTest {
 
     @Test
     fun `the astronomical turns are read, kept to the day, and told high from low on the Dutch clock`() {
-        val found = assertIs<Tidal.Found>(astronomical(service("GETETBRKD2" to Posted(200, TURNS))).tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
+        val found = assertIs<Tidal.Found>(astronomical(service(EXTREMES to Posted(200, TURNS))).tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
         val tides = found.tides
         assertEquals("Stavenisse", tides.station)
         assertEquals(9.0, tides.kilometres, 0.5)
@@ -211,7 +284,7 @@ class RijkswaterstaatTest {
     }
 
     @Test
-    fun `the forecast finds its turns in the curve`() {
+    fun `the gauge finds its turns in the curve`() {
         val curve = answered(
             measured("2026-10-03T02:00:00.000+01:00", -100),
             measured("2026-10-03T02:10:00.000+01:00", -120),
@@ -221,9 +294,9 @@ class RijkswaterstaatTest {
             measured("2026-10-03T02:50:00.000+01:00", 150),
             measured("2026-10-03T03:00:00.000+01:00", 130),
         )
-        val forecast = calculators(service("" to Posted(200, curve))).single { it.accuracy == Accuracy.FORECAST }
-        val found = assertIs<Tidal.Found>(forecast.tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
+        val found = assertIs<Tidal.Found>(gauge(service(GAUGE to Posted(200, curve))).tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
         assertEquals(7, found.tides.curve.size)
+        assertNull(found.tides.measuredUntil)
         assertEquals(
             listOf(
                 Extreme(Moment(DAY, Time(3, 10, 0)), -1.2, false),
@@ -253,8 +326,7 @@ class RijkswaterstaatTest {
             measured("2026-10-03T01:00:00.000+01:00", -120),
             measured("2026-10-03T02:00:00.000+01:00", 0),
         )
-        val forecast = calculators(service("" to Posted(200, curve))).single { it.accuracy == Accuracy.FORECAST }
-        val found = assertIs<Tidal.Found>(forecast.tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
+        val found = assertIs<Tidal.Found>(gauge(service(GAUGE to Posted(200, curve))).tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
         assertEquals(listOf(Extreme(Moment(DAY, Time(2, 0, 0)), -1.2, false)), found.tides.extremes)
         assertEquals(3, found.tides.curve.size)
     }
@@ -263,7 +335,7 @@ class RijkswaterstaatTest {
     fun `a station holding nothing gives way to the next nearest`() {
         val stations = stationsOf("near\tNear\t51.62\t3.9\ta\nfurther\tFurther\t51.598\t4.004\ta\n")
         val asked = ArrayList<String>()
-        val calculator = rijkswaterstaatCalculators(stations) { _, body ->
+        val calculator = rijkswaterstaatCalculators(stations, watersOf(WATERS)) { _, body ->
             asked += if ("\"Code\":\"near\"" in body) "near" else "further"
             if ("\"Code\":\"near\"" in body || "GETETBRKD2" !in body) Posted(204, "") else Posted(200, TURNS)
         }.single { it.accuracy == Accuracy.LOCAL }
@@ -272,7 +344,8 @@ class RijkswaterstaatTest {
         // The turns from each in turn, and then the curve from the one that answered.
         assertEquals(listOf("near", "further", "further"), asked)
         // Where neither answers, what is said is what the nearest said.
-        val none = rijkswaterstaatCalculators(stations) { _, _ -> Posted(204, "") }.single { it.accuracy == Accuracy.LOCAL }
+        val none = rijkswaterstaatCalculators(stations, watersOf(WATERS)) { _, _ -> Posted(204, "") }
+            .single { it.accuracy == Accuracy.LOCAL }
         assertEquals(
             Tidal.None("Rijkswaterstaat has nothing for Near on 2026-10-03"),
             none.tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY),
@@ -282,6 +355,101 @@ class RijkswaterstaatTest {
     @Test
     fun `a site with no station in reach is none`() {
         val none = assertIs<Tidal.None>(astronomical(service()).tides(27.9, 34.3, DAY))
-        assertEquals("no station within 50 km", none.reason)
+        assertEquals("no station within 50 km in the same water", none.reason)
+    }
+}
+
+class ForecastTest {
+
+    /** The gauge through a low water at 03:10 on the clock, and up to its last reading at 03:40. */
+    private val read = answered(
+        measured("2026-10-03T01:50:00.000+01:00", -100),
+        measured("2026-10-03T02:00:00.000+01:00", -118),
+        measured("2026-10-03T02:10:00.000+01:00", -125),
+        measured("2026-10-03T02:20:00.000+01:00", -110),
+        measured("2026-10-03T02:30:00.000+01:00", -80),
+        measured("2026-10-03T02:40:00.000+01:00", -40),
+    )
+
+    /**
+     * The forecast over the same hours and on through a high water at 04:10 on the clock. Its part
+     * already past is two issues end to end, and it stands twelve centimetres under the gauge where
+     * the gauge stops.
+     */
+    private val issued = answered(
+        measured("2026-10-03T01:50:00.000+01:00", -90),
+        measured("2026-10-03T02:00:00.000+01:00", -105),
+        measured("2026-10-03T02:10:00.000+01:00", -92),
+        measured("2026-10-03T02:20:00.000+01:00", -111),
+        measured("2026-10-03T02:30:00.000+01:00", -96),
+        measured("2026-10-03T02:40:00.000+01:00", -52),
+        measured("2026-10-03T02:50:00.000+01:00", -52),
+        measured("2026-10-03T03:00:00.000+01:00", 20),
+        measured("2026-10-03T03:10:00.000+01:00", 60),
+        measured("2026-10-03T03:20:00.000+01:00", 40),
+        measured("2026-10-03T03:30:00.000+01:00", 0),
+    )
+
+    @Test
+    fun `today is the gauge as far as it has read, and the forecast from there on`() {
+        val found = assertIs<Tidal.Found>(
+            forecast(service(FORECAST to Posted(200, issued), GAUGE to Posted(200, read)))
+                .tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY),
+        )
+        val tides = found.tides
+        assertEquals(Moment(DAY, Time(3, 40, 0)), tides.measuredUntil)
+        // Six readings of the gauge and the five of the forecast after its last, none of the forecast's past.
+        assertEquals(
+            listOf(-1.0, -1.18, -1.25, -1.1, -0.8, -0.4, -0.52, 0.2, 0.6, 0.4, 0.0),
+            tides.curve.map { it.height },
+        )
+        // The forecast starts twelve centimetres under the gauge, mid-rise, and that step is no turn.
+        assertEquals(
+            listOf(
+                Extreme(Moment(DAY, Time(3, 10, 0)), -1.25, false),
+                Extreme(Moment(DAY, Time(4, 10, 0)), 0.6, true),
+            ),
+            tides.extremes,
+        )
+    }
+
+    @Test
+    fun `a step where the forecast takes over is two turns to whoever does not move it to meet the gauge`() {
+        val measured = listOf(-1.25, -1.1, -0.8, -0.4).mapIndexed { at, height -> Reading(Moment(DAY, Time(3, at * 10, 0)), height) }
+        val ahead = listOf(-0.52, 0.2, 0.6, 0.4).mapIndexed { at, height -> Reading(Moment(DAY, Time(4, at * 10, 0)), height) }
+        assertEquals(3, turnsIn(measured + ahead).size)
+        assertEquals(listOf(Extreme(Moment(DAY, Time(4, 20, 0)), 0.6, true)), turnsAcross(measured, ahead))
+    }
+
+    @Test
+    fun `a day that has not begun is the forecast alone`() {
+        val found = assertIs<Tidal.Found>(
+            forecast(service(FORECAST to Posted(200, issued))).tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY),
+        )
+        assertNull(found.tides.measuredUntil)
+        assertEquals(11, found.tides.curve.size)
+    }
+
+    @Test
+    fun `a gauge that has read the whole of what the forecast holds is not followed by one`() {
+        val found = assertIs<Tidal.Found>(
+            forecast(service(FORECAST to Posted(200, read), GAUGE to Posted(200, read)))
+                .tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY),
+        )
+        assertNull(found.tides.measuredUntil)
+        assertEquals(6, found.tides.curve.size)
+    }
+
+    @Test
+    fun `only a station with a forecast and a gauge is asked`() {
+        val stations = stationsOf("near\tNear\t51.62\t3.9\taf\nfurther\tFurther\t51.598\t4.004\tafm\n")
+        val asked = ArrayList<String>()
+        val calculator = rijkswaterstaatCalculators(stations, watersOf(WATERS)) { _, body ->
+            asked += if ("\"Code\":\"near\"" in body) "near" else "further"
+            Posted(200, issued)
+        }.single { it.accuracy == Accuracy.FORECAST }
+        val found = assertIs<Tidal.Found>(calculator.tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
+        assertEquals("Further", found.tides.station)
+        assertEquals(listOf("further", "further"), asked)
     }
 }

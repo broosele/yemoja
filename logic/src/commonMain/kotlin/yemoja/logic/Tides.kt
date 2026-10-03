@@ -60,6 +60,9 @@ data class Reading(val at: Moment, val height: Double)
  * metres above the datum [datum] names, so a reader is told what a figure is against rather than
  * left to guess. [kilometres] is how far the station answering is from the site asked about.
  *
+ * [measuredUntil] is the last moment the curve is a gauge's reading, where the rest of it is a
+ * forecast. It is absent where the curve is of one kind throughout.
+ *
  * Immutable.
  */
 class Tides(
@@ -69,6 +72,7 @@ class Tides(
     val clock: String,
     extremes: List<Extreme>,
     curve: List<Reading>,
+    val measuredUntil: Moment? = null,
 ) {
     val extremes: List<Extreme> = extremes.toList()
     val curve: List<Reading> = curve.toList()
@@ -90,8 +94,10 @@ sealed class Tidal {
  * the water it stands, and which sites and days it answers for.
  *
  * A site is a position and nothing more: the logbook's dive sites know nothing of tides, so a
- * calculator decides from latitude and longitude alone whether a site is one it covers. The
- * window lists the calculators covering a site, most accurate first, and asks the one chosen.
+ * calculator decides from latitude and longitude alone whether a site is one it covers. A lake
+ * beside the sea has no tide, so being near a tide station is not enough, and a calculator has
+ * to know which water a position lies in. The window lists the calculators covering a site, most
+ * accurate first, and asks the one chosen.
  */
 interface TideCalculator {
     val name: String
@@ -134,6 +140,51 @@ fun stationsOf(text: String): List<Station> = text.lineSequence()
     }
     .toList()
 
+/**
+ * Water is one tidal water a calculator covers, as libraries/tides/waters.txt outlines it.
+ *
+ * The outline is one ring of longitude and latitude alternating, as the map's shapes are written.
+ * It is drawn generously over land and exactly along a dam, since a dive site stands on the shore
+ * and what must be told apart is the water either side of a dam: the Oosterschelde from the
+ * Grevelingen, the sea from a lake behind the dunes.
+ */
+class Water(val name: String, ring: DoubleArray) {
+    private val ring: DoubleArray = ring.copyOf()
+
+    init {
+        require(ring.size >= 6 && ring.size % 2 == 0) {
+            "an outline should be three or more pairs of longitude and latitude, but $name has ${ring.size} numbers"
+        }
+    }
+
+    /** Whether a position lies inside the outline, by counting the edges a line due east of it crosses. */
+    fun holds(latitude: Double, longitude: Double): Boolean {
+        var inside = false
+        val points = ring.size / 2
+        for (at in 0..<points) {
+            val next = (at + 1) % points
+            val x = ring[2 * at]
+            val y = ring[2 * at + 1]
+            val nextX = ring[2 * next]
+            val nextY = ring[2 * next + 1]
+            if ((y > latitude) != (nextY > latitude) && longitude < (nextX - x) * (latitude - y) / (nextY - y) + x) {
+                inside = !inside
+            }
+        }
+        return inside
+    }
+}
+
+/** The waters in [text], which is the library file: one a line, a name, a tab, and the outline. */
+fun watersOf(text: String): List<Water> = text.lineSequence()
+    .filter { it.isNotBlank() }
+    .map { line ->
+        val cells = line.split('\t')
+        require(cells.size == 2) { "a water should have two cells, but this line has ${cells.size}: $line" }
+        Water(cells[0], cells[1].trim().split(' ').map { it.toDouble() }.toDoubleArray())
+    }
+    .toList()
+
 /** Posted is what a POST came back with. */
 class Posted(val status: Int, val body: String)
 
@@ -146,14 +197,31 @@ class Posted(val status: Int, val body: String)
 expect fun postJson(url: String, body: String): Posted
 
 /**
+ * Every tide calculator the application has, read from the library's own files, which [text]
+ * gives whole by the path they are bundled under.
+ *
+ * The one place a front end asks, so that a calculator added here reaches every one of them.
+ */
+fun tideCalculators(text: (path: String) -> String): List<TideCalculator> =
+    rijkswaterstaatCalculators(
+        stationsOf(text("libraries/tides/rijkswaterstaat.txt")),
+        watersOf(text("libraries/tides/waters.txt")),
+    )
+
+/**
  * The three calculators reading the Rijkswaterstaat WaterWebservices, from [stations] as
- * libraries/tides/rijkswaterstaat.txt lists them and [post] as the way to the service.
+ * libraries/tides/rijkswaterstaat.txt lists them, [waters] as libraries/tides/waters.txt outlines
+ * them, and [post] as the way to the service.
  *
  * Most accurate first: the measurement, the forecast, the astronomical prediction. One service
  * answers all three, in Dutch clock time against NAP. `LOGIC-44`.
  */
-fun rijkswaterstaatCalculators(stations: List<Station>, post: (url: String, body: String) -> Posted = ::postJson): List<TideCalculator> {
-    val service = Rijkswaterstaat(stations, post)
+fun rijkswaterstaatCalculators(
+    stations: List<Station>,
+    waters: List<Water>,
+    post: (url: String, body: String) -> Posted = ::postJson,
+): List<TideCalculator> {
+    val service = Rijkswaterstaat(stations, waters, post)
     return listOf(RijkswaterstaatMeasured(service), RijkswaterstaatForecast(service), RijkswaterstaatAstronomical(service))
 }
 
@@ -164,17 +232,32 @@ const val STATION_REACH = 50_000.0
 const val FORECAST_DAYS = 2
 
 /**
- * Rijkswaterstaat is what the three calculators reading its service share: the stations, the way to
- * the service, and the request a day's series is asked for with.
+ * Rijkswaterstaat is what the three calculators reading its service share: the stations, the
+ * waters they stand in, the way to the service, and the request a day's series is asked for with.
  */
-private class Rijkswaterstaat(val stations: List<Station>, val post: (url: String, body: String) -> Posted) {
+private class Rijkswaterstaat(
+    stations: List<Station>,
+    val waters: List<Water>,
+    val post: (url: String, body: String) -> Posted,
+) {
+    /** The stations of each water. One standing in no water answers for no site. */
+    private val stationsIn: Map<Water, List<Station>> =
+        waters.associateWith { water -> stations.filter { water.holds(it.latitude, it.longitude) } }
 
-    /** The stations carrying [series] within reach of a position, the nearest first. */
-    fun near(latitude: Double, longitude: Double, series: Char): List<Pair<Station, Double>> =
-        stations.filter { series in it.series }
+    /**
+     * The stations carrying every one of [series] that may answer for a position, the nearest
+     * first: those in the water the position lies in, within reach of it.
+     *
+     * A position in none of the waters has no stations. The gauge outside a dam is the nearest
+     * one to a site on the lake behind it, and its tide is not the lake's.
+     */
+    fun near(latitude: Double, longitude: Double, series: String): List<Pair<Station, Double>> {
+        val water = waters.firstOrNull { it.holds(latitude, longitude) } ?: return emptyList()
+        return stationsIn.getValue(water).filter { station -> series.all { it in station.series } }
             .map { it to metresApart(latitude, longitude, it.latitude, it.longitude) }
             .filter { (_, metres) -> metres <= STATION_REACH }
             .sortedBy { (_, metres) -> metres }
+    }
 
     /**
      * A day's readings from the nearest station that has any, or why there are none.
@@ -184,7 +267,7 @@ private class Rijkswaterstaat(val stations: List<Station>, val post: (url: Strin
      * What is said where none of them answers is what the nearest said. A service out of reach is
      * not asked twice.
      */
-    fun nearestRead(latitude: Double, longitude: Double, series: Char, day: Date, process: String, grouping: String): Sought {
+    fun nearestRead(latitude: Double, longitude: Double, series: String, day: Date, process: String, grouping: String): Sought {
         val near = near(latitude, longitude, series).take(STATIONS_TRIED)
         var first: Sought.None? = null
         for ((station, metres) in near) {
@@ -194,7 +277,9 @@ private class Rijkswaterstaat(val stations: List<Station>, val post: (url: Strin
                 is Series.Read -> return Sought.Read(station, metres, read.readings)
             }
         }
-        return first ?: Sought.None("no station within ${(STATION_REACH / METRES_IN_KILOMETRE).roundToInt()} km")
+        return first ?: Sought.None(
+            "no station within ${(STATION_REACH / METRES_IN_KILOMETRE).roundToInt()} km in the same water",
+        )
     }
 
     /**
@@ -354,21 +439,71 @@ private class RijkswaterstaatAstronomical(private val service: Rijkswaterstaat) 
     }
 }
 
-/** RijkswaterstaatForecast is the forecast at the nearest station, the astronomical tide with the coming weather added. */
+/**
+ * RijkswaterstaatForecast is the tide at the nearest station as far as its gauge has read it, and
+ * the service's forecast from there on.
+ *
+ * **The forecast's past is never shown.** For a day under way the series holds steps of ten
+ * centimetres or more a few times a day, so that part of it is no curve of the water. What the
+ * gauge read stands in its place, which is why only a station with both series is asked. A day
+ * that has not begun has no steps. `LOGIC-44`.
+ */
 private class RijkswaterstaatForecast(private val service: Rijkswaterstaat) : TideCalculator {
-    override val name: String = "Rijkswaterstaat forecast"
+    override val name: String = "Rijkswaterstaat gauge and forecast"
     override val accuracy: Accuracy = Accuracy.FORECAST
     override val needsNetwork: Boolean = true
 
     override fun covers(latitude: Double, longitude: Double): Boolean =
-        service.near(latitude, longitude, FORECAST).isNotEmpty()
+        service.near(latitude, longitude, BOTH).isNotEmpty()
 
     /** Today and the days the forecast runs ahead. */
     override fun coversDay(day: Date, today: Date): Boolean =
         day >= today && today.daysUntil(day) <= FORECAST_DAYS
 
-    override fun tides(latitude: Double, longitude: Double, day: Date): Tidal =
-        service.curved(latitude, longitude, day, FORECAST, "verwachting")
+    override fun tides(latitude: Double, longitude: Double, day: Date): Tidal {
+        val forecast = when (val sought = service.nearestRead(latitude, longitude, BOTH, day, "verwachting", "")) {
+            is Sought.Offline -> return Tidal.Offline(sought.reason)
+            is Sought.None -> return Tidal.None(sought.reason)
+            is Sought.Read -> sought
+        }
+        // Nothing measured is the ordinary answer for a day that has not begun.
+        val measured = when (val read = service.readings(forecast.station, day, "meting", "")) {
+            is Series.Offline -> return Tidal.Offline(read.reason)
+            is Series.None -> emptyList()
+            is Series.Read -> read.readings
+        }
+        val last = measured.lastOrNull()
+        val ahead = forecast.readings.filter { last == null || it.at > last.at }
+        val curve = measured + ahead
+        return Tidal.Found(
+            Tides(
+                station = forecast.station.name,
+                kilometres = forecast.metres / METRES_IN_KILOMETRE,
+                datum = DATUM,
+                clock = DUTCH_CLOCK,
+                extremes = turnsAcross(measured, ahead).filter { it.at.date == day },
+                curve = curve.filter { it.at.date == day },
+                measuredUntil = last?.at?.takeIf { it.date == day && ahead.isNotEmpty() },
+            ),
+        )
+    }
+}
+
+/**
+ * The turns of the tide in a gauge's readings followed by a forecast's.
+ *
+ * The forecast seldom starts where the gauge left off, and a step down in the middle of a rise
+ * would read as a high water and a low water ten minutes apart. So the turns are looked for with
+ * the forecast moved to meet the gauge, and each is then given the height it has unmoved.
+ */
+internal fun turnsAcross(measured: List<Reading>, ahead: List<Reading>): List<Extreme> {
+    val last = measured.lastOrNull()
+    val first = ahead.firstOrNull()
+    if (last == null || first == null) return turnsIn(measured + ahead)
+    val step = last.height - first.height
+    val unmoved = ahead.associate { it.at to it.height }
+    return turnsIn(measured + ahead.map { Reading(it.at, it.height + step) })
+        .map { turn -> unmoved[turn.at]?.let { turn.copy(height = it) } ?: turn }
 }
 
 /** RijkswaterstaatMeasured is what the gauge at the nearest station read, for a day that is over. */
@@ -388,7 +523,7 @@ private class RijkswaterstaatMeasured(private val service: Rijkswaterstaat) : Ti
 }
 
 /** A day's tide from a ten-minute series alone, its turns found in the curve. */
-private fun Rijkswaterstaat.curved(latitude: Double, longitude: Double, day: Date, series: Char, process: String): Tidal =
+private fun Rijkswaterstaat.curved(latitude: Double, longitude: Double, day: Date, series: String, process: String): Tidal =
     when (val sought = nearestRead(latitude, longitude, series, day, process, "")) {
         is Sought.Offline -> Tidal.Offline(sought.reason)
         is Sought.None -> Tidal.None(sought.reason)
@@ -407,9 +542,11 @@ private fun Rijkswaterstaat.curved(latitude: Double, longitude: Double, day: Dat
 /** The grouping the service files the computed extremes of the astronomical series under. */
 private const val EXTREMES = "GETETBRKD2"
 
-private const val ASTRONOMICAL = 'a'
-private const val FORECAST = 'f'
-private const val MEASURED = 'm'
+private const val ASTRONOMICAL = "a"
+private const val MEASURED = "m"
+
+/** A station with a forecast and a gauge, which the forecast calculator needs both of. */
+private const val BOTH = "fm"
 
 private const val METRES_IN_KILOMETRE = 1000.0
 

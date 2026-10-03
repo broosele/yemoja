@@ -441,14 +441,17 @@ are worked out. **Always analyse a mix before you breathe it**, whatever the for
 
 **Tides** gives the high and low waters of a day near one of your dive sites. Choose the site, and
 the day if it is not today, written `2026-10-03`. Only sites that have a position, and that a tide
-model covers, are listed. At present that means the Dutch coast and estuaries, with an internet
-connection: the figures are fetched from Rijkswaterstaat when you ask, and this is the
+model covers, are listed. At present that means the Oosterschelde, and the North Sea within fifty
+kilometres of a Dutch tide station. A site on the Grevelingen or on another lake is not listed:
+there is no tide there. It needs an internet connection: the figures are fetched from Rijkswaterstaat when you ask, and this is the
 one place where Yemoja itself uses a network. Nothing about you or your logbook is sent, only the name of
 a tide station and a date.
 
 **Model** is where the figures come from, and Yemoja chooses the most accurate one that covers the
-day. For a day that is over it is what the gauge measured. For today and the next two days it is
-the forecast, which includes the weather. For any other day it is the astronomical tide, the
+day. For a day that is over it is what the gauge measured. For today it is what the gauge has
+measured so far, followed by the forecast for the rest of the day, and a line above the table
+says until when it is measured. The forecast includes the weather, which the astronomical tide leaves out. For the next two
+days it is that forecast alone. For any other day it is the astronomical tide, the
 prediction from the sun and the moon alone, which Rijkswaterstaat has computed for some years back
 and a year or so ahead. You can choose another model from the list. Without a connection the
 models are greyed and the form says it could not reach them.
@@ -457,7 +460,7 @@ Under the choices is a line saying which tide station answered and how far it is
 then a table with a line for each turn of the tide: high or low water, the time, the height, and
 how far the water rose or fell since the turn before. Times are Dutch clock time, summer time
 included. Heights are in metres against NAP, the Dutch reference level, which is close to mean sea
-level. Under the table is the water level through the day.
+level. Under the table is the water level through the day, with the forecast part drawn dashed.
 
 **These are the tides at the station, not at your site.** The water at a site turns earlier or
 later than at the station, sometimes by more than half an hour. Slack water, when the current

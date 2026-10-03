@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -33,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import yemoja.data.Date
 import yemoja.data.ItemSet
+import yemoja.data.Moment
 import yemoja.data.Result
 import yemoja.data.Time
 import yemoja.data.ValueFormatException
@@ -138,6 +140,10 @@ internal fun rowsOf(extremes: List<Extreme>): List<TideRow> = extremes.mapIndexe
         difference = before?.let { hundredthsOf(abs(extreme.height - it.height)) }.orEmpty(),
     )
 }
+
+/** What the form says of a curve that is a gauge's as far as [until] and a forecast after. */
+internal fun measuredSaid(until: Moment): String =
+    "Measured until ${clockOf(until.time)}, forecast after that. The plot draws the forecast dashed."
 
 /** A time as a tide table writes it, to the minute. */
 internal fun clockOf(time: Time): String =
@@ -267,6 +273,7 @@ private fun TideAnswer(tides: Tides) {
         "${tides.station}, ${plain(tides.kilometres, 0)} km from the site. Times in ${tides.clock}, " +
             "heights in metres against ${tides.datum}.",
     )
+    tides.measuredUntil?.let { Aside(measuredSaid(it)) }
     val rows = rowsOf(tides.extremes)
     if (rows.isEmpty()) {
         Aside("The water did not turn on this day in what the model holds.")
@@ -275,7 +282,7 @@ private fun TideAnswer(tides: Tides) {
         HorizontalDivider(modifier = Modifier.widthIn(max = TABLE))
         for (row in rows) Lined(row, heading = false)
     }
-    if (tides.curve.size > 1) Curve(tides.curve, tides.extremes)
+    if (tides.curve.size > 1) Curve(tides.curve, tides.extremes, tides.measuredUntil)
     Aside(
         "The station's tide, not the site's: the water at a site turns earlier or later, and slack " +
             "water is not the same moment as high or low water. Wind and air pressure move the real " +
@@ -313,10 +320,11 @@ private fun Lined(row: TideRow, heading: Boolean) {
  * The day's water level against the hour, with a dot on each turn.
  *
  * Across is the whole day whatever the curve covers, so a forecast that stops at noon is seen to
- * stop there.
+ * stop there. What comes after [measuredUntil] is a forecast and is drawn dashed, joined to the
+ * gauge's last reading so the step between the two is seen as a step and not as a gap.
  */
 @Composable
-private fun Curve(curve: List<Reading>, extremes: List<Extreme>) {
+private fun Curve(curve: List<Reading>, extremes: List<Extreme>, measuredUntil: Moment?) {
     val ink = MaterialTheme.colorScheme.primary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val label = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -338,11 +346,17 @@ private fun Curve(curve: List<Reading>, extremes: List<Extreme>) {
                 }
 
                 val side = ticksOf(heights.start, heights.endInclusive, 5)
-                val path = Path()
-                for ((at, reading) in curve.withIndex()) {
-                    val point = Offset(x(reading.at.time), y(reading.height))
-                    if (at == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+                fun pathOf(readings: List<Reading>): Path = Path().also { path ->
+                    for ((at, reading) in readings.withIndex()) {
+                        val point = Offset(x(reading.at.time), y(reading.height))
+                        if (at == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+                    }
                 }
+
+                val read = if (measuredUntil == null) curve else curve.filter { it.at <= measuredUntil }
+                val drawn = pathOf(read)
+                val forecast = pathOf(read.takeLast(1) + curve.drop(read.size))
+                val dashes = PathEffect.dashPathEffect(floatArrayOf(DASH.toPx(), DASH.toPx()))
                 onDrawBehind {
                     for (tick in side) {
                         val at = y(tick)
@@ -356,7 +370,10 @@ private fun Curve(curve: List<Reading>, extremes: List<Extreme>) {
                         val laid = measurer.measure(hour.toString().padStart(2, '0'), label)
                         drawText(laid, topLeft = Offset(at - laid.size.width / 2f, bottom + 2f))
                     }
-                    drawPath(path, ink, style = Stroke(width = CURVE_LINE.toPx()))
+                    drawPath(drawn, ink, style = Stroke(width = CURVE_LINE.toPx()))
+                    if (measuredUntil != null) {
+                        drawPath(forecast, ink, style = Stroke(width = CURVE_LINE.toPx(), pathEffect = dashes))
+                    }
                     for (extreme in extremes) {
                         drawCircle(ink, DOT.toPx(), Offset(x(extreme.at.time), y(extreme.height)))
                     }
@@ -386,6 +403,9 @@ private val AXIS = 40.dp
 private val FOOT = 16.dp
 
 private val CURVE_LINE = 2.dp
+
+/** How long a dash of the forecast's line is, and the gap after it. */
+private val DASH = 5.dp
 private val THIN = 1.dp
 private val DOT = 4.dp
 

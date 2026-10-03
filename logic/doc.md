@@ -1164,7 +1164,22 @@ To settle when we discuss architecture and features:
   and `longitude` and a calculator decides from those whether it covers it. `TideCalculator` is
   the whole interface — a name, an `Accuracy`, whether it needs a network, `covers`, `coversDay`
   and `tides` — and a front end lists the ones covering a site and a day, most accurate first.
-  More are added by writing one; nothing else changes.
+  More are added by writing one and naming it in `tideCalculators`, which is what every front end
+  asks; nothing else changes.
+
+  **A position is covered where it lies in a tidal water, and being near a tide station is not
+  enough.** The first build covered whatever stood within reach of a station, and offered the
+  tide of the Brouwershavense Gat for the Grevelingen, a lake two kilometres from that gauge with
+  a dam between, and for a pond beside the Bergsche Maas. Nothing on a dive site tells them apart:
+  a site on the Grevelingen is salt, in Zeeland, and says no more. And nothing the service holds
+  does either, since most gauges in the Oosterschelde carry no astronomical series and look like a
+  lake's. So the calculators are given the waters they cover as outlines,
+  [libraries/tides/waters.txt](../libraries/tides/waters.txt): at present the Oosterschelde and
+  the North Sea. A position inside one is covered, and is answered by a station inside the same
+  one, so a site within the storm surge barrier is not given the tide outside it. An outline is
+  drawn generously over land, a site standing on the shore, and exactly along each dam, between
+  the gauges the service keeps on either side of it. The Westerschelde and the Wadden Sea are
+  tidal and are not outlined yet; each would be a line in the file.
 
   **Accuracy is five levels, least first**: a worldwide model, a regional one, a local prediction,
   a local forecast, a measurement. The author named four, and the forecast was added between the
@@ -1177,12 +1192,27 @@ To settle when we discuss architecture and features:
   | Calculator | Accuracy | Days | Turns of the tide |
   |---|---|---|---|
   | Rijkswaterstaat gauge | measured | before today | found in the ten-minute curve |
-  | Rijkswaterstaat forecast | local forecast | today and two days on | found in the ten-minute curve |
+  | Rijkswaterstaat gauge and forecast | local forecast | today and two days on | found in the ten-minute curve |
   | Rijkswaterstaat astronomical tide | local prediction | any the service has computed | the service's own, to the minute |
 
-  The gauge does not answer for today, because it has not seen today's later turns and the
-  forecast has. What the service has computed of the astronomical tide is its own to say: asked in
-  October 2026 it answered for 2020 to the end of 2027 and had nothing for 2028.
+  The gauge alone does not answer for today, because it has not seen today's later turns. What
+  the service has computed of the astronomical tide is its own to say: asked in October 2026 it
+  answered for 2020 to the end of 2027 and had nothing for 2028.
+
+  **Today is the gauge as far as it has read, and the forecast from there on.** The forecast
+  series for a day already under way holds steps, ten to fifteen centimetres at the stations
+  looked at, three or four times a day and at the same minute at stations far apart. That is
+  what forecasts issued one after another and kept end to end would look like, though the
+  service does not say so. A step against the tide reads as a high water and a low water ten
+  minutes apart: the first build showed six turns in a day at Kats. The part of the series already past is therefore not shown at all. The gauge's
+  readings stand in its place, which are what happened, and the answer says until when it is
+  measured. Only a station carrying both series is asked, which leaves out three that have a
+  forecast and no gauge. A day that has not begun was smooth at every station looked at.
+
+  The forecast seldom starts where the gauge left off. `turnsAcross` looks for the turns with the
+  forecast moved to meet the gauge's last reading, so that step is not a turn either, and gives
+  each turn the height it has unmoved. The curve is not moved: what is shown is what the service
+  said.
 
   **Which stations there are is a shipped file, and what they answer is asked.**
   [libraries/tides/rijkswaterstaat.txt](../libraries/tides/rijkswaterstaat.txt) lists each station with a position and the
@@ -1190,8 +1220,8 @@ To settle when we discuss architecture and features:
   The readings themselves are fetched when asked for and kept nowhere: a day is a few kilobytes,
   and what to keep and for how long is a question for when something needs a tide offline.
 
-  **The nearest station within fifty kilometres answers, and the next nearest where it holds
-  nothing**, three at most. A gauge is out for a day now and then. The answer names the station
+  **The nearest station of the same water within fifty kilometres answers, and the next nearest
+  where it holds nothing**, three at most. A gauge is out for a day now and then. The answer names the station
   and how far it is, so a reader sees whose tide they are looking at. Fifty kilometres is a guess
   that covers every Dutch estuary and reaches a wreck off the coast; it is `STATION_REACH`.
 
@@ -1210,6 +1240,10 @@ To settle when we discuss architecture and features:
   When the current at a site stops is earlier or later by an amount local to the site, and no
   calculator here knows it. The corrections divers use for the Oosterschelde are somebody's work
   and are being asked for; they would arrive as a calculator of their own.
+
+  **There is no current to plot.** The service predicts none anywhere. It measures the stream at
+  seventy places, none of them inside the Oosterschelde: the nearest are off the coast and in the
+  mouth of the Maas.
 
   **The network is reached through one function**, `postJson`, which is the JDK's own connection on
   a JVM and on Android and so takes no library. The browser build has none and never asks. A

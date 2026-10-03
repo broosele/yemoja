@@ -392,7 +392,8 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **Three choices, each with an answer already in it.** The dive site is one of the logbook's,
   and only those with a position that some model covers are listed, since any other would be
-  offered only to be refused. The model is the most accurate one covering that site on that day,
+  offered only to be refused. A site on a lake is not listed however near the sea it is, which
+  is the model's to know. `LOGIC-44`. The model is the most accurate one covering that site on that day,
   named with its accuracy, and another may be chosen. The day is today until one is typed, written
   as the logbook writes a date. Nothing is pressed: the form asks as soon as the three are known.
 
@@ -408,6 +409,10 @@ once and corrected. The numbers stay unused rather than being given to something
   station answered and how far it is from the site, the clock the times are in and the datum the
   heights are against. Under it the day's curve where the model has one, the whole day across
   whatever the curve covers, so a forecast that stops at noon is seen to stop.
+
+  **Today's curve is two things and is drawn as two.** The gauge's readings are a solid line and
+  the forecast after them a dashed one, joined, so the step between what was read and what was
+  forecast is seen as a step. A line above the table says until when the curve is measured.
 
   **It is not a plot of currents**, which was asked for and has no source: nothing free predicts
   the stream at a site. The line under the plot says what the table is not — the station's tide

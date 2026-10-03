@@ -100,6 +100,12 @@ astronomical prediction, `f` the forecast, `m` the measurement. Only tidal stati
 Nothing in a logbook names one. `tool/tidestations.py` writes the file, and `LOGIC-44` in
 [logic/doc.md](../logic/doc.md) says how it is used.
 
+Beside it, `tides/waters.txt` outlines the tidal waters those calculators cover, so that a dive
+site on a lake behind a dam is not given the tide of the sea in front of it. A water is one
+line: its name, a tab, and one ring written as a map shape is, longitude and latitude
+alternating. An outline runs generously over land, since a dive site stands on the shore, and
+exactly along each dam.
+
 
 One consequence: a library and a logbook share an id namespace, because resolution
 looks in the logbook first and then here. An id chosen carelessly will be shadowed
@@ -149,6 +155,10 @@ rename or remove one. The reason is in [data/libraries.md](../data/libraries.md)
   is published under CC0, taken in October 2026. Only each station's code, name and position were
   kept. Which series a station carries is not the catalogue's word, which lists some a station no
   longer delivers: each was asked for, and a letter is written where the service answered.
+- **The tidal waters** — written for this project. The outlines are approximate and are
+  well-known geography, as the regions' boxes are. Where one follows a dam it was drawn between
+  the positions of the gauges Rijkswaterstaat keeps on either side of that dam, which the same
+  catalogue gives, and checked against every gauge whose side is plain from its name.
 - **Certifications** — the qualifications agencies publish, recorded as fact. See the
   note on names below.
 - **Generic gear** — written for this project.
@@ -169,7 +179,8 @@ it: this is reference data, not a review.
 ## Status
 
 Populated: world regions split by continent, PADI and CMAS certifications, a catalogue
-of generic gear, the map at three scales, and the Dutch tide stations.
+of generic gear, the map at three scales, and the Dutch tide stations with the outlines of
+the Oosterschelde and the North Sea.
 
 No count is given here on purpose — it went stale the first time anything was added.
 `tool/checkdata.py` reports the current figure and verifies that every reference

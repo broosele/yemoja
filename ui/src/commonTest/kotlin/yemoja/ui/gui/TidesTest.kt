@@ -110,6 +110,14 @@ class TidesTest {
     }
 
     @Test
+    fun `a curve that is part gauge and part forecast says where the one ends`() {
+        assertEquals(
+            "Measured until 19:40, forecast after that. The plot draws the forecast dashed.",
+            measuredSaid(Moment(TODAY, Time(19, 40, 0))),
+        )
+    }
+
+    @Test
     fun `a height at the datum carries no sign`() {
         assertEquals("0.00", signedOf(0.0))
         assertEquals("0.00", signedOf(-0.004))

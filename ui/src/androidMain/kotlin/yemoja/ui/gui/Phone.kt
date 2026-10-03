@@ -46,8 +46,7 @@ import yemoja.logic.Universe
 import yemoja.logic.today
 import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.FoundDevices
-import yemoja.logic.rijkswaterstaatCalculators
-import yemoja.logic.stationsOf
+import yemoja.logic.tideCalculators
 import java.io.IOException
 
 /*
@@ -163,7 +162,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
                 )
             },
             today = ::today,
-            tides = { rijkswaterstaatCalculators(stationsOf(bundled("libraries/tides/rijkswaterstaat.txt"))) },
+            tides = { tideCalculators(::bundled) },
             pick = { _, hand ->
                 picked = hand
                 // Any file: neither a UDDF document nor a Diving Log database has a type a

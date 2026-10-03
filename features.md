@@ -202,16 +202,20 @@ them.
   site can be dived at all, and a logbook that knows a site's tides could say whether a planned
   dive falls in it. *Built, in part:* a Tides calculation gives the high and low waters of a day
   and the curve between, at the tide station nearest a dive site, from Rijkswaterstaat's measured,
-  forecast and astronomical series, which are CC0. `LOGIC-44`, `GUI-55`. That covers the Dutch coast
-  and estuaries, on the desktop and on Android, `AND-8`, with a network.
+  forecast and astronomical series, which are CC0. `LOGIC-44`, `GUI-55`. That covers the
+  Oosterschelde and the Dutch North Sea within fifty kilometres of a station, on the desktop and on
+  Android, `AND-8`, with a network. A site on the Grevelingen or on any other lake is not offered
+  one, having no tide.
 
   A dive site says nothing about tides: a calculator decides from the site's position whether it
   covers it, so the question of a field on a site for its station is closed by not having one.
 
   What is not built: **slack water at a site**, which is earlier or later than the station's turn
   by an amount local to the site, and whose corrections for the Oosterschelde are being asked for
-  from those who compiled them; **how hard the water runs**, which no free source predicts; **any
-  water outside the Netherlands**, which waits on a worldwide or a regional calculator; and **a tide
+  from those who compiled them; **how hard the water runs**, which Rijkswaterstaat predicts nowhere and measures at no
+  place inside the Oosterschelde; **the Westerschelde and the Wadden Sea**, which are tidal and
+  not outlined yet; **any water outside the Netherlands**, which waits on a worldwide or a
+  regional calculator; and **a tide
   without a network**.
 - **FEAT-25 — Scans of the papers a logbook stands on.** A photograph or a scan attached to a
   `person`'s `courses`, `medical` and `insurance`, and to a piece of gear's `maintenances`: the
