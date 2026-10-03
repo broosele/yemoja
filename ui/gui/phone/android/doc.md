@@ -73,7 +73,10 @@ processor and the emulator's, USB, IrDA and classic Bluetooth left as the librar
 app carries it as a file of its own, as the desktop does. The code reaching it is the desktop's,
 shared through the logic layer's `javaMain`, JNA taken as its Android archive. Bluetooth is asked
 for when Download is pressed, with notifications beside it, and a refusal says where to allow it,
-`AND-2`. While a read runs, a foreground service keeps the app alive with a notification showing
+`AND-2`. A computer that wants the code it is showing typed is given a dialog for it, `LOGIC-24`:
+the read waits on its own thread while the screen's asks, and leaving the dialog answers nothing.
+Tried on the emulator with a question put from another thread, there being no computer there to
+put one. While a read runs, a foreground service keeps the app alive with a notification showing
 its progress and a Cancel, `AND-3`. Tried on the emulator as far as an emulator goes: the
 permissions are asked, the library loads, and the scan finds nothing, there being no dive
 computer to find. No read has been made on a phone yet.

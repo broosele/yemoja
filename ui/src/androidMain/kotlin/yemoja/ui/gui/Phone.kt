@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.DocumentsContract
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,6 +51,7 @@ import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.FoundDevices
 import yemoja.logic.tideCalculators
 import java.io.IOException
+import java.util.concurrent.CompletableFuture
 
 /*
  * The window the screens are shown in on Android, which is the one part per platform.
@@ -62,7 +66,8 @@ import java.io.IOException
  * one, which is how a logbook is started here: New and Open are one question on a phone, which
  * folder. `AND-5`. What this supplies is the platform: the manual and the map read from the app,
  * whatever the phone opens a link with, whether the screen is a phone's, its back button, and a
- * dive computer over Bluetooth, asked permission for when a download starts. `AND-6`. A read is
+ * dive computer over Bluetooth, asked permission for when a download starts. `AND-6`. A computer
+ * that wants the code it is showing typed is given a dialog to type it in. `LOGIC-24`. A read is
  * told to [onReading] while it runs, which is how the app keeps it alive in the background.
  * `AND-3`. An import is a file picked and an export a file named, through Android's own pickers.
  * `AND-9`.
@@ -104,8 +109,14 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     // The folder picked last time, opened again. One that will not open says why and leaves the
     // welcome, from which another can be picked.
     LaunchedEffect(Unit) { remembered.getString(FOLDER, null)?.let { take(Uri.parse(it)) } }
+    // What a download has asked and is waiting on, a code its computer is showing. `LOGIC-24`.
+    var awaited by remember { mutableStateOf<Asking?>(null) }
     DisposableEffect(Unit) {
-        onDispose { devices.close() }
+        onDispose {
+            // A download still waiting is let go with no answer, or its thread would wait for good.
+            awaited?.answer?.complete(null)
+            devices.close()
+        }
     }
     // What a download needs the user to allow, asked when one starts rather than when the app
     // does, so the question comes with its reason in front of the user. `AND-2`.
@@ -163,6 +174,18 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
             },
             today = ::today,
             tides = { tideCalculators(::bundled) },
+            ask = { question ->
+                // Waited for on the thread that asked, which is a download's own, while the
+                // screen's thread shows the question. Asked from the screen's thread there would
+                // be nothing left to show it, so that is answered with nothing.
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    null
+                } else {
+                    val answer = CompletableFuture<String?>()
+                    Handler(Looper.getMainLooper()).post { awaited = Asking(question, answer) }
+                    answer.get()?.ifBlank { null }
+                }
+            },
             pick = { _, hand ->
                 picked = hand
                 // Any file: neither a UDDF document nor a Diving Log database has a type a
@@ -203,7 +226,43 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
                 text = { Text(said) },
             )
         }
+        awaited?.let { asked ->
+            Asked(asked.question) { typed ->
+                awaited = null
+                asked.answer.complete(typed)
+            }
+        }
     }
+}
+
+/** Asking is a question a download put and is waiting on: what it asked, and where the answer goes. */
+private class Asking(val question: String, val answer: CompletableFuture<String?>)
+
+/**
+ * A [question] with a box to answer it in, and [onAnswer] told what was typed, or nothing where
+ * the reader gave none.
+ *
+ * Leaving the dialog is giving no answer, which is what the download is then told.
+ */
+@Composable
+private fun Asked(question: String, onAnswer: (String?) -> Unit) {
+    var typed by remember(question) { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = { onAnswer(null) },
+        confirmButton = { TextButton(onClick = { onAnswer(typed) }) { Text("OK") } },
+        dismissButton = { TextButton(onClick = { onAnswer(null) }) { Text("Cancel") } },
+        text = {
+            Column {
+                Text(question.replaceFirstChar { it.uppercase() })
+                OutlinedTextField(
+                    value = typed,
+                    onValueChange = { typed = it },
+                    singleLine = true,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
+        },
+    )
 }
 
 /**
