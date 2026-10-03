@@ -34,11 +34,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import yemoja.data.Date
 import yemoja.data.Gas
 import yemoja.data.ValueFormatException
 import yemoja.logic.NOMINAL_DENSITY
 import yemoja.logic.SEA_LEVEL
 import yemoja.logic.Settings
+import yemoja.logic.TideCalculator
 import yemoja.logic.Universe
 import yemoja.logic.ambientAt
 import yemoja.logic.depthAt
@@ -49,6 +51,7 @@ import yemoja.logic.maximumOperatingDepth
 import yemoja.logic.minimumOperatingDepth
 import yemoja.logic.noDecompressionLimit
 import yemoja.logic.shownOf
+import yemoja.logic.today
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToLong
@@ -83,6 +86,9 @@ internal enum class Calculation(val label: String) {
 
     /** The depth of air as narcotic as a mix is at a depth. `LOGIC-41`. */
     END("END"),
+
+    /** High and low water at a dive site on a day. `GUI-55`. */
+    TIDES("Tides"),
 }
 
 /**
@@ -146,6 +152,9 @@ internal class Working {
 
     /** Where the plan will be saved, and what the last save said. `GUI-44`. */
     val saving: Saving = Saving()
+
+    /** The Tides form's choices and what was answered. `GUI-55`. */
+    val tiding: Tiding = Tiding()
 }
 
 /** Answer is what a calculation came to: a number, or why there is none. */
@@ -377,19 +386,22 @@ internal fun Calculations(
     working: Working,
     settings: Settings?,
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)? = null,
-    /** The logbook a plan is saved into, or absent where none is open. */
+    /** The logbook a plan is saved into and a tide's dive site is chosen from, or absent where none is open. */
     universe: Universe? = null,
+    /** What the Tides form can ask, or empty where the platform reaches none. */
+    tides: List<TideCalculator> = emptyList(),
+    today: () -> Date = ::today,
 ) {
     // A phone scrolls the warning away with the form, which it still heads; a third of a small
     // screen held by it for good would leave the form no room. `PHONE-2`.
     if (LocalCompact.current) {
-        Calculators(working, settings, scrollbar, universe)
+        Calculators(working, settings, scrollbar, universe, tides, today)
         return
     }
     Column(modifier = Modifier.fillMaxSize()) {
         Waiver()
         HorizontalDivider()
-        Calculators(working, settings, scrollbar, universe)
+        Calculators(working, settings, scrollbar, universe, tides, today)
     }
 }
 
@@ -445,6 +457,8 @@ private fun Calculators(
     settings: Settings?,
     scrollbar: (@Composable (state: ScrollState, modifier: Modifier) -> Unit)?,
     universe: Universe?,
+    tides: List<TideCalculator>,
+    today: () -> Date,
 ) {
     // A phone chooses the calculation from a list above it rather than beside it. `PHONE-2`.
     val compact = LocalCompact.current
@@ -480,6 +494,7 @@ private fun Calculators(
                         Calculation.PLAN -> PlanForm(working.shaping, settings, scrollbar, universe) {
                             SaveRow(working.saving, working.shaping, universe)
                         }
+                        Calculation.TIDES -> TidesForm(working.tiding, universe, tides, today())
                     }
                 }
             }

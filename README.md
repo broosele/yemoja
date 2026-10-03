@@ -14,6 +14,8 @@ outlives the app that wrote it.
 - **Versioned.** Changes are recoverable, and the history is inspectable.
 - **Offline first.** Everything works with no network. Backup and sync across your
   machines happen when a network is there, and never get in the way when it is not.
+  The tide calculation is the exception: it fetches a day's tide when asked, and says
+  so when it cannot.
 - **Reads your dive computer**, including over Bluetooth.
 - **Cross-platform.** Windows, Android, macOS, Linux and iPhone — in that order of
   priority.

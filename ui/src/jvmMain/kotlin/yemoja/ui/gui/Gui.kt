@@ -37,6 +37,8 @@ import javax.swing.JOptionPane
 import java.util.concurrent.Executor
 import javax.swing.SwingUtilities
 import yemoja.logic.Outcome
+import yemoja.logic.rijkswaterstaatCalculators
+import yemoja.logic.stationsOf
 
 /*
  * The window the screens are shown in, which is the one part per platform.
@@ -79,6 +81,7 @@ fun gui(folder: String? = null): Int {
                 },
                 open = ::browse,
                 today = ::today,
+                tides = { rijkswaterstaatCalculators(stationsOf(bundled("libraries/tides/rijkswaterstaat.txt"))) },
                 ask = ::asked,
                 pick = ::picked,
                 save = ::saved,

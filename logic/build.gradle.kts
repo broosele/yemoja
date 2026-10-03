@@ -72,7 +72,7 @@ val bundledLibraries: CopySpec = copySpec {
     from(rootProject.file("libraries")) {
         // The name FileStore.LIBRARIES resolves under. A build script cannot see it.
         into("libraries")
-        include("**/*.json", "map/**/*.txt", "LICENSE")
+        include("**/*.json", "map/**/*.txt", "tides/**/*.txt", "LICENSE")
     }
 }
 

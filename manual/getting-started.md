@@ -292,9 +292,9 @@ you and its provider.
 
 ## Calculations
 
-Six things can be calculated: a dive plan, SAC, NDL, MOD, EAD and END. The dive plan is shown
-first. None needs a logbook open to calculate, though saving or opening a plan does,
-and what you type stays while you look at another tab.
+Seven things can be calculated: a dive plan, SAC, NDL, MOD, EAD, END and tides. The dive plan is
+shown first. None but the tides needs a logbook open to calculate, though saving or opening a plan
+does, and what you type stays while you look at another tab.
 
 **A line at the top of the tab says what these figures are not**, and it is worth reading once:
 they come from a model, not a dive computer, they may be wrong, and you use them at your own risk. It says
@@ -415,6 +415,33 @@ narcotic as your mix. Helium is not narcotic. Whether oxygen is, agencies disagr
 tick for it: counting oxygen gives the deeper and more cautious depth, and it is on until you turn
 it off. The three share one gas box, and each assumes salt water at sea level. EAD and END are
 rounded up.
+
+**Tides** gives the high and low waters of a day near one of your dive sites. Choose the site, and
+the day if it is not today, written `2026-10-03`. Only sites that have a position, and that a tide
+model covers, are listed. At present that means the Dutch coast and estuaries, on a computer, with
+an internet connection: the figures are fetched from Rijkswaterstaat when you ask, and this is the
+one place where Yemoja itself uses a network. Nothing about you or your logbook is sent, only the name of
+a tide station and a date.
+
+**Model** is where the figures come from, and Yemoja chooses the most accurate one that covers the
+day. For a day that is over it is what the gauge measured. For today and the next two days it is
+the forecast, which includes the weather. For any other day it is the astronomical tide, the
+prediction from the sun and the moon alone, which Rijkswaterstaat has computed for some years back
+and a year or so ahead. You can choose another model from the list. Without a connection the
+models are greyed and the form says it could not reach them.
+
+Under the choices is a line saying which tide station answered and how far it is from the site,
+then a table with a line for each turn of the tide: high or low water, the time, the height, and
+how far the water rose or fell since the turn before. Times are Dutch clock time, summer time
+included. Heights are in metres against NAP, the Dutch reference level, which is close to mean sea
+level. Under the table is the water level through the day.
+
+**These are the tides at the station, not at your site.** The water at a site turns earlier or
+later than at the station, sometimes by more than half an hour. Slack water, when the current
+stops, is not the same moment as high or low water either. Yemoja does not know the correction for
+a site, and it says nothing about how hard the current runs. Wind and air pressure also move the
+real tide away from a prediction. Use local knowledge and a published slack-water table for a dive
+that depends on the current.
 
 ---
 

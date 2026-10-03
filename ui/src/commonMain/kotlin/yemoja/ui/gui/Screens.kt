@@ -183,6 +183,11 @@ internal class Platform(
     /** What day it is, which only a platform knows. Asked each time, a window outliving one. */
     val today: () -> yemoja.data.Date,
     /**
+     * The tide calculators this platform can ask, read when asked, or none where it has no way to
+     * reach one. The Tides form then says so. `GUI-55`.
+     */
+    val tides: () -> List<yemoja.logic.TideCalculator> = { emptyList() },
+    /**
      * Puts [question] to the reader and waits for the answer, or nothing where they give none.
      *
      * Waits, which is what makes it the platform's: a device that guards itself asks for a code
@@ -417,6 +422,8 @@ internal fun Application(universe: Universe?, platform: Platform) {
     val atlas by produceState<Atlas?>(null, platform) {
         value = withContext(Dispatchers.Default) { platform.atlas() }
     }
+    // The tide calculators, read once: what a platform can ask does not change under a window.
+    val tides = remember(platform) { platform.tides() }
     // A reference followed: the tab holding the item's type, opened on it. `GUI-28`.
     val follow = { id: String ->
         val item = universe?.logbook?.get(id)
@@ -523,7 +530,9 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                     kept.getValue(tab).working,
                                     universe?.settings,
                                     platform.scrollbar,
-                                    universe
+                                    universe,
+                                    tides,
+                                    platform.today,
                                 )
 
                             universe == null -> Unit
@@ -1337,9 +1346,13 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
 private fun sideOf(gathering: Gathering, up: Variable): String =
     if (gathering.reads) titledOf(up) else "Dives"
 
-/** One thing chosen from a list, its name being the box that chooses it. */
+/**
+ * One thing chosen from a list, its name being the box that chooses it.
+ *
+ * An entry in [greyed] is listed and cannot be chosen, which says it exists and is out of reach.
+ */
 @Composable
-internal fun Picked(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) {
+internal fun Picked(labels: List<String>, chosen: Int, greyed: Set<Int> = emptySet(), onChoose: (Int) -> Unit) {
     var picking by remember { mutableStateOf(false) }
     if (labels.isEmpty()) return
     val at = chosen.coerceIn(labels.indices)
@@ -1361,6 +1374,7 @@ internal fun Picked(labels: List<String>, chosen: Int, onChoose: (Int) -> Unit) 
             for ((index, label) in labels.withIndex()) {
                 DropdownMenuItem(
                     text = { Text(label) },
+                    enabled = index !in greyed,
                     onClick = {
                         onChoose(index)
                         picking = false

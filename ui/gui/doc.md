@@ -275,7 +275,8 @@ bind every front end.
 ## Cross-cutting requirements
 
 - **Offline is the normal case**, not an error state. Nothing may block on a
-  network, and the UI must not nag about being offline.
+  network, and the UI must not nag about being offline. The Tides calculation is the one
+  thing the window itself asks a network for, and says so where it is asked. `GUI-55`.
 - **Long operations** — dive computer downloads, imports, sync — need progress,
   cancellation, and a way to recover from failure partway through.
 - **Decompression output is a planning aid.** Wording and presentation must not
@@ -384,6 +385,38 @@ that cannot edit.
 Kept with their identifiers so earlier discussion still resolves. `GUI-1` and `GUI-2`
 are not among them: they were never questions, only the priority list above, mislabelled
 once and corrected. The numbers stay unused rather than being given to something else.
+
+- **GUI-55 — Tides, as a calculation.** *Settled:* **a seventh entry in the Calculations list: a
+  dive site, a model and a day, and under them the day's high and low waters and its curve.**
+  Decided on 2026-10-03, at the author's word. `FEAT-26`.
+
+  **Three choices, each with an answer already in it.** The dive site is one of the logbook's,
+  and only those with a position that some model covers are listed, since any other would be
+  offered only to be refused. The model is the most accurate one covering that site on that day,
+  named with its accuracy, and another may be chosen. The day is today until one is typed, written
+  as the logbook writes a date. Nothing is pressed: the form asks as soon as the three are known.
+
+  **A model out of reach is listed and greyed, not hidden.** Every model built reaches over a
+  network, `LOGIC-44`. Once one has found none, each that needs one is greyed in the list, so a
+  reader sees what there would be with a connection instead of a shorter list and no explanation.
+  The form then says what the model said and offers *Try again*. This is the tab's own exception
+  to *offline is the normal case*: nothing else in the window waits on a network, and this waits
+  off the screen's thread and says so, without stopping anything else.
+
+  **The answer is a table and a plot.** A line a turn: high or low water, the time to the minute,
+  the height with its sign, and how far the water moved since the turn before. Above it, which
+  station answered and how far it is from the site, the clock the times are in and the datum the
+  heights are against. Under it the day's curve where the model has one, the whole day across
+  whatever the curve covers, so a forecast that stops at noon is seen to stop.
+
+  **It is not a plot of currents**, which was asked for and has no source: nothing free predicts
+  the stream at a site. The line under the plot says what the table is not — the station's tide
+  and not the site's, and not slack water — in the form's own words, since the tab's waiver is
+  about a decompression model and says nothing of this.
+
+  What is asked is kept while the tab is, `GUI-27`, so looking back at a day asks nobody twice. A
+  phone lists the form and has no model to ask yet: reaching a network there is a permission the
+  application does not hold.
 
 - **GUI-54 — How the planner starts a new plan.** *Settled:* **a *New plan* deed in the save row,
   which asks first where the plan has changes not saved.** Decided on 2026-10-01, at the author's
@@ -533,7 +566,8 @@ once and corrected. The numbers stay unused rather than being given to something
   the recording, and the plan sits beside it for comparing.
 
 - **GUI-43 — Calculations, as a tab.** *Settled:* **a list of what can be worked out on the left,
-  the form for the one chosen on the right: a dive plan, SAC, NDL, MOD, EAD and END.**
+  the form for the one chosen on the right: a dive plan, SAC, NDL, MOD, EAD and END.** Tides
+  joined them later, `GUI-55`.
 
   A calculation reads no dive: a diver on a boat wants a number from figures they have in their
   head, and the logbook is neither here nor there. So it is a tab of its own rather than a box

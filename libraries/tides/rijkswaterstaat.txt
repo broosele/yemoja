@@ -1,0 +1,87 @@
+ameland.nes	Ameland, Nes	53.429766	5.759448	afm
+botlek.geulhaven	Botlek Geulhaven	51.891814	4.312531	am
+breskens.veerhaven	Breskens, Veerhaven	51.403661	3.550427	a
+brouwersdam.brouwershavensegat.2	Brouwersdam Brouwershavense Gat 2	51.766527	3.621747	af
+brouwersdam.brouwershavensegat.8	Brouwersdam Brouwershavense Gat 8	51.74644	3.81472	a
+cadzand.2	Cadzand, 2	51.379298	3.376275	a
+dalem	Dalem	51.822	5.016527	afm
+delfzijl	Delfzijl	53.328	6.931	afm
+denhelder.marsdiep	Den Helder, Marsdiep	52.964359	4.74499	afm
+denoever.waddenzee.voorhaven	Den Oever, Waddenzee voorhaven	52.931538	5.045596	afm
+dordrecht.oudemaas.benedenmerwede	Dordrecht Oude Maas, Beneden Merwede	51.82	4.671	afm
+dukegat	Dukegat	53.433611	6.926111	a
+eemhaven	Eemhaven	51.889213	4.417595	a
+eemshaven.haven	Eemshaven, haven	53.448702	6.828392	a
+eemshaven.waddenzee	Eemshaven, Waddenzee	53.474392	6.821731	am
+europahaven	Europahaven	51.962179	4.029151	a
+europoort.harmsenbrug	Europoort, Harmsenbrug	51.901771	4.210879	am
+europoort.hartelbrug	Europoort, Hartelbrug	51.86635	4.307781	am
+gatvanborssele	Gat van Borssele	51.411393	3.757884	a
+gouda.hollandscheijssel	Gouda Hollandsche IJssel	52.00658	4.71972	afm
+hagestein.beneden	Hagestein, beneden	51.993	5.1315	afm
+hank.bergschemaas	Keizersveer	51.7191	4.894	afm
+hansweert	Hansweert	51.44567	3.99744	afm
+haringvliet.10	Haringvliet, punt 10	51.862779	3.860561	afm
+harlingen.waddenzee	Harlingen, Waddenzee	53.175634	5.409342	afm
+heesbeen	Heesbeen	51.735848	5.124738	afm
+heinenoord.goidschalxoord	Heinenoord, Goidschalxoord	51.830298	4.451622	afm
+hellevoetsluis	Hellevoetsluis	51.819724	4.128239	afm
+hoekvanholland	Hoek van Holland	51.976899	4.119827	afm
+hoekvanholland.maeslantkering.beneden.noord	Hoek van Holland, Maeslantkering, Beneden, noord	51.958239	4.161443	a
+holwerd.veersteiger	Holwerd, Veersteiger	53.395656	5.878059	a
+huibertgat	Huibertgat	53.57375	6.398433	afm
+ijgeul.1	IJGeul, 1	52.463943	4.517596	am
+ijmuiden.buitenhaven	IJmuiden, buitenhaven	52.463	4.555	afm
+kats.zandkreeksluis	Kats, Zandkreeksluis	51.543947	3.865418	af
+kloosterzande.baalhoek	Kloosterzande, Baalhoek	51.366086	4.10258	afm
+knock	Knock	53.327222	7.030556	a
+kornwerderzand.waddenzee.buitenhaven	Kornwerderzand Waddenzee buitenhaven	53.07459	5.334757	afm
+krammersluizen.west	Krammersluizen west	51.65934474	4.144263681	a
+krimpenaandeijssel.hollandscheijssel	Krimpen aan de IJssel, Hollandsche IJssel	51.9165	4.579	afm
+krimpenaandelek.lek	Krimpen aan de Lek, Lek	51.890722	4.628906	afm
+lauwersoog.waddenzee	Lauwersoog, Waddenzee	53.408334	6.196046	afm
+lith.beneden	Lith dorp	51.810386	5.432911	afm
+maassluis	Maassluis	51.917507	4.249788	afm
+maasvlakte.amaliahaven	Maasvlakte Amaliahaven	51.96219	3.99496	am
+maasvlakte.hartelhaven	Maasvlakte, Hartelhaven	51.929692	4.042464	afm
+marollegat	Marollegat	51.479747	4.191958	afm
+moerdijk	Moerdijk	51.712	4.615	afm
+nieuwestatenzijl.dollard	Nieuwe Statenzijl, Dollard	53.231562	7.207423	afm
+oosterschelde.11	Oosterschelde, 11	51.64329	3.480331	af
+oosterschelde.14	Oosterschelde, 14	51.720117	3.676908	afm
+oosterschelde.4	Oosterschelde, 4	51.65514	3.69342	afm
+oosterschelde.roompotsluis.binnen	Oosterschelde Roompotsluis binnen	51.618	3.688	afm
+oosterschelde.roompotsluis.buiten	Oosterschelde Roompotsluis buiten	51.619	3.68	afm
+ossenisse	Ossenisse	51.407884	3.966769	am
+parksluis	Parksluis	51.906535	4.464452	am
+pogum	Pogum	53.321485	7.253999	a
+rilland.bath	Rilland, Bath	51.39878	4.21014	afm
+rotterdam.nieuwemaas.boerengat	Rotterdam, Nieuwe Maas, Boerengat	51.9184	4.5003	afm
+rozenburgsesluis.noordzijde	Rozenburgsesluis, noordzijde	51.895774	4.228892	am
+rozenburgsesluis.zuidzijde	Rozenburgsesluis, zuidzijde	51.891244	4.229823	am
+schaarvandenoord	Schaar van de Noord	51.377868	4.164992	am
+scheveningen	Scheveningen	52.099035	4.263563	afm
+schiermonnikoog.waddenzee	Schiermonnikoog, Waddenzee	53.468937	6.202908	afm
+schoonhoven	Schoonhoven	51.942	4.85	afm
+sintannaland.havensteiger	Sint Annaland, Haven Steiger	51.603596	4.109586	a
+spijkenisse.oudemaas	Spijkenisse, Oude Maas	51.861661	4.333954	am
+stavenisse	Stavenisse	51.598	4.004	afm
+stellendam.buitenhaven	Stellendam, buitenhaven	51.827028	4.033445	afm
+suurhofbrug.noordzijde	Suurhofbrug, noordzijde	51.937687	4.107234	am
+tennesseehaven	Tennesseehaven	51.963507	4.093561	a
+terneuzen	Terneuzen	51.336212	3.819812	afm
+terschelling.noordzee	Terschelling, Noordzee	53.442486	5.333033	afm
+terschelling.west	Terschelling, west	53.363045	5.220026	afm
+texel.noordzee	Texel, Noordzee	53.120612	4.733193	afm
+texel.oudeschild	Texel, Oudeschild	53.038835	4.850192	afm
+tholen.bergsediepsluis.buiten	Tholen, Bergse Diepsluis, buiten	51.511335	4.165743	am
+vlaardingen	Vlaardingen	51.899639	4.349048	afm
+vlaktevanderaan	Vlakte van de Raan	51.503721	3.242164	afm
+vlieland.haven	Vlieland, haven	53.296127	5.091456	afm
+vlissingen	Vlissingen	51.442	3.6	afm
+walsoorden	Walsoorden	51.398427	4.026206	am
+werkendam.nieuwemerwede	Werkendam, Nieuwe Merwede	51.806041	4.876824	afm
+westkapelle	Westkapelle	51.521448	3.440031	afm
+wierumergronden	Wierumergronden	53.515827	5.958261	afm
+willemstad.hollandschdiep	Willemstad, Hollandsch Diep	51.696401	4.40689	afm
+yerseke	Yerseke	51.506154	4.07513	afm

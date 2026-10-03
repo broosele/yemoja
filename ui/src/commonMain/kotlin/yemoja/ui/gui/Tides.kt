@@ -1,0 +1,384 @@
+package yemoja.ui.gui
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import yemoja.data.Date
+import yemoja.data.ItemSet
+import yemoja.data.Result
+import yemoja.data.Time
+import yemoja.data.ValueFormatException
+import yemoja.logic.Extreme
+import yemoja.logic.Reading
+import yemoja.logic.Tidal
+import yemoja.logic.TideCalculator
+import yemoja.logic.Tides
+import yemoja.logic.Types
+import yemoja.logic.Universe
+import kotlin.math.abs
+import kotlin.math.roundToLong
+
+/*
+ * The Tides form of the Calculations tab: a dive site, a tide model and a day, and under them the
+ * day's high and low waters and the curve between.
+ *
+ * See ../../../../../../gui/doc.md — `GUI-55`. The calculators are the logic layer's, `LOGIC-44`.
+ */
+
+/**
+ * Tiding is what the Tides form holds while the tab is open: what is chosen, and what each
+ * calculator answered. `GUI-27`.
+ *
+ * Not immutable.
+ */
+internal class Tiding {
+    /** The id of the site chosen, or absent until one is, the first listed then standing in. */
+    var site: String? by mutableStateOf(null)
+
+    /** The name of the model chosen, or absent for the most accurate one on offer. */
+    var calculator: String? by mutableStateOf(null)
+
+    /** The day as typed, and empty for today. */
+    var day: String by mutableStateOf("")
+
+    /** What each question came to, kept so that looking back at a day asks nobody again. */
+    val answers = mutableStateMapOf<Asked, Tidal>()
+
+    /** Whether a model that needs the network last found none, which greys every such model. */
+    var offline: Boolean by mutableStateOf(false)
+}
+
+/** Asked is one question put to a calculator: which, where, and for what day. */
+internal data class Asked(val calculator: String, val latitude: Double, val longitude: Double, val day: Date)
+
+/** Sited is a dive site a tide can be asked for: its id, its name, and where it is. */
+internal class Sited(val id: String, val title: String, val latitude: Double, val longitude: Double)
+
+/**
+ * The dive sites of [set] that have a position one of [calculators] covers, in the logbook's order.
+ *
+ * A site with no position cannot be asked about, and one no model covers would be offered only to
+ * be refused.
+ */
+internal fun sitedIn(set: ItemSet, calculators: List<TideCalculator>): List<Sited> =
+    entriesOf(set, Types.DIVE_SITE).mapNotNull { site ->
+        val latitude = (site.item.read("latitude") as? Result.Usable)?.value as? Double ?: return@mapNotNull null
+        val longitude = (site.item.read("longitude") as? Result.Usable)?.value as? Double ?: return@mapNotNull null
+        if (calculators.none { it.covers(latitude, longitude) }) return@mapNotNull null
+        Sited(site.id, site.title, latitude, longitude)
+    }
+
+/** The calculators answering for [site] on [day], the most accurate first. */
+internal fun offeredFor(calculators: List<TideCalculator>, site: Sited, day: Date, today: Date): List<TideCalculator> =
+    calculators.filter { it.covers(site.latitude, site.longitude) && it.coversDay(day, today) }
+        .sortedByDescending { it.accuracy }
+
+/**
+ * The model the form asks: the one named in [chosen] where it is on offer, else the most accurate
+ * that is not greyed, else the most accurate.
+ */
+internal fun calculatorOf(offered: List<TideCalculator>, chosen: String?, offline: Boolean): TideCalculator? =
+    offered.firstOrNull { it.name == chosen }
+        ?: offered.firstOrNull { !(offline && it.needsNetwork) }
+        ?: offered.firstOrNull()
+
+/** The day [typed] names, [today] where the box is empty, or absent where it names none. */
+internal fun dayAsked(typed: String, today: Date): Date? = when {
+    typed.isBlank() -> today
+    else -> try {
+        Date.parse(typed)
+    } catch (refused: ValueFormatException) {
+        null
+    }
+}
+
+/** TideRow is one line of the table: a turn of the tide as the form writes it. */
+internal data class TideRow(val turn: String, val time: String, val height: String, val difference: String)
+
+/**
+ * The table for [extremes]: each turn, when, how high, and how far the water moved since the turn
+ * before.
+ *
+ * The first line has no turn before it and so no difference.
+ */
+internal fun rowsOf(extremes: List<Extreme>): List<TideRow> = extremes.mapIndexed { index, extreme ->
+    val before = extremes.getOrNull(index - 1)
+    TideRow(
+        turn = if (extreme.high) "High water" else "Low water",
+        time = clockOf(extreme.at.time),
+        height = signedOf(extreme.height),
+        difference = before?.let { hundredthsOf(abs(extreme.height - it.height)) }.orEmpty(),
+    )
+}
+
+/** A time as a tide table writes it, to the minute. */
+internal fun clockOf(time: Time): String =
+    "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
+
+/** A height against a datum, to the centimetre and with its sign, since half of them are below it. */
+internal fun signedOf(metres: Double): String {
+    val written = hundredthsOf(abs(metres))
+    return when {
+        written == "0.00" -> written
+        metres < 0 -> "−$written"
+        else -> "+$written"
+    }
+}
+
+/** A length to the centimetre, both decimals always written so a column lines up. */
+private fun hundredthsOf(metres: Double): String {
+    val hundredths = (metres * HUNDREDTHS).roundToLong()
+    return "${hundredths / HUNDREDTHS.toLong()}.${(hundredths % HUNDREDTHS.toLong()).toString().padStart(2, '0')}"
+}
+
+private const val HUNDREDTHS = 100.0
+
+/**
+ * A dive site, a model and a day, and the day's tide under them.
+ *
+ * [calculators] are what the platform can ask; where there are none the form says so rather than
+ * offering a choice of nothing. A model is asked off the screen's thread, the ones built reaching
+ * over a network. `GUI-55`.
+ */
+@Composable
+internal fun TidesForm(tiding: Tiding, universe: Universe?, calculators: List<TideCalculator>, today: Date) {
+    Heading("Tides")
+    Aside("High and low water on a day, at the tide station nearest a dive site.")
+    if (calculators.isEmpty()) {
+        Aside("No tide model is available here.")
+        return
+    }
+    if (universe == null) {
+        Aside("Open a logbook to choose one of its dive sites.")
+        return
+    }
+    val sites = sitedIn(universe.logbook, calculators)
+    if (sites.isEmpty()) {
+        Aside("No dive site in this logbook has a position that a tide model covers.")
+        return
+    }
+    val site = sites.firstOrNull { it.id == tiding.site } ?: sites.first()
+    val day = dayAsked(tiding.day, today)
+    val offered = if (day == null) emptyList() else offeredFor(calculators, site, day, today)
+    val calculator = calculatorOf(offered, tiding.calculator, tiding.offline)
+
+    Choice("Dive site") {
+        Picked(sites.map { it.title }, sites.indexOf(site)) { tiding.site = sites[it].id }
+    }
+    Choice("Model") {
+        if (calculator == null) {
+            if (day != null) Aside("None covers this day.")
+        } else {
+            Picked(
+                labels = offered.map { "${it.name} (${it.accuracy.label})" },
+                chosen = offered.indexOf(calculator),
+                greyed = offered.indices.filter { tiding.offline && offered[it].needsNetwork }.toSet(),
+            ) { tiding.calculator = offered[it].name }
+        }
+    }
+    Choice("Day") {
+        Box(modifier = Modifier.width(FIGURE)) {
+            Compact(
+                value = tiding.day,
+                onChange = { tiding.day = it },
+                hint = today.toString(),
+                derived = true,
+                wrong = day == null,
+            )
+        }
+    }
+    if (day == null) {
+        Refused("Day should be a date written 2026-02-23, not \"${tiding.day.trim()}\"")
+        return
+    }
+    if (calculator == null) return
+
+    val asked = Asked(calculator.name, site.latitude, site.longitude, day)
+    val answer = tiding.answers[asked]
+    LaunchedEffect(asked, answer == null) {
+        if (answer != null) return@LaunchedEffect
+        val found = withContext(Dispatchers.Default) { calculator.tides(site.latitude, site.longitude, day) }
+        tiding.offline = found is Tidal.Offline
+        tiding.answers[asked] = found
+    }
+    when (answer) {
+        null -> Aside("Asking…")
+        is Tidal.Offline -> {
+            Refused(answer.reason)
+            // Forgetting the answer is what asks again: the effect above runs for a question with none.
+            TextButton(onClick = { tiding.answers.remove(asked) }) { Text("Try again") }
+        }
+        is Tidal.None -> Refused(answer.reason)
+        is Tidal.Found -> TideAnswer(answer.tides)
+    }
+}
+
+/** One labelled choice of the form, its name where a box's name stands. */
+@Composable
+private fun Choice(label: String, content: @Composable () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(LABEL),
+        )
+        content()
+    }
+}
+
+/** What a model answered: which station spoke, the turns as a table, and the day's curve. */
+@Composable
+private fun TideAnswer(tides: Tides) {
+    Aside(
+        "${tides.station}, ${plain(tides.kilometres, 0)} km from the site. Times in ${tides.clock}, " +
+            "heights in metres against ${tides.datum}.",
+    )
+    val rows = rowsOf(tides.extremes)
+    if (rows.isEmpty()) {
+        Aside("The water did not turn on this day in what the model holds.")
+    } else {
+        Lined(TideRow("", "Time", "Height", "Difference"), heading = true)
+        HorizontalDivider(modifier = Modifier.widthIn(max = TABLE))
+        for (row in rows) Lined(row, heading = false)
+    }
+    if (tides.curve.size > 1) Curve(tides.curve, tides.extremes)
+    Aside(
+        "The station's tide, not the site's: the water at a site turns earlier or later, and slack " +
+            "water is not the same moment as high or low water. Wind and air pressure move the real " +
+            "tide away from a prediction. Check local knowledge before a dive that depends on it.",
+    )
+}
+
+/** One line of the table, its figures drawn as calculated values are. */
+@Composable
+private fun Lined(row: TideRow, heading: Boolean) {
+    val base = MaterialTheme.typography.bodyMedium
+    val quiet = base.copy(color = MaterialTheme.colorScheme.outline)
+    val figure = if (heading) quiet else calculatedOf(base)
+    Row(
+        modifier = Modifier.padding(horizontal = GAP, vertical = HALF),
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        Text(text = row.turn, style = if (heading) quiet else base, modifier = Modifier.width(TURN))
+        Text(text = row.time, style = figure, textAlign = TextAlign.End, modifier = Modifier.width(CELL))
+        Text(text = row.height, style = figure, textAlign = TextAlign.End, modifier = Modifier.width(CELL))
+        Text(text = row.difference, style = figure, textAlign = TextAlign.End, modifier = Modifier.width(CELL))
+    }
+}
+
+/**
+ * The day's water level against the hour, with a dot on each turn.
+ *
+ * Across is the whole day whatever the curve covers, so a forecast that stops at noon is seen to
+ * stop there.
+ */
+@Composable
+private fun Curve(curve: List<Reading>, extremes: List<Extreme>) {
+    val ink = MaterialTheme.colorScheme.primary
+    val grid = MaterialTheme.colorScheme.outlineVariant
+    val label = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val measurer = rememberTextMeasurer()
+    Spacer(
+        modifier = Modifier.widthIn(max = PLOT_WIDE).fillMaxWidth().height(PLOT_HIGH).padding(vertical = HALF)
+            .drawWithCache {
+                val left = AXIS.toPx()
+                val right = size.width - GAP.toPx()
+                val top = HALF.toPx()
+                val bottom = size.height - FOOT.toPx()
+                val heights = rangeOf(curve.map { it.height } + extremes.map { it.height })
+                fun x(time: Time): Float =
+                    left + (right - left) * time.secondOfDay / Time.SECONDS_IN_DAY.toFloat()
+
+                fun y(height: Double): Float {
+                    val part = (height - heights.start) / (heights.endInclusive - heights.start)
+                    return (bottom - (bottom - top) * part).toFloat()
+                }
+
+                val side = ticksOf(heights.start, heights.endInclusive, 5)
+                val path = Path()
+                for ((at, reading) in curve.withIndex()) {
+                    val point = Offset(x(reading.at.time), y(reading.height))
+                    if (at == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+                }
+                onDrawBehind {
+                    for (tick in side) {
+                        val at = y(tick)
+                        drawLine(grid, Offset(left, at), Offset(right, at), THIN.toPx())
+                        val laid = measurer.measure(shortOf(tick), label)
+                        drawText(laid, topLeft = Offset(left - laid.size.width - HALF.toPx(), at - laid.size.height / 2f))
+                    }
+                    for (hour in 0..Time.HOURS_IN_DAY step HOURS_A_MARK) {
+                        val at = left + (right - left) * hour / Time.HOURS_IN_DAY.toFloat()
+                        drawLine(grid, Offset(at, top), Offset(at, bottom), THIN.toPx())
+                        val laid = measurer.measure(hour.toString().padStart(2, '0'), label)
+                        drawText(laid, topLeft = Offset(at - laid.size.width / 2f, bottom + 2f))
+                    }
+                    drawPath(path, ink, style = Stroke(width = CURVE_LINE.toPx()))
+                    for (extreme in extremes) {
+                        drawCircle(ink, DOT.toPx(), Offset(x(extreme.at.time), y(extreme.height)))
+                    }
+                }
+            },
+    )
+}
+
+/** How wide the column naming a turn is. */
+private val TURN = 100.dp
+
+/** How wide a column of figures is. */
+private val CELL = 80.dp
+
+/** How wide the table is, which its rule is drawn to. */
+private val TABLE = 400.dp
+
+private val PLOT_HIGH = 220.dp
+
+/** The widest the curve is drawn: a day stretched across a whole window says nothing more. */
+private val PLOT_WIDE = 640.dp
+
+/** The room left of the plot for the heights. */
+private val AXIS = 40.dp
+
+/** The room under the plot for the hours. */
+private val FOOT = 16.dp
+
+private val CURVE_LINE = 2.dp
+private val THIN = 1.dp
+private val DOT = 4.dp
+
+/** How many hours stand between two marks along the day. */
+private const val HOURS_A_MARK = 3

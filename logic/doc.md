@@ -24,6 +24,7 @@ layer for anything it *does* is a bug in the design.
 - **Import from dive computers**, and import of other logbook formats — folded into
   the logbook by the shared machinery in [reconciliation.md](reconciliation.md).
 - **Search and filtering** — the definitions of "recent", "deep", "with this buddy".
+- **Tides** at a dive site on a day, from whichever calculator covers the site. `LOGIC-44`.
 - Unit handling for *display and entry*: what a user is shown and what they type. A file
   declares what its own numbers are written in and the data layer converts on the way in,
   so a value held here is in the model's own unit — see [../data/doc.md](../data/doc.md).
@@ -103,6 +104,8 @@ logic/
                   Consumption.kt   gas used, and what a cylinder has left
                   Equivalents.kt   equivalent air and narcotic depth
                   Pressure.kt      the water above a depth
+                  Tides.kt         high and low water at a position, and who is asked
+                  Distance.kt      how far one position is from another
                   Serial.kt        what tells two computers of one model apart
                   Hex.kt           bytes as text, for what a device hands back
                   divecomputer/    a device read, joined, thinned and recorded
@@ -111,6 +114,7 @@ logic/
   src/javaMain/kotlin/yemoja/logic/
                   what the JVM and Android share, both being Java underneath
                   Today.kt      the machine's own date, a day needing a zone
+                  PostJson.kt   the one way out to a network, for a tide
                   divecomputer/  libdivecomputer itself, and Bluetooth under it
   src/commonTest/kotlin/yemoja/logic/
   src/jvmTest/kotlin/yemoja/logic/
@@ -1148,6 +1152,67 @@ To settle when we discuss architecture and features:
 
   **Not `LOGIC-37`.** That settles what `evaluate` answers about a profile, which this calls
   rather than duplicates; the two were cited as one for a while, which this corrects.
+
+- **LOGIC-44 — How a tide is worked out, and from what.** *Settled:* **by tide calculators, each
+  saying which positions and which days it answers for, and the first three reading Rijkswaterstaat's
+  WaterWebservices.** Decided on 2026-10-03, at the author's word. `FEAT-26`.
+
+  **A calculator is asked about a position, not a dive site.** `dive_site` has no field for a tide
+  station and gets none: the feature is not part of the data model, so a site is its `latitude`
+  and `longitude` and a calculator decides from those whether it covers it. `TideCalculator` is
+  the whole interface — a name, an `Accuracy`, whether it needs a network, `covers`, `coversDay`
+  and `tides` — and a front end lists the ones covering a site and a day, most accurate first.
+  More are added by writing one; nothing else changes.
+
+  **Accuracy is five levels, least first**: a worldwide model, a regional one, a local prediction,
+  a local forecast, a measurement. The author named four, and the forecast was added between the
+  last two when the service turned out to carry one: it is the astronomical prediction with the
+  coming weather in it, which is better than the prediction and is not a measurement. The first
+  two levels have no calculator yet.
+
+  **The three built are one service read three ways**, nearest station first:
+
+  | Calculator | Accuracy | Days | Turns of the tide |
+  |---|---|---|---|
+  | Rijkswaterstaat gauge | measured | before today | found in the ten-minute curve |
+  | Rijkswaterstaat forecast | local forecast | today and two days on | found in the ten-minute curve |
+  | Rijkswaterstaat astronomical tide | local prediction | any the service has computed | the service's own, to the minute |
+
+  The gauge does not answer for today, because it has not seen today's later turns and the
+  forecast has. What the service has computed of the astronomical tide is its own to say: asked in
+  October 2026 it answered for 2020 to the end of 2027 and had nothing for 2028.
+
+  **Which stations there are is a shipped file, and what they answer is asked.**
+  [libraries/tides/rijkswaterstaat.txt](../libraries/tides/rijkswaterstaat.txt) lists each station with a position and the
+  series it carries, so `covers` is answered with no network; `tool/tidestations.py` writes it.
+  The readings themselves are fetched when asked for and kept nowhere: a day is a few kilobytes,
+  and what to keep and for how long is a question for when something needs a tide offline.
+
+  **The nearest station within fifty kilometres answers, and the next nearest where it holds
+  nothing**, three at most. A gauge is out for a day now and then. The answer names the station
+  and how far it is, so a reader sees whose tide they are looking at. Fifty kilometres is a guess
+  that covers every Dutch estuary and reaches a wreck off the coast; it is `STATION_REACH`.
+
+  **A turn found in a curve must be left by ten centimetres.** A gauge reads to the centimetre and
+  a forecast is stitched from runs of a model, so both hold bumps of a few centimetres, and the
+  first forecast read gave a low water, a high water three centimetres above it ten minutes later,
+  and the real low after that. `turnsIn` counts a height as a turn only once the water has moved
+  `LEAST_TURN` away from it. A day is asked for with two hours either side so that a turn at
+  midnight has water on both sides to be judged by, and trimmed to the day afterwards.
+
+  **Times are the Dutch clock and heights are metres above NAP**, and the answer says both. The
+  service speaks MET all year; `dutchClock` adds the summer hour by the European rule rather than
+  asking the machine, the station's clock being the Netherlands' wherever the machine is.
+
+  **What a turn of the tide is not is slack water.** These are the station's high and low water.
+  When the current at a site stops is earlier or later by an amount local to the site, and no
+  calculator here knows it. The corrections divers use for the Oosterschelde are somebody's work
+  and are being asked for; they would arrive as a calculator of their own.
+
+  **The network is reached through one function**, `postJson`, which is the JDK's own connection on
+  a JVM and on Android and so takes no library. The browser build has none and never asks. A
+  calculator is handed the function, so every test hands it a recorded answer and none reaches the
+  service.
 
 - **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones
    something used, unless there is only one.**
