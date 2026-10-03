@@ -156,6 +156,14 @@ behaviour of its own, that behaviour is in the wrong place.
   one that was refused is refused with it. Following a dive in a logbook stays the window's,
   which is `API-7`'s open note.
 
+  **What the answer says in words, it says in whole sentences.** A warning's `said` was the
+  finding without its cylinder or its moment, and a reserve was figures alone, so every caller
+  assembled the sentences the window shows, and the website kept a second copy of the wording.
+  The answer now carries them as the window says them: a warning names its cylinder and its
+  moment, and each reserve scenario has its line in `said`, with `shortfall` and `unchecked`
+  where they apply. The figures stay beside the sentences for a caller that draws or compares.
+  A cylinder is named by its number, *Gas 1*, a plan file having no other name for one.
+
   **The table's columns are chosen for the comparison that prompted this**: `bottom_minutes` and
   `stop_minutes` are what a published air table's row and column say, and `stops` reads as
   `18@1 15@2 12@3` so that a whole schedule fits in one cell. The rest are what a second program

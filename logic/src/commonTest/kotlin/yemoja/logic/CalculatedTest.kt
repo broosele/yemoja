@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /*
@@ -161,6 +162,37 @@ class CalculatedTest {
         val lost = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.LOST_GAS))
         assertTrue(lost.kept.getValue("1").litres > 0, "losing the deco gas leaves the bottom gas something to keep")
         assertTrue(Scenario.SHARED in schedule.reserves, "switched on by default")
+    }
+
+    @Test
+    fun `a warning and a reserve are whole sentences, the cylinder and the moment in them`() {
+        // Ten litres of air cannot do forty metres for twenty-five minutes with its stops.
+        val gases = listOf(
+            Breathed("air", Role.BOTTOM, size = "10", fill = "200", sac = "25"),
+            Breathed("EAN50", Role.DECO, size = "3", fill = "200", sac = "25"),
+        )
+        val schedule = assertIs<Calculated.Done>(
+            calculated(table(gases = gases, low = "30", high = "70").copy(stressFactor = "2", problemMinutes = "2")),
+        ).schedule
+        val empty = schedule.warnings.first { it.gas == "1" }
+        val lost = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.LOST_GAS))
+
+        assertTrue(empty.said.startsWith("Gas 1 runs empty: "), empty.said)
+        assertTrue(empty.said.endsWith(" at ${clockOf(empty.second)}"), empty.said)
+        assertTrue(lost.said.startsWith("Gas 1 reserve needs to be ") && "worst at " in lost.said, lost.said)
+        assertTrue(assertNotNull(lost.shortfall).startsWith("Gas 1 reserve violation: "), lost.shortfall)
+        assertNull(lost.unchecked, "both cylinders have a size and a fill")
+    }
+
+    @Test
+    fun `a cylinder with no size is said to be costed in litres only`() {
+        val schedule = assertIs<Calculated.Done>(
+            calculated(table(gases = listOf(Breathed("air", Role.BOTTOM, sac = "20"))).copy(stressFactor = "2", problemMinutes = "0")),
+        ).schedule
+        val shared = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.SHARED))
+
+        assertEquals("Gas 1: reserve in litres only (missing: volume, start pressure)", shared.unchecked)
+        assertNull(shared.shortfall, "nothing to judge it against")
     }
 
     @Test

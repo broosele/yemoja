@@ -166,14 +166,18 @@ well:
   is a percentage and may run below nought while a compartment is still taking gas on. The two
   oxygen clocks run as a percentage and a count. The pressures are each cylinder's gauge in bar,
   by its number, for the cylinders that say how big they are and what they were filled to.
-- `warnings` — what the model has to say against the plan, each with the second it happened at,
-  how serious it is, and the number of the cylinder it is about where it is about one.
+- `warnings` — what the model has to say against the plan, each as the sentence the window
+  shows in `said`, the cylinder and the moment in it, with beside it the `second` it happened
+  at, its `severity`, and the number of the cylinder it is about in `gas` where it is about one.
 - `no_flight_seconds` and `desaturation_seconds`.
 - `reserve` — the gas reserve, keyed `lost_gas` and `shared_gas`; a scenario switched off is left
-  out. Each holds `kept`, what each cylinder should still hold at the end of the dive, by its
-  number, leaving out a cylinder that needs nothing: `litres`, `bar` on its own gauge, `end_bar`
-  what the plan leaves on it, `short` where that is less, and `worst_seconds` and `worst_m`, the
-  moment that asks it. A scenario
+  out. Each holds `said`, the scenario in the sentence the window's contingency line shows;
+  `shortfall`, the cylinders that end the dive with less than they keep, in a sentence, or
+  nothing; `unchecked`, the cylinders costed in litres only for want of a size or a fill, in a
+  sentence, or nothing; and `kept`, what each cylinder should still hold at the end of the dive,
+  by its number, leaving out a cylinder that needs nothing: `litres`, `bar` on its own gauge,
+  `end_bar` what the plan leaves on it, `short` where that is less, and `worst_seconds` and
+  `worst_m`, the moment that asks it. A scenario
   that cannot be worked out — a cylinder with no SAC, most often — is an object with only a
   `refused`, the rest of the plan answered regardless.
 

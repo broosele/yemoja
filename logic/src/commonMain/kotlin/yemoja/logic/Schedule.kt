@@ -87,6 +87,12 @@ sealed class ReserveAnswer {
     class Done(
         /** What each cylinder must still hold at the end of the dive, by its number. A cylinder needing nothing is absent. */
         val kept: Map<String, ReserveKept>,
+        /** The scenario in one sentence, as the window's contingency line says it. */
+        val said: String,
+        /** The cylinders that end the dive with less than they keep, in a sentence, or absent where none does. */
+        val shortfall: String?,
+        /** The cylinders costed in litres only, having no size or no fill, in a sentence, or absent where every one is judged. */
+        val unchecked: String?,
     ) : ReserveAnswer()
 
     class Refused(val reason: String) : ReserveAnswer()
@@ -136,6 +142,7 @@ class Stop(val metres: Double, val seconds: Int)
 class Warning(
     val second: Int,
     val severity: Severity,
+    /** The whole of it in one sentence, the cylinder and the moment included, as the window lists it. */
     val said: String,
     /** The cylinder it is about, by its number, or absent where it is about the dive. */
     val gas: String?,
@@ -192,11 +199,11 @@ private fun answeredOf(planned: Planned, residual: Residual.Done?): Answered {
         is Worked.Refused -> return Answered(Calculated.Refused(worked.reason), null)
     }
     val reckoned = reckonedOf(planned, done, ready.conditions)
-    return Answered(Calculated.Done(scheduleOf(ready, done, reckoned)), done)
+    return Answered(Calculated.Done(scheduleOf(planned, ready, done, reckoned)), done)
 }
 
 /** The schedule [done] came to, with the lines [ready] was asked for marked as the caller's. */
-private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done, reckoned: Reckoned): Schedule {
+private fun scheduleOf(planned: Planned, ready: Shaped.Ready, done: Worked.Done, reckoned: Reckoned): Schedule {
     val typed = ready.legs.map { lineOf(it, added = false) }
     val added = done.tail.map { lineOf(it, added = true) }
     val lines = typed + added
@@ -215,9 +222,9 @@ private fun scheduleOf(ready: Shaped.Ready, done: Worked.Done, reckoned: Reckone
         noFlightSeconds = done.evaluated.noFlight,
         desaturationSeconds = done.evaluated.desaturation,
         gasUsedLitres = done.evaluated.gasUsed.mapKeys { numberedOf(it.key) },
-        warnings = done.evaluated.findings.map { Warning(it.second, it.severity, it.said, it.source?.let(::numberedOf)) },
+        warnings = done.evaluated.findings.map { Warning(it.second, it.severity, warningSaid(it), it.source?.let(::numberedOf)) },
         reserves = reckoned.scenarios.mapNotNull { (scenario, reckoning) ->
-            reckoning?.let { scenario to reserveAnswerOf(it) }
+            reckoning?.let { scenario to reserveAnswerOf(scenario, it, planned) }
         }.toMap(),
         ceiling = ceilingOf(done.evaluated.ceiling),
         noDecompressionSeconds = sampledOf(done.evaluated.noDecompressionTime),
@@ -245,11 +252,25 @@ private fun ceilingOf(series: Series): List<SchedulePoint> {
     return if (points.any { it.value > 0 }) points else emptyList()
 }
 
-private fun reserveAnswerOf(reckoning: Reckoning): ReserveAnswer = when (reckoning) {
+/**
+ * [finding] as the window lists it: the cylinder by its label, what is wrong, what to do, and when.
+ *
+ * Example: `Gas 1 runs empty: more volume, a higher start pressure or a lower SAC would keep it at
+ * 27:14`.
+ */
+private fun warningSaid(finding: Finding): String {
+    val named = finding.source?.let { "${gasLabelOf(gasIndexOf(it))} " }.orEmpty()
+    return "$named${finding.what}: ${finding.how} at ${clockOf(finding.second)}"
+}
+
+private fun reserveAnswerOf(scenario: Scenario, reckoning: Reckoning, planned: Planned): ReserveAnswer = when (reckoning) {
     is Reckoning.Wrong -> ReserveAnswer.Refused(reckoning.reason)
     is Reckoning.Done -> {
         ReserveAnswer.Done(
-            reckoning.reserve.kept.entries.associate { (key, kept) ->
+            said = scenarioSaid(scenario, reckoning.reserve, planned),
+            shortfall = shortfallSaid(scenario, reckoning.reserve),
+            unchecked = uncheckedSaid(Reckoned(mapOf(scenario to reckoning)), planned),
+            kept = reckoning.reserve.kept.entries.associate { (key, kept) ->
                 numberedOf(key) to ReserveKept(
                     litres = kept.litres,
                     bar = kept.bar,
