@@ -418,8 +418,8 @@ rounded up.
 
 **Tides** gives the high and low waters of a day near one of your dive sites. Choose the site, and
 the day if it is not today, written `2026-10-03`. Only sites that have a position, and that a tide
-model covers, are listed. At present that means the Dutch coast and estuaries, on a computer, with
-an internet connection: the figures are fetched from Rijkswaterstaat when you ask, and this is the
+model covers, are listed. At present that means the Dutch coast and estuaries, with an internet
+connection: the figures are fetched from Rijkswaterstaat when you ask, and this is the
 one place where Yemoja itself uses a network. Nothing about you or your logbook is sent, only the name of
 a tide station and a date.
 

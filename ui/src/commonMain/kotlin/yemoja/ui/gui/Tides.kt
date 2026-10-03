@@ -289,14 +289,23 @@ private fun Lined(row: TideRow, heading: Boolean) {
     val base = MaterialTheme.typography.bodyMedium
     val quiet = base.copy(color = MaterialTheme.colorScheme.outline)
     val figure = if (heading) quiet else calculatedOf(base)
+    // A phone's screen is narrower than the table at its desktop widths, so each column is cut to
+    // what its widest entry needs. `PHONE-2`.
+    val widths = if (LocalCompact.current) COMPACT_CELLS else CELLS
     Row(
         modifier = Modifier.padding(horizontal = GAP, vertical = HALF),
         horizontalArrangement = Arrangement.spacedBy(GAP),
     ) {
-        Text(text = row.turn, style = if (heading) quiet else base, modifier = Modifier.width(TURN))
-        Text(text = row.time, style = figure, textAlign = TextAlign.End, modifier = Modifier.width(CELL))
-        Text(text = row.height, style = figure, textAlign = TextAlign.End, modifier = Modifier.width(CELL))
-        Text(text = row.difference, style = figure, textAlign = TextAlign.End, modifier = Modifier.width(CELL))
+        Text(text = row.turn, style = if (heading) quiet else base, maxLines = 1, modifier = Modifier.width(widths[0]))
+        for ((at, cell) in listOf(row.time, row.height, row.difference).withIndex()) {
+            Text(
+                text = cell,
+                style = figure,
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                modifier = Modifier.width(widths[at + 1]),
+            )
+        }
     }
 }
 
@@ -356,11 +365,11 @@ private fun Curve(curve: List<Reading>, extremes: List<Extreme>) {
     )
 }
 
-/** How wide the column naming a turn is. */
-private val TURN = 100.dp
+/** How wide the table's four columns are: the turn, the time, the height and the difference. */
+private val CELLS = listOf(100.dp, 80.dp, 80.dp, 80.dp)
 
-/** How wide a column of figures is. */
-private val CELL = 80.dp
+/** The same four on a phone, which add up to what a screen 360 wide has left. */
+private val COMPACT_CELLS = listOf(84.dp, 52.dp, 60.dp, 80.dp)
 
 /** How wide the table is, which its rule is drawn to. */
 private val TABLE = 400.dp

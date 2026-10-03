@@ -415,8 +415,7 @@ once and corrected. The numbers stay unused rather than being given to something
   about a decompression model and says nothing of this.
 
   What is asked is kept while the tab is, `GUI-27`, so looking back at a day asks nobody twice. A
-  phone lists the form and has no model to ask yet: reaching a network there is a permission the
-  application does not hold.
+  phone has the same form and the same models, by a permission taken for it, `AND-8`.
 
 - **GUI-54 — How the planner starts a new plan.** *Settled:* **a *New plan* deed in the save row,
   which asks first where the plan has changes not saved.** Decided on 2026-10-01, at the author's

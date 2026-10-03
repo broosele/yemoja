@@ -46,6 +46,8 @@ import yemoja.logic.Universe
 import yemoja.logic.today
 import yemoja.logic.divecomputer.Devices
 import yemoja.logic.divecomputer.FoundDevices
+import yemoja.logic.rijkswaterstaatCalculators
+import yemoja.logic.stationsOf
 
 /*
  * The window the screens are shown in on Android, which is the one part per platform.
@@ -134,6 +136,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
                 )
             },
             today = ::today,
+            tides = { rijkswaterstaatCalculators(stationsOf(bundled("libraries/tides/rijkswaterstaat.txt"))) },
             compact = compact,
             back = { enabled, onBack -> BackHandler(enabled, onBack) },
             deeds = mapOf(Deed.NEW to choose, Deed.OPEN to choose),

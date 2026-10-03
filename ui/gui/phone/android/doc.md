@@ -125,6 +125,12 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   as a dependency on that ground. The SDK is a build tool installed on the machine that builds,
   as WiX is for the installer, and carries nothing into the app. README lists the plugin among
   the dependencies once the build takes it.
+- **AND-8 — Whether the app may reach a network.** *Settled:* **it may, for a tide.** Decided on
+  2026-10-03, at the author's word. The Tides calculation fetches a day's readings from
+  Rijkswaterstaat, `LOGIC-44`, and on Android nothing opens a connection without the `INTERNET`
+  permission. It is one the system grants at installation and never asks the user about, so it
+  costs no prompt. What it costs is that the app could not reach a network at all before, and
+  now can. What is sent is a station's code and a date; nothing of the logbook is.
 - **AND-4 — Test devices.** *Settled:* **the author's phone and the SDK's emulator.** The
   emulator for the screens and the storage picker during development; the phone, on Android 12
   or later, for every download, since Bluetooth is proven only on real hardware.
