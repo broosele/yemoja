@@ -18,10 +18,8 @@ import yemoja.logic.Operation
 import yemoja.logic.Outcome
 import yemoja.logic.Types
 import yemoja.logic.divecomputer.DiveComputer
+import yemoja.logic.metresApart
 import yemoja.logic.titleOf
-import kotlin.math.sqrt
-import kotlin.math.cos
-import kotlin.math.PI
 
 /*
  * Reading a dive computer, worked out without a screen.
@@ -178,26 +176,6 @@ internal fun nearestTo(into: ItemSet, latitude: Double, longitude: Double, most:
     val id = into.idOf(site as ReferenceableItem) ?: return@mapNotNull null
     Near(id, titleOf(site), metresApart(latitude, longitude, there, across))
 }.sortedBy { it.metres }.take(most)
-
-/**
- * How far apart two positions are, in metres.
- *
- * Flat rather than spherical: what this decides is which site a dive was at, and over the few
- * kilometres that can mean the earth's curve is worth centimetres.
- */
-internal fun metresApart(
-    latitude: Double,
-    longitude: Double,
-    otherLatitude: Double,
-    otherLongitude: Double,
-): Double {
-    val north = (otherLatitude - latitude) * METRES_PER_DEGREE
-    val east = (otherLongitude - longitude) * METRES_PER_DEGREE * cos(latitude * PI / 180.0)
-    return sqrt(north * north + east * east)
-}
-
-/** A degree of latitude, in metres, which is near enough the same everywhere. */
-private const val METRES_PER_DEGREE = 111_320.0
 
 private fun numberOf(item: Item, field: String): Double? =
     (item.read(field) as? Result.Usable)?.value as? Double
