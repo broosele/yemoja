@@ -41,6 +41,13 @@ deep, and which computer recorded it. Each has three choices, one of them alread
 - **Merge** where the dive overlaps one you already have. Nobody is on two dives at once, so the
   two are recordings of the same dive, and the recording is added to the one you have. It is
   chosen to begin with wherever it applies, and greyed where it does not.
+
+  **A second computer's recording changes nothing you already have.** Where the dive has a
+  recording from another computer, this one is kept beside it and the first stays the one the
+  dive is worked from: the start, the duration and the depth are still the first computer's,
+  and nothing it left empty is filled in. Its gases are matched to the dive's cylinders by mix,
+  and a mix the dive has no cylinder for is added as one. Two recordings are from the same
+  computer when their serial numbers match, and that one is laid over the recording it repeats.
 - **Import as dive N** takes it in as a new dive. The number follows from the boxes above: a
   merged dive takes none, a skipped one takes none, so change one and the numbers below move.
 - **Skip** leaves it out. A skipped dive is offered again each time you come back to Home, until

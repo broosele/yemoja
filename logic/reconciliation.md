@@ -213,8 +213,9 @@ some fields and none about others, and silence is not an instruction to erase �
 computer knows nothing about buddies, and re-downloading a dive must not take them out.
 That is why applying writes field by field rather than replacing the item, and why a field
 that is itself a collection — the profiles, the gas sources, the environment — is laid over
-the one held member by member rather than written in its place. A second computer's profile
-lands beside the first; the visibility a computer never knew survives it. `RECON-6`.
+the one held member by member rather than written in its place, so the visibility a computer
+never knew survives it. `RECON-6`. A second computer's recording is narrower still: its profile
+and nothing else, `RECON-7`.
 
 **Something else** is rare and real: two logbooks can each mint `north_sea`, one for a
 region and one for a person. Nothing is written for one, since giving it another id would
@@ -307,29 +308,43 @@ columns mapped by the user rather than guessed.
    incoming item and not the rest. Accepting or declining a whole item is built; below the
    item it becomes the collision interaction the storage requirements describe, and waits
    on that.
-- **RECON-7 — What lands when a second computer's dive meets one already logged.** Taking an
-  arriving dive onto a held one writes every field the arrival holds, and for a second computer
-  worn on the same dive that is wrong twice over. Its times and its maximum depth are written
-  over the first computer's, though neither is more right than the other; and the dive ends up
-  holding two profiles and naming no primary, which makes its date, its duration and its depth
-  read back *unusable* rather than wrong. `primaryProfile` refuses to guess, correctly.
-
-  The naming half is now settled and built: a change that gives a dive its second profile names
-  the first as primary, `DATA-120`, so a merged recording no longer leaves a dive unusable. What
-  is still open is the writing half. A second computer's recording should bring its profile and
-  leave the times and the maximum depth alone, and whether that is a rule the review applies by
-  itself — a recording from a computer the dive has no profile from is a profile and nothing
-  else — or a question put to the user, is the decision. It is the half of `RECON-2` that was
-  left open, met in a concrete case.
-
-  Found by doing it: a hundred and two i330R recordings laid onto dives a Perdix had already
-  recorded, beside the application rather than through it, for exactly this reason.
-
 - **RECON-5 — Which formats to import**, at which level of support, and in which
    versions — see *Two levels of support* above. Also whether a common intermediate form
    is worth having, or each format converts directly to the item model.
 
 ## Settled
+
+- **RECON-7 — What lands when a second computer's dive meets one already logged.** *Settled:*
+  **a second profile, and nothing else**, applied by the review as a rule rather than asked, at
+  the author's word.
+
+  Taking an arriving dive onto a held one wrote every field the arrival held, and for a second
+  computer worn on the same dive that was wrong twice over. Its times and its maximum depth were
+  written over the first computer's, though neither is more right than the other; and the dive
+  ended up holding two profiles and naming no primary, so its date, its duration and its depth
+  read back *unusable*. The naming half was settled first: a change that gives a dive its second
+  profile names the first as primary, `DATA-120`.
+
+  - **A second computer is one the dive has no profile from.** Two recordings are from the same
+    computer where their `serial`s match, ignoring what `serial` ignores. Where either has no
+    serial, a `fingerprint` in common says the same dive was downloaded again, and so does being
+    filed under one key, which a download takes from the computer's name as `LOGIC-23` does.
+    Anything else is a second computer.
+  - **It brings its profile and writes no field of the dive.** Its times and its maximum depth
+    leave the first computer's alone, and so does everything the first left empty: a cylinder's
+    start and end pressure stay unwritten even where only the second computer had a
+    transmitter, its readings staying in its own `pressures`.
+  - **Its gases go to the dive's cylinders by mix.** A recording keeps no `gas_sources` of its
+    own, so its `gas_switches` and `pressures` must name the dive's. A mix the dive holds once
+    is that cylinder. A mix it does not hold becomes a new cylinder. A mix it holds more than
+    once goes to the one whose pressures agree best with the arriving readings, and to a new
+    cylinder where nothing tells them apart.
+
+  A dive with no recording yet has no first computer and takes the arrival whole. Built as
+  `secondComputerOf` in `Import.kt`.
+
+  Found by doing it: a hundred and two i330R recordings laid onto dives a Perdix had already
+  recorded, beside the application rather than through it, for exactly this reason.
 
 - **RECON-8 — What an agent's staged changes may hold, and how they land.** *Settled:*
   **additions, edits and deletions, and each edit remembers the value it replaced.** An agent

@@ -286,7 +286,8 @@ Decided and not built, or built and not proven. Each is here rather than in some
   being quicker is consistent with their asking. Whether it is worth reaching past Kable to the
   platform for this is not decided. The window shows how far a read has got and carries on
   meanwhile, `GUI-52`; the terminal's silence is `TUI-8`'s.
-- **A second computer's dive is merged beside the application, not through it.** `RECON-7`.
+- **A second computer's dive is a second profile, merged through the review.** It writes none
+  of the dive's fields and its gases name the dive's cylinders by mix. `RECON-7`.
 - **A link that drops keeps what it got.** The second session lost the connection after fifteen
   minutes and seventy-two dives, for no reason either side reported; the seventy-two were handed
   over. What was not got cannot be fetched by resuming, because a device counts from its newest
@@ -308,8 +309,8 @@ Decided and not built, or built and not proven. Each is here rather than in some
   a Perdix prints on its screen. The comparison reads a hexadecimal spelling as its number, so
   either way round should match; whether it does is the next download's to say.
 - **A re-download overwrites a correction.** Applying lays the arriving dive over the held one
-  member by member, so buddies, site, rating and notes survive, a second computer's profile
-  lands beside the first, and the visibility survives the environment. `RECON-6`. A field the
+  member by member, so buddies, site, rating and notes survive, and the visibility survives the
+  environment. `RECON-6`. A second computer's recording writes nothing but its profile, `RECON-7`. A field the
   computer reports *and* the user has corrected does not survive: a max depth fixed by hand is
   written over without a word, and a profile arriving under the key already held has its
   series replaced. That is the collision `data/json/requirements.md` describes and
