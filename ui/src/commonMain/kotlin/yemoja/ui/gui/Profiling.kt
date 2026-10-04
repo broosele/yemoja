@@ -900,12 +900,12 @@ private fun Cylinders(
     done: Worked.Done?,
     reckoned: Reckoned?,
     /**
-     * Whether the table is a phone's: the role a letter by the number, no add button on the line,
+     * Whether the table is a phone's: the role a dropdown after the number, no add button on the line,
      * smaller columns, and the units in the headings rather than the boxes. `PHONE-2`.
      */
     narrow: Boolean = false,
     /** How a phone's table writes the role, which depends on the room it has. */
-    shown: RoleShown = RoleShown.LETTER,
+    shown: RoleShown = RoleShown.PLAIN,
 ) {
     for ((index, breathed) in shaping.gases.withIndex()) {
         val key = gasKeyOf(index)
@@ -1006,7 +1006,7 @@ private fun Cylinders(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(NARROW_GAP),
             ) {
-                if (shown == RoleShown.LETTER) {
+                if (shown == RoleShown.PLAIN) {
                     RoleCell(index, breathed) { shaping.gases[index] = breathed.copy(role = it) }
                 } else {
                     Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX_NARROW, TextAlign.End) }
@@ -1066,40 +1066,32 @@ internal enum class RoleShown(
     /** *Bottom*, in a box of its own after the number. */
     NAME(370.dp, 64.dp),
 
-    /** *Btm*, in a box of its own after the number. */
-    ABBREVIATION(350.dp, 44.dp),
+    /** *Bt*, in a box of its own after the number. */
+    ABBREVIATION(344.dp, 38.dp),
 
-    /** *1 B*, the number and a letter as one cell that opens the roles' menu. */
-    LETTER(0.dp, 30.dp);
+    /** *1 Bt*, the number and the abbreviation as one cell that opens the roles' menu. */
+    PLAIN(0.dp, 30.dp);
 
-    /** The role as this form writes it. */
-    fun write(role: Role): String = when (this) {
-        NAME -> role.label
-        ABBREVIATION -> when (role) {
-            Role.BOTTOM -> "Btm"
-            Role.DECO -> "Dec"
-            Role.BAILOUT -> "Blt"
-        }
-        LETTER -> when (role) {
-            Role.BOTTOM -> "B"
-            Role.DECO -> "D"
-            Role.BAILOUT -> "BO"
-        }
+    /** The role as this form writes it, abbreviated alike whether boxed or not. */
+    fun write(role: Role): String = if (this == NAME) role.label else when (role) {
+        Role.BOTTOM -> "Bt"
+        Role.DECO -> "Dc"
+        Role.BAILOUT -> "Bl"
     }
 }
 
-/** A phone's cylinder number and its role's letter as one cell, *1 B*, which opens the roles' menu. */
+/** A phone's cylinder number and its role's abbreviation as one cell, *1 Bt*, which opens the roles' menu. */
 @Composable
 private fun RoleCell(index: Int, breathed: Breathed, onChoose: (Role) -> Unit) {
     var choosing by remember { mutableStateOf(false) }
     Box {
         Explained(PlannerTips.ROLE) {
             Text(
-                text = "${index + 1} ${RoleShown.LETTER.write(breathed.role)}",
+                text = "${index + 1} ${RoleShown.PLAIN.write(breathed.role)}",
                 style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.primary),
                 textAlign = TextAlign.Center,
                 maxLines = 1,
-                modifier = Modifier.width(RoleShown.LETTER.width).clickable { choosing = true },
+                modifier = Modifier.width(RoleShown.PLAIN.width).clickable { choosing = true },
             )
         }
         Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
@@ -1122,7 +1114,7 @@ private fun RoleCell(index: Int, breathed: Breathed, onChoose: (Role) -> Unit) {
  * On a phone, [narrow], each heading is its name over its unit, the boxes having no room for one.
  */
 @Composable
-private fun CylinderHeadings(narrow: Boolean = false, shown: RoleShown = RoleShown.LETTER) {
+private fun CylinderHeadings(narrow: Boolean = false, shown: RoleShown = RoleShown.PLAIN) {
     if (narrow) {
         Row(horizontalArrangement = Arrangement.spacedBy(NARROW_GAP)) {
             for ((heading, width, tip) in narrowColumns(shown)) {
@@ -1375,7 +1367,7 @@ private val NARROW_GAP = 2.dp
 
 /** A phone's cylinder columns, each heading its name over its unit. */
 private fun narrowColumns(shown: RoleShown): List<Triple<String, Dp, String>> =
-    (if (shown == RoleShown.LETTER) emptyList() else listOf(Triple("", INDEX_NARROW, PlannerTips.NUMBER))) + listOf(
+    (if (shown == RoleShown.PLAIN) emptyList() else listOf(Triple("", INDEX_NARROW, PlannerTips.NUMBER))) + listOf(
     Triple("Role", shown.width, PlannerTips.ROLE),
     Triple("Gas", MIX_NARROW, PlannerTips.MIX),
     Triple("Volume\nL", VOLUME_NARROW, PlannerTips.VOLUME),

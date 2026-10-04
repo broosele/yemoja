@@ -874,8 +874,8 @@ class RoleShownTest {
     @Test
     fun `each form writes each role differently`() {
         val roles = Role.entries
-        assertEquals(listOf("Btm", "Dec", "Blt"), roles.map { RoleShown.ABBREVIATION.write(it) })
-        assertEquals(listOf("B", "D", "BO"), roles.map { RoleShown.LETTER.write(it) })
+        assertEquals(listOf("Bt", "Dc", "Bl"), roles.map { RoleShown.ABBREVIATION.write(it) })
+        assertEquals(roles.map { RoleShown.ABBREVIATION.write(it) }, roles.map { RoleShown.PLAIN.write(it) }, "one set of abbreviations")
         for (shown in RoleShown.entries) {
             assertEquals(roles.size, roles.map { shown.write(it) }.toSet().size, "$shown repeats a role")
         }
@@ -884,6 +884,6 @@ class RoleShownTest {
     @Test
     fun `the widest form a table has room for is chosen`() {
         assertEquals(RoleShown.entries.sortedByDescending { it.table }, RoleShown.entries)
-        assertEquals(0.dp, RoleShown.LETTER.table, "the narrowest table still shows the role")
+        assertEquals(0.dp, RoleShown.PLAIN.table, "the narrowest table still shows the role")
     }
 }
