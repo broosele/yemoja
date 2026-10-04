@@ -4,7 +4,7 @@ Your preferences: what a new dive plan starts from today, and in time the units 
 shown, how dates are written, and whatever else the application lets you choose. They live in your
 logbook folder, in two files beside `yemoja.json`.
 
-**Press *Settings* in the System tab** to see and change them. Each shows what it holds and where
+**They are in the System tab**, in a box of their own, ready to change. Each shows what it holds and where
 that came from: *set on this device*, *set in this logbook*, *the default*, or *not set*. Change
 any box and press **Save**. Empty a box and save to take your choice away, so the next place in
 line answers again.

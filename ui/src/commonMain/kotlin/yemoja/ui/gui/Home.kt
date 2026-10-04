@@ -224,26 +224,29 @@ internal fun spanOf(seconds: Double): String {
  * System lists them. `GUI-30`.
  */
 internal enum class Deed(val label: String) {
-    /** The one deed of System's own button, being what a logbook is fed by after a dive. */
-    DOWNLOAD("Download from dive computer"),
-    IMPORT("Import"),
-    EXPORT("Export to UDDF"),
+    OPEN("Open logbook"),
+    NEW("New logbook"),
 
     /** Reading the logbook's files again, for a change made to them outside the window. */
     RELOAD("Reload logbook"),
-    SETTINGS("Settings"),
-    NEW("New logbook"),
-    OPEN("Open logbook"),
+
+    /** What a logbook is fed by after a dive, and so the one filled button. */
+    DOWNLOAD("Download from dive computer"),
+    IMPORT("Import"),
+    EXPORT("Export to UDDF"),
 }
 
 /** The tabs Home has a tile for, in their order: every one but Home itself. `GUI-30`. */
 internal fun tilesOf(tabs: List<Tab>): List<Tab> = tabs.filter { it.shape != Shape.HOME }
 
 /** The deeds that need a logbook open, there being nothing to feed, read or write without one. */
-private val NEEDS_LOGBOOK = setOf(Deed.DOWNLOAD, Deed.IMPORT, Deed.EXPORT, Deed.RELOAD, Deed.SETTINGS)
+private val NEEDS_LOGBOOK = setOf(Deed.DOWNLOAD, Deed.IMPORT, Deed.EXPORT, Deed.RELOAD)
 
-/** The deeds of System's logbook row, in order: everything but the download, which stands alone. */
-internal val LOGBOOK_DEEDS: List<Deed> = Deed.entries - Deed.DOWNLOAD
+/** The deeds of System's Logbook box: the logbook itself, opened, made or read again. */
+internal val LOGBOOK_DEEDS: List<Deed> = listOf(Deed.OPEN, Deed.NEW, Deed.RELOAD)
+
+/** The deeds of System's Data box: what goes into the logbook and out of it. */
+internal val DATA_DEEDS: List<Deed> = listOf(Deed.DOWNLOAD, Deed.IMPORT, Deed.EXPORT)
 
 /**
  * Why [deed] cannot be done now, or absent where it can.

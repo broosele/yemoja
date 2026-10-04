@@ -54,13 +54,19 @@ internal class Choosing {
 /**
  * The settings, each with what it holds and where that came from, and a deed to save what changed.
  *
- * In the System tab, opened by its own deed: a short settings list is a form rather than a
+ * In the System tab, a box of its own and always open: a short settings list is a form rather than a
  * place. Each says whether this device, this logbook or the
  * application answered it, since a choice kept on this device is one a reader may otherwise look
  * for in vain on another. `GUI-42`.
  */
 @Composable
-internal fun Chooser(universe: Universe?, choosing: Choosing, onChanged: () -> Unit = {}) {
+internal fun Chooser(
+    universe: Universe?,
+    choosing: Choosing,
+    /** Whether the form can be put away, which it cannot where it is a box of its own. `GUI-42`. */
+    closable: Boolean = true,
+    onChanged: () -> Unit = {},
+) {
     if (universe == null || !choosing.open) return
     val settings = universe.settings
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
@@ -88,17 +94,20 @@ internal fun Chooser(universe: Universe?, choosing: Choosing, onChanged: () -> U
                 choosing = choosing,
             )
         }
-        val agent = Settings.AGENT_COMMAND
-        SettingRow(
-            setting = agent,
-            wide = COMMAND,
-            after = "",
-            answered = answeredSaid(settings.answeredBy(agent), agent),
-            // Nothing stands behind it: an agent nobody named is an agent there is not.
-            hint = "",
-            choosing = choosing,
-        )
-        Aside(AGENT_SETUP)
+        // Not on a phone, which runs no agent to start. `PHONE-1`.
+        if (!LocalCompact.current) {
+            val agent = Settings.AGENT_COMMAND
+            SettingRow(
+                setting = agent,
+                wide = COMMAND,
+                after = "",
+                answered = answeredSaid(settings.answeredBy(agent), agent),
+                // Nothing stands behind it: an agent nobody named is an agent there is not.
+                hint = "",
+                choosing = choosing,
+            )
+            Aside(AGENT_SETUP)
+        }
         choosing.said?.let { Aside(it) }
         Row(
             modifier = Modifier.padding(top = HALF),
@@ -110,7 +119,7 @@ internal fun Chooser(universe: Universe?, choosing: Choosing, onChanged: () -> U
                     onChanged()
                 },
             ) { Text("Save") }
-            TextButton(onClick = { choosing.open = false }) { Text("Close") }
+            if (closable) TextButton(onClick = { choosing.open = false }) { Text("Close") }
         }
     }
 }

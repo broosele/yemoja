@@ -98,18 +98,22 @@ would be too many to read.
 
 ## System
 
-**Download from dive computer** is the large button at the top.
+System is three boxes.
 
-While something is running or waiting for you, a box under it says what: a download, an import,
-an export, or changes an agent has proposed. When dives have arrived, it is where you review them.
-On a phone, **Review** opens the list as a page of its own, and back returns to System.
+**Logbook** opens a logbook you already have, makes a new one, or reloads the one that is open:
+**Reload logbook** reads your files again, for a change made to them outside Yemoja, by a sync or
+by hand.
 
-**Logbook** holds the rest of what can be done to a logbook as a whole: importing, exporting to
-UDDF, **Reload logbook**, **Settings**, and making or opening a logbook. Reload reads your files
-again, for a change made to them outside Yemoja, by a sync or by hand. A greyed button says why
-underneath: it needs a logbook open, one is already running, or the device cannot do it.
-Importing and downloading are explained in [computers-and-importing.md](computers-and-importing.md),
-exporting in [uddf.md](uddf.md), and the settings in [settings.md](settings.md).
+**Data** downloads from a dive computer, imports and exports. While one of them is running or
+waiting for you, the box says what under its buttons; when dives have arrived, it is where you
+review them. On a phone, **Review** opens the list as a page of its own, and back returns to
+System. Downloading and importing are explained in
+[computers-and-importing.md](computers-and-importing.md), exporting in [uddf.md](uddf.md).
+
+**Settings** shows every setting, ready to change; see [settings.md](settings.md).
+
+A greyed button says why under its row: it needs a logbook open, one is already running, or the
+device cannot do it.
 
 ## Reading an item
 

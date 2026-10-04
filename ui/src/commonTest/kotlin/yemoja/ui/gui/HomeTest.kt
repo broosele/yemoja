@@ -208,24 +208,22 @@ class GreetingTest {
     fun `every deed the application knows is named, built or not`() {
         assertEquals(
             listOf(
+                "Open logbook",
+                "New logbook",
+                "Reload logbook",
                 "Download from dive computer",
                 "Import",
                 "Export to UDDF",
-                "Reload logbook",
-                "Settings",
-                "New logbook",
-                "Open logbook",
             ),
             Deed.entries.map { it.label },
         )
     }
 
     @Test
-    fun `the logbook row holds every deed but the download`() {
-        assertEquals(
-            listOf(Deed.IMPORT, Deed.EXPORT, Deed.RELOAD, Deed.SETTINGS, Deed.NEW, Deed.OPEN),
-            LOGBOOK_DEEDS,
-        )
+    fun `System's two boxes of deeds hold every deed once`() {
+        assertEquals(listOf(Deed.OPEN, Deed.NEW, Deed.RELOAD), LOGBOOK_DEEDS)
+        assertEquals(listOf(Deed.DOWNLOAD, Deed.IMPORT, Deed.EXPORT), DATA_DEEDS)
+        assertEquals(Deed.entries.toSet(), (LOGBOOK_DEEDS + DATA_DEEDS).toSet())
     }
 
     @Test

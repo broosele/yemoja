@@ -1093,10 +1093,6 @@ private fun System(
                     }
                 }
             }
-            put(Deed.SETTINGS) {
-                if (!choosing.open) choosing.fill(universe.settings)
-                choosing.open = true
-            }
             if (platform.save != null && !giving.writing) {
                 val save = platform.save
                 put(Deed.EXPORT) {
@@ -1142,20 +1138,22 @@ private fun System(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = GAP * 2),
         ) {
-            Spacer(modifier = Modifier.height(GAP * 2))
-            // The one deed a logbook is fed by after every dive, on its own and the size of a
-            // deed that matters. `GUI-30`.
-            val download = deeds[Deed.DOWNLOAD]
-            Button(onClick = { download?.invoke() }, enabled = download != null) {
-                Text(Deed.DOWNLOAD.label)
+            Spacer(modifier = Modifier.height(GAP))
+            // Three boxes: the logbook itself, what goes into it and out of it, and the settings,
+            // each saying why a greyed deed in it is greyed. `GUI-30`.
+            Inset("Logbook") {
+                DeedRow(LOGBOOK_DEEDS, deeds, running, universe != null)
+                when {
+                    reloading -> Aside("Reading the logbook again…")
+                    else -> reloaded?.let { Aside(it) }
+                }
             }
-            unavailableOf(Deed.DOWNLOAD, deeds.keys, running, universe != null)?.let {
-                Aside("Download ${it}.")
-            }
-            // What is under way or waiting on the reader, in one box that is there only then.
-            val working = reading.stage != Stage.IDLE || taking.open || giving.said != null || agentStaged
-            if (working && universe != null) {
-                Inset(if (reviewing || agentStaged) "Waiting for you" else "Under way") {
+            Inset("Data") {
+                DeedRow(DATA_DEEDS, deeds, running, universe != null)
+                // What is under way or waiting on the reader, under the deeds that started it.
+                val working = reading.stage != Stage.IDLE || taking.open || giving.said != null || agentStaged
+                if (working && universe != null) {
+                    Caption(if (reviewing || agentStaged) "Waiting for you" else "Under way")
                     Reader(universe, platform, reading, changer, downloads, inline = !paged, onReview = review)
                     Taker(universe, taking, changer, inline = !paged, onReview = review)
                     Review(universe, changer, onApplied)
@@ -1167,15 +1165,19 @@ private fun System(
                     }
                 }
             }
-            choosing.takeIf { it.open && universe != null }?.let {
-                // Said through the changer, so a command set here reaches the button on the tab
-                // row without a change to the logbook.
-                Inset("Settings") { Chooser(universe, choosing) { changer.changed() } }
-            }
-            LogbookDeeds(deeds, running, universe != null)
-            when {
-                reloading -> Aside("Reading the logbook again…")
-                else -> reloaded?.let { Aside(it) }
+            Inset("Settings") {
+                if (universe == null) {
+                    Aside("Settings need a logbook open.")
+                } else {
+                    // Open for good: the settings are this box rather than something it opens.
+                    // Said through the changer, so a command set here reaches the button on the
+                    // tab row without a change to the logbook. `GUI-42`.
+                    remember(universe) {
+                        if (!choosing.open) choosing.fill(universe.settings)
+                        choosing.open = true
+                    }
+                    Chooser(universe, choosing, closable = false) { changer.changed() }
+                }
             }
             Spacer(modifier = Modifier.height(GAP * 2))
         }
@@ -1618,13 +1620,11 @@ private fun ToReview(arrived: Int, onReview: () -> Unit, onClose: () -> Unit) {
 }
 
 /**
- * What can be done to the logbook as a whole besides a download: a row of quiet buttons under a
- * caption, each greyed one said beneath with its reason. `GUI-30`.
+ * A row of [listed] as quiet buttons, the download filled being what is done after every dive,
+ * each greyed one said beneath with its reason. `GUI-30`.
  */
 @Composable
-private fun LogbookDeeds(deeds: Map<Deed, () -> Unit>, running: Set<Deed>, open: Boolean) {
-    Caption("Logbook")
-    val listed = LOGBOOK_DEEDS
+private fun DeedRow(listed: List<Deed>, deeds: Map<Deed, () -> Unit>, running: Set<Deed>, open: Boolean) {
     // Wrapping onto a second line where the window is too narrow for one, as on a phone.
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -1632,7 +1632,11 @@ private fun LogbookDeeds(deeds: Map<Deed, () -> Unit>, running: Set<Deed>, open:
     ) {
         for (deed in listed) {
             val act = deeds[deed]
-            OutlinedButton(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+            if (deed == Deed.DOWNLOAD) {
+                Button(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+            } else {
+                OutlinedButton(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+            }
         }
     }
     for (deed in listed) {

@@ -812,10 +812,11 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  *Amended on 2026-10-04 with `GUI-30`:* the deed is in the System tab's logbook row, and the form
-  opens there in a box of its own. Greyed, and saying why, where no logbook is open.
+  *Amended on 2026-10-04 with `GUI-30`:* the settings are a box of System's of their own, always
+  open, with no deed to open them and no *Close*; with no logbook open the box says they need one.
+  On a phone the agent's command is left out, a phone running no agent, `PHONE-1`.
 
-  Fourteen settings are still a form rather than a place, so they open in System like a
+  Fourteen settings are still a form rather than a place, so they sit in System like a
   download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 
@@ -1536,13 +1537,13 @@ once and corrected. The numbers stay unused rather than being given to something
     reviewed.
   - **On a phone, back leads from any tab's first page to Home**, which its tiles lead from.
 
-  **System** has the download first, as the one filled button; then a box for what is under way
-  or waiting, there only then (a download, an import and its review, an export's result, an
-  agent's staged changes); the settings when opened; and a *Logbook* row of outlined buttons:
-  import, export, reload, settings, new and open. *Reload logbook* reads the files again, for a
-  change made to them outside the window. On a phone the review of what arrived is a page of its
-  own, opened from the box and left by back. **A greyed deed still shows, and says why under the
-  row**: *needs a logbook open*, *already under way* or *not on this device*.
+  **System is three boxes**, at the author's word. *Logbook*: open, new, and reload, which reads
+  the files again for a change made to them outside the window. *Data*: the download, the one
+  filled button, then import and export, and under them what is under way or waiting, there only
+  then (a download, an import and its review, an export's result, an agent's staged changes). On a
+  phone the review of what arrived is a page of its own, opened from there and left by back.
+  *Settings*: the settings themselves, always open, `GUI-42`. **A greyed deed still shows, and says
+  why under its row**: *needs a logbook open*, *already under way* or *not on this device*.
 
   **Statistics** opens on *Dives per month* among a few named charts; *Your own* brings back the
   boxes for gathering and the axes, starting from the chart that was shown.
