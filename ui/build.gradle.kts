@@ -238,3 +238,42 @@ compose.desktop {
 }
 
 tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(installerResources) }
+
+// The installer is jpackage's own, run here on the app image Compose makes, because the one switch
+// it needs is one the Compose plugin cannot pass: --win-shortcut-prompt, which asks whether to put
+// a shortcut on the desktop and in the Start menu rather than putting them there unasked. `WIN-5`.
+// The task keeps its name, so `./gradlew :ui:packageMsi` and tool/release.py are unchanged.
+val jpackage = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) }
+    .map { it.metadata.installationPath.file("bin/jpackage.exe").asFile }
+tasks.matching { it.name == "packageMsi" }.configureEach {
+    dependsOn("createDistributable", ":unzipWix")
+    actions.clear()
+    doLast {
+        val binaries = layout.buildDirectory.dir("compose/binaries/main").get().asFile
+        val into = binaries.resolve("msi")
+        into.mkdirs()
+        into.listFiles()?.filter { it.name.endsWith(".msi") }?.forEach { it.delete() }
+        val run = ProcessBuilder(
+            jpackage.get().path,
+            "--type", "msi",
+            "--app-image", binaries.resolve("app/Yemoja").path,
+            "--name", "Yemoja",
+            "--app-version", release,
+            "--description", "A dive logbook kept as readable files",
+            "--icon", project.file("icons/yemoja.ico").path,
+            "--win-menu",
+            "--win-shortcut",
+            "--win-shortcut-prompt",
+            "--win-dir-chooser",
+            // Fixed for good: it is how Windows knows a later installer upgrades this one.
+            "--win-upgrade-uuid", "4edab8bc-ba5c-4ead-94b9-f4821b831dab",
+            "--dest", into.path,
+        ).inheritIO()
+        // The WiX tools the Compose plugin fetched for its own installer, which jpackage needs found
+        // on the path.
+        val wix = rootProject.layout.buildDirectory.dir("wix311").get().asFile.path
+        run.environment()["PATH"] = wix + File.pathSeparator + System.getenv("PATH")
+        val ran = run.start()
+        check(ran.waitFor() == 0) { "jpackage should make the installer, but stopped with ${ran.exitValue()}" }
+    }
+}

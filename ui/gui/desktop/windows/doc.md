@@ -19,8 +19,8 @@ Only Windows-specific matters belong here; everything else is in
 
 - **WIN-1 — How it is delivered.** *Settled:* **an installer, and nothing else for now.** No
   store listing, no MSIX and no portable build in the first version. The installer carries the
-  runtime it needs, so a user installs nothing else first. It is an MSI made by Compose's own
-  packaging through the JDK's jpackage, `./gradlew :ui:packageMsi`, which needs the WiX toolset;
+  runtime it needs, so a user installs nothing else first. It is an MSI made through the JDK's
+  jpackage, `./gradlew :ui:packageMsi`, from the app image Compose's packaging makes, `WIN-5`, which needs the WiX toolset;
   the plugin fetches WiX into the build's cache, so the machine that builds installs nothing. The
   runtime goes in whole rather than as a list of modules, since a module left out would fail only
   when the code needing it ran — for Bluetooth, during a download. The dive computer library is
@@ -41,6 +41,16 @@ Only Windows-specific matters belong here; everything else is in
   proven on one Windows 11 machine with its own adapter: a scan finds a computer and a download
   reads it. A Windows 10 machine has not been tried, which is a test owed before the first version
   rather than a question.
+- **WIN-5 — Whether the installer makes shortcuts unasked.** *Settled:* **it asks.** Decided on
+  2026-10-04, at the author's word, who found a desktop shortcut made without being asked. After
+  the folder is chosen a page offers a desktop shortcut and a Start menu one, each a box to tick,
+  and only what is ticked is made. Both start ticked, which is the JDK's template.
+
+  It is jpackage's own `--win-shortcut-prompt`, which the Compose plugin has no setting for. So
+  `packageMsi` keeps its name and its output and runs jpackage itself, on the app image the plugin
+  makes and with the WiX the plugin fetched; `ui/build.gradle.kts` says so where it does it.
+  Starting the two boxes unticked would take a WiX fragment of our own in place of the template,
+  and is not done.
 
 ## Open questions
 
