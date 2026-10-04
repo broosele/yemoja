@@ -30,7 +30,9 @@ import yemoja.data.json.FileStoreMissing
  *
  * Android gives an app no path to such a folder, only a tree it was granted, whose files are
  * found by asking for the children of each folder in turn. A folder's children are asked for once
- * and kept until something in it is written or deleted.
+ * and kept, and what this store writes and deletes itself is put into the kept answer rather than
+ * asking again: on a cloud drive one asking takes a second or more, and taking in three hundred
+ * dives asked once for each. `AND-9`.
  *
  * **The libraries are the app's own**, read from inside it as on the desktop, and are never looked
  * for in the granted folder. Not immutable: it caches.
@@ -130,11 +132,7 @@ internal class GrantedFileStore(
         var folder = root
         for (name in names.dropLast(1)) folder = folderIn(folder, name)
         val name = names.last()
-        val id = childrenOf(folder)[name]?.id
-            ?: DocumentsContract.createDocument(resolver, uriOf(folder), MIME, name)
-                ?.let { DocumentsContract.getDocumentId(it) }
-                ?: error("$path could not be made")
-        listed.remove(folder)
+        val id = childrenOf(folder)[name]?.id ?: made(folder, name, path)
         // Truncated as it is written, so a shorter text leaves nothing of the longer behind.
         val stream = resolver.openOutputStream(uriOf(id), "wt") ?: error("$path could not be written")
         stream.bufferedWriter().use { it.write(text) }
@@ -171,8 +169,20 @@ internal class GrantedFileStore(
         val folder = folderId(names.dropLast(1).joinToString("/")) ?: return
         val entry = childrenOf(folder)[names.last()] ?: return
         DocumentsContract.deleteDocument(resolver, uriOf(entry.id))
-        listed.remove(folder)
+        listed[folder]?.let { listed[folder] = it - names.last() }
         listed.remove(entry.id)
+    }
+
+    /**
+     * A new file [name] in [folder], added to the folder's kept listing. Its stamp is not known
+     * until the folder is next asked for, which [forget] makes happen.
+     */
+    private fun made(folder: String, name: String, path: String): String {
+        val id = DocumentsContract.createDocument(resolver, uriOf(folder), MIME, name)
+            ?.let { DocumentsContract.getDocumentId(it) }
+            ?: error("$path could not be made")
+        listed[folder]?.let { listed[folder] = it + (name to Entry(id, folder = false)) }
+        return id
     }
 
     private fun isLibrary(path: String): Boolean =

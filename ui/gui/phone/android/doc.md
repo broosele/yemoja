@@ -27,7 +27,10 @@ folder holding none; each refuses the other's and says which to use. They were o
 2026-10-04, a folder with no logbook being made into one, and the author asked for the two to be
 told apart, `GUI-30`. The grant is kept and the folder remembered, so the app opens on it
 again. It is reached through the storage access framework, by `GrantedFileStore`, whose answers
-about a folder's children are kept until something in it changes. **A folder is listed whole**: a
+about a folder's children are kept, and what the app writes or deletes itself is put into the kept
+answer rather than asked for again. Asking again after every file made taking in three hundred
+dives take minutes on Drive, a listing there costing a second or more, and the same 347 dives went
+from 79 seconds to 13 on the emulator's own storage. **A folder is listed whole**: a
 cloud provider such as Google Drive's answers in parts, marking the list as still loading or giving
 one page of a longer one, and the first answer taken as the whole once read a logbook of 347 dives
 as 200. So the list is asked for page after page, while the provider counts more than it gave and
