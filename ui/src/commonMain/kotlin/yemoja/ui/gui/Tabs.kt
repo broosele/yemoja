@@ -101,11 +101,11 @@ internal val TABS: List<Tab> = listOf(
     Tab("Home", Icons.Filled.Home, shape = Shape.HOME, holds = "The greeting, and what is owed."),
     Tab(
         "Dives", Icons.Filled.ScubaDiving, listOf(Types.DIVE, Types.DIVE_TRIP), Shape.DIVES,
-        "Every dive and trip, newest first, with its profile.",
+        "Every dive and trip, with its profile.",
     ),
     Tab(
         "Gear", Icons.Filled.PropaneTank, listOf(Types.GEAR), Shape.GEAR,
-        "Your equipment, and when each piece is due a service.",
+        "Your equipment, and when it is due a service.",
     ),
     Tab(
         "Community", Icons.Filled.Groups,
@@ -119,7 +119,7 @@ internal val TABS: List<Tab> = listOf(
     ),
     Tab(
         "Calculations", Icons.Filled.Calculate, shape = Shape.CALCULATIONS,
-        holds = "Dive plans, gas mixes, SAC, NDL, MOD, EAD, END and tides.",
+        holds = "Dive plans, gas mixes, SAC, NDL, MOD and tides.",
     ),
     Tab(
         "Statistics", Icons.Filled.BarChart, shape = Shape.STATISTICS,
@@ -127,10 +127,10 @@ internal val TABS: List<Tab> = listOf(
     ),
     Tab(
         "System", Icons.Filled.Settings, shape = Shape.SYSTEM,
-        holds = "Download from a dive computer, import, export, the logbook and settings.",
+        holds = "Downloads, import, export, the logbook and settings.",
     ),
     Tab(
         "Manuals", Icons.Filled.MenuBook, shape = Shape.MANUAL,
-        holds = "How Yemoja works, and how a logbook is written.",
+        holds = "How Yemoja works, and its file format.",
     ),
 )

@@ -964,8 +964,11 @@ private fun Tiles(tabs: List<Tab>, download: Stage, onChoose: (Tab) -> Unit) {
     ) {
         for (tab in tabs) {
             val wide = if (compact) Modifier.fillMaxWidth() else Modifier.width(TILE)
+            // Every tile one height, which fits a name and two lines, so a short description does
+            // not leave a tile smaller than its neighbours.
             Row(
-                modifier = wide.clip(SHAPE).background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                modifier = wide.height(TILE_HEIGHT).clip(SHAPE)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .clickable { onChoose(tab) }.padding(GAP),
                 horizontalArrangement = Arrangement.spacedBy(GAP),
             ) {
@@ -977,16 +980,20 @@ private fun Tiles(tabs: List<Tab>, download: Stage, onChoose: (Tab) -> Unit) {
                 )
                 Column {
                     Text(tab.name, style = MaterialTheme.typography.titleMedium)
+                    // A download under way is said in place of what System holds, the tile having
+                    // room for two lines.
+                    val busy = busyOf(download).takeIf { tab.shape == Shape.SYSTEM }
                     Text(
-                        text = tab.holds,
+                        text = busy ?: tab.holds,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (busy != null) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    if (tab.shape == Shape.SYSTEM) {
-                        busyOf(download)?.let {
-                            Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
                 }
             }
         }
@@ -998,6 +1005,9 @@ private val TILE = 340.dp
 
 /** How big a tile's glyph is. */
 private val TILE_ICON = 40.dp
+
+/** How tall every tile is: its name and two lines under it. */
+private val TILE_HEIGHT = 96.dp
 
 /** The Statistics tab: one chart of the logbook's dives, chosen by name or put together. `GUI-30`. */
 @Composable
