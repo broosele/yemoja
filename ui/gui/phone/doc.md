@@ -62,12 +62,16 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   and a box of a fixed height scrolling inside it was mostly empty for a short dive and a second
   thing to scroll for a long one. A box that holds a number asks the phone for its number keys.
 
-  **A cylinder is three lines on a phone** rather than a row of a table: its number, gas and role
-  with the buttons that add and take out a cylinder; its volume, start pressure and SAC, each box
-  naming itself while empty; and what the plan makes of it, each figure named, *MOD 56 m · Used
-  1530 L · End 72 bar · Reserve 121 bar*, the reserve red where the cylinder ends below it. The
-  table's eleven columns scrolled sideways under headings that scrolled with them, and the figures
-  that matter were off the screen.
+  **The cylinders are a narrower table on a phone**, at the author's word: the gas, volume, start
+  pressure and SAC typed, then MOD, gas used, end pressure and reserve, and a button taking the
+  cylinder out. The units are in the headings, each its name over its unit in a smaller size, so
+  the boxes hold only the number; *+ Add gas* is one button under the table rather than one on
+  each line. The desktop's table of eleven columns scrolled sideways on a phone, and three lines a
+  cylinder, tried before this, read badly.
+
+  **The role is not on a phone.** A cylinder keeps the role it has: the first is the bottom gas
+  and one added is a deco gas, and a plan opened from a file or a dive keeps whatever it says. The
+  role decides the pO₂ a cylinder is held to, so a stage is planned on the desktop.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -27,7 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import yemoja.logic.SEA_LEVEL_SAID
 import yemoja.logic.Breathed
 import yemoja.logic.Conditions
@@ -315,11 +315,15 @@ internal fun PlanForm(
     if (LocalCompact.current) {
         // A phone stacks the four, each its own height and each folding away under its caption,
         // in the order a plan is made: what it is dived under, what it is dived on, the dive, and
-        // what is kept back. A cylinder is three lines of its own there, its columns being wider
-        // together than the screen. `PHONE-2`.
+        // what is kept back. The cylinders are a narrower table there. `PHONE-2`.
         Folding("Settings", shaping.folded) { Framed { Conditions(shaping) } }
         Folding("Gases", shaping.folded) {
-            Framed { Cylinders(shaping, conditions, done, reckoned, stacked = true) }
+            Framed {
+                CylinderHeadings(narrow = true)
+                Cylinders(shaping, conditions, done, reckoned, narrow = true)
+                // A line's own add button does not fit across a phone, so one adds below the last.
+                TextButton(onClick = { shaping.addGas(shaping.gases.lastIndex) }) { Text("+ Add gas") }
+            }
         }
         // As tall as its lines: the page scrolls, and a box scrolling inside it would be mostly
         // empty for a short dive and a second thing to scroll for a long one.
@@ -887,16 +891,16 @@ private fun Cylinders(
     done: Worked.Done?,
     reckoned: Reckoned?,
     /**
-     * Whether each cylinder takes three lines rather than one: what it is, what it holds, and what
-     * the plan makes of it, each figure named since there are no headings. For a phone. `PHONE-2`.
+     * Whether the table is a phone's: no role, no add button on the line, smaller columns, and the
+     * units in the headings rather than the boxes. `PHONE-2`.
      */
-    stacked: Boolean = false,
+    narrow: Boolean = false,
 ) {
     for ((index, breathed) in shaping.gases.withIndex()) {
         val key = gasKeyOf(index)
         val number = @Composable { Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX, TextAlign.End) } }
         val mix = @Composable {
-            Tipped(PlannerTips.MIX, MIX) {
+            Tipped(PlannerTips.MIX, if (narrow) MIX_NARROW else MIX) {
                 Compact(
                     dense = true,
                     value = breathed.gas,
@@ -913,40 +917,37 @@ private fun Cylinders(
             }
         }
         val volume = @Composable {
-            Tipped(PlannerTips.VOLUME, VOLUME) {
+            Tipped(PlannerTips.VOLUME, if (narrow) VOLUME_NARROW else VOLUME) {
                 Compact(
                     dense = true,
                     value = breathed.size,
                     onChange = { shaping.gases[index] = breathed.copy(size = it) },
-                    // Named while empty where there are no headings to name it.
-                    hint = if (stacked) "volume" else "",
-                    after = "L",
+                    // The unit is in the heading where the table is narrow.
+                    after = if (narrow) "" else "L",
                     number = true,
                 )
             }
         }
         val start = @Composable {
-            Tipped(PlannerTips.START, PRESSURE) {
+            Tipped(PlannerTips.START, if (narrow) PRESSURE_NARROW else PRESSURE) {
                 Compact(
                     dense = true,
                     value = breathed.fill,
                     onChange = { shaping.gases[index] = breathed.copy(fill = it) },
-                    // Named while empty where there are no headings to name it.
-                    hint = if (stacked) "start" else "",
-                    after = "bar",
+                    // The unit is in the heading where the table is narrow.
+                    after = if (narrow) "" else "bar",
                     number = true,
                 )
             }
         }
         val sac = @Composable {
-            Tipped(PlannerTips.SAC, SAC) {
+            Tipped(PlannerTips.SAC, if (narrow) SAC_NARROW else SAC) {
                 Compact(
                     dense = true,
                     value = breathed.sac,
                     onChange = { shaping.gases[index] = breathed.copy(sac = it) },
-                    // Named while empty where there are no headings to name it.
-                    hint = if (stacked) "SAC" else "",
-                    after = "L/min",
+                    // The unit is in the heading where the table is narrow.
+                    after = if (narrow) "" else "L/min",
                     number = true,
                 )
             }
@@ -959,7 +960,7 @@ private fun Cylinders(
         // Red where the cylinder ends with less than this, as a line too deep for its gas is.
         val short = reckoned != null && isShort(reckoned, key)
         val keptStyle = if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked
-        val buttons = @Composable {
+        val add = @Composable {
             Explained(PlannerTips.ADD_GAS) {
                 IconButton(onClick = { shaping.addGas(index) }, modifier = Modifier.size(BUTTON)) {
                     Icon(
@@ -970,6 +971,8 @@ private fun Cylinders(
                     )
                 }
             }
+        }
+        val remove = @Composable {
             // Why a gas cannot be taken out, where a line breathes it.
             val keptBecause = shaping.keptBecause(index)
             Explained(keptBecause ?: PlannerTips.REMOVE_GAS) {
@@ -986,37 +989,22 @@ private fun Cylinders(
                 }
             }
         }
-        if (stacked) {
-            if (index > 0) HorizontalDivider(modifier = Modifier.padding(vertical = HALF))
+        if (narrow) {
             Row(
                 modifier = Modifier.height(ROW),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(HALF),
+                horizontalArrangement = Arrangement.spacedBy(NARROW_GAP),
             ) {
-                number()
+                Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX_NARROW, TextAlign.End) }
                 mix()
-                role()
-                Spacer(modifier = Modifier.weight(1f))
-                buttons()
-            }
-            Row(
-                modifier = Modifier.height(ROW).padding(start = INDEX + HALF),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(HALF),
-            ) {
                 volume()
                 start()
                 sac()
-            }
-            // What the plan makes of it, each figure named, there being no headings above.
-            FlowRow(
-                modifier = Modifier.padding(start = INDEX + HALF, top = HALF),
-                horizontalArrangement = Arrangement.spacedBy(GAP),
-            ) {
-                Explained(PlannerTips.MOD) { Text("MOD $deepest", style = worked) }
-                if (used.isNotEmpty()) Explained(PlannerTips.USED) { Text("Used $used", style = worked) }
-                if (ends.isNotEmpty()) Explained(PlannerTips.END) { Text("End $ends", style = worked) }
-                if (kept.isNotEmpty()) Explained(PlannerTips.RESERVE) { Text("Reserve $kept", style = keptStyle) }
+                Explained(PlannerTips.MOD) { Cell(deepest.removeSuffix(" m"), MOD_NARROW, TextAlign.End, worked) }
+                Explained(PlannerTips.USED) { Cell(used.removeSuffix(" L"), USED_NARROW, TextAlign.End, worked) }
+                Explained(PlannerTips.END) { Cell(ends.removeSuffix(" bar"), END_NARROW, TextAlign.End, worked) }
+                Explained(PlannerTips.RESERVE) { Cell(kept.removeSuffix(" bar"), RESERVE_NARROW, TextAlign.End, keptStyle) }
+                remove()
             }
             continue
         }
@@ -1035,14 +1023,40 @@ private fun Cylinders(
             Explained(PlannerTips.USED) { Cell(used, FIGURED, TextAlign.End, worked) }
             Explained(PlannerTips.END) { Cell(ends, FIGURED, TextAlign.End, worked) }
             Explained(PlannerTips.RESERVE) { Cell(kept, FIGURED, TextAlign.End, keptStyle) }
-            buttons()
+            add()
+            remove()
         }
     }
 }
 
-/** What each column of the cylinders is, kept above them while they scroll. */
+/**
+ * What each column of the cylinders is, kept above them while they scroll.
+ *
+ * On a phone, [narrow], each heading is its name over its unit, the boxes having no room for one.
+ */
 @Composable
-private fun CylinderHeadings() {
+private fun CylinderHeadings(narrow: Boolean = false) {
+    if (narrow) {
+        Row(horizontalArrangement = Arrangement.spacedBy(NARROW_GAP)) {
+            for ((heading, width, tip) in NARROW_COLUMNS) {
+                Explained(tip) {
+                    // A size smaller than a label's, and never broken inside a word.
+                    Text(
+                        text = heading,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = MaterialTheme.colorScheme.outline,
+                            fontSize = NARROW_HEADING,
+                            letterSpacing = 0.sp,
+                        ),
+                        textAlign = TextAlign.Center,
+                        softWrap = false,
+                        modifier = Modifier.width(width),
+                    )
+                }
+            }
+        }
+        return
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(HALF)) {
         for ((heading, width, tip) in CYLINDER_COLUMNS) {
             Explained(tip) {
@@ -1252,6 +1266,36 @@ private val LEAD = 140.dp
 
 /** What *Gas lost* offers for losing no gas, which is no lost-gas scenario. */
 private const val NO_GAS_LOST = "None"
+
+/** How wide each of a phone's cylinder columns is, which together fit across 360 dp. `PHONE-2`. */
+private val INDEX_NARROW = 12.dp
+private val MIX_NARROW = 48.dp
+private val VOLUME_NARROW = 36.dp
+private val PRESSURE_NARROW = 34.dp
+private val SAC_NARROW = 30.dp
+private val MOD_NARROW = 26.dp
+private val USED_NARROW = 34.dp
+private val END_NARROW = 30.dp
+private val RESERVE_NARROW = 38.dp
+
+/** How big a phone's cylinder headings are, which must fit *Reserve* over its column. */
+private val NARROW_HEADING = 10.sp
+
+/** The room between a phone's cylinder columns. */
+private val NARROW_GAP = 2.dp
+
+/** A phone's cylinder columns, each heading its name over its unit. */
+private val NARROW_COLUMNS: List<Triple<String, Dp, String>> = listOf(
+    Triple("", INDEX_NARROW, PlannerTips.NUMBER),
+    Triple("Gas", MIX_NARROW, PlannerTips.MIX),
+    Triple("Volume\nL", VOLUME_NARROW, PlannerTips.VOLUME),
+    Triple("Start\nbar", PRESSURE_NARROW, PlannerTips.START),
+    Triple("SAC\nL/min", SAC_NARROW, PlannerTips.SAC),
+    Triple("MOD\nm", MOD_NARROW, PlannerTips.MOD),
+    Triple("Used\nL", USED_NARROW, PlannerTips.USED),
+    Triple("End\nbar", END_NARROW, PlannerTips.END),
+    Triple("Reserve\nbar", RESERVE_NARROW, PlannerTips.RESERVE),
+)
 
 /** The cylinders' columns, headed, as wide as what sits under them. */
 private val CYLINDER_COLUMNS: List<Triple<String, Dp, String>> = listOf(
