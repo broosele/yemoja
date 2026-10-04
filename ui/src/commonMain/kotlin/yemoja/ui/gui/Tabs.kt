@@ -105,7 +105,7 @@ internal val TABS: List<Tab> = listOf(
     ),
     Tab(
         "Gear", Icons.Filled.PropaneTank, listOf(Types.GEAR), Shape.GEAR,
-        "Your equipment, and when it is due a service.",
+        "Your equipment, and when it is due.",
     ),
     Tab(
         "Community", Icons.Filled.Groups,
@@ -119,7 +119,7 @@ internal val TABS: List<Tab> = listOf(
     ),
     Tab(
         "Calculations", Icons.Filled.Calculate, shape = Shape.CALCULATIONS,
-        holds = "Dive plans, gas mixes, SAC, NDL, MOD and tides.",
+        holds = "Plans, gas mixes, NDL, MOD, tides.",
     ),
     Tab(
         "Statistics", Icons.Filled.BarChart, shape = Shape.STATISTICS,
@@ -127,10 +127,10 @@ internal val TABS: List<Tab> = listOf(
     ),
     Tab(
         "System", Icons.Filled.Settings, shape = Shape.SYSTEM,
-        holds = "Downloads, import, export, the logbook and settings.",
+        holds = "Download, import, export, settings.",
     ),
     Tab(
         "Manuals", Icons.Filled.MenuBook, shape = Shape.MANUAL,
-        holds = "How Yemoja works, and its file format.",
+        holds = "How Yemoja works.",
     ),
 )

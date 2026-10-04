@@ -898,7 +898,7 @@ private fun Home(
             Text(
                 text = greeted(hail, platform.open),
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(top = GAP * 2),
+                modifier = Modifier.padding(top = GAP),
             )
             Text(
                 text = tellingOf(universe?.user, greeting),
@@ -913,13 +913,13 @@ private fun Home(
             // The deed done after every dive, here as well as in System, which it opens so the
             // download can be followed and its dives reviewed. `GUI-30`.
             if (universe != null) {
-                Spacer(modifier = Modifier.height(GAP * 2))
+                Spacer(modifier = Modifier.height(GAP))
                 Button(onClick = { onDownload?.invoke() }, enabled = onDownload != null) {
                     Text(Deed.DOWNLOAD.label)
                 }
                 busyOf(download)?.let { Aside(it) }
             }
-            Spacer(modifier = Modifier.height(GAP * 2))
+            Spacer(modifier = Modifier.height(GAP))
             Tiles(tilesOf(tabs), download, onChoose)
             Spacer(modifier = Modifier.height(GAP * 2))
         }
@@ -959,18 +959,19 @@ private fun Tiles(tabs: List<Tab>, download: Stage, onChoose: (Tab) -> Unit) {
     val compact = LocalCompact.current
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(GAP),
-        verticalArrangement = Arrangement.spacedBy(GAP),
+        horizontalArrangement = Arrangement.spacedBy(HALF),
+        verticalArrangement = Arrangement.spacedBy(HALF),
     ) {
         for (tab in tabs) {
             val wide = if (compact) Modifier.fillMaxWidth() else Modifier.width(TILE)
-            // Every tile one height, which fits a name and two lines, so a short description does
-            // not leave a tile smaller than its neighbours.
+            // Every tile one height, a name and one line under it, so all of them fit on a phone's
+            // screen under the greeting.
             Row(
                 modifier = wide.height(TILE_HEIGHT).clip(SHAPE)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .clickable { onChoose(tab) }.padding(GAP),
+                    .clickable { onChoose(tab) }.padding(horizontal = GAP, vertical = HALF),
                 horizontalArrangement = Arrangement.spacedBy(GAP),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     tab.icon,
@@ -979,19 +980,19 @@ private fun Tiles(tabs: List<Tab>, download: Stage, onChoose: (Tab) -> Unit) {
                     modifier = Modifier.size(TILE_ICON),
                 )
                 Column {
-                    Text(tab.name, style = MaterialTheme.typography.titleMedium)
+                    Text(tab.name, style = MaterialTheme.typography.titleSmall)
                     // A download under way is said in place of what System holds, the tile having
-                    // room for two lines.
+                    // room for one line.
                     val busy = busyOf(download).takeIf { tab.shape == Shape.SYSTEM }
                     Text(
                         text = busy ?: tab.holds,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = if (busy != null) {
                             MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -1004,10 +1005,10 @@ private fun Tiles(tabs: List<Tab>, download: Stage, onChoose: (Tab) -> Unit) {
 private val TILE = 340.dp
 
 /** How big a tile's glyph is. */
-private val TILE_ICON = 40.dp
+private val TILE_ICON = 28.dp
 
-/** How tall every tile is: its name and two lines under it. */
-private val TILE_HEIGHT = 96.dp
+/** How tall every tile is: its name and one line under it. */
+private val TILE_HEIGHT = 44.dp
 
 /** The Statistics tab: one chart of the logbook's dives, chosen by name or put together. `GUI-30`. */
 @Composable
