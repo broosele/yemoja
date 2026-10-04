@@ -275,5 +275,13 @@ tasks.matching { it.name == "packageMsi" }.configureEach {
         run.environment()["PATH"] = wix + File.pathSeparator + System.getenv("PATH")
         val ran = run.start()
         check(ran.waitFor() == 0) { "jpackage should make the installer, but stopped with ${ran.exitValue()}" }
+        // The desktop shortcut's box starts unticked, which jpackage has no switch for. `WIN-5`.
+        val built = into.listFiles()?.single { it.name.endsWith(".msi") }
+            ?: error("jpackage should have written one installer into $into")
+        val untick = ProcessBuilder(
+            "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+            "-File", project.file("installer/desktop-shortcut-unticked.ps1").path, built.path,
+        ).inheritIO().start()
+        check(untick.waitFor() == 0) { "the desktop shortcut's box should be unticked, but that stopped with ${untick.exitValue()}" }
     }
 }

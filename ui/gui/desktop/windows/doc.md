@@ -44,13 +44,15 @@ Only Windows-specific matters belong here; everything else is in
 - **WIN-5 — Whether the installer makes shortcuts unasked.** *Settled:* **it asks.** Decided on
   2026-10-04, at the author's word, who found a desktop shortcut made without being asked. After
   the folder is chosen a page offers a desktop shortcut and a Start menu one, each a box to tick,
-  and only what is ticked is made. Both start ticked, which is the JDK's template.
+  and only what is ticked is made. The Start menu's starts ticked and the desktop's unticked, at
+  the author's word.
 
   It is jpackage's own `--win-shortcut-prompt`, which the Compose plugin has no setting for. So
   `packageMsi` keeps its name and its output and runs jpackage itself, on the app image the plugin
   makes and with the WiX the plugin fetched; `ui/build.gradle.kts` says so where it does it.
-  Starting the two boxes unticked would take a WiX fragment of our own in place of the template,
-  and is not done.
+  jpackage ticks both and has no switch for either, so the build then takes the value that ticks
+  the desktop's out of the installer, `ui/installer/desktop-shortcut-unticked.ps1`. A WiX fragment
+  of our own in place of the template would do it too, and is far more to keep.
 
 ## Open questions
 
