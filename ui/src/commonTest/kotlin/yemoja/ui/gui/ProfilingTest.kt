@@ -864,3 +864,15 @@ class GasSwitchStopsTest {
         assertTrue(stopping > passing, "switched to deeper, more of it is kept: $stopping against $passing")
     }
 }
+
+/*
+ * A phone's role letters beside a cylinder's number. `PHONE-2`.
+ */
+class RoleLetterTest {
+
+    @Test
+    fun `each role has a letter of its own`() {
+        assertEquals(listOf("B", "D", "BO"), yemoja.logic.Role.entries.map { letterOf(it) })
+        assertEquals(yemoja.logic.Role.entries.size, yemoja.logic.Role.entries.map { letterOf(it) }.toSet().size)
+    }
+}

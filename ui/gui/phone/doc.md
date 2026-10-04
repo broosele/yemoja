@@ -62,16 +62,17 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   and a box of a fixed height scrolling inside it was mostly empty for a short dive and a second
   thing to scroll for a long one. A box that holds a number asks the phone for its number keys.
 
-  **The cylinders are a narrower table on a phone**, at the author's word: the gas, volume, start
-  pressure and SAC typed, then MOD, gas used, end pressure and reserve, and a button taking the
-  cylinder out. The units are in the headings, each its name over its unit in a smaller size, so
+  **The cylinders are a narrower table on a phone**, at the author's word: the role, the gas,
+  volume, start pressure and SAC typed, then MOD, gas used, end pressure and reserve, and a button
+  taking the cylinder out. The units are in the headings, each its name over its unit in a smaller size, so
   the boxes hold only the number; *+ Add gas* is one button under the table rather than one on
   each line. The desktop's table of eleven columns scrolled sideways on a phone, and three lines a
   cylinder, tried before this, read badly.
 
-  **The role is not on a phone.** A cylinder keeps the role it has: the first is the bottom gas
-  and one added is a deco gas, and a plan opened from a file or a dive keeps whatever it says. The
-  role decides the pO₂ a cylinder is held to, so a stage is planned on the desktop.
+  **The role is a letter beside the number**, *1 B*, *2 D*, *3 BO*, and pressing it opens a menu
+  of the three. A column of its own did not fit. It was left out for a day and came back: the role
+  decides the pO₂ a cylinder is held to, whether the ascent may choose it, and which cylinder the
+  contingency loses and goes to, and a phone could plan no bailout without it.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.

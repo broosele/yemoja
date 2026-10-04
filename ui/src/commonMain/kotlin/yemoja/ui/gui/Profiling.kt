@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -891,8 +892,8 @@ private fun Cylinders(
     done: Worked.Done?,
     reckoned: Reckoned?,
     /**
-     * Whether the table is a phone's: no role, no add button on the line, smaller columns, and the
-     * units in the headings rather than the boxes. `PHONE-2`.
+     * Whether the table is a phone's: the role a letter by the number, no add button on the line,
+     * smaller columns, and the units in the headings rather than the boxes. `PHONE-2`.
      */
     narrow: Boolean = false,
 ) {
@@ -995,7 +996,7 @@ private fun Cylinders(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(NARROW_GAP),
             ) {
-                Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX_NARROW, TextAlign.End) }
+                RoleCell(index, breathed) { shaping.gases[index] = breathed.copy(role = it) }
                 mix()
                 volume()
                 start()
@@ -1027,6 +1028,45 @@ private fun Cylinders(
             remove()
         }
     }
+}
+
+/**
+ * A phone's cylinder number with its role's letter beside it, *1 B*, which opens a menu of the
+ * roles when pressed: a role column does not fit across a phone, and the role decides the pO₂ a
+ * cylinder is held to and whether the ascent may choose it. `PHONE-2`.
+ */
+@Composable
+private fun RoleCell(index: Int, breathed: Breathed, onChoose: (Role) -> Unit) {
+    var choosing by remember { mutableStateOf(false) }
+    Box {
+        Explained(PlannerTips.ROLE) {
+            Text(
+                text = "${index + 1} ${letterOf(breathed.role)}",
+                style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.primary),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier.width(ROLE_NARROW).clickable { choosing = true },
+            )
+        }
+        Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
+            for (role in Role.entries) {
+                DropdownMenuItem(
+                    text = { Text(role.label) },
+                    onClick = {
+                        choosing = false
+                        onChoose(role)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** A role as a phone's cylinder table writes it beside the number, its first letter and bailout's two. */
+internal fun letterOf(role: Role): String = when (role) {
+    Role.BOTTOM -> "B"
+    Role.DECO -> "D"
+    Role.BAILOUT -> "BO"
 }
 
 /**
@@ -1268,15 +1308,15 @@ private val LEAD = 140.dp
 private const val NO_GAS_LOST = "None"
 
 /** How wide each of a phone's cylinder columns is, which together fit across 360 dp. `PHONE-2`. */
-private val INDEX_NARROW = 12.dp
-private val MIX_NARROW = 48.dp
-private val VOLUME_NARROW = 36.dp
+private val ROLE_NARROW = 30.dp
+private val MIX_NARROW = 42.dp
+private val VOLUME_NARROW = 34.dp
 private val PRESSURE_NARROW = 34.dp
 private val SAC_NARROW = 30.dp
 private val MOD_NARROW = 26.dp
-private val USED_NARROW = 34.dp
-private val END_NARROW = 30.dp
-private val RESERVE_NARROW = 38.dp
+private val USED_NARROW = 30.dp
+private val END_NARROW = 28.dp
+private val RESERVE_NARROW = 36.dp
 
 /** How big a phone's cylinder headings are, which must fit *Reserve* over its column. */
 private val NARROW_HEADING = 10.sp
@@ -1286,7 +1326,7 @@ private val NARROW_GAP = 2.dp
 
 /** A phone's cylinder columns, each heading its name over its unit. */
 private val NARROW_COLUMNS: List<Triple<String, Dp, String>> = listOf(
-    Triple("", INDEX_NARROW, PlannerTips.NUMBER),
+    Triple("Role", ROLE_NARROW, PlannerTips.ROLE),
     Triple("Gas", MIX_NARROW, PlannerTips.MIX),
     Triple("Volume\nL", VOLUME_NARROW, PlannerTips.VOLUME),
     Triple("Start\nbar", PRESSURE_NARROW, PlannerTips.START),
