@@ -170,10 +170,14 @@ All three can be corrected where the calculation is wrong.
   is a judgement, and any threshold that decided it for you would be wrong for somebody.
   It must name a dive in this logbook that ended before this one began.
 - `surface_interval` (number, derived) — how long you were out of the water before this
-  dive, from `previous_dive`'s end time to this dive's start. Nothing is calculated when
-  `previous_dive` is unset, and where it names a dive that is not in this logbook or that
-  ended after this one began, the interval is shown as something that cannot be calculated. Write it yourself for a dive whose predecessor is not in this
-  logbook — an imported dive often knows the interval without knowing the dive.
+  dive: from the end of `previous_dive` where you named one, and otherwise from the end of the
+  latest dive in this logbook that began earlier, plans left out. The clock needs no judgement,
+  so it is worked out for every dive; whether the dive before still counts for the gas you
+  carried is what `previous_dive` says. Nothing is calculated for the first dive in the
+  logbook. Where `previous_dive` names a dive that is not in this logbook, or that ended after
+  this one began, the interval is shown as something that cannot be calculated. Write it
+  yourself for a dive whose predecessor is not in this logbook — an imported dive often knows
+  the interval without knowing the dive.
 - `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
   the leg: a trip's list of dives gathers its own and those of everything beneath it.
 - `operator` (reference) — who you dived with.

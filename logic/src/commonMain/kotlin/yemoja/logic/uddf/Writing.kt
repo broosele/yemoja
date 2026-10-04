@@ -360,7 +360,11 @@ internal class Writer(private val set: ItemSet) {
             val zone = if (time == null) "" else zoneOf(dive)
             say("datetime", date?.let { if (time == null) it else "${it}T$time$zone" })
             if (opens) {
-                val interval = number(dive, "surface_interval")
+                // Only an interval the user wrote or one from a named dive: the gap since whatever
+                // dive came last says nothing about whether this one began clean. `DATA-60`.
+                val counted = pointed(dive, "previous_dive") != null ||
+                    (dive.read("surface_interval") as? Result.Usable)?.origin == Result.Origin.STORED
+                val interval = if (counted) number(dive, "surface_interval") else null
                 tag("surfaceintervalbeforedive") {
                     if (interval != null) {
                         say("passedtime", interval)

@@ -829,23 +829,57 @@ private fun buddyCount(dive: Item): Result<Any> {
 /**
  * How long the user was out of the water before a dive, in seconds.
  *
- * From `previous_dive`'s end to this dive's start, each taken off its own local time by its
- * `time_zone_offset`, which is what makes it right when two dives sit in different zones.
+ * From the end of the dive before to this dive's start, each taken off its own local time by its
+ * `time_zone_offset`, which is what makes it right when two dives sit in different zones. The
+ * dive before is `previous_dive` where one is named, and otherwise the latest dive in the logbook
+ * that began earlier.
  *
- * **Absent where no previous dive is named**: whether a surface interval was long enough to
- * ignore is a judgement, and any threshold deciding it would be wrong for somebody.
+ * **The clock is a fact and `previous_dive` a judgement.** How long somebody was on the surface
+ * needs no deciding, so it is worked out for every dive. Whether the dive before still counts for
+ * the gas carried is the user's to say, and only a named one is carried. A plan is passed over,
+ * being a dive not made. Absent where no earlier dive says when it was.
  */
 private fun surfaceInterval(dive: Item): Result<Any> {
-    val named = dive.single<Reference>("previous_dive") as? Result.Usable ?: return Result.Absent
-    val id = (named.value as? Reference.Identified)?.id
-        ?: return unusable("a surface interval needs a dive with an id to measure from")
-    val before = dive.set[id] ?: return unusable("$id is not in this logbook")
-    val out = endOf(before)?.let { absoluteOf(before, it) } ?: return Result.Absent
+    val named = dive.single<Reference>("previous_dive")
+    val namedId = (named as? Result.Usable)?.let {
+        (it.value as? Reference.Identified)?.id
+            ?: return unusable("a surface interval needs a dive with an id to measure from")
+    }
+    val namedDive = namedId?.let { dive.set[it] ?: return unusable("$it is not in this logbook") }
     val back = momentOf(dive, "start_date", "start_time")?.let { absoluteOf(dive, it) }
         ?: return Result.Absent
+    val before: Item
+    val id: String
+    if (namedDive != null && namedId != null) {
+        before = namedDive
+        id = namedId
+    } else {
+        val latest = latestBefore(dive, back) ?: return Result.Absent
+        before = latest
+        id = (latest as? ReferenceableItem)?.let { dive.set.idOf(it) } ?: return Result.Absent
+    }
+    val out = endOf(before)?.let { absoluteOf(before, it) } ?: return Result.Absent
     val seconds = out.secondsUntil(back)
     if (seconds < 0) return unusable("$id ended after this dive began")
     return Result.Usable(seconds.toDouble(), Result.Origin.DERIVED)
+}
+
+/** The dive in [dive]'s logbook that began last before [back], plans passed over. */
+private fun latestBefore(dive: Item, back: Moment): Item? {
+    var latest: Item? = null
+    var latestAt: Long? = null
+    for (other in dive.set.allOf(DIVE)) {
+        if (other === dive) continue
+        if ((other.single<Boolean>("planned") as? Result.Usable)?.value == true) continue
+        val began = momentOf(other, "start_date", "start_time")?.let { absoluteOf(other, it) } ?: continue
+        val at = began.epochSecond
+        if (at >= back.epochSecond) continue
+        if (latestAt == null || at > latestAt) {
+            latest = other
+            latestAt = at
+        }
+    }
+    return latest
 }
 
 /** A date field and a time field of one item read together, or absent where either is missing. */

@@ -335,8 +335,34 @@ class SurfaceIntervalTest {
     }
 
     @Test
-    fun `a dive starting clean has none, which is most of them`() {
+    fun `the first dive in the logbook has none`() {
         assertEquals(Result.Absent, two["a#0"]!!.read("surface_interval"))
+    }
+
+    /** A dive of half an hour begun at [at] on 21 June, naming [named] as the dive before. */
+    private fun at(at: String, named: String = "", planned: Boolean = false): String =
+        """{$named "profiles": {"p1": {${if (planned) "\"planned\": true," else ""}
+            "start_date": "2026-06-21", "start_time": "$at", "depth": [[0, 0], [1800, 0]]}}}"""
+
+    @Test
+    fun `with no dive named, it runs from the latest dive that began earlier`() {
+        val dives = set("dive/a#0.json" to at("08:00:00"), "dive/a#1.json" to at("10:00:00"),
+            "dive/a#2.json" to at("13:00:00"))
+        assertEquals(9000.0, value(dives["a#2"]!!, "surface_interval"), "from 10:30, not from 08:30")
+    }
+
+    @Test
+    fun `a named dive is measured from, however many came between`() {
+        val dives = set("dive/a#0.json" to at("08:00:00"), "dive/a#1.json" to at("10:00:00"),
+            "dive/a#2.json" to at("13:00:00", named = """"previous_dive": "@a#0","""))
+        assertEquals(16200.0, value(dives["a#2"]!!, "surface_interval"))
+    }
+
+    @Test
+    fun `a plan is not a dive anybody surfaced from`() {
+        val dives = set("dive/a#0.json" to at("08:00:00"), "dive/a#1.json" to at("10:00:00", planned = true),
+            "dive/a#2.json" to at("13:00:00"))
+        assertEquals(16200.0, value(dives["a#2"]!!, "surface_interval"))
     }
 
     @Test

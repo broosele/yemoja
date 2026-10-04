@@ -1756,6 +1756,12 @@ To settle when we discuss architecture:
   Importing reverses it: a dive takes the one before it in its group, and the first of a
   group takes nothing. See [../logic/uddf.md](../logic/uddf.md).
 
+  *Amended, at the author's word:* **`surface_interval` is worked out for every dive**, from
+  the latest earlier dive where `previous_dive` names none. The gap is the arithmetic and was
+  never the judgement, and measuring it only for a named dive left it missing from nearly
+  every dive. What is carried over is still only what a named
+  dive says, and an export still opens a group with `<infinity/>` where none is named.
+
 - **DATA-17 — Cycles in self-referential lists.** *Relocated to the logic layer,* as
   `LOGIC-8`, and **not answered once for all fields.** A region's `parents`, a dive trip's
   `parent` and a certification's `supersedes` all point at their own type, and what a
