@@ -92,24 +92,6 @@ finer than the source draws at that scale. No shape crosses the date line; the s
 splits them there. A city is one line of five tab-separated cells: name, latitude,
 longitude, the source's rank from 0 for the most important, and population.
 
-**The tide stations are the other.** `tides/rijkswaterstaat.txt` lists the water-level stations of
-Rijkswaterstaat that a tide calculator may ask, so that which dive sites a calculator covers is
-known without a network. A station is one line of five tab-separated cells: the code the service
-knows it by, its name, latitude, longitude, and a letter for each series it carries — `a` the
-astronomical prediction, `f` the forecast, `m` the measurement. Only tidal stations are listed.
-Nothing in a logbook names one. `tool/tidestations.py` writes the file, and `LOGIC-44` in
-[logic/doc.md](../logic/doc.md) says how it is used.
-
-Beside it, `tides/waters.txt` outlines the tidal waters those calculators cover, so that a dive
-site on a lake behind a dam is not given the tide of the sea in front of it. A water is one
-line: its name, a tab, and one ring written as a map shape is, longitude and latitude
-alternating. An outline runs generously over land, since a dive site stands on the shore, and
-exactly along each dam.
-
-`tides/scaldis-oost.txt` lists the places Rijkswaterstaat's Scaldis-Oost model gives the current
-at. A place is one line of four tab-separated cells: the code the service knows it by, its name,
-latitude and longitude. `tool/currentpoints.py` writes it.
-
 
 One consequence: a library and a logbook share an id namespace, because resolution
 looks in the logbook first and then here. An id chosen carelessly will be shadowed
@@ -154,21 +136,6 @@ rename or remove one. The reason is in [data/libraries.md](../data/libraries.md)
   GeoJSON in its maintainers' repository. Only geometry, names, ranks and populations were
   kept; every other attribute was dropped, and coordinates were rounded as the layout above
   says.
-- **The tide stations** — the catalogue of
-  [Rijkswaterstaat's WaterWebservices](https://rijkswaterstaatdata.nl/waterdata/), whose content
-  is published under CC0, taken in October 2026. Only each station's code, name and position were
-  kept. Which series a station carries is not the catalogue's word, which lists some a station no
-  longer delivers: each was asked for, and a letter is written where the service answered.
-- **The current model's places** — the data service behind Rijkswaterstaat's
-  [RWsOS viewer](https://rwsos.rws.nl/viewer/), taken in October 2026; only each place's code,
-  name and position were kept. **The service states no licence.** Its viewer carries a disclaimer
-  of liability and nothing else, so this list rests on Rijkswaterstaat's general policy that its
-  data is open unless stated otherwise. A code, a name and a position are facts about where the
-  model is reported, which is the most such a list can be.
-- **The tidal waters** — written for this project. The outlines are approximate and are
-  well-known geography, as the regions' boxes are. Where one follows a dam it was drawn between
-  the positions of the gauges Rijkswaterstaat keeps on either side of that dam, which the same
-  catalogue gives, and checked against every gauge whose side is plain from its name.
 - **Certifications** — the qualifications agencies publish, recorded as fact. See the
   note on names below.
 - **Generic gear** — written for this project.
@@ -189,8 +156,7 @@ it: this is reference data, not a review.
 ## Status
 
 Populated: world regions split by continent, PADI and CMAS certifications, a catalogue
-of generic gear, the map at three scales, and the Dutch tide stations with the outlines of
-the Oosterschelde and the North Sea and the places of the Oosterschelde's current model.
+of generic gear, and the map at three scales.
 
 No count is given here on purpose — it went stale the first time anything was added.
 `tool/checkdata.py` reports the current figure and verifies that every reference

@@ -1,6 +1,6 @@
 """Write the list of places Rijkswaterstaat's Scaldis-Oost model gives the current at.
 
-The list is libraries/tides/scaldis-oost.txt, one place a line, and the current calculator in the
+The list is logic/tides/scaldis-oost.txt, one place a line, and the current calculator in the
 logic layer reads it to say which dive sites it covers without asking the network. It is taken from
 the data service behind Rijkswaterstaat's RWsOS viewer, and written again whenever a place comes or
 goes:
@@ -17,7 +17,7 @@ import os
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "libraries", "tides", "scaldis-oost.txt")
+OUT = os.path.join(ROOT, "logic", "tides", "scaldis-oost.txt")
 
 # Every place holding the model's current speed, which is series SG.1 of source SOF_6.
 PLACES = "https://rwsos.rws.nl/wb-api/dd/2.0/timeseries?observationTypeId=SG.1&sourceName=SOF_6"

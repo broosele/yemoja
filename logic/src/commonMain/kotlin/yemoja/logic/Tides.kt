@@ -138,7 +138,7 @@ interface TideCalculator {
 }
 
 /**
- * Station is one water-level gauge of the Rijkswaterstaat network, as libraries/tides/rijkswaterstaat.txt
+ * Station is one water-level gauge of the Rijkswaterstaat network, as logic/tides/rijkswaterstaat.txt
  * lists it.
  *
  * [series] holds a letter for each series the station carries: `a` the astronomical prediction,
@@ -163,7 +163,7 @@ fun stationsOf(text: String): List<Station> = text.lineSequence()
     .toList()
 
 /**
- * Water is one tidal water a calculator covers, as libraries/tides/waters.txt outlines it.
+ * Water is one tidal water a calculator covers, as logic/tides/waters.txt outlines it.
  *
  * The outline is one ring of longitude and latitude alternating, as the map's shapes are written.
  * It is drawn generously over land and exactly along a dam, since a dive site stands on the shore
@@ -228,14 +228,14 @@ expect fun getJson(url: String): Posted
  * The one place a front end asks, so that a calculator added here reaches every one of them.
  */
 fun tideCalculators(text: (path: String) -> String): List<TideCalculator> {
-    val waters = watersOf(text("libraries/tides/waters.txt"))
-    return listOf(scaldisOostCalculator(placesOf(text("libraries/tides/scaldis-oost.txt")), waters)) +
-        rijkswaterstaatCalculators(stationsOf(text("libraries/tides/rijkswaterstaat.txt")), waters)
+    val waters = watersOf(text("tides/waters.txt"))
+    return listOf(scaldisOostCalculator(placesOf(text("tides/scaldis-oost.txt")), waters)) +
+        rijkswaterstaatCalculators(stationsOf(text("tides/rijkswaterstaat.txt")), waters)
 }
 
 /**
  * The three calculators reading the Rijkswaterstaat WaterWebservices, from [stations] as
- * libraries/tides/rijkswaterstaat.txt lists them, [waters] as libraries/tides/waters.txt outlines
+ * logic/tides/rijkswaterstaat.txt lists them, [waters] as logic/tides/waters.txt outlines
  * them, and [post] as the way to the service.
  *
  * Most accurate first: the measurement, the forecast, the astronomical prediction. One service
@@ -693,7 +693,7 @@ fun Date.plusDays(days: Long): Date = Date.ofEpochDay(epochDay + days)
 
 // --- The current, from the Scaldis-Oost model.
 
-/** Place is one point Rijkswaterstaat's Scaldis-Oost model gives the current at, as libraries/tides/scaldis-oost.txt lists it. */
+/** Place is one point Rijkswaterstaat's Scaldis-Oost model gives the current at, as logic/tides/scaldis-oost.txt lists it. */
 data class Place(val code: String, val name: String, val latitude: Double, val longitude: Double)
 
 /** The places in [text], which is the library file, one a line, four cells a line. */
@@ -708,7 +708,7 @@ fun placesOf(text: String): List<Place> = text.lineSequence()
 
 /**
  * The calculator reading Rijkswaterstaat's Scaldis-Oost model, from [places] as
- * libraries/tides/scaldis-oost.txt lists them, [waters] as libraries/tides/waters.txt outlines them,
+ * logic/tides/scaldis-oost.txt lists them, [waters] as logic/tides/waters.txt outlines them,
  * and [get] as the way to the service. `LOGIC-44`.
  */
 fun scaldisOostCalculator(

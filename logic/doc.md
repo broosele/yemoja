@@ -1192,7 +1192,7 @@ To settle when we discuss architecture and features:
   a site on the Grevelingen is salt, in Zeeland, and says no more. And nothing the service holds
   does either, since most gauges in the Oosterschelde carry no astronomical series and look like a
   lake's. So the calculators are given the waters they cover as outlines,
-  [libraries/tides/waters.txt](../libraries/tides/waters.txt): at present the Oosterschelde and
+  [tides/waters.txt](tides/waters.txt): at present the Oosterschelde and
   the North Sea. A position inside one is covered, and is answered by a station inside the same
   one, so a site within the storm surge barrier is not given the tide outside it. An outline is
   drawn generously over land, a site standing on the shore, and exactly along each dam, between
@@ -1234,7 +1234,7 @@ To settle when we discuss architecture and features:
   said.
 
   **Which stations there are is a shipped file, and what they answer is asked.**
-  [libraries/tides/rijkswaterstaat.txt](../libraries/tides/rijkswaterstaat.txt) lists each station with a position and the
+  [tides/rijkswaterstaat.txt](tides/rijkswaterstaat.txt) lists each station with a position and the
   series it carries, so `covers` is answered with no network; `tool/tidestations.py` writes it.
   The readings themselves are fetched when asked for and kept nowhere: a day is a few kilobytes,
   and what to keep and for how long is a question for when something needs a tide offline.
@@ -1269,7 +1269,7 @@ To settle when we discuss architecture and features:
   a day it is the one offered. The nearest place within three kilometres in the same water answers,
   `PLACE_REACH`, and of those only one with all three series: the level is what signs the current,
   and Zeelandbrug pijler 2 has the current without it. The places ship as
-  [libraries/tides/scaldis-oost.txt](../libraries/tides/scaldis-oost.txt), written by
+  [tides/scaldis-oost.txt](tides/scaldis-oost.txt), written by
   `tool/currentpoints.py`.
 
   Two things about it are weaker than the WaterWebservices. **It states no licence**: the viewer
@@ -1291,6 +1291,24 @@ To settle when we discuss architecture and features:
   last crossing. `slacksIn`. At the Zeelandbrug the model puts slack within about ten minutes of
   high and low water, which is what the basin behind the barrier is known for; at the station
   calculators the table still has no slacks.
+
+  **The calculators' files are this layer's, in `logic/tides/`, and not a library.** Nothing in a
+  logbook names a station, a water or a model place, and a library is data a logbook refers to, so
+  they sit beside the code that reads them and are bundled with it under `tides/`. Decided on
+  2026-10-04, at the author's word; they were in `libraries/tides/` for a day. Three files:
+
+  - `rijkswaterstaat.txt` — a station a line, five tab-separated cells: the service's code, the
+    name, latitude, longitude, and a letter for each series it carries, `a` the astronomical
+    prediction, `f` the forecast and `m` the measurement. Taken from the WaterWebservices, which
+    are CC0, in October 2026; `tool/tidestations.py` asks each station what it answers rather than
+    believing the catalogue, which lists series that have stopped.
+  - `waters.txt` — a water a line: a name, a tab, and one ring of longitude and latitude
+    alternating, as a map shape is written. Written for this project. Each dam is drawn between the
+    positions of the gauges Rijkswaterstaat keeps on either side of it, and the outlines were
+    checked against every gauge whose side is plain from its name.
+  - `scaldis-oost.txt` — a model place a line, four cells: the service's code, the name, latitude
+    and longitude. Taken from the RWsOS service in October 2026, which states no licence; it rests
+    on Rijkswaterstaat's general policy that its data is open unless stated otherwise.
 
   **The network is reached through two functions**, `postJson` for the WaterWebservices and
   `getJson` for the RWsOS service, which are the JDK's own connection on a JVM and on Android and so

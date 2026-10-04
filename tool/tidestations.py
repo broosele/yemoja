@@ -1,6 +1,6 @@
 """Write the list of Rijkswaterstaat water-level stations the tide calculators choose from.
 
-The list is libraries/tides/rijkswaterstaat.txt, one station a line, and the tide calculators in the logic
+The list is logic/tides/rijkswaterstaat.txt, one station a line, and the tide calculators in the logic
 layer read it to say which dive sites they cover without asking the network. It is taken from the
 WaterWebservices, which are CC0, and written again whenever a station comes or goes:
 
@@ -27,7 +27,7 @@ import urllib.error
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "libraries", "tides", "rijkswaterstaat.txt")
+OUT = os.path.join(ROOT, "logic", "tides", "rijkswaterstaat.txt")
 
 SERVICE = "https://ddapi20-waterwebservices.rijkswaterstaat.nl"
 CATALOGUE = SERVICE + "/METADATASERVICES/OphalenCatalogus"

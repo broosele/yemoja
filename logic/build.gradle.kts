@@ -72,11 +72,24 @@ val bundledLibraries: CopySpec = copySpec {
     from(rootProject.file("libraries")) {
         // The name FileStore.LIBRARIES resolves under. A build script cannot see it.
         into("libraries")
-        include("**/*.json", "map/**/*.txt", "tides/**/*.txt", "LICENSE")
+        include("**/*.json", "map/**/*.txt", "LICENSE")
     }
 }
 
-tasks.named<ProcessResources>("jvmProcessResources") { with(bundledLibraries) }
+// The tide calculators' own files: the stations and places they ask, and the waters they cover.
+// Not a library, since nothing in a logbook names them; they are this layer's, as its code is.
+// `LOGIC-44`.
+val bundledTides: CopySpec = copySpec {
+    from(project.file("tides")) {
+        into("tides")
+        include("*.txt")
+    }
+}
+
+tasks.named<ProcessResources>("jvmProcessResources") {
+    with(bundledLibraries)
+    with(bundledTides)
+}
 
 // Android packs what a library's resource folders hold into the app, so the same files are put
 // in one of those for it. A folder inside an app cannot be listed, only a file read, so an index
@@ -93,3 +106,10 @@ val androidLibraries = tasks.register<Sync>("androidLibraries") {
     }
 }
 kotlin.sourceSets.named("androidMain") { resources.srcDir(androidLibraries) }
+
+// The tides for Android, apart from the libraries so the index above lists libraries alone.
+val androidTides = tasks.register<Sync>("androidTides") {
+    with(bundledTides)
+    into(layout.buildDirectory.dir("androidTides"))
+}
+kotlin.sourceSets.named("androidMain") { resources.srcDir(androidTides) }
