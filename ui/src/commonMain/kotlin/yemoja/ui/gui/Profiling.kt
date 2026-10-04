@@ -585,6 +585,9 @@ private fun TypedLine(
                 derived = true,
                 // A line staying at its depth has nothing else to time it by.
                 wrong = needsDuration(shaping.segments, index),
+                // Minutes, which are what a duration is mostly typed in. The number keys have no
+                // colon, so m:ss is typed on a keyboard that has one.
+                number = true,
             )
         }
         Tipped(PlannerTips.RATE, widths.rate) {

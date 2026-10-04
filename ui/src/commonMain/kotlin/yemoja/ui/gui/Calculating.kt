@@ -555,6 +555,7 @@ private fun SacForm(working: Working) {
                         value = working.figures[figure].orEmpty(),
                         onChange = { working.figures[figure] = it },
                         after = figure.unit,
+                        number = true,
                     )
                 }
             }
@@ -720,7 +721,10 @@ internal fun Field(label: String, value: String, after: String, onChange: (Strin
             textAlign = TextAlign.End,
             modifier = Modifier.width(LABEL),
         )
-        Box(modifier = Modifier.width(FIGURE)) { Compact(value = value, onChange = onChange, after = after) }
+        // A box with a unit after it holds a number, and a phone offers the number keys for it.
+        Box(modifier = Modifier.width(FIGURE)) {
+            Compact(value = value, onChange = onChange, after = after, number = after.isNotEmpty())
+        }
     }
 }
 

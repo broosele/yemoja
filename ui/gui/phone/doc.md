@@ -60,7 +60,9 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   contingency, and each folds away under its caption at a press, so that the one column need not
   hold all four at once. **The runtime is as tall as its lines** and no taller: the page scrolls,
   and a box of a fixed height scrolling inside it was mostly empty for a short dive and a second
-  thing to scroll for a long one. A box that holds a number asks the phone for its number keys.
+  thing to scroll for a long one. A box that holds a number asks the phone for its number keys: in the planner,
+  the calculators and the settings alike. A line's duration is one of them, typed in minutes; the
+  number keys have no colon, so *m:ss* is typed on a keyboard that has one.
 
   **The cylinders are a narrower table on a phone**, at the author's word: the role, the gas,
   volume, start pressure and SAC typed, then MOD, gas used, end pressure and reserve, and a button

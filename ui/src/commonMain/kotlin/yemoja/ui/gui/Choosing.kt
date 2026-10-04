@@ -164,6 +164,8 @@ private fun SettingRow(
                 after = after,
                 hint = hint,
                 derived = true,
+                // Every setting but the agent's command is a number.
+                number = setting != Settings.AGENT_COMMAND,
             )
         }
         Text(
