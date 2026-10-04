@@ -677,8 +677,11 @@ To settle when we discuss architecture and features:
   switch.** Without the ask, a dive whose first owed stop is shallower than its deco gas's limit
   passes that depth on its bottom gas. Planners differ here, and a user comparing one with another
   needs the choice. With `switchStops`, the ascent also stops at the deepest three on which a
-  richer source it may choose is within its limit, switches, and holds sixty seconds. It does not
-  hold where a stop is owed at that depth, since the owed stop already covers the switch. A
+  richer source it may choose is within its limit, switches, and holds sixty seconds. A stop owed
+  at that depth counts towards the minute rather than adding to it, and one owing less, down to
+  none, is lengthened to it. That last case is the stop the model asks for and clears on arriving:
+  it was first taken to cover the switch, and held it for no time at all. A safety stop at the
+  switch depth counts the minute towards its own time. A
   plan keeps the choice as `gas_switch_stops`, beside `last_stop`, and the gas reserves' ascents
   follow it so that they climb as the plan does. `DATA-129`, `LOGIC-40`.
 

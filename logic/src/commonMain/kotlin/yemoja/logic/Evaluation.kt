@@ -863,9 +863,10 @@ internal class Climbed(val points: List<Pair<Int, Double>>, val switches: List<P
  *
  * **A richer gas is switched to where the ascent stops anyway**: at a stop the model owes, or at
  * the surface. Where [switchStops] says so, the ascent also stops at the deepest depth on the
- * stops' grid where a richer gas it may choose comes within its own limit, switches there, and
- * holds a minute for the switch unless a stop is owed there already. Without it a dive owing no
- * stop deeper than that depth passes it and stays on its bottom gas. `LOGIC-35`.
+ * stops' grid where a richer gas it may choose comes within its own limit, and every switch it
+ * makes is held at least a minute before it rises: a stop owed there that is longer counts, and
+ * one that is shorter, down to none, is lengthened to the minute. Without it a dive owing no stop
+ * deeper than that depth passes it and stays on its bottom gas. `LOGIC-35`.
  */
 internal fun climbed(
     from: From,
@@ -891,6 +892,8 @@ internal fun climbed(
     var owed = safety?.let { stop ->
         heldAt(before, stop.metres)?.let { held -> stop.seconds - held } ?: 0
     } ?: 0
+    // The second a switch made at this depth has been held long enough, where switch stops are asked for.
+    var switchHeldUntil = Int.MIN_VALUE
 
     while (metres > 0) {
         if (second - from.second > LONGEST_ASCENT) return null
@@ -921,9 +924,11 @@ internal fun climbed(
             null
         }
         val floor = switching ?: owedFloor
-        val target = if (floor < metres) floor else metres
+        val target = if (floor < metres && second >= switchHeldUntil) floor else metres
         val seconds = when {
             target < metres -> riseSeconds(metres, target, metresAMinute)
+            // The switch is made on arriving, so what is left of its minute is the first stretch held.
+            second < switchHeldUntil -> switchHeldUntil - second
             // Held for the safety stop alone, so for what it still needs rather than a minute.
             allowed < metres -> min(owed, SECONDS_IN_MINUTE.toInt())
             else -> SECONDS_IN_MINUTE.toInt()
@@ -939,20 +944,12 @@ internal fun climbed(
         metres = target
         points += second to metres
         val arrived = ambientAt(metres, density, surface)
-        var switched = false
         breathing.richestAt(arrived)?.let { richest ->
             if (richest != breathed && breathing.worthSwitching(breathed, richest, arrived)) {
                 switches += second to richest
                 breathed = richest
-                switched = true
+                if (switchStops && metres > 0) switchHeldUntil = second + SWITCH_SECONDS
             }
-        }
-        // A stop made for the switch alone is held for it; one owed there already holds anyway.
-        if (switched && switching != null && metres == switching) {
-            tissues = tissues.breathing(breathing.mixes[breathed] ?: Gas.AIR, arrived, arrived, SWITCH_SECONDS.toDouble())
-            second += SWITCH_SECONDS
-            points += second to metres
-            if (safety != null && metres == safety.metres) owed -= SWITCH_SECONDS
         }
     }
     return Climbed(points, switches)

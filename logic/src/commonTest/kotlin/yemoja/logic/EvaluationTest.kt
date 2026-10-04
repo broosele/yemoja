@@ -632,6 +632,50 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a switch at the first stop owed is held a minute when asked, even where the stop owes none`() {
+        // Thirty minutes at forty metres owes its first stop at twenty-one, EAN50's own depth, and
+        // that stop clears on arriving: off, the ascent switches there and rises at once.
+        val run = airAndDeco(40.0, 30, Gas.parse("EAN50"))
+        val passing = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+        val stopping = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0, switchStops = true))
+        fun switchedAt(ascent: Ascended.Done): Double =
+            ascent.depth.single { it.first == ascent.switches.single().first }.second
+
+        assertEquals(21.0, switchedAt(passing))
+        assertEquals(0, heldIn(run, passing, 21.0), "off, the switch costs no time")
+        assertEquals(21.0, switchedAt(stopping))
+        assertEquals(60, heldIn(run, stopping, 21.0), "on, it is held its minute: ${stopping.depth}")
+    }
+
+    @Test
+    fun `a stop owing a minute or more at the switch is not lengthened for it`() {
+        for ((metres, minutes) in listOf(50.0 to 25, 45.0 to 35)) {
+            val run = airAndDeco(metres, minutes, Gas.parse("EAN50"))
+            val passing = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+            val stopping = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0, switchStops = true))
+
+            assertTrue(heldIn(run, passing, 21.0) >= 60, "$metres m for $minutes min owes its minute: ${passing.depth}")
+            assertEquals(passing.depth, stopping.depth, "$metres m for $minutes min")
+            assertEquals(passing.switches, stopping.switches)
+        }
+    }
+
+    @Test
+    fun `a switch at the safety stop's depth counts towards it rather than adding to it`() {
+        // EAN90 comes within 1.6 bar between six and nine metres, so it is switched to at six,
+        // where the safety stop is held.
+        val run = airAndDeco(30.0, 20, Gas.parse("EAN90")).withSafetyStop(6.0, 180)
+        val passing = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+        val stopping = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0, switchStops = true))
+        val switched = stopping.switches.single().first
+
+        assertEquals(6.0, stopping.depth.single { it.first == switched }.second, "${stopping.switches}")
+
+        assertEquals(heldIn(run, passing, 6.0), heldIn(run, stopping, 6.0), "${passing.depth} against ${stopping.depth}")
+        assertTrue(heldIn(run, stopping, 6.0) >= 180)
+    }
+
+    @Test
     fun `a dive no deeper than a deco gas's limit makes no stop for it`() {
         val run = Run(
             depth = listOf(0 to 0.0, 60 to 18.0, 1200 to 18.0),
@@ -1001,6 +1045,15 @@ private fun chained(carrying: String): ItemSet = logbook(
 private fun decoRun(deco: Source): Run = Run(
     depth = listOf(0 to 0.0, 134 to 40.0, 1500 to 40.0),
     sources = mapOf("g1" to Source(Gas.AIR), "g2" to deco),
+    gradientFactorLow = 0.3,
+    gradientFactorHigh = 0.7,
+    switches = listOf(0 to "g1"),
+)
+
+/** A dive on air to [metres], leaving the bottom at [minutes], carrying [deco] as its deco gas. */
+private fun airAndDeco(metres: Double, minutes: Int, deco: Gas): Run = Run(
+    depth = listOf(0 to 0.0, (metres / 18.0 * 60).toInt() + 1 to metres, minutes * 60 to metres),
+    sources = mapOf("g1" to Source(Gas.AIR), "g2" to Source(deco)),
     gradientFactorLow = 0.3,
     gradientFactorHigh = 0.7,
     switches = listOf(0 to "g1"),
