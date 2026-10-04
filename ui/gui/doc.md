@@ -28,19 +28,20 @@ The application is divided into **tabs**. One is visible at a time, and the mean
 choosing between them is always *accessible* — whatever else is happening, another tab
 is reachable without unwinding what you are doing.
 
-Accessible, not necessarily visible. Seven labels fit comfortably across the top of a
-desktop window and will not fit across the foot of a phone, so the phone is free to keep
-the switcher one gesture away rather than permanently on screen.
+Accessible, not necessarily visible. Nine labels fit across the top of a wide desktop
+window and scroll in a narrow one, and will not fit across the foot of a phone, so the phone is
+free to keep the switcher one gesture away rather than permanently on screen.
 
-There are seven:
+There are nine:
 
-- **Home** — a greeting, what the application can be asked to do to a logbook as a whole,
-  and everything counted. `GUI-30`.
+- **Home** — a greeting, what is owed, and a tile for each of the others. `GUI-30`.
 - **Dives** — dives and dive trips.
 - **Gear** — equipment.
 - **Community** — people, operators and certifications.
 - **Locations** — regions and dive sites.
 - **Calculations** — what a diver works out on a slate, with no dive to read it from. `GUI-43`.
+- **Statistics** — charts of the logbook's dives. `GUI-30`.
+- **System** — what can be done to a logbook as a whole, and the settings. `GUI-30`.
 - **Manuals** — the documentation, read inside the application.
 
 **The application opens on Home**, which is first in the list and is what a user arrives at
@@ -48,11 +49,8 @@ rather than what they last left. A first screen that says how much diving is in 
 offers to open another logbook is a truer start than a list of dives pretending to be the
 point.
 
-**Home holds the statistics** rather than a tab of their own. A few figures worth
-seeing without asking and every figure there is are the same subject read at two
-depths, and a tab a user visits to see one number beside a tab that greets them was
-two doors onto one room. What is owed by this is a Home that goes somewhere: the
-figures shown without asking have to lead to the rest rather than being all there is.
+**Home leads to the rest.** Its tiles are the tabs, in their order, each saying what it holds,
+so a first screen goes somewhere rather than being all there is. `GUI-30`.
 
 ### Selector, item view, edit view
 
@@ -478,14 +476,14 @@ once and corrected. The numbers stay unused rather than being given to something
   device, is gathered before it starts, so it never reads a logbook while it is being edited.
   `LOGIC-5` records the exception this makes.
 
-  **While it reads**, Home shows how far it has got, in kilobytes as the device counts them, with
+  **While it reads**, System shows how far it has got, in kilobytes as the device counts them, with
   a bar where the device says how much there is, and a *Cancel* that gives it up. A read given up
-  keeps nothing. The download button is greyed meanwhile, since there is one at a time. Home's tab
+  keeps nothing. The download button is greyed meanwhile, since there is one at a time. System's tab
   shows a spinner in place of its icon from wherever the user is, and a tick once the read has
   finished; resting the pointer on either says what it means.
 
   **Staged on arrival, and again on every arrival after.** A finished read waits for the user to
-  come to Home and is staged there, on the window's thread, against the logbook as it is then.
+  come to System and is staged there, on the window's thread, against the logbook as it is then.
   The review can be left half done: coming back stages it afresh, so a dive site added meanwhile
   is there to choose, and a dive taken in on the earlier visit is not offered again, its token
   being in the logbook now. A choice made and not applied is not kept across a visit. *Close*
@@ -814,11 +812,10 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  *Amended on 2026-10-04 with `GUI-30`:* the deed is a gear in the tab row, beside add, edit and
-  delete, since a setting is not something done to a logbook. It brings the reader to Home and
-  opens the form there, in a box of its own. Greyed, and saying why, where no logbook is open.
+  *Amended on 2026-10-04 with `GUI-30`:* the deed is in the System tab's logbook row, and the form
+  opens there in a box of its own. Greyed, and saying why, where no logbook is open.
 
-  Fourteen settings are still a form rather than a place, so they open on the home screen like a
+  Fourteen settings are still a form rather than a place, so they open in System like a
   download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 
@@ -1076,7 +1073,7 @@ once and corrected. The numbers stay unused rather than being given to something
   is never shown* the way an ordinary reference keeps it. One that resolves to nothing is shown
   as written.
 
-  **Staged changes are reviewed where an import is**, in the home screen's box of what waits, and the
+  **Staged changes are reviewed where an import is**, in System's box of what waits, and the
   panel says how many items wait there with a deed that brings the reader to it from any tab. One
   place to review a pending change whatever proposed it, and a table of before and after wants the
   window's width: an agent that corrects forty dives fills a panel's column with a scroll nobody
@@ -1521,27 +1518,31 @@ once and corrected. The numbers stay unused rather than being given to something
 
   Three things, in that order, because they answer what a reader has not asked yet.
 
-  *Amended on 2026-10-04, at the author's word, who found the screen confusing:* **the download
-  first, what is under way in a box of its own, the rest of the deeds quiet, and the plot by
-  name.** The deeds had been six buttons alike in a box called *System*, the one a reader uses
-  after every dive no different from the one they use once. Below the greeting now:
+  *Amended on 2026-10-04, at the author's word, who found the screen confusing:* **a greeting,
+  what is owed, a way to a logbook where none is open, and a tile for every other tab.** What can
+  be done to a logbook as a whole moved to a System tab, and the plot to a Statistics tab. Six
+  deeds alike in a box called *System*, the review of whatever arrived, the settings and a plot
+  had made one long page of four subjects, the download that matters after every dive no
+  different from the deed used once.
 
-  - **Download from dive computer**, the one filled button, alone.
-  - **A box for what is under way or waiting**, there only then: a download, an import and its
-    review, an export's result, an agent's staged changes. *Waiting for you* where something
-    wants deciding, *Under way* otherwise. An export's result closes with a button, and starting
-    another deed clears it. On a phone the review of what arrived is a page of its own, opened
-    from the box and left by back, a few hundred rows being no part of a home screen. `PHONE-2`.
-  - **Settings**, when opened from the tab row, `GUI-42`.
-  - **Logbook**: import, export, and making and opening a logbook, as outlined buttons. A phone
-    has one *Change folder* in place of the last two, both being the choosing of a folder there,
-    `AND-5`.
-  - **Your diving**, the plot, opening on *Dives per month* among a few named charts; *Your own*
-    brings back the boxes for gathering and the axes, starting from the chart that was shown.
+  - **Where no logbook is open**, two buttons said in full: *Open an existing Yemoja logbook*
+    and *Create a new Yemoja logbook*, each with a line saying which folder it wants. *New* and
+    *Open* alone were taken for one another by a reader who has not met a logbook folder yet.
+  - **The tiles** are the tabs this window offers, in their order, which runs from what a
+    diver came for to the machinery: a glyph, the name and what it holds. As many to a row as
+    fit, which on a phone is one. System's tile says when a download is under way or done.
+  - **On a phone, back leads from any tab's first page to Home**, which its tiles lead from.
 
-  **A greyed deed still shows, and says why under the row**: *needs a logbook open*, *already
-  under way* or *not on this device*. The list stays what the application is for, as below, and
-  a reader no longer has to guess which of three reasons one shared sentence meant.
+  **System** has the download first, as the one filled button; then a box for what is under way
+  or waiting, there only then (a download, an import and its review, an export's result, an
+  agent's staged changes); the settings when opened; and a *Logbook* row of outlined buttons:
+  import, export, reload, settings, new and open. *Reload logbook* reads the files again, for a
+  change made to them outside the window. On a phone the review of what arrived is a page of its
+  own, opened from the box and left by back. **A greyed deed still shows, and says why under the
+  row**: *needs a logbook open*, *already under way* or *not on this device*.
+
+  **Statistics** opens on *Dives per month* among a few named charts; *Your own* brings back the
+  boxes for gathering and the axes, starting from the chart that was shown.
 
   **The greeting is two lines.** Who is being greeted, large; and beneath it, in the size the
   rest of the application reads at, what there is to say to them. Splitting it is what lets the
@@ -1608,13 +1609,12 @@ once and corrected. The numbers stay unused rather than being given to something
   screens has a clock, and the alternative was a dependency for a date the window already
   knows.
 
-  **What the application does to a logbook as a whole is not a subject**, so it is not a tab.
-  Opening another logbook, making one, importing one and downloading from a computer are four
-  things done *to* a logbook rather than things in one, and they belong where a reader is
-  before they have chosen anything. That is what removed the System tab: it held nothing, and
-  what it was owed turned out to belong here. The four are named whether or not a platform can
-  do any of them yet, greyed where it cannot, for the same reason the tab list is the whole of
-  what the application offers rather than the part that happens to be built.
+  **What the application does to a logbook as a whole is a tab of its own**, System, since the
+  amendment above. It had been Home's, on the argument that it belongs where a reader is before
+  they have chosen anything; the deeds then crowded out what Home was for. A window with no
+  logbook keeps the two that make one reachable on Home as well. The deeds are named whether or
+  not a platform can do any of them yet, greyed where it cannot, for the same reason the tab list
+  is the whole of what the application offers rather than the part that happens to be built.
 
   **The statistics are one plot rather than a page of figures.** A dive answers for a dozen
   numbers and a date, and every pair of them is a question somebody might have; a screen that

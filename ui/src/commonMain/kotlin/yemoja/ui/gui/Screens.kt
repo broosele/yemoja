@@ -530,10 +530,16 @@ internal fun Application(universe: Universe?, platform: Platform) {
             tab = calculations
         }
     }
-    // The settings form, opened from the tab row and shown on Home. `GUI-42`.
+    // The settings form, opened in System. `GUI-42`.
     val choosing = remember(universe) { Choosing() }
-    // A phone steps back through a tab one page at a time, by the arrow and by its own back.
-    val back = if (platform.compact) backOf(tab, kept.getValue(tab)) else null
+    // A phone steps back through a tab one page at a time, by the arrow and by its own back, and
+    // from a tab's first page to Home, which its tiles lead from. `GUI-30`.
+    val home = tabs.first { it.shape == Shape.HOME }
+    val back = if (!platform.compact) {
+        null
+    } else {
+        backOf(tab, kept.getValue(tab)) ?: if (tab === home) null else ({ tab = home })
+    }
     platform.back?.invoke(back != null) { back?.invoke() }
     CompositionLocalProvider(
         LocalChanger provides changer,
@@ -552,18 +558,18 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     onBack = back,
                     unasked = unasked,
                     asking = talking,
-                    onSettings = universe?.let { open ->
-                        {
-                            if (!choosing.open) choosing.fill(open.settings)
-                            choosing.open = true
-                            tab = tabs.first { it.shape == Shape.HOME }
-                        }
-                    },
                 ) { talking = !talking }
                 Row(modifier = Modifier.weight(1f)) {
                     Box(modifier = Modifier.weight(1f)) {
                         when {
                             tab.shape == Shape.HOME -> Home(
+                                universe = universe,
+                                platform = platform,
+                                tabs = tabs,
+                                download = reading.stage,
+                            ) { tab = it }
+
+                            tab.shape == Shape.SYSTEM -> System(
                                 universe = universe,
                                 platform = platform,
                                 kept = kept.getValue(tab),
@@ -572,6 +578,9 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 choosing = choosing,
                                 onApplied = { said -> told = Told(said) },
                             )
+
+                            tab.shape == Shape.STATISTICS && universe != null ->
+                                Statistics(universe.logbook, kept.getValue(tab))
 
                             tab.shape == Shape.MANUAL ->
                                 Manuals(platform.manual, platform.open, kept.getValue(tab))
@@ -605,7 +614,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                             command = command.orEmpty(),
                             staged = staged,
                             told = told,
-                            onReview = { tab = tabs.first() },
+                            onReview = { tab = tabs.first { it.shape == Shape.SYSTEM } },
                             onTurn = { changer.changed() },
                             onFollow = follow,
                         )
@@ -683,12 +692,10 @@ private fun Tabs(
     unasked: String?,
     /** Whether the panel is open, which is what the button would shut. */
     asking: Boolean,
-    /** Opens the settings, or absent where no logbook is open to hold them. `GUI-42`. */
-    onSettings: (() -> Unit)?,
     onAsk: () -> Unit,
 ) {
     if (LocalCompact.current) {
-        CompactTabs(tabs, chosen, onChoose, kept, ribbon, download, onBack, onSettings)
+        CompactTabs(tabs, chosen, onChoose, kept, ribbon, download, onBack)
         return
     }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -713,7 +720,6 @@ private fun Tabs(
             // Add, edit and delete stand here for every tab rather than on each card, so they
             // are in one place whatever the tab shows. `GUI-53`.
             Buttons(ribbon, kept)
-            SettingsButton(onSettings)
             // On every tab rather than on home, since a question comes up wherever the reader
             // is. An icon, so the row stays the tabs' own; what pressing it would do is said over
             // it while the pointer rests there, and the reason instead while it is greyed. The
@@ -737,7 +743,7 @@ private fun Tabs(
  */
 @Composable
 private fun TabIcon(tab: Tab, download: Stage) {
-    val busy = busyOf(download).takeIf { tab.shape == Shape.HOME }
+    val busy = busyOf(download).takeIf { tab.shape == Shape.SYSTEM }
     when {
         busy == null -> Icon(tab.icon, contentDescription = null)
         download == Stage.READY -> Explained(busy) {
@@ -766,7 +772,6 @@ private fun CompactTabs(
     ribbon: Ribbon,
     download: Stage,
     onBack: (() -> Unit)?,
-    onSettings: (() -> Unit)?,
 ) {
     var choosing by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -800,19 +805,8 @@ private fun CompactTabs(
                 }
             }
             Buttons(ribbon, kept)
-            SettingsButton(onSettings)
         }
         HorizontalDivider()
-    }
-}
-
-/** The button that opens the settings, greyed and saying why where no logbook is open. `GUI-42`. */
-@Composable
-private fun SettingsButton(onSettings: (() -> Unit)?) {
-    Explained(if (onSettings == null) "Settings need a logbook open" else "Settings") {
-        IconButton(onClick = { onSettings?.invoke() }, enabled = onSettings != null) {
-            Icon(Icons.Filled.Settings, contentDescription = "Settings")
-        }
     }
 }
 
@@ -846,6 +840,139 @@ internal fun Explained(said: String?, content: @Composable () -> Unit) {
 // --- Home: the greeting, what can be done to a logbook, and a plot of it. `GUI-30`.
 
 /**
+ * The home screen: the greeting, what is owed, a way to a logbook where none is open, and a tile
+ * for every other tab. `GUI-30`.
+ */
+@Composable
+private fun Home(
+    universe: Universe?,
+    platform: Platform,
+    /** The tabs this window offers, which are fewer where no logbook is open. */
+    tabs: List<Tab>,
+    /** How far a download has got, which System's tile says. `GUI-52`. */
+    download: Stage,
+    onChoose: (Tab) -> Unit,
+) {
+    val set = universe?.logbook
+    val edition = LocalChanger.current.edition
+    val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
+    Selectable {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = GAP * 2),
+        ) {
+            val southern = remember(set, edition) { set != null && southernOf(set) }
+            val hail = hailOf(universe?.user, greeting, platform.today(), southern)
+            Text(
+                text = greeted(hail, platform.open),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(top = GAP * 2),
+            )
+            Text(
+                text = tellingOf(universe?.user, greeting),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = HALF),
+            )
+            val owed = remember(set, edition, universe?.user) {
+                set?.let { owedIn(it, universe?.user, platform.today()) }.orEmpty()
+            }
+            Owing(owed)
+            if (universe == null) Starting(platform.deeds)
+            Spacer(modifier = Modifier.height(GAP * 2))
+            Tiles(tilesOf(tabs), download, onChoose)
+            Spacer(modifier = Modifier.height(GAP * 2))
+        }
+    }
+}
+
+/**
+ * The two ways to a logbook, where none is open: one already made, or a new one.
+ *
+ * Said in full rather than as *New* and *Open*, the two being easily taken for one another by a
+ * reader who has not met a logbook folder yet. `GUI-30`.
+ */
+@Composable
+private fun Starting(deeds: Map<Deed, () -> Unit>) {
+    Column(
+        modifier = Modifier.padding(top = GAP * 2),
+        verticalArrangement = Arrangement.spacedBy(HALF),
+    ) {
+        for ((deed, said, explained) in listOf(
+            Triple(Deed.OPEN, "Open an existing Yemoja logbook", "Choose the folder your logbook is kept in."),
+            Triple(Deed.NEW, "Create a new Yemoja logbook", "Choose an empty folder to keep a new logbook in."),
+        )) {
+            val act = deeds[deed]
+            Button(onClick = { act?.invoke() }, enabled = act != null) { Text(said) }
+            Aside(explained)
+        }
+    }
+}
+
+/**
+ * A tile for each of [tabs], which opens it: its glyph, its name and what it holds.
+ *
+ * As many to a row as fit, which on a phone is one. `GUI-30`.
+ */
+@Composable
+private fun Tiles(tabs: List<Tab>, download: Stage, onChoose: (Tab) -> Unit) {
+    val compact = LocalCompact.current
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalArrangement = Arrangement.spacedBy(GAP),
+    ) {
+        for (tab in tabs) {
+            val wide = if (compact) Modifier.fillMaxWidth() else Modifier.width(TILE)
+            Row(
+                modifier = wide.clip(SHAPE).background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .clickable { onChoose(tab) }.padding(GAP),
+                horizontalArrangement = Arrangement.spacedBy(GAP),
+            ) {
+                Icon(
+                    tab.icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(TILE_ICON),
+                )
+                Column {
+                    Text(tab.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = tab.holds,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (tab.shape == Shape.SYSTEM) {
+                        busyOf(download)?.let {
+                            Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** How wide a tile is on a screen wide enough for several to a row. */
+private val TILE = 340.dp
+
+/** How big a tile's glyph is. */
+private val TILE_ICON = 40.dp
+
+/** The Statistics tab: one chart of the logbook's dives, chosen by name or put together. `GUI-30`. */
+@Composable
+private fun Statistics(set: ItemSet, kept: Kept) {
+    val edition = LocalChanger.current.edition
+    Selectable {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(GAP * 2),
+        ) {
+            Plot(set, kept, edition)
+        }
+    }
+}
+
+/**
  * Home: what the logbook comes to in a line, what the application can be asked to do, and any
  * two things a dive answers for, plotted against each other.
  *
@@ -854,7 +981,7 @@ internal fun Explained(said: String?, content: @Composable () -> Unit) {
  * diving is in here, and what would you like to do.
  */
 @Composable
-private fun Home(
+private fun System(
     universe: Universe?,
     platform: Platform,
     kept: Kept,
@@ -865,13 +992,14 @@ private fun Home(
     choosing: Choosing,
     onApplied: (String) -> Unit = {},
 ) {
-    val set = universe?.logbook
     val changer = LocalChanger.current
     val edition = changer.edition
-    val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
     val taking = remember(universe) { Taking() }
     val giving = remember(universe) { Giving() }
     val scope = rememberCoroutineScope()
+    // What reloading came to, said under the logbook row until the next.
+    var reloaded by remember(universe) { mutableStateOf<String?>(null) }
+    var reloading by remember(universe) { mutableStateOf(false) }
     // A finished read is staged on arriving here, and staged afresh on every arrival after, so a
     // review left half done meets the logbook as it is now. `GUI-52`. It waits while a file's
     // import is under review, the two sharing the one staging.
@@ -911,6 +1039,25 @@ private fun Home(
                     take(universe, platform, taking, changer, scope)
                 }
             }
+            if (!reloading) {
+                put(Deed.RELOAD) {
+                    reloading = true
+                    scope.launch {
+                        // Off the screen's thread: a logbook on a cloud drive takes a while.
+                        val done = withContext(Dispatchers.Default) { universe.reload() }
+                        reloaded = when (done) {
+                            is Outcome.Refused -> done.reason.replaceFirstChar { it.uppercase() }
+                            is Outcome.Done -> "The logbook was read again from its files."
+                        }
+                        reloading = false
+                        changer.changed()
+                    }
+                }
+            }
+            put(Deed.SETTINGS) {
+                if (!choosing.open) choosing.fill(universe.settings)
+                choosing.open = true
+            }
             if (platform.save != null && !giving.writing) {
                 val save = platform.save
                 put(Deed.EXPORT) {
@@ -928,6 +1075,7 @@ private fun Home(
         if (reading.stage == Stage.LOOKING || reading.stage == Stage.READING) add(Deed.DOWNLOAD)
         if (taking.reading) add(Deed.IMPORT)
         if (giving.writing) add(Deed.EXPORT)
+        if (reloading) add(Deed.RELOAD)
     }
     if (running.isNotEmpty()) platform.awake?.invoke()
     val agentStaged = remember(universe, edition) { universe?.staging?.staged?.isNotEmpty() == true }
@@ -955,22 +1103,6 @@ private fun Home(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = GAP * 2),
         ) {
-            val southern = remember(set, edition) { set != null && southernOf(set) }
-            val hail = hailOf(universe?.user, greeting, platform.today(), southern)
-            Text(
-                text = greeted(hail, platform.open),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(top = GAP * 2),
-            )
-            Text(
-                text = tellingOf(universe?.user, greeting),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = HALF),
-            )
-            val owed = remember(set, edition, universe?.user) {
-                set?.let { owedIn(it, universe?.user, platform.today()) }.orEmpty()
-            }
-            Owing(owed)
             Spacer(modifier = Modifier.height(GAP * 2))
             // The one deed a logbook is fed by after every dive, on its own and the size of a
             // deed that matters. `GUI-30`.
@@ -1002,8 +1134,10 @@ private fun Home(
                 Inset("Settings") { Chooser(universe, choosing) { changer.changed() } }
             }
             LogbookDeeds(deeds, running, universe != null)
-            // Nothing to count where there is no logbook, and nothing to say about that.
-            if (set != null) Inset("Your diving") { Plot(set, kept, edition) }
+            when {
+                reloading -> Aside("Reading the logbook again…")
+                else -> reloaded?.let { Aside(it) }
+            }
             Spacer(modifier = Modifier.height(GAP * 2))
         }
     }
@@ -1451,7 +1585,7 @@ private fun ToReview(arrived: Int, onReview: () -> Unit, onClose: () -> Unit) {
 @Composable
 private fun LogbookDeeds(deeds: Map<Deed, () -> Unit>, running: Set<Deed>, open: Boolean) {
     Caption("Logbook")
-    val listed = logbookDeedsOf(deeds.keys)
+    val listed = LOGBOOK_DEEDS
     // Wrapping onto a second line where the window is too narrow for one, as on a phone.
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -1826,7 +1960,7 @@ private fun Subject(
                     onChoose = { kept.chosen = it },
                 )
 
-                Shape.MANUAL, Shape.HOME, Shape.CALCULATIONS -> Unit
+                Shape.MANUAL, Shape.HOME, Shape.CALCULATIONS, Shape.STATISTICS, Shape.SYSTEM -> Unit
             }
         }
         if (page == null) VerticalDivider()

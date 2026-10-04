@@ -43,33 +43,10 @@ yellow one what falls due within a month:
 Nobody else's medical or insurance is warned about, and generic gear owes nothing. When nothing
 is due, nothing is shown.
 
-**Download from dive computer** is the large button under the greeting.
-
-While something is running or waiting for you, a box under it says what: a download, an import,
-an export, or changes an agent has proposed. When dives have arrived, it is where you review them.
-On a phone, **Review** opens the list as a page of its own, and back returns to the home screen.
-
-**Logbook** holds the rest of what can be done to a logbook as a whole: importing, exporting to
-UDDF, and making or opening a logbook. On a phone the last two are one, **Change folder**. A
-greyed button says why underneath: it needs a logbook open, one is already running, or the device
-cannot do it. Importing and downloading are explained in
-[computers-and-importing.md](computers-and-importing.md), exporting in [uddf.md](uddf.md).
-
-**Settings** is the gear at the top right. It opens the settings on the home screen; see
-[settings.md](settings.md).
-
-**Your diving** plots your dives. It opens on **Dives per month**; the box above the chart offers
-a few others by name, and **Your own** lets you choose what is drawn. Then the first box chooses
-how:
-
-- **Each dive** is a dot per dive, one figure against another.
-- **Count**, **Total**, **Average**, **Largest** and **Smallest** cut the bottom axis into
-  bars and bring the dives in each to one figure.
-- **Running total** adds the dives up in the order you made them.
-
-The next boxes choose the figures, and **by** chooses how wide a bar is: a month, a quarter, a
-year or five years for a date, and a round number for anything else. The bars widen where there
-would be too many to read.
+Under the greeting is a tile for each of the other tabs; press one to go there. On a phone, back
+returns here from any of them. Without a logbook open, two buttons above the tiles get you one:
+**Open an existing Yemoja logbook** for a folder you already keep one in, and **Create a new
+Yemoja logbook** for an empty folder.
 
 ## The tabs
 
@@ -90,12 +67,46 @@ would be too many to read.
   Choose what to calculate on the left; the form is on the right. On a phone the list comes
   first, and back returns to it. See
   [Calculations](getting-started.md#calculations) below.
+- **Statistics** charts your dives; see [Statistics](getting-started.md#statistics) below.
+- **System** downloads from a dive computer, imports, exports and holds the settings; see
+  [System](getting-started.md#system) below.
 - **Manuals** is this manual.
 
 **Several dives can be chosen at once.** Hold Ctrl and click to add a dive or take one out, or
 hold Shift and click to take every dive between the last one chosen and this one. What they
 come to together is shown instead of a single dive: the range and average of each figure, how
 many there were of each value, and how many said yes.
+
+
+## Statistics
+
+**Statistics** plots your dives. It opens on **Dives per month**; the box above the chart offers
+a few others by name, and **Your own** lets you choose what is drawn. Then the first box chooses
+how:
+
+- **Each dive** is a dot per dive, one figure against another.
+- **Count**, **Total**, **Average**, **Largest** and **Smallest** cut the bottom axis into
+  bars and bring the dives in each to one figure.
+- **Running total** adds the dives up in the order you made them.
+
+The next boxes choose the figures, and **by** chooses how wide a bar is: a month, a quarter, a
+year or five years for a date, and a round number for anything else. The bars widen where there
+would be too many to read.
+
+## System
+
+**Download from dive computer** is the large button at the top.
+
+While something is running or waiting for you, a box under it says what: a download, an import,
+an export, or changes an agent has proposed. When dives have arrived, it is where you review them.
+On a phone, **Review** opens the list as a page of its own, and back returns to System.
+
+**Logbook** holds the rest of what can be done to a logbook as a whole: importing, exporting to
+UDDF, **Reload logbook**, **Settings**, and making or opening a logbook. Reload reads your files
+again, for a change made to them outside Yemoja, by a sync or by hand. A greyed button says why
+underneath: it needs a logbook open, one is already running, or the device cannot do it.
+Importing and downloading are explained in [computers-and-importing.md](computers-and-importing.md),
+exporting in [uddf.md](uddf.md), and the settings in [settings.md](settings.md).
 
 ## Reading an item
 
@@ -235,7 +246,7 @@ items that hold them. Yemoja holds nothing back, so the only judgement about wha
 is yours: ask an agent about a logbook you are willing to send, or run a model on your own machine,
 where nothing leaves it.
 
-**First tell Yemoja how to start your agent**, in **Settings**, the gear at the top right: the *Agent
+**First tell Yemoja how to start your agent**, in **Settings** in the System tab: the *Agent
 command* box, which [settings.md](settings.md#the-agent-command) explains. Until it is set, the
 sparkle button is greyed.
 
@@ -256,7 +267,7 @@ not to touch the files unless you tick *Allow raw file access*.
 **It can propose changes, and you decide.** Tick *Allow logbook edits* and an agent can stage
 changes — correct a clock error across a trip, give one dive's gear to the others. Nothing it
 stages touches your logbook. The panel says how many items are waiting, and **Review** takes you to
-them on the home screen, in the box of what is waiting for you. Each item shows every field it would change, what
+them in the System tab, in the box of what is waiting for you. Each item shows every field it would change, what
 the field holds and what it would hold. If you have edited one of those fields since the agent
 staged it, the row says what it holds now, in red, and that change is left alone when you apply the
 rest. It stays waiting afterwards, still in red, until you **Discard** it or the agent stages it

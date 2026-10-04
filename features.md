@@ -100,9 +100,9 @@ them.
 - **FEAT-8 — Statistics over the logbook.** Totals, counts and summaries, each reported
   with what it was based on.
 
-  *Built:* any two things a dive answers for, plotted against each other on the home screen —
+  *Built:* any two things a dive answers for, plotted against each other in the Statistics tab —
   each dive, a count, a total, an average, the largest, the smallest, or a running total, grouped
-  by whatever the user picks. `Figures.kt` counts and the home screen draws it.
+  by whatever the user picks. `Figures.kt` counts and the Statistics tab draws it.
 - **FEAT-9 — Renewal tracking.** One list answering what needs renewing, across
   insurance and gear maintenance. The reason the validity work in
   [data/doc.md](data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
@@ -140,7 +140,7 @@ them.
   refuses a request of its own unless a box allows it: *Allow raw file access* for one that
   stays at the logbook's files, *Allow internet access* for one that fetches. A command it asks
   to run is always refused. It reads, and it stages a change where the user allows one. What it
-  staged is reviewed on the home screen field by field, with anything the logbook has moved under
+  staged is reviewed in the System tab field by field, with anything the logbook has moved under
   marked before it is taken in.
 - **FEAT-30 — Gas mixing.** What a cylinder holds after a top-up, and which gases to add to make
   a mix in a cylinder that is not empty: a half-used nitrox topped up with air, or a trimix made
@@ -164,7 +164,7 @@ them.
   resolve are marked. A rename carries them with it, which is `JSON-24` and waits on there
   being a rename at all.
 - **FEAT-13 — Export to other applications' formats.** UDDF is written: the whole logbook,
-  from the home screen, and read back by the importer. What goes and what is not written yet is
+  from the System tab, and read back by the importer. What goes and what is not written yet is
   under *What is built* in [logic/uddf.md](logic/uddf.md). No other format is written.
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).

@@ -81,10 +81,10 @@ private fun kilobytesOf(bytes: Long): Long = (bytes + BYTES_A_KILOBYTE - 1) / BY
 
 private const val BYTES_A_KILOBYTE = 1000L
 
-/** What the home tab says of a download over its icon, or absent where there is none. */
+/** What System's tab says of a download over its icon, or absent where there is none. */
 internal fun busyOf(stage: Stage): String? = when (stage) {
-    Stage.LOOKING, Stage.READING -> "A download is under way. Home shows how far it has got."
-    Stage.READY -> "A download has finished. Its dives are reviewed on Home."
+    Stage.LOOKING, Stage.READING -> "A download is under way. System shows how far it has got."
+    Stage.READY -> "A download has finished. Its dives are reviewed in System."
     else -> null
 }
 

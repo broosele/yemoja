@@ -21,9 +21,11 @@ form factor.
 **It builds, it starts, and a phone is laid out as one.** `./gradlew :android:assembleDebug`
 writes a debug app. Tried on the SDK's emulator, Android 16, and on no phone yet.
 
-**A logbook lives in a folder the user picks**, `AND-5`. New and Open are one question on a phone,
-which folder, asked through Android's own picker; a folder holding a logbook is opened, and one that
-holds none is made into one. The grant is kept and the folder remembered, so the app opens on it
+**A logbook lives in a folder the user picks**, `AND-5`, asked through Android's own picker.
+*Open an existing Yemoja logbook* wants a folder holding one, and *Create a new Yemoja logbook* a
+folder holding none; each refuses the other's and says which to use. They were one question until
+2026-10-04, a folder with no logbook being made into one, and the author asked for the two to be
+told apart, `GUI-30`. The grant is kept and the folder remembered, so the app opens on it
 again. It is reached through the storage access framework, by `GrantedFileStore`, whose answers
 about a folder's children are kept until something in it changes. **A folder is listed whole**: a
 cloud provider such as Google Drive's answers in parts, marking the list as still loading or giving
@@ -119,7 +121,7 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
 - **AND-3 — Background downloads.** *Settled:* **a download carries on, with a notification.**
   A slow Bluetooth computer takes a quarter of an hour, which nobody watches with the screen on.
   The read runs in a foreground service whose notification shows its progress and a Cancel, as
-  the desktop shows them on Home, `GUI-52`.
+  the desktop shows them in System, `GUI-52`.
 - **AND-6 — Which connections are read.** *Settled:* **Bluetooth only.** Every computer met so
   far talks Bluetooth LE, and the Bluetooth library already in use carries it on Android. A USB
   or serial cable on a phone needs an adapter, a USB-serial library and testing per chip, for
@@ -143,7 +145,7 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   manager or a cloud drive, and the logic layer reads and writes by path. So an import copies what
   was picked into the app's cache and reads the copy, and an export is written into the cache and
   copied out to the document the user named. The copy is under the document's own name, and what
-  the home screen says names that and not the path of the copy. The cache is the system's to
+  System says names that and not the path of the copy. The cache is the system's to
   clear, and nothing is read from it twice: what an import staged is kept in the app's files.
 
   **An import is a file, not a folder.** Android has one picker for a document and another for a
@@ -159,7 +161,7 @@ Decided on 2026-10-01, before anything Android is built. Nothing below is built 
   some providers would put `.xml` after the name.
 
   **Both run off the screen's thread.** Android stops an app that keeps its screen waiting five
-  seconds, and reading ten megabytes of UDDF takes longer than that. The home screen says
+  seconds, and reading ten megabytes of UDDF takes longer than that. System says
   *Reading logbook.uddf…* until the review opens, and the Import deed is greyed meanwhile.
 
   *Extended on 2026-10-03, when the author found a phone asking to close the app, or going to

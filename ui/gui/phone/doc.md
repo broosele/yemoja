@@ -64,7 +64,7 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.
-- **PHONE-5 — The tab switcher.** *Settled:* **accessible, not permanently visible.** Seven
+- **PHONE-5 — The tab switcher.** *Settled:* **accessible, not permanently visible.** Nine
   tabs do not fit across the foot of a phone, and requiring them to would force the same
   compromise on the desktop, where there is ample room. Relocated from `GUI-13`.
 

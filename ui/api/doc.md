@@ -41,7 +41,7 @@ its own, hands the tools the boxes the user ticks beside it, and closes both whe
 
 **An agent can stage a change.** `stage_set`, `stage_add`, `stage_delete` and `staged` answer while
 the user allows changes and are refused while they do not, and what they stage is `RECON-8`'s
-`Staging`. Nothing they do reaches the logbook until somebody reviews it on the home screen and
+`Staging`. Nothing they do reaches the logbook until somebody reviews it in the System tab and
 applies it, which is the window's, `GUI-38`.
 
 ## Scope
@@ -110,7 +110,7 @@ behaviour of its own, that behaviour is in the wrong place.
 
   **Creating one stages, like every other change.** `RECON-8` has no exception for a big change,
   and a dive plan is exactly the kind somebody should read before it lands. So `create_plan` needs
-  *Allow logbook edits*, and what it stages waits on the home screen like anything else. A plan
+  *Allow logbook edits*, and what it stages waits in the System tab like anything else. A plan
   that will not calculate is refused rather than staged, as it is refused rather than written.
 
   **The briefing says the model is not a dive computer** and tells the agent to say so when it

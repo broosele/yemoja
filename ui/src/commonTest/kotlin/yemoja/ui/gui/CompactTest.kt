@@ -107,8 +107,8 @@ class CompactTest {
     }
 
     @Test
-    fun `back leads from Home's review to Home`() {
-        val home = TABS.first { it.name == "Home" }
+    fun `back leads from System's review to System`() {
+        val home = TABS.first { it.name == "System" }
         val kept = Kept()
         assertNull(backOf(home, kept))
         kept.inReview = true

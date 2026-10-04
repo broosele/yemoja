@@ -31,7 +31,7 @@ own doc.
   tabs rather than in a window of its own, `GUI-38`. A dive cannot be opened beside the list in a
   second window; following a link moves to the tab that holds it.
 - **DESK-2 — The menu bar.** *Settled, as built:* **there is none.** Everything lives in the
-  application's own controls — the deeds on the home screen, the buttons on a card — so the window
+  application's own controls — the deeds in System, the buttons on a card — so the window
   behaves the same on every desktop rather than differing where a platform expects a menu.
 - **DESK-3 — Density.** *Settled, as built:* **one density, and no compact mode.** A long logbook
   is handled by the table folding by year and the tree folding by region rather than by drawing
@@ -154,11 +154,11 @@ what it means is argued there; what is here is where it goes on a large screen.
 
   A new library means running `jdeps --print-module-deps` again over `ui/build/install/yemoja/lib`.
 
-- **DESK-11 — Where the icons the core set lacks come from.** *Settled:* **eleven are copied in,
+- **DESK-11 — Where the icons the core set lacks come from.** *Settled:* **twelve are copied in,
   under their own licence; the extended set is not shipped.** Decided on 2026-10-02, at the
   author's word.
 
-  The window uses twenty-one Material icons. Ten are in Compose's core set; the other eleven, a
+  The window uses twenty-two Material icons. Ten are in Compose's core set; the other twelve, a
   diver, a cylinder, a map and a book among them, were the only reason for the extended set, 37 MB
   of some two thousand icons. Shrinking the build with ProGuard would have dropped the rest without
   copying anything, but every library that loads a class by name, JNA, Bluetooth and the agent's

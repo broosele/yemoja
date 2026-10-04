@@ -65,9 +65,8 @@ import java.util.concurrent.CompletableFuture
 /**
  * The application on an Android screen, over the logbook in the folder the user picked.
  *
- * The folder is remembered, so the app opens on it again. One that holds no logbook is made into
- * one, which is how a logbook is started here: New and Open are one question on a phone, which
- * folder. `AND-5`. What this supplies is the platform: the manual and the map read from the app,
+ * The folder is remembered, so the app opens on it again. Opening asks for a folder holding a
+ * logbook, and making one for a folder holding none, each refusing the other. `AND-5`. What this supplies is the platform: the manual and the map read from the app,
  * whatever the phone opens a link with, whether the screen is a phone's, its back button, and a
  * dive computer over Bluetooth, asked permission for when a download starts. `AND-6`. A computer
  * that wants the code it is showing typed is given a dialog to type it in. `LOGIC-24`. A read is
@@ -90,13 +89,15 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     val scope = rememberCoroutineScope()
     // Read off the screen's own thread, so the app draws at once and says what it is doing rather
     // than staying blank while the files come in. `AND-5`.
-    fun take(tree: Uri) {
+    fun take(tree: Uri, making: Boolean) {
         held = null
         fetched = null
         opening = true
         scope.launch {
             val opened = withContext(Dispatchers.IO) {
-                openedIn(context, tree, devices) { said, done, of -> fetched = Underway(said, done.toLong(), of.toLong()) {} }
+                openedIn(context, tree, devices, making) { said, done, of ->
+                    fetched = Underway(said, done.toLong(), of.toLong()) {}
+                }
             }
             opening = false
             when (opened) {
@@ -111,7 +112,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     }
     // The folder picked last time, opened again. One that will not open says why and leaves the
     // welcome, from which another can be picked.
-    LaunchedEffect(Unit) { remembered.getString(FOLDER, null)?.let { take(Uri.parse(it)) } }
+    LaunchedEffect(Unit) { remembered.getString(FOLDER, null)?.let { take(Uri.parse(it), making = false) } }
     // What a download has asked and is waiting on, a code its computer is showing. `LOGIC-24`.
     var awaited by remember { mutableStateOf<Asking?>(null) }
     DisposableEffect(Unit) {
@@ -130,12 +131,14 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
         granting?.invoke(BLUETOOTH.all { given[it] == true || allowed(context, it) })
         granting = null
     }
+    // Whether the folder being picked is to hold a new logbook, rather than one already there.
+    var making by remember { mutableStateOf(false) }
     val picking = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
         if (tree == null) return@rememberLauncherForActivityResult
         // Kept across restarts of the phone, or the folder is unreachable the next time.
         val both = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         context.contentResolver.takePersistableUriPermission(tree, both)
-        take(tree)
+        take(tree, making)
     }
     // What an import and an export hand their file to, kept until the picker answers, which is
     // after the deed that asked has returned. `AND-9`.
@@ -166,7 +169,10 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
     // the line; a tablet is laid out as a desktop is. `PHONE-3`.
     val compact = LocalConfiguration.current.smallestScreenWidthDp < TABLET
     val platform = remember(compact) {
-        val choose = { picking.launch(null) }
+        val choose = { new: Boolean ->
+            making = new
+            picking.launch(null)
+        }
         Platform(
             manual = CHAPTERS.map { file -> chapterOf(file, bundled("manual/$file")) },
             atlas = { Atlas.read { scale, layer -> bundled("libraries/map/$scale/$layer.txt") } },
@@ -202,7 +208,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
             compact = compact,
             awake = { Awake() },
             back = { enabled, onBack -> BackHandler(enabled, onBack) },
-            deeds = mapOf(Deed.FOLDER to choose),
+            deeds = mapOf(Deed.OPEN to { choose(false) }, Deed.NEW to { choose(true) }),
             permit = { granted ->
                 val wanted = BLUETOOTH + NOTIFYING
                 if (wanted.all { allowed(context, it) }) {
@@ -319,6 +325,8 @@ private fun openedIn(
     context: Context,
     tree: Uri,
     devices: Devices,
+    /** Whether the folder is to hold a new logbook, and is refused where it holds one already. */
+    making: Boolean,
     told: (said: String, done: Int, of: Int) -> Unit,
 ): Opening {
     // Read through a copy of the files kept in the app's own storage, so a folder on a cloud drive
@@ -333,6 +341,18 @@ private fun openedIn(
     val called = nameOf(context, tree) ?: "this folder"
     val staging = DiskFileStore(context.filesDir.resolve("import").path)
     val proposing = DiskFileStore(context.filesDir.resolve("proposed").path)
+    // Asked of the folder before anything is fetched: a logbook is its manifest, or the dives of
+    // one written before manifests were. `GUI-30`.
+    val holds = granted.isFile(LogbookReader.MANIFEST) || granted.isFolder("dive") || granted.isFile("dive.json")
+    if (making && holds) {
+        return Opening.Refused("$called already holds a Yemoja logbook. Open it with Open logbook instead.")
+    }
+    if (!making && !holds) {
+        return Opening.Refused(
+            "$called holds no Yemoja logbook. Choose the folder your logbook is in, or start one " +
+                "there with Create a new Yemoja logbook.",
+        )
+    }
     return try {
         // What the copy lacks is fetched several files at a time, before the reading asks for
         // each in turn. A logbook's own files are all JSON, and nothing else is worth fetching.

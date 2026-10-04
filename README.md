@@ -181,7 +181,7 @@ to ask for — see `TUI-4` in [ui/tui/doc.md](ui/tui/doc.md). The logic layer ta
 for reading UDDF, common Kotlin having no XML reader — Apache 2.0, and there rather than in the
 data layer, whose promise of no dependencies stands because a foreign format is not its business.
 The terminal front end also takes JNA, through Mordant's JVM side, and the window takes
-Compose's core icon set, with eleven icons copied from the extended one rather than shipping it
+Compose's core icon set, with twelve icons copied from the extended one rather than shipping it
 whole. The logic layer's JVM and Android side takes **libdivecomputer** for reading dive
 computers — LGPL-2.1,
 linked as a shared library so the rest of the application stays its own, which *Licensing* below

@@ -221,41 +221,29 @@ internal fun spanOf(seconds: Double): String {
  *
  * Named here and offered on the home screen whether or not this platform can do it yet, so
  * that what the application is for is one list rather than the part that happens to be built.
- * `GUI-30`. Settings are not among them: they open from the tab row, `GUI-42`.
+ * System lists them. `GUI-30`.
  */
 internal enum class Deed(val label: String) {
-    /** The one deed of the home screen's own row, being what a logbook is fed by after a dive. */
+    /** The one deed of System's own button, being what a logbook is fed by after a dive. */
     DOWNLOAD("Download from dive computer"),
     IMPORT("Import"),
     EXPORT("Export to UDDF"),
+
+    /** Reading the logbook's files again, for a change made to them outside the window. */
+    RELOAD("Reload logbook"),
+    SETTINGS("Settings"),
     NEW("New logbook"),
     OPEN("Open logbook"),
-
-    /** New and open as one, for a platform where both are choosing a folder. `AND-5`. */
-    FOLDER("Change folder"),
 }
+
+/** The tabs Home has a tile for, in their order: every one but Home itself. `GUI-30`. */
+internal fun tilesOf(tabs: List<Tab>): List<Tab> = tabs.filter { it.shape != Shape.HOME }
 
 /** The deeds that need a logbook open, there being nothing to feed, read or write without one. */
-private val NEEDS_LOGBOOK = setOf(Deed.DOWNLOAD, Deed.IMPORT, Deed.EXPORT)
+private val NEEDS_LOGBOOK = setOf(Deed.DOWNLOAD, Deed.IMPORT, Deed.EXPORT, Deed.RELOAD, Deed.SETTINGS)
 
-/**
- * The deeds of the home screen's logbook row, in order: everything but the download, and of the
- * folder deeds the ones [offered] uses.
- *
- * A platform offering [Deed.FOLDER] has no separate new and open, and one that does not has no
- * folder deed; listing the other pair greyed would say something is missing that is not.
- */
-internal fun logbookDeedsOf(offered: Set<Deed>): List<Deed> {
-    val folder = Deed.FOLDER in offered
-    return Deed.entries.filter { deed ->
-        when (deed) {
-            Deed.DOWNLOAD -> false
-            Deed.FOLDER -> folder
-            Deed.NEW, Deed.OPEN -> !folder
-            else -> true
-        }
-    }
-}
+/** The deeds of System's logbook row, in order: everything but the download, which stands alone. */
+internal val LOGBOOK_DEEDS: List<Deed> = Deed.entries - Deed.DOWNLOAD
 
 /**
  * Why [deed] cannot be done now, or absent where it can.

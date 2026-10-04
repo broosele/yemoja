@@ -28,9 +28,9 @@ class TabsTest {
     @Test
     fun `a tab about what a logbook holds is not offered without one`() {
         val without = TABS.filter { !it.needsLogbook }
-        assertEquals(listOf("Home", "Calculations", "Manuals"), without.map { it.name })
+        assertEquals(listOf("Home", "Calculations", "System", "Manuals"), without.map { it.name })
         assertEquals(
-            listOf("Dives", "Gear", "Community", "Locations"),
+            listOf("Dives", "Gear", "Community", "Locations", "Statistics"),
             TABS.filter { it.needsLogbook }.map { it.name },
         )
         assertEquals("Home", without.first().name, "a window with no logbook still opens on Home")
@@ -39,10 +39,12 @@ class TabsTest {
     @Test
     fun `the subjects are the ones the interface document settled`() {
         assertEquals(
-            // Statistics is Home's, not a tab: the figures shown without asking and all of
-            // them are the same subject at two depths. What the application does to a logbook
-            // as a whole is Home's too, which is why there is no System. `GUI-30`.
-            listOf("Home", "Dives", "Gear", "Community", "Locations", "Calculations", "Manuals"),
+            // Statistics and System became tabs of their own when Home became a way into the
+            // others. `GUI-30`.
+            listOf(
+                "Home", "Dives", "Gear", "Community", "Locations", "Calculations", "Statistics",
+                "System", "Manuals",
+            ),
             TABS.map { it.name },
         )
         assertEquals(

@@ -144,7 +144,7 @@ internal fun Panel(
     staged: Int,
     /** What a review came to, which the conversation records as the window's own turn. */
     told: Told?,
-    /** Opens the review, which is on the home screen where an import's is. */
+    /** Opens the review, which is in System where an import's is. */
     onReview: () -> Unit,
     /**
      * Said when a turn ends, an agent having staged whatever it staged while it answered.
@@ -418,7 +418,7 @@ internal suspend fun startedWith(conversation: Conversation, command: String): S
 internal fun unaskedOf(logbookOpen: Boolean, hosts: Boolean, command: String?): String? = when {
     !hosts -> "An agent runs on a desktop, and this is a phone."
     !logbookOpen -> "Open a logbook first. An agent answers questions about the logbook you have open."
-    command.isNullOrBlank() -> "Set the command that starts your agent in Settings, on the home screen."
+    command.isNullOrBlank() -> "Set the command that starts your agent in Settings, in the System tab."
     else -> null
 }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Changed for Yemoja: the eleven icons it uses from material-icons-extended 1.7.3, written out
+ * Changed for Yemoja: the twelve icons it uses from material-icons-extended 1.7.3, written out
  * from that library's own drawing data so that the library, 37 MB, need not be shipped. This file
  * and the LICENSE beside it are not covered by the repository's own licence. `DESK-11`.
  */
@@ -75,6 +75,31 @@ private val autoAwesome: ImageVector by lazy {
             lineTo(23f, 19f)
             lineToRelative(-2.75f, -1.25f)
             lineTo(19f, 15f)
+            close()
+        }
+    }
+}
+
+/** `Filled.BarChart`. */
+val Icons.Filled.BarChart: ImageVector get() = barChart
+
+private val barChart: ImageVector by lazy {
+    materialIcon(name = "Filled.BarChart") {
+        materialPath {
+            moveTo(4.0f, 9.0f)
+            horizontalLineToRelative(4.0f)
+            verticalLineToRelative(11.0f)
+            horizontalLineTo(4.0f)
+            close()
+            moveTo(16.0f, 13.0f)
+            horizontalLineToRelative(4.0f)
+            verticalLineToRelative(7.0f)
+            horizontalLineToRelative(-4.0f)
+            close()
+            moveTo(10.0f, 4.0f)
+            horizontalLineToRelative(4.0f)
+            verticalLineToRelative(16.0f)
+            horizontalLineToRelative(-4.0f)
             close()
         }
     }

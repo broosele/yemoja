@@ -38,7 +38,7 @@ import yemoja.logic.titleOf
 /**
  * What an agent has staged, and the deeds that take it or drop it.
  *
- * In the home screen's box of what waits, where an import's review already sits: a reader reviews a
+ * In System's box of what waits, where an import's review already sits: a reader reviews a
  * pending change in one place whatever proposed it, and a table of before and after wants the
  * window's width rather than the panel's column. `GUI-38`.
  */

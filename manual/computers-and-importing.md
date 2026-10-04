@@ -7,7 +7,7 @@ doing it.
 
 ## Downloading from a dive computer
 
-Press **Download from dive computer** on the home screen. Yemoja looks for a computer plugged in
+Press **Download from dive computer** in the System tab. Yemoja looks for a computer plugged in
 over USB or a serial cable, and for one advertising over Bluetooth.
 
 - **Nothing found:** switch the computer on and put it into its Bluetooth or download mode,
@@ -15,7 +15,7 @@ over USB or a serial cable, and for one advertising over Bluetooth.
 - **One found:** it is read straight away.
 - **Several found:** you are asked which, with a button for each.
 
-Reading a full computer takes several minutes. Home shows how far it has got, and **Cancel**
+Reading a full computer takes several minutes. System shows how far it has got, and **Cancel**
 gives it up, keeping nothing. You can go to any other tab and carry on meanwhile. Home's tab shows
 a spinning circle in place of its icon while the computer is read, and a tick once it has
 finished.
@@ -64,7 +64,7 @@ after its name. It is not part of your logbook.
 
 ## Importing another logbook
 
-Press **Import** on the home screen and choose either:
+Press **Import** in the System tab and choose either:
 
 - **a folder**, which is read as another Yemoja logbook; or
 - **a file**, which is read as UDDF, the open format most dive logs can write;
@@ -73,7 +73,7 @@ Press **Import** on the home screen and choose either:
 
 On a phone you choose a file, from the phone or from a cloud drive: a UDDF file or a Diving Log
 database. A folder cannot be chosen there, so another Yemoja logbook is imported on a computer.
-A large file takes a while to read on a phone, and the home screen says it is reading until the
+A large file takes a while to read on a phone, and System says it is reading until the
 list appears.
 
 The dives are listed for you to look over, exactly as a download is. Everything else that came
@@ -113,7 +113,7 @@ in twice for you to review; nothing remembers what came from Diving Log before.
 
 ## Exporting
 
-Press **Export to UDDF** on the home screen and name a file. The whole logbook goes: every dive
+Press **Export to UDDF** in the System tab and name a file. The whole logbook goes: every dive
 you have made, and the sites, people, gear, trips and operators they refer to. Nothing in
 your logbook changes. When it is written, Yemoja says how many dives went, how many were recorded
 on more than one computer and so went with one recording only, and how many planned dives were
