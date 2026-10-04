@@ -456,7 +456,11 @@ To settle when we discuss architecture and features:
    download is then given up rather than failed, which is the difference between a user who
    pressed escape and a device that would not talk.
 
-- **LOGIC-7 — What counts as due soon.** The data layer records `valid_until`,
+- **LOGIC-7 — What counts as due soon.** *Settled:* **a month, the same for everything**, at the
+   author's word. It is what the home screen already used, `NOTICE` under `GUI-34`, and it
+   stays one figure rather than one per obligation.
+
+   The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
    shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants
    it: one list answering what needs renewing.

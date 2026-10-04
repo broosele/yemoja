@@ -15,7 +15,7 @@ import yemoja.logic.titleOf
  * See ../../../../../../gui/doc.md — `GUI-34`.
  */
 
-/** How much notice an obligation is given before it falls due, in days. A month. `GUI-34`. */
+/** How much notice an obligation is given before it falls due, in days. A month for all. `LOGIC-7`. */
 internal const val NOTICE = 31
 
 /** How long a medical is taken to run, in days short of the calendar. `GUI-34`. */

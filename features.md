@@ -110,8 +110,8 @@ them.
   when that is worth saying.
 
   *Built:* the home screen warns of gear maintenance that has fallen due, and of the user's own
-  medical and insurance. What is owed is the single list across the logbook, and `LOGIC-7`
-  itself.
+  medical and insurance, a month ahead (`LOGIC-7`). What is owed is the single list across the
+  logbook.
 - **FEAT-12 — A programmatic interface.** Another program driving the logbook without a person
   present. See [ui/api/doc.md](ui/api/doc.md). Moved from *Future* because `FEAT-18` is built on
   it. The tools an agent reads through were the part built first.

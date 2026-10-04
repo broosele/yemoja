@@ -1322,10 +1322,8 @@ once and corrected. The numbers stay unused rather than being given to something
    no role for and which the palette therefore carries itself. Amber rather than a paler red:
    the two sit next to each other and have to be told apart at a glance rather than by reading.
 
-   **A month's notice**, which `LOGIC-7` in [../../logic/doc.md](../../logic/doc.md) leaves open
-   and which this does not close: that question asks what notice each kind of obligation wants,
-   and a service and a five-yearly pressure test do not want the same. One month for everything
-   is what a first version says rather than the answer.
+   **A month's notice, for everything**, which is how `LOGIC-7` in
+   [../../logic/doc.md](../../logic/doc.md) settled.
 
    **The latest work for each thing owed is the one that counts.** An entry sets the clock for
    what its `follow_up_type` names, or for its own `type`, and a later entry for the same thing
