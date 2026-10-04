@@ -7,6 +7,7 @@ import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Types
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -207,15 +208,46 @@ class GreetingTest {
     fun `every deed the application knows is named, built or not`() {
         assertEquals(
             listOf(
-                "New logbook",
-                "Open logbook",
+                "Download from dive computer",
                 "Import",
                 "Export to UDDF",
-                "Download from dive computer",
-                "Settings",
+                "New logbook",
+                "Open logbook",
+                "Change folder",
             ),
             Deed.entries.map { it.label },
         )
+    }
+
+    @Test
+    fun `the logbook row holds the folder deeds the platform uses, and not the download`() {
+        assertEquals(
+            listOf(Deed.IMPORT, Deed.EXPORT, Deed.NEW, Deed.OPEN),
+            logbookDeedsOf(setOf(Deed.NEW, Deed.OPEN)),
+        )
+        assertEquals(listOf(Deed.IMPORT, Deed.EXPORT, Deed.FOLDER), logbookDeedsOf(setOf(Deed.FOLDER)))
+    }
+
+    @Test
+    fun `a greyed deed says why`() {
+        assertNull(unavailableOf(Deed.IMPORT, setOf(Deed.IMPORT), emptySet(), open = true))
+        assertEquals("already under way", unavailableOf(Deed.IMPORT, emptySet(), setOf(Deed.IMPORT), open = true))
+        assertEquals("needs a logbook open", unavailableOf(Deed.EXPORT, emptySet(), emptySet(), open = false))
+        assertEquals("not on this device", unavailableOf(Deed.EXPORT, emptySet(), emptySet(), open = true))
+        assertEquals("not on this device", unavailableOf(Deed.NEW, emptySet(), emptySet(), open = false))
+    }
+
+    @Test
+    fun `every named chart finds its variables and its width`() {
+        val variables = variablesOf()
+        for (chart in CHARTS) {
+            val (up, across) = assertNotNull(placedOf(chart, variables), chart.label)
+            assertEquals(chart.across, variables[across].label)
+            chart.up?.let { assertEquals(it, variables[up].label) }
+            chart.step?.let { step ->
+                assertTrue(step in listOf("month", "quarter", "year", "five years"), "${chart.label}: no width called $step")
+            }
+        }
     }
 }
 

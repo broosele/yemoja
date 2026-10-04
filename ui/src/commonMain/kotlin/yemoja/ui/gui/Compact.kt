@@ -40,7 +40,8 @@ internal fun pageOf(tab: Tab, kept: Kept): Page = when {
  *
  * One step at a time: a form is left before the item it was opened over, the item before the
  * list, on Locations what is at a region before the regions, in Manuals a chapter before the
- * chapters, and in Calculations a calculation before the list of them, which keeps what was typed.
+ * chapters, in Calculations a calculation before the list of them, which keeps what was typed,
+ * and on Home a review before Home.
  * A form left by back is cancelled, as its Cancel would.
  */
 internal fun backOf(tab: Tab, kept: Kept): (() -> Unit)? = when {
@@ -49,6 +50,7 @@ internal fun backOf(tab: Tab, kept: Kept): (() -> Unit)? = when {
     kept.chosenMany.size > 1 -> ({ kept.chosenMany = emptySet() })
     kept.chosen != null -> ({ kept.chosen = null })
     tab.shape == Shape.MANUAL && kept.inChapter -> ({ kept.inChapter = false })
+    tab.shape == Shape.HOME && kept.inReview -> ({ kept.inReview = false })
     tab.shape == Shape.CALCULATIONS && kept.working.inForm -> ({ kept.working.inForm = false })
     tab.shape == Shape.PLACES && (kept.place != null || kept.unplaced) -> ({
         kept.place = null

@@ -107,6 +107,16 @@ class CompactTest {
     }
 
     @Test
+    fun `back leads from Home's review to Home`() {
+        val home = TABS.first { it.name == "Home" }
+        val kept = Kept()
+        assertNull(backOf(home, kept))
+        kept.inReview = true
+        assertNotNull(backOf(home, kept)).invoke()
+        assertEquals(false, kept.inReview)
+    }
+
+    @Test
     fun `fields stand one to a row on a phone`() {
         val rows = rowsOf(listOf("a", "b", "c"), 1) { false }
         assertEquals(listOf(listOf("a"), listOf("b"), listOf("c")), rows)

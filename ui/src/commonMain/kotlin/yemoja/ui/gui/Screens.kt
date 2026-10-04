@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import yemoja.ui.icons.ArrowRight
 import yemoja.ui.icons.AutoAwesome
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import yemoja.ui.icons.StarHalf
 import yemoja.ui.icons.StarOutline
@@ -60,6 +61,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
@@ -357,6 +359,15 @@ internal class Kept {
     var gathering: Int? by mutableStateOf(null)
     var step: Int? by mutableStateOf(null)
 
+    /**
+     * Home's plot: which of the named charts, or [CHARTS]' size for the reader's own, which is
+     * when the gathering and the axes above are read. Absent for the first chart. `GUI-30`.
+     */
+    var chart: Int? by mutableStateOf(null)
+
+    /** Whether a phone shows Home's review of what arrived as a page of its own. `PHONE-2`. */
+    var inReview: Boolean by mutableStateOf(false)
+
     /** The branches of a tree unfolded, by path; absent until the tree has decided how it opens. */
     var open: Set<String>? by mutableStateOf(null)
 
@@ -519,6 +530,8 @@ internal fun Application(universe: Universe?, platform: Platform) {
             tab = calculations
         }
     }
+    // The settings form, opened from the tab row and shown on Home. `GUI-42`.
+    val choosing = remember(universe) { Choosing() }
     // A phone steps back through a tab one page at a time, by the arrow and by its own back.
     val back = if (platform.compact) backOf(tab, kept.getValue(tab)) else null
     platform.back?.invoke(back != null) { back?.invoke() }
@@ -539,6 +552,13 @@ internal fun Application(universe: Universe?, platform: Platform) {
                     onBack = back,
                     unasked = unasked,
                     asking = talking,
+                    onSettings = universe?.let { open ->
+                        {
+                            if (!choosing.open) choosing.fill(open.settings)
+                            choosing.open = true
+                            tab = tabs.first { it.shape == Shape.HOME }
+                        }
+                    },
                 ) { talking = !talking }
                 Row(modifier = Modifier.weight(1f)) {
                     Box(modifier = Modifier.weight(1f)) {
@@ -549,6 +569,7 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 kept = kept.getValue(tab),
                                 reading = reading,
                                 downloads = downloads,
+                                choosing = choosing,
                                 onApplied = { said -> told = Told(said) },
                             )
 
@@ -662,10 +683,12 @@ private fun Tabs(
     unasked: String?,
     /** Whether the panel is open, which is what the button would shut. */
     asking: Boolean,
+    /** Opens the settings, or absent where no logbook is open to hold them. `GUI-42`. */
+    onSettings: (() -> Unit)?,
     onAsk: () -> Unit,
 ) {
     if (LocalCompact.current) {
-        CompactTabs(tabs, chosen, onChoose, kept, ribbon, download, onBack)
+        CompactTabs(tabs, chosen, onChoose, kept, ribbon, download, onBack, onSettings)
         return
     }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -690,6 +713,7 @@ private fun Tabs(
             // Add, edit and delete stand here for every tab rather than on each card, so they
             // are in one place whatever the tab shows. `GUI-53`.
             Buttons(ribbon, kept)
+            SettingsButton(onSettings)
             // On every tab rather than on home, since a question comes up wherever the reader
             // is. An icon, so the row stays the tabs' own; what pressing it would do is said over
             // it while the pointer rests there, and the reason instead while it is greyed. The
@@ -742,6 +766,7 @@ private fun CompactTabs(
     ribbon: Ribbon,
     download: Stage,
     onBack: (() -> Unit)?,
+    onSettings: (() -> Unit)?,
 ) {
     var choosing by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -775,8 +800,19 @@ private fun CompactTabs(
                 }
             }
             Buttons(ribbon, kept)
+            SettingsButton(onSettings)
         }
         HorizontalDivider()
+    }
+}
+
+/** The button that opens the settings, greyed and saying why where no logbook is open. `GUI-42`. */
+@Composable
+private fun SettingsButton(onSettings: (() -> Unit)?) {
+    Explained(if (onSettings == null) "Settings need a logbook open" else "Settings") {
+        IconButton(onClick = { onSettings?.invoke() }, enabled = onSettings != null) {
+            Icon(Icons.Filled.Settings, contentDescription = "Settings")
+        }
     }
 }
 
@@ -825,6 +861,8 @@ private fun Home(
     /** The download, which is the window's rather than this tab's. `GUI-52`. */
     reading: Reading,
     downloads: CoroutineScope,
+    /** The settings form, which the tab row opens. `GUI-42`. */
+    choosing: Choosing,
     onApplied: (String) -> Unit = {},
 ) {
     val set = universe?.logbook
@@ -833,7 +871,6 @@ private fun Home(
     val greeting = remember(set, edition) { set?.let { greetingOf(it) } }
     val taking = remember(universe) { Taking() }
     val giving = remember(universe) { Giving() }
-    val choosing = remember(universe) { Choosing() }
     val scope = rememberCoroutineScope()
     // A finished read is staged on arriving here, and staged afresh on every arrival after, so a
     // review left half done meets the logbook as it is now. `GUI-52`. It waits while a file's
@@ -843,6 +880,76 @@ private fun Home(
     LaunchedEffect(universe, ready, taking.open) {
         if (ready && universe != null && !taking.open) arrive(universe, reading, changer)
     }
+    // Reading a computer is this layer's own: everything it needs is on the universe, and what a
+    // platform adds is only the asking. `GUI-31`.
+    val deeds = platform.deeds + buildMap {
+        if (universe != null) {
+            // One download at a time. Another started over a finished one replaces it.
+            if (reading.stage != Stage.LOOKING && reading.stage != Stage.READING) {
+                put(Deed.DOWNLOAD) {
+                    giving.said = null
+                    val start = { downloads.launch { look(universe, platform, reading) } }
+                    val permit = platform.permit
+                    if (permit == null) {
+                        start()
+                    } else {
+                        permit { granted ->
+                            if (granted) {
+                                start()
+                            } else {
+                                reading.said = REFUSED_BLUETOOTH
+                                reading.stage = Stage.DONE
+                            }
+                        }
+                    }
+                }
+            }
+            // One import at a time, as a download is.
+            if (platform.pick != null && !taking.reading) {
+                put(Deed.IMPORT) {
+                    giving.said = null
+                    take(universe, platform, taking, changer, scope)
+                }
+            }
+            if (platform.save != null && !giving.writing) {
+                val save = platform.save
+                put(Deed.EXPORT) {
+                    // Asked here rather than inside the writing: a platform's dialog waits, and
+                    // waiting inside a coroutine the window is running breaks the window's own
+                    // machinery.
+                    save("Export this logbook to UDDF") { to ->
+                        scope.launch { give(universe, to, giving) }
+                    }
+                }
+            }
+        }
+    }
+    val running = buildSet {
+        if (reading.stage == Stage.LOOKING || reading.stage == Stage.READING) add(Deed.DOWNLOAD)
+        if (taking.reading) add(Deed.IMPORT)
+        if (giving.writing) add(Deed.EXPORT)
+    }
+    if (running.isNotEmpty()) platform.awake?.invoke()
+    val agentStaged = remember(universe, edition) { universe?.staging?.staged?.isNotEmpty() == true }
+    val reviewing = (reading.stage == Stage.DONE && reading.arrived > 0) || (taking.open && taking.arrived > 0)
+    // A phone shows a review as a page of its own, a few hundred rows being no part of a home
+    // screen; back returns to Home. `PHONE-2`.
+    val paged = LocalCompact.current
+    if (paged && kept.inReview && !reviewing) kept.inReview = false
+    if (paged && kept.inReview) {
+        Selectable {
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = GAP * 2, vertical = GAP),
+            ) {
+                Heading("Review what arrived")
+                Reader(universe, platform, reading, changer, downloads, inline = true)
+                Taker(universe, taking, changer, inline = true)
+            }
+        }
+        return
+    }
+    val review = { kept.inReview = true }
     Selectable {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -865,64 +972,38 @@ private fun Home(
             }
             Owing(owed)
             Spacer(modifier = Modifier.height(GAP * 2))
-            // Reading a computer is this layer's own: everything it needs is on the universe, and
-            // what a platform adds is only the asking. `GUI-31`.
-            val deeds = platform.deeds + buildMap {
-                if (universe != null) {
-                    // One download at a time. Another started over a finished one replaces it.
-                    if (reading.stage != Stage.LOOKING && reading.stage != Stage.READING) {
-                        put(Deed.DOWNLOAD) {
-                            val start = { downloads.launch { look(universe, platform, reading) } }
-                            val permit = platform.permit
-                            if (permit == null) {
-                                start()
-                            } else {
-                                permit { granted ->
-                                    if (granted) {
-                                        start()
-                                    } else {
-                                        reading.said = REFUSED_BLUETOOTH
-                                        reading.stage = Stage.DONE
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    put(Deed.SETTINGS) {
-                        if (!choosing.open) choosing.fill(universe.settings)
-                        choosing.open = true
-                    }
-                    // One import at a time, as a download is.
-                    if (platform.pick != null && !taking.reading) {
-                        put(Deed.IMPORT) { take(universe, platform, taking, changer, scope) }
-                    }
-                    platform.save?.let { save ->
-                        put(Deed.EXPORT) {
-                            // Asked here rather than inside the writing: a platform's dialog
-                            // waits, and waiting inside a coroutine the window is running
-                            // breaks the window's own machinery.
-                            save("Export this logbook to UDDF") { to ->
-                                scope.launch { give(universe, to, giving) }
-                            }
+            // The one deed a logbook is fed by after every dive, on its own and the size of a
+            // deed that matters. `GUI-30`.
+            val download = deeds[Deed.DOWNLOAD]
+            Button(onClick = { download?.invoke() }, enabled = download != null) {
+                Text(Deed.DOWNLOAD.label)
+            }
+            unavailableOf(Deed.DOWNLOAD, deeds.keys, running, universe != null)?.let {
+                Aside("Download ${it}.")
+            }
+            // What is under way or waiting on the reader, in one box that is there only then.
+            val working = reading.stage != Stage.IDLE || taking.open || giving.said != null || agentStaged
+            if (working && universe != null) {
+                Inset(if (reviewing || agentStaged) "Waiting for you" else "Under way") {
+                    Reader(universe, platform, reading, changer, downloads, inline = !paged, onReview = review)
+                    Taker(universe, taking, changer, inline = !paged, onReview = review)
+                    Review(universe, changer, onApplied)
+                    giving.said?.let { said ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.weight(1f)) { Aside(said) }
+                            if (!giving.writing) TextButton(onClick = { giving.said = null }) { Text("Close") }
                         }
                     }
                 }
             }
-            val busy = taking.reading || giving.writing ||
-                reading.stage == Stage.LOOKING || reading.stage == Stage.READING
-            if (busy) platform.awake?.invoke()
-            Inset("System") {
-                Deeds(deeds)
-                Reader(universe, platform, reading, changer, downloads)
-                Taker(universe, taking, changer)
+            choosing.takeIf { it.open && universe != null }?.let {
                 // Said through the changer, so a command set here reaches the button on the tab
                 // row without a change to the logbook.
-                Chooser(universe, choosing) { changer.changed() }
-                Review(universe, changer, onApplied)
-                giving.said?.let { Aside(it) }
+                Inset("Settings") { Chooser(universe, choosing) { changer.changed() } }
             }
+            LogbookDeeds(deeds, running, universe != null)
             // Nothing to count where there is no logbook, and nothing to say about that.
-            if (set != null) Inset("Statistics") { Plot(set, kept, edition) }
+            if (set != null) Inset("Your diving") { Plot(set, kept, edition) }
             Spacer(modifier = Modifier.height(GAP * 2))
         }
     }
@@ -1247,6 +1328,9 @@ private fun Reader(
     reading: Reading,
     changer: Changer,
     scope: CoroutineScope,
+    /** Whether a review is shown here, rather than a button opening it as a page. `PHONE-2`. */
+    inline: Boolean = true,
+    onReview: () -> Unit = {},
 ) {
     if (universe == null || reading.stage == Stage.IDLE) return
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
@@ -1271,7 +1355,9 @@ private fun Reader(
             TextButton(onClick = { reading.drop() }) { Text("Cancel") }
         }
         reading.said?.let { Aside(it) }
-        if (reading.stage == Stage.DONE && reading.arrived > 0) {
+        if (reading.stage == Stage.DONE && reading.arrived > 0 && !inline) {
+            ToReview(reading.arrived, onReview) { reading.drop() }
+        } else if (reading.stage == Stage.DONE && reading.arrived > 0) {
             Arrived(
                 universe = universe,
                 changer = changer,
@@ -1301,7 +1387,14 @@ private fun Reader(
  * and they come in with the dives. `GUI-33`.
  */
 @Composable
-private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
+private fun Taker(
+    universe: Universe?,
+    taking: Taking,
+    changer: Changer,
+    /** Whether a review is shown here, rather than a button opening it as a page. `PHONE-2`. */
+    inline: Boolean = true,
+    onReview: () -> Unit = {},
+) {
     if (universe == null || !taking.open) return
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
         taking.said?.let { Aside(it) }
@@ -1317,7 +1410,12 @@ private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
             }
             return@Column
         }
-        if (taking.arrived > 0) {
+        if (taking.arrived > 0 && !inline) {
+            ToReview(taking.arrived, onReview) {
+                universe.stopImporting()
+                taking.open = false
+            }
+        } else if (taking.arrived > 0) {
             Arrived(
                 universe = universe,
                 changer = changer,
@@ -1337,29 +1435,35 @@ private fun Taker(universe: Universe?, taking: Taking, changer: Changer) {
     }
 }
 
+/** How many dives wait to be reviewed, and the buttons that open the review or put it down. */
+@Composable
+private fun ToReview(arrived: Int, onReview: () -> Unit, onClose: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(GAP), verticalAlignment = Alignment.CenterVertically) {
+        Button(onClick = onReview) { Text("Review ${counted(arrived, "dive")}") }
+        TextButton(onClick = onClose) { Text("Close") }
+    }
+}
+
 /**
- * Every deed the application knows, as a button apiece, the ones this platform cannot do yet
- * greyed rather than left out. `GUI-30`.
+ * What can be done to the logbook as a whole besides a download: a row of quiet buttons under a
+ * caption, each greyed one said beneath with its reason. `GUI-30`.
  */
 @Composable
-private fun Deeds(deeds: Map<Deed, () -> Unit>) {
-    // Wrapping onto a second line where the window is too narrow for one: a phone, or a desktop
-    // window made small.
+private fun LogbookDeeds(deeds: Map<Deed, () -> Unit>, running: Set<Deed>, open: Boolean) {
+    Caption("Logbook")
+    val listed = logbookDeedsOf(deeds.keys)
+    // Wrapping onto a second line where the window is too narrow for one, as on a phone.
     FlowRow(
-        modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
-        horizontalArrangement = Arrangement.spacedBy(GAP),
-        verticalArrangement = Arrangement.spacedBy(HALF),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {
-        for (deed in Deed.entries) {
+        for (deed in listed) {
             val act = deeds[deed]
-            Button(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+            OutlinedButton(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
         }
     }
-    if (Deed.entries.any { it !in deeds }) {
-        Aside(
-            "The greyed-out actions need a logbook open, or this platform cannot offer them, or " +
-                    "one is already under way.",
-        )
+    for (deed in listed) {
+        unavailableOf(deed, deeds.keys, running, open)?.let { Aside("${deed.label}: $it.") }
     }
 }
 
@@ -1377,11 +1481,16 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
         return
     }
     val opening = remember(variables) { openingOf(variables) }
-    val alongAt = (kept.across ?: opening.first).coerceIn(variables.indices)
-    val upAt = (kept.up ?: opening.second).coerceIn(variables.indices)
+    // The named charts this model has the variables for, and the reader's own after them.
+    val charts = remember(variables) { CHARTS.filter { placedOf(it, variables) != null } }
+    val chartAt = (kept.chart ?: 0).coerceIn(0..charts.size)
+    val named = charts.getOrNull(chartAt)
+    val placed = named?.let { placedOf(it, variables) }
+    val alongAt = (placed?.second ?: kept.across ?: opening.first).coerceIn(variables.indices)
+    val upAt = (placed?.first ?: kept.up ?: opening.second).coerceIn(variables.indices)
     val across = variables[alongAt]
     val up = variables[upAt]
-    val gathering = Gathering.entries[
+    val gathering = named?.gathering ?: Gathering.entries[
         (kept.gathering ?: Gathering.COUNT.ordinal).coerceIn(Gathering.entries.indices),
     ]
     val steps = remember(set, edition, across) {
@@ -1390,10 +1499,21 @@ private fun Plot(set: ItemSet, kept: Kept, edition: Int) {
     val fitted = remember(set, edition, across, up, gathering, steps) {
         if (gathering.bars) fittedOf(set, across, up, gathering, steps) else 0
     }
-    val stepAt = (kept.step ?: fitted).coerceIn(steps.indices)
+    val namedStep = named?.step?.let { width -> steps.indexOfFirst { it.label == width }.takeIf { it >= 0 } }
+    val stepAt = (namedStep ?: kept.step ?: fitted).coerceIn(steps.indices)
+    Picked(charts.map { it.label } + CUSTOMISED, chartAt) { chosen ->
+        // The reader's own starts from the chart they were looking at.
+        if (chosen == charts.size && named != null) {
+            kept.gathering = gathering.ordinal
+            kept.up = upAt
+            kept.across = alongAt
+            kept.step = stepAt
+        }
+        kept.chart = chosen
+    }
     // Onto further lines where the screen is too narrow for one, as on a phone.
-    FlowRow(
-        modifier = Modifier.fillMaxWidth().padding(bottom = HALF),
+    if (named == null) FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(vertical = HALF),
         itemVerticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HALF),
     ) {

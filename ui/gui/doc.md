@@ -808,7 +808,11 @@ once and corrected. The numbers stay unused rather than being given to something
 - **GUI-42 — Where settings are seen and changed.** *Settled:* **a deed on the home screen, and a
   form of every setting saying where each value came from.**
 
-  Fourteen settings are still a form rather than a place, so they open in the System box like a
+  *Amended on 2026-10-04 with `GUI-30`:* the deed is a gear in the tab row, beside add, edit and
+  delete, since a setting is not something done to a logbook. It brings the reader to Home and
+  opens the form there, in a box of its own. Greyed, and saying why, where no logbook is open.
+
+  Fourteen settings are still a form rather than a place, so they open on the home screen like a
   download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.
 
@@ -1066,7 +1070,7 @@ once and corrected. The numbers stay unused rather than being given to something
   is never shown* the way an ordinary reference keeps it. One that resolves to nothing is shown
   as written.
 
-  **Staged changes are reviewed where an import is**, in the home screen's System box, and the
+  **Staged changes are reviewed where an import is**, in the home screen's box of what waits, and the
   panel says how many items wait there with a deed that brings the reader to it from any tab. One
   place to review a pending change whatever proposed it, and a table of before and after wants the
   window's width: an agent that corrects forty dives fills a panel's column with a scroll nobody
@@ -1510,6 +1514,28 @@ once and corrected. The numbers stay unused rather than being given to something
   logbook as a whole, and one plot the reader chooses both axes of.**
 
   Three things, in that order, because they answer what a reader has not asked yet.
+
+  *Amended on 2026-10-04, at the author's word, who found the screen confusing:* **the download
+  first, what is under way in a box of its own, the rest of the deeds quiet, and the plot by
+  name.** The deeds had been six buttons alike in a box called *System*, the one a reader uses
+  after every dive no different from the one they use once. Below the greeting now:
+
+  - **Download from dive computer**, the one filled button, alone.
+  - **A box for what is under way or waiting**, there only then: a download, an import and its
+    review, an export's result, an agent's staged changes. *Waiting for you* where something
+    wants deciding, *Under way* otherwise. An export's result closes with a button, and starting
+    another deed clears it. On a phone the review of what arrived is a page of its own, opened
+    from the box and left by back, a few hundred rows being no part of a home screen. `PHONE-2`.
+  - **Settings**, when opened from the tab row, `GUI-42`.
+  - **Logbook**: import, export, and making and opening a logbook, as outlined buttons. A phone
+    has one *Change folder* in place of the last two, both being the choosing of a folder there,
+    `AND-5`.
+  - **Your diving**, the plot, opening on *Dives per month* among a few named charts; *Your own*
+    brings back the boxes for gathering and the axes, starting from the chart that was shown.
+
+  **A greyed deed still shows, and says why under the row**: *needs a logbook open*, *already
+  under way* or *not on this device*. The list stays what the application is for, as below, and
+  a reader no longer has to guess which of three reasons one shared sentence meant.
 
   **The greeting is two lines.** Who is being greeted, large; and beneath it, in the size the
   rest of the application reads at, what there is to say to them. Splitting it is what lets the

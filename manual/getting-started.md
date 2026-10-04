@@ -43,13 +43,24 @@ yellow one what falls due within a month:
 Nobody else's medical or insurance is warned about, and generic gear owes nothing. When nothing
 is due, nothing is shown.
 
-**System** holds what can be done to a logbook as a whole: making one, opening one, importing,
-exporting to UDDF, downloading from a dive computer, and settings. All but the first two need a
-logbook open. Most have more written about them: importing and downloading in
-[computers-and-importing.md](computers-and-importing.md), exporting in [uddf.md](uddf.md), and
-settings in [settings.md](settings.md).
+**Download from dive computer** is the large button under the greeting.
 
-**Statistics** plots your dives. The first box chooses what is drawn:
+While something is running or waiting for you, a box under it says what: a download, an import,
+an export, or changes an agent has proposed. When dives have arrived, it is where you review them.
+On a phone, **Review** opens the list as a page of its own, and back returns to the home screen.
+
+**Logbook** holds the rest of what can be done to a logbook as a whole: importing, exporting to
+UDDF, and making or opening a logbook. On a phone the last two are one, **Change folder**. A
+greyed button says why underneath: it needs a logbook open, one is already running, or the device
+cannot do it. Importing and downloading are explained in
+[computers-and-importing.md](computers-and-importing.md), exporting in [uddf.md](uddf.md).
+
+**Settings** is the gear at the top right. It opens the settings on the home screen; see
+[settings.md](settings.md).
+
+**Your diving** plots your dives. It opens on **Dives per month**; the box above the chart offers
+a few others by name, and **Your own** lets you choose what is drawn. Then the first box chooses
+how:
 
 - **Each dive** is a dot per dive, one figure against another.
 - **Count**, **Total**, **Average**, **Largest** and **Smallest** cut the bottom axis into
@@ -57,8 +68,8 @@ settings in [settings.md](settings.md).
 - **Running total** adds the dives up in the order you made them.
 
 The next boxes choose the figures, and **by** chooses how wide a bar is: a month, a quarter, a
-year or five years for a date, and a round number for anything else. It opens on how many dives
-you made each month, widening the bars where there would be too many to read.
+year or five years for a date, and a round number for anything else. The bars widen where there
+would be too many to read.
 
 ## The tabs
 
@@ -224,7 +235,7 @@ items that hold them. Yemoja holds nothing back, so the only judgement about wha
 is yours: ask an agent about a logbook you are willing to send, or run a model on your own machine,
 where nothing leaves it.
 
-**First tell Yemoja how to start your agent**, in **Settings** on the home screen: the *Agent
+**First tell Yemoja how to start your agent**, in **Settings**, the gear at the top right: the *Agent
 command* box, which [settings.md](settings.md#the-agent-command) explains. Until it is set, the
 sparkle button is greyed.
 
@@ -245,7 +256,7 @@ not to touch the files unless you tick *Allow raw file access*.
 **It can propose changes, and you decide.** Tick *Allow logbook edits* and an agent can stage
 changes — correct a clock error across a trip, give one dive's gear to the others. Nothing it
 stages touches your logbook. The panel says how many items are waiting, and **Review** takes you to
-them on the home screen, under the other deeds. Each item shows every field it would change, what
+them on the home screen, in the box of what is waiting for you. Each item shows every field it would change, what
 the field holds and what it would hold. If you have edited one of those fields since the agent
 staged it, the row says what it holds now, in red, and that change is left alone when you apply the
 rest. It stays waiting afterwards, still in red, until you **Discard** it or the agent stages it

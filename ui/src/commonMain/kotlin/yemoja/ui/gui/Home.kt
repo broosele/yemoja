@@ -221,15 +221,91 @@ internal fun spanOf(seconds: Double): String {
  *
  * Named here and offered on the home screen whether or not this platform can do it yet, so
  * that what the application is for is one list rather than the part that happens to be built.
- * `GUI-30`.
+ * `GUI-30`. Settings are not among them: they open from the tab row, `GUI-42`.
  */
 internal enum class Deed(val label: String) {
-    NEW("New logbook"),
-    OPEN("Open logbook"),
+    /** The one deed of the home screen's own row, being what a logbook is fed by after a dive. */
+    DOWNLOAD("Download from dive computer"),
     IMPORT("Import"),
     EXPORT("Export to UDDF"),
-    DOWNLOAD("Download from dive computer"),
-    SETTINGS("Settings"),
+    NEW("New logbook"),
+    OPEN("Open logbook"),
+
+    /** New and open as one, for a platform where both are choosing a folder. `AND-5`. */
+    FOLDER("Change folder"),
+}
+
+/** The deeds that need a logbook open, there being nothing to feed, read or write without one. */
+private val NEEDS_LOGBOOK = setOf(Deed.DOWNLOAD, Deed.IMPORT, Deed.EXPORT)
+
+/**
+ * The deeds of the home screen's logbook row, in order: everything but the download, and of the
+ * folder deeds the ones [offered] uses.
+ *
+ * A platform offering [Deed.FOLDER] has no separate new and open, and one that does not has no
+ * folder deed; listing the other pair greyed would say something is missing that is not.
+ */
+internal fun logbookDeedsOf(offered: Set<Deed>): List<Deed> {
+    val folder = Deed.FOLDER in offered
+    return Deed.entries.filter { deed ->
+        when (deed) {
+            Deed.DOWNLOAD -> false
+            Deed.FOLDER -> folder
+            Deed.NEW, Deed.OPEN -> !folder
+            else -> true
+        }
+    }
+}
+
+/**
+ * Why [deed] cannot be done now, or absent where it can.
+ *
+ * In the order a reader can do something about: one already running ends by itself, a logbook
+ * can be opened, and a platform that cannot do a thing will not start to. `GUI-30`.
+ */
+internal fun unavailableOf(deed: Deed, offered: Set<Deed>, running: Set<Deed>, open: Boolean): String? = when {
+    deed in offered -> null
+    deed in running -> "already under way"
+    !open && deed in NEEDS_LOGBOOK -> "needs a logbook open"
+    else -> "not on this device"
+}
+
+/**
+ * Chart is one of the plots the home screen offers by name: how the dives are gathered, and which
+ * variable runs up the side, along the bottom, and by what width.
+ *
+ * Variables and widths are named as the reader sees them, so a chart whose variable a model lacks
+ * is not offered. Immutable.
+ */
+internal class Chart(
+    val label: String,
+    val gathering: Gathering,
+    /** Absent where the gathering reads nothing up the side, as a count does not. */
+    val up: String?,
+    val across: String,
+    /** Absent where the gathering draws no bars. */
+    val step: String?,
+)
+
+/** The charts offered by name, the first being the one the home screen opens on. `GUI-30`. */
+internal val CHARTS: List<Chart> = listOf(
+    Chart("Dives per month", Gathering.COUNT, null, "Start date", "month"),
+    Chart("Dives per year", Gathering.COUNT, null, "Start date", "year"),
+    Chart("Time underwater per year", Gathering.TOTAL, "Duration", "Start date", "year"),
+    Chart("Depth of each dive", Gathering.EACH, "Max depth", "Start date", null),
+)
+
+/** What the chart list calls the plot a reader puts together themselves. */
+internal const val CUSTOMISED = "Your own"
+
+/**
+ * Where [chart] puts [variables]: the index up the side and the one along the bottom, or absent
+ * where the model has no variable of either name.
+ */
+internal fun placedOf(chart: Chart, variables: List<Variable>): Pair<Int, Int>? {
+    val across = variables.indexOfFirst { it.label == chart.across }.takeIf { it >= 0 } ?: return null
+    val up = chart.up?.let { name -> variables.indexOfFirst { it.label == name }.takeIf { it >= 0 } ?: return null }
+    return (up ?: across) to across
 }
 
 /**

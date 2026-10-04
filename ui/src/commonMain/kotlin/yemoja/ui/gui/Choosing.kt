@@ -54,8 +54,8 @@ internal class Choosing {
 /**
  * The settings, each with what it holds and where that came from, and a deed to save what changed.
  *
- * In the home screen's System box, opened by its own deed, as a download is: a short settings
- * list is a form rather than a place. Each says whether this device, this logbook or the
+ * On the home screen, opened from the tab row: a short settings list is a form rather than a
+ * place. Each says whether this device, this logbook or the
  * application answered it, since a choice kept on this device is one a reader may otherwise look
  * for in vain on another. `GUI-42`.
  */

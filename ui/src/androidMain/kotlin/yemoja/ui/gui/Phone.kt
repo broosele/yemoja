@@ -202,7 +202,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
             compact = compact,
             awake = { Awake() },
             back = { enabled, onBack -> BackHandler(enabled, onBack) },
-            deeds = mapOf(Deed.NEW to choose, Deed.OPEN to choose),
+            deeds = mapOf(Deed.FOLDER to choose),
             permit = { granted ->
                 val wanted = BLUETOOTH + NOTIFYING
                 if (wanted.all { allowed(context, it) }) {
