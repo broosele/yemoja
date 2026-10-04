@@ -337,9 +337,10 @@ someone. It gets treated differently from everything else:
 
 - Isolated behind its own boundary, with no dependency on storage or UI, so it can be
   tested exhaustively and compared against published schedules. What that comparison
-  amounts to today is `ScheduleTest`: four air dives held to bands around what published
-  air tables ask, `LOGIC-37`, and two no-stop limits. The bands are wide and the tables are
-  not named, which is what `yemoja plan` exists to make better, `API-8`.
+  amounts to here is `ScheduleTest`: four air dives held to bands around what published
+  air tables ask, `LOGIC-37`, and two no-stop limits. The bands are wide on purpose: they catch
+  a model gone grossly wrong, and nothing finer. Comparing the planner to named references is
+  done outside this repository.
 - No change without tests.
 - Whatever the app shows is a planning aid, never a substitute for a dive computer
   or for training. That framing is a requirement on the UI layer too.
