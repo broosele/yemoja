@@ -462,8 +462,8 @@ To settle when we discuss architecture and features:
 
    The data layer records `valid_until`,
    `days_left` and `expired`, and stops there — `expired` is a fact, "needs renewing
-   shortly" is a judgement. This layer decides the judgement, and `FEAT-9` is what wants
-   it: one list answering what needs renewing.
+   shortly" is a judgement. This layer decides the judgement, and `FEAT-9`'s warnings on
+   the home screen are what use it.
 
    What makes it more than a threshold is that one number is wrong everywhere. A month's
    notice suits a regulator service, is derisory for a five-yearly pressure test, and

@@ -103,15 +103,15 @@ them.
   *Built:* any two things a dive answers for, plotted against each other in the Statistics tab —
   each dive, a count, a total, an average, the largest, the smallest, or a running total, grouped
   by whatever the user picks. `Figures.kt` counts and the Statistics tab draws it.
-- **FEAT-9 — Renewal tracking.** One list answering what needs renewing, across
-  insurance and gear maintenance. The reason the validity work in
-  [data/doc.md](data/doc.md) exists. What counts as *soon* is `LOGIC-7`, not a
-  stored value: the data layer records when a thing falls due and this feature decides
-  when that is worth saying.
+- **FEAT-9 — Renewal tracking.** Saying what needs renewing, across insurance, the medical and
+  gear maintenance. The reason the validity work in [data/doc.md](data/doc.md) exists. What
+  counts as *soon* is `LOGIC-7`, not a stored value: the data layer records when a thing falls
+  due and this feature decides when that is worth saying.
 
   *Built:* the home screen warns of gear maintenance that has fallen due, and of the user's own
-  medical and insurance, a month ahead (`LOGIC-7`). What is owed is the single list across the
-  logbook.
+  medical and insurance, a month ahead (`LOGIC-7`). That is the whole feature: a separate list
+  of every renewal however far off was offered and declined, since each item's own page already
+  shows its dates.
 - **FEAT-12 — A programmatic interface.** Another program driving the logbook without a person
   present. See [ui/api/doc.md](ui/api/doc.md). Moved from *Future* because `FEAT-18` is built on
   it. The tools an agent reads through were the part built first.
