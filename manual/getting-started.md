@@ -453,16 +453,19 @@ pressures says 106. The pressures are for a cylinder at 20 °C, so let it cool b
 before the last reading: a cylinder read warm holds less than it shows. Pressures up to 340 bar
 are worked out. **Always analyse a mix before you breathe it**, whatever the form said.
 
-**Tides** gives the high and low waters of a day near one of your dive sites. Choose the site, and
+**Tides** gives the high and low waters of a day near one of your dive sites, and in the
+Oosterschelde the current. Choose the site, and
 the day if it is not today, written `2026-10-03`. Only sites that have a position, and that a tide
 model covers, are listed. At present that means the Oosterschelde, and the North Sea within fifty
 kilometres of a Dutch tide station. A site on the Grevelingen or on another lake is not listed:
 there is no tide there. It needs an internet connection: the figures are fetched from Rijkswaterstaat when you ask, and this is the
 one place where Yemoja itself uses a network. Nothing about you or your logbook is sent, only the name of
-a tide station and a date.
+a tide station or a model's place, and a date.
 
 **Model** is where the figures come from, and Yemoja chooses the most accurate one that covers the
-day. For a day that is over it is what the gauge measured. For today it is what the gauge has
+day. Near most dive sites in the Oosterschelde, from two weeks back to two days ahead, it is
+Rijkswaterstaat's Scaldis-Oost model, which works out the water and the current at the site itself.
+Otherwise, for a day that is over it is what the gauge measured. For today it is what the gauge has
 measured so far, followed by the forecast for the rest of the day, and a line above the table
 says until when it is measured. The forecast includes the weather, which the astronomical tide leaves out. For the next two
 days it is that forecast alone. For any other day it is the astronomical tide, the
@@ -470,16 +473,22 @@ prediction from the sun and the moon alone, which Rijkswaterstaat has computed f
 and a year or so ahead. You can choose another model from the list. Without a connection the
 models are greyed and the form says it could not reach them.
 
-Under the choices is a line saying which tide station answered and how far it is from the site,
-then a table with a line for each turn of the tide: high or low water, the time, the height, and
-how far the water rose or fell since the turn before. Times are Dutch clock time, summer time
+Under the choices is a line saying which tide station or model place answered and how far it is
+from the site, then a table with a line for each turn of the tide: high or low water, the time, the
+height, and how far the water rose or fell since the turn before. With the Scaldis-Oost model the
+table also has a line for each slack: **Flood begins** when the current turns to run in, and **Ebb
+begins** when it turns to run out. Times are Dutch clock time, summer time
 included. Heights are in metres against NAP, the Dutch reference level, which is close to mean sea
 level. Under the table is the water level through the day, with the forecast part drawn dashed.
+With the Scaldis-Oost model a second plot shows the current in metres a second: flood above the
+line at nought, ebb below it, and a dot on each slack.
 
-**These are the tides at the station, not at your site.** The water at a site turns earlier or
-later than at the station, sometimes by more than half an hour. Slack water, when the current
-stops, is not the same moment as high or low water either. Yemoja does not know the correction for
-a site, and it says nothing about how hard the current runs. Wind and air pressure also move the
+**From a tide station, these are the tides at the station, not at your site.** The water at a site
+turns earlier or later than at the station, sometimes by more than half an hour. Slack water, when
+the current stops, is not the same moment as high or low water either, and a station gives neither
+the slack nor the current. **From the Scaldis-Oost model** they are for the site, but they are a
+model's figures and can be out by half an hour or more, and close to the bottom or in the lee of a
+pier the water runs otherwise. Wind and air pressure also move the
 real tide away from a prediction. Use local knowledge and a published slack-water table for a dive
 that depends on the current.
 

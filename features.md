@@ -210,10 +210,14 @@ them.
   A dive site says nothing about tides: a calculator decides from the site's position whether it
   covers it, so the question of a field on a site for its station is closed by not having one.
 
-  What is not built: **slack water at a site**, which is earlier or later than the station's turn
-  by an amount local to the site, and whose corrections for the Oosterschelde are being asked for
-  from those who compiled them; **how hard the water runs**, which Rijkswaterstaat predicts nowhere and measures at no
-  place inside the Oosterschelde; **the Westerschelde and the Wadden Sea**, which are tidal and
+  **The current at a site in the Oosterschelde** is built too, from Rijkswaterstaat's Scaldis-Oost
+  model at fifty-eight places, most of them dive locations: how fast it runs, flood and ebb told
+  apart, and when it is slack, from two weeks back to two days ahead. `LOGIC-44`.
+
+  What is not built: **slack water away from those places**, and further ahead than the model
+  runs, where the station's turn is all there is and the corrections divers use for the
+  Oosterschelde are being asked for from those who compiled them; **the current anywhere outside
+  the Oosterschelde**; **the Westerschelde and the Wadden Sea**, which are tidal and
   not outlined yet; **any water outside the Netherlands**, which waits on a worldwide or a
   regional calculator; and **a tide
   without a network**.

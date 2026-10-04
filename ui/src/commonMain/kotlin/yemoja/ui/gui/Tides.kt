@@ -23,9 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -39,7 +41,7 @@ import yemoja.data.Result
 import yemoja.data.Time
 import yemoja.data.ValueFormatException
 import yemoja.logic.Extreme
-import yemoja.logic.Reading
+import yemoja.logic.Slack
 import yemoja.logic.Tidal
 import yemoja.logic.TideCalculator
 import yemoja.logic.Tides
@@ -126,20 +128,47 @@ internal fun dayAsked(typed: String, today: Date): Date? = when {
 internal data class TideRow(val turn: String, val time: String, val height: String, val difference: String)
 
 /**
- * The table for [extremes]: each turn, when, how high, and how far the water moved since the turn
- * before.
+ * The table for [extremes] and [slacks]: each turn of the water and each turn of the current, in
+ * the order of the day.
  *
- * The first line has no turn before it and so no difference.
+ * A turn of the water says when, how high, and how far the water moved since the turn before; the
+ * first has no turn before it and so no difference. A slack says when, and which way the current
+ * sets after it, and has no height.
  */
-internal fun rowsOf(extremes: List<Extreme>): List<TideRow> = extremes.mapIndexed { index, extreme ->
-    val before = extremes.getOrNull(index - 1)
-    TideRow(
-        turn = if (extreme.high) "High water" else "Low water",
-        time = clockOf(extreme.at.time),
-        height = signedOf(extreme.height),
-        difference = before?.let { hundredthsOf(abs(extreme.height - it.height)) }.orEmpty(),
-    )
+internal fun rowsOf(extremes: List<Extreme>, slacks: List<Slack> = emptyList()): List<TideRow> {
+    val turns = extremes.mapIndexed { index, extreme ->
+        val before = extremes.getOrNull(index - 1)
+        extreme.at to TideRow(
+            turn = if (extreme.high) "High water" else "Low water",
+            time = clockOf(extreme.at.time),
+            height = signedOf(extreme.height),
+            difference = before?.let { hundredthsOf(abs(extreme.height - it.height)) }.orEmpty(),
+        )
+    }
+    val turnings = slacks.map { slack ->
+        slack.at to TideRow(if (slack.toFlood) "Flood begins" else "Ebb begins", clockOf(slack.at.time), "", "")
+    }
+    return (turns + turnings).sortedBy { it.first }.map { it.second }
 }
+
+/** A distance in kilometres as the form writes it: to a tenth under ten, whole above. */
+internal fun distanceOf(kilometres: Double): String = plain(kilometres, if (kilometres < TENTH_UNDER) 1 else 0)
+
+/** The distance under which the form gives a tenth of a kilometre. */
+private const val TENTH_UNDER = 10.0
+
+/** What the form says under a station's tide. */
+internal const val STATION_CAUTION: String =
+    "The station's tide, not the site's: the water at a site turns earlier or later, and slack " +
+        "water is not the same moment as high or low water. Wind and air pressure move the real " +
+        "tide away from a prediction. Check local knowledge before a dive that depends on it."
+
+/** What the form says under a model's tide and current at the site. */
+internal const val MODEL_CAUTION: String =
+    "A model's figures for the site, with the weather in them. Flood is the current running in as " +
+        "the water rises, ebb running out, and slack the moment it turns. A model can be wrong by " +
+        "half an hour or more, and close to the bottom or behind a pier the water runs otherwise. " +
+        "Check local knowledge before a dive that depends on it."
 
 /** What the form says of a curve that is a gauge's as far as [until] and a forecast after. */
 internal fun measuredSaid(until: Moment): String =
@@ -177,7 +206,7 @@ private const val HUNDREDTHS = 100.0
 @Composable
 internal fun TidesForm(tiding: Tiding, universe: Universe?, calculators: List<TideCalculator>, today: Date) {
     Heading("Tides")
-    Aside("High and low water on a day, at the tide station nearest a dive site.")
+    Aside("High and low water on a day near a dive site, and the current where a model gives it.")
     if (calculators.isEmpty()) {
         Aside("No tide model is available here.")
         return
@@ -270,11 +299,11 @@ private fun Choice(label: String, content: @Composable () -> Unit) {
 @Composable
 private fun TideAnswer(tides: Tides) {
     Aside(
-        "${tides.station}, ${plain(tides.kilometres, 0)} km from the site. Times in ${tides.clock}, " +
+        "${tides.station}, ${distanceOf(tides.kilometres)} km from the site. Times in ${tides.clock}, " +
             "heights in metres against ${tides.datum}.",
     )
     tides.measuredUntil?.let { Aside(measuredSaid(it)) }
-    val rows = rowsOf(tides.extremes)
+    val rows = rowsOf(tides.extremes, tides.slacks)
     if (rows.isEmpty()) {
         Aside("The water did not turn on this day in what the model holds.")
     } else {
@@ -282,12 +311,25 @@ private fun TideAnswer(tides: Tides) {
         HorizontalDivider(modifier = Modifier.widthIn(max = TABLE))
         for (row in rows) Lined(row, heading = false)
     }
-    if (tides.curve.size > 1) Curve(tides.curve, tides.extremes, tides.measuredUntil)
-    Aside(
-        "The station's tide, not the site's: the water at a site turns earlier or later, and slack " +
-            "water is not the same moment as high or low water. Wind and air pressure move the real " +
-            "tide away from a prediction. Check local knowledge before a dive that depends on it.",
-    )
+    if (tides.curve.size > 1) {
+        DayPlot(
+            points = tides.curve.map { it.at to it.height },
+            marks = tides.extremes.map { it.at to it.height },
+            dashedAfter = tides.measuredUntil,
+            above = "Height (m)",
+            below = null,
+        )
+    }
+    if (tides.flows.size > 1) {
+        DayPlot(
+            points = tides.flows.map { it.at to it.speed },
+            marks = tides.slacks.map { it.at to 0.0 },
+            dashedAfter = null,
+            above = "Flood (m/s)",
+            below = "Ebb",
+        )
+    }
+    Aside(if (tides.flows.isEmpty()) STATION_CAUTION else MODEL_CAUTION)
 }
 
 /** One line of the table, its figures drawn as calculated values are. */
@@ -317,16 +359,27 @@ private fun Lined(row: TideRow, heading: Boolean) {
 }
 
 /**
- * The day's water level against the hour, with a dot on each turn.
+ * A value through the day against the hour, with a dot on each of [marks].
  *
- * Across is the whole day whatever the curve covers, so a forecast that stops at noon is seen to
- * stop there. What comes after [measuredUntil] is a forecast and is drawn dashed, joined to the
- * gauge's last reading so the step between the two is seen as a step and not as a gap.
+ * Across is the whole day whatever [points] cover, so a forecast that stops at noon is seen to stop
+ * there. What comes after [dashedAfter] is a forecast and is drawn dashed, joined to the last
+ * reading before it so the step between the two is seen as a step and not as a gap.
+ *
+ * [above] titles the plot's top, and [below], where there is one, its bottom: a signed value is
+ * read by which side of nought it stands, so nought is drawn as a line of its own.
  */
 @Composable
-private fun Curve(curve: List<Reading>, extremes: List<Extreme>, measuredUntil: Moment?) {
+private fun DayPlot(
+    points: List<Pair<Moment, Double>>,
+    marks: List<Pair<Moment, Double>>,
+    dashedAfter: Moment?,
+    above: String,
+    below: String?,
+) {
     val ink = MaterialTheme.colorScheme.primary
     val grid = MaterialTheme.colorScheme.outlineVariant
+    val axisInk = MaterialTheme.colorScheme.outline
+    val ground = MaterialTheme.colorScheme.surface
     val label = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
     val measurer = rememberTextMeasurer()
     Spacer(
@@ -336,7 +389,10 @@ private fun Curve(curve: List<Reading>, extremes: List<Extreme>, measuredUntil: 
                 val right = size.width - GAP.toPx()
                 val top = HALF.toPx()
                 val bottom = size.height - FOOT.toPx()
-                val heights = rangeOf(curve.map { it.height } + extremes.map { it.height })
+                val values = points.map { it.second } + marks.map { it.second }
+                // A signed value is drawn with nought in view, so a current that runs one way all
+                // day is still read against the other.
+                val heights = rangeOf(if (below == null) values else values + 0.0)
                 fun x(time: Time): Float =
                     left + (right - left) * time.secondOfDay / Time.SECONDS_IN_DAY.toFloat()
 
@@ -346,16 +402,18 @@ private fun Curve(curve: List<Reading>, extremes: List<Extreme>, measuredUntil: 
                 }
 
                 val side = ticksOf(heights.start, heights.endInclusive, 5)
-                fun pathOf(readings: List<Reading>): Path = Path().also { path ->
-                    for ((at, reading) in readings.withIndex()) {
-                        val point = Offset(x(reading.at.time), y(reading.height))
-                        if (at == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+                fun pathOf(line: List<Pair<Moment, Double>>): Path = Path().also { path ->
+                    for ((at, point) in line.withIndex()) {
+                        val placed = Offset(x(point.first.time), y(point.second))
+                        if (at == 0) path.moveTo(placed.x, placed.y) else path.lineTo(placed.x, placed.y)
                     }
                 }
 
-                val read = if (measuredUntil == null) curve else curve.filter { it.at <= measuredUntil }
+                val read = if (dashedAfter == null) points else points.filter { it.first <= dashedAfter }
                 val drawn = pathOf(read)
-                val forecast = pathOf(read.takeLast(1) + curve.drop(read.size))
+                val forecast = pathOf(read.takeLast(1) + points.drop(read.size))
+                val topTitle = measurer.measure(above, label)
+                val bottomTitle = below?.let { measurer.measure(it, label) }
                 val dashes = PathEffect.dashPathEffect(floatArrayOf(DASH.toPx(), DASH.toPx()))
                 onDrawBehind {
                     for (tick in side) {
@@ -370,13 +428,21 @@ private fun Curve(curve: List<Reading>, extremes: List<Extreme>, measuredUntil: 
                         val laid = measurer.measure(hour.toString().padStart(2, '0'), label)
                         drawText(laid, topLeft = Offset(at - laid.size.width / 2f, bottom + 2f))
                     }
+                    if (below != null) drawLine(axisInk, Offset(left, y(0.0)), Offset(right, y(0.0)), CURVE_LINE.toPx() / 2)
                     drawPath(drawn, ink, style = Stroke(width = CURVE_LINE.toPx()))
-                    if (measuredUntil != null) {
+                    if (dashedAfter != null) {
                         drawPath(forecast, ink, style = Stroke(width = CURVE_LINE.toPx(), pathEffect = dashes))
                     }
-                    for (extreme in extremes) {
-                        drawCircle(ink, DOT.toPx(), Offset(x(extreme.at.time), y(extreme.height)))
+                    for ((at, value) in marks) {
+                        drawCircle(ink, DOT.toPx(), Offset(x(at.time), y(value)))
                     }
+                    // On the ground's own colour, so a curve running under a title does not cross it.
+                    fun titled(laid: TextLayoutResult, corner: Offset) {
+                        drawRect(ground, corner, Size(laid.size.width.toFloat(), laid.size.height.toFloat()))
+                        drawText(laid, topLeft = corner)
+                    }
+                    titled(topTitle, Offset(right - topTitle.size.width, top))
+                    bottomTitle?.let { titled(it, Offset(right - it.size.width, bottom - it.size.height)) }
                 }
             },
     )

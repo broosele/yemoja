@@ -2,15 +2,17 @@ The contents of this directory are dedicated to the public domain under CC0 1.0
 Universal, whose full text follows.
 
 This covers every library shipped with Yemoja: the atlas of regions, the map, the list
-of tide stations and the outlines of their waters, the certification lists and the
-generic gear catalogue. Use any of it for any purpose, including commercially and
-including in software that competes with Yemoja. No permission is needed and no
-attribution is required.
+of tide stations, the outlines of their waters and the places of the current model, the
+certification lists and the generic gear catalogue. Use any of it for any purpose,
+including commercially and including in software that competes with Yemoja. No
+permission is needed and no attribution is required.
 
 The data here was written for this project or is otherwise free of obligations; the map
 is Natural Earth's, itself in the public domain, and the tide stations are from
-Rijkswaterstaat's WaterWebservices, published under CC0. Provenance is recorded per
-library in doc.md, and anything whose source cannot be established does not stay.
+Rijkswaterstaat's WaterWebservices, published under CC0. The current model's places are
+from Rijkswaterstaat's RWsOS service, which states no licence, and are taken as open by
+Rijkswaterstaat's general policy. Provenance is recorded per library in doc.md, and
+anything whose source cannot be established does not stay.
 
 The rest of the repository is not covered by this dedication. See the LICENSE file at
 its root.

@@ -414,10 +414,16 @@ once and corrected. The numbers stay unused rather than being given to something
   the forecast after them a dashed one, joined, so the step between what was read and what was
   forecast is seen as a step. A line above the table says until when the curve is measured.
 
-  **It is not a plot of currents**, which was asked for and has no source: nothing free predicts
-  the stream at a site. The line under the plot says what the table is not — the station's tide
-  and not the site's, and not slack water — in the form's own words, since the tab's waiver is
-  about a decompression model and says nothing of this.
+  **Where the model gives the current, a second plot shows it, signed.** Flood above nought and
+  ebb below, a line at nought, and a dot on each slack, which the table lists among the turns of
+  the water as *Flood begins* and *Ebb begins*. Signed because the author asked for it: the viewer
+  the figures come from plots the speed alone, and a dip to nought reads the same at both turns.
+  `LOGIC-44`.
+
+  The line under the plots says what the answer is not, in the form's own words, since the tab's
+  waiver is about a decompression model and says nothing of this. Under a station's tide it is the
+  station's and not the site's, and high water is not slack; under the model it is a model's figure
+  for the site, which can be out by half an hour.
 
   What is asked is kept while the tab is, `GUI-27`, so looking back at a day asks nobody twice. A
   phone has the same form and the same models, by a permission taken for it, `AND-8`.

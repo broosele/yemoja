@@ -106,6 +106,10 @@ line: its name, a tab, and one ring written as a map shape is, longitude and lat
 alternating. An outline runs generously over land, since a dive site stands on the shore, and
 exactly along each dam.
 
+`tides/scaldis-oost.txt` lists the places Rijkswaterstaat's Scaldis-Oost model gives the current
+at. A place is one line of four tab-separated cells: the code the service knows it by, its name,
+latitude and longitude. `tool/currentpoints.py` writes it.
+
 
 One consequence: a library and a logbook share an id namespace, because resolution
 looks in the logbook first and then here. An id chosen carelessly will be shadowed
@@ -155,6 +159,12 @@ rename or remove one. The reason is in [data/libraries.md](../data/libraries.md)
   is published under CC0, taken in October 2026. Only each station's code, name and position were
   kept. Which series a station carries is not the catalogue's word, which lists some a station no
   longer delivers: each was asked for, and a letter is written where the service answered.
+- **The current model's places** — the data service behind Rijkswaterstaat's
+  [RWsOS viewer](https://rwsos.rws.nl/viewer/), taken in October 2026; only each place's code,
+  name and position were kept. **The service states no licence.** Its viewer carries a disclaimer
+  of liability and nothing else, so this list rests on Rijkswaterstaat's general policy that its
+  data is open unless stated otherwise. A code, a name and a position are facts about where the
+  model is reported, which is the most such a list can be.
 - **The tidal waters** — written for this project. The outlines are approximate and are
   well-known geography, as the regions' boxes are. Where one follows a dam it was drawn between
   the positions of the gauges Rijkswaterstaat keeps on either side of that dam, which the same
@@ -180,7 +190,7 @@ it: this is reference data, not a review.
 
 Populated: world regions split by continent, PADI and CMAS certifications, a catalogue
 of generic gear, the map at three scales, and the Dutch tide stations with the outlines of
-the Oosterschelde and the North Sea.
+the Oosterschelde and the North Sea and the places of the Oosterschelde's current model.
 
 No count is given here on purpose — it went stale the first time anything was added.
 `tool/checkdata.py` reports the current figure and verifies that every reference

@@ -1,0 +1,58 @@
+KATS	Sluis Kats	51.54397	3.86527
+MRG	Marollegat	51.47852	4.19249
+OS4	O'SCHELDE ZEEZIJDE SCHAAR	51.65588	3.69395
+RPBI	Roompot Binnen	51.61907	3.6865
+RPBU	Roompot buiten	51.61957	3.68222
+STAV	Stavenisse	51.59541	4.00601
+YE	Yerseke	51.50825	4.07206
+aw10	Ingang kanaal Z-Beveland bij Wemeldinge	51.52331	4.01397
+burgd	Burghsluis (duiklocatie 45a/b)	51.67348	3.75733
+cpdl	Colijnsplaat (duiklocatie 55)	51.60477	3.85111
+dhoek	De Hoek/ Galjoen, Wemeldinge (duiklocatie 68a)	51.52478	3.98926
+dypc	Dicky’s Place/ Gemaal (duiklocatie 79a)	51.52353	4.11126
+flauw	Flauwers (duiklocatie 38)	51.67608	3.84715
+gh	O'SCHELDE GORISHOEK	51.52499	4.0815
+ghdk	Gorishoekse dijk (duiklocatie 78 a/b)	51.52457	4.07677
+grb	Groene Boei (duiklocatie 65a)	51.52722	3.97766
+hfwk	Havenhoofd West/Kurkenol (duiklocatie 33a)	51.63204	3.88875
+irhe	Irenehoeve (duiklocatie 75)	51.60254	4.03192
+katsh	Katshoek (duiklocatie 57)	51.5642	3.89954
+kstl	Kistersnol (duiklocatie 36)	51.65769	3.87832
+lvnsd	Levensstrijd (duiklocatie 34)	51.64296	3.88929
+o11	Stroomlocatie boei O11-Z2 (duiklocatie 62 - Putti's Place)	51.54722	3.92967
+o13	Stroomlocatie boei O13	51.54375	3.93898
+o15	Stroomlocatie boei O15-SAS2	51.53462	3.9528
+oesp	Oesterputen (duiklocatie 53)	51.60544	3.79713
+pltn	Plompe Toren (duiklocatie 44)	51.68137	3.77267
+pw	Krammer Philipsdam West	51.66597	4.15046
+quack	Quaack (duiklocatie 74)	51.60483	4.03809
+rmptd	Roompot (duiklocatie)	51.60057	3.70003
+rpl1	Roggenplaat 1 (Suppletie Roggenplaat)	51.6655	3.78753
+rpl2	Roggenplaat 2 (Suppletie Roggenplaat)	51.66967	3.81912
+rpl3	Roggenplaat 3 (Suppletie Roggenplaat)	51.66437	3.82037
+rpl4	Roggenplaat 4 (Suppletie Roggenplaat)	51.65371	3.78084
+rpl5	Roggenplaat 5 (Suppletie Roggenplaat)	51.65625	3.79296
+rpl6	Roggenplaat 6 (Suppletie Roggenplaat)	51.65846	3.8152
+rpl7	Roggenplaat 7 (Suppletie Roggenplaat)	51.65673	3.83295
+sphn	Sophiahaven (duiklocatie 49)	51.59658	3.71961
+stald	St. Annaland (duiklocatie 73)	51.60978	4.10368
+ston	Stavenisse Oostnol (duiklocatie 76)	51.59903	4.0193
+strd	Strijenham (duiklocatie 79)	51.52102	4.14048
+stsgr	Stavenisse steiger (duiklocatie 77)	51.59603	4.00635
+stvbevp	Stortvak Bevelandpolder (duiklocatie 63)	51.5433	3.9327
+stvbusl	Stortvak Burghsluis	51.67164	3.75467
+stvk26	Stortvak 26 (OSK)	51.61024	3.69505
+stvk31	Stortvak 31 (OSK)	51.66001	3.73319
+stvschk	Stortvak Schelphoek (duiklocatie 42a/b)	51.6837	3.81639
+stvwemew	Stortvak Wemeldinge West (duiklocatie 64)	51.53098	3.96183
+stvzzee	Stortvak Zierikzee	51.63606	3.88847
+vlblt	Vuilnisbelt (duiklocatie 80)	51.52411	4.09361
+vlie	VLIETEPOLDER (duiklocatie 51)	51.59717	3.7522
+wdoo	Wemeldinge Oost (duiklocatie 70)	51.5212	4.00806
+zn	Zeelandbrug Noord	51.6269	3.90998
+znp1	Zeelandbrug pijler 1 (duiklocatie 32)	51.6287	3.91389
+znp2	Zeelandbrug pijler 2 (duiklocatie)	51.62828	3.91307
+znsn	Zonneschijn (duiklocatie 28)	51.6292	4.06568
+zobt	Zoeterbout (duiklocatie 26)	51.64428	4.09166
+zpmn	Zijpe Midden (duiklocatie 26/72)	51.64362	4.09472
+zubt	Zuidbout (duiklocatie 29)	51.61396	3.96122

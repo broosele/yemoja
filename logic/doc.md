@@ -1209,6 +1209,7 @@ To settle when we discuss architecture and features:
 
   | Calculator | Accuracy | Days | Turns of the tide |
   |---|---|---|---|
+  | Rijkswaterstaat Scaldis-Oost model | local forecast | thirteen days back to two ahead | found in the ten-minute curve, with the current's slacks |
   | Rijkswaterstaat gauge | measured | before today | found in the ten-minute curve |
   | Rijkswaterstaat gauge and forecast | local forecast | today and two days on | found in the ten-minute curve |
   | Rijkswaterstaat astronomical tide | local prediction | any the service has computed | the service's own, to the minute |
@@ -1259,12 +1260,41 @@ To settle when we discuss architecture and features:
   calculator here knows it. The corrections divers use for the Oosterschelde are somebody's work
   and are being asked for; they would arrive as a calculator of their own.
 
-  **There is no current to plot.** The service predicts none anywhere. It measures the stream at
-  seventy places, none of them inside the Oosterschelde: the nearest are off the coast and in the
-  mouth of the Maas.
+  **The current comes from a second service, at the dive site itself.** The WaterWebservices
+  predict no current. The data service behind Rijkswaterstaat's RWsOS viewer does: its Scaldis-Oost
+  model gives the current's speed and direction and the water level every ten minutes at
+  fifty-eight places in the Oosterschelde, most of them the numbered dive locations, from about two
+  weeks back to about forty hours ahead. The author pointed to it, through the viewer Duikspotter
+  links. It is the first calculator, and it ranks with the forecast, so where it covers a site and
+  a day it is the one offered. The nearest place within three kilometres in the same water answers,
+  `PLACE_REACH`, and of those only one with all three series: the level is what signs the current,
+  and Zeelandbrug pijler 2 has the current without it. The places ship as
+  [libraries/tides/scaldis-oost.txt](../libraries/tides/scaldis-oost.txt), written by
+  `tool/currentpoints.py`.
 
-  **The network is reached through one function**, `postJson`, which is the JDK's own connection on
-  a JVM and on Android and so takes no library. The browser build has none and never asks. A
+  Two things about it are weaker than the WaterWebservices. **It states no licence**: the viewer
+  carries a disclaimer of liability and says its figures are not for navigation, and nothing else.
+  Rijkswaterstaat's data is open as a rule, which is what its use rests on here. And **its interface
+  is the viewer's own and undocumented**, so a change to it makes the calculator answer that the
+  model has nothing, and the station's calculators still answer below it.
+
+  **The current is signed, flood positive.** The model gives a speed and a heading, and the
+  viewer plots the speed alone, so a turning tide reads as a dip to nought and back up whichever
+  way the water then runs. A tidal stream runs to and fro along one line, so each speed is
+  projected onto that line: the mean of the headings taken as axes, each angle doubled so a heading
+  and its opposite agree, weighted by speed so the wandering heading at slack counts for little.
+  The flood is the end of the line the water runs towards while the level rises. `signedFlows`.
+
+  **Slack is where the signed current crosses nought**, placed on a straight line between the
+  readings either side, and counted only once the current has run the other way by five
+  centimetres a second, `LEAST_FLOW`. A current that wavers about nought makes one slack, at its
+  last crossing. `slacksIn`. At the Zeelandbrug the model puts slack within about ten minutes of
+  high and low water, which is what the basin behind the barrier is known for; at the station
+  calculators the table still has no slacks.
+
+  **The network is reached through two functions**, `postJson` for the WaterWebservices and
+  `getJson` for the RWsOS service, which are the JDK's own connection on a JVM and on Android and so
+  take no library. The browser build has none and never asks. A
   calculator is handed the function, so every test hands it a recorded answer and none reaches the
   service.
 

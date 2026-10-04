@@ -3,6 +3,8 @@ package yemoja.logic
 import yemoja.data.Date
 import yemoja.data.Moment
 import yemoja.data.Time
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -451,5 +453,188 @@ class ForecastTest {
         val found = assertIs<Tidal.Found>(calculator.tides(BRIDGE_LATITUDE, BRIDGE_LONGITUDE, DAY))
         assertEquals("Further", found.tides.station)
         assertEquals(listOf("further", "further"), asked)
+    }
+}
+
+/** Two model places: one under the Zeelandbrug, one outside the storm surge barrier. */
+private val PLACES = """
+    znp1	Zeelandbrug pijler 1	51.6287	3.91389
+    OS4	Zeezijde Schaar	51.65588	3.69395
+""".trimIndent()
+
+/** The Oosterschelde and the sea beside it, as boxes split at the barrier: enough to tell the two places apart. */
+private val SPLIT = """
+    Inside	3.70 51.4 4.3 51.4 4.3 51.8 3.70 51.8
+    Outside	3.0 51.4 3.70 51.4 3.70 51.8 3.0 51.8
+""".trimIndent()
+
+/** One model event as the service writes it: a stamp in GMT and a value. */
+private fun event(stamp: String, value: Int): String = """{"timeStamp":"$stamp","value":$value}"""
+
+/** A whole answer holding [events]. */
+private fun events(vararg events: String): String =
+    """{"results":[{"location":{"properties":{"locationId":"znp1"}},"events":[${events.joinToString(",")}]}]}"""
+
+/** The model's answers by the series asked for, and nothing for any other. */
+private fun model(vararg answers: Pair<String, String>): (String) -> Posted = { url ->
+    answers.firstOrNull { (series, _) -> "observationTypeId=$series&" in url }?.let { Posted(200, it.second) }
+        ?: Posted(200, """{"results":[]}""")
+}
+
+/** Readings at ten-minute steps from 08:00 GMT, which is ten on the summer clock. */
+private fun stepped(vararg values: Int): Array<String> =
+    values.mapIndexed { at, value -> event("2026-10-03T08:${(at * 10).toString().padStart(2, '0')}:00Z", value) }
+        .toTypedArray()
+
+class ScaldisOostTest {
+
+    private fun calculator(get: (String) -> Posted): TideCalculator =
+        scaldisOostCalculator(placesOf(PLACES), watersOf(SPLIT), get)
+
+    @Test
+    fun `a site near a place in its own water is covered, and one across the barrier is not`() {
+        val model = calculator(model())
+        assertTrue(model.covers(51.63, 3.91))
+        // Eight kilometres north of Zeelandbrug pijler 1, further than the reach.
+        assertFalse(model.covers(51.70, 3.91))
+        // Beside the place outside the barrier, which stands in another water than the site.
+        assertFalse(model.covers(51.655, 3.705))
+    }
+
+    @Test
+    fun `the days are the two weeks back and the two ahead`() {
+        val model = calculator(model())
+        assertTrue(model.coversDay(DAY.plusDays(-MODEL_DAYS_BACK.toLong()), DAY))
+        assertFalse(model.coversDay(DAY.plusDays(-MODEL_DAYS_BACK - 1L), DAY))
+        assertTrue(model.coversDay(DAY.plusDays(MODEL_DAYS_AHEAD.toLong()), DAY))
+        assertFalse(model.coversDay(DAY.plusDays(MODEL_DAYS_AHEAD + 1L), DAY))
+    }
+
+    @Test
+    fun `the current is signed, flood positive, and slack is where it crosses nought`() {
+        // Running west at 30 cm/s while the water falls, turning, then east at 40 while it rises.
+        val found = assertIs<Tidal.Found>(
+            calculator(
+                model(
+                    "SG.1" to events(*stepped(30, 10, 10, 30, 40)),
+                    "SG.2" to events(*stepped(280, 280, 100, 100, 100)),
+                    "WT" to events(*stepped(-20, -30, -25, -10, 10)),
+                ),
+            ).tides(51.63, 3.91, DAY),
+        )
+        val tides = found.tides
+        assertEquals("Zeelandbrug pijler 1", tides.station)
+        assertEquals(listOf(-0.3, -0.1, 0.1, 0.3, 0.4), tides.flows.map { (it.speed * 100).roundToInt() / 100.0 })
+        assertEquals(Moment(DAY, Time(10, 0, 0)), tides.flows.first().at)
+        // Half-way between 10:10 at -0.1 and 10:20 at +0.1.
+        assertEquals(listOf(Slack(Moment(DAY, Time(10, 15, 0)), toFlood = true)), tides.slacks)
+        assertEquals(listOf(-0.2, -0.3, -0.25, -0.1, 0.1), tides.curve.map { it.height })
+    }
+
+    @Test
+    fun `a place with no level gives way to the next nearest, the level being what signs the current`() {
+        val places = placesOf("near\tNear\t51.6287\t3.91389\nnext\tNext\t51.629\t3.915\n")
+        val asked = ArrayList<String>()
+        val calculator = scaldisOostCalculator(places, watersOf(SPLIT)) { url ->
+            val place = if ("locationCode=near&" in url) "near" else "next"
+            asked += "$place ${url.substringAfter("observationTypeId=").substringBefore('&')}"
+            when {
+                "observationTypeId=SG.1&" in url -> Posted(200, events(*stepped(30, 10, 10, 30, 40)))
+                "observationTypeId=SG.2&" in url -> Posted(200, events(*stepped(280, 280, 100, 100, 100)))
+                place == "next" -> Posted(200, events(*stepped(-20, -30, -25, -10, 10)))
+                else -> Posted(200, """{"results":[]}""")
+            }
+        }
+        val found = assertIs<Tidal.Found>(calculator.tides(51.63, 3.91, DAY))
+        assertEquals("Next", found.tides.station)
+        assertEquals(listOf("near SG.1", "near SG.2", "near WT", "next SG.1", "next SG.2", "next WT"), asked)
+    }
+
+    @Test
+    fun `the period is asked in GMT, from the summer clock's midnight less the margin`() {
+        var asked = ""
+        calculator { url ->
+            asked = url
+            Posted(200, """{"results":[]}""")
+        }.tides(51.63, 3.91, DAY)
+        assertTrue("locationCode=znp1&" in asked, asked)
+        assertTrue("startTime=2026-10-02T20:00:00Z" in asked, asked)
+        assertTrue("endTime=2026-10-04T02:00:00Z" in asked, asked)
+    }
+
+    @Test
+    fun `a model with nothing for the day says so, and one out of reach is offline`() {
+        val none = assertIs<Tidal.None>(calculator(model()).tides(51.63, 3.91, DAY))
+        assertEquals("the Scaldis-Oost model has nothing for Zeelandbrug pijler 1 on 2026-10-03", none.reason)
+        val offline = calculator { throw IllegalStateException("no route to host") }.tides(51.63, 3.91, DAY)
+        assertEquals(Tidal.Offline("Rijkswaterstaat could not be reached: no route to host"), offline)
+    }
+}
+
+class SignedFlowsTest {
+
+    private fun at(minute: Int): Moment = Moment(DAY, Time(minute / 60, minute % 60, 0))
+
+    private fun readings(vararg values: Double): List<Reading> =
+        values.mapIndexed { index, value -> Reading(at(index * 10), value) }
+
+    @Test
+    fun `the flood is the way the water runs while it rises, whichever heading that is`() {
+        val speeds = readings(20.0, 20.0, 20.0, 20.0)
+        val north = readings(0.0, 0.0, 0.0, 0.0)
+        assertTrue(signedFlows(speeds, north, readings(0.0, 0.1, 0.2, 0.3)).all { it.speed > 0 })
+        assertTrue(signedFlows(speeds, north, readings(0.3, 0.2, 0.1, 0.0)).all { it.speed < 0 })
+    }
+
+    @Test
+    fun `a heading off the stream's line counts only for its part along it`() {
+        // The stream runs east and west; one reading heads north-east at 20 cm/s.
+        val flows = signedFlows(readings(40.0, 20.0, 40.0), readings(90.0, 45.0, 270.0), readings(0.0, 0.1, 0.0))
+        assertTrue(abs(flows[1].speed) in 0.1..0.19, "${flows[1].speed}")
+    }
+
+    @Test
+    fun `a speed with no direction at its moment is left out`() {
+        assertEquals(1, signedFlows(readings(20.0, 20.0), readings(90.0), readings(0.0, 0.1)).size)
+    }
+}
+
+class SlacksInTest {
+
+    private fun flows(vararg speeds: Double): List<Flow> =
+        speeds.mapIndexed { index, speed -> Flow(Moment(DAY, Time(10, 0, 0)).plusSeconds(index * 600L), speed) }
+
+    @Test
+    fun `each turn from one way to the other is a slack, at the crossing`() {
+        assertEquals(
+            listOf(
+                Slack(Moment(DAY, Time(10, 15, 0)), toFlood = false),
+                Slack(Moment(DAY, Time(10, 45, 0)), toFlood = true),
+            ),
+            slacksIn(flows(0.3, 0.1, -0.1, -0.3, -0.1, 0.1, 0.3)),
+        )
+    }
+
+    @Test
+    fun `wavering about nought is one slack, at the last crossing`() {
+        // Ebb, a flicker across nought and back, then flood: one turn, after the flicker.
+        assertEquals(
+            // A sixth of the way from 10:30 at -0.02 to 10:40 at +0.1.
+            listOf(Slack(Moment(DAY, Time(10, 31, 40)), toFlood = true)),
+            slacksIn(flows(-0.3, -0.02, 0.02, -0.02, 0.1, 0.3)),
+        )
+    }
+
+    @Test
+    fun `a current that dips and keeps its way has no slack`() {
+        assertEquals(emptyList(), slacksIn(flows(0.3, 0.1, 0.02, 0.1, 0.3)))
+    }
+}
+
+class GmtStampTest {
+
+    @Test
+    fun `a stamp ending in Z is GMT`() {
+        assertEquals(Moment(Date(2026, 10, 3), Time(8, 0, 0)).epochSecond, instantOf("2026-10-03T08:00:00Z"))
     }
 }

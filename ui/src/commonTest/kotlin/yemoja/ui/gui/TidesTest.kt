@@ -7,6 +7,7 @@ import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import yemoja.logic.Accuracy
 import yemoja.logic.Extreme
+import yemoja.logic.Slack
 import yemoja.logic.Tidal
 import yemoja.logic.TideCalculator
 import yemoja.logic.Types
@@ -115,6 +116,33 @@ class TidesTest {
             "Measured until 19:40, forecast after that. The plot draws the forecast dashed.",
             measuredSaid(Moment(TODAY, Time(19, 40, 0))),
         )
+    }
+
+    @Test
+    fun `a slack takes its place among the turns of the water, and has no height`() {
+        val rows = rowsOf(
+            listOf(
+                Extreme(Moment(TODAY, Time(2, 21, 0)), -1.32, false),
+                Extreme(Moment(TODAY, Time(8, 42, 0)), 1.46, true),
+            ),
+            listOf(Slack(Moment(TODAY, Time(3, 5, 0)), toFlood = true), Slack(Moment(TODAY, Time(9, 30, 0)), toFlood = false)),
+        )
+        assertEquals(
+            listOf(
+                TideRow("Low water", "02:21", "−1.32", ""),
+                TideRow("Flood begins", "03:05", "", ""),
+                TideRow("High water", "08:42", "+1.46", "2.78"),
+                TideRow("Ebb begins", "09:30", "", ""),
+            ),
+            rows,
+        )
+    }
+
+    @Test
+    fun `a distance is given to a tenth under ten kilometres and whole above`() {
+        assertEquals("0.2", distanceOf(0.17))
+        assertEquals("9.4", distanceOf(9.37))
+        assertEquals("12", distanceOf(12.4))
     }
 
     @Test

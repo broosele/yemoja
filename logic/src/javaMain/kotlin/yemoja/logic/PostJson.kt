@@ -28,6 +28,22 @@ actual fun postJson(url: String, body: String): Posted {
     }
 }
 
+/** The same connection asked with a GET, for a service that takes its question in the address. */
+actual fun getJson(url: String): Posted {
+    val connection = URI(url).toURL().openConnection() as HttpURLConnection
+    try {
+        connection.connectTimeout = CONNECT_MILLIS
+        connection.readTimeout = READ_MILLIS
+        connection.setRequestProperty("Accept", "application/json")
+        val status = connection.responseCode
+        val stream = if (status < HttpURLConnection.HTTP_BAD_REQUEST) connection.inputStream else connection.errorStream
+        val answer = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+        return Posted(status, answer)
+    } finally {
+        connection.disconnect()
+    }
+}
+
 /** How long to wait for the service to answer the knock, in milliseconds. */
 private const val CONNECT_MILLIS = 10_000
 

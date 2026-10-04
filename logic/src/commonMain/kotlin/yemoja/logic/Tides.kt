@@ -7,7 +7,12 @@ import yemoja.data.Time
 import yemoja.data.ValueFormatException
 import yemoja.data.json.Json
 import yemoja.data.json.JsonFormatException
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
+import kotlin.math.sin
 
 /*
  * The tide at a dive site on a day: when the water turns, how high it stands, and the curve
@@ -53,6 +58,16 @@ data class Extreme(
 data class Reading(val at: Moment, val height: Double)
 
 /**
+ * Flow is one point of a day's current: when, and how fast the water ran, in metres a second.
+ *
+ * Signed: positive is the flood, running in as the water rises, and negative the ebb.
+ */
+data class Flow(val at: Moment, val speed: Double)
+
+/** Slack is a moment the current stops and turns, and which way it turns to. */
+data class Slack(val at: Moment, val toFlood: Boolean)
+
+/**
  * Tides is what a calculator answers for a site and a day.
  *
  * The extremes are the day's, in order; the curve is the same day at the calculator's own interval,
@@ -62,6 +77,9 @@ data class Reading(val at: Moment, val height: Double)
  *
  * [measuredUntil] is the last moment the curve is a gauge's reading, where the rest of it is a
  * forecast. It is absent where the curve is of one kind throughout.
+ *
+ * [flows] and [slacks] are the current at the place answering, and empty where a calculator knows
+ * only the water's height.
  *
  * Immutable.
  */
@@ -73,9 +91,13 @@ class Tides(
     extremes: List<Extreme>,
     curve: List<Reading>,
     val measuredUntil: Moment? = null,
+    flows: List<Flow> = emptyList(),
+    slacks: List<Slack> = emptyList(),
 ) {
     val extremes: List<Extreme> = extremes.toList()
     val curve: List<Reading> = curve.toList()
+    val flows: List<Flow> = flows.toList()
+    val slacks: List<Slack> = slacks.toList()
 }
 
 /** Tidal is what asking a calculator came to. */
@@ -196,17 +218,20 @@ class Posted(val status: Int, val body: String)
  */
 expect fun postJson(url: String, body: String): Posted
 
+/** Asks [url] with a GET and answers with what came back, or throws where nothing did. Per platform, as [postJson] is. */
+expect fun getJson(url: String): Posted
+
 /**
  * Every tide calculator the application has, read from the library's own files, which [text]
  * gives whole by the path they are bundled under.
  *
  * The one place a front end asks, so that a calculator added here reaches every one of them.
  */
-fun tideCalculators(text: (path: String) -> String): List<TideCalculator> =
-    rijkswaterstaatCalculators(
-        stationsOf(text("libraries/tides/rijkswaterstaat.txt")),
-        watersOf(text("libraries/tides/waters.txt")),
-    )
+fun tideCalculators(text: (path: String) -> String): List<TideCalculator> {
+    val waters = watersOf(text("libraries/tides/waters.txt"))
+    return listOf(scaldisOostCalculator(placesOf(text("libraries/tides/scaldis-oost.txt")), waters)) +
+        rijkswaterstaatCalculators(stationsOf(text("libraries/tides/rijkswaterstaat.txt")), waters)
+}
 
 /**
  * The three calculators reading the Rijkswaterstaat WaterWebservices, from [stations] as
@@ -614,8 +639,9 @@ fun turnsIn(curve: List<Reading>, least: Double = LEAST_TURN): List<Extreme> {
  * The instant [written] names, as seconds since the epoch, or none where it is not a time with
  * its offset.
  *
- * The service writes `2026-10-03T01:21:00.000+01:00`: a date, a time to the millisecond, and how
- * far that clock stood ahead of GMT.
+ * The WaterWebservices write `2026-10-03T01:21:00.000+01:00`: a date, a time to the millisecond,
+ * and how far that clock stood ahead of GMT. The RWsOS service writes `2026-10-03T00:00:00Z`,
+ * which is GMT itself.
  */
 fun instantOf(written: String): Long? {
     val match = STAMPED.matchEntire(written.trim()) ?: return null
@@ -627,12 +653,14 @@ fun instantOf(written: String): Long? {
     } catch (refused: ValueFormatException) {
         return null
     }
+    // A stamp ending in Z is GMT, and has no offset to take off.
+    if (sign.isEmpty()) return local.epochSecond
     val offset = (hours.toLong() * Time.SECONDS_IN_HOUR + minutes.toLong() * Time.SECONDS_IN_MINUTE) *
         (if (sign == "-") -1 else 1)
     return local.epochSecond - offset
 }
 
-private val STAMPED = Regex("""(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d+)?([+-])(\d{2}):(\d{2})""")
+private val STAMPED = Regex("""(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:([+-])(\d{2}):(\d{2})|Z)""")
 
 /**
  * The instant [epochSecond] on the Dutch clock, which is MET in winter and an hour ahead in summer.
@@ -662,3 +690,269 @@ private const val OCTOBER = 10
 
 /** [days] later, carrying the month and the year as far as they have to go. */
 fun Date.plusDays(days: Long): Date = Date.ofEpochDay(epochDay + days)
+
+// --- The current, from the Scaldis-Oost model.
+
+/** Place is one point Rijkswaterstaat's Scaldis-Oost model gives the current at, as libraries/tides/scaldis-oost.txt lists it. */
+data class Place(val code: String, val name: String, val latitude: Double, val longitude: Double)
+
+/** The places in [text], which is the library file, one a line, four cells a line. */
+fun placesOf(text: String): List<Place> = text.lineSequence()
+    .filter { it.isNotBlank() }
+    .map { line ->
+        val cells = line.split('\t')
+        require(cells.size == 4) { "a place should have four cells, but this line has ${cells.size}: $line" }
+        Place(cells[0], cells[1], cells[2].toDouble(), cells[3].toDouble())
+    }
+    .toList()
+
+/**
+ * The calculator reading Rijkswaterstaat's Scaldis-Oost model, from [places] as
+ * libraries/tides/scaldis-oost.txt lists them, [waters] as libraries/tides/waters.txt outlines them,
+ * and [get] as the way to the service. `LOGIC-44`.
+ */
+fun scaldisOostCalculator(
+    places: List<Place>,
+    waters: List<Water>,
+    get: (url: String) -> Posted = ::getJson,
+): TideCalculator = ScaldisOost(places, waters, get)
+
+/** The furthest a model place may be from a site and still be the one answering for it, in metres. */
+const val PLACE_REACH = 3_000.0
+
+/** How many places are asked, nearest first, before a day is said to have nothing. */
+private const val PLACES_TRIED = 3
+
+/** How many days before today the model's series reaches. */
+const val MODEL_DAYS_BACK = 13
+
+/** How many days after today the model's series reaches, the last of them in part. */
+const val MODEL_DAYS_AHEAD = 2
+
+/** The least the current must run either way for its turning to count as slack, in metres a second. */
+const val LEAST_FLOW = 0.05
+
+/**
+ * ScaldisOost is the current and the water level the Scaldis-Oost model gives at a place in the
+ * Oosterschelde, which is the dive site itself rather than a station kilometres off.
+ *
+ * Model output with the weather in it, every ten minutes, from about two weeks back to about forty
+ * hours ahead. It ranks with the forecast and is listed before the station's, so where both cover
+ * a site it is the one offered first. The service is the one behind the RWsOS viewer, which states
+ * no licence and documents no interface. `LOGIC-44`.
+ */
+private class ScaldisOost(
+    private val places: List<Place>,
+    private val waters: List<Water>,
+    private val get: (url: String) -> Posted,
+) : TideCalculator {
+    override val name: String = "Rijkswaterstaat Scaldis-Oost model"
+    override val accuracy: Accuracy = Accuracy.FORECAST
+    override val needsNetwork: Boolean = true
+
+    /** The places in the water a position lies in, within reach, the nearest first, and how far each is. */
+    private fun near(latitude: Double, longitude: Double): List<Pair<Place, Double>> {
+        val water = waters.firstOrNull { it.holds(latitude, longitude) } ?: return emptyList()
+        return places.filter { water.holds(it.latitude, it.longitude) }
+            .map { it to metresApart(latitude, longitude, it.latitude, it.longitude) }
+            .filter { (_, metres) -> metres <= PLACE_REACH }
+            .sortedBy { (_, metres) -> metres }
+    }
+
+    override fun covers(latitude: Double, longitude: Double): Boolean = near(latitude, longitude).isNotEmpty()
+
+    override fun coversDay(day: Date, today: Date): Boolean =
+        today.daysUntil(day) in -MODEL_DAYS_BACK..MODEL_DAYS_AHEAD
+
+    /**
+     * The tide and the current at the nearest place holding all three series, [PLACES_TRIED] at most.
+     *
+     * **A place with no level is passed over**, because the level is what tells the flood from the
+     * ebb: without it the sign of the current is a guess. Zeelandbrug pijler 2 has the current and
+     * no level, and pijler 1 a hundred metres off has all three. What is said where none of them
+     * answers is what the nearest said.
+     */
+    override fun tides(latitude: Double, longitude: Double, day: Date): Tidal {
+        val near = near(latitude, longitude).take(PLACES_TRIED)
+        var first: Tidal.None? = null
+        for ((place, metres) in near) {
+            when (val read = at(place, metres, day)) {
+                is Tidal.None -> if (first == null) first = read
+                else -> return read
+            }
+        }
+        return first ?: Tidal.None(
+            "no model place within ${(PLACE_REACH / METRES_IN_KILOMETRE).roundToInt()} km in the same water",
+        )
+    }
+
+    /** The tide and the current at one place, or why there are none. */
+    private fun at(place: Place, metres: Double, day: Date): Tidal {
+        val read = listOf(SPEED, DIRECTION, LEVEL).map { kind ->
+            when (val answer = series(place, day, kind)) {
+                is Series.Offline -> return Tidal.Offline(answer.reason)
+                is Series.None -> return Tidal.None(answer.reason)
+                is Series.Read -> answer.readings
+            }
+        }
+        val (speeds, directions) = read
+        val levels = read[2].map { Reading(it.at, it.height / CENTIMETRES_IN_METRE) }
+        val flows = signedFlows(speeds, directions, levels)
+        return Tidal.Found(
+            Tides(
+                station = place.name,
+                kilometres = metres / METRES_IN_KILOMETRE,
+                datum = DATUM,
+                clock = DUTCH_CLOCK,
+                extremes = turnsIn(levels).filter { it.at.date == day },
+                curve = levels.filter { it.at.date == day },
+                flows = flows.filter { it.at.date == day },
+                slacks = slacksIn(flows).filter { it.at.date == day },
+            ),
+        )
+    }
+
+    /**
+     * One of the model's series at [place] around the Dutch calendar day [day], on the Dutch clock,
+     * or why there is none.
+     *
+     * Asked in GMT with [MARGIN] either side of the day as the summer clock has it, which covers the
+     * winter clock's day too, so a slack at midnight has the current either side of it.
+     */
+    private fun series(place: Place, day: Date, series: String): Series {
+        val from = Moment(day, Time(0, 0, 0)).plusSeconds(-SUMMER_AHEAD - MARGIN)
+        val until = Moment(day.plusDays(1), Time(0, 0, 0)).plusSeconds(MARGIN)
+        val url = "$TIMESERIES?locationCode=${place.code}&sourceName=$SOURCE&observationTypeId=$series" +
+            "&startTime=${gmt(from)}&endTime=${gmt(until)}"
+        val got = try {
+            get(url)
+        } catch (unreachable: Exception) {
+            return Series.Offline(
+                "Rijkswaterstaat could not be reached: ${unreachable.message ?: unreachable::class.simpleName}",
+            )
+        }
+        val nothing = "the Scaldis-Oost model has nothing for ${place.name} on $day"
+        if (got.status != OK || got.body.isBlank()) return Series.None(nothing)
+        val read = try {
+            Json.parse(got.body)
+        } catch (refused: JsonFormatException) {
+            return Series.None("the Scaldis-Oost answer for ${place.name} could not be read: ${refused.message}")
+        }
+        val results = ((read as? Stored.Members)?.members?.get("results") as? Stored.Elements)?.elements.orEmpty()
+        val events = results.flatMap { result ->
+            ((result as? Stored.Members)?.members?.get("events") as? Stored.Elements)?.elements.orEmpty()
+        }
+        val readings = events.mapNotNull(::readingOf).sortedBy { it.at }
+        if (readings.none { it.at.date == day }) return Series.None(nothing)
+        return Series.Read(readings)
+    }
+
+    /** One event as a reading on the Dutch clock, its value as the service gives it, or none where it has no value. */
+    private fun readingOf(event: Stored): Reading? {
+        val members = (event as? Stored.Members)?.members ?: return null
+        val stamp = (members["timeStamp"] as? Stored.Leaf)?.value as? String ?: return null
+        val value = when (val held = (members["value"] as? Stored.Leaf)?.value) {
+            is Double -> held
+            is Long -> held.toDouble()
+            else -> return null
+        }
+        return Reading(dutchClock(instantOf(stamp) ?: return null), value)
+    }
+
+    /** [moment] in GMT, as the service wants a period written. */
+    private fun gmt(moment: Moment): String = "${moment.date}T${moment.time}Z"
+}
+
+private const val TIMESERIES = "https://rwsos.rws.nl/wb-api/dd/2.0/timeseries"
+
+/** The model's own source in the service. */
+private const val SOURCE = "SOF_6"
+
+/** The model's current speed, in centimetres a second. */
+private const val SPEED = "SG.1"
+
+/** The direction the model's current runs towards, in degrees from north. */
+private const val DIRECTION = "SG.2"
+
+/** The model's water level, in centimetres against NAP. */
+private const val LEVEL = "WT"
+
+/** How far the summer clock stands ahead of GMT, in seconds. */
+private const val SUMMER_AHEAD = 2L * Time.SECONDS_IN_HOUR
+
+private const val DEGREES_IN_HALF_TURN = 180.0
+
+/**
+ * The current as a signed speed in metres a second, flood positive, from a speed in centimetres a
+ * second and the direction it runs towards, with [levels] to tell the flood from the ebb.
+ *
+ * **A speed alone has no sign**, and the RWsOS viewer plots it so: a turning tide reads as a dip
+ * to nought and back up, the same either way. A tidal stream runs to and fro along one line, so
+ * each speed is projected onto that line and the projection carries the sign. The line is the mean
+ * of the directions taken as axes, each angle doubled so that a heading and its opposite agree,
+ * and weighted by speed so the wandering heading at slack counts for little. The flood is the end
+ * of the line the water runs towards while it rises.
+ *
+ * A speed with no direction at its moment is left out. Where no level is given the sign follows
+ * the line as computed, which is one way or the other and not known to be the flood, so the
+ * calculator asks only a place with a level.
+ */
+internal fun signedFlows(speeds: List<Reading>, directions: List<Reading>, levels: List<Reading>): List<Flow> {
+    val headings = directions.associate { it.at to it.height }
+    val paired = speeds.mapNotNull { speed -> headings[speed.at]?.let { Triple(speed.at, speed.height, it) } }
+    if (paired.isEmpty()) return emptyList()
+    var across = 0.0
+    var along = 0.0
+    for ((_, speed, heading) in paired) {
+        val doubled = 2 * heading * PI / DEGREES_IN_HALF_TURN
+        across += speed * cos(doubled)
+        along += speed * sin(doubled)
+    }
+    val axis = atan2(along, across) / 2
+    val projected = paired.map { (at, speed, heading) ->
+        Flow(at, speed * cos(heading * PI / DEGREES_IN_HALF_TURN - axis) / CENTIMETRES_IN_METRE)
+    }
+    // How far the water rose at each moment, from the readings either side of it.
+    val rise = HashMap<Moment, Double>()
+    for (index in levels.indices) {
+        val before = levels[maxOf(index - 1, 0)]
+        val after = levels[minOf(index + 1, levels.size - 1)]
+        rise[levels[index].at] = after.height - before.height
+    }
+    val agreement = projected.sumOf { flow -> flow.speed * (rise[flow.at] ?: 0.0) }
+    return if (agreement < 0) projected.map { it.copy(speed = -it.speed) } else projected
+}
+
+/**
+ * The slacks in [flows]: each moment the current crosses nought on its way from running one way by
+ * at least [least] to running the other way by as much.
+ *
+ * The crossing is placed on a straight line drawn between the readings either side of it. A
+ * current that wavers about nought without running either way by [least] makes one slack, at the
+ * last crossing before it sets in its new direction.
+ */
+fun slacksIn(flows: List<Flow>, least: Double = LEAST_FLOW): List<Slack> {
+    val slacks = ArrayList<Slack>()
+    var flooding: Boolean? = null
+    var crossing: Moment? = null
+    for (index in flows.indices) {
+        val flow = flows[index]
+        if (index > 0) {
+            val before = flows[index - 1]
+            if ((before.speed < 0) != (flow.speed < 0)) {
+                val part = before.speed / (before.speed - flow.speed)
+                crossing = before.at.plusSeconds((before.at.secondsUntil(flow.at) * part).roundToLong())
+            }
+        }
+        val now = when {
+            flow.speed >= least -> true
+            flow.speed <= -least -> false
+            else -> continue
+        }
+        val crossed = crossing
+        if (flooding != null && now != flooding && crossed != null) slacks += Slack(crossed, toFlood = now)
+        flooding = now
+        crossing = null
+    }
+    return slacks
+}
