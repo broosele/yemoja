@@ -160,12 +160,26 @@ object Uddf {
         environmentOf(dive, said)?.let { fields["environment"] = it }
         gearOf(dive, said, ours)?.let { fields["gear"] = it }
         detailsOf(dive, fields, trips, linked[Types.OPERATOR]?.firstOrNull())
-        profileOf(dive, keysOf(dive, mixes.keys), tanksOf(dive))?.let { fields["profiles"] = it }
-        gasesOf(dive, ours, mixes)?.let { fields["gas_sources"] = it }
+        val profiles = profileOf(dive, keysOf(dive, mixes.keys), tanksOf(dive))
+        val gases = gasesOf(dive, ours, mixes)
+        // A recording keeps its own gases, and the dive reads them from it. A dive with no
+        // recording keeps them itself, as the user's. `RECON-7`.
+        if (profiles != null) {
+            fields["profiles"] = gases?.let { withSources(profiles, it) } ?: profiles
+        } else {
+            gases?.let { fields["gas_sources"] = it }
+        }
         return fields
     }
 
     private val SAMPLES_APART = setOf(SAMPLES)
+
+    /** Every profile in [profiles] given [sources] as its own cylinders. */
+    private fun withSources(profiles: Stored.Members, sources: Stored): Stored.Members =
+        Stored.Members(profiles.members.mapValues { (_, profile) ->
+            val fields = (profile as? Stored.Members)?.members ?: return@mapValues profile
+            Stored.Members(fields + ("gas_sources" to sources))
+        })
 
     /**
      * What the links before a dive point at, by the type of what each resolves to.

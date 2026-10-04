@@ -242,7 +242,20 @@ class Universe(
      *
      * Nothing is announced. Whatever is showing the logbook asks again. `DATA-6`.
      */
-    fun change(operation: Operation, vararg changes: Change): Outcome {
+    fun change(operation: Operation, vararg asked: Change): Outcome {
+        // An edit to a recording's cylinders is made on the dive instead. `RECON-7`.
+        val plans = asked.filterIsInstance<Change.Write>()
+            .filter { it.field == "planned" && ((it.given as? Stored.Leaf)?.value ?: it.given) == true }
+            .map { it.item }
+        val changes = ArrayList<Change>()
+        for (change in asked) {
+            if (change !is Change.Write) {
+                changes += change
+                continue
+            }
+            refusedCylinders(change, plans)?.let { return Outcome.Refused(it) }
+            changes += overriding(change, plans)
+        }
         val writes = ArrayList<Pair<Change.Write, Result<Any>>>()
         val adds = ArrayList<Pair<String, ReferenceableItem>>()
         for (change in changes) {
@@ -279,7 +292,7 @@ class Universe(
         }
         // A dive given its second profile names the one it had as primary, in the same change.
         // Added to what the change did rather than done beside it, so a journal records it too.
-        val done = ArrayList<Change>(changes.asList())
+        val done = ArrayList<Change>(changes)
         val written = writes.map { (change, _) -> change.item to change.field }.toSet()
         for ((change, made) in writes.toList()) {
             val kept = primaryKeptBy(change, made, written) ?: continue

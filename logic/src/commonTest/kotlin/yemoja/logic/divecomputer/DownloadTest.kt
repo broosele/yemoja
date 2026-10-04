@@ -3,12 +3,14 @@ package yemoja.logic.divecomputer
 import yemoja.data.Date
 import yemoja.data.Element
 import yemoja.data.Item
+import yemoja.data.ItemWriter
 import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
 import yemoja.data.Reference
 import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Time
+import yemoja.data.Units
 import yemoja.logic.Types
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -234,6 +236,14 @@ class DownloadedGasTest {
     fun `a tank and the mix it carried are one gas source`() {
         // Two arrays there, one collection here: a gas and its cylinder are one thing. `LOGIC-12`.
         assertEquals(listOf("tank_1", "tank_2"), keyed(gassed, "gas_sources"))
+    }
+
+    @Test
+    fun `the gas sources are the recording's own, and the dive's are read from it`() {
+        val written = ItemWriter.write(gassed, Units.DEFAULT).members
+        assertNull(written["gas_sources"], "the dive writes none of its own")
+        val profile = (gassed.keyed<OwnedItem>("profiles") as Result.Usable).value.values.single()
+        assertEquals(listOf("tank_1", "tank_2"), keyed((profile as Element.Usable).value, "gas_sources"))
     }
 
     @Test

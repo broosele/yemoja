@@ -185,7 +185,11 @@ All three can be corrected where the calculation is wrong.
   below.
 - `profiles` (keyed owned items) — the depth records through the dive, one of them the
   primary.
-- `gas_sources` (keyed owned items) — what you breathed from.
+- `gas_sources` (keyed owned items, derived) — what you breathed from. Taken from the primary
+  profile, which keeps the cylinders its computer reported. Write the dive's own to correct them,
+  to name the cylinder you own or to say what each was for: editing one in Yemoja copies them
+  all onto the dive with your change, and from then on they are yours rather than the
+  recording's. A download never writes them, so a second computer's recording leaves them alone.
 - `name` (text, derived) — the dive's date and its number within that day, as
   `2026-02-23#0`. This is what a dive is listed and linked as.
 - `planned` (true or false, derived) — whether this dive is still ahead of you. True where the
@@ -435,16 +439,15 @@ that is the only record of it.
   **Write it on a plan to say which earlier plan it assumes.** Two plans for the morning are two
   things that might happen, so a plan for the afternoon says which of them it follows, and a chain
   of plans sits beside the chain of dives you actually made.
-- `gas_sources` (keyed owned items) — the cylinders this run uses, where they are its own rather
-  than the dive's.
+- `gas_sources` (keyed owned items) — the cylinders this run uses.
 
-  **A plan keeps its own, and a recording never does.** One dive was breathed once however many
-  computers watched it, so every recording shares the dive's; but two plans for the same dive
-  are free to assume different mixes, different fills and different cylinders, and each keeps
-  what it assumes.
+  **Each run keeps its own.** A recording keeps what its computer reported, so two computers on
+  one dive each keep theirs and neither overwrites the other; a plan keeps what it assumes, so two
+  plans for the same dive are free to assume different mixes, fills and cylinders. A recording's
+  are what its computer said and are not edited: a correction goes on the dive's own instead.
 
-  A profile that keeps none names the dive's, which is what `gas_switches` and `pressures` do on
-  every recording. A profile that keeps its own names those instead, through the same fields.
+  `gas_switches` and `pressures` name the run's own. A profile that keeps none names the dive's,
+  which is how a dive logged before recordings kept their own still reads.
 
 **What the planner was set to.** A plan saved from the planner keeps the settings it was made
 under and the lines you typed, so opening it again gives back the plan you saved rather than one
@@ -535,8 +538,9 @@ One entry for each cylinder you breathed from on the dive, so a dive on several 
 keeps them apart. They are not in any order of their own: which you went in on is in the
 profile's `gas_switches`, not in where the entry happens to sit.
 
-A plan keeps entries of the same shape for the cylinders it assumes, under its own
-`gas_sources`. Everything below is written the same way there.
+Each profile keeps entries of the same shape under its own `gas_sources`: a recording for the
+cylinders its computer reported, a plan for the ones it assumes. Everything below is written the
+same way there.
 
 - `gas_type` (gas) — what was in it: `AIR`, `EAN32`, `TMX18/35`.
 - `start_pressure` (number) — what the gauge read as you went in.

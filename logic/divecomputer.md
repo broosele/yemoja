@@ -286,8 +286,8 @@ Decided and not built, or built and not proven. Each is here rather than in some
   being quicker is consistent with their asking. Whether it is worth reaching past Kable to the
   platform for this is not decided. The window shows how far a read has got and carries on
   meanwhile, `GUI-52`; the terminal's silence is `TUI-8`'s.
-- **A second computer's dive is a second profile, merged through the review.** It writes none
-  of the dive's fields and its gases name the dive's cylinders by mix. `RECON-7`.
+- **A second computer's dive is a second profile, merged through the review.** It keeps its own
+  cylinders and fills only the dive fields left empty. `RECON-7`.
 - **A link that drops keeps what it got.** The second session lost the connection after fifteen
   minutes and seventy-two dives, for no reason either side reported; the seventy-two were handed
   over. What was not got cannot be fetched by resuming, because a device counts from its newest
@@ -308,15 +308,11 @@ Decided and not built, or built and not proven. Each is here rather than in some
   hands the serial over as a decimal number, and nothing has yet compared that number with what
   a Perdix prints on its screen. The comparison reads a hexadecimal spelling as its number, so
   either way round should match; whether it does is the next download's to say.
-- **A re-download overwrites a correction.** Applying lays the arriving dive over the held one
-  member by member, so buddies, site, rating and notes survive, and the visibility survives the
-  environment. `RECON-6`. A second computer's recording writes nothing but its profile, `RECON-7`. A field the
-  computer reports *and* the user has corrected does not survive: a max depth fixed by hand is
-  written over without a word, and a profile arriving under the key already held has its
-  series replaced. That is the collision `data/json/requirements.md` describes and
-  [reconciliation.md](reconciliation.md) records as not built. And the gas sources land beside
-  the held ones under their own keys rather than onto them, since nothing says which is which,
-  so a re-download doubles them.
+- **A re-download replaces its own recording.** Its profile is laid over the one the same
+  computer gave before, member by member, so its series and its cylinders are the new download's
+  and a correction made inside that recording does not survive. Nothing the dive holds is
+  changed: a recording fills only the dive fields left empty, so a max depth or a cylinder
+  corrected on the dive stays. `RECON-6`, `RECON-7`.
 - **A logbook resumes only through a serial its gear items carry.** A profile that names a gear
   item by hand is found through that item's serial, so the item must have one. Until it does,
   the resume lookup finds no chain for the device and the next download fetches everything

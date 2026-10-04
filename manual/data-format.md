@@ -338,8 +338,8 @@ after the field.
 
   Which list is the one that field names, and the nearest of that name: the item you are
   reading where it keeps one, and the item holding it otherwise. So a recording's gas
-  switches name the dive's cylinders, because a recording keeps none of its own, and a plan
-  that keeps its own names those.
+  switches name its own cylinders, and one that keeps none, as in a logbook written before
+  recordings kept their own, names the dive's.
 
   **The two markers join where a field reaches into another item**, and it says so where it
   does: `"@2026-09-20#0*b"` is the entry keyed `b` inside that dive. The `@` half finds the

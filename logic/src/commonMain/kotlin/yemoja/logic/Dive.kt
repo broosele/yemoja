@@ -218,7 +218,7 @@ private val RUNTIME_LINE = ItemDescription(
  *
  * Absent so far: nothing of its own.
  */
-private val PROFILE = ItemDescription(
+internal val PROFILE = ItemDescription(
     "profile",
     listOf(
         // Whether the series below are what is intended rather than what happened. Absent is a
@@ -359,9 +359,8 @@ private val PROFILE = ItemDescription(
             targetType = "dive",
             role = Role.Overrideable(::profilesPrevious),
         ),
-        // A plan's own cylinders, which its switches and its pressures then name instead of the
-        // dive's. `JSON-19`. A recording keeps none: one dive was breathed once, however many
-        // computers watched it.
+        // The run's own cylinders, which its switches and its pressures name. A plan keeps what it
+        // assumes and a recording what its computer said. `JSON-19`, `RECON-7`.
         OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
         // What the planner was set to when it made a plan, so a plan opened again is the plan that
         // was saved. A setting a new plan starts from is each name with `default_` before it. The
@@ -650,7 +649,13 @@ internal val DIVE: ItemDescription = ItemDescription(
         OwnedItemDescription("environment", ENVIRONMENT),
         OwnedItemDescription("gear", DIVE_GEAR),
         OwnedItemDescription("profiles", PROFILE, cardinality = Cardinality.KEYED),
-        OwnedItemDescription("gas_sources", GAS_SOURCE, cardinality = Cardinality.KEYED),
+        // The primary profile's cylinders, unless the user wrote the dive's own. `RECON-7`.
+        OwnedItemDescription(
+            "gas_sources",
+            GAS_SOURCE,
+            cardinality = Cardinality.KEYED,
+            role = Role.Overrideable(::divesSources),
+        ),
         // The id, which is what a dive is listed and linked as. Not correctable: writing
         // one would be renaming the dive, which the Universe does with its references.
         TextDescription("name", role = Role.Derived(::divesId)),

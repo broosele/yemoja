@@ -174,8 +174,9 @@ sealed class Item(
      * The item a key reference into [collection] names an entry of: this one where it holds any,
      * and its owner otherwise.
      *
-     * A recording's `gas_switches` name the dive's gas sources, because a recording keeps none of
-     * its own. One that keeps its own names those instead, and the same field reads both.
+     * A profile's `gas_switches` name its own gas sources where it keeps any, and the dive's where
+     * it keeps none, as a dive logged before recordings kept their own does. The same field reads
+     * both.
      *
      * Where nothing from here outwards declares the collection, null.
      */

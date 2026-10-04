@@ -214,8 +214,8 @@ computer knows nothing about buddies, and re-downloading a dive must not take th
 That is why applying writes field by field rather than replacing the item, and why a field
 that is itself a collection — the profiles, the gas sources, the environment — is laid over
 the one held member by member rather than written in its place, so the visibility a computer
-never knew survives it. `RECON-6`. A second computer's recording is narrower still: its profile
-and nothing else, `RECON-7`.
+never knew survives it. `RECON-6`. A recording landing on a dive that already has one is
+narrower still: its own profile, and only the dive fields left empty, `RECON-7`.
 
 **Something else** is rare and real: two logbooks can each mint `north_sea`, one for a
 region and one for a person. Nothing is written for one, since giving it another id would
@@ -315,8 +315,8 @@ columns mapped by the user rather than guessed.
 ## Settled
 
 - **RECON-7 — What lands when a second computer's dive meets one already logged.** *Settled:*
-  **a second profile, and nothing else**, applied by the review as a rule rather than asked, at
-  the author's word.
+  **a second profile, keeping its own cylinders**, applied by the review as a rule rather than
+  asked, at the author's word.
 
   Taking an arriving dive onto a held one wrote every field the arrival held, and for a second
   computer worn on the same dive that was wrong twice over. Its times and its maximum depth were
@@ -330,18 +330,24 @@ columns mapped by the user rather than guessed.
     serial, a `fingerprint` in common says the same dive was downloaded again, and so does being
     filed under one key, which a download takes from the computer's name as `LOGIC-23` does.
     Anything else is a second computer.
-  - **It brings its profile and writes no field of the dive.** Its times and its maximum depth
-    leave the first computer's alone, and so does everything the first left empty: a cylinder's
-    start and end pressure stay unwritten even where only the second computer had a
-    transmitter, its readings staying in its own `pressures`.
-  - **Its gases go to the dive's cylinders by mix.** A recording keeps no `gas_sources` of its
-    own, so its `gas_switches` and `pressures` must name the dive's. A mix the dive holds once
-    is that cylinder. A mix it does not hold becomes a new cylinder. A mix it holds more than
-    once goes to the one whose pressures agree best with the arriving readings, and to a new
-    cylinder where nothing tells them apart.
+  - **Each recording stays within its own profile, cylinders included.** A download writes its
+    gases into the profile it makes, beside the switches and pressures that name them, so a
+    second computer's cylinders never meet the first's.
+  - **It fills only the dive fields left empty.** A site or a time zone the first left out can be
+    added; nothing the dive holds is changed. The start, the duration and the depth are the
+    primary's, being derived, and so are the cylinders.
+  - **The dive's cylinders are derived from its primary profile, and the user's to override.**
+    An edit to the cylinders the dive shows copies them all onto the dive with the edit laid on,
+    and from then on they are the user's. Another recording's cylinders are not the dive's, and
+    editing them is refused. A download never writes the dive's own.
+
+  Which fields count is narrower than the rule sounds. It holds for sources that carry no ids,
+  a download, a UDDF file and a Diving Log export; another Yemoja logbook's dive is the same item
+  and still writes every field it holds. Diving Log's tanks are what its user typed, so a dive
+  from it keeps them as the dive's own rather than a recording's.
 
   A dive with no recording yet has no first computer and takes the arrival whole. Built as
-  `secondComputerOf` in `Import.kt`.
+  `recordingOnto` in `Import.kt`, and `divesSources` and `overriding` in `Recordings.kt`.
 
   Found by doing it: a hundred and two i330R recordings laid onto dives a Perdix had already
   recorded, beside the application rather than through it, for exactly this reason.

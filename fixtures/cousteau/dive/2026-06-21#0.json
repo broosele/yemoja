@@ -45,6 +45,18 @@
       "start_date": "2026-06-21",
       "start_time": "08:50:00",
       "water_type": "salt",
+      "gas_sources": {
+        "g1": {
+          "gas_type": "TMX18/35",
+          "start_pressure": 232,
+          "end_pressure": 70
+        },
+        "g2": {
+          "gas_type": "EAN50",
+          "start_pressure": 200,
+          "end_pressure": 120
+        }
+      },
       "deco_model": "buhlmann",
       "gradient_factor_low": 0.3,
       "gradient_factor_high": 0.7,

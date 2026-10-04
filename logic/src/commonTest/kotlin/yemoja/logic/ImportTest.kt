@@ -3,13 +3,10 @@ package yemoja.logic
 import yemoja.data.Element
 import yemoja.data.Gas
 import yemoja.data.Item
-import yemoja.data.ItemWriter
 import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.Stored
-import yemoja.data.Time
-import yemoja.data.Units
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
 import kotlin.test.Test
@@ -466,13 +463,13 @@ class RememberedMatchingTest {
     }
 }
 
-/** A second computer's recording of a dive already logged is a second profile on it. `RECON-7`. */
+/** Each recording stays within its own profile, and the dive reads its primary. `RECON-7`. */
 class SecondComputerTest {
 
-    private val held = """{"start_date": "2024-06-15", "start_time": "10:00:00",
-        "gas_sources": {"g1": {"gas_type": "EAN32"}, "g2": {"gas_type": "EAN50"}},
+    private val held = """{"start_date": "2024-06-15", "start_time": "10:00:00", "time_zone_offset": 3600,
         "profiles": {"p1": {"serial": "1111", "fingerprint": ["aa"], "start_date": "2024-06-15",
             "start_time": "10:00:00", "depth": [[0, 0], [600, 30], [1800, 0]],
+            "gas_sources": {"g1": {"gas_type": "EAN32"}, "g2": {"gas_type": "EAN50"}},
             "gas_switches": [[0, "*g1"], [1500, "*g2"]]}}}"""
 
     /** [coming] taken in onto the held dive, and the dive as it then reads. */
@@ -485,110 +482,133 @@ class SecondComputerTest {
         return into.logbook["d#0"]!!
     }
 
-    private fun recording(serial: String, fingerprint: String, gases: String, switches: String, pressures: String = "{}") =
-        """{"start_date": "2024-06-15", "start_time": "10:02:00",
-        "gas_sources": $gases,
-        "profiles": {"p1": {"serial": "$serial", "fingerprint": ["$fingerprint"],
-            "start_date": "2024-06-15", "start_time": "10:02:00",
-            "depth": [[0, 0], [600, 31.5], [1700, 0]], "gas_switches": $switches,
-            "pressures": $pressures}}}"""
+    private fun recording(serial: String?, fingerprint: String, key: String = "p1", dive: String = ""): String {
+        val serialled = serial?.let { "\"serial\": \"$it\"," } ?: ""
+        return """{$dive "profiles": {"$key": {$serialled
+            "fingerprint": ["$fingerprint"], "start_date": "2024-06-15", "start_time": "10:02:00",
+            "depth": [[0, 0], [600, 31.5], [1700, 0]],
+            "gas_sources": {"g1": {"gas_type": "EAN21", "start_pressure": 210, "end_pressure": 70}},
+            "gas_switches": [[0, "*g1"]]}}}"""
+    }
 
     private fun profilesOf(dive: Item): Map<String, OwnedItem> =
         (dive.keyed<OwnedItem>("profiles") as Result.Usable).value
             .mapValues { (it.value as Element.Usable).value }
 
-    private fun sourcesOf(dive: Item): Map<String, String?> =
-        (dive.keyed<OwnedItem>("gas_sources") as Result.Usable).value
-            .mapValues { ((it.value as Element.Usable).value.single<Gas>("gas_type") as? Result.Usable)?.value?.toString() }
-
-    private fun switchesOf(profile: Item): String =
-        ItemWriter.write(profile, Units.DEFAULT).members["gas_switches"].toString()
+    private fun gasesOf(item: Item): Map<String, String?> =
+        ((item.keyed<OwnedItem>("gas_sources") as? Result.Usable)?.value.orEmpty()).mapValues {
+            ((it.value as Element.Usable).value.single<Gas>("gas_type") as? Result.Usable)?.value?.toString()
+        }
 
     @Test
     fun `another computer's recording goes in beside the first, which stays primary`() {
-        val dive = landed(recording("2222", "bb", """{"g1": {"gas_type": "EAN32"}}""", """[[0, "*g1"]]"""))
+        val dive = landed(recording("2222", "bb"))
         assertEquals(setOf("p1", "p2"), profilesOf(dive).keys)
-        assertEquals("2222", (profilesOf(dive).getValue("p2").single<String>("serial") as Result.Usable).value)
         assertEquals("*p1", (dive.single<KeyReference>("primary_profile") as Result.Usable).value.toString())
     }
 
     @Test
-    fun `it writes none of the dive's own fields`() {
-        val dive = landed(recording("2222", "bb", """{"g1": {"gas_type": "EAN32", "start_pressure": 210,
-            "end_pressure": 70}}""", """[[0, "*g1"]]"""))
-        assertEquals("10:00:00", (dive.single<Time>("start_time") as Result.Usable).value.toString())
-        val first = (dive.keyed<OwnedItem>("gas_sources") as Result.Usable).value.getValue("g1")
-        assertIs<Result.Absent>((first as Element.Usable).value.single<Double>("start_pressure"),
-            "the second computer's pressures do not fill the cylinder's empty fields")
+    fun `it keeps its own cylinders, and the dive's are the primary's`() {
+        val dive = landed(recording("2222", "bb"))
+        assertEquals(mapOf("g1" to "AIR"), gasesOf(profilesOf(dive).getValue("p2")))
+        assertEquals(mapOf("g1" to "EAN32", "g2" to "EAN50"), gasesOf(dive))
     }
 
     @Test
-    fun `its gases name the dive's cylinders by mix`() {
-        // The arriving recording calls its EAN50 g1, where the dive calls it g2.
-        val dive = landed(recording("2222", "bb", """{"g1": {"gas_type": "EAN50"}, "g2": {"gas_type": "EAN32"}}""",
-            """[[0, "*g2"], [1500, "*g1"]]""", """{"g2": [[0, 200], [1700, 80]]}"""))
-        val second = profilesOf(dive).getValue("p2")
-        assertTrue("*g1" in switchesOf(second) && switchesOf(second).indexOf("*g1") < switchesOf(second).indexOf("*g2"),
-            "it went in on the dive's EAN32, g1, and switched to its EAN50, g2: ${switchesOf(second)}")
-        assertEquals(setOf("g1", "g2"), sourcesOf(dive).keys, "no cylinder was added")
-        val pressures = ItemWriter.write(second, Units.DEFAULT).members["pressures"]
-        assertTrue((pressures as Stored.Members).members.keys == setOf("g1"), "pressures follow: $pressures")
-    }
-
-    @Test
-    fun `a mix the dive does not hold becomes a cylinder of its own`() {
-        val dive = landed(recording("2222", "bb", """{"g1": {"gas_type": "EAN32"}, "g2": {"gas_type": "EAN80"}}""",
-            """[[0, "*g1"], [1500, "*g2"]]"""))
-        assertEquals("EAN80", sourcesOf(dive)["g3"])
-        assertTrue("*g3" in switchesOf(profilesOf(dive).getValue("p2")))
-    }
-
-    @Test
-    fun `of two cylinders of one mix, the one whose pressures agree is chosen`() {
-        val twins = """{"start_date": "2024-06-15", "start_time": "10:00:00",
-            "gas_sources": {"g1": {"gas_type": "AIR", "start_pressure": 200, "end_pressure": 100},
-                "g2": {"gas_type": "AIR", "start_pressure": 210, "end_pressure": 60}},
-            "profiles": {"p1": {"serial": "1111", "depth": [[0, 0], [600, 20], [1800, 0]]}}}"""
-        val dive = landed(recording("2222", "bb", """{"g1": {"gas_type": "AIR"}}""", """[[0, "*g1"]]""",
-            """{"g1": [[0, 209], [1700, 62]]}"""), twins)
-        assertTrue("*g2" in switchesOf(profilesOf(dive).getValue("p2")))
-    }
-
-    @Test
-    fun `of two that nothing tells apart, a cylinder of its own is added`() {
-        val twins = """{"start_date": "2024-06-15", "start_time": "10:00:00",
-            "gas_sources": {"g1": {"gas_type": "AIR"}, "g2": {"gas_type": "AIR"}},
-            "profiles": {"p1": {"serial": "1111", "depth": [[0, 0], [600, 20], [1800, 0]]}}}"""
-        val dive = landed(recording("2222", "bb", """{"g1": {"gas_type": "AIR"}}""", """[[0, "*g1"]]"""), twins)
-        assertEquals(setOf("g1", "g2", "g3"), sourcesOf(dive).keys)
+    fun `a dive field it holds fills only what the dive left empty`() {
+        val dive = landed(recording("2222", "bb", dive = """"time_zone_offset": 7200, "rating": 4,"""))
+        assertEquals(3600.0, (dive.single<Double>("time_zone_offset") as Result.Usable).value, "not changed")
+        assertEquals(4, (dive.single<Int>("rating") as Result.Usable).value, "added")
     }
 
     @Test
     fun `the same computer downloaded again is laid over its own profile`() {
-        val dive = landed(recording("1111", "aa", """{"g1": {"gas_type": "EAN32"}}""", """[[0, "*g1"]]"""))
+        val dive = landed(recording("1111", "aa"))
         assertEquals(setOf("p1"), profilesOf(dive).keys)
     }
 
     @Test
     fun `without serials, a fingerprint in common is the same computer`() {
-        val unserialled = held.replace(""""serial": "1111", """, "")
-        val dive = landed(recording("", "aa", """{"g1": {"gas_type": "EAN32"}}""", """[[0, "*g1"]]""")
-            .replace(""""serial": "", """, ""), unserialled)
+        val dive = landed(recording(null, "aa", key = "perdix"), held.replace(""""serial": "1111", """, ""))
         assertEquals(setOf("p1"), profilesOf(dive).keys)
     }
 
     @Test
     fun `a recording with no serial, fingerprint or key in common is a second computer`() {
-        val unserialled = held.replace(""""serial": "1111", """, "")
-        val dive = landed(recording("", "cc", """{"g1": {"gas_type": "EAN32"}}""", """[[0, "*g1"]]""")
-            .replace(""""serial": "", """, "").replace(""""profiles": {"p1"""", """"profiles": {"i330r""""), unserialled)
+        val dive = landed(recording(null, "cc", key = "i330r"), held.replace(""""serial": "1111", """, ""))
         assertEquals(setOf("p1", "i330r"), profilesOf(dive).keys, "and keeps the key it came under")
     }
 
     @Test
     fun `a dive with no recording yet takes the arrival whole`() {
-        val logged = """{"start_date": "2024-06-15", "start_time": "10:00:00"}"""
-        val dive = landed(recording("2222", "bb", """{"g1": {"gas_type": "EAN32"}}""", """[[0, "*g1"]]"""), logged)
-        assertEquals("10:02:00", (dive.single<Time>("start_time") as Result.Usable).value.toString())
+        val logged = """{"start_date": "2024-06-15", "start_time": "10:00:00", "rating": 3}"""
+        val dive = landed(recording("2222", "bb", dive = """"rating": 5,"""), logged)
+        assertEquals(5, (dive.single<Int>("rating") as Result.Usable).value)
+    }
+}
+
+/** A dive's cylinders are its primary recording's until the user writes its own. `RECON-7`. */
+class DiveCylindersTest {
+
+    private val two = """{"primary_profile": "*p1", "profiles": {
+        "p1": {"depth": [[0, 0], [600, 20], [1800, 0]], "gas_sources": {"g1": {"gas_type": "EAN32"}}},
+        "p2": {"depth": [[0, 0], [600, 20], [1800, 0]], "gas_sources": {"g1": {"gas_type": "AIR"}}}}}"""
+
+    private fun holding(dive: String): Pair<MemoryFileStore, Universe> {
+        val store = MemoryFileStore(mapOf("dive/d#0.json" to dive))
+        return store to Universe(LogbookReader.read(store, Types.ALL), null, store)
+    }
+
+    private fun entry(item: Item, field: String, key: String): OwnedItem =
+        ((item.keyed<OwnedItem>(field) as Result.Usable).value.getValue(key) as Element.Usable).value
+
+    private fun gasOf(item: Item, key: String = "g1"): String? =
+        (entry(item, "gas_sources", key).single<Gas>("gas_type") as? Result.Usable)?.value?.toString()
+
+    private fun usageOf(source: Item): Result<String> = source.single<String>("usage")
+
+    @Test
+    fun `the dive reads the primary recording's cylinders`() {
+        val (_, universe) = holding(two)
+        assertEquals("EAN32", gasOf(universe.logbook["d#0"]!!))
+    }
+
+    @Test
+    fun `an edit to them becomes the dive's own, and the recording stays as it was`() {
+        val (store, universe) = holding(two)
+        val dive = universe.logbook["d#0"]!!
+        val shown = entry(dive, "gas_sources", "g1")
+        assertIs<Outcome.Done>(universe.change(Operation.EDIT, Change.Write(shown, "usage", Stored.Leaf("bottom"))))
+        val file = store.readText("dive/d#0.json")
+        assertEquals(3, Regex("\"gas_sources\"").findAll(file).count(), "the dive now holds its own: $file")
+        assertEquals("bottom", (usageOf(entry(dive, "gas_sources", "g1")) as Result.Usable).value)
+        assertEquals("EAN32", gasOf(dive), "copied whole, not just the field edited")
+        assertIs<Result.Absent>(usageOf(entry(entry(dive, "profiles", "p1"), "gas_sources", "g1")))
+    }
+
+    @Test
+    fun `another recording's cylinders cannot be edited`() {
+        val (_, universe) = holding(two)
+        val other = entry(entry(universe.logbook["d#0"]!!, "profiles", "p2"), "gas_sources", "g1")
+        assertIs<Outcome.Refused>(universe.change(Operation.EDIT, Change.Write(other, "usage", Stored.Leaf("deco"))))
+    }
+
+    @Test
+    fun `a plan's cylinders are its own to change`() {
+        val (_, universe) = holding(
+            """{"profiles": {"plan": {"planned": true, "gas_sources": {"g1": {"gas_type": "EAN32"}}}}}""",
+        )
+        val plan = entry(universe.logbook["d#0"]!!, "profiles", "plan")
+        val source = entry(plan, "gas_sources", "g1")
+        assertIs<Outcome.Done>(universe.change(Operation.EDIT, Change.Write(source, "usage", Stored.Leaf("bottom"))))
+        assertEquals("bottom", (usageOf(source) as Result.Usable).value)
+    }
+
+    @Test
+    fun `a dive that holds its own keeps them`() {
+        val (_, universe) = holding(
+            two.replace(""""primary_profile": "*p1",""", """"primary_profile": "*p1", "gas_sources": {"g9": {"gas_type": "EAN40"}},"""),
+        )
+        assertEquals("EAN40", gasOf(universe.logbook["d#0"]!!, "g9"))
     }
 }

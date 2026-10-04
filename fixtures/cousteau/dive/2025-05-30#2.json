@@ -39,6 +39,16 @@
       "start_date": "2025-05-30",
       "start_time": "16:05:00",
       "water_type": "salt",
+      "gas_sources": {
+        "g1": {
+          "gas_type": "AIR",
+          "start_pressure": 205,
+          "end_pressure": 106,
+          "volume": 12,
+          "usage": "bottom",
+          "configuration": "back mounted"
+        }
+      },
       "depth": [
         [0, 0],
         [90, 8.6],
@@ -70,16 +80,6 @@
         [900, 6600],
         [1980, 5940]
       ]
-    }
-  },
-  "gas_sources": {
-    "g1": {
-      "gas_type": "AIR",
-      "start_pressure": 205,
-      "end_pressure": 106,
-      "volume": 12,
-      "usage": "bottom",
-      "configuration": "back mounted"
     }
   },
   "remarks": "Rented cylinder from the centre, so nothing here to point at: the twelve litres is written in rather than worked out."

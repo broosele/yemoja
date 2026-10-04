@@ -4,6 +4,7 @@ import yemoja.data.Cardinality
 import yemoja.data.Date
 import yemoja.data.Element
 import yemoja.data.Item
+import yemoja.data.ItemWriter
 import yemoja.data.KeyReference
 import yemoja.data.Moment
 import yemoja.data.OwnedItem
@@ -11,6 +12,7 @@ import yemoja.data.Result
 import yemoja.data.Series
 import yemoja.data.Stored
 import yemoja.data.Time
+import yemoja.data.Units
 
 /*
  * What a dive's times and depths are worked out from: the recording a computer made.
@@ -81,7 +83,81 @@ internal fun primaryKeptBy(write: Change.Write, made: Result<Any>, written: Set<
     return Change.Write(write.item, PRIMARY, Stored.Leaf("*$only"))
 }
 
+/**
+ * The cylinders of [dive]'s primary profile, which are the dive's until the user writes its own.
+ *
+ * A recording keeps what its computer said about the gas and a plan what it assumes, so the dive
+ * reads whichever run it is worked from. Absent where that run keeps none, which is a dive logged
+ * before recordings kept their own: those dives hold theirs as written. `RECON-7`.
+ */
+internal fun divesSources(dive: Item): Result<Any> {
+    val profile = (primaryProfile(dive) as? Result.Usable)?.value ?: return Result.Absent
+    val own = (profile.read(SOURCES) as? Result.Usable)?.value as? Map<*, *>
+    return if (own.isNullOrEmpty()) Result.Absent else Result.Usable(own, Result.Origin.DERIVED)
+}
+
+/**
+ * [write] as it should land, which is on the dive where it reaches the primary recording's own
+ * cylinders, and [write] itself anywhere else.
+ *
+ * **A recording holds what its computer said**, so an edit to its cylinders is the user's and
+ * belongs on the dive. The primary recording's cylinders are what the dive shows, and the edit
+ * becomes the dive's own set: every cylinder copied with the edit laid on it. From then on the
+ * dive's cylinders are the user's. A plan's are its own to change. `RECON-7`.
+ */
+internal fun overriding(write: Change.Write, plans: List<Item>): Change.Write {
+    val (profile, key) = recordingSourceOf(write, plans) ?: return write
+    val dive = (profile as? OwnedItem)?.parent ?: return write
+    if ((primaryProfile(dive) as? Result.Usable)?.value !== profile) return write
+    if (key == null) return Change.Write(dive, SOURCES, write.given)
+    val written = LinkedHashMap(
+        (ItemWriter.write(profile, Units.DEFAULT).members[SOURCES] as? Stored.Members)?.members.orEmpty(),
+    )
+    val entry = LinkedHashMap((written[key] as? Stored.Members)?.members.orEmpty())
+    when (val given = write.given) {
+        null -> entry.remove(write.field)
+        is Stored -> entry[write.field] = given
+        else -> entry[write.field] = Stored.Leaf(given)
+    }
+    written[key] = Stored.Members(entry)
+    return Change.Write(dive, SOURCES, Stored.Members(written))
+}
+
+/**
+ * Why [write] cannot land, where it edits the cylinders of a recording the dive is not worked
+ * from; null otherwise.
+ *
+ * Those cylinders are not the dive's, so there is no dive's set for the edit to become. `RECON-7`.
+ */
+internal fun refusedCylinders(write: Change.Write, plans: List<Item>): String? {
+    val (profile, _) = recordingSourceOf(write, plans) ?: return null
+    val dive = (profile as? OwnedItem)?.parent ?: return null
+    if ((primaryProfile(dive) as? Result.Usable)?.value === profile) return null
+    return "a recording's cylinders are what its computer said, and this one is not the dive's primary"
+}
+
+/**
+ * The recording and the key of its cylinder [write] reaches, the key absent where the write is to
+ * the whole set; or null where it reaches no recording's cylinders.
+ *
+ * [plans] are the profiles the same change marks as planned: a plan is built field by field, and
+ * its cylinders may be written before it says it is one.
+ */
+private fun recordingSourceOf(write: Change.Write, plans: List<Item>): Pair<Item, String?>? {
+    val item = write.item
+    if (item.description == PROFILE && write.field == SOURCES && isRecording(item, plans)) return item to null
+    val profile = (item as? OwnedItem)?.parent ?: return null
+    if (profile.description != PROFILE || !isRecording(profile, plans)) return null
+    val entries = (profile.keyed<OwnedItem>(SOURCES) as? Result.Usable)?.value ?: return null
+    val key = entries.entries.firstOrNull { (it.value as? Element.Usable)?.value === item }?.key ?: return null
+    return profile to key
+}
+
+private fun isRecording(profile: Item, plans: List<Item>): Boolean =
+    plans.none { it === profile } && (profile.single<Boolean>("planned") as? Result.Usable)?.value != true
+
 private const val PROFILES = "profiles"
+private const val SOURCES = "gas_sources"
 private const val PRIMARY = "primary_profile"
 
 /**

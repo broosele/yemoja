@@ -163,9 +163,10 @@ every dive came off a computer would not be one anybody has.
 - `2025-05-30#2` is the simple case: **one profile, so no `primary_profile`**, since there
   is nothing to choose between. The dive writes no `start_date`, `start_time`, `duration`,
   `max_depth` or `deco` at all; every one of them derives from the recording, which is the
-  whole point of having it. Its cylinder was rented, so the gas source names no `cylinder`
-  and writes `volume` by hand — the case the manual describes, where nothing can be worked
-  out from a gear item that does not exist.
+  whole point of having it. **Its cylinder is the recording's own**, and the dive writes none, so
+  the dive's `gas_sources` derive from `p1` as a download leaves them. The cylinder was rented,
+  so the gas source names no `cylinder` and writes `volume` — the case the manual describes,
+  where nothing can be worked out from a gear item that does not exist.
 
   Its profile records `no_deco_time` and no `decostop`, which is how a computer writes an
   ordinary recreational dive — so `deco` derives as false from the absence of stops plus
@@ -183,6 +184,11 @@ every dive came off a computer would not be one anybody has.
   falls back to, so a derivation that ignored the field would be visible here. What the
   fixture does *not* exercise is that fallback: a salt recording off a computer with no
   figure on it wants a fixture of its own.
+
+  **Both the dive and `p1` keep cylinders.** `p1`'s are what its computer reported, the mixes and
+  the pressures; the dive's are the user's own, the same two with the cylinder each was, what it
+  was for and how it was carried. That is what correcting a recording's cylinders leaves, and
+  the dive reads its own rather than `p1`'s. `p2` keeps none, its computer reporting no gas.
 
   It keeps `max_depth` written down at 52.4 while `p1`'s deepest sample is 51.9. That is
   the documented correction, not an inconsistency: a computer usually reports a better

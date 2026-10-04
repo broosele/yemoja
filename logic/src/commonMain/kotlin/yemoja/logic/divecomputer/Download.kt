@@ -276,7 +276,6 @@ object Download {
         // reports one, which is local time against GMT if its clock was set. `LOGIC-32`.
         held.offset?.let { fields["time_zone_offset"] = Stored.Leaf(it) }
         where?.let { fields["dive_site"] = Stored.Leaf("@$it") }
-        gasesOf(held)?.let { fields["gas_sources"] = it }
         profileOf(held, named)?.let { fields["profiles"] = it }
         return fields
     }
@@ -336,6 +335,8 @@ object Download {
         held.model?.conservatism?.let { fields["conservatism"] = Stored.Leaf(it) }
         held.model?.gradientFactorLow?.let { fields["gradient_factor_low"] = Stored.Leaf(it) }
         held.model?.gradientFactorHigh?.let { fields["gradient_factor_high"] = Stored.Leaf(it) }
+        // The gases are the recording's own, and the dive reads them from its primary. `RECON-7`.
+        gasesOf(held)?.let { fields["gas_sources"] = it }
         fields.putAll(seriesOf(held))
         if (fields.isEmpty()) return null
         // The gear item the serial named, which is the same key each time that computer is read.

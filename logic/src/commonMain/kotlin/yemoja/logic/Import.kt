@@ -1,7 +1,6 @@
 package yemoja.logic
 
 import yemoja.data.Date
-import yemoja.data.Gas
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.ItemSet
@@ -17,7 +16,6 @@ import yemoja.data.json.FileStore
 import yemoja.data.json.Json
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.LogbookWriter
-import kotlin.math.abs
 
 /*
  * Items arriving from somewhere else, and what becomes of them.
@@ -260,7 +258,8 @@ class Import private constructor(
      */
     private fun writesOnto(there: Item, held: Map<String, Stored>): List<Change> {
         val already = ItemWriter.write(there, Units.DEFAULT).members
-        val writing = if (there.description == Types.DIVE) secondComputerOf(already, held) ?: held else held
+        val recorded = matching == Matching.NONE && there.description == Types.DIVE
+        val writing = if (recorded) recordingOnto(already, held) ?: held else held
         return writing.map { (field, value) ->
             Change.Write(there, field, laidOver(already[field], value))
         }
@@ -379,39 +378,34 @@ internal fun laidOver(existing: Stored?, incoming: Stored): Stored {
 }
 
 /**
- * What an arriving dive writes onto a held one when it was recorded by a computer the held dive
- * has no profile from, or null where it was not.
+ * What an arriving dive writes onto a held dive that already has a recording, or null where the
+ * held one has none and takes the arrival whole.
  *
- * **A second computer brings its profile and writes no field of the dive.** Its times and its
- * maximum depth are no more right than the first computer's, and what the first left empty stays
- * empty. Each arriving profile goes in under a key of its own, and its gases name the dive's
- * cylinders by mix, a mix the dive does not hold being added as a cylinder. A dive with no
- * recording yet has no first computer, and takes the arrival whole. `RECON-7`.
+ * **Each recording stays within its own profile.** One from a computer the dive already has a
+ * recording from is laid over that recording; one from another computer goes in beside it under
+ * a key of its own, and the first stays primary. Each brings its own cylinders. Of the dive's own
+ * fields, a recording fills only what is empty: a site or a time zone the first left out can be
+ * added, and nothing the dive holds is changed. `RECON-7`.
  *
  * [already] is the held dive as written and [held] the fields the arriving one holds.
  */
-internal fun secondComputerOf(already: Map<String, Stored>, held: Map<String, Stored>): Map<String, Stored>? {
+internal fun recordingOnto(already: Map<String, Stored>, held: Map<String, Stored>): Map<String, Stored>? {
     val had = membersOf(already[PROFILES_FIELD]) ?: return null
     val recorded = had.filterValues { !plannedOf(it) }
     if (recorded.isEmpty()) return null
-    val arriving = membersOf(held[PROFILES_FIELD]) ?: return null
-    val sameAs = arriving.mapValues { (key, profile) ->
-        recorded.entries.firstOrNull { sameComputer(it.key, it.value, key, profile) }?.key
+    val writing = LinkedHashMap<String, Stored>()
+    for ((field, value) in held) {
+        if (field != PROFILES_FIELD && already[field] == null) writing[field] = value
     }
-    if (sameAs.values.all { it != null }) return null
-
-    val sources = membersOf(already[SOURCES_FIELD]).orEmpty()
-    val added = LinkedHashMap<String, Stored>()
-    val renamed = gasKeysOf(membersOf(held[SOURCES_FIELD]).orEmpty(), arriving, sources, had, added)
+    val arriving = membersOf(held[PROFILES_FIELD]) ?: return writing
     val profiles = LinkedHashMap<String, Stored>()
     for ((key, profile) in arriving) {
-        val onto = sameAs[key]
+        val onto = recorded.entries.firstOrNull { sameComputer(it.key, it.value, key, profile) }?.key
             ?: key.takeIf { it !in had && it !in profiles }
             ?: freeKey("p", had.keys + profiles.keys)
-        profiles[onto] = renamedGases(profile, renamed)
+        profiles[onto] = profile
     }
-    val writing = linkedMapOf<String, Stored>(PROFILES_FIELD to Stored.Members(profiles))
-    if (added.isNotEmpty()) writing[SOURCES_FIELD] = Stored.Members(added)
+    writing[PROFILES_FIELD] = Stored.Members(profiles)
     return writing
 }
 
@@ -431,98 +425,12 @@ private fun sameComputer(oneKey: String, one: Stored, otherKey: String, other: S
     return oneKey == otherKey || fingerprintsOf(left).intersect(fingerprintsOf(right)).isNotEmpty()
 }
 
-/**
- * Which of the dive's cylinders each arriving one is, by key, adding to [added] those it is none of.
- *
- * A mix the dive holds once is that cylinder. A mix it holds more than once is the one whose start
- * and end pressures lie nearest the arriving ones, and a new cylinder where none is nearer than
- * the rest or nothing says a pressure.
- */
-private fun gasKeysOf(
-    arriving: Map<String, Stored>,
-    arrivingProfiles: Map<String, Stored>,
-    sources: Map<String, Stored>,
-    profiles: Map<String, Stored>,
-    added: MutableMap<String, Stored>,
-): Map<String, String> {
-    val renamed = LinkedHashMap<String, String>()
-    for ((key, source) in arriving) {
-        val gas = gasOf(source)
-        val alike = sources.filterValues { gas != null && gasOf(it) == gas }.keys
-            .filter { it !in renamed.values }
-        val chosen = when {
-            alike.size == 1 -> alike.single()
-            alike.size > 1 -> nearestOf(alike, pressuresOf(key, source, arrivingProfiles), sources, profiles)
-            else -> null
-        }
-        renamed[key] = chosen
-            ?: (key.takeIf { it !in sources && it !in added } ?: freeKey("g", sources.keys + added.keys))
-                .also { added[it] = source }
-    }
-    return renamed
-}
-
-/** Of [alike], the cylinder whose pressures lie nearest [arriving], or null where none is nearest. */
-private fun nearestOf(
-    alike: List<String>,
-    arriving: Pair<Double, Double>?,
-    sources: Map<String, Stored>,
-    profiles: Map<String, Stored>,
-): String? {
-    if (arriving == null) return null
-    val distances = alike.mapNotNull { key ->
-        pressuresOf(key, sources[key], profiles)?.let { (start, end) ->
-            key to abs(start - arriving.first) + abs(end - arriving.second)
-        }
-    }.sortedBy { it.second }
-    val best = distances.firstOrNull() ?: return null
-    return if (distances.getOrNull(1)?.second == best.second) null else best.first
-}
-
-/**
- * The start and end pressure of the cylinder [key], from [source]'s own fields or else from the
- * first and last reading any of [profiles] keeps of it.
- */
-private fun pressuresOf(key: String, source: Stored?, profiles: Map<String, Stored>): Pair<Double, Double>? {
-    val fields = membersOf(source).orEmpty()
-    val start = numberOf(fields["start_pressure"])
-    val end = numberOf(fields["end_pressure"])
-    if (start != null && end != null) return start to end
-    for (profile in profiles.values) {
-        val series = membersOf(membersOf(profile)?.get("pressures"))?.get(key) as? Stored.Elements ?: continue
-        val values = series.elements.mapNotNull { (it as? Stored.Elements)?.elements?.getOrNull(1)?.let(::numberOf) }
-        if (values.isNotEmpty()) return values.first() to values.last()
-    }
-    return null
-}
-
-/** [profile] with its `gas_switches` and `pressures` naming the dive's cylinders, by [renamed]. */
-private fun renamedGases(profile: Stored, renamed: Map<String, String>): Stored {
-    val fields = membersOf(profile) ?: return profile
-    val out = LinkedHashMap(fields)
-    (fields["gas_switches"] as? Stored.Elements)?.let { switches ->
-        out["gas_switches"] = Stored.Elements(switches.elements.map { pair ->
-            val parts = (pair as? Stored.Elements)?.elements ?: return@map pair
-            val named = textOf(parts.getOrNull(1))?.removePrefix("*")
-            val to = renamed[named] ?: return@map pair
-            Stored.Elements(listOf(parts[0], Stored.Leaf("*$to")) + parts.drop(2))
-        })
-    }
-    membersOf(fields["pressures"])?.let { pressures ->
-        out["pressures"] = Stored.Members(pressures.mapKeys { (key, _) -> renamed[key] ?: key })
-    }
-    return Stored.Members(out)
-}
-
 /** The first of `p1`, `p2` and so on that [taken] does not hold. */
 private fun freeKey(prefix: String, taken: Set<String>): String =
     generateSequence(1) { it + 1 }.map { "$prefix$it" }.first { it !in taken }
 
 private fun plannedOf(profile: Stored): Boolean =
     (membersOf(profile)?.get("planned") as? Stored.Leaf)?.value == true
-
-private fun gasOf(source: Stored): Gas? =
-    textOf(membersOf(source)?.get("gas_type"))?.let { runCatching { Gas.parse(it) }.getOrNull() }
 
 private fun fingerprintsOf(profile: Map<String, Stored>): Set<String> =
     (profile["fingerprint"] as? Stored.Elements)?.elements.orEmpty().mapNotNull(::textOf).toSet()
@@ -531,7 +439,5 @@ private fun membersOf(stored: Stored?): Map<String, Stored>? = (stored as? Store
 
 private fun textOf(stored: Stored?): String? = ((stored as? Stored.Leaf)?.value as? String)?.ifBlank { null }
 
-private fun numberOf(stored: Stored?): Double? = ((stored as? Stored.Leaf)?.value as? Number)?.toDouble()
 
 private const val PROFILES_FIELD = "profiles"
-private const val SOURCES_FIELD = "gas_sources"
