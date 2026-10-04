@@ -61,8 +61,7 @@ private fun stampsUnder(folder: String): Map<String, String> {
 
 /** Where the copy of the logbook in [folder] is kept: this user's application data. */
 private fun copiesOf(folder: String): String {
-    val base = System.getenv("LOCALAPPDATA")?.let { File(it, "Yemoja") }
-        ?: File(System.getProperty("user.home"), ".yemoja")
+    val base = localData()
     val digest = MessageDigest.getInstance("SHA-256").digest(File(folder).canonicalPath.toByteArray())
     val name = digest.take(NAME_BYTES).joinToString("") { "%02x".format(it) }
     return File(File(base, "copies"), name).path

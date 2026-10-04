@@ -154,6 +154,18 @@ what it means is argued there; what is here is where it goes on a large screen.
 
   A new library means running `jdeps --print-module-deps` again over `ui/build/install/yemoja/lib`.
 
+- **DESK-12 — Which logbook the window opens on.** *Settled:* **the one named, else the one
+  opened last.** Decided on 2026-10-04, at the author's word, who found an update had made the
+  window forget its logbook. It never remembered one: the installer's shortcut names no folder, so
+  the window opened on the welcome unless a folder was named where it was started.
+
+  The folder last opened, by name, by *Open logbook* or by *New logbook*, is kept in one file in
+  this user's application data, `%LOCALAPPDATA%\Yemoja\last-logbook.txt`, beside the copies of
+  `JSON-28`. Not in the installation, which an update replaces, and not in a logbook, which is
+  what it names. A folder named where the window is started still wins, and one that will not read
+  still fails the command; the folder remembered failing to read opens the welcome instead, there
+  being nothing the user asked for to refuse. The phone keeps its folder the same way, `AND-5`.
+
 - **DESK-11 — Where the icons the core set lacks come from.** *Settled:* **twelve are copied in,
   under their own licence; the extended set is not shipped.** Decided on 2026-10-02, at the
   author's word.

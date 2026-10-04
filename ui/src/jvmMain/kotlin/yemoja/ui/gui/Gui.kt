@@ -1,6 +1,8 @@
 package yemoja.ui.gui
 
 import yemoja.ui.copiedFrom
+import yemoja.ui.lastLogbook
+import yemoja.ui.rememberLogbook
 import yemoja.ui.api.bundled
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.VerticalScrollbar
@@ -56,18 +58,23 @@ import yemoja.logic.tideCalculators
  * and the map read from the jar, and a browser for a link that leads out. Everything shown is
  * decided by the screens, which know nothing about any of this.
  */
-fun gui(folder: String? = null): Int {
+fun gui(named: String? = null): Int {
+    // Named, the folder is opened or the command fails. Not named, the logbook opened last is
+    // opened where it still reads, and the window opens on the welcome where it does not. `DESK-12`.
+    val folder = named ?: lastLogbook()
     val universe = if (folder == null) null else try {
         Universe.open(folder, FoundDevices(), copiedFrom(folder))
     } catch (refused: Exception) {
         // A folder that is not a logbook, or a file in it that will not read. There is no window
         // yet to say so in, so it is said where the command was typed.
         System.err.println("$folder could not be read: ${refused.message}")
-        return 1
+        if (named != null) return 1
+        null
     }
+    if (universe != null && folder != null) rememberLogbook(folder)
     application {
         // Which logbook is open can change while the window is: a new one is made into it.
-        var at by remember { mutableStateOf(folder) }
+        var at by remember { mutableStateOf(folder.takeIf { universe != null }) }
         var held by remember { mutableStateOf(universe) }
         // What an agent runs in, which outlives any one conversation: an agent is started and
         // stopped many times while a window is open. `GUI-38`.
@@ -115,6 +122,7 @@ fun gui(folder: String? = null): Int {
                             made(where)?.let {
                                 at = where
                                 held = it
+                                rememberLogbook(where)
                             }
                         }
                     },
@@ -123,6 +131,7 @@ fun gui(folder: String? = null): Int {
                             opened(where)?.let {
                                 at = where
                                 held = it
+                                rememberLogbook(where)
                             }
                         }
                     },

@@ -7,16 +7,18 @@ in [data-fields.md](data-fields.md).
 
 ## Opening a logbook
 
-With no logbook open, the window shows only **Home** and **Manuals**, and Home offers two
-buttons.
+With no logbook open, the window shows only **Home**, **Calculations**, **System** and
+**Manuals**, and Home offers two buttons.
 
-- **New logbook** asks for a folder, and one that does not exist yet may be typed. The new
+- **Create a new Yemoja logbook** asks for a folder, and one that does not exist yet may be typed. The new
   logbook comes with what Yemoja ships already in it — the regions of the world, the agencies'
   certifications and a catalogue of generic gear — and nothing of yours. A folder that already holds a logbook is refused rather than written over.
-- **Open logbook** asks for a folder holding one. A folder with no logbook files in it opens
-  as an empty logbook.
+- **Open an existing Yemoja logbook** asks for a folder holding one. On a computer, a folder with no logbook files
+  in it opens as an empty logbook; on a phone it is refused, and **Create** is the way to start
+  one there.
 
-The folder can also be named when Yemoja is started, and it then opens straight away.
+The folder can also be named when Yemoja is started, and it then opens straight away. Otherwise
+Yemoja opens the logbook you had open last, and an update does not change that.
 
 **Keep a logbook open in one place at a time.** Nothing stops two windows, or a computer and a
 phone sharing the folder through a sync, from having it open together, and where both change it,
