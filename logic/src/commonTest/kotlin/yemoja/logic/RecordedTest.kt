@@ -282,10 +282,19 @@ class DecoTest {
             Result.Usable).value)
     }
 
+    /** What the model makes of [depth] where the recording says nothing about stops. */
+    private fun modelled(depth: String): Any? =
+        (dived(series = """"depth": $depth, "gas_sources": {"g1": {"gas_type": "AIR"}},
+            "gas_switches": [[0, "*g1"]]""").read("deco") as? Result.Usable)?.value
+
     @Test
-    fun `neither recorded is left for the user, not answered`() {
-        // The computer decided this at the time, with settings nothing here can reproduce.
-        assertEquals(Result.Absent, deco(""""temperature": [[0, 21]]"""))
+    fun `neither recorded, the model answers a short shallow dive no`() {
+        assertEquals(false, modelled("[[0, 0], [60, 10.0], [1200, 10.0], [1260, 0]]"))
+    }
+
+    @Test
+    fun `neither recorded, the model answers a long deep dive yes`() {
+        assertEquals(true, modelled("[[0, 0], [120, 40.0], [1800, 40.0], [2100, 0]]"))
     }
 }
 

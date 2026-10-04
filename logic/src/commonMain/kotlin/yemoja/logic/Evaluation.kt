@@ -357,13 +357,15 @@ private fun evaluated(profile: Item, seen: Set<Item>): Evaluated =
  * what water, what air, what it breathed from, and what it carries from the run before it. The
  * arithmetic sees none of the reading.
  */
-private fun runOf(profile: Item, seen: Set<Item>): RunResult {
+private fun runOf(profile: Item, seen: Set<Item>, assumed: Boolean = false): RunResult {
     if (profile in seen) return RunResult.Refused(
         "this dive is set to follow itself, so the gas it starts with cannot be worked out",
         Refusal.FAULTY
     )
     val low = (profile.single<Double>("gradient_factor_low") as? Result.Usable)?.value
+        ?: Settings.DEFAULT_GRADIENT_FACTOR_LOW.default.takeIf { assumed }
     val high = (profile.single<Double>("gradient_factor_high") as? Result.Usable)?.value
+        ?: Settings.DEFAULT_GRADIENT_FACTOR_HIGH.default.takeIf { assumed }
     // Both factors are needed. One of them is a setting half written down, and guessing the other
     // would put a number into a decompression answer that nobody chose.
     if (low == null || high == null) {
@@ -373,10 +375,11 @@ private fun runOf(profile: Item, seen: Set<Item>): RunResult {
         )
     }
     val named = (profile.single<String>("deco_model") as? Result.Usable)?.value ?: BUHLMANN
-    if (named != BUHLMANN) {
+    if (named != BUHLMANN && !assumed) {
         return RunResult.Refused("$named is not the model built here, which is $BUHLMANN", Refusal.UNASKED)
     }
     val density = (profile.single<Double>("density") as? Result.Usable)?.value
+        ?: ASSUMED_DENSITY.takeIf { assumed }
         ?: return RunResult.Refused(
             "this recording should say whether the water was salt or fresh, without which a depth is not a pressure",
             Refusal.UNASKED,
@@ -400,6 +403,25 @@ private fun runOf(profile: Item, seen: Set<Item>): RunResult {
         ),
     )
 }
+
+/**
+ * What the model makes of [profile], taking what the recording does not say from Yemoja's own
+ * defaults: the gradient factors a new plan starts from, salt water, and this model whatever the
+ * computer ran.
+ *
+ * **For an answer the recording never gave, and nothing else.** A logged dive's `deco` is the
+ * computer's where it recorded one; this is the fallback for a recording that holds neither stops
+ * nor no-deco time. The built-in defaults rather than the user's settings, so that changing a
+ * setting cannot change what is said about a dive already made. `LOGIC-6`.
+ */
+internal fun assumedOf(profile: Item): Evaluated =
+    when (val made = runOf(profile, emptySet(), assumed = true)) {
+        is RunResult.Refused -> Evaluated.Refused(made.reason, made.why)
+        is RunResult.Run -> evaluate(made.run)
+    }
+
+/** The density taken for a recording that does not say what water it was in: salt. */
+private const val ASSUMED_DENSITY = 1030.0
 
 /** RunResult is a profile turned into a run, or why it could not be. */
 private sealed class RunResult {

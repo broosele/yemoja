@@ -2113,6 +2113,18 @@ To settle when we discuss architecture and features:
   from, and changing them cannot alter what the application says about a dive done years ago — which
   is what this question was worried about, now unable to happen.
 
+  *Amended, at the author's word:* **where the recording has neither, Yemoja's model answers.**
+  A recording that says nothing either way left `deco` empty on nearly half of one real logbook.
+  The depths are run through the model at the gradient factors the profile names, and where it
+  says nothing, at the values a new plan starts from before anybody changes them, 30/70 in salt
+  water. A ceiling below the surface at any moment means yes. What the computer recorded still
+  wins wherever it recorded anything, and a written answer wins over both.
+
+  The built-in values rather than the user's settings, because a derived field cannot reach the
+  settings, `LOGIC-4`, and because it keeps the guarantee above: changing a setting still cannot
+  change what is said about a dive already made. A recording that names no gas is not answered,
+  the model refusing to guess a mix. The manual says the answer is the model's.
+
   A dive from a depth gauge gets no computed answer, and that is the point. Absent means
   nobody has said; it does not mean no. See `DATA-50` in
   [../data/doc.md](../data/doc.md).

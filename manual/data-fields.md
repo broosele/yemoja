@@ -154,11 +154,14 @@ All three can be corrected where the calculation is wrong.
   matters. A zero before the first positive value is ignored: some computers read zero at the
   surface before they have calculated anything, and a dive cannot begin in deco.
 
-  Where the recording has neither, or there is no profile at all, nothing is calculated
-  and the field is empty for you to answer. Yemoja will not decide this one for you — your
-  computer decided it at the time, with you in the water and with settings this
-  application cannot reproduce, and a second opinion arrived at years later would be
-  answering a different question.
+  Where the recording has neither, Yemoja's own decompression model answers: it runs the
+  depths at the gradient factors the recording names, or at 30/70 in salt water where it says
+  nothing, and says yes if it would have held you to a stop at any moment. Those are Yemoja's
+  own starting values rather than your planner settings, so changing a setting does not change
+  what is said about a dive you have made. That is the model's opinion
+  rather than your computer's, which decided at the time with settings Yemoja cannot always
+  reproduce, so the two can disagree on a dive near the limit. Write the answer yourself where
+  you know better. With no profile at all, nothing is calculated.
 - `buddies` (list of references or text) — who you dived with. Plain names are allowed
   for people you have no item for.
 - `buddy_count` (whole number, derived) — from the list. Correct it when you remember how

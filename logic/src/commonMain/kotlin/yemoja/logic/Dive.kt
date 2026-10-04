@@ -763,10 +763,11 @@ private fun profilesAverageDepth(profile: Item): Result<Any> {
  * computer's first reading precedes its first calculation and reads zero at the surface, and a
  * dive cannot begin in deco.
  *
- * **Absent where the recording has neither**, and left for the user to answer. The manual is
- * deliberate that Yemoja does not decide this one: the computer decided it at the time, with
- * settings this application cannot reproduce, and an opinion arrived at years later would be
- * answering a different question.
+ * **Where the recording has neither, Yemoja's model answers**: the depths run through it at the
+ * gradient factors the recording names, or the built-in 30/70 where it names none, and a ceiling
+ * below the surface at any moment means yes. That is the model's judgement rather than the
+ * computer's, which decided at the time with settings this application cannot always reproduce,
+ * and the user may write the answer instead. Absent where the model cannot work the dive out.
  */
 private fun divesDeco(dive: Item): Result<Any> = fromProfile(dive) { profile ->
     val stops = (profile.read("decostop") as? Result.Usable)?.value as? Series
@@ -776,10 +777,17 @@ private fun divesDeco(dive: Item): Result<Any> = fromProfile(dive) { profile ->
     val left = remaining?.usable()?.filterIsInstance<Double>().orEmpty()
     when {
         held.isNotEmpty() -> Result.Usable(false, Result.Origin.DERIVED)
-        left.isEmpty() -> Result.Absent
+        left.isEmpty() -> modelsDeco(profile)
         left.dropWhile { it <= 0.0 }.all { it > 0.0 } -> Result.Usable(false, Result.Origin.DERIVED)
         else -> Result.Usable(true, Result.Origin.DERIVED)
     }
+}
+
+/** Whether Yemoja's model held [profile] to a ceiling below the surface at any moment. */
+private fun modelsDeco(profile: Item): Result<Any> {
+    val done = assumedOf(profile) as? Evaluated.Done ?: return Result.Absent
+    val deepest = done.ceiling.usable().filterIsInstance<Double>().maxOrNull() ?: return Result.Absent
+    return Result.Usable(deepest > 0.0, Result.Origin.DERIVED)
 }
 
 /**
