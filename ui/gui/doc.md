@@ -1531,6 +1531,9 @@ once and corrected. The numbers stay unused rather than being given to something
   - **The tiles** are the tabs this window offers, in their order, which runs from what a
     diver came for to the machinery: a glyph, the name and what it holds. As many to a row as
     fit, which on a phone is one. System's tile says when a download is under way or done.
+  - **Download from dive computer** stands before the tiles as well as in System, being what is
+    done after every dive; pressing it opens System, where the download is followed and its dives
+    reviewed.
   - **On a phone, back leads from any tab's first page to Home**, which its tiles lead from.
 
   **System** has the download first, as the one filled button; then a box for what is under way

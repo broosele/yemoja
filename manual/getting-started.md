@@ -43,7 +43,10 @@ yellow one what falls due within a month:
 Nobody else's medical or insurance is warned about, and generic gear owes nothing. When nothing
 is due, nothing is shown.
 
-Under the greeting is a tile for each of the other tabs; press one to go there. On a phone, back
+**Download from dive computer** is under the greeting too, so a download after a dive is one
+press; it opens System, where the download shows how far it has got and its dives are reviewed.
+
+Under that is a tile for each of the other tabs; press one to go there. On a phone, back
 returns here from any of them. Without a logbook open, two buttons above the tiles get you one:
 **Open an existing Yemoja logbook** for a folder you already keep one in, and **Create a new
 Yemoja logbook** for an empty folder.

@@ -567,6 +567,14 @@ internal fun Application(universe: Universe?, platform: Platform) {
                                 platform = platform,
                                 tabs = tabs,
                                 download = reading.stage,
+                                onDownload = universe?.takeIf {
+                                    reading.stage != Stage.LOOKING && reading.stage != Stage.READING
+                                }?.let { open ->
+                                    {
+                                        tab = tabs.first { it.shape == Shape.SYSTEM }
+                                        download(open, platform, reading, downloads)
+                                    }
+                                },
                             ) { tab = it }
 
                             tab.shape == Shape.SYSTEM -> System(
@@ -840,6 +848,28 @@ internal fun Explained(said: String?, content: @Composable () -> Unit) {
 // --- Home: the greeting, what can be done to a logbook, and a plot of it. `GUI-30`.
 
 /**
+ * Starts a download from a dive computer, having asked for what the platform wants allowed first.
+ *
+ * One function for System's button and Home's, so the two cannot start it differently. `GUI-31`.
+ */
+private fun download(universe: Universe, platform: Platform, reading: Reading, downloads: CoroutineScope) {
+    val start = { downloads.launch { look(universe, platform, reading) } }
+    val permit = platform.permit
+    if (permit == null) {
+        start()
+    } else {
+        permit { granted ->
+            if (granted) {
+                start()
+            } else {
+                reading.said = REFUSED_BLUETOOTH
+                reading.stage = Stage.DONE
+            }
+        }
+    }
+}
+
+/**
  * The home screen: the greeting, what is owed, a way to a logbook where none is open, and a tile
  * for every other tab. `GUI-30`.
  */
@@ -851,6 +881,8 @@ private fun Home(
     tabs: List<Tab>,
     /** How far a download has got, which System's tile says. `GUI-52`. */
     download: Stage,
+    /** Starts a download, or absent where none can start: no logbook, or one under way. */
+    onDownload: (() -> Unit)?,
     onChoose: (Tab) -> Unit,
 ) {
     val set = universe?.logbook
@@ -878,6 +910,15 @@ private fun Home(
             }
             Owing(owed)
             if (universe == null) Starting(platform.deeds)
+            // The deed done after every dive, here as well as in System, which it opens so the
+            // download can be followed and its dives reviewed. `GUI-30`.
+            if (universe != null) {
+                Spacer(modifier = Modifier.height(GAP * 2))
+                Button(onClick = { onDownload?.invoke() }, enabled = onDownload != null) {
+                    Text(Deed.DOWNLOAD.label)
+                }
+                busyOf(download)?.let { Aside(it) }
+            }
             Spacer(modifier = Modifier.height(GAP * 2))
             Tiles(tilesOf(tabs), download, onChoose)
             Spacer(modifier = Modifier.height(GAP * 2))
@@ -1016,20 +1057,7 @@ private fun System(
             if (reading.stage != Stage.LOOKING && reading.stage != Stage.READING) {
                 put(Deed.DOWNLOAD) {
                     giving.said = null
-                    val start = { downloads.launch { look(universe, platform, reading) } }
-                    val permit = platform.permit
-                    if (permit == null) {
-                        start()
-                    } else {
-                        permit { granted ->
-                            if (granted) {
-                                start()
-                            } else {
-                                reading.said = REFUSED_BLUETOOTH
-                                reading.stage = Stage.DONE
-                            }
-                        }
-                    }
+                    download(universe, platform, reading, downloads)
                 }
             }
             // One import at a time, as a download is.
