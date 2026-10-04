@@ -58,8 +58,8 @@ its list, and choosing opens the item full-screen. Locations goes from the regio
 own page, its map, what is at it and the region itself, and from there to a site. Back,
 the arrow or the phone's own, steps out one page at a time, cancelling a form on the way. Fields
 stand one to a row. Calculations opens on the list of them and a calculation fills the screen, the planner's settings,
-gases, runtime and contingency stand one under another with the gases' table scrolling sideways,
-and the model's warning scrolls with the form it heads. A tablet keeps the desktop's layout, `PHONE-3`,
+gases, runtime and contingency stand one under another, a cylinder in three short lines, and the
+model's warning scrolls with the form it heads. A tablet keeps the desktop's layout, `PHONE-3`,
 told apart by the shorter side of its screen, 600 or more.
 
 The app is one activity in `android/`, which hands the screen to `Yemoja` in `ui/src/androidMain`;

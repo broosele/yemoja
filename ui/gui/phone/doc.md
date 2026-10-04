@@ -61,6 +61,13 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   hold all four at once. **The runtime is as tall as its lines** and no taller: the page scrolls,
   and a box of a fixed height scrolling inside it was mostly empty for a short dive and a second
   thing to scroll for a long one. A box that holds a number asks the phone for its number keys.
+
+  **A cylinder is three lines on a phone** rather than a row of a table: its number, gas and role
+  with the buttons that add and take out a cylinder; its volume, start pressure and SAC, each box
+  naming itself while empty; and what the plan makes of it, each figure named, *MOD 56 m · Used
+  1530 L · End 72 bar · Reserve 121 bar*, the reserve red where the cylinder ends below it. The
+  table's eleven columns scrolled sideways under headings that scrolled with them, and the figures
+  that matter were off the screen.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.

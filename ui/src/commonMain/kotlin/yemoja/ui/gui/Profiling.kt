@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -22,11 +23,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -314,17 +315,11 @@ internal fun PlanForm(
     if (LocalCompact.current) {
         // A phone stacks the four, each its own height and each folding away under its caption,
         // in the order a plan is made: what it is dived under, what it is dived on, the dive, and
-        // what is kept back. The gases' table scrolls sideways, its columns being wider together
-        // than the screen. `PHONE-2`.
+        // what is kept back. A cylinder is three lines of its own there, its columns being wider
+        // together than the screen. `PHONE-2`.
         Folding("Settings", shaping.folded) { Framed { Conditions(shaping) } }
         Folding("Gases", shaping.folded) {
-            Column(
-                modifier = Modifier.fillMaxWidth().framed().padding(HALF)
-                    .horizontalScroll(rememberScrollState()),
-            ) {
-                CylinderHeadings()
-                Cylinders(shaping, conditions, done, reckoned)
-            }
+            Framed { Cylinders(shaping, conditions, done, reckoned, stacked = true) }
         }
         // As tall as its lines: the page scrolls, and a box scrolling inside it would be mostly
         // empty for a short dive and a second thing to scroll for a long one.
@@ -886,21 +881,29 @@ private fun Labelled(label: String, tip: String, content: @Composable () -> Unit
  * choice and with the warning. `LOGIC-39`.
  */
 @Composable
-private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Done?, reckoned: Reckoned?) {
+private fun Cylinders(
+    shaping: Shaping,
+    conditions: Conditions?,
+    done: Worked.Done?,
+    reckoned: Reckoned?,
+    /**
+     * Whether each cylinder takes three lines rather than one: what it is, what it holds, and what
+     * the plan makes of it, each figure named since there are no headings. For a phone. `PHONE-2`.
+     */
+    stacked: Boolean = false,
+) {
     for ((index, breathed) in shaping.gases.withIndex()) {
         val key = gasKeyOf(index)
-        Row(
-            modifier = Modifier.height(ROW),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(HALF),
-        ) {
-            Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX, TextAlign.End) }
+        val number = @Composable { Explained(PlannerTips.NUMBER) { Cell("${index + 1}", INDEX, TextAlign.End) } }
+        val mix = @Composable {
             Tipped(PlannerTips.MIX, MIX) {
                 Compact(
                     dense = true,
                     value = breathed.gas,
                     onChange = { shaping.gases[index] = breathed.copy(gas = prettyGasOf(it)) })
             }
+        }
+        val role = @Composable {
             Tipped(PlannerTips.ROLE, ROLE) {
                 Pick(
                     dense = true,
@@ -908,56 +911,55 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     options = Role.entries.map { it.label },
                 ) { shaping.gases[index] = breathed.copy(role = Role.entries[it]) }
             }
+        }
+        val volume = @Composable {
             Tipped(PlannerTips.VOLUME, VOLUME) {
                 Compact(
                     dense = true,
                     value = breathed.size,
                     onChange = { shaping.gases[index] = breathed.copy(size = it) },
+                    // Named while empty where there are no headings to name it.
+                    hint = if (stacked) "volume" else "",
                     after = "L",
                     number = true,
                 )
             }
+        }
+        val start = @Composable {
             Tipped(PlannerTips.START, PRESSURE) {
                 Compact(
                     dense = true,
                     value = breathed.fill,
                     onChange = { shaping.gases[index] = breathed.copy(fill = it) },
+                    // Named while empty where there are no headings to name it.
+                    hint = if (stacked) "start" else "",
                     after = "bar",
                     number = true,
                 )
             }
+        }
+        val sac = @Composable {
             Tipped(PlannerTips.SAC, SAC) {
                 Compact(
                     dense = true,
                     value = breathed.sac,
                     onChange = { shaping.gases[index] = breathed.copy(sac = it) },
+                    // Named while empty where there are no headings to name it.
+                    hint = if (stacked) "SAC" else "",
                     after = "L/min",
                     number = true,
                 )
             }
-            val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
-            Explained(PlannerTips.MOD) { Cell(deepestSaid(breathed, conditions), FIGURED, TextAlign.End, worked) }
-            Explained(PlannerTips.USED) {
-                Cell(
-                    done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty(),
-                    FIGURED,
-                    TextAlign.End,
-                    worked
-                )
-            }
-            Explained(PlannerTips.END) {
-                Cell(done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty(), FIGURED, TextAlign.End, worked)
-            }
-            // Red where the cylinder ends with less than this, as a line too deep for its gas is.
-            val short = reckoned != null && isShort(reckoned, key)
-            Explained(PlannerTips.RESERVE) {
-                Cell(
-                    reckoned?.let { keptSaid(it, key) }.orEmpty(),
-                    FIGURED,
-                    TextAlign.End,
-                    if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked,
-                )
-            }
+        }
+        val worked = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.outline)
+        val deepest = deepestSaid(breathed, conditions)
+        val used = done?.evaluated?.gasUsed?.get(key)?.let { "${it.roundToInt()} L" }.orEmpty()
+        val ends = done?.evaluated?.pressures?.get(key)?.let { ending(it) }.orEmpty()
+        val kept = reckoned?.let { keptSaid(it, key) }.orEmpty()
+        // Red where the cylinder ends with less than this, as a line too deep for its gas is.
+        val short = reckoned != null && isShort(reckoned, key)
+        val keptStyle = if (short) worked.copy(color = MaterialTheme.colorScheme.error) else worked
+        val buttons = @Composable {
             Explained(PlannerTips.ADD_GAS) {
                 IconButton(onClick = { shaping.addGas(index) }, modifier = Modifier.size(BUTTON)) {
                     Icon(
@@ -969,11 +971,11 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                 }
             }
             // Why a gas cannot be taken out, where a line breathes it.
-            val kept = shaping.keptBecause(index)
-            Explained(kept ?: PlannerTips.REMOVE_GAS) {
+            val keptBecause = shaping.keptBecause(index)
+            Explained(keptBecause ?: PlannerTips.REMOVE_GAS) {
                 IconButton(
                     onClick = { shaping.removeGas(index) },
-                    enabled = kept == null,
+                    enabled = keptBecause == null,
                     modifier = Modifier.size(BUTTON),
                 ) {
                     Icon(
@@ -983,6 +985,57 @@ private fun Cylinders(shaping: Shaping, conditions: Conditions?, done: Worked.Do
                     )
                 }
             }
+        }
+        if (stacked) {
+            if (index > 0) HorizontalDivider(modifier = Modifier.padding(vertical = HALF))
+            Row(
+                modifier = Modifier.height(ROW),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(HALF),
+            ) {
+                number()
+                mix()
+                role()
+                Spacer(modifier = Modifier.weight(1f))
+                buttons()
+            }
+            Row(
+                modifier = Modifier.height(ROW).padding(start = INDEX + HALF),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(HALF),
+            ) {
+                volume()
+                start()
+                sac()
+            }
+            // What the plan makes of it, each figure named, there being no headings above.
+            FlowRow(
+                modifier = Modifier.padding(start = INDEX + HALF, top = HALF),
+                horizontalArrangement = Arrangement.spacedBy(GAP),
+            ) {
+                Explained(PlannerTips.MOD) { Text("MOD $deepest", style = worked) }
+                if (used.isNotEmpty()) Explained(PlannerTips.USED) { Text("Used $used", style = worked) }
+                if (ends.isNotEmpty()) Explained(PlannerTips.END) { Text("End $ends", style = worked) }
+                if (kept.isNotEmpty()) Explained(PlannerTips.RESERVE) { Text("Reserve $kept", style = keptStyle) }
+            }
+            continue
+        }
+        Row(
+            modifier = Modifier.height(ROW),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(HALF),
+        ) {
+            number()
+            mix()
+            role()
+            volume()
+            start()
+            sac()
+            Explained(PlannerTips.MOD) { Cell(deepest, FIGURED, TextAlign.End, worked) }
+            Explained(PlannerTips.USED) { Cell(used, FIGURED, TextAlign.End, worked) }
+            Explained(PlannerTips.END) { Cell(ends, FIGURED, TextAlign.End, worked) }
+            Explained(PlannerTips.RESERVE) { Cell(kept, FIGURED, TextAlign.End, keptStyle) }
+            buttons()
         }
     }
 }
