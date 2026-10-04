@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import androidx.compose.ui.unit.dp
 import yemoja.data.Gas
 import yemoja.logic.needsDuration
 import yemoja.logic.Breathed
@@ -866,13 +867,23 @@ class GasSwitchStopsTest {
 }
 
 /*
- * A phone's role letters beside a cylinder's number. `PHONE-2`.
+ * How a phone's cylinder table writes a role, by the room it has. `PHONE-2`.
  */
-class RoleLetterTest {
+class RoleShownTest {
 
     @Test
-    fun `each role has a letter of its own`() {
-        assertEquals(listOf("B", "D", "BO"), yemoja.logic.Role.entries.map { letterOf(it) })
-        assertEquals(yemoja.logic.Role.entries.size, yemoja.logic.Role.entries.map { letterOf(it) }.toSet().size)
+    fun `each form writes each role differently`() {
+        val roles = Role.entries
+        assertEquals(listOf("Btm", "Dec", "Blt"), roles.map { RoleShown.ABBREVIATION.write(it) })
+        assertEquals(listOf("B", "D", "BO"), roles.map { RoleShown.LETTER.write(it) })
+        for (shown in RoleShown.entries) {
+            assertEquals(roles.size, roles.map { shown.write(it) }.toSet().size, "$shown repeats a role")
+        }
+    }
+
+    @Test
+    fun `the widest form a table has room for is chosen`() {
+        assertEquals(RoleShown.entries.sortedByDescending { it.table }, RoleShown.entries)
+        assertEquals(0.dp, RoleShown.LETTER.table, "the narrowest table still shows the role")
     }
 }

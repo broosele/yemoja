@@ -71,10 +71,13 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   each line. The desktop's table of eleven columns scrolled sideways on a phone, and three lines a
   cylinder, tried before this, read badly.
 
-  **The role is a letter beside the number**, *1 B*, *2 D*, *3 BO*, and pressing it opens a menu
-  of the three. A column of its own did not fit. It was left out for a day and came back: the role
-  decides the pO₂ a cylinder is held to, whether the ascent may choose it, and which cylinder the
-  contingency loses and goes to, and a phone could plan no bailout without it.
+  **The role is a dropdown after the number, written as fully as the width allows**: *Bottom*
+  where the table has 370 dp, *Btm*, *Dec* and *Blt* where it has 350, and below that a letter
+  beside the number, *1 B*, *2 D*, *3 BO*, which opens the same menu. The widths were found by
+  trying them on a phone: 411 dp holds the names, 393 the abbreviations, 360 only the letter. It
+  was left out for a day and came back: the role decides the pO₂ a cylinder is held to, whether the
+  ascent may choose it, and which cylinder the contingency loses and goes to, and a phone could
+  plan no bailout without it.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.
