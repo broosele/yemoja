@@ -41,9 +41,11 @@ mkdir -p "$tree"
 sed -i 's/\r$//' "$tree/gradlew"
 chmod +x "$tree/gradlew"
 
+built="$tree/ui/build/compose/binaries/main"
+# An earlier version's packages would otherwise be copied back beside this one's.
+rm -rf "${built:?}/deb" "${built:?}/tar"
 (cd "$tree" && ./gradlew --no-daemon -q -Plibdivecomputer="$library" :ui:packageDeb :ui:packageTarGz --rerun)
 
-built="$tree/ui/build/compose/binaries/main"
 into="$repository/ui/build/compose/binaries/main"
 for kind in deb tar; do
     rm -rf "${into:?}/$kind"
