@@ -64,9 +64,12 @@ internal fun fieldsShownOf(
     type.fields.filter {
         it.name !in ALREADY_SHOWN[type.name].orEmpty() &&
                 (editing || (!it.housekeeping && !it.source)) &&
+                // A form offers what can be typed, so what is only worked out stays on the card: a
+                // site's dives, a certification's days left. A correctable field stays. `GUI-29`.
+                !(editing && it.role is Role.Derived) &&
                 // The card is titled with the name, so a card saying it again says it twice. A form
                 // keeps it where it can be typed: a site is renamed by writing in that box. `GUI-16`.
-                (it.name != NAME || (editing && it.role !is Role.Derived))
+                (it.name != NAME || editing)
     }
 
 /** The field every card is titled by, which [titleOf] reads. */

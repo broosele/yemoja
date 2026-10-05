@@ -349,10 +349,18 @@ class ArrangedTest {
     }
 
     @Test
-    fun `the form has no foot, and lays out what the view put there among the rest`() {
-        val arranged = arrangedOf(Types.GEAR, editing = true)
-        assertEquals(emptyList(), arranged.foot)
-        assertEquals(true, arranged.plain.any { it.name == "dives" })
+    fun `the form has no foot, and offers nothing that is only worked out`() {
+        for (type in listOf(Types.GEAR, Types.PERSON, Types.DIVE_SITE, Types.OPERATOR, Types.DIVE_TRIP)) {
+            val arranged = arrangedOf(type, editing = true)
+            assertEquals(emptyList(), arranged.foot)
+            val offered = arranged.plain + arranged.sections.flatMap { it.fields }
+            assertEquals(emptyList(), offered.filter { it.role is yemoja.data.Role.Derived }.map { it.name }, type.name)
+        }
+    }
+
+    @Test
+    fun `the view still lists a site's dives`() {
+        assertEquals(true, arrangedOf(Types.DIVE_SITE).foot.any { it.name == "dives" })
     }
 
     @Test

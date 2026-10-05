@@ -1762,8 +1762,10 @@ once and corrected. The numbers stay unused rather than being given to something
   collection's keys; a list as one such widget per entry, with add and take out. A series is not
   edited: the graph is its place.
 
-  **What is worked out is shown, not edited.** A derived field is read-only, and how it is drawn
-  is `GUI-49`. One the model works out unless told otherwise shows what it worked out with an
+  **What is only worked out is left out of the form.** A derived field cannot be typed, so it is
+  read on the item's card and not offered here: a site's dives, a certification's days left, a
+  trip's dates. Amended at the author's word on 2026-10-05; until then the form showed such fields
+  read-only, drawn as `GUI-49` says. One the model works out unless told otherwise shows what it worked out with an
   *override* beside it —
   not *correct*, which beside a number reads as saying the number is; overridden, it is edited
   like any other, and *revert* clears the override so the worked-out value returns. **Validation
