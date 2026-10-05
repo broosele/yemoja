@@ -50,3 +50,11 @@ tried: installing the `.deb`, a desktop other than WSL's, and Bluetooth, which W
    libraries, rather than carrying them.
 - **LNX-3 — Bluetooth LE** behaviour differs across stack versions; needs real testing. Open:
    nothing has been read over Bluetooth on Linux, WSL having no radio.
+- **LNX-4 — Classic Bluetooth.** Open, and waiting for someone who needs it. What makes it GPL
+   is BlueZ's library, not the radio: an RFCOMM connection is a kernel socket any program may
+   open. So the application could open one itself through JNA and hand it to libdivecomputer as
+   a custom stream, as it hands over Bluetooth LE, finding the device through BlueZ's D-Bus
+   service as Kable does. The library's one other part is the lookup of a device's RFCOMM channel,
+   which would be the first channel and then each in turn. A few days' work, and untestable here
+   without a Linux machine and a computer that speaks only classic Bluetooth: an older Petrel or
+   Perdix, or an OSTC 3.
