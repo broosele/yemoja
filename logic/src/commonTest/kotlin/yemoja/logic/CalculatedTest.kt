@@ -174,6 +174,7 @@ class CalculatedTest {
 
         assertEquals("ccr", schedule.diveMode)
         assertEquals(0.7, schedule.setpointSeries.first().value)
+        assertEquals(1.3, schedule.oxygenSeries.last { it.second <= 1800 }.value, 1e-12, "the loop's oxygen, at the end of the bottom")
         assertEquals(1.3, schedule.setpointSeries.last().value)
         assertTrue(schedule.stopSeconds < open.stopSeconds, "${schedule.stopSeconds} s against ${open.stopSeconds} s")
         assertTrue(schedule.gasUsedLitres.isEmpty(), "gas on the loop comes with the second step")

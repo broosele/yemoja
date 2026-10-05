@@ -185,14 +185,15 @@ well:
   `added` saying which it is.
 - `stops` — each held depth in metres and seconds.
 - `dive_mode` — `oc` or `ccr`, as the case said.
-- `ceiling`, `no_deco_seconds`, `tts_seconds`, `gf99_series`, `end_series`, `setpoint_series`,
+- `ceiling`, `no_deco_seconds`, `tts_seconds`, `gf99_series`, `end_series`, `setpoint_series`, `po2_series`,
   `cns_series`, `otu_series`, `pressures_bar` — what the model works out through the dive, each written as a series is
   written everywhere: pairs of a second and the value then. The ceiling is the shallowest allowed
   depth in metres, and is empty where the dive owes none. The no-decompression time is in
   seconds, the stretches already owing a stop left out. The time to surface is in seconds. GF99
   is a percentage and may run below nought while a compartment is still taking gas on. The END is
   in metres, on the gas breathed at each moment. The setpoint is in bar, and empty on open
-  circuit. The two
+  circuit. The pO₂ is the oxygen breathed, in bar: the mix's on open circuit, and on a rebreather
+  the setpoint, or the diluent's own where it holds more. The two
   oxygen clocks run as a percentage and a count. The pressures are each cylinder's gauge in bar,
   by its number, for the cylinders that say how big they are and what they were filled to.
 - `warnings` — what the model has to say against the plan, each as the sentence the window

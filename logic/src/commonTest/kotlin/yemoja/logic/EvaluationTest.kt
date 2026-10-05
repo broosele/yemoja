@@ -1025,6 +1025,21 @@ class EvaluationTest {
     }
 
     @Test
+    fun `the oxygen breathed is tracked, the mix's on open circuit and the loop's on a rebreather`() {
+        fun last(run: Run): Double {
+            val series = done(run).oxygenPressure
+            return (series.valueAt(series.size - 1) as Element.Usable).value as Double
+        }
+        val open = airAndDeco(40.0, 30, Gas.parse("EAN50"))
+        val atForty = ambientAt(40.0, open.density, open.surface)
+
+        assertEquals(0.21 * atForty, last(open), 1e-12, "air at forty metres")
+        assertEquals(1.3, last(loopRun(Gas.AIR, metres = 40.0, minutes = 30)), 1e-12, "the high setpoint")
+        assertEquals(0.21 * ambientAt(70.0, open.density, open.surface), last(loopRun(Gas.AIR, metres = 70.0, minutes = 10)), 1e-12,
+            "the diluent, where it holds more than the setpoint")
+    }
+
+    @Test
     fun `the way up on the loop switches to nothing`() {
         val run = loopRun(Gas.AIR, metres = 40.0, minutes = 30, deco = Gas.parse("EAN50"))
 

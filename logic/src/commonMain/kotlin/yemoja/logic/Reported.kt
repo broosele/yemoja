@@ -101,6 +101,7 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
         "gf99_series" to pairsOf(schedule.gradientFactorNow),
         "end_series" to pairsOf(schedule.narcoticDepth),
         "setpoint_series" to pairsOf(schedule.setpointSeries),
+        "po2_series" to pairsOf(schedule.oxygenSeries),
         "cns_series" to pairsOf(schedule.cnsSeries),
         "otu_series" to pairsOf(schedule.otuSeries),
         "pressures_bar" to Stored.Members(schedule.pressures.mapValues { pairsOf(it.value) }),

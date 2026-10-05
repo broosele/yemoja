@@ -78,6 +78,7 @@ internal fun runOverlaysOf(evaluated: Evaluated.Done, tanks: Map<String, String>
         Line("GF99", pointsOf(evaluated.gradientFactorNow).map { Point(it.minute, maxOf(it.value, 0.0)) }),
     )
     overlays += Overlay("END", "m", Line("END", pointsOf(evaluated.narcoticDepth)))
+    overlays += Overlay("pO₂", "bar", Line("pO₂", pointsOf(evaluated.oxygenPressure)))
     overlays += Overlay("CNS", "%", Line("CNS", pointsOf(evaluated.cns)))
     overlays += Overlay("OTU", "", Line("OTU", pointsOf(evaluated.otu)))
     return overlays

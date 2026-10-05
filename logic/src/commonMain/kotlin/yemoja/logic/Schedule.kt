@@ -78,6 +78,8 @@ class Schedule(
     val diveMode: String,
     /** The setpoint in force through the dive, in bar, and empty on open circuit. */
     val setpointSeries: List<SchedulePoint>,
+    /** The oxygen breathed through the dive, in bar. */
+    val oxygenSeries: List<SchedulePoint>,
     /** The central nervous system's clock through the dive, as a percentage. */
     val cnsSeries: List<SchedulePoint>,
     /** Oxygen tolerance units taken through the dive. */
@@ -252,6 +254,7 @@ private fun scheduleOf(planned: Planned, ready: Shaped.Ready, done: Worked.Done,
         narcoticDepth = sampledOf(done.evaluated.narcoticDepth),
         diveMode = if (ready.conditions.loop == null) OPEN_CIRCUIT else CLOSED_CIRCUIT,
         setpointSeries = sampledOf(done.evaluated.setpoint),
+        oxygenSeries = sampledOf(done.evaluated.oxygenPressure),
         cnsSeries = sampledOf(done.evaluated.cns),
         otuSeries = sampledOf(done.evaluated.otu),
         pressures = done.evaluated.pressures.entries.associate { (key, series) ->

@@ -106,6 +106,8 @@ sealed class Evaluated {
         val narcoticDepth: Series,
         /** The setpoint in force at each moment, in bar, and empty for a run on open circuit. `LOGIC-46`. */
         val setpoint: Series,
+        /** The oxygen breathed at each moment, in bar: the mix's on open circuit, the loop's on a rebreather. */
+        val oxygenPressure: Series,
     ) : Evaluated() {
 
         /**
@@ -477,6 +479,7 @@ private fun walked(
     val factorsNow = ArrayList<Double>()
     val narcotic = ArrayList<Double>()
     val setpoints = ArrayList<Double>()
+    val oxygenPressures = ArrayList<Double>()
     var stupefied = false
     val findings = ArrayList<Finding>()
     val used = HashMap<String, Double>()
@@ -573,6 +576,7 @@ private fun walked(
         }
         above = point.metres < allowed
         val oxygen = breathing.inspirationAt(point.second.toDouble()).oxygen(ambient)
+        oxygenPressures += oxygen
         val most = breathing.mostOxygenOf(breathing.keyAt(point.second))
         if (oxygen > most && !rich) {
             findings += Finding(
@@ -654,6 +658,7 @@ private fun walked(
         seriesOf(seconds, factorsNow),
         seriesOf(seconds, narcotic),
         if (setpoints.isEmpty()) seriesOf(emptyList(), emptyList()) else seriesOf(seconds, setpoints),
+        seriesOf(seconds, oxygenPressures),
     )
 }
 
