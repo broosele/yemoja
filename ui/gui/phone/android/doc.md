@@ -90,9 +90,9 @@ only over an app signed with the same key, so that folder is kept and backed up.
 keeps Android's own debug key, and the two cannot be installed over each other.
 
 **The launcher icon is the window's drawing**, in Android's adaptive form: the tile's blue behind,
-the sea and the fish in front, and the same shapes alone for a phone that tints its icons.
-`tool/icons.py` writes it from `yemoja.svg`, drawn at a little over the part a launcher shows, so
-the sea reaches the mask's edges and the fish stays clear of them.
+the drop and its diver in front, and the same shapes alone for a phone that tints its icons, which
+leaves the drop's outline. `tool/icons.py` writes it from `yemoja.svg`, drawn small enough that the
+drop's point and its bead stay within the part a launcher never cuts.
 
 **Import and export go through Android's pickers for a file**, `AND-9`. Tried on the emulator with
 a logbook of 347 dives: the export was written to a file named in the picker, ten megabytes of

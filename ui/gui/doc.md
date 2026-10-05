@@ -980,9 +980,11 @@ once and corrected. The numbers stay unused rather than being given to something
   component stay the platform's. Two constraints hold it in place: every colour on a screen is a
   *role* from the scheme rather than a value, so the palette lives in one file; and every
   pairing of a colour with the text on it is tested for contrast, because a hand-filled scheme
-  can pair a dark on a dark and nothing else would say so. The icon is a white fish above three
-  waves on the palette's navy — Yemọja is the mother whose children are fish — drawn as a
-  vector, and given to the window at whatever size the platform asks for. What is left of the
+  can pair a dark on a dark and nothing else would say so. The icon is a drop of the sea seen through a
+  cream window, a diver rising in it, on a mid blue; its point and the bead below it make the
+  ọ of Yemọja, whose dot is the bead. It replaced a white fish above three waves on 2026-10-05,
+  at the author's word, traced from a drawing the author chose. It is drawn as a vector and given
+  to the window at whatever size the platform asks for. What is left of the
   question is whether the application ever wants type or glyphs of its own, which nothing yet
   asks for.
 - **GUI-25 — What a region shows.** *Settled:* **a map, then the region, then what was chosen at

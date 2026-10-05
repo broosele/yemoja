@@ -34,8 +34,10 @@ SIZES = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
 # How much larger the .ico is drawn than its largest size, before being scaled down.
 SUPER = 4
 
-# How much of Android's 108 by 108 icon the drawing's square takes: a little over the 72 shown.
-FILLS = 0.72
+# How much of Android's 108 by 108 icon the drawing's square takes. The drop reaches nearly to the
+# top and the bottom of its square, so the square is drawn small enough that the drop sits inside
+# the 66 a launcher promises never to cut, on the tile's own blue.
+FILLS = 0.62
 
 
 def numbers(text):
@@ -149,13 +151,12 @@ def ico():
 
 def android():
     """
-    The launcher icon in Android's adaptive form: the tile's blue behind, the sea and the fish in
+    The launcher icon in Android's adaptive form: the tile's blue behind, the drop and its diver in
     front, and the same shapes alone for a phone that tints its icons.
 
-    A launcher shows the middle 72 of the icon's 108 through whatever mask it uses, so the
-    drawing's square is drawn a little larger than that, [FILLS] of the whole, and centred: the
-    sea reaches every edge of what is shown, and the fish sits well within the 66 a launcher
-    promises never to cut.
+    A launcher shows the middle 72 of the icon's 108 through whatever mask it uses, and promises
+    never to cut the middle 66. The drawing's square is drawn at [FILLS] of the whole and centred,
+    so the drop fits within those 66, and the tile's blue behind it reaches every edge.
     """
     shapes = drawing()
     background = next(a["fill"] for kind, a, _ in shapes if kind == "rect")
