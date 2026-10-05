@@ -56,4 +56,16 @@ Only Windows-specific matters belong here; everything else is in
 
 ## Open questions
 
-None for the first version.
+- **WIN-6 — A pinned icon keeps the old picture after an update.** Low importance, for later.
+   Seen when the icon changed in 0.1.19 and 0.1.20: a shortcut pinned to the taskbar showed the
+   old icon until it was unpinned and pinned again. Windows caches the icon by the exe's path,
+   and an update replaces the exe at the same path, so nothing makes it look again; jpackage's
+   installer does not say that icons have changed, as some installers do.
+
+   The cheapest answer is the application's: on its first start after an update, noticed by
+   remembering the version it last ran as, it tells the shell through JNA that icons have
+   changed, `SHChangeNotify` with `SHCNE_ASSOCCHANGED`, and may run Windows' own
+   `ie4uinit.exe -show`. The installer could do the same as a custom action, which is more work
+   in the MSI. Whether either reaches a *pinned* icon varies between Windows builds, so the first
+   step is to try `ie4uinit.exe -show` by hand the next time a pinned icon is stale, before
+   building anything. Until then, unpinning and pinning again is the answer.
