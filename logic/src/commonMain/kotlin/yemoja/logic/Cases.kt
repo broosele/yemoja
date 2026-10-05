@@ -156,6 +156,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
         is Boolean -> written
         else -> return Made.Wrong("$name oxygen_narcotic should be true or false, but was $written")
     }
+    // The diluent is a cylinder named by its number, as everything here names one. `API-7`.
+    val diluent = textOf(members["diluent"])?.let { written ->
+        written.toIntOrNull()?.takeIf { it >= 1 }?.let { it - 1 }
+            ?: return Made.Wrong("$name diluent should be a cylinder's number, not $written")
+    } ?: 0
     val switchStops = when (val written = (members["gas_switch_stops"] as? Stored.Leaf)?.value) {
         null -> false
         is Boolean -> written
@@ -206,6 +211,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             problemMinutes = setting("problem_solving_time", Settings.DEFAULT_PROBLEM_SOLVING_TIME),
             lostGasScenario = lostGasReserve,
             lostGas = lostGas,
+            diveMode = textOf(members["dive_mode"]) ?: OPEN_CIRCUIT,
+            setpointLow = textOf(members["setpoint_low"]) ?: Planned().setpointLow,
+            setpointHigh = textOf(members["setpoint_high"]) ?: Planned().setpointHigh,
+            setpointSwitchDepth = textOf(members["setpoint_switch_depth"]) ?: Planned().setpointSwitchDepth,
+            diluent = diluent,
             sharedScenario = sharedGasReserve,
         ),
     )

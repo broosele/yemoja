@@ -166,6 +166,55 @@ class CalculatedTest {
     }
 
     @Test
+    fun `a rebreather plan answers its schedule and setpoints, and leaves gas and reserves to come`() {
+        val loop = table(gases = listOf(Breathed("air", Role.BOTTOM, size = "3", fill = "200", sac = "20")), low = "30", high = "70")
+            .copy(diveMode = "ccr", stressFactor = "2", problemMinutes = "2")
+        val schedule = assertIs<Calculated.Done>(calculated(loop)).schedule
+        val open = assertIs<Calculated.Done>(calculated(loop.copy(diveMode = "oc"))).schedule
+
+        assertEquals("ccr", schedule.diveMode)
+        assertEquals(0.7, schedule.setpointSeries.first().value)
+        assertEquals(1.3, schedule.setpointSeries.last().value)
+        assertTrue(schedule.stopSeconds < open.stopSeconds, "${schedule.stopSeconds} s against ${open.stopSeconds} s")
+        assertTrue(schedule.gasUsedLitres.isEmpty(), "gas on the loop comes with the second step")
+        assertTrue(schedule.reserves.isEmpty(), "and so does its bailout")
+        assertTrue(schedule.lines.all { it.gas == "1" }, "every line breathes the diluent")
+        assertEquals("oc", open.diveMode)
+        assertTrue(open.setpointSeries.isEmpty())
+    }
+
+    @Test
+    fun `a diluent is held to the bottom's oxygen limit whatever role its cylinder was given`() {
+        // EAN32 at forty metres is 1.6 bar: within the deco limit, past the bottom's 1.4.
+        val loop = table(gases = listOf(Breathed("EAN32", Role.DECO))).copy(diveMode = "ccr")
+        val schedule = assertIs<Calculated.Done>(calculated(loop)).schedule
+
+        assertTrue(schedule.warnings.any { "pO₂ too high" in it.said && "1.40 bar allowed" in it.said }, "${schedule.warnings.map { it.said }}")
+    }
+
+    @Test
+    fun `a rebreather plan is refused for what it cannot be`() {
+        fun refused(planned: Planned): String = assertIs<Calculated.Refused>(calculated(planned)).reason
+        val loop = table().copy(diveMode = "ccr")
+
+        assertEquals("Dive mode should be oc or ccr, not \"scr\"", refused(table().copy(diveMode = "scr")))
+        assertEquals(
+            "Setpoint high should be more than 0 bar and at most the pO₂ max bottom, 1.4 bar, not \"1.5\"",
+            refused(loop.copy(setpointHigh = "1.5")),
+        )
+        assertEquals("Diluent should be one of the 1 cylinders, not 2", refused(loop.copy(diluent = 1)))
+        assertEquals(
+            "Line 2 names a gas, but a CCR plan breathes the loop throughout",
+            refused(
+                loop.copy(
+                    gases = listOf(Breathed("air", Role.BOTTOM), Breathed("EAN50", Role.DECO)),
+                    segments = listOf(Segment("40"), Segment("40", duration = "20", gas = 1)),
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `a plan starts at one standard atmosphere`() {
         assertEquals(1.013, assertNotNull(conditionsOf(table()).first).atmosphericPressure)
     }

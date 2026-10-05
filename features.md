@@ -309,12 +309,15 @@ Entries here keep their reason, so that a decision already taken is not taken ag
 
 - **FEAT-21 — Closed and semi-closed circuit diving.** Rebreather support, and the data
   that comes with it: set, measured and calculated oxygen partial pressures through a
-  dive, and the dive modes that distinguish a rebreather from open circuit. Ruled out for
-  the foreseeable future rather than for ever — the reason is scope, not principle. It is
-  a different kind of diving with its own safety surface, and supporting it badly would be
-  worse than not supporting it. UDDF carries all of it, so a rebreather dive imported from
-  elsewhere will lose that data rather than be refused; `DATA-54` should record it among
-  the fields deliberately not modelled.
+  dive, and the dive modes that distinguish a rebreather from open circuit. *Planning on a
+  closed circuit is being built for plan files, and so for the web planner, in two steps*:
+  the schedule on the loop first, `LOGIC-46`, then its gas, scrubber and bailout. The window
+  offers none of it. Logging rebreather dives remains ruled out for the foreseeable future
+  rather than for ever — the reason is scope, not principle. It is a different kind of diving
+  with its own safety surface, and supporting it badly would be worse than not supporting it.
+  UDDF carries all of it, so a rebreather dive imported from elsewhere will lose that data
+  rather than be refused; `DATA-54` should record it among the fields deliberately not
+  modelled.
 - **FEAT-20 — Recording what things cost.** A purchase price on gear, a price on each
   service, and totals across them. Dropped from the data model rather than deferred:
   money is the one quantity that does not behave like the others. Every dimension the

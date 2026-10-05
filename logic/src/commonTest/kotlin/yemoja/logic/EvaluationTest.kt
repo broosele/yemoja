@@ -949,6 +949,114 @@ class EvaluationTest {
     }
 
     @Test
+    fun `a rebreather holds its low setpoint until the switch depth, then its high one`() {
+        val run = loopRun(Gas.AIR, metres = 40.0, minutes = 30)
+        val setpoints = done(run).setpoint
+        fun at(second: Int): Double {
+            val index = (0..<setpoints.size).first { setpoints.secondAt(it) == second }
+            return (setpoints.valueAt(index) as Element.Usable).value as Double
+        }
+
+        assertEquals(0.7, at(0))
+        assertEquals(1.3, at(134), "past six metres on the way down")
+        assertEquals(1.3, at(1800))
+        assertEquals(0, done(safetyRun(18.0, 20, 1.0, 1.0)).setpoint.size, "open circuit has none")
+    }
+
+    @Test
+    fun `on the loop a dive owes less than the same dive breathing its diluent, and spends more oxygen`() {
+        val loop = loopRun(Gas.AIR, metres = 40.0, minutes = 30)
+        val open = airAndDeco(40.0, 30, Gas.AIR)
+        val onLoop = assertIs<Ascended.Done>(completeAscent(loop, 9.0, 3.0))
+        val onAir = assertIs<Ascended.Done>(completeAscent(open, 9.0, 3.0))
+
+        assertTrue(onLoop.depth.last().first < onAir.depth.last().first, "${onLoop.depth.last()} against ${onAir.depth.last()}")
+        assertTrue(done(loop).oxygen.percentCns > done(open).oxygen.percentCns)
+    }
+
+    @Test
+    fun `the setpoint changes where the descent passes the switch depth, not at the next point`() {
+        // Sixty metres in two minutes passes six metres at twelve seconds. A point written there
+        // changes nothing, since the walk cuts the descent there anyway.
+        fun loop(depth: List<Pair<Int, Double>>): Run = Run(
+            depth = depth,
+            sources = mapOf("g1" to Source(Gas.AIR)),
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+            closedCircuit = ClosedCircuit("g1", 0.7, 1.3, 6.0),
+        )
+        val plain = loop(listOf(0 to 0.0, 120 to 60.0, 900 to 60.0))
+        val marked = loop(listOf(0 to 0.0, 12 to 6.0, 120 to 60.0, 900 to 60.0))
+
+        for (number in 1..Tissues.COMPARTMENTS) {
+            assertEquals(done(marked).surfacing.nitrogenIn(number), done(plain).surfacing.nitrogenIn(number), 1e-9)
+        }
+        assertEquals(done(marked).oxygen.percentCns, done(plain).oxygen.percentCns, 1e-9)
+        assertEquals(
+            anchorOf(marked, assertNotNull(breathedBy(marked))),
+            anchorOf(plain, assertNotNull(breathedBy(plain))),
+            1e-9,
+            "and the anchor an ascent starts from is walked the same way",
+        )
+    }
+
+    @Test
+    fun `a way up begun before the switch depth keeps the low setpoint all the way`() {
+        // Tissues loaded beforehand owe stops from five metres, short of the six the high setpoint
+        // waits for. The time to surface there is the ascent finished from there, on the low one.
+        val loaded = Tissues.saturated(SEA_LEVEL).breathing(Gas.AIR, 6.0, 6.0, 40 * 60.0)
+        val run = Run(
+            depth = listOf(0 to 0.0, 60 to 5.0, 600 to 5.0, 700 to 30.0, 1200 to 30.0),
+            sources = mapOf("g1" to Source(Gas.AIR)),
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+            carried = loaded,
+            closedCircuit = ClosedCircuit("g1", 0.7, 1.3, 6.0),
+        )
+        val there = run.withDepth(run.depth.take(3), run.switches)
+        val ascent = assertIs<Ascended.Done>(completeAscent(there, 9.0, 3.0))
+        val tts = done(run).timeToSurface
+        val at = (0..<tts.size).first { tts.secondAt(it) == 600 }
+
+        assertTrue(ascent.depth.last().first - 600 > 60, "the loaded tissues owe a stop: ${ascent.depth}")
+        assertEquals((ascent.depth.last().first - 600).toDouble(), (tts.valueAt(at) as Element.Usable).value as Double, 1e-9)
+    }
+
+    @Test
+    fun `the way up on the loop switches to nothing`() {
+        val run = loopRun(Gas.AIR, metres = 40.0, minutes = 30, deco = Gas.parse("EAN50"))
+
+        assertTrue(assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0)).switches.isEmpty())
+    }
+
+    @Test
+    fun `the time to surface on the loop is the time its ascent has left`() {
+        val bottom = loopRun(Gas.AIR, metres = 40.0, minutes = 30).withRate(9.0)
+        val ascent = assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0))
+        val whole = bottom.withDepth(bottom.depth + ascent.depth, bottom.switches)
+        val tts = done(whole).timeToSurface
+        val end = whole.depth.last().first
+
+        for (at in 0..<tts.size) {
+            val second = tts.secondAt(at)
+            if (second < bottom.depth.last().first) continue
+            assertEquals((end - second).toDouble(), (tts.valueAt(at) as Element.Usable).value as Double, 1e-9, "at $second")
+        }
+    }
+
+    @Test
+    fun `a diluent too rich for the depth and one too lean for the surface are both said`() {
+        val deep = done(loopRun(Gas.AIR, metres = 70.0, minutes = 10)).findings
+        val lean = done(loopRun(Gas.parse("TMX10/70"), metres = 70.0, minutes = 10)).findings
+
+        assertTrue(deep.any { it.what == "pO₂ too high" }, "air holds 1.69 bar at seventy metres: $deep")
+        assertTrue(lean.any { it.what == "Diluent hypoxic at the surface" && it.second == 0 }, "$lean")
+        assertTrue(deep.none { it.what == "Diluent hypoxic at the surface" })
+    }
+
+    @Test
     fun `a hypoxic mix breathed at the surface is said once, and not at depth`() {
         // Trimix 10/70 is 0.10 bar at the surface and reaches 0.18 bar at about eight metres.
         fun leanFindings(switches: List<Pair<Int, String>>): List<Finding> = assertIs<Evaluated.Done>(
@@ -1091,6 +1199,19 @@ private fun decoRun(deco: Source): Run = Run(
     switches = listOf(0 to "g1"),
 )
 
+/**
+ * A rebreather dive on [diluent] to [metres], leaving the bottom at [minutes], at 0.7 and 1.3 with
+ * the switch at six metres, carrying [deco] beside it where given.
+ */
+private fun loopRun(diluent: Gas, metres: Double, minutes: Int, deco: Gas? = null): Run = Run(
+    depth = listOf(0 to 0.0, (metres / 18.0 * 60).toInt() + 1 to metres, minutes * 60 to metres),
+    sources = mapOf("g1" to Source(diluent)) + (deco?.let { mapOf("g2" to Source(it)) } ?: emptyMap()),
+    gradientFactorLow = 0.3,
+    gradientFactorHigh = 0.7,
+    switches = listOf(0 to "g1"),
+    closedCircuit = ClosedCircuit("g1", 0.7, 1.3, 6.0),
+)
+
 /** A dive on air to [metres], leaving the bottom at [minutes], carrying [deco] as its deco gas. */
 private fun airAndDeco(metres: Double, minutes: Int, deco: Gas): Run = Run(
     depth = listOf(0 to 0.0, (metres / 18.0 * 60).toInt() + 1 to metres, minutes * 60 to metres),
@@ -1131,8 +1252,14 @@ private fun Run.copied(
     switches = switches,
     density = density,
     surface = surface,
+    carried = carried,
+    oxygenCarried = oxygenCarried,
     safetyStop = safetyStop,
     ascentRate = ascentRate,
+    lastStop = lastStop,
+    mostNarcoticDepth = mostNarcoticDepth,
+    oxygenNarcotic = oxygenNarcotic,
+    closedCircuit = closedCircuit,
 )
 
 private fun Run.withSafetyStop(metres: Double, seconds: Int): Run =

@@ -44,24 +44,54 @@ class Tissues private constructor(
      * The pressure moves along the straight line between the two, which is how a series is read
      * between two samples. A steady depth is the same call with one pressure twice.
      */
-    fun breathing(gas: Gas, from: Double, to: Double, seconds: Double): Tissues {
+    fun breathing(gas: Gas, from: Double, to: Double, seconds: Double): Tissues =
+        breathing(Inspiration.OpenCircuit(gas), from, to, seconds)
+
+    /**
+     * These tissues after [seconds] of breathing what [inspiration] gives, with the pressure around
+     * them going from [from] to [to] in bar along a straight line.
+     *
+     * **Split where the inspired gas bends.** Within each piece the inspired pressures are straight
+     * lines in time, which is what the loading equation solves exactly, so a loop crossing from its
+     * setpoint to its diluent on one descent is loaded as exactly as an open-circuit mix.
+     */
+    fun breathing(inspiration: Inspiration, from: Double, to: Double, seconds: Double): Tissues {
         require(seconds >= 0) { "seconds should be 0 or more, but was $seconds" }
         if (seconds == 0.0) return this
+        val low = minOf(from, to)
+        val high = maxOf(from, to)
+        val bends = inspiration.bends().filter { it > low && it < high }.sortedBy { if (to > from) it else -it }
+        var tissues = this
+        var pressure = from
+        var spent = 0.0
+        for (bend in bends + to) {
+            val share = if (to == from) 1.0 else (bend - pressure) / (to - from)
+            val part = if (bend == to) seconds - spent else seconds * share
+            tissues = tissues.straight(inspiration, pressure, bend, part)
+            spent += part
+            pressure = bend
+        }
+        return tissues
+    }
+
+    /** These tissues after [seconds] of [inspiration] between [from] and [to], with no bend between. */
+    private fun straight(inspiration: Inspiration, from: Double, to: Double, seconds: Double): Tissues {
+        if (seconds <= 0.0) return this
         val minutes = seconds / SECONDS_IN_MINUTE
         val loadedNitrogen = DoubleArray(COMPARTMENTS)
         val loadedHelium = DoubleArray(COMPARTMENTS)
         for (index in 0..<COMPARTMENTS) {
             loadedNitrogen[index] = loaded(
                 nitrogen[index],
-                inspired(from, gas.fractionN2),
-                inspired(to, gas.fractionN2),
+                inspiration.nitrogen(from),
+                inspiration.nitrogen(to),
                 minutes,
                 HALF_TIMES_N2[index],
             )
             loadedHelium[index] = loaded(
                 helium[index],
-                inspired(from, gas.fractionHe),
-                inspired(to, gas.fractionHe),
+                inspiration.helium(from),
+                inspiration.helium(to),
                 minutes,
                 HALF_TIMES_HE[index],
             )
@@ -130,6 +160,14 @@ class Tissues private constructor(
         ambient: Double,
         surface: Double,
         gradientFactor: Double,
+    ): Double? = noDecompressionSeconds(Inspiration.OpenCircuit(gas), ambient, surface, gradientFactor)
+
+    /** [noDecompressionSeconds] for whatever [gas] gives, a loop included. */
+    fun noDecompressionSeconds(
+        gas: Inspiration,
+        ambient: Double,
+        surface: Double,
+        gradientFactor: Double,
     ): Double? {
         requireFactor(gradientFactor)
         if (ceiling(gradientFactor) > surface) return 0.0
@@ -155,7 +193,7 @@ class Tissues private constructor(
      * steady depth moving one way throughout.
      */
     private fun crossingIn(
-        gas: Gas,
+        gas: Inspiration,
         ambient: Double,
         surface: Double,
         gradientFactor: Double,
@@ -220,7 +258,7 @@ class Tissues private constructor(
 
     /** Where inside one step the ceiling passes [surface], in seconds from these tissues. */
     private fun crossing(
-        gas: Gas,
+        gas: Inspiration,
         ambient: Double,
         surface: Double,
         gradientFactor: Double,
@@ -346,7 +384,98 @@ private fun loaded(
  * shallow end that share is not small: at 1 bar it is a sixteenth of everything breathed.
  */
 private fun inspired(ambient: Double, fraction: Double): Double =
-    (ambient - WATER_VAPOUR).coerceAtLeast(0.0) * fraction
+    dryOf(ambient) * fraction
+
+/** What is left of [ambient] bar once the lungs have wetted the gas. */
+private fun dryOf(ambient: Double): Double = (ambient - WATER_VAPOUR).coerceAtLeast(0.0)
+
+/**
+ * Inspiration is what a breath holds at a given ambient pressure: the oxygen, and the inert gas the
+ * tissues take up.
+ *
+ * Immutable.
+ */
+sealed class Inspiration {
+
+    /** Bar of nitrogen breathed at [ambient] bar. */
+    abstract fun nitrogen(ambient: Double): Double
+
+    /** Bar of helium breathed at [ambient] bar. */
+    abstract fun helium(ambient: Double): Double
+
+    /** Bar of oxygen breathed at [ambient] bar, as an oxygen limit judges it. */
+    abstract fun oxygen(ambient: Double): Double
+
+    /** The ambient pressures between which [nitrogen], [helium] and [oxygen] are straight lines. */
+    abstract fun bends(): List<Double>
+
+    /**
+     * OpenCircuit is a fixed mix breathed from a cylinder, the same fractions at every depth.
+     *
+     * Immutable.
+     */
+    class OpenCircuit(val gas: Gas) : Inspiration() {
+
+        override fun nitrogen(ambient: Double): Double = inspired(ambient, gas.fractionN2)
+
+        override fun helium(ambient: Double): Double = inspired(ambient, gas.fractionHe)
+
+        override fun oxygen(ambient: Double): Double = gas.fractionO2 * ambient
+
+        override fun bends(): List<Double> = emptyList()
+    }
+
+    /**
+     * Loop is a closed-circuit rebreather holding its oxygen at [setpoint] bar, the rest of the dry
+     * gas inert in the proportion the [diluent] holds it. `LOGIC-46`.
+     *
+     * **Three stretches, each a straight line.** Where the diluent alone holds more oxygen than the
+     * setpoint, deep on a rich diluent, the loop holds the diluent itself. Where the dry gas is no
+     * more than the setpoint, near the surface on a high one, it is all oxygen. Between the two, the
+     * oxygen is the setpoint and the inert gas everything else.
+     *
+     * Immutable.
+     */
+    class Loop(val diluent: Gas, val setpoint: Double) : Inspiration() {
+
+        init {
+            require(setpoint > 0) { "a setpoint should be more than nought, but was $setpoint" }
+        }
+
+        override fun nitrogen(ambient: Double): Double = inert(ambient) * shareOf(diluent.fractionN2)
+
+        override fun helium(ambient: Double): Double = inert(ambient) * shareOf(diluent.fractionHe)
+
+        // The setpoint, or the diluent's own where it holds more, and no more than the dry breath:
+        // continuous, so a stretch read at its middle reads what it breathed. A loop on nearly pure
+        // oxygen is held to the dry breath at every depth, which is what such a loop holds.
+        override fun oxygen(ambient: Double): Double =
+            minOf(dryOf(ambient), maxOf(setpoint, diluent.fractionO2 * ambient))
+
+        override fun bends(): List<Double> = listOfNotNull(
+            setpoint + WATER_VAPOUR,
+            diluent.fractionO2.takeIf { it > 0 }?.let { setpoint / it + WATER_VAPOUR },
+            diluent.fractionO2.takeIf { it > 0 }?.let { setpoint / it },
+            // Where the diluent's own oxygen meets the dry breath, which only a nearly pure
+            // oxygen diluent reaches at a depth anybody dives.
+            diluent.fractionO2.takeIf { it < 1 }?.let { WATER_VAPOUR / (1 - it) },
+        )
+
+        /** Bar of inert gas in the dry breath at [ambient] bar. */
+        private fun inert(ambient: Double): Double {
+            val dry = dryOf(ambient)
+            return if (diluentHolds(dry)) dry * (1 - diluent.fractionO2) else (dry - setpoint).coerceAtLeast(0.0)
+        }
+
+        private fun diluentHolds(dry: Double): Boolean = diluent.fractionO2 * dry >= setpoint
+
+        /** What share of the diluent's inert gas [fraction] is. */
+        private fun shareOf(fraction: Double): Double {
+            val inert = diluent.fractionN2 + diluent.fractionHe
+            return if (inert <= 0) 0.0 else fraction / inert
+        }
+    }
+}
 
 private fun requireFactor(gradientFactor: Double) {
     require(gradientFactor in 0.0..1.0) {
@@ -393,7 +522,7 @@ private val B_HE = doubleArrayOf(
 )
 
 /** Water vapour in the lungs at body temperature, in bar. */
-private const val WATER_VAPOUR = 0.0627
+internal const val WATER_VAPOUR = 0.0627
 
 private const val SECONDS_IN_MINUTE = 60.0
 

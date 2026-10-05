@@ -202,7 +202,7 @@ private fun heldThenClimbed(
     val ambient = ambientAt(metres, run.density, run.surface)
     val held = if (metres > 0) ascending.problemSolvingSeconds else 0
     val loaded = if (held > 0) {
-        tissues.breathing(choosing.mixes.getValue(breathed), ambient, ambient, held.toDouble())
+        tissues.breathing(choosing.inspirationOf(breathed, second.toDouble()), ambient, ambient, held.toDouble())
     } else {
         tissues
     }
@@ -262,12 +262,7 @@ private fun reserveOver(
         val (second, metres) = point
         if (index > 0) {
             val (was, from) = run.depth[index - 1]
-            tissues = tissues.breathing(
-                breathing.mixAt(was),
-                ambientAt(from, run.density, run.surface),
-                ambientAt(metres, run.density, run.surface),
-                (second - was).toDouble(),
-            )
+            tissues = breathedOver(tissues, breathing, was, from, second, metres, run)
         }
         anchor = firstStopAfter(tissues, anchor, run.model, run.surface)
         val litres = when (val answer = cost(index, second, metres, tissues, anchor)) {

@@ -109,6 +109,29 @@ factor as a proportion.
 [settings.md](settings.md) says what each of them does, and
 [decompression.md](decompression.md#planning-a-dive) what the two gas-reserve scenarios are.
 
+### On a closed-circuit rebreather
+
+A case may be planned on a closed-circuit rebreather, which the window does not offer. The loop
+holds its oxygen at a setpoint, and the rest of what you breathe is inert gas in the proportion
+your diluent holds it.
+
+| Field | What it says |
+|---|---|
+| `dive_mode` | `ccr` for a rebreather; `oc`, open circuit, if left out |
+| `setpoint_low` | The setpoint from the surface down to `setpoint_switch_depth`, in bar; 0.7 if left out |
+| `setpoint_high` | The setpoint from there on, the way up included, in bar; 1.3 if left out |
+| `setpoint_switch_depth` | Where the descent changes to the high setpoint, in metres; 6 if left out |
+| `diluent` | The cylinder the diluent comes from, by its number; 1 if left out |
+
+A setpoint may be no higher than `po2_max_bottom`. Every line breathes the loop, and the way up
+switches to no cylinder, so a line naming a gas is refused. Where your diluent alone holds more
+oxygen than the setpoint, deep on a rich diluent, the loop breathes the diluent itself, and the
+pO₂ warning says so; a diluent too lean to breathe at the surface is warned of too.
+
+**Not yet:** the gas a rebreather uses, its scrubber, and the bailout reserve. A rebreather case's
+answer leaves out the litres and the reserve rather than giving open-circuit figures that would
+be wrong.
+
 ### Following an earlier case
 
 A case may follow an earlier case in the same file, so a repetitive dive is planned with the
@@ -161,13 +184,15 @@ well:
   added, each with `from_m`, `to_m`, `begins_at_seconds`, `seconds`, `direction`, `gas`, and
   `added` saying which it is.
 - `stops` — each held depth in metres and seconds.
-- `ceiling`, `no_deco_seconds`, `tts_seconds`, `gf99_series`, `end_series`, `cns_series`, `otu_series`,
-  `pressures_bar` — what the model works out through the dive, each written as a series is
+- `dive_mode` — `oc` or `ccr`, as the case said.
+- `ceiling`, `no_deco_seconds`, `tts_seconds`, `gf99_series`, `end_series`, `setpoint_series`,
+  `cns_series`, `otu_series`, `pressures_bar` — what the model works out through the dive, each written as a series is
   written everywhere: pairs of a second and the value then. The ceiling is the shallowest allowed
   depth in metres, and is empty where the dive owes none. The no-decompression time is in
   seconds, the stretches already owing a stop left out. The time to surface is in seconds. GF99
   is a percentage and may run below nought while a compartment is still taking gas on. The END is
-  in metres, on the gas breathed at each moment. The two
+  in metres, on the gas breathed at each moment. The setpoint is in bar, and empty on open
+  circuit. The two
   oxygen clocks run as a percentage and a count. The pressures are each cylinder's gauge in bar,
   by its number, for the cylinders that say how big they are and what they were filled to.
 - `warnings` — what the model has to say against the plan, each as the sentence the window

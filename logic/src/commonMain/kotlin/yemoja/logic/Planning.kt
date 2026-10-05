@@ -98,6 +98,16 @@ data class Planned(
     val leastOxygen: String = "",
     /** The deepest equivalent narcotic depth any gas is breathed at, in metres. */
     val narcoticDepth: String = "50",
+    /** `oc` for open circuit or `ccr` for a closed-circuit rebreather. `LOGIC-46`. */
+    val diveMode: String = "oc",
+    /** The setpoint from the surface until [setpointSwitchDepth], in bar, on a rebreather. */
+    val setpointLow: String = "0.7",
+    /** The setpoint from [setpointSwitchDepth] on, the way up included, in bar. */
+    val setpointHigh: String = "1.3",
+    /** The depth the descent changes to [setpointHigh] at, in metres. */
+    val setpointSwitchDepth: String = "6",
+    /** The cylinder the loop's diluent comes from, by its place in the list. */
+    val diluent: Int = 0,
     /** Whether oxygen counts as narcotic in the equivalent narcotic depth. */
     val oxygenNarcotic: Boolean = true,
     val descentRate: String = "",
@@ -314,6 +324,8 @@ class Conditions(
     /** The deepest equivalent narcotic depth any gas is breathed at, in metres. */
     val narcoticDepth: Double,
     val oxygenNarcotic: Boolean,
+    /** The rebreather's setpoints and diluent, or null on open circuit. */
+    val loop: Setpoints?,
     val descentRate: Double,
     val ascentRate: Double,
     val safetyDepth: Double,
@@ -328,6 +340,20 @@ class Conditions(
     val atmosphericPressure: Double,
 )
 
+/**
+ * Setpoints are a rebreather plan's loop: the cylinder its diluent comes from by its place in the
+ * list, the low and high setpoints in bar, and the depth the descent changes from one to the other.
+ *
+ * Immutable.
+ */
+class Setpoints(val diluent: Int, val low: Double, val high: Double, val switchDepth: Double)
+
+/** A plan's [Planned.diveMode] on open circuit. */
+const val OPEN_CIRCUIT = "oc"
+
+/** A plan's [Planned.diveMode] on a closed-circuit rebreather. */
+const val CLOSED_CIRCUIT = "ccr"
+
 /** One standard atmosphere, as a plan's atmospheric pressure starts where nothing else says. */
 const val SEA_LEVEL_SAID = "1.013"
 
@@ -338,6 +364,24 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
     if (low > high) return null to "GF low should not be higher than GF high"
     val bottom = positiveOf(shaping.bottomOxygen)
         ?: return null to numberWrong("pO₂ max bottom", "more than 0 bar", shaping.bottomOxygen)
+    val loop = when (shaping.diveMode.trim()) {
+        OPEN_CIRCUIT -> null
+        CLOSED_CIRCUIT -> {
+            // A setpoint is held for the whole stretch it governs, so it answers to the bottom limit.
+            val within = "more than 0 bar and at most the pO₂ max bottom, ${plain(bottom)} bar"
+            val low = positiveOf(shaping.setpointLow)?.takeIf { it <= bottom }
+                ?: return null to numberWrong("Setpoint low", within, shaping.setpointLow)
+            val high = positiveOf(shaping.setpointHigh)?.takeIf { it <= bottom }
+                ?: return null to numberWrong("Setpoint high", within, shaping.setpointHigh)
+            val switchDepth = shaping.setpointSwitchDepth.trim().toDoubleOrNull()?.takeIf { it >= 0 }
+                ?: return null to numberWrong("Setpoint switch depth", "0 m or more", shaping.setpointSwitchDepth)
+            if (shaping.diluent !in shaping.gases.indices) {
+                return null to "Diluent should be one of the ${shaping.gases.size} cylinders, not ${shaping.diluent + 1}"
+            }
+            Setpoints(shaping.diluent, low, high, switchDepth)
+        }
+        else -> return null to "Dive mode should be $OPEN_CIRCUIT or $CLOSED_CIRCUIT, not ${said(shaping.diveMode)}"
+    }
     val deco = positiveOf(shaping.decoOxygen)
         ?: return null to numberWrong("pO₂ max deco", "more than 0 bar", shaping.decoOxygen)
     val least = positiveOf(shaping.leastOxygen)
@@ -375,6 +419,7 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
         leastOxygen = least,
         narcoticDepth = narcotic,
         oxygenNarcotic = shaping.oxygenNarcotic,
+        loop = loop,
         descentRate = descent,
         ascentRate = ascent,
         safetyDepth = safety,
@@ -445,7 +490,10 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
             },
             legs,
         )
-        sources[gasKeyOf(index)] = sourceOf(breathed, gas, conditions)
+        // The loop breathes its diluent for the whole dive, so it is held to the bottom's limit
+        // whatever role its cylinder was given.
+        val held = if (conditions.loop?.diluent == index) breathed.copy(role = Role.BOTTOM) else breathed
+        sources[gasKeyOf(index)] = sourceOf(held, gas, conditions)
     }
     // A start that will not read, or a run followed that cannot be, is the plan's fault as a
     // setting that will not read is: the model cannot say what the dive starts from.
@@ -453,9 +501,19 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
     if (followed is Followed.Wrong) return Shaped.Wrong(followed.reason, legs)
     (startOf(shaping) as? Start.Wrong)?.let { return Shaped.Wrong(it.reason, legs) }
     val left = (followed as? Followed.After)?.residual ?: residual
-    val points = listOf(0 to 0.0) + legs.map { it.ends to it.to }
+    val loop = conditions.loop
+    // On the loop every line breathes it; a cylinder named on a line is open circuit, which is a
+    // bailout and comes with `LOGIC-46`'s second step.
+    val breathed = if (loop == null) legs else {
+        shaping.segments.withIndex().firstOrNull { (_, segment) -> segment.gas != null && segment.gas != loop.diluent }
+            ?.let { (index, _) ->
+                return Shaped.Wrong("Line ${index + 1} names a gas, but a CCR plan breathes the loop throughout", legs)
+            }
+        legs.map { it.copy(gas = loop.diluent) }
+    }
+    val points = listOf(0 to 0.0) + breathed.map { it.ends to it.to }
     val switches = ArrayList<Pair<Int, String>>()
-    for (leg in legs) {
+    for (leg in breathed) {
         val key = gasKeyOf(leg.gas)
         if (switches.lastOrNull()?.second != key) switches += (if (switches.isEmpty()) 0 else leg.begins) to key
     }
@@ -477,10 +535,11 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
             lastStop = conditions.lastStop,
             mostNarcoticDepth = conditions.narcoticDepth,
             oxygenNarcotic = conditions.oxygenNarcotic,
+            closedCircuit = loop?.let { ClosedCircuit(gasKeyOf(it.diluent), it.low, it.high, it.switchDepth) },
             carried = left?.tissues,
             oxygenCarried = left?.oxygen,
         ),
-        legs,
+        breathed,
         conditions,
     )
 }
@@ -573,6 +632,8 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
         )
     }
 
+    // A rebreather's reserve is its bailout, which comes with `LOGIC-46`'s second step.
+    if (conditions.loop != null) return Reckoned(mapOf(Scenario.LOST_GAS to null, Scenario.SHARED to null))
     val keys = shaping.gases.indices
     // Both scenarios begin with it, so one typed wrong leaves both unsaid.
     val problem = problemSecondsOf(shaping)
@@ -775,6 +836,7 @@ fun withAscent(run: Run, ascent: Ascended.Done): Run = Run(
     lastStop = run.lastStop,
     mostNarcoticDepth = run.mostNarcoticDepth,
     oxygenNarcotic = run.oxygenNarcotic,
+    closedCircuit = run.closedCircuit,
 )
 
 /**

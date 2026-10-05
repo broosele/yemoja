@@ -127,6 +127,25 @@ class CasesTest {
     }
 
     @Test
+    fun `a rebreather case says its mode, setpoints and diluent, and leaves out what it takes as given`() {
+        val case = oneOf(
+            """{"runtime": [{"depth": 40}], "dive_mode": "ccr", "setpoint_low": 0.6, "setpoint_high": 1.2,
+                "setpoint_switch_depth": 10, "diluent": 2, "gases": [{"gas": "EAN50"}, {"gas": "TMX18/45"}]}""",
+        ).planned
+        assertEquals("ccr", case.diveMode)
+        assertEquals(listOf("0.6", "1.2", "10"), listOf(case.setpointLow, case.setpointHigh, case.setpointSwitchDepth))
+        assertEquals(1, case.diluent, "the second cylinder")
+        val plain = oneOf("""{"runtime": [{"depth": 40}], "dive_mode": "ccr"}""").planned
+        assertEquals(listOf("0.7", "1.3", "6"), listOf(plain.setpointLow, plain.setpointHigh, plain.setpointSwitchDepth))
+        assertEquals(0, plain.diluent)
+        assertEquals("oc", oneOf("""{"runtime": [{"depth": 40}]}""").planned.diveMode)
+        assertEquals(
+            "case 1 diluent should be a cylinder's number, not first",
+            assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 40}], "diluent": "first"}""")).reason,
+        )
+    }
+
+    @Test
     fun `a plan on its own is a file of one`() {
         val cases = assertIs<Read.Cases>(
             read("""{"runtime": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),

@@ -321,3 +321,99 @@ class DecompressionTest {
         )
     }
 }
+
+class LoopTest {
+
+    private val water = 0.0627
+
+    @Test
+    fun `on the loop the setpoint is oxygen and the rest of the dry breath is inert`() {
+        val loop = Inspiration.Loop(Gas.AIR, 1.3)
+
+        assertEquals(4.0 - water - 1.3, loop.nitrogen(4.0), 1e-12, "air's inert gas is all nitrogen")
+        assertEquals(0.0, loop.helium(4.0))
+        assertEquals(1.3, loop.oxygen(4.0))
+        val trimix = Inspiration.Loop(Gas.parse("TMX21/35"), 1.3)
+        assertEquals((4.0 - water - 1.3) * 35 / 79, trimix.helium(4.0), 1e-12, "split as the diluent splits it")
+    }
+
+    @Test
+    fun `near the surface a high setpoint cannot be held, and the breath is all oxygen`() {
+        val loop = Inspiration.Loop(Gas.AIR, 1.3)
+
+        assertEquals(0.0, loop.nitrogen(1.2))
+        assertEquals(1.2 - water, loop.oxygen(1.2), 1e-12)
+    }
+
+    @Test
+    fun `where the diluent holds more oxygen than the setpoint, the loop is the diluent`() {
+        // Air at eighty metres is 1.9 bar of oxygen, past a setpoint of 1.3.
+        val loop = Inspiration.Loop(Gas.AIR, 1.3)
+        val open = Inspiration.OpenCircuit(Gas.AIR)
+
+        assertEquals(open.nitrogen(9.0), loop.nitrogen(9.0), 1e-12)
+        assertEquals(open.oxygen(9.0), loop.oxygen(9.0), 1e-12)
+    }
+
+    @Test
+    fun `a loop whose setpoint never binds loads as its diluent does on open circuit`() {
+        val settled = Tissues.saturated(SURFACE)
+        val loop = settled.breathing(Inspiration.Loop(Gas.AIR, 0.1), SURFACE, DEEP, 120.0)
+            .breathing(Inspiration.Loop(Gas.AIR, 0.1), DEEP, DEEP, 20 * MINUTE)
+        val open = settled.breathing(Gas.AIR, SURFACE, DEEP, 120.0).breathing(Gas.AIR, DEEP, DEEP, 20 * MINUTE)
+
+        for (number in 1..Tissues.COMPARTMENTS) {
+            assertEquals(open.nitrogenIn(number), loop.nitrogenIn(number), 1e-12, "compartment $number")
+        }
+    }
+
+    @Test
+    fun `a descent across the loop's bends loads the same taken whole or in two`() {
+        // From the surface to fifty metres on air at 1.3 crosses the setpoint's own pressure.
+        val loop = Inspiration.Loop(Gas.AIR, 1.3)
+        val settled = Tissues.saturated(SURFACE)
+        val whole = settled.breathing(loop, SURFACE, 6.0, 300.0)
+        val halves = settled.breathing(loop, SURFACE, 3.5, 300.0 * (3.5 - SURFACE) / (6.0 - SURFACE))
+            .breathing(loop, 3.5, 6.0, 300.0 * (6.0 - 3.5) / (6.0 - SURFACE))
+
+        for (number in 1..Tissues.COMPARTMENTS) {
+            assertEquals(whole.nitrogenIn(number), halves.nitrogenIn(number), 1e-9, "compartment $number")
+        }
+    }
+
+    @Test
+    fun `an ascent across both of the loop's bends loads the same taken whole or in two`() {
+        // From 6.5 bar up to the surface on air at 1.3 crosses the diluent's bend near 6.25 bar
+        // and the setpoint's near 1.36.
+        val loop = Inspiration.Loop(Gas.AIR, 1.3)
+        val loaded = Tissues.saturated(SURFACE).breathing(loop, 6.5, 6.5, 30 * MINUTE)
+        val whole = loaded.breathing(loop, 6.5, SURFACE, 600.0)
+        val halves = loaded.breathing(loop, 6.5, 3.0, 600.0 * 3.5 / 5.5).breathing(loop, 3.0, SURFACE, 600.0 * 2.0 / 5.5)
+
+        for (number in 1..Tissues.COMPARTMENTS) {
+            assertEquals(whole.nitrogenIn(number), halves.nitrogenIn(number), 1e-9, "compartment $number")
+        }
+    }
+
+    @Test
+    fun `a loop's oxygen is a straight line between every bend it lists`() {
+        // A 99 % diluent's oxygen meets the dry breath near 6.3 bar, a corner of its own.
+        for (diluent in listOf(Gas.AIR, Gas.parse("TMX10/70"), Gas(99, 0), Gas(100, 0))) {
+            val loop = Inspiration.Loop(diluent, 1.3)
+            val edges = (listOf(1.0, 12.0) + loop.bends().filter { it > 1.0 && it < 12.0 }).sorted()
+            for ((low, high) in edges.zipWithNext()) {
+                val middle = (low + high) / 2
+                assertEquals((loop.oxygen(low) + loop.oxygen(high)) / 2, loop.oxygen(middle), 1e-12, "$diluent between $low and $high")
+            }
+        }
+    }
+
+    @Test
+    fun `a high setpoint takes on less nitrogen than air at the same depth`() {
+        val settled = Tissues.saturated(SURFACE)
+        val loop = settled.breathing(Inspiration.Loop(Gas.AIR, 1.3), DEEP, DEEP, 20 * MINUTE)
+        val open = settled.breathing(Gas.AIR, DEEP, DEEP, 20 * MINUTE)
+
+        assertTrue(loop.nitrogenIn(1) < open.nitrogenIn(1))
+    }
+}

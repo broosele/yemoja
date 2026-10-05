@@ -75,6 +75,7 @@ private fun quoted(field: String): String =
 fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
     mapOf(
         "name" to Stored.Leaf(name),
+        "dive_mode" to Stored.Leaf(schedule.diveMode),
         "max_depth_m" to Stored.Leaf(schedule.maxDepthMetres),
         "runtime_seconds" to Stored.Leaf(schedule.runtimeSeconds.toLong()),
         "stop_seconds" to Stored.Leaf(schedule.stopSeconds.toLong()),
@@ -99,6 +100,7 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
         "tts_seconds" to pairsOf(schedule.timeToSurfaceSeconds),
         "gf99_series" to pairsOf(schedule.gradientFactorNow),
         "end_series" to pairsOf(schedule.narcoticDepth),
+        "setpoint_series" to pairsOf(schedule.setpointSeries),
         "cns_series" to pairsOf(schedule.cnsSeries),
         "otu_series" to pairsOf(schedule.otuSeries),
         "pressures_bar" to Stored.Members(schedule.pressures.mapValues { pairsOf(it.value) }),

@@ -1389,6 +1389,46 @@ To settle when we discuss architecture and features:
   and a top-up lands between them. `Contents` gives the fractions as they are and the
   nearest `Gas`, and a front end shows both.
 
+- **LOGIC-46 — How a plan is worked out on a closed-circuit rebreather.** *Settled, first of two
+  steps:* **a loop held at a setpoint, its inert gas in the diluent's proportion, for a plan
+  described in a plan file.**
+
+  The user asked for CCR planning in the web planner alone, `FEAT-21`, so it reaches the planner
+  through a plan file, `API-8`, and the window neither offers it nor shows it. Recorded rebreather
+  dives are still dropped on import.
+
+  **What the loop breathes.** The oxygen is the setpoint, and the rest of the dry breath is inert,
+  split between nitrogen and helium as the diluent splits it. Two stretches differ. Deep on a rich
+  diluent, where the diluent alone holds more oxygen than the setpoint, the loop holds the diluent
+  itself. Near the surface on a high setpoint, where the dry breath is no more than the setpoint,
+  it is all oxygen. Each stretch is a straight line in the ambient pressure, so `Tissues.breathing`
+  cuts a depth change where it crosses from one to the next and loads each piece with the
+  equation open circuit uses, exactly. `Inspiration` says what a breath holds, a fixed mix being
+  the other kind, and an open-circuit run loads to the bit as it did before.
+
+  **The oxygen the loop is judged by is continuous**: the setpoint, or the diluent's own where it
+  holds more, and never more than the dry breath. The oxygen clocks read each stretch at its middle,
+  so a jump at a bend made what a dive spent depend on where its lines were cut. A loop on pure
+  oxygen therefore reads the dry breath, a little under open circuit's figure for the same mix.
+
+  **Two setpoints and a depth between them.** The low one holds from the surface until the dive
+  first reaches the switch depth, and the high one from then on, the way up included. A third, for
+  decompression, was offered and not chosen. A setpoint above the plan's *pO₂ max bottom* is
+  refused, being held for the whole stretch it governs.
+
+  **What follows from the tissues follows unchanged**: the ceiling, the stops, the time to surface,
+  GF99 and the no-decompression time. The oxygen clocks run on the loop's oxygen, the walk being
+  cut at the same places so that they are as exact. The END is read from the loop's own
+  fractions. The pO₂ check judges the loop, which is how a diluent too rich for the depth is said,
+  and a diluent too lean to breathe at the surface is said once at the start. The way up switches
+  to nothing: a cylinder beside the diluent is open circuit, which is a bailout, and a line naming
+  one is refused.
+
+  **Left to the second step**: the gas the loop uses, the scrubber, and the bailout reserve. Until
+  then a rebreather plan's answer leaves out litres and reserves rather than give open-circuit
+  figures that would be wrong. Built in `Decompression.kt` and `Evaluation.kt`, the plan's side in
+  `Planning.kt`.
+
 - **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones
    something used, unless there is only one.**
 
