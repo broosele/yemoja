@@ -981,9 +981,12 @@ once and corrected. The numbers stay unused rather than being given to something
   *role* from the scheme rather than a value, so the palette lives in one file; and every
   pairing of a colour with the text on it is tested for contrast, because a hand-filled scheme
   can pair a dark on a dark and nothing else would say so. The icon is a drop of the sea seen through a
-  cream window, a diver rising in it, on a mid blue; its point and the bead below it make the
-  ọ of Yemọja, whose dot is the bead. It replaced a white fish above three waves on 2026-10-05,
-  at the author's word, traced from a drawing the author chose. It is drawn as a vector and given
+  white window, a diver rising in it, on the palette's navy; its point and the bead below it make
+  the ọ of Yemọja, whose dot is the bead. It replaced a white fish above three waves on 2026-10-05,
+  at the author's word, traced from a drawing the author chose. Its colours then moved to the
+  palette's where one lay close: the tile is the primary navy, the frame the background and the
+  diver a container's navy. The sea keeps its own cyans and blues, nothing in the palette being
+  near them, and its floor stays apart from the tile it would otherwise have matched. It is drawn as a vector and given
   to the window at whatever size the platform asks for. What is left of the
   question is whether the application ever wants type or glyphs of its own, which nothing yet
   asks for.
