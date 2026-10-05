@@ -1,12 +1,13 @@
 """Make the platforms' icons from the one drawing, ui/src/jvmMain/resources/yemoja.svg.
 
-The window draws the SVG itself, and the website copies it. A Windows installer wants a .ico and an
-Android app an icon in its own vector format, so both are written here from the same shapes, and run
+The window draws the SVG itself, and the website copies it. A Windows installer wants a .ico, a Linux
+desktop a .png and an Android app an icon in its own vector format, so both are written here from the same shapes, and run
 again whenever the drawing changes:
 
     python tool/icons.py
 
-writes ui/icons/yemoja.ico and the Android launcher icon under android/src/main/res.
+writes ui/icons/yemoja.ico, ui/icons/yemoja.png for Linux, and the Android launcher icon under
+android/src/main/res.
 
 Only what the drawing uses is read: a rect with rounded corners, circles, and paths of M, L, H, V,
 C, c, s and Z. Pillow does the drawing for the .ico, four times larger and then scaled down, which
@@ -23,6 +24,7 @@ from PIL import Image, ImageDraw
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SVG = os.path.join(ROOT, "ui", "src", "jvmMain", "resources", "yemoja.svg")
 ICO = os.path.join(ROOT, "ui", "icons", "yemoja.ico")
+PNG = os.path.join(ROOT, "ui", "icons", "yemoja.png")
 RES = os.path.join(ROOT, "android", "src", "main", "res")
 NS = "{http://www.w3.org/2000/svg}"
 
@@ -140,6 +142,9 @@ def ico():
     os.makedirs(os.path.dirname(ICO), exist_ok=True)
     picture.resize((SIZES[-1], SIZES[-1]), Image.LANCZOS).save(ICO, sizes=[(s, s) for s in SIZES])
     print(ICO)
+    # A Linux desktop takes one picture and scales it, so the largest size goes alone.
+    picture.resize((SIZES[-1], SIZES[-1]), Image.LANCZOS).save(PNG)
+    print(PNG)
 
 
 def android():

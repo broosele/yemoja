@@ -160,7 +160,8 @@ what it means is argued there; what is here is where it goes on a large screen.
   the window opened on the welcome unless a folder was named where it was started.
 
   The folder last opened, by name, by *Open logbook* or by *New logbook*, is kept in one file in
-  this user's application data, `%LOCALAPPDATA%\Yemoja\last-logbook.txt`, beside the copies of
+  this user's application data, `%LOCALAPPDATA%\Yemoja\last-logbook.txt` on Windows and
+`~/.local/share/yemoja` on Linux, beside the copies of
   `JSON-28`. Not in the installation, which an update replaces, and not in a logbook, which is
   what it names. A folder named where the window is started still wins, and one that will not read
   still fails the command; the folder remembered failing to read opens the welcome instead, there

@@ -39,15 +39,14 @@ far as [features.md](features.md) records; history and syncing are designed and
 specified but not written. The file format was settled with those in mind, so adding
 them later is building, not rewriting.
 
-What a reader should not expect yet: nothing is installable, the history and the syncing
-the format was designed for are not written, and none of the four other platforms has been
-built. Each is registered in features.md or in the layer document that owns it.
+What a reader should not expect yet: the history and the syncing the format was designed for
+are not written, and the Mac and the iPhone have not been built. Each is registered in features.md or in the layer document that owns it.
 
 ## Installing and running
 
 **Releases are on [GitHub](https://github.com/broosele/yemoja/releases)**: a Windows installer,
-for Windows 10 and 11, and an Android app, for Android 12 and later, both attached to each release.
-The Mac, Linux and the iPhone come later. Building either, and building and running from source,
+for Windows 10 and 11, a `.deb` and a `.tar.gz` for Linux, and an Android app, for Android 12 and
+later, all attached to each release. The Mac and the iPhone come later. Building either, and building and running from source,
 are below.
 
 **A release is made as a draft first**, the installer and the app attached to it, and published
@@ -63,6 +62,12 @@ warns on first run that the publisher is unknown; *More info* then *Run anyway* 
 `WIN-1`, `WIN-2`. The installed `Yemoja.exe` opens the window, and given a command it runs that
 command instead — `Yemoja.exe plan <file>` — except the terminal front end, which needs a
 console the installed launcher does not have: use `installDist` for that.
+
+**The Linux packages** are built on Linux, or in WSL from a Windows checkout, by
+`tool/linux-packages.sh`, which writes them beside the installer. The `.deb` installs under
+`/opt/yemoja` with a menu entry; the `.tar.gz` unpacks anywhere and runs `Yemoja/bin/Yemoja`.
+Both carry their own Java runtime and the dive computer library. `LNX-1` in
+[ui/gui/desktop/linux/doc.md](ui/gui/desktop/linux/doc.md).
 
 **Building what exists** needs a JDK 21 and nothing else. The Gradle wrapper fetches its
 own Gradle, and Gradle fetches the Kotlin compiler, so `./gradlew build` from the root is
@@ -205,6 +210,11 @@ installer is made, and installed on nothing. Its reciprocal terms reach changes 
 source files, which this project makes none of; the installer it writes compiles in WiX's standard
 dialogs and carries no WiX code to run. See `WIN-1` in
 [ui/gui/desktop/windows/doc.md](ui/gui/desktop/windows/doc.md).
+
+**Building the Linux packages** takes jpackage again, which on Linux calls the system's
+`dpkg-deb` and `fakeroot` to make the `.deb`. Both are build tools of the machine that builds,
+GPL, and nothing of them is carried in the package. libdivecomputer is built there without BlueZ,
+whose library is GPL, so classic Bluetooth is not read on Linux. `LNX-1`.
 
 **Building for Android** takes Google's **Android Gradle Plugin**, Apache 2.0, the only way
 Gradle builds an Android app, and the app takes **androidx activity-compose**, Apache 2.0, which

@@ -1,15 +1,16 @@
-"""Publish a release on GitHub, with the Windows installer and the Android app attached.
+"""Publish a release on GitHub, with the Windows installer, the Linux packages and the Android app.
 
     python tool/release.py <notes file>
 
 The version is the build's own, `release` in gradle.properties, and so are the files' names; nothing
-is typed twice. Build both first:
+is typed twice. Build them first, the Linux two from a Linux shell or WSL:
 
     ./gradlew :ui:packageMsi :android:assembleRelease
+    JAVA_HOME=~/jdk21 bash tool/linux-packages.sh <libdivecomputer source>
 
 The repository's releases are immutable: nothing can be attached to one once it is published, no
 attached file renamed, and a tag a deleted release used cannot be used again. So the release is
-made as a draft, both files attached and their names checked, and only then published, as the
+made as a draft, every file attached and their names checked, and only then published, as the
 latest. The tag is the bare version and points at what is pushed: the commit here must be on
 GitHub already.
 
@@ -65,6 +66,10 @@ def main(notes_file):
          f"Yemoja-{tag}.msi", "application/octet-stream"),
         (os.path.join(ROOT, "android", "build", "outputs", "apk", "release", "android-release.apk"),
          f"Yemoja-{tag}.apk", "application/vnd.android.package-archive"),
+        (os.path.join(ROOT, "ui", "build", "compose", "binaries", "main", "deb", f"yemoja_{tag}_amd64.deb"),
+         f"yemoja_{tag}_amd64.deb", "application/vnd.debian.binary-package"),
+        (os.path.join(ROOT, "ui", "build", "compose", "binaries", "main", "tar", f"Yemoja-{tag}.tar.gz"),
+         f"Yemoja-{tag}.tar.gz", "application/gzip"),
     ]
     for path, _, _ in files:
         if not os.path.isfile(path):

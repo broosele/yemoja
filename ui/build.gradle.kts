@@ -193,6 +193,10 @@ val installerResources = tasks.register<Sync>("installerResources") {
             include("*.dll")
             into("windows")
         }
+        from(where) {
+            include("libdivecomputer.so")
+            into("linux")
+        }
     }
     doFirst {
         if (libdivecomputer == null) {
@@ -211,7 +215,8 @@ compose.desktop {
         // name, which is how an agent starts `yemoja api` from an installed copy. `API-4`.
         args += listOf("gui")
         nativeDistributions {
-            targetFormats(TargetFormat.Msi)
+            // The .msi on Windows, and on Linux a .deb beside the `packageTarGz` below. `LNX-1`.
+            targetFormats(TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Yemoja"
             packageVersion = release
             description = "A dive logbook kept as readable files"
@@ -233,11 +238,33 @@ compose.desktop {
                 // Fixed for good: it is how Windows knows a later installer upgrades this one.
                 upgradeUuid = "4edab8bc-ba5c-4ead-94b9-f4821b831dab"
             }
+            linux {
+                iconFile.set(project.file("icons/yemoja.png"))
+                packageName = "yemoja"
+                shortcut = true
+                menuGroup = "Utility"
+                appCategory = "utils"
+            }
         }
     }
 }
 
 tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(installerResources) }
+
+// The application folder as one archive, for a Linux that takes no .deb: unpacked anywhere, it runs
+// from bin/Yemoja. The runtime and the dive computer library are inside it. `LNX-1`.
+tasks.register<Tar>("packageTarGz") {
+    description = "Writes the application folder as a .tar.gz, for Linux."
+    group = "distribution"
+    dependsOn("createDistributable")
+    from(layout.buildDirectory.dir("compose/binaries/main/app")) { include("Yemoja/**") }
+    archiveFileName = "Yemoja-$release.tar.gz"
+    destinationDirectory = layout.buildDirectory.dir("compose/binaries/main/tar")
+    compression = Compression.GZIP
+    // Gradle writes every file as a plain one, which leaves the launcher and the runtime's own
+    // programs unable to run once unpacked; each keeps whether it could run where it was built.
+    eachFile { if (file.canExecute()) permissions { unix("rwxr-xr-x") } }
+}
 
 // The installer is jpackage's own, run here on the app image Compose makes, because the one switch
 // it needs is one the Compose plugin cannot pass: --win-shortcut-prompt, which asks whether to put

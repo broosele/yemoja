@@ -11,9 +11,16 @@ import java.io.File
 /**
  * This user's application data: outside the installation, so an update replaces the application
  * and leaves this.
+ *
+ * Windows' `LOCALAPPDATA`, and elsewhere the data folder of the XDG convention Linux desktops
+ * follow, `~/.local/share` unless `XDG_DATA_HOME` moves it. `LNX-2`.
  */
-internal fun localData(): File =
-    System.getenv("LOCALAPPDATA")?.let { File(it, "Yemoja") } ?: File(System.getProperty("user.home"), ".yemoja")
+internal fun localData(): File {
+    System.getenv("LOCALAPPDATA")?.let { return File(it, "Yemoja") }
+    val data = System.getenv("XDG_DATA_HOME")?.takeIf { it.isNotBlank() }?.let(::File)
+        ?: File(System.getProperty("user.home"), ".local/share")
+    return File(data, "yemoja")
+}
 
 /** The logbook folder the window last opened, or absent where none was or the folder is gone. */
 internal fun lastLogbook(base: File = localData()): String? =

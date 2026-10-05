@@ -19,8 +19,8 @@ form factor.
 Found when it was asked about, so the next look starts here rather than from nothing.
 
 - **Already there.** Everything but packaging is shared JVM and Compose code. Kable carries
-  btleplug built for both Intel and Apple Silicon. The settings fall back to `~/.yemoja` where
-  Windows' `LOCALAPPDATA` is absent, which works but is not where a Mac keeps them.
+  btleplug built for both Intel and Apple Silicon. Outside Windows the settings go to
+  `~/.local/share/yemoja`, Linux's place, which works but is not where a Mac keeps them.
 - **libdivecomputer as a `.dylib`**, for both processors, bundled as the Windows DLL is. The
   build already copies a `.dylib` where it finds one, `LOGIC-27`.
 - **A `.dmg`**, which jpackage makes only on a Mac. A macOS machine in CI could build it without

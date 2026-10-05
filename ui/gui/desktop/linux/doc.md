@@ -1,6 +1,6 @@
 # GUI — desktop — Linux
 
-Planned, not started. Comes after Windows and Android.
+Built from 0.1.17: a `.deb` and a `.tar.gz`, made in WSL and tried there without Bluetooth.
 
 Only Linux-specific matters belong here; see [../doc.md](../doc.md) for the desktop
 form factor.
@@ -14,12 +14,39 @@ form factor.
   the least uniform part of this target.
 - Which desktop environments and versions are actually supported.
 
+## How it is built
+
+jpackage makes a package only for the system it runs on, so the Linux packages are built on Linux,
+or in WSL from the Windows checkout: `tool/linux-packages.sh`, given a JDK 21 and the
+libdivecomputer source. It copies the tree to the Linux side, builds there, and copies the two
+packages back beside the `.msi`, where `tool/release.py` takes them.
+
+**libdivecomputer is built for Linux by `tool/libdivecomputer-linux.py`**, from the same tree and
+commit as the Windows DLL, whose generated `configure` lets it build with the compiler and make
+alone. USB is built in through libusb, as on Windows. **Classic Bluetooth through BlueZ is left
+out**: BlueZ's library is GPL, which the application does not take on, and Bluetooth LE reaches
+the system's stack through Kable, which talks to BlueZ over D-Bus rather than linking it. A
+computer that speaks only classic Bluetooth is therefore not read on Linux. `LOGIC-27`.
+
+The application keeps what it remembers, the last logbook and the copies of `JSON-28`, in
+`~/.local/share/yemoja`, or under `XDG_DATA_HOME` where that is set: the XDG convention's place
+for an application's data, as `LOCALAPPDATA` is on Windows. `DESK-12`.
+
+**Tried in WSL, on Debian 12:** the archive unpacked and ran a command, the bundled library loaded
+through JNA, and the window opened a logbook through WSL's own display and remembered it. Not
+tried: installing the `.deb`, a desktop other than WSL's, and Bluetooth, which WSL does not have.
+
 ## Open questions
 
-Not in the first version, which is Windows alone, `GUI-5`; these wait for the version that adds it.
-
-- **LNX-1 — Packaging:** Flatpak, AppImage, Snap, native packages, or several. Determines
-   how much the sandbox restricts file and Bluetooth access.
-- **LNX-2 — Which distributions are supported**, and what runtime dependencies may be
-   assumed present.
-- **LNX-3 — Bluetooth LE** behaviour differs across stack versions; needs real testing.
+- **LNX-1 — Packaging.** *Settled:* **a `.deb` and a `.tar.gz`**, at the author's word. The `.deb`
+   installs under `/opt/yemoja` with a menu entry and names its own dependencies, the system's
+   libusb among them. The archive is the application folder, which runs from `bin/Yemoja` on any
+   distribution once unpacked. Neither is sandboxed, so Bluetooth and a logbook anywhere need no
+   permissions; Flatpak and Snap would, which is most of why they were passed over, with
+   AppImage's extra tooling for little gain.
+- **LNX-2 — Which distributions are supported.** *Settled:* **the Debian family through the
+   `.deb`, and anything else through the archive** on a best-effort basis. Both carry their own
+   Java runtime. The archive assumes what a desktop already has, libusb and the X11 and OpenGL
+   libraries, rather than carrying them.
+- **LNX-3 — Bluetooth LE** behaviour differs across stack versions; needs real testing. Open:
+   nothing has been read over Bluetooth on Linux, WSL having no radio.
