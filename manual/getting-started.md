@@ -157,9 +157,10 @@ its moment and its values change as you edit the plan.
 **What Yemoja's own model makes of it sits under the graph**, where it can be calculated: how deep
 the stops would start, what each cylinder gives up and ends at, the oxygen clocks, how long before
 you may fly, and how long before it is out of you. Anything it objects to — going above the
-ceiling, a cylinder that runs dry, a mix too rich or too lean for the depth it is breathed at — is listed in
+ceiling, a cylinder that runs dry, a mix too rich or too lean for the depth it is breathed at, a
+mix past 50 m END — is listed in
 red with the minute it happened at, and the ceiling itself is drawn over the graph with the water
-above it shaded. Its own NDL, time to surface (**TTS**), **GF99**, gauges and clocks can be
+above it shaded. Its own NDL, time to surface (**TTS**), **GF99**, **END**, gauges and clocks can be
 chosen on the right-hand axis, and [the decompression model](decompression.md)
 says what TTS and GF99 are. Where your computer
 recorded the same reading, Yemoja's is marked *calculated* so you can tell the two apart.
@@ -357,8 +358,8 @@ interval and the CNS you start with.
 
 Each line breathes the gas of the line above it, shown in italics, until you choose another.
 Choosing the gas above makes it follow again. **+** adds a line below, and **×** takes one out.
-A gas turns red on a line that takes it deeper than its limit, or shallower than a hypoxic mix may
-be breathed, a depth turns red on a line that takes you above the ceiling, and a duration turns
+A gas turns red on a line that takes it deeper than its limit or past *END max*, or shallower than
+a hypoxic mix may be breathed, a depth turns red on a line that takes you above the ceiling, and a duration turns
 red on a line that stays at the depth above it without one.
 
 Below your lines, in italics, is the way up Yemoja calculates from where you stopped typing: every

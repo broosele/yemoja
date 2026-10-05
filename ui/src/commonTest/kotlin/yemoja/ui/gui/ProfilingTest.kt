@@ -300,6 +300,24 @@ class ConditionsOfTest {
     }
 
     @Test
+    fun `a gas taken past END max is red on its line, and within it is not`() {
+        // Air at fifty-five metres: an END of fifty-five, and a pO₂ of 1.37, within its own limit.
+        val shaping = planned(Segment("55"), Segment("55", duration = "5"))
+        fun wrong(): Boolean {
+            val described = shaping.described()
+            val conditions = assertNotNull(conditionsOf(described).first)
+            return ready(shaping).legs.any { gasWrongFor(it, described, conditions) }
+        }
+
+        assertTrue(wrong(), "past the fifty a new plan allows")
+        shaping.narcoticDepth = "60"
+        assertTrue(!wrong(), "within sixty")
+        shaping.narcoticDepth = "50"
+        shaping.oxygenNarcotic = false
+        assertTrue(wrong(), "air's END is its depth whether or not oxygen counts")
+    }
+
+    @Test
     fun `how deep a cylinder may go is the model's figure at its role's limit`() {
         val shaping = planned(*FORTY)
         val conditions = assertNotNull(conditionsOf(shaping.described()).first)

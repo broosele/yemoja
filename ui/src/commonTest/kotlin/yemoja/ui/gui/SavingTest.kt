@@ -176,6 +176,8 @@ class SavingRoundTripTest {
         shaping.lastStop = "6"
         shaping.switchStops = true
         shaping.atmosphericPressure = "0.85"
+        shaping.narcoticDepth = "40"
+        shaping.oxygenNarcotic = false
         shaping.safetyDepth = "5"
         shaping.safetyMinutes = "5"
         shaping.stressFactor = "3"
@@ -191,6 +193,8 @@ class SavingRoundTripTest {
         assertEquals("6", back.lastStop)
         assertEquals(true, back.switchStops)
         assertEquals("0.85", back.atmosphericPressure)
+        assertEquals("40", back.narcoticDepth)
+        assertEquals(false, back.oxygenNarcotic)
         assertEquals("5", back.safetyDepth)
         assertEquals("5", back.safetyMinutes, "held in seconds, shown in minutes")
         assertEquals("3", back.stressFactor)

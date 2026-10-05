@@ -99,6 +99,11 @@ sealed class Evaluated {
          * percentage: what divers call GF99. Nought or below is no supersaturation. `LOGIC-37`.
          */
         val gradientFactorNow: Series,
+        /**
+         * The equivalent narcotic depth of the gas breathed at each moment, in metres, oxygen
+         * counted as narcotic where the run says so. `LOGIC-41`.
+         */
+        val narcoticDepth: Series,
     ) : Evaluated() {
 
         /**
@@ -212,9 +217,19 @@ class Run(
     val ascentRate: Double? = null,
     /** The depth a plan's way up takes its shallowest stop at, in metres, or null for a recording. */
     val lastStop: Double? = null,
+    /**
+     * The deepest equivalent narcotic depth any gas is breathed at, in metres, past which a finding
+     * says so. A plan names its own, and a recording is held to [MOST_NARCOTIC_DEPTH].
+     */
+    val mostNarcoticDepth: Double = MOST_NARCOTIC_DEPTH,
+    /** Whether oxygen counts as narcotic in the equivalent narcotic depth. `LOGIC-41`. */
+    val oxygenNarcotic: Boolean = true,
 ) {
 
     init {
+        require(mostNarcoticDepth > 0) {
+            "a most narcotic depth should be more than nought, but was $mostNarcoticDepth"
+        }
         require(ascentRate == null || ascentRate > 0) {
             "an ascent rate should be more than nought, but was $ascentRate"
         }
@@ -453,6 +468,8 @@ private fun walked(
     // The moments a time to surface is worked out from, kept for when it is asked for.
     val surfacingFrom = ArrayList<Triple<Int, Tissues, Double>>()
     val factorsNow = ArrayList<Double>()
+    val narcotic = ArrayList<Double>()
+    var stupefied = false
     val findings = ArrayList<Finding>()
     val used = HashMap<String, Double>()
     val gauges = breathing.fills.mapValues { ArrayList<Double>() }
@@ -576,6 +593,25 @@ private fun walked(
             )
         }
         lean = oxygen < least
+        // Too narcotic, once a crossing as a mix too rich is.
+        val equivalent = equivalentNarcoticDepth(
+            point.metres,
+            breathing.mixAt(point.second),
+            run.oxygenNarcotic,
+            density,
+            surface,
+        )
+        narcotic += equivalent
+        if (equivalent > run.mostNarcoticDepth && !stupefied) {
+            findings += Finding(
+                point.second,
+                Severity.WARNING,
+                "END too deep",
+                "${metres(equivalent)} against the ${metres(run.mostNarcoticDepth)} allowed; stay shallower on it",
+                breathing.keyAt(point.second),
+            )
+        }
+        stupefied = equivalent > run.mostNarcoticDepth
     }
     safetyStopFinding(depths, safetyStop)?.let { findings += it }
 
@@ -598,6 +634,7 @@ private fun walked(
             seriesOf(surfacings.map { it.first }, surfacings.map { it.second })
         },
         seriesOf(seconds, factorsNow),
+        seriesOf(seconds, narcotic),
     )
 }
 
@@ -1368,6 +1405,13 @@ const val MOST_OXYGEN = 1.6
  * given for a diver at work, and less is tolerated at rest. A form lets it be typed over.
  */
 const val LEAST_OXYGEN = 0.18
+
+/**
+ * The deepest equivalent narcotic depth a gas is breathed at, in metres, where nothing names
+ * another: fifty, the figure agencies most often teach. A recording is held to it, as it is held
+ * to [MOST_OXYGEN], and a plan starts from it.
+ */
+const val MOST_NARCOTIC_DEPTH = 50.0
 
 private const val SECONDS_IN_MINUTE = 60.0
 

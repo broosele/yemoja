@@ -59,6 +59,20 @@ class TextSetting internal constructor(name: String, label: String, onlyHere: Bo
     Setting(name, label, onlyHere)
 
 /**
+ * FlagSetting is a setting holding yes or no, and a default.
+ *
+ * Written as a settings file writes a boolean, `true` or `false`.
+ *
+ * Immutable.
+ */
+class FlagSetting internal constructor(
+    name: String,
+    label: String,
+    /** What holds where nobody chose. */
+    val default: Boolean,
+) : Setting(name, label, onlyHere = false)
+
+/**
  * ChoiceSetting is a setting holding one of a fixed set of words, and a default among them.
  *
  * The words are what a settings file holds, so they follow the vocabulary of the data field the
@@ -128,12 +142,21 @@ class Settings internal constructor(private val store: FileStore) {
         return setting.default
     }
 
+    /** What [setting] holds, from the first layer that answers with `true` or `false`. */
+    fun flag(setting: FlagSetting): Boolean {
+        for (file in layersOf(setting)) {
+            readable(setting, file)?.let { return it }
+        }
+        return setting.default
+    }
+
     /** The file [setting] is answered from, or absent where its default answers. */
     fun answeredBy(setting: Setting): SettingsFile? = layersOf(setting).firstOrNull { file ->
         when (setting) {
             is NumberSetting -> readable(setting, file) != null
             is TextSetting -> readable(setting, file) != null
             is ChoiceSetting -> readable(setting, file) != null
+            is FlagSetting -> readable(setting, file) != null
         }
     }
 
@@ -175,6 +198,12 @@ class Settings internal constructor(private val store: FileStore) {
         return Outcome.Done()
     }
 
+    /** Chooses [value] for [setting], or takes the choice away where it is absent. */
+    fun choose(setting: FlagSetting, value: Boolean?): Outcome {
+        write(setting, value?.let { Stored.Leaf(it) })
+        return Outcome.Done()
+    }
+
     /** Writes [value] for [setting] to the one file it belongs in. */
     private fun write(setting: Setting, value: Stored?) {
         val file = when {
@@ -209,6 +238,10 @@ class Settings internal constructor(private val store: FileStore) {
     /** What [file] says [setting] is, where it says one of the setting's words. */
     private fun readable(setting: ChoiceSetting, file: SettingsFile): String? =
         ((of(file)[setting.name] as? Stored.Leaf)?.value as? String)?.takeIf { it in setting.choices }
+
+    /** What [file] says [setting] is, where it says `true` or `false`. */
+    private fun readable(setting: FlagSetting, file: SettingsFile): Boolean? =
+        (of(file)[setting.name] as? Stored.Leaf)?.value as? Boolean
 
     /** Every setting [file] holds, read once and again after it is written. */
     private fun of(file: SettingsFile): Map<String, Stored> =
@@ -275,6 +308,16 @@ class Settings internal constructor(private val store: FileStore) {
         val DEFAULT_ATMOSPHERIC_PRESSURE =
             NumberSetting("default_atmospheric_pressure", "Atmospheric pressure", "bar", SEA_LEVEL, 0.4..1.1)
 
+        /**
+         * The deepest equivalent narcotic depth a new plan breathes a gas at, in metres, past which
+         * it warns. `LOGIC-41`.
+         */
+        val DEFAULT_END_MAX =
+            NumberSetting("default_end_max", "END max", "m", MOST_NARCOTIC_DEPTH, 10.0..100.0)
+
+        /** Whether a new plan counts oxygen as narcotic in its equivalent narcotic depth. `LOGIC-41`. */
+        val DEFAULT_OXYGEN_NARCOTIC = FlagSetting("default_oxygen_narcotic", "O₂ narcotic", true)
+
         /** The water a new plan is dived in, in the words `water_type` uses. */
         val DEFAULT_WATER_TYPE =
             ChoiceSetting("default_water_type", "Water", listOf("salt", "fresh"), "salt")
@@ -303,6 +346,7 @@ class Settings internal constructor(private val store: FileStore) {
             DEFAULT_PO2_MAX_BOTTOM,
             DEFAULT_PO2_MAX_DECO,
             DEFAULT_PO2_MIN,
+            DEFAULT_END_MAX,
             DEFAULT_SAFETY_STOP_DEPTH,
             DEFAULT_SAFETY_STOP_DURATION,
             DEFAULT_STRESS_FACTOR,
@@ -312,6 +356,9 @@ class Settings internal constructor(private val store: FileStore) {
 
         /** Every setting holding one of a set of words that the settings form offers, after the numbers. */
         val OFFERED_CHOICES: List<ChoiceSetting> = listOf(DEFAULT_WATER_TYPE)
+
+        /** Every yes-or-no setting the settings form offers, after the choices. */
+        val OFFERED_FLAGS: List<FlagSetting> = listOf(DEFAULT_OXYGEN_NARCOTIC)
     }
 }
 

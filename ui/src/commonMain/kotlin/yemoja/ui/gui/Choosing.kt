@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import yemoja.data.json.SettingsFile
 import yemoja.logic.ChoiceSetting
+import yemoja.logic.FlagSetting
 import yemoja.logic.Outcome
 import yemoja.logic.NumberSetting
 import yemoja.logic.Setting
@@ -90,6 +92,14 @@ internal fun Chooser(
             ChoiceRow(
                 setting = setting,
                 chosen = choosing.typed[setting.name] ?: settings.choice(setting),
+                answered = answeredSaid(settings.answeredBy(setting), setting),
+                choosing = choosing,
+            )
+        }
+        for (setting in Settings.OFFERED_FLAGS) {
+            FlagRow(
+                setting = setting,
+                ticked = choosing.typed[setting.name]?.toBooleanStrictOrNull() ?: settings.flag(setting),
                 answered = answeredSaid(settings.answeredBy(setting), setting),
                 choosing = choosing,
             )
@@ -219,6 +229,48 @@ private fun ChoiceRow(
     }
 }
 
+/**
+ * One yes-or-no setting: what it is called, a tick, and where it came from.
+ *
+ * [ticked] is what it holds, the application's own until somebody ticks or unticks it. Held in the
+ * form as `true` or `false`, as a settings file writes it.
+ */
+@Composable
+private fun FlagRow(
+    setting: FlagSetting,
+    ticked: Boolean,
+    answered: String,
+    choosing: Choosing,
+) {
+    Row(
+        modifier = Modifier.padding(vertical = HALF),
+        horizontalArrangement = Arrangement.spacedBy(GAP),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = setting.label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(LABEL),
+        )
+        Box(modifier = Modifier.width(BOX)) {
+            Checkbox(
+                checked = ticked,
+                onCheckedChange = {
+                    choosing.typed[setting.name] = it.toString()
+                    choosing.said = null
+                },
+            )
+        }
+        Text(
+            text = answered,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
 /** A setting's word as a menu shows it: `salt` as *Salt*. */
 internal fun wordSaid(word: String): String = word.replaceFirstChar { it.uppercase() }
 
@@ -234,6 +286,9 @@ internal fun Choosing.fill(settings: Settings) {
     for (setting in Settings.OFFERED) typed[setting.name] = filledOf(settings, setting)
     for (setting in Settings.OFFERED_CHOICES) {
         if (settings.answeredBy(setting) != null) typed[setting.name] = settings.choice(setting)
+    }
+    for (setting in Settings.OFFERED_FLAGS) {
+        if (settings.answeredBy(setting) != null) typed[setting.name] = settings.flag(setting).toString()
     }
     typed[Settings.AGENT_COMMAND.name] = settings.text(Settings.AGENT_COMMAND).orEmpty()
     said = null
@@ -279,9 +334,14 @@ private fun saved(settings: Settings, choosing: Choosing): String {
         val typed = choosing.typed[setting.name] ?: continue
         if (typed != settings.choice(setting)) picked[setting] = typed
     }
+    val ticked = LinkedHashMap<FlagSetting, Boolean>()
+    for (setting in Settings.OFFERED_FLAGS) {
+        val typed = choosing.typed[setting.name]?.toBooleanStrictOrNull() ?: continue
+        if (typed != settings.flag(setting)) ticked[setting] = typed
+    }
     val command = choosing.typed[Settings.AGENT_COMMAND.name].orEmpty().trim()
     val commandMoved = command != settings.text(Settings.AGENT_COMMAND).orEmpty()
-    if (chosen.isEmpty() && picked.isEmpty() && !commandMoved) return "Nothing was changed."
+    if (chosen.isEmpty() && picked.isEmpty() && ticked.isEmpty() && !commandMoved) return "Nothing was changed."
     for ((setting, value) in chosen) {
         val outcome = settings.choose(setting, value)
         if (outcome is Outcome.Refused) return outcome.reason
@@ -290,6 +350,7 @@ private fun saved(settings: Settings, choosing: Choosing): String {
         val outcome = settings.choose(setting, value)
         if (outcome is Outcome.Refused) return outcome.reason
     }
+    for ((setting, value) in ticked) settings.choose(setting, value)
     if (commandMoved) settings.choose(Settings.AGENT_COMMAND, command)
     choosing.fill(settings)
     return "Saved."

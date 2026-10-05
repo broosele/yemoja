@@ -29,6 +29,20 @@ class SettingsTest {
     }
 
     @Test
+    fun `a new plan's END max is fifty metres and oxygen counts as narcotic until somebody says otherwise`() {
+        val (chosen, _) = settings()
+        assertEquals(MOST_NARCOTIC_DEPTH, chosen.number(Settings.DEFAULT_END_MAX))
+        assertEquals(true, chosen.flag(Settings.DEFAULT_OXYGEN_NARCOTIC))
+        assertNull(chosen.answeredBy(Settings.DEFAULT_OXYGEN_NARCOTIC))
+
+        chosen.choose(Settings.DEFAULT_OXYGEN_NARCOTIC, false)
+        assertEquals(false, chosen.flag(Settings.DEFAULT_OXYGEN_NARCOTIC), "a choice of no is read back")
+        assertEquals(SettingsFile.LOGBOOK, chosen.answeredBy(Settings.DEFAULT_OXYGEN_NARCOTIC))
+        chosen.choose(Settings.DEFAULT_OXYGEN_NARCOTIC, null)
+        assertEquals(true, chosen.flag(Settings.DEFAULT_OXYGEN_NARCOTIC), "and taking it away leaves the default")
+    }
+
+    @Test
     fun `the atmospheric pressure is one atmosphere until somebody chooses another, and millibars are refused`() {
         val (chosen, _) = settings()
         assertEquals(SEA_LEVEL, chosen.number(Settings.DEFAULT_ATMOSPHERIC_PRESSURE))
@@ -146,6 +160,7 @@ class SettingsTest {
                 "default_po2_max_bottom",
                 "default_po2_max_deco",
                 "default_po2_min",
+                "default_end_max",
                 "default_safety_stop_depth",
                 "default_safety_stop_duration",
                 "default_stress_factor",
@@ -155,6 +170,7 @@ class SettingsTest {
             Settings.OFFERED.map { it.name },
         )
         assertEquals(listOf("default_water_type"), Settings.OFFERED_CHOICES.map { it.name })
+        assertEquals(listOf("default_oxygen_narcotic"), Settings.OFFERED_FLAGS.map { it.name })
     }
 
     @Test

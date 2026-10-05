@@ -210,6 +210,17 @@ bottom it reads 0 %, because your tissues are still taking gas on. It rises on t
 a stop holds it near the gradient factor the plan uses there. A figure past your GF high means
 you are closer to the limit than you chose to go.
 
+### Equivalent narcotic depth
+
+**END** is the depth of air that would be as narcotic as what you are breathing. Air's END is its
+depth; helium is not narcotic, so a trimix's is shallower. Whether oxygen is narcotic, agencies
+disagree: counted, nitrox has the same END as air at the same depth; not counted, its END is its
+equivalent air depth. A plan chooses with *O₂ narcotic*, and counts it unless you say otherwise.
+
+Yemoja tracks the END through every dive on the gas you are breathing, and warns where it goes
+past the plan's *END max*, 50 m unless you set another. Your computer's recordings carry no limit
+of their own, so they are held to 50 m with oxygen counted.
+
 ## Planning a dive
 
 A plan is a profile you write instead of one your computer wrote: the depths against time, the

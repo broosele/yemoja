@@ -193,6 +193,8 @@ private fun plannerFieldsOf(shaping: Planned, conditions: Conditions, keys: List
         "po2_max_bottom" to Stored.Leaf(conditions.bottomOxygen),
         "po2_max_deco" to Stored.Leaf(conditions.decoOxygen),
         "po2_min" to Stored.Leaf(conditions.leastOxygen),
+        "end_max" to Stored.Leaf(conditions.narcoticDepth),
+        "oxygen_narcotic" to Stored.Leaf(conditions.oxygenNarcotic),
         "descent_rate" to Stored.Leaf(conditions.descentRate),
         "ascent_rate" to Stored.Leaf(conditions.ascentRate),
         "last_stop" to Stored.Leaf(conditions.lastStop),
@@ -409,6 +411,8 @@ private fun Shaping.loadSettingsFrom(profile: Item, index: Map<String, Int>) {
     read("po2_max_bottom", Settings.DEFAULT_PO2_MAX_BOTTOM) { bottomOxygen = it }
     read("po2_max_deco", Settings.DEFAULT_PO2_MAX_DECO) { decoOxygen = it }
     read("po2_min", Settings.DEFAULT_PO2_MIN) { leastOxygen = it }
+    read("end_max", Settings.DEFAULT_END_MAX) { narcoticDepth = it }
+    (profile.single<Boolean>("oxygen_narcotic") as? Result.Usable)?.value?.let { oxygenNarcotic = it }
     read("descent_rate", Settings.DEFAULT_DESCENT_RATE) { descentRate = it }
     read("ascent_rate", Settings.DEFAULT_ASCENT_RATE) { ascentRate = it }
     read("last_stop", Settings.DEFAULT_LAST_STOP) { lastStop = it }

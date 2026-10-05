@@ -908,6 +908,47 @@ class EvaluationTest {
     }
 
     @Test
+    fun `the END is tracked on the gas breathed, oxygen counted where the run says so`() {
+        fun endAt(gas: String, oxygenNarcotic: Boolean): Double {
+            val series = done(
+                Run(
+                    depth = listOf(0 to 0.0, 120 to 40.0, 600 to 40.0),
+                    sources = mapOf("g1" to Source(Gas.parse(gas))),
+                    gradientFactorLow = 1.0,
+                    gradientFactorHigh = 1.0,
+                    oxygenNarcotic = oxygenNarcotic,
+                ),
+            ).narcoticDepth
+            return (series.valueAt(series.size - 1) as Element.Usable).value as Double
+        }
+
+        assertEquals(40.0, endAt("AIR", oxygenNarcotic = true), 1e-9)
+        assertEquals(40.0, endAt("EAN32", oxygenNarcotic = true), 1e-9, "all of nitrox is narcotic, counted so")
+        assertEquals(equivalentAirDepth(40.0, Gas.parse("EAN32")), endAt("EAN32", oxygenNarcotic = false), 1e-9)
+        assertTrue(endAt("TMX21/35", oxygenNarcotic = true) < 30.0, "helium is not narcotic")
+    }
+
+    @Test
+    fun `an END past the limit is said once a crossing, on its cylinder`() {
+        // Fifty-five metres on air is an END of fifty-five, past the fifty a recording is held to.
+        fun endFindings(mostNarcoticDepth: Double = MOST_NARCOTIC_DEPTH): List<Finding> = done(
+            Run(
+                depth = listOf(0 to 0.0, 180 to 55.0, 600 to 55.0, 700 to 40.0, 800 to 55.0, 900 to 55.0),
+                sources = mapOf("g1" to Source(Gas.AIR)),
+                gradientFactorLow = 1.0,
+                gradientFactorHigh = 1.0,
+                mostNarcoticDepth = mostNarcoticDepth,
+            ),
+        ).findings.filter { it.what == "END too deep" }
+
+        val crossings = endFindings()
+        assertEquals(listOf(180, 800), crossings.map { it.second }, "down, up through it, and down again")
+        assertEquals("g1", crossings.first().source)
+        assertTrue("55 m against the 50 m allowed" in crossings.first().how, crossings.first().how)
+        assertTrue(endFindings(60.0).isEmpty(), "a plan allowing sixty says nothing")
+    }
+
+    @Test
     fun `a hypoxic mix breathed at the surface is said once, and not at depth`() {
         // Trimix 10/70 is 0.10 bar at the surface and reaches 0.18 bar at about eight metres.
         fun leanFindings(switches: List<Pair<Int, String>>): List<Finding> = assertIs<Evaluated.Done>(

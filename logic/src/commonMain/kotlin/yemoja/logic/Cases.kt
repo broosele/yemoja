@@ -151,6 +151,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             )
         }
     }
+    val oxygenNarcotic = when (val written = (members["oxygen_narcotic"] as? Stored.Leaf)?.value) {
+        null -> Settings.DEFAULT_OXYGEN_NARCOTIC.default
+        is Boolean -> written
+        else -> return Made.Wrong("$name oxygen_narcotic should be true or false, but was $written")
+    }
     val switchStops = when (val written = (members["gas_switch_stops"] as? Stored.Leaf)?.value) {
         null -> false
         is Boolean -> written
@@ -187,6 +192,8 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             bottomOxygen = setting("po2_max_bottom", Settings.DEFAULT_PO2_MAX_BOTTOM),
             decoOxygen = setting("po2_max_deco", Settings.DEFAULT_PO2_MAX_DECO),
             leastOxygen = setting("po2_min", Settings.DEFAULT_PO2_MIN),
+            narcoticDepth = setting("end_max", Settings.DEFAULT_END_MAX),
+            oxygenNarcotic = oxygenNarcotic,
             descentRate = setting("descent_rate", Settings.DEFAULT_DESCENT_RATE),
             ascentRate = setting("ascent_rate", Settings.DEFAULT_ASCENT_RATE),
             safetyDepth = setting("safety_stop_depth", Settings.DEFAULT_SAFETY_STOP_DEPTH),

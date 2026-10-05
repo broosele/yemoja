@@ -113,6 +113,20 @@ class CasesTest {
     }
 
     @Test
+    fun `a case's END max and whether oxygen is narcotic are written as end_max and oxygen_narcotic`() {
+        val case = oneOf("""{"runtime": [{"depth": 20}], "end_max": 40, "oxygen_narcotic": false}""").planned
+        assertEquals("40", case.narcoticDepth)
+        assertEquals(false, case.oxygenNarcotic)
+        val plain = oneOf("""{"runtime": [{"depth": 20}]}""").planned
+        assertEquals("50", plain.narcoticDepth)
+        assertEquals(true, plain.oxygenNarcotic)
+        assertEquals(
+            "case 1 oxygen_narcotic should be true or false, but was yes",
+            assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 20}], "oxygen_narcotic": "yes"}""")).reason,
+        )
+    }
+
+    @Test
     fun `a plan on its own is a file of one`() {
         val cases = assertIs<Read.Cases>(
             read("""{"runtime": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3, "gradient_factor_high": 0.7}"""),

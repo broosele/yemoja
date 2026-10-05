@@ -91,12 +91,12 @@ class PlanningTest {
         val recorded = planned("$DEEP, \"cns\": [[0, 0], [1900, 20]]")
 
         assertEquals(
-            listOf("NDL", "G1 pressure", "TTS", "GF99", "CNS", "OTU"),
+            listOf("NDL", "G1 pressure", "TTS", "GF99", "END", "CNS", "OTU"),
             workedOverlaysOf(plan, profile(plan), done(plan)).map { it.title },
             "a plan has nothing recorded to tell them from",
         )
         assertEquals(
-            listOf("NDL", "G1 pressure", "TTS", "GF99", "CNS calculated", "OTU"),
+            listOf("NDL", "G1 pressure", "TTS", "GF99", "END", "CNS calculated", "OTU"),
             workedOverlaysOf(recorded, profile(recorded), done(recorded)).map { it.title },
         )
     }

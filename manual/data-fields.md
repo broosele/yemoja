@@ -465,6 +465,8 @@ what each does.
 
 - `po2_max_bottom`, `po2_max_deco`, `po2_min` (number) — the most oxygen a bottom or bailout
   gas is breathed at, the most a deco gas is, and the least any gas is, in bar.
+- `end_max` (number) — the deepest equivalent narcotic depth any gas is breathed at, in metres.
+- `oxygen_narcotic` (true or false) — whether oxygen counts as narcotic in that depth.
 - `descent_rate`, `ascent_rate` (number) — in metres a minute, for a line that gives neither a
   duration nor a rate, and for the way up.
 - `last_stop` (number) — the depth the way up takes its shallowest stop at.

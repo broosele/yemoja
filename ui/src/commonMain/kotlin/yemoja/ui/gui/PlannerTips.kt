@@ -28,6 +28,8 @@ internal object PlannerTips {
     const val DECO_OXYGEN = "Oxygen pressure limit for deco gases; sets the depth each is switched to"
     const val DIVE_START = "When the dive begins, a date and a time; needed to follow an earlier dive, and saved with the plan"
     const val AFTER = "An earlier dive or plan this dive follows, whose nitrogen and oxygen are still in you at the start"
+    const val END_MAX = "Deepest equivalent narcotic depth any gas may be breathed at; a gas past it is red and warned of"
+    const val OXYGEN_NARCOTIC = "Whether oxygen counts as narcotic in the END; agencies teach both, and counting it is the more cautious"
     const val LEAST_OXYGEN = "Least oxygen pressure any gas may be breathed at; a hypoxic gas is warned of above its minimum depth"
     const val DESCENT_RATE = "Descent rate for lines given no duration or rate"
     const val ASCENT_RATE = "Ascent rate for the calculated ascent, and for lines given no duration or rate"

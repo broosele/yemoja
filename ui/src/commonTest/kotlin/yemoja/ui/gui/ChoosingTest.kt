@@ -114,6 +114,18 @@ class ShownSettingTest {
     }
 
     @Test
+    fun `a tick nobody chose is left out of the form, and one somebody chose is in it`() {
+        val settings = settings()
+        val choosing = Choosing()
+        choosing.fill(settings)
+        assertEquals(false, Settings.DEFAULT_OXYGEN_NARCOTIC.name in choosing.typed, "the default shows through")
+
+        settings.choose(Settings.DEFAULT_OXYGEN_NARCOTIC, false)
+        choosing.fill(settings)
+        assertEquals("false", choosing.typed[Settings.DEFAULT_OXYGEN_NARCOTIC.name])
+    }
+
+    @Test
     fun `a value somebody chose is in its box, and reads as written`() {
         val settings = settings()
         assertTrue(settings.choose(Settings.DEFAULT_ASCENT_RATE, 7.0) is Outcome.Done)

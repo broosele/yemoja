@@ -123,6 +123,12 @@ internal class Shaping {
     var bottomOxygen: String by mutableStateOf("")
     var decoOxygen: String by mutableStateOf("")
     var leastOxygen: String by mutableStateOf("")
+
+    /** The deepest equivalent narcotic depth any gas is breathed at, in metres, as typed. */
+    var narcoticDepth: String by mutableStateOf("")
+
+    /** Whether oxygen counts as narcotic in the equivalent narcotic depth. */
+    var oxygenNarcotic: Boolean by mutableStateOf(true)
     var descentRate: String by mutableStateOf("")
     var ascentRate: String by mutableStateOf("")
     var safetyDepth: String by mutableStateOf("")
@@ -177,6 +183,8 @@ internal fun Shaping.prefill(settings: Settings?) {
     bottomOxygen = shown(Settings.DEFAULT_PO2_MAX_BOTTOM)
     decoOxygen = shown(Settings.DEFAULT_PO2_MAX_DECO)
     leastOxygen = shown(Settings.DEFAULT_PO2_MIN)
+    narcoticDepth = shown(Settings.DEFAULT_END_MAX)
+    oxygenNarcotic = settings?.flag(Settings.DEFAULT_OXYGEN_NARCOTIC) ?: Settings.DEFAULT_OXYGEN_NARCOTIC.default
     descentRate = shown(Settings.DEFAULT_DESCENT_RATE)
     ascentRate = shown(Settings.DEFAULT_ASCENT_RATE)
     safetyDepth = shown(Settings.DEFAULT_SAFETY_STOP_DEPTH)
@@ -757,6 +765,16 @@ private fun Conditions(shaping: Shaping) {
                 ) { shaping.bottomOxygen = it }
                 Setting("pO₂ max deco", PlannerTips.DECO_OXYGEN, shaping.decoOxygen, "bar") { shaping.decoOxygen = it }
                 Setting("pO₂ min", PlannerTips.LEAST_OXYGEN, shaping.leastOxygen, "bar") { shaping.leastOxygen = it }
+                Setting("END max", PlannerTips.END_MAX, shaping.narcoticDepth, "m") { shaping.narcoticDepth = it }
+                Labelled("O₂ narcotic", PlannerTips.OXYGEN_NARCOTIC) {
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        Checkbox(
+                            checked = shaping.oxygenNarcotic,
+                            onCheckedChange = { shaping.oxygenNarcotic = it },
+                            modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
+                        )
+                    }
+                }
             }
         },
         second = {

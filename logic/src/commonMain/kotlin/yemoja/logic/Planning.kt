@@ -96,6 +96,10 @@ data class Planned(
     val bottomOxygen: String = "",
     val decoOxygen: String = "",
     val leastOxygen: String = "",
+    /** The deepest equivalent narcotic depth any gas is breathed at, in metres. */
+    val narcoticDepth: String = "50",
+    /** Whether oxygen counts as narcotic in the equivalent narcotic depth. */
+    val oxygenNarcotic: Boolean = true,
     val descentRate: String = "",
     val ascentRate: String = "",
     val safetyDepth: String = "",
@@ -307,6 +311,9 @@ class Conditions(
     val decoOxygen: Double,
     /** The least oxygen any cylinder is breathed at, in bar. */
     val leastOxygen: Double,
+    /** The deepest equivalent narcotic depth any gas is breathed at, in metres. */
+    val narcoticDepth: Double,
+    val oxygenNarcotic: Boolean,
     val descentRate: Double,
     val ascentRate: Double,
     val safetyDepth: Double,
@@ -335,6 +342,8 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
         ?: return null to numberWrong("pO₂ max deco", "more than 0 bar", shaping.decoOxygen)
     val least = positiveOf(shaping.leastOxygen)
         ?: return null to numberWrong("pO₂ min", "more than 0 bar", shaping.leastOxygen)
+    val narcotic = positiveOf(shaping.narcoticDepth)
+        ?: return null to numberWrong("END max", "more than 0 m", shaping.narcoticDepth)
     val descent = positiveOf(shaping.descentRate)
         ?: return null to numberWrong("Descent rate", "more than 0 m/min", shaping.descentRate)
     val ascent = positiveOf(shaping.ascentRate)
@@ -364,6 +373,8 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
         bottomOxygen = bottom,
         decoOxygen = deco,
         leastOxygen = least,
+        narcoticDepth = narcotic,
+        oxygenNarcotic = shaping.oxygenNarcotic,
         descentRate = descent,
         ascentRate = ascent,
         safetyDepth = safety,
@@ -464,6 +475,8 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
             },
             ascentRate = conditions.ascentRate,
             lastStop = conditions.lastStop,
+            mostNarcoticDepth = conditions.narcoticDepth,
+            oxygenNarcotic = conditions.oxygenNarcotic,
             carried = left?.tissues,
             oxygenCarried = left?.oxygen,
         ),
@@ -760,6 +773,8 @@ fun withAscent(run: Run, ascent: Ascended.Done): Run = Run(
     safetyStop = run.safetyStop,
     ascentRate = run.ascentRate,
     lastStop = run.lastStop,
+    mostNarcoticDepth = run.mostNarcoticDepth,
+    oxygenNarcotic = run.oxygenNarcotic,
 )
 
 /**
@@ -824,9 +839,31 @@ fun tooShallowFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean 
     return minOf(leg.from, leg.to) < shallowest
 }
 
-/** Whether [leg] breathes its cylinder anywhere it may not be breathed, too deep or too shallow. */
+/**
+ * Whether [leg] takes its cylinder deeper than the plan's *END max* allows, oxygen counted as
+ * narcotic where the plan says so.
+ */
+fun tooNarcoticFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean {
+    if (conditions == null) return false
+    val breathed = shaping.gases.getOrNull(leg.gas) ?: return false
+    val gas = gasOf(breathed.gas) ?: return false
+    val equivalent = equivalentNarcoticDepth(
+        maxOf(leg.from, leg.to),
+        gas,
+        conditions.oxygenNarcotic,
+        conditions.density,
+        conditions.atmosphericPressure,
+    )
+    return equivalent > conditions.narcoticDepth
+}
+
+/**
+ * Whether [leg] breathes its cylinder anywhere it may not be breathed: too deep for its oxygen or
+ * its END, or too shallow.
+ */
 fun gasWrongFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean =
-    tooDeepFor(leg, shaping, conditions) || tooShallowFor(leg, shaping, conditions)
+    tooDeepFor(leg, shaping, conditions) || tooShallowFor(leg, shaping, conditions) ||
+        tooNarcoticFor(leg, shaping, conditions)
 
 /**
  * The seconds at which [run] is above the ceiling [evaluated] worked out for it.

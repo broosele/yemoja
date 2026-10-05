@@ -368,6 +368,9 @@ internal val PROFILE = ItemDescription(
         NumberDescription("po2_max_bottom", Dimension.PRESSURE, label = "pO₂ max bottom", housekeeping = true),
         NumberDescription("po2_max_deco", Dimension.PRESSURE, label = "pO₂ max deco", housekeeping = true),
         NumberDescription("po2_min", Dimension.PRESSURE, label = "pO₂ min", housekeeping = true),
+        NumberDescription("end_max", Dimension.LENGTH, label = "END max", housekeeping = true),
+        // Whether oxygen counts as narcotic in the equivalent narcotic depth. `LOGIC-41`.
+        BooleanDescription("oxygen_narcotic", housekeeping = true),
         NumberDescription("descent_rate", Dimension.SPEED, housekeeping = true),
         NumberDescription("ascent_rate", Dimension.SPEED, housekeeping = true),
         NumberDescription("last_stop", Dimension.LENGTH, housekeeping = true),

@@ -719,7 +719,7 @@ once and corrected. The numbers stay unused rather than being given to something
 
   **The settings are the plan's own.** They sit in titled sections, each a single column, the
   sections stacked in two columns with space between them. On the left, *General* holds descent
-  and ascent rate, water and the atmospheric pressure, and *Gas* pO₂ max bottom, pO₂ max deco and pO₂ min. On the right,
+  and ascent rate, water and the atmospheric pressure, and *Gas* pO₂ max bottom, pO₂ max deco, pO₂ min, END max and whether oxygen is narcotic. On the right,
   *Algorithm* names the model, Bühlmann ZH-L16C, as a value that is shown rather than chosen until
   there is a second model, above GF low and high, and *Stops* holds the last stop, the safety
   stop's depth and duration, and the tick for stopping to switch gas, `LOGIC-35`. That tick starts
@@ -834,6 +834,10 @@ once and corrected. The numbers stay unused rather than being given to something
   **The water is chosen from a menu**, being one of a fixed set: `salt` or `fresh`, the words
   `water_type` uses, so a settings file and a recording say it alike. A word outside the set is
   ignored when read and refused when chosen, as a number outside its range is.
+
+  **A yes-or-no setting is a tick**, after the menus, held as `true` or `false` as a settings file
+  writes a boolean. Whether oxygen is narcotic is the first. As with a menu, a tick nobody chose
+  shows the default, and only one somebody changed is written.
 
   **The gradient factors are typed as percentages**, as the plan form takes them and for the same
   reason, `GUI-41`, and held as the proportions the file writes.

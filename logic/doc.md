@@ -532,6 +532,16 @@ To settle when we discuss architecture and features:
   Sea water at sea level unless told otherwise, as every function beside them assumes. Built in
   `Equivalents.kt`.
 
+  *Amended:* **the equivalent narcotic depth is tracked through every dive, and a limit warned
+  of.** `evaluate` gives it at each moment on the gas breathed then, and a finding where it goes
+  past the run's `mostNarcoticDepth`, once a crossing as a mix too rich for its depth is said. A
+  plan names its own limit and its own choice about oxygen, *END max* and *O₂ narcotic*, kept as
+  `end_max` and `oxygen_narcotic` beside the other plan settings, `DATA-129`. A recording names
+  neither and is held to `MOST_NARCOTIC_DEPTH`, fifty metres, with oxygen counted: a fixed figure,
+  as the oxygen limit a recording is held to is, so what is said about a dive already done does
+  not move with a setting. The user chose a warning on recordings over a curve alone, though it
+  falls on every air dive past fifty metres they have logged.
+
 - **LOGIC-40 — What gas a plan keeps back for a way up in trouble.** *Settled:* **two scenarios,
   `lostGasReserve` and `sharedGasReserve`, each trying every moment of the dive; a cylinder keeps
   back the most either asks of it.**

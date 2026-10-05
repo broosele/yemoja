@@ -78,6 +78,8 @@ settings file cannot declare any. Each is named after the field of a plan it fil
   to 2. Without a choice, 1.6.
 - `default_po2_min` — the least oxygen a new dive plan breathes any gas at, in bar, from 0.1 to
   0.5. A hypoxic gas breathed shallower than this is warned of. Without a choice, 0.18.
+- `default_end_max` — the deepest equivalent narcotic depth a new dive plan breathes any gas at,
+  in metres, from 10 to 100. A gas taken deeper is warned of. Without a choice, 50.
 - `default_safety_stop_depth` — how deep a new dive plan's safety stop is, in metres, from 1 to
   12. Without a choice, 6.
 - `default_safety_stop_duration` — how long a new dive plan's safety stop lasts, in seconds, from
@@ -94,9 +96,13 @@ settings file cannot declare any. Each is named after the field of a plan it fil
   one standard atmosphere.
 - `default_water_type` — the water a new dive plan is dived in: `salt` or `fresh`. Without a
   choice, `salt`.
+- `default_oxygen_narcotic` — whether a new dive plan counts oxygen as narcotic in its
+  equivalent narcotic depth: `true` or `false`. Agencies teach both, and counting it is the more
+  cautious. Without a choice, `true`.
 
 A value that is not a number, or lies outside its range, is ignored, and the next place in line
-answers instead.
+answers instead. So is a word that is not one of a setting's words, and anything but `true` or
+`false` for a yes-or-no setting.
 
 All of them are worth a word, because their names are doing real work. They are *defaults*
 for making a plan and nothing more. A plan keeps the gradient factors it was made with and
