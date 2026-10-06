@@ -821,6 +821,13 @@ once and corrected. The numbers stay unused rather than being given to something
   open, with no deed to open them and no *Close*; with no logbook open the box says they need one.
   On a phone the agent's command is left out, a phone running no agent, `PHONE-1`.
 
+  *Amended on 2026-10-06, at the author's word:* **the box holds two framed boxes**, *Dive planner
+  defaults* and *AI agent*. The planner's defaults stand under the planner's own sections in its
+  two columns, *General* and *Gas* on the left and *Algorithm* and *Stops* on the right, so a
+  default is found where the setting it starts is; *Contingency*, a box of its own in the planner,
+  closes the right column here, being two lines. On a phone the columns stack, as the planner's do.
+  Save is under both.
+
   Fourteen settings are still a form rather than a place, so they sit in System like a
   download, from a deed of their own, rather than taking a tab. A tab is the answer once there are
   enough of them to want sections; nothing about this one stands in its way.

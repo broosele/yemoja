@@ -411,7 +411,7 @@ private fun Folding(title: String, folded: MutableSet<String>, content: @Composa
 
 /** Two columns of settings side by side, or one above the other on a phone. `PHONE-2`. */
 @Composable
-private fun Halves(first: @Composable ColumnScope.() -> Unit, second: @Composable ColumnScope.() -> Unit) {
+internal fun Halves(first: @Composable ColumnScope.() -> Unit, second: @Composable ColumnScope.() -> Unit) {
     val spaced = Arrangement.spacedBy(GAP)
     if (LocalCompact.current) {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = spaced) {
@@ -856,7 +856,7 @@ private fun Contingency(shaping: Shaping, reckoned: Reckoned?) {
 
 /** A group of settings under a small title of its own. */
 @Composable
-private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column {
         Text(
             text = title,

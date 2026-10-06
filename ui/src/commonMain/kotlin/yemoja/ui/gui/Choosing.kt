@@ -1,8 +1,10 @@
 package yemoja.ui.gui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -72,51 +74,29 @@ internal fun Chooser(
     if (universe == null || !choosing.open) return
     val settings = universe.settings
     Column(modifier = Modifier.fillMaxWidth().padding(top = HALF)) {
-        for (setting in Settings.OFFERED) {
-            SettingRow(
-                setting = setting,
-                wide = BOX,
-                after = unitOf(setting),
-                answered = answeredSaid(settings.answeredBy(setting), setting),
-                // The application's own answer, shown in the box the way every other value
-                // nobody wrote is shown. `GUI-49`.
-                hint = if (settings.answeredBy(setting) == null) {
-                    shownOf(setting, settings.number(setting))
-                } else {
-                    ""
-                },
-                choosing = choosing,
-            )
-        }
-        for (setting in Settings.OFFERED_CHOICES) {
-            ChoiceRow(
-                setting = setting,
-                chosen = choosing.typed[setting.name] ?: settings.choice(setting),
-                answered = answeredSaid(settings.answeredBy(setting), setting),
-                choosing = choosing,
-            )
-        }
-        for (setting in Settings.OFFERED_FLAGS) {
-            FlagRow(
-                setting = setting,
-                ticked = choosing.typed[setting.name]?.toBooleanStrictOrNull() ?: settings.flag(setting),
-                answered = answeredSaid(settings.answeredBy(setting), setting),
-                choosing = choosing,
+        // The planner's own sections in its own two columns, so a default is found where the
+        // setting it starts is. `GUI-42`.
+        Framed("Dive planner defaults") {
+            Halves(
+                first = { Sections(PLANNER_FIRST, settings, choosing) },
+                second = { Sections(PLANNER_SECOND, settings, choosing) },
             )
         }
         // Not on a phone, which runs no agent to start. `PHONE-1`.
         if (!LocalCompact.current) {
-            val agent = Settings.AGENT_COMMAND
-            SettingRow(
-                setting = agent,
-                wide = COMMAND,
-                after = "",
-                answered = answeredSaid(settings.answeredBy(agent), agent),
-                // Nothing stands behind it: an agent nobody named is an agent there is not.
-                hint = "",
-                choosing = choosing,
-            )
-            Aside(AGENT_SETUP)
+            Framed("AI agent") {
+                val agent = Settings.AGENT_COMMAND
+                SettingRow(
+                    setting = agent,
+                    wide = COMMAND,
+                    after = "",
+                    answered = answeredSaid(settings.answeredBy(agent), agent),
+                    // Nothing stands behind it: an agent nobody named is an agent there is not.
+                    hint = "",
+                    choosing = choosing,
+                )
+                Aside(AGENT_SETUP)
+            }
         }
         choosing.said?.let { Aside(it) }
         Row(
@@ -131,6 +111,105 @@ internal fun Chooser(
             ) { Text("Save") }
             if (closable) TextButton(onClick = { choosing.open = false }) { Text("Close") }
         }
+    }
+}
+
+/**
+ * The planner's defaults by the sections the planner shows them under, its left column first.
+ *
+ * Every setting in [Settings.OFFERED], [Settings.OFFERED_CHOICES] and [Settings.OFFERED_FLAGS] is
+ * in one of them. Contingency is a box of its own in the planner; here its two settings close
+ * the right column.
+ */
+internal val PLANNER_FIRST: List<Pair<String, List<Setting>>> = listOf(
+    "General" to listOf(
+        Settings.DEFAULT_DESCENT_RATE,
+        Settings.DEFAULT_ASCENT_RATE,
+        Settings.DEFAULT_WATER_TYPE,
+        Settings.DEFAULT_ATMOSPHERIC_PRESSURE,
+    ),
+    "Gas" to listOf(
+        Settings.DEFAULT_PO2_MAX_BOTTOM,
+        Settings.DEFAULT_PO2_MAX_DECO,
+        Settings.DEFAULT_PO2_MIN,
+        Settings.DEFAULT_END_MAX,
+        Settings.DEFAULT_OXYGEN_NARCOTIC,
+    ),
+)
+
+internal val PLANNER_SECOND: List<Pair<String, List<Setting>>> = listOf(
+    "Algorithm" to listOf(Settings.DEFAULT_GRADIENT_FACTOR_LOW, Settings.DEFAULT_GRADIENT_FACTOR_HIGH),
+    "Stops" to listOf(
+        Settings.DEFAULT_LAST_STOP,
+        Settings.DEFAULT_SAFETY_STOP_DEPTH,
+        Settings.DEFAULT_SAFETY_STOP_DURATION,
+    ),
+    "Contingency" to listOf(Settings.DEFAULT_STRESS_FACTOR, Settings.DEFAULT_PROBLEM_SOLVING_TIME),
+)
+
+/**
+ * A part of the settings in a thin frame, as the planner frames each of its parts, so it reads as
+ * a box inside the Settings box rather than as a heading.
+ */
+@Composable
+private fun Framed(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = GAP)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
+            // Narrower inside on a phone, whose rows have no room to give.
+            .padding(if (LocalCompact.current) HALF else GAP),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        content()
+    }
+}
+
+/** How wide a setting's name is: room for *Atmospheric pressure* on one line where there is room. */
+@Composable
+private fun settingLabel(): Dp = if (LocalCompact.current) LABEL else WIDE_LABEL
+
+/** [sections] one under another, each its title over its settings. */
+@Composable
+private fun Sections(sections: List<Pair<String, List<Setting>>>, settings: Settings, choosing: Choosing) {
+    for ((title, held) in sections) {
+        Section(title) {
+            for (setting in held) SettingLine(setting, settings, choosing)
+        }
+    }
+}
+
+/** One of the planner's defaults, drawn as its kind of setting is: a box, a menu or a tick. */
+@Composable
+private fun SettingLine(setting: Setting, settings: Settings, choosing: Choosing) {
+    val answered = answeredSaid(settings.answeredBy(setting), setting)
+    when (setting) {
+        is NumberSetting -> SettingRow(
+            setting = setting,
+            wide = BOX,
+            after = unitOf(setting),
+            answered = answered,
+            // The application's own answer, shown in the box the way every other value nobody
+            // wrote is shown. `GUI-49`.
+            hint = if (settings.answeredBy(setting) == null) shownOf(setting, settings.number(setting)) else "",
+            choosing = choosing,
+        )
+        is ChoiceSetting -> ChoiceRow(
+            setting = setting,
+            chosen = choosing.typed[setting.name] ?: settings.choice(setting),
+            answered = answered,
+            choosing = choosing,
+        )
+        is FlagSetting -> FlagRow(
+            setting = setting,
+            ticked = choosing.typed[setting.name]?.toBooleanStrictOrNull() ?: settings.flag(setting),
+            answered = answered,
+            choosing = choosing,
+        )
+        else -> Unit
     }
 }
 
@@ -162,7 +241,7 @@ private fun SettingRow(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
             textAlign = TextAlign.End,
-            modifier = Modifier.width(LABEL),
+            modifier = Modifier.width(settingLabel()),
         )
         Box(modifier = Modifier.width(wide)) {
             Compact(
@@ -209,7 +288,7 @@ private fun ChoiceRow(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
             textAlign = TextAlign.End,
-            modifier = Modifier.width(LABEL),
+            modifier = Modifier.width(settingLabel()),
         )
         Box(modifier = Modifier.width(BOX)) {
             Pick(
@@ -252,7 +331,7 @@ private fun FlagRow(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
             textAlign = TextAlign.End,
-            modifier = Modifier.width(LABEL),
+            modifier = Modifier.width(settingLabel()),
         )
         Box(modifier = Modifier.width(BOX)) {
             Checkbox(
@@ -436,3 +515,6 @@ private val BOX = 110.dp
 
 /** How wide the command's box is, a command being a line rather than a number. */
 private val COMMAND = 420.dp
+
+/** A setting's name beside its box on a wide screen. */
+private val WIDE_LABEL = 170.dp

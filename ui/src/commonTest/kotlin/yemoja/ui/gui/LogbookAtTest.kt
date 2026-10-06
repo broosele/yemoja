@@ -51,3 +51,21 @@ class DeedTipTest {
         for (deed in listOf(Deed.OPEN, Deed.NEW)) assertTrue("folder" in deed.tip, deed.tip)
     }
 }
+
+/** The planner's defaults in the settings, by the planner's own sections. `GUI-42`. */
+class SettingsSectionsTest {
+
+    @Test
+    fun `every default the settings offer is in exactly one section`() {
+        val placed = (PLANNER_FIRST + PLANNER_SECOND).flatMap { it.second }
+        val offered = yemoja.logic.Settings.OFFERED + yemoja.logic.Settings.OFFERED_CHOICES +
+            yemoja.logic.Settings.OFFERED_FLAGS
+        assertEquals(offered.map { it.name }.sorted(), placed.map { it.name }.sorted())
+    }
+
+    @Test
+    fun `the sections are the planner's, in its two columns`() {
+        assertEquals(listOf("General", "Gas"), PLANNER_FIRST.map { it.first })
+        assertEquals(listOf("Algorithm", "Stops", "Contingency"), PLANNER_SECOND.map { it.first })
+    }
+}
