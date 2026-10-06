@@ -76,7 +76,7 @@ class Schedule(
     val narcoticDepth: List<SchedulePoint>,
     /** `oc` or `ccr`, as the plan said. */
     val diveMode: String,
-    /** The setpoint in force through the dive, in bar, and empty on open circuit. */
+    /** The setpoint at each moment the loop is breathed, in bar, and nothing off the loop or on open circuit. */
     val setpointSeries: List<SchedulePoint>,
     /** The oxygen breathed through the dive, in bar. */
     val oxygenSeries: List<SchedulePoint>,
@@ -143,7 +143,7 @@ class Line(
     val seconds: Int,
     /** `down`, `up` or `stay`. */
     val direction: String,
-    /** The cylinder by its number, as `gasUsedLitres` keys it. */
+    /** The cylinder by its number, as `gasUsedLitres` keys it, or `loop` for a rebreather's loop. */
     val gas: String,
     /** Whether the model added the line, rather than a caller describing it. */
     val added: Boolean,
@@ -315,7 +315,7 @@ private fun lineOf(leg: Leg, added: Boolean): Line = Line(
     beginsAt = leg.begins,
     seconds = leg.seconds,
     direction = leg.direction.name.lowercase(),
-    gas = numberedOf(gasKeyOf(leg.gas)),
+    gas = if (leg.gas == LOOP) LOOP_SAID else numberedOf(gasKeyOf(leg.gas)),
     added = added,
 )
 

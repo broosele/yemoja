@@ -63,7 +63,7 @@ and adds it.
 | `depth` | Metres. Required. |
 | `duration` | How long the line takes, in seconds as a logbook writes a time: `1366`, or minutes and seconds as `22:46`. |
 | `rate` | Metres a minute, instead of a duration. |
-| `gas` | Which cylinder, by its number: `1` for the first. Left out, the line breathes what the line above breathes. |
+| `gas` | Which cylinder, by its number: `1` for the first, or `loop` on a rebreather. Left out, the line breathes what the line above breathes. |
 
 A line at the same depth as the one before it is a stay and needs a duration. A line that
 changes depth takes a duration or a rate; given neither, it moves at the descent or ascent rate.
@@ -73,7 +73,7 @@ changes depth takes a duration or a rate; given neither, it moves at the descent
 | Field | What it says |
 |---|---|
 | `gas` | The mix: `air`, `EAN32`, `TMX18/45`. |
-| `role` | `bottom`, `deco` or `bailout`. `bottom` if left out. |
+| `role` | `bottom`, `deco` or `bailout`, and on a rebreather `diluent` or `rich`. `bottom` if left out. |
 | `size` | Litres of water the cylinder holds. |
 | `fill` | Bar it was filled to. |
 | `sac` | Litres a minute at the surface. |
@@ -121,15 +121,24 @@ your diluent holds it.
 | `setpoint_low` | The setpoint from the surface down to `setpoint_switch_depth`, in bar; 0.7 if left out |
 | `setpoint_high` | The setpoint from there on, the way up included, in bar; 1.3 if left out |
 | `setpoint_switch_depth` | Where the descent changes to the high setpoint, in metres; 6 if left out |
-| `diluent` | The cylinder the diluent comes from, by its number; 1 if left out |
 | `bailout_reserve` | Whether the bailout reserve is tried, `true` or `false`; `true` if left out |
 | `co2_hit_factor` | Times its usual SAC a bailout is breathed at during the CO₂ hit; 4 if left out |
 | `co2_hit_time` | How long the CO₂ hit holds you at the depth it happened, in seconds; 600 if left out |
 
-A setpoint may be no higher than `po2_max_bottom`. Every line breathes the loop, and the way up
-switches to no cylinder, so a line naming a gas is refused. Where your diluent alone holds more
-oxygen than the setpoint, deep on a rich diluent, the loop breathes the diluent itself, and the
-pO₂ warning says so; a diluent too lean to breathe at the surface is warned of too.
+**Two roles belong to the loop.** The cylinder whose `role` is `diluent` is the loop's diluent,
+and a rebreather case has exactly one. One whose `role` is `rich` is its oxygen, which nothing
+counts yet. No line breathes either: a line chooses `loop` or a `bottom`, `deco` or `bailout`
+cylinder, which it breathes on open circuit. The first line breathes the loop unless it names a
+cylinder, and every line after breathes what the one above does until it names another, so a
+dive may leave the loop and come back. Gas breathed off the loop is counted as on open circuit.
+
+The way up continues on what your last line breathes. From the loop it stays on the loop and
+switches to nothing. From a cylinder it stays on open circuit and switches to a richer `bottom` or
+`deco` cylinder as an open-circuit plan does, never to a bailout and never back to the loop.
+
+A setpoint may be no higher than `po2_max_bottom`. Where your diluent alone holds more oxygen than
+the setpoint, deep on a rich diluent, the loop breathes the diluent itself, and the pO₂ warning
+says so; a diluent too lean to breathe at the surface is warned of too.
 
 **The reserve is the bailout.** A rebreather case's one gas-reserve scenario is the loop failing
 at the worst moment and the way up on open circuit, on the cylinders whose `role` is `bailout`
@@ -138,12 +147,13 @@ its limit allows, switches among them as it rises, and breathes each at its own 
 with a CO₂ hit: `co2_hit_time` at the depth the loop failed, breathed on the bailout at
 `co2_hit_factor` times its `sac`, which loads your tissues as well. A rebreather case uses these two
 instead of `stress_factor` and `problem_solving_time`. Each bailout is said to
-keep what it needs at the end of the dive, which the loop leaves it full for. `bailout_reserve`
-switches it on or off, `true` unless it says `false`. With no bailout cylinder it says so, and
-the diluent's cylinder may not be a bailout.
+keep what it needs at the end of the dive. Only moments on the loop are tried, up to the one it is
+left at, there being no loop to lose off it. `bailout_reserve` switches it on or off, `true`
+unless it says `false`. With no bailout cylinder it says so.
 
-**Not yet:** the gas the loop itself uses, and its scrubber. A rebreather case's answer leaves out
-the litres rather than giving open-circuit figures that would be wrong.
+**Not yet:** the gas the loop itself uses, and its scrubber. A rebreather case's answer leaves the
+diluent and the rich cylinder out of the litres rather than giving open-circuit figures that would
+be wrong.
 
 ### Following an earlier case
 

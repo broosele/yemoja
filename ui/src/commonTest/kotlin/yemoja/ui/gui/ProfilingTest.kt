@@ -2,6 +2,7 @@ package yemoja.ui.gui
 
 import androidx.compose.ui.unit.dp
 import yemoja.data.Gas
+import yemoja.logic.OPEN_CIRCUIT_ROLES
 import yemoja.logic.needsDuration
 import yemoja.logic.Breathed
 import yemoja.logic.Conditions
@@ -893,7 +894,7 @@ class RoleShownTest {
 
     @Test
     fun `each form writes each role differently`() {
-        val roles = Role.entries
+        val roles = OPEN_CIRCUIT_ROLES
         assertEquals(listOf("Bt", "Dc", "Bl"), roles.map { RoleShown.ABBREVIATION.write(it) })
         assertEquals(roles.map { RoleShown.ABBREVIATION.write(it) }, roles.map { RoleShown.PLAIN.write(it) }, "one set of abbreviations")
         for (shown in RoleShown.entries) {

@@ -35,9 +35,15 @@ data class Segment(
     val duration: String = "",
     /** Metres a minute. */
     val rate: String = "",
-    /** The cylinder by its place in the list, or null to breathe what the line above breathes. */
+    /**
+     * The cylinder by its place in the list, [LOOP] for a rebreather's loop, or null to breathe what
+     * the line above breathes.
+     */
     val gas: Int? = null,
 )
+
+/** What a line names for breathing a rebreather's loop rather than a cylinder. `LOGIC-46`. */
+const val LOOP = -1
 
 /**
  * Role is what a cylinder is carried for, which decides the oxygen it is held to and whether the
@@ -57,7 +63,22 @@ enum class Role(val label: String) {
      * brought the trouble on.
      */
     BAILOUT("Bailout"),
+
+    /**
+     * A rebreather's diluent, which the loop breathes in the proportion of its inert gas. Never
+     * named on a line: a line breathes it by choosing the loop. `LOGIC-46`.
+     */
+    DILUENT("Diluent"),
+
+    /**
+     * A rebreather's oxygen, which the loop draws on to hold its setpoint. Never named on a line.
+     * What it gives up is not yet counted. `LOGIC-46`.
+     */
+    RICH("Rich"),
 }
+
+/** The roles a cylinder has on open circuit, which is all the window offers. `LOGIC-46`. */
+val OPEN_CIRCUIT_ROLES: List<Role> = listOf(Role.BOTTOM, Role.DECO, Role.BAILOUT)
 
 /**
  * Breathed is one cylinder as it is typed: what is in it, what it is carried for, what it holds,
@@ -106,8 +127,6 @@ data class Planned(
     val setpointHigh: String = "1.3",
     /** The depth the descent changes to [setpointHigh] at, in metres. */
     val setpointSwitchDepth: String = "6",
-    /** The cylinder the loop's diluent comes from, by its place in the list. */
-    val diluent: Int = 0,
     /** Whether a rebreather plan's gas reserve tries a failed loop, bailing out. */
     val bailoutScenario: Boolean = true,
     /** Times their usual SAC a bailout is breathed at during a CO₂ hit, on a rebreather. */
@@ -264,14 +283,16 @@ fun laidOf(
     gases: Int,
     descentRate: Double?,
     ascentRate: Double?,
+    /** What the first line breathes where it names nothing: the first cylinder, or [LOOP]. */
+    startOn: Int = 0,
 ): Pair<List<Leg>, String?> {
     val legs = ArrayList<Leg>()
     var from = 0.0
     var second = 0
-    var gas = 0
+    var gas = startOn
     for ((index, segment) in segments.withIndex()) {
         if (isBlank(segment)) {
-            segment.gas?.takeIf { it in 0..<gases }?.let { gas = it }
+            segment.gas?.takeIf { it == LOOP || it in 0..<gases }?.let { gas = it }
             continue
         }
         val line = "Line ${index + 1}"
@@ -297,8 +318,8 @@ fun laidOf(
             timedBy = rate
             maxOf(ceil(abs(to - from) / rate * SECONDS_IN_MINUTE).toInt(), 1)
         }
-        val named = segment.gas?.takeIf { it in 0..<gases }
-        gas = named ?: gas.coerceIn(0, gases - 1)
+        val named = segment.gas?.takeIf { it == LOOP || it in 0..<gases }
+        gas = named ?: if (gas == LOOP) LOOP else gas.coerceIn(0, gases - 1)
         legs += Leg(index, from, to, second, seconds, gas, inherited = named == null, timedBy = timedBy)
         second += seconds
         from = to
@@ -381,16 +402,20 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
                 ?: return null to numberWrong("Setpoint high", within, shaping.setpointHigh)
             val switchDepth = shaping.setpointSwitchDepth.trim().toDoubleOrNull()?.takeIf { it >= 0 }
                 ?: return null to numberWrong("Setpoint switch depth", "0 m or more", shaping.setpointSwitchDepth)
-            if (shaping.diluent !in shaping.gases.indices) {
-                return null to "Diluent should be one of the ${shaping.gases.size} cylinders, not ${shaping.diluent + 1}"
+            val diluents = shaping.gases.indices.filter { shaping.gases[it].role == Role.DILUENT }
+            val diluent = diluents.singleOrNull() ?: return null to if (diluents.isEmpty()) {
+                "A CCR plan needs a cylinder whose role is diluent"
+            } else {
+                "A CCR plan has one diluent, not ${diluents.size}"
             }
-            // The loop breathes its diluent throughout, so it cannot also be what is left when the loop fails.
-            if (shaping.gases[shaping.diluent].role == Role.BAILOUT) {
-                return null to "${gasLabelOf(shaping.diluent)} is the diluent, so its role should not be bailout"
-            }
-            Setpoints(shaping.diluent, low, high, switchDepth)
+            Setpoints(diluent, low, high, switchDepth)
         }
         else -> return null to "Dive mode should be $OPEN_CIRCUIT or $CLOSED_CIRCUIT, not ${said(shaping.diveMode)}"
+    }
+    if (loop == null) {
+        shaping.gases.withIndex().firstOrNull { it.value.role == Role.DILUENT || it.value.role == Role.RICH }?.let { (index, gas) ->
+            return null to "${gasLabelOf(index)} is ${gas.role.label.lowercase()}, which only a CCR plan has"
+        }
     }
     val deco = positiveOf(shaping.decoOxygen)
         ?: return null to numberWrong("pO₂ max deco", "more than 0 bar", shaping.decoOxygen)
@@ -448,7 +473,7 @@ fun sourceOf(breathed: Breathed, gas: Gas, conditions: Conditions): Source = Sou
     volume = breathed.size.trim().toDoubleOrNull(),
     fill = breathed.fill.trim().toDoubleOrNull(),
     mostOxygen = limitOf(breathed.role, conditions),
-    ascentMayChoose = breathed.role != Role.BAILOUT,
+    ascentMayChoose = breathed.role == Role.BOTTOM || breathed.role == Role.DECO,
     leastOxygen = conditions.leastOxygen,
 )
 
@@ -486,6 +511,7 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
         shaping.gases.size,
         conditions?.descentRate ?: positiveOf(shaping.descentRate),
         conditions?.ascentRate ?: positiveOf(shaping.ascentRate),
+        startOn = if (shaping.diveMode.trim() == CLOSED_CIRCUIT) LOOP else 0,
     )
     if (wrong != null) return Shaped.Wrong(wrong, legs)
     if (unreadable != null || conditions == null) return Shaped.Wrong(unreadable ?: "", legs)
@@ -500,10 +526,7 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
             },
             legs,
         )
-        // The loop breathes its diluent for the whole dive, so it is held to the bottom's limit
-        // whatever role its cylinder was given.
-        val held = if (conditions.loop?.diluent == index) breathed.copy(role = Role.BOTTOM) else breathed
-        sources[gasKeyOf(index)] = sourceOf(held, gas, conditions)
+        sources[gasKeyOf(index)] = sourceOf(breathed, gas, conditions)
     }
     // A start that will not read, or a run followed that cannot be, is the plan's fault as a
     // setting that will not read is: the model cannot say what the dive starts from.
@@ -512,19 +535,20 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
     (startOf(shaping) as? Start.Wrong)?.let { return Shaped.Wrong(it.reason, legs) }
     val left = (followed as? Followed.After)?.residual ?: residual
     val loop = conditions.loop
-    // On the loop every line breathes it; a cylinder named on a line is open circuit, which is a
-    // bailout and comes with `LOGIC-46`'s second step.
-    val breathed = if (loop == null) legs else {
-        shaping.segments.withIndex().firstOrNull { (_, segment) -> segment.gas != null && segment.gas != loop.diluent }
-            ?.let { (index, _) ->
-                return Shaped.Wrong("Line ${index + 1} names a gas, but a CCR plan breathes the loop throughout", legs)
-            }
-        legs.map { it.copy(gas = loop.diluent) }
+    // A line breathes the loop or an open-circuit cylinder, never the cylinders the loop draws on.
+    for (leg in legs) {
+        val line = "Line ${leg.index + 1}"
+        if (leg.gas == LOOP && loop == null) return Shaped.Wrong("$line chooses the loop, which only a CCR plan has", legs)
+        val role = shaping.gases.getOrNull(leg.gas)?.role
+        if (role == Role.DILUENT || role == Role.RICH) {
+            return Shaped.Wrong("$line breathes ${gasLabelOf(leg.gas)}, the ${role.label.lowercase()}; choose the loop", legs)
+        }
     }
+    val breathed = legs
     val points = listOf(0 to 0.0) + breathed.map { it.ends to it.to }
     val switches = ArrayList<Pair<Int, String>>()
     for (leg in breathed) {
-        val key = gasKeyOf(leg.gas)
+        val key = gasKeyOf(if (leg.gas == LOOP) loop!!.diluent else leg.gas)
         if (switches.lastOrNull()?.second != key) switches += (if (switches.isEmpty()) 0 else leg.begins) to key
     }
     return Shaped.Ready(
@@ -545,7 +569,15 @@ fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Do
             lastStop = conditions.lastStop,
             mostNarcoticDepth = conditions.narcoticDepth,
             oxygenNarcotic = conditions.oxygenNarcotic,
-            closedCircuit = loop?.let { ClosedCircuit(gasKeyOf(it.diluent), it.low, it.high, it.switchDepth) },
+            closedCircuit = loop?.let {
+                ClosedCircuit(
+                    gasKeyOf(it.diluent),
+                    it.low,
+                    it.high,
+                    it.switchDepth,
+                    rich = shaping.gases.indices.filter { index -> shaping.gases[index].role == Role.RICH }.map(::gasKeyOf).toSet(),
+                )
+            },
             carried = left?.tissues,
             oxygenCarried = left?.oxygen,
         ),
@@ -900,7 +932,8 @@ fun tailOf(run: Run, ascent: Ascended.Done): List<Leg> {
         val (ends, to) = points[at]
         if (ends <= began) continue
         val key = switches.lastOrNull { it.first <= began }?.second ?: continue
-        val leg = Leg(-1, from, to, began, ends - began, gasIndexOf(key), inherited = true)
+        val gas = if (key == run.closedCircuit?.diluent) LOOP else gasIndexOf(key)
+        val leg = Leg(-1, from, to, began, ends - began, gas, inherited = true)
         val last = legs.lastOrNull()
         val switched = ascent.switches.any { it.first == began }
         if (last != null && !switched && last.gas == leg.gas && last.direction == leg.direction) {

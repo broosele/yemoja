@@ -97,11 +97,13 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
                 written.toDoubleOrNull()?.let { clockOf(it.roundToInt()) } ?: written
             }.orEmpty(),
             rate = textOf(held["rate"]).orEmpty(),
-            // A cylinder is named by its number, as it is everywhere else here. `API-7`.
+            // A cylinder is named by its number, as it is everywhere else here, `API-7`, and a
+            // rebreather's loop as `loop`.
             gas = when (val named = textOf(held["gas"])) {
                 null -> null
+                LOOP_SAID -> LOOP
                 else -> named.toIntOrNull()?.takeIf { it >= 1 }?.let { it - 1 }
-                    ?: return Made.Wrong("$name line ${index + 1} gas should be a cylinder's number, not $named")
+                    ?: return Made.Wrong("$name line ${index + 1} gas should be a cylinder's number or $LOOP_SAID, not $named")
             },
         )
     }
@@ -112,7 +114,7 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             ?: return Made.Wrong("$name gas ${index + 1} should be an object")
         val said = textOf(held["role"])?.lowercase() ?: "bottom"
         val role = Role.entries.firstOrNull { it.name.lowercase() == said }
-            ?: return Made.Wrong("$name gas ${index + 1} is $said, not bottom, deco or bailout")
+            ?: return Made.Wrong("$name gas ${index + 1} is $said, not bottom, deco, bailout, diluent or rich")
         gases += Breathed(
             gas = textOf(held["gas"]).orEmpty(),
             role = role,
@@ -156,11 +158,6 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
         is Boolean -> written
         else -> return Made.Wrong("$name oxygen_narcotic should be true or false, but was $written")
     }
-    // The diluent is a cylinder named by its number, as everything here names one. `API-7`.
-    val diluent = textOf(members["diluent"])?.let { written ->
-        written.toIntOrNull()?.takeIf { it >= 1 }?.let { it - 1 }
-            ?: return Made.Wrong("$name diluent should be a cylinder's number, not $written")
-    } ?: 0
     val switchStops = when (val written = (members["gas_switch_stops"] as? Stored.Leaf)?.value) {
         null -> false
         is Boolean -> written
@@ -220,7 +217,6 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             setpointLow = textOf(members["setpoint_low"]) ?: Planned().setpointLow,
             setpointHigh = textOf(members["setpoint_high"]) ?: Planned().setpointHigh,
             setpointSwitchDepth = textOf(members["setpoint_switch_depth"]) ?: Planned().setpointSwitchDepth,
-            diluent = diluent,
             sharedScenario = sharedGasReserve,
             bailoutScenario = bailoutReserve,
             co2HitFactor = textOf(members["co2_hit_factor"]) ?: Planned().co2HitFactor,
@@ -249,3 +245,6 @@ private fun textOf(held: Stored?): String? = when (val value = (held as? Stored.
 /** A number with no trailing nought, which is how everything else here writes one. */
 private fun plainOf(value: Double): String =
     if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
+
+/** How a plan file's line names a rebreather's loop. */
+const val LOOP_SAID = "loop"

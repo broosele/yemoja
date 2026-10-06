@@ -8,6 +8,7 @@ import yemoja.data.Result
 import yemoja.data.Stored
 import yemoja.data.json.LogbookReader
 import yemoja.data.json.MemoryFileStore
+import yemoja.logic.OPEN_CIRCUIT_ROLES
 import yemoja.logic.SEA_LEVEL_SAID
 import yemoja.logic.Breathed
 import yemoja.logic.Operation
@@ -142,7 +143,7 @@ class PlanFieldsTest {
 
     @Test
     fun `a role is written as the usage a cylinder is for, and read back`() {
-        for (role in Role.entries) assertEquals(role, roleOf(usageOf(role)))
+        for (role in OPEN_CIRCUIT_ROLES) assertEquals(role, roleOf(usageOf(role)))
         assertEquals(Role.BOTTOM, roleOf("stage"), "a usage the planner has no role for")
         assertEquals(Role.BOTTOM, roleOf(null))
     }

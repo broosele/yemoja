@@ -1474,9 +1474,18 @@ To settle when we discuss architecture and features:
   GF99 and the no-decompression time. The oxygen clocks run on the loop's oxygen, the walk being
   cut at the same places so that they are as exact. The END is read from the loop's own
   fractions. The pO₂ check judges the loop, which is how a diluent too rich for the depth is said,
-  and a diluent too lean to breathe at the surface is said once at the start. The way up switches
-  to nothing: a cylinder beside the diluent is open circuit, which is a bailout, and a line naming
-  one is refused.
+  and a diluent too lean to breathe at the surface is said once at the start.
+
+  *Amended:* **a line chooses the loop or an open-circuit cylinder, and two roles belong to the
+  loop.** First every line breathed the loop and a line naming a cylinder was refused, which left
+  no way to plan open-circuit time on a rebreather dive. The user added the roles *diluent* and
+  *rich*, the loop's diluent and its oxygen, and a line chooses the loop or any other cylinder,
+  which it breathes on open circuit and whose gas is counted. In the run a switch to the diluent is
+  a switch onto the loop and one to anything else is open circuit, so `ClosedCircuit` needs no list
+  of lines. The way up goes on with what the last line breathed, as the user chose: from the loop it
+  switches to nothing; from a cylinder it stays on open circuit and switches as an open-circuit way
+  up does. The bailout reserve tries only the moments on the loop, the moment it is left included.
+  A plan on open circuit refuses both roles and the loop, and the window offers neither.
 
   **The reserve is the bailout**, `bailoutReserve`: the loop failing at each moment in turn and
   the way up on open circuit from the tissues the loop left, as `LOGIC-40`'s scenarios try every

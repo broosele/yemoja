@@ -166,11 +166,13 @@ class CalculatedTest {
     }
 
     @Test
-    fun `a rebreather plan answers its schedule and setpoints, and leaves gas and reserves to come`() {
-        val loop = table(gases = listOf(Breathed("air", Role.BOTTOM, size = "3", fill = "200", sac = "20")), low = "30", high = "70")
+    fun `a rebreather plan answers its schedule and setpoints, and leaves the loop's own gas to come`() {
+        val loop = table(gases = listOf(Breathed("air", Role.DILUENT, size = "3", fill = "200", sac = "20")), low = "30", high = "70")
             .copy(diveMode = "ccr", stressFactor = "2", problemMinutes = "2")
         val schedule = assertIs<Calculated.Done>(calculated(loop)).schedule
-        val open = assertIs<Calculated.Done>(calculated(loop.copy(diveMode = "oc"))).schedule
+        val open = assertIs<Calculated.Done>(
+            calculated(loop.copy(diveMode = "oc", gases = listOf(Breathed("air", Role.BOTTOM, size = "3", fill = "200", sac = "20")))),
+        ).schedule
 
         assertEquals("ccr", schedule.diveMode)
         assertEquals(0.7, schedule.setpointSeries.first().value)
@@ -183,15 +185,15 @@ class CalculatedTest {
             assertIs<ReserveAnswer.Refused>(schedule.reserves.getValue(Scenario.BAILOUT)).reason,
             "its one scenario is the bailout, and it has none",
         )
-        assertTrue(schedule.lines.all { it.gas == "1" }, "every line breathes the diluent")
+        assertTrue(schedule.lines.all { it.gas == "loop" }, "every line breathes the loop")
         assertEquals("oc", open.diveMode)
         assertTrue(open.setpointSeries.isEmpty())
     }
 
     @Test
-    fun `a diluent is held to the bottom's oxygen limit whatever role its cylinder was given`() {
+    fun `a diluent is held to the bottom's oxygen limit`() {
         // EAN32 at forty metres is 1.6 bar: within the deco limit, past the bottom's 1.4.
-        val loop = table(gases = listOf(Breathed("EAN32", Role.DECO))).copy(diveMode = "ccr")
+        val loop = table(gases = listOf(Breathed("EAN32", Role.DILUENT))).copy(diveMode = "ccr")
         val schedule = assertIs<Calculated.Done>(calculated(loop)).schedule
 
         assertTrue(schedule.warnings.any { "pO₂ too high" in it.said && "1.40 bar allowed" in it.said }, "${schedule.warnings.map { it.said }}")
@@ -201,7 +203,7 @@ class CalculatedTest {
     fun `a rebreather plan's reserve is its bailout, said as a sentence`() {
         val loop = table(
             gases = listOf(
-                Breathed("air", Role.BOTTOM),
+                Breathed("air", Role.DILUENT),
                 Breathed("air", Role.BAILOUT, size = "11", fill = "200", sac = "20"),
                 Breathed("EAN50", Role.DECO, size = "7", fill = "200", sac = "20"),
             ),
@@ -228,7 +230,7 @@ class CalculatedTest {
     @Test
     fun `a bailout lacking its SAC is named, whatever cylinder the lost-gas setting names`() {
         val loop = table(
-            gases = listOf(Breathed("air", Role.BOTTOM), Breathed("air", Role.BAILOUT, size = "11", fill = "200")),
+            gases = listOf(Breathed("air", Role.DILUENT), Breathed("air", Role.BAILOUT, size = "11", fill = "200")),
         ).copy(diveMode = "ccr", problemMinutes = "2", lostGas = 1)
         val bailout = assertIs<ReserveAnswer.Refused>(
             assertIs<Calculated.Done>(calculated(loop)).schedule.reserves.getValue(Scenario.BAILOUT),
@@ -240,27 +242,123 @@ class CalculatedTest {
     @Test
     fun `a rebreather plan is refused for what it cannot be`() {
         fun refused(planned: Planned): String = assertIs<Calculated.Refused>(calculated(planned)).reason
-        val loop = table().copy(diveMode = "ccr")
+        val loop = table(gases = listOf(Breathed("air", Role.DILUENT))).copy(diveMode = "ccr")
 
         assertEquals("Dive mode should be oc or ccr, not \"scr\"", refused(table().copy(diveMode = "scr")))
         assertEquals(
             "Setpoint high should be more than 0 bar and at most the pO₂ max bottom, 1.4 bar, not \"1.5\"",
             refused(loop.copy(setpointHigh = "1.5")),
         )
-        assertEquals("Diluent should be one of the 1 cylinders, not 2", refused(loop.copy(diluent = 1)))
+        assertEquals("A CCR plan needs a cylinder whose role is diluent", refused(table().copy(diveMode = "ccr")))
         assertEquals(
-            "Gas 1 is the diluent, so its role should not be bailout",
-            refused(loop.copy(gases = listOf(Breathed("air", Role.BAILOUT)))),
+            "A CCR plan has one diluent, not 2",
+            refused(loop.copy(gases = listOf(Breathed("air", Role.DILUENT), Breathed("TMX18/45", Role.DILUENT)))),
         )
         assertEquals(
-            "Line 2 names a gas, but a CCR plan breathes the loop throughout",
+            "Line 2 breathes Gas 2, the rich; choose the loop",
             refused(
                 loop.copy(
-                    gases = listOf(Breathed("air", Role.BOTTOM), Breathed("EAN50", Role.DECO)),
+                    gases = listOf(Breathed("air", Role.DILUENT), Breathed("O2", Role.RICH)),
                     segments = listOf(Segment("40"), Segment("40", duration = "20", gas = 1)),
                 ),
             ),
         )
+        assertEquals("Line 1 chooses the loop, which only a CCR plan has", refused(table().copy(segments = listOf(Segment("40", gas = LOOP)))))
+        assertEquals("Gas 1 is diluent, which only a CCR plan has", refused(table(gases = listOf(Breathed("air", Role.DILUENT)))))
+    }
+
+    @Test
+    fun `a rebreather plan may leave the loop for a cylinder and come back`() {
+        // Five minutes at twenty metres on the bailout, then down on the loop.
+        val gases = listOf(
+            Breathed("air", Role.DILUENT),
+            Breathed("O2", Role.RICH),
+            Breathed("air", Role.BAILOUT, size = "11", fill = "200", sac = "20"),
+        )
+        val plan = table(gases = gases, low = "30", high = "70").copy(
+            diveMode = "ccr",
+            problemMinutes = "2",
+            segments = listOf(Segment("20", gas = 2), Segment("20", duration = "5"), Segment("40", gas = LOOP), Segment("40", duration = "25")),
+        )
+        val schedule = assertIs<Calculated.Done>(calculated(plan)).schedule
+
+        assertEquals(listOf("3", "3", "loop", "loop"), schedule.lines.filter { !it.added }.map { it.gas })
+        assertTrue(schedule.lines.filter { it.added }.all { it.gas == "loop" }, "the way up from the loop stays on it")
+        assertTrue(schedule.gasUsedLitres.getValue("3") > 0, "the bailout breathed off the loop is counted")
+        assertTrue("1" !in schedule.gasUsedLitres && "2" !in schedule.gasUsedLitres, "the loop's own gas is not yet")
+        assertTrue(schedule.setpointSeries.all { it.second >= schedule.lines[2].beginsAt }, "a setpoint only while on the loop")
+    }
+
+    @Test
+    fun `a way up from the loop stays on it, a deco cylinder beside it or not`() {
+        val gases = listOf(
+            Breathed("air", Role.DILUENT),
+            Breathed("air", Role.BAILOUT, size = "11", fill = "200", sac = "20"),
+            Breathed("EAN50", Role.DECO, size = "7", fill = "200", sac = "20"),
+        )
+        val plan = table(gases = gases, low = "30", high = "70").copy(diveMode = "ccr", problemMinutes = "2")
+        for (stops in listOf(false, true)) {
+            val added = assertIs<Calculated.Done>(calculated(plan.copy(switchStops = stops))).schedule.lines.filter { it.added }
+            assertTrue(added.all { it.gas == "loop" }, "switch stops $stops: ${added.map { it.gas }}")
+        }
+    }
+
+    @Test
+    fun `a bailout breathed on open circuit is kept for less, and a moment off the loop asks nothing`() {
+        // Ten minutes at twenty metres on the loop, then down to forty-five on the bailout: the
+        // deepest, longest moments come off the loop and are not tried. What the plan breathes from
+        // the bailout is part of what it has to keep.
+        val gases = listOf(
+            Breathed("air", Role.DILUENT),
+            Breathed("O2", Role.RICH, size = "3", fill = "200", sac = "20"),
+            Breathed("air", Role.BAILOUT, size = "24", fill = "232", sac = "20"),
+        )
+        val plan = table(gases = gases, low = "30", high = "70").copy(
+            diveMode = "ccr",
+            problemMinutes = "2",
+            segments = listOf(Segment("20"), Segment("20", duration = "10"), Segment("45", gas = 2), Segment("45", duration = "10")),
+        )
+        val schedule = assertIs<Calculated.Done>(calculated(plan)).schedule
+        val bailout = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.BAILOUT))
+        val kept = bailout.kept.getValue("3")
+
+        assertEquals(setOf("3"), bailout.kept.keys, "the rich cylinder is never a bailout")
+        assertEquals(schedule.lines[2].beginsAt, kept.worstSeconds, "the last moment on the loop, leaving it at twenty metres")
+        assertEquals(20.0, kept.worstMetres)
+        // The same dive with its deep stretch on a bottom cylinder: the same escape from the same
+        // moment, and nothing of the bailout breathed after it.
+        val elsewhere = plan.copy(
+            gases = gases + Breathed("air", Role.BOTTOM, size = "24", fill = "232", sac = "20"),
+            segments = listOf(Segment("20"), Segment("20", duration = "10"), Segment("45", gas = 3), Segment("45", duration = "10")),
+        )
+        val untouched = assertIs<ReserveAnswer.Done>(
+            assertIs<Calculated.Done>(calculated(elsewhere)).schedule.reserves.getValue(Scenario.BAILOUT),
+        ).kept.getValue("3")
+        assertTrue(kept.litres < untouched.litres, "the plan's own use of it after that moment is taken off: ${kept.litres} against ${untouched.litres}")
+    }
+
+    @Test
+    fun `a way up begun off the loop stays on open circuit and switches as one does`() {
+        // The bottom on the loop, then up to twenty-one metres on EAN50, which the way up keeps.
+        val gases = listOf(
+            Breathed("air", Role.DILUENT),
+            Breathed("air", Role.BAILOUT, size = "11", fill = "200", sac = "20"),
+            Breathed("EAN50", Role.DECO, size = "11", fill = "200", sac = "20"),
+            Breathed("O2", Role.DECO, size = "7", fill = "200", sac = "20"),
+        )
+        val plan = table(gases = gases, low = "30", high = "70").copy(
+            diveMode = "ccr",
+            problemMinutes = "2",
+            segments = listOf(Segment("40"), Segment("40", duration = "25"), Segment("21", gas = 2)),
+        )
+        val schedule = assertIs<Calculated.Done>(calculated(plan)).schedule
+        val added = schedule.lines.filter { it.added }
+
+        assertEquals("3", added.first().gas)
+        assertEquals("4", added.last().gas, "on to oxygen at six metres, as open circuit does")
+        assertTrue(added.none { it.gas == "loop" || it.gas == "2" }, "never back on the loop, never on the bailout")
+        val bailout = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.BAILOUT))
+        assertEquals(schedule.lines[2].beginsAt, bailout.kept.getValue("2").worstSeconds, "the loop can fail up to the moment it is left")
     }
 
     @Test

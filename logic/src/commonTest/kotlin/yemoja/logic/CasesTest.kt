@@ -127,17 +127,18 @@ class CasesTest {
     }
 
     @Test
-    fun `a rebreather case says its mode, setpoints and diluent, and leaves out what it takes as given`() {
+    fun `a rebreather case says its mode, setpoints, its cylinders' roles and the loop on a line`() {
         val case = oneOf(
-            """{"runtime": [{"depth": 40}], "dive_mode": "ccr", "setpoint_low": 0.6, "setpoint_high": 1.2,
-                "setpoint_switch_depth": 10, "diluent": 2, "gases": [{"gas": "EAN50"}, {"gas": "TMX18/45"}]}""",
+            """{"runtime": [{"depth": 40}, {"depth": 40, "duration": 600, "gas": 3}, {"depth": 30, "gas": "loop"}],
+                "dive_mode": "ccr", "setpoint_low": 0.6, "setpoint_high": 1.2, "setpoint_switch_depth": 10,
+                "gases": [{"gas": "TMX18/45", "role": "diluent"}, {"gas": "O2", "role": "rich"}, {"gas": "EAN50", "role": "bailout"}]}""",
         ).planned
         assertEquals("ccr", case.diveMode)
         assertEquals(listOf("0.6", "1.2", "10"), listOf(case.setpointLow, case.setpointHigh, case.setpointSwitchDepth))
-        assertEquals(1, case.diluent, "the second cylinder")
+        assertEquals(listOf(Role.DILUENT, Role.RICH, Role.BAILOUT), case.gases.map { it.role })
+        assertEquals(listOf(null, 2, LOOP), case.segments.map { it.gas })
         val plain = oneOf("""{"runtime": [{"depth": 40}], "dive_mode": "ccr"}""").planned
         assertEquals(listOf("0.7", "1.3", "6"), listOf(plain.setpointLow, plain.setpointHigh, plain.setpointSwitchDepth))
-        assertEquals(0, plain.diluent)
         assertEquals("oc", oneOf("""{"runtime": [{"depth": 40}]}""").planned.diveMode)
         assertEquals(true, plain.bailoutScenario)
         assertEquals(listOf("4", "10"), listOf(plain.co2HitFactor, plain.co2HitMinutes))
@@ -145,8 +146,8 @@ class CasesTest {
         assertEquals(listOf("3", "5"), listOf(hit.co2HitFactor, hit.co2HitMinutes), "the time in seconds, as a file writes it")
         assertEquals(false, oneOf("""{"runtime": [{"depth": 40}], "bailout_reserve": false}""").planned.bailoutScenario)
         assertEquals(
-            "case 1 diluent should be a cylinder's number, not first",
-            assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 40}], "diluent": "first"}""")).reason,
+            "case 1 line 1 gas should be a cylinder's number or loop, not first",
+            assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 40, "gas": "first"}]}""")).reason,
         )
     }
 
@@ -165,7 +166,7 @@ class CasesTest {
         assertTrue("written as a list" in assertIs<Read.Wrong>(read("""[{"name": "x"}]""")).reason)
         assertTrue("runtime is empty" in assertIs<Read.Wrong>(read("""[{"runtime": []}]""")).reason)
         assertTrue(
-            "not bottom, deco or bailout" in
+            "not bottom, deco, bailout, diluent or rich" in
                     assertIs<Read.Wrong>(
                         read("""[{"runtime": [{"depth": 10}], "gases": [{"gas": "air", "role": "spare"}]}]"""),
                     ).reason,

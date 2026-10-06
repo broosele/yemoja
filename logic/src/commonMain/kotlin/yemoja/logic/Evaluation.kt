@@ -104,7 +104,7 @@ sealed class Evaluated {
          * counted as narcotic where the run says so. `LOGIC-41`.
          */
         val narcoticDepth: Series,
-        /** The setpoint in force at each moment, in bar, and empty for a run on open circuit. `LOGIC-46`. */
+        /** The setpoint at each moment the loop is breathed, in bar, and nothing off it. `LOGIC-46`. */
         val setpoint: Series,
         /** The oxygen breathed at each moment, in bar: the mix's on open circuit, the loop's on a rebreather. */
         val oxygenPressure: Series,
@@ -479,6 +479,7 @@ private fun walked(
     val factorsNow = ArrayList<Double>()
     val narcotic = ArrayList<Double>()
     val setpoints = ArrayList<Double>()
+    val setpointSeconds = ArrayList<Int>()
     val oxygenPressures = ArrayList<Double>()
     var stupefied = false
     val findings = ArrayList<Finding>()
@@ -608,7 +609,10 @@ private fun walked(
             density,
             surface,
         )
-        breathing.setpointAt(point.second.toDouble())?.let { setpoints += it }
+        breathing.loopSetpointAt(point.second.toDouble())?.let {
+            setpointSeconds += point.second
+            setpoints += it
+        }
         narcotic += equivalent
         if (equivalent > run.mostNarcoticDepth && !stupefied) {
             findings += Finding(
@@ -657,7 +661,7 @@ private fun walked(
         },
         seriesOf(seconds, factorsNow),
         seriesOf(seconds, narcotic),
-        if (setpoints.isEmpty()) seriesOf(emptyList(), emptyList()) else seriesOf(seconds, setpoints),
+        seriesOf(setpointSeconds, setpoints),
         seriesOf(seconds, oxygenPressures),
     )
 }
@@ -1205,11 +1209,24 @@ internal class Breathing(
     /** What is breathed at [second]: the loop at its setpoint, or the mix of the source breathed. */
     fun inspirationAt(second: Double): Inspiration = inspirationOf(keyAt(second.toInt()), second)
 
-    /** What breathing [key] gives at [second]; on a loop, the loop whatever [key] says. */
+    /** What breathing [key] gives at [second]: the loop where [key] is its diluent, and the mix otherwise. */
     fun inspirationOf(key: String, second: Double): Inspiration {
-        val loop = closedCircuit ?: return Inspiration.OpenCircuit(mixes[key] ?: Gas.AIR)
-        return Inspiration.Loop(mixes[loop.diluent] ?: Gas.AIR, setpointAt(second)!!)
+        if (!onLoop(key)) return Inspiration.OpenCircuit(mixes[key] ?: Gas.AIR)
+        return Inspiration.Loop(mixes.getValue(key), setpointAt(second)!!)
     }
+
+    /** Whether breathing [key] is breathing the loop. */
+    fun onLoop(key: String): Boolean = closedCircuit?.diluent == key
+
+    /**
+     * Whether the loop is breathed at [second], up to it or from it, so a switch off the loop is
+     * still a moment the loop can fail.
+     */
+    fun onLoopAt(second: Int): Boolean = onLoop(keyAt(second)) || (second > 0 && onLoop(keyAt(second - 1)))
+
+    /** The setpoint at [second] where the loop is breathed then, and null off it. */
+    fun loopSetpointAt(second: Double): Double? =
+        if (onLoop(keyAt(second.toInt()))) setpointAt(second) else null
 
     /**
      * The stretch from [second], [seconds] long, with the pressure going from [from] to [to], cut
@@ -1251,7 +1268,7 @@ internal class Breathing(
 
     /** The same sources and switches, with only [keys] open to an ascent's choice. */
     fun choosing(keys: Set<String>): Breathing =
-        Breathing(mixes, switches, rates, fills, mostOxygen, if (closedCircuit == null) keys else emptySet(), leastOxygen, closedCircuit, highFrom)
+        Breathing(mixes, switches, rates, fills, mostOxygen, keys, leastOxygen, closedCircuit, highFrom)
 
     /**
      * The deepest depth on a grid of [step] metres, shallower than [metres] and deeper than
@@ -1266,6 +1283,8 @@ internal class Breathing(
         density: Double,
         surface: Double,
     ): Double? {
+        // A way up on the loop stays on it.
+        if (onLoop(breathed)) return null
         val now = mixes[breathed]?.fractionO2 ?: return null
         return mixes.filter { (key, mix) -> key in choosable && mix.fractionO2 > now }
             .mapNotNull { (key, mix) -> maximumOperatingDepth(mix, mostOxygenOf(key), density, surface) }
@@ -1301,6 +1320,7 @@ internal class Breathing(
      * back to a leaner mix.
      */
     fun worthSwitching(breathed: String, richest: String, ambient: Double): Boolean {
+        if (onLoop(breathed)) return false
         val now = mixes[breathed] ?: return true
         val next = mixes[richest] ?: return false
         return next.fractionO2 > now.fractionO2 || now.fractionO2 * ambient > mostOxygenOf(breathed)
@@ -1315,9 +1335,20 @@ internal class Piece(val second: Double, val from: Double, val to: Double, val s
  * setpoint from the surface until the run first reaches [switchDepth], and a [high] one from then
  * on, the way up included. `LOGIC-46`.
  *
+ * **A switch to the diluent is a switch onto the loop**, and one to any other source is open
+ * circuit on it. So a dive may leave the loop for a cylinder and come back, and the gas it breathes
+ * off the loop is counted as an open-circuit dive's is.
+ *
  * Immutable.
  */
-class ClosedCircuit(val diluent: String, val low: Double, val high: Double, val switchDepth: Double) {
+class ClosedCircuit(
+    val diluent: String,
+    val low: Double,
+    val high: Double,
+    val switchDepth: Double,
+    /** The sources the loop draws its oxygen from, which no line breathes. */
+    val rich: Set<String> = emptySet(),
+) {
 
     init {
         require(low > 0 && high > 0) { "setpoints should be more than nought, but were $low and $high" }
@@ -1350,15 +1381,23 @@ internal fun breathedBy(run: Run): Breathing? {
     if (run.sources.isEmpty()) return null
     run.closedCircuit?.let { loop ->
         if (loop.diluent !in run.sources) return null
-        // On the loop nothing is switched to and nothing is costed yet: gas comes with `LOGIC-46`'s
-        // second step.
+        // The loop's own gas is not costed yet, `LOGIC-46`'s second step, so its sources have no
+        // rate and no gauge. A cylinder breathed off the loop is costed as on open circuit.
+        val drawn = loop.rich + loop.diluent
+        val rates = run.sources.filterKeys { it !in drawn }.mapNotNull { (key, source) -> source.sac?.let { key to it } }.toMap()
+        val fills = run.sources.filterKeys { it !in drawn }.mapNotNull { (key, source) ->
+            val gauge = source.fill
+            val volume = source.volume
+            if (gauge == null || volume == null || volume <= 0) null else key to Fill(gauge, volume)
+        }.toMap()
+        val written = run.switches.filter { (_, key) -> key in run.sources }.ifEmpty { listOf(0 to loop.diluent) }
         return Breathing(
             run.sources.mapValues { (_, source) -> source.gas },
-            listOf(0 to loop.diluent),
-            emptyMap(),
-            emptyMap(),
+            written,
+            rates,
+            fills,
             run.sources.mapValues { (_, source) -> source.mostOxygen },
-            emptySet(),
+            run.sources.filterValues { it.ascentMayChoose }.keys,
             run.sources.mapValues { (_, source) -> source.leastOxygen },
             loop,
             firstReaching(run.depth, loop.switchDepth),

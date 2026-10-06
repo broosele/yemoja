@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import yemoja.logic.OPEN_CIRCUIT_ROLES
 import yemoja.logic.SEA_LEVEL_SAID
 import yemoja.logic.Breathed
 import yemoja.logic.Conditions
@@ -941,8 +942,8 @@ private fun Cylinders(
                 Pick(
                     dense = true,
                     chosen = breathed.role.label,
-                    options = Role.entries.map { it.label },
-                ) { shaping.gases[index] = breathed.copy(role = Role.entries[it]) }
+                    options = OPEN_CIRCUIT_ROLES.map { it.label },
+                ) { shaping.gases[index] = breathed.copy(role = OPEN_CIRCUIT_ROLES[it]) }
             }
         }
         val volume = @Composable {
@@ -1032,8 +1033,8 @@ private fun Cylinders(
                         Pick(
                             dense = true,
                             chosen = shown.write(breathed.role),
-                            options = Role.entries.map { it.label },
-                        ) { shaping.gases[index] = breathed.copy(role = Role.entries[it]) }
+                            options = OPEN_CIRCUIT_ROLES.map { it.label },
+                        ) { shaping.gases[index] = breathed.copy(role = OPEN_CIRCUIT_ROLES[it]) }
                     }
                 }
                 mix()
@@ -1095,6 +1096,9 @@ internal enum class RoleShown(
         Role.BOTTOM -> "Bt"
         Role.DECO -> "Dc"
         Role.BAILOUT -> "Bl"
+        // Never shown: the window plans open circuit only. `LOGIC-46`.
+        Role.DILUENT -> "Dl"
+        Role.RICH -> "Rc"
     }
 }
 
@@ -1113,7 +1117,7 @@ private fun RoleCell(index: Int, breathed: Breathed, onChoose: (Role) -> Unit) {
             )
         }
         Menu(expanded = choosing, onDismissRequest = { choosing = false }) {
-            for (role in Role.entries) {
+            for (role in OPEN_CIRCUIT_ROLES) {
                 DropdownMenuItem(
                     text = { Text(role.label) },
                     onClick = {

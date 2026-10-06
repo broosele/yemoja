@@ -174,8 +174,9 @@ fun sharedGasReserve(
  * **Only the bailouts are breathed**: the sources an ascent may not choose by itself, which is what
  * a plan's *bailout* role makes them. The way up starts on the richest of them its own limit allows
  * at the moment's depth, or the leanest where none is allowed, switches among them as an open-circuit
- * ascent does, and is breathed at each one's own `sac`. The tissues up to the moment are the loop's.
- * Every moment is tried, as [lostGasReserve] tries them.
+ * ascent does, and is breathed at each one's own `sac`. The tissues up to the moment are whatever the
+ * plan breathed. Every moment on the loop is tried, as [lostGasReserve] tries them, the moment it is
+ * left included; a moment off it costs nothing, there being no loop to lose.
  *
  * **The loop fails with a CO₂ hit.** The [co2HitSeconds] are spent at that depth on the bailout,
  * breathed at [co2HitFactor] times its `sac` and loading the tissues as they go. The way up after
@@ -193,11 +194,14 @@ fun bailoutReserve(
     checkAscent(metresAMinute, lastStop, co2HitSeconds)
     if (run.closedCircuit == null) return Reserve.Refused("A bailout is from a rebreather, and this dive is on open circuit")
     val breathing = breathedBy(run) ?: return Reserve.Refused("nothing says what is breathed")
-    val bailouts = run.sources.filterValues { !it.ascentMayChoose }.keys
+    val drawn = run.closedCircuit.rich + run.closedCircuit.diluent
+    val bailouts = run.sources.filterKeys { it !in drawn }.filterValues { !it.ascentMayChoose }.keys
     if (bailouts.isEmpty()) return Reserve.Refused("No bailout: give a cylinder the bailout role")
     val open = run.onOpenCircuit()
     val escape = breathedBy(open)?.choosing(bailouts) ?: return Reserve.Refused("nothing says what is breathed")
     return reserveOver(run, breathing) { index, second, metres, tissues, anchor ->
+        // Off the loop there is no loop to lose.
+        if (!breathing.onLoopAt(second)) return@reserveOver Cost.Litres(emptyMap(), metres)
         val ambient = ambientAt(metres, run.density, run.surface)
         val breathed = escape.richestAt(ambient) ?: bailouts.minBy { escape.mixes.getValue(it).fractionO2 }
         heldThenClimbed(
@@ -361,10 +365,9 @@ private fun reserveOver(
     var judged = true
     val answer = kept.mapValues { (key, moment) ->
         val volume = run.sources.getValue(key).volume?.takeIf { it > 0 }
-        // A rebreather's plan breathes no cylinder of its own, so a bailout ends as it was filled.
         val end = evaluated.pressures[key]?.let { series ->
             (series.valueAt(series.size - 1) as? Element.Usable)?.value as? Double
-        } ?: run.sources.getValue(key).fill.takeIf { run.closedCircuit != null }
+        }
         if (volume == null || end == null) judged = false
         val bar = volume?.let { moment.extra / it }
         Kept(
