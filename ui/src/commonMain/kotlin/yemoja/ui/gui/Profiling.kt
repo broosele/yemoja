@@ -1190,6 +1190,8 @@ private fun Figures(evaluated: Evaluated.Done) {
 internal fun tipOf(scenario: Scenario): String = when (scenario) {
     Scenario.LOST_GAS -> PlannerTips.LOST_GAS
     Scenario.SHARED -> PlannerTips.SHARED
+    // Never shown: the window plans open circuit only. `LOGIC-46`.
+    Scenario.BAILOUT -> ""
 }
 
 /**
@@ -1202,7 +1204,8 @@ internal fun tipOf(scenario: Scenario): String = when (scenario) {
 @Composable
 private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        for (scenario in Scenario.entries) {
+        // The window plans open circuit only, so a rebreather's bailout is not among them. `LOGIC-46`.
+        for (scenario in Scenario.entries - Scenario.BAILOUT) {
             val reckoning = reckoned?.scenarios?.get(scenario)
             Row(
                 modifier = Modifier.heightIn(min = ROW),
@@ -1253,6 +1256,8 @@ private fun Scenarios(reckoned: Reckoned?, shaping: Shaping, modifier: Modifier 
                                         modifier = Modifier.size(DENSE_GLYPH).scale(DENSE_CHECK),
                                     )
                                 }
+
+                            Scenario.BAILOUT -> {}
                         }
                     }
                 }

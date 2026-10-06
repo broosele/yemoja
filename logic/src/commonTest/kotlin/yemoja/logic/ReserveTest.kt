@@ -375,3 +375,76 @@ class SwitchStopsTest {
         )
     }
 }
+
+class BailoutReserveTest {
+
+    /** Thirty minutes at forty metres on a loop of air at 0.7 and 1.3, with [sources] beside the diluent, its way up added. */
+    private fun loop(sources: Map<String, Source>): Run {
+        val all = mapOf("g1" to Source(Gas.AIR)) + sources
+        val circuit = ClosedCircuit("g1", 0.7, 1.3, 6.0)
+        val bottom = Run(
+            depth = listOf(0 to 0.0, 134 to 40.0, 1800 to 40.0),
+            sources = all,
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+            closedCircuit = circuit,
+        )
+        val ascent = assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0))
+        return Run(
+            depth = bottom.depth + ascent.depth,
+            sources = all,
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = bottom.switches,
+            closedCircuit = circuit,
+        )
+    }
+
+    private fun bailout(gas: String, volume: Double = 11.0) =
+        Source(Gas.parse(gas), sac = 20.0, volume = volume, fill = 200.0, ascentMayChoose = false)
+
+    @Test
+    fun `only the bailouts are breathed, never the diluent or a deco gas`() {
+        val run = loop(mapOf("g2" to bailout("AIR"), "g3" to cylinder("EAN50", volume = 7.0)))
+        val done = assertIs<Reserve.Done>(bailoutReserve(run, 9.0, 3.0))
+
+        assertEquals(setOf("g2"), done.kept.keys)
+        assertTrue(done.judged)
+        assertEquals(200.0, done.kept.getValue("g2").end, "the loop breathes no bailout, so it ends as filled")
+    }
+
+    @Test
+    fun `the way up switches among the bailouts, and a rich one saves the other`() {
+        val alone = assertIs<Reserve.Done>(bailoutReserve(loop(mapOf("g2" to bailout("AIR"))), 9.0, 3.0))
+        val both = assertIs<Reserve.Done>(
+            bailoutReserve(loop(mapOf("g2" to bailout("AIR"), "g3" to bailout("EAN50", 7.0))), 9.0, 3.0),
+        )
+
+        assertTrue(both.kept.getValue("g3").litres > 0, "${both.kept.keys}")
+        assertTrue(both.kept.getValue("g2").litres < alone.kept.getValue("g2").litres)
+    }
+
+    @Test
+    fun `the worst moment is the end of the bottom, and time solving the problem costs more`() {
+        val run = loop(mapOf("g2" to bailout("AIR")))
+        val prompt = assertIs<Reserve.Done>(bailoutReserve(run, 9.0, 3.0)).kept.getValue("g2")
+        val held = assertIs<Reserve.Done>(bailoutReserve(run, 9.0, 3.0, problemSolvingSeconds = 120)).kept.getValue("g2")
+
+        assertEquals(1800, prompt.second)
+        assertEquals(40.0, prompt.metres)
+        assertTrue(held.litres > prompt.litres + 2 * 20.0 * ambientAt(40.0, NOMINAL_DENSITY, SEA_LEVEL) - 1e-6)
+    }
+
+    @Test
+    fun `a bailout too small is short, and none at all or open circuit is refused`() {
+        val small = assertIs<Reserve.Done>(bailoutReserve(loop(mapOf("g2" to bailout("AIR", volume = 3.0))), 9.0, 3.0))
+
+        assertTrue(small.kept.getValue("g2").short)
+        assertEquals(
+            "No bailout: give a cylinder the bailout role",
+            assertIs<Reserve.Refused>(bailoutReserve(loop(emptyMap()), 9.0, 3.0)).reason,
+        )
+        assertIs<Reserve.Refused>(bailoutReserve(whole(30.0, 20, AIR_ONLY), 9.0, 3.0))
+    }
+}

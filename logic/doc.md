@@ -1478,9 +1478,16 @@ To settle when we discuss architecture and features:
   to nothing: a cylinder beside the diluent is open circuit, which is a bailout, and a line naming
   one is refused.
 
-  **Left to the second step**: the gas the loop uses, the scrubber, and the bailout reserve. Until
-  then a rebreather plan's answer leaves out litres and reserves rather than give open-circuit
-  figures that would be wrong. Built in `Decompression.kt` and `Evaluation.kt`, the plan's side in
+  **The reserve is the bailout**, `bailoutReserve`: the loop failing at each moment in turn and
+  the way up on open circuit from the tissues the loop left, as `LOGIC-40`'s scenarios try every
+  moment. Only the cylinders the plan gives the bailout role are breathed, as the user set it: a
+  deco cylinder carried beside the loop is not a bailout, and the diluent is the loop's. The way
+  up starts on the richest bailout its limit allows, switches among them, and breathes each at its
+  own SAC; the problem-solving time is spent on the bailout. Lost gas and sharing are not tried on
+  a loop. The loop breathes no cylinder of its own here, so a bailout ends the dive as filled.
+
+  **Left to the second step**: the gas the loop uses and the scrubber. Until then a rebreather
+  plan's answer leaves out litres rather than give open-circuit figures that would be wrong. Built in `Decompression.kt` and `Evaluation.kt`, the plan's side in
   `Planning.kt`.
 
 - **LOGIC-29 — Which of a computer's gas slots a download writes down.** *Settled:* **the ones

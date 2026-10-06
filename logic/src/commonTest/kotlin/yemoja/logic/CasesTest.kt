@@ -139,6 +139,8 @@ class CasesTest {
         assertEquals(listOf("0.7", "1.3", "6"), listOf(plain.setpointLow, plain.setpointHigh, plain.setpointSwitchDepth))
         assertEquals(0, plain.diluent)
         assertEquals("oc", oneOf("""{"runtime": [{"depth": 40}]}""").planned.diveMode)
+        assertEquals(true, plain.bailoutScenario)
+        assertEquals(false, oneOf("""{"runtime": [{"depth": 40}], "bailout_reserve": false}""").planned.bailoutScenario)
         assertEquals(
             "case 1 diluent should be a cylinder's number, not first",
             assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 40}], "diluent": "first"}""")).reason,

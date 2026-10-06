@@ -129,6 +129,7 @@ fun saidOf(name: String, schedule: Schedule): Stored = Stored.Members(
 private fun keyOf(scenario: Scenario): String = when (scenario) {
     Scenario.LOST_GAS -> "lost_gas"
     Scenario.SHARED -> "shared_gas"
+    Scenario.BAILOUT -> "bailout"
 }
 
 private fun reserveSaid(answer: ReserveAnswer): Stored = when (answer) {

@@ -167,6 +167,68 @@ fun sharedGasReserve(
     }
 }
 
+/**
+ * What a rebreather [run] must still hold at its end, in its bailout cylinders, to reach the surface
+ * on open circuit if the loop fails at its worst moment. `LOGIC-46`.
+ *
+ * **Only the bailouts are breathed**: the sources an ascent may not choose by itself, which is what
+ * a plan's *bailout* role makes them. The way up starts on the richest of them its own limit allows
+ * at the moment's depth, or the leanest where none is allowed, switches among them as an open-circuit
+ * ascent does, and is breathed at each one's own `sac`. The tissues up to the moment are the loop's.
+ * The [problemSolvingSeconds] at that depth are breathed on the bailout already, the loop being
+ * gone. Every moment is tried, as [lostGasReserve] tries them.
+ */
+fun bailoutReserve(
+    run: Run,
+    metresAMinute: Double,
+    lastStop: Double,
+    problemSolvingSeconds: Int = 0,
+    switchStops: Boolean = false,
+): Reserve {
+    checkAscent(metresAMinute, lastStop, problemSolvingSeconds)
+    if (run.closedCircuit == null) return Reserve.Refused("A bailout is from a rebreather, and this dive is on open circuit")
+    val breathing = breathedBy(run) ?: return Reserve.Refused("nothing says what is breathed")
+    val bailouts = run.sources.filterValues { !it.ascentMayChoose }.keys
+    if (bailouts.isEmpty()) return Reserve.Refused("No bailout: give a cylinder the bailout role")
+    val open = run.onOpenCircuit()
+    val escape = breathedBy(open)?.choosing(bailouts) ?: return Reserve.Refused("nothing says what is breathed")
+    return reserveOver(run, breathing) { index, second, metres, tissues, anchor ->
+        val ambient = ambientAt(metres, run.density, run.surface)
+        val breathed = escape.richestAt(ambient) ?: bailouts.minBy { escape.mixes.getValue(it).fractionO2 }
+        heldThenClimbed(
+            second,
+            metres,
+            index,
+            tissues,
+            anchor,
+            breathed,
+            escape,
+            open,
+            Ascending(metresAMinute, lastStop, problemSolvingSeconds, switchStops),
+            factor = 1.0,
+            handoff = 0.0,
+        )
+    }
+}
+
+/** [this] with its rebreather taken away and everything else kept, for a way up on open circuit. */
+private fun Run.onOpenCircuit(): Run = Run(
+    depth = depth,
+    sources = sources,
+    gradientFactorLow = gradientFactorLow,
+    gradientFactorHigh = gradientFactorHigh,
+    switches = switches,
+    density = density,
+    surface = surface,
+    carried = carried,
+    oxygenCarried = oxygenCarried,
+    safetyStop = safetyStop,
+    ascentRate = ascentRate,
+    lastStop = lastStop,
+    mostNarcoticDepth = mostNarcoticDepth,
+    oxygenNarcotic = oxygenNarcotic,
+)
+
 /** Ascending is how a way up in trouble is made: how fast, how shallow the last stop, how long first. */
 private class Ascending(
     val metresAMinute: Double,
@@ -291,9 +353,10 @@ private fun reserveOver(
     var judged = true
     val answer = kept.mapValues { (key, moment) ->
         val volume = run.sources.getValue(key).volume?.takeIf { it > 0 }
+        // A rebreather's plan breathes no cylinder of its own, so a bailout ends as it was filled.
         val end = evaluated.pressures[key]?.let { series ->
             (series.valueAt(series.size - 1) as? Element.Usable)?.value as? Double
-        }
+        } ?: run.sources.getValue(key).fill.takeIf { run.closedCircuit != null }
         if (volume == null || end == null) judged = false
         val bar = volume?.let { moment.extra / it }
         Kept(

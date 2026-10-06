@@ -178,7 +178,11 @@ class CalculatedTest {
         assertEquals(1.3, schedule.setpointSeries.last().value)
         assertTrue(schedule.stopSeconds < open.stopSeconds, "${schedule.stopSeconds} s against ${open.stopSeconds} s")
         assertTrue(schedule.gasUsedLitres.isEmpty(), "gas on the loop comes with the second step")
-        assertTrue(schedule.reserves.isEmpty(), "and so does its bailout")
+        assertEquals(
+            "No bailout: give a cylinder the bailout role",
+            assertIs<ReserveAnswer.Refused>(schedule.reserves.getValue(Scenario.BAILOUT)).reason,
+            "its one scenario is the bailout, and it has none",
+        )
         assertTrue(schedule.lines.all { it.gas == "1" }, "every line breathes the diluent")
         assertEquals("oc", open.diveMode)
         assertTrue(open.setpointSeries.isEmpty())
@@ -194,6 +198,39 @@ class CalculatedTest {
     }
 
     @Test
+    fun `a rebreather plan's reserve is its bailout, said as a sentence`() {
+        val loop = table(
+            gases = listOf(
+                Breathed("air", Role.BOTTOM),
+                Breathed("air", Role.BAILOUT, size = "11", fill = "200", sac = "20"),
+                Breathed("EAN50", Role.DECO, size = "7", fill = "200", sac = "20"),
+            ),
+            low = "30",
+            high = "70",
+        ).copy(diveMode = "ccr", stressFactor = "2", problemMinutes = "2")
+        val schedule = assertIs<Calculated.Done>(calculated(loop)).schedule
+        val bailout = assertIs<ReserveAnswer.Done>(schedule.reserves.getValue(Scenario.BAILOUT))
+
+        assertEquals(setOf(Scenario.BAILOUT), schedule.reserves.keys, "no lost gas and no sharing on a loop")
+        assertEquals(setOf("2"), bailout.kept.keys, "the bailout alone, not the deco cylinder")
+        assertTrue(bailout.said.startsWith("Gas 2 reserve needs to be ") && "bailing out to the surface at normal SAC" in bailout.said, bailout.said)
+        val off = assertIs<Calculated.Done>(calculated(loop.copy(bailoutScenario = false))).schedule
+        assertTrue(off.reserves.isEmpty())
+    }
+
+    @Test
+    fun `a bailout lacking its SAC is named, whatever cylinder the lost-gas setting names`() {
+        val loop = table(
+            gases = listOf(Breathed("air", Role.BOTTOM), Breathed("air", Role.BAILOUT, size = "11", fill = "200")),
+        ).copy(diveMode = "ccr", problemMinutes = "2", lostGas = 1)
+        val bailout = assertIs<ReserveAnswer.Refused>(
+            assertIs<Calculated.Done>(calculated(loop)).schedule.reserves.getValue(Scenario.BAILOUT),
+        )
+
+        assertEquals("Cannot be calculated (missing for Gas 2: SAC)", bailout.reason, "the diluent's own SAC is not asked for")
+    }
+
+    @Test
     fun `a rebreather plan is refused for what it cannot be`() {
         fun refused(planned: Planned): String = assertIs<Calculated.Refused>(calculated(planned)).reason
         val loop = table().copy(diveMode = "ccr")
@@ -204,6 +241,10 @@ class CalculatedTest {
             refused(loop.copy(setpointHigh = "1.5")),
         )
         assertEquals("Diluent should be one of the 1 cylinders, not 2", refused(loop.copy(diluent = 1)))
+        assertEquals(
+            "Gas 1 is the diluent, so its role should not be bailout",
+            refused(loop.copy(gases = listOf(Breathed("air", Role.BAILOUT)))),
+        )
         assertEquals(
             "Line 2 names a gas, but a CCR plan breathes the loop throughout",
             refused(

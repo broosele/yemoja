@@ -108,6 +108,8 @@ data class Planned(
     val setpointSwitchDepth: String = "6",
     /** The cylinder the loop's diluent comes from, by its place in the list. */
     val diluent: Int = 0,
+    /** Whether a rebreather plan's gas reserve tries a failed loop, bailing out. */
+    val bailoutScenario: Boolean = true,
     /** Whether oxygen counts as narcotic in the equivalent narcotic depth. */
     val oxygenNarcotic: Boolean = true,
     val descentRate: String = "",
@@ -378,6 +380,10 @@ fun conditionsOf(shaping: Planned): Pair<Conditions?, String?> {
             if (shaping.diluent !in shaping.gases.indices) {
                 return null to "Diluent should be one of the ${shaping.gases.size} cylinders, not ${shaping.diluent + 1}"
             }
+            // The loop breathes its diluent throughout, so it cannot also be what is left when the loop fails.
+            if (shaping.gases[shaping.diluent].role == Role.BAILOUT) {
+                return null to "${gasLabelOf(shaping.diluent)} is the diluent, so its role should not be bailout"
+            }
             Setpoints(shaping.diluent, low, high, switchDepth)
         }
         else -> return null to "Dive mode should be $OPEN_CIRCUIT or $CLOSED_CIRCUIT, not ${said(shaping.diveMode)}"
@@ -593,6 +599,9 @@ enum class Scenario(val label: String) {
 
     /** A buddy has lost their bottom gas, and the two share this diver's up to a deco gas. */
     SHARED("Buddy out of gas"),
+
+    /** A rebreather's loop has failed, and the way up is on its bailout cylinders. `LOGIC-46`. */
+    BAILOUT("Bailout"),
 }
 
 /** Reckoning is what one scenario of the gas reserve came to, or why it came to nothing. */
@@ -632,11 +641,29 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
         )
     }
 
-    // A rebreather's reserve is its bailout, which comes with `LOGIC-46`'s second step.
-    if (conditions.loop != null) return Reckoned(mapOf(Scenario.LOST_GAS to null, Scenario.SHARED to null))
     val keys = shaping.gases.indices
-    // Both scenarios begin with it, so one typed wrong leaves both unsaid.
+    // Every scenario begins with it, so one typed wrong leaves them all unsaid.
     val problem = problemSecondsOf(shaping)
+    // A rebreather's one scenario is its bailout, on the bailout cylinders alone.
+    if (conditions.loop != null) {
+        if (!shaping.bailoutScenario) return Reckoned(mapOf(Scenario.BAILOUT to null))
+        if (problem == null) {
+            return Reckoned(
+                mapOf(
+                    Scenario.BAILOUT to
+                        Reckoning.Wrong(numberWrong("Problem solving time", "0 minutes or more", shaping.problemMinutes)),
+                ),
+            )
+        }
+        val bailout = when (val reserve = bailoutReserve(done.whole, conditions.ascentRate, conditions.lastStop, problem, conditions.switchStops)) {
+            is Reserve.Done -> Reckoning.Done(reserve)
+            // A bailout lacking a rate is named with everything each bailout lacks, and no other cylinder.
+            is Reserve.Refused -> Reckoning.Wrong(
+                if (reserve.source == null) reserve.reason else missingSaid(shaping, only = Role.BAILOUT) ?: reserve.reason,
+            )
+        }
+        return Reckoned(mapOf(Scenario.BAILOUT to bailout))
+    }
     if (problem == null) {
         val wrong = Reckoning.Wrong(numberWrong("Problem solving time", "0 minutes or more", shaping.problemMinutes))
         return Reckoned(
@@ -706,14 +733,15 @@ fun worstSaid(kept: Kept): String =
 
 /**
  * Why no reserve can be worked out: every cylinder the reserve may breathe that has no rate, each
- * with everything it lacks. Null where none lacks a rate.
+ * with everything it lacks, or only those of [only]'s role where given. Null where none lacks a rate.
  *
  * Example: `Cannot be calculated (missing for Gas 1: SAC, volume, start pressure)`.
  */
-fun missingSaid(shaping: Planned): String? {
-    val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() }
+fun missingSaid(shaping: Planned, only: Role? = null): String? {
+    // Only the lost-gas scenario loses a cylinder, so one asked about by role loses none.
+    val lost = shaping.lostIndex()?.takeIf { shaping.lostGasTried() && only == null }
     val missing = shaping.gases.withIndex().filter { (index, breathed) ->
-        index != lost && breathed.sac.trim().toDoubleOrNull() == null
+        index != lost && (only == null || breathed.role == only) && breathed.sac.trim().toDoubleOrNull() == null
     }.map { (index, breathed) -> "${gasLabelOf(index)}: ${lackedBy(breathed).joinToString(", ")}" }
     if (missing.isEmpty()) return null
     return "Cannot be calculated (missing for ${missing.joinToString("; ")})"
@@ -741,7 +769,7 @@ fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): S
     val kept = reserve.kept.entries.sortedBy { gasIndexOf(it.key) }
     if (kept.isEmpty()) {
         return when (scenario) {
-            Scenario.LOST_GAS -> "No reserve needed"
+            Scenario.LOST_GAS, Scenario.BAILOUT -> "No reserve needed"
             Scenario.SHARED -> decoReachedSaid(shaping)
                 ?.let { "No sharing needed: each diver switches to $it at once" } ?: "No sharing needed"
         }
@@ -761,6 +789,8 @@ fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): S
 
         Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
                 "${upToSaid(kept.maxOf { it.value.upTo })}, each at ${shaping.stressFactor.trim()} × SAC"
+
+        Scenario.BAILOUT -> (held?.let { "$it at depth, then " } ?: "") + "bailing out to the surface at normal SAC"
     }
     return "${needs.joinToString(" and ")} for $assumed" + worsts.singleOrNull()?.let { ", worst at $it" }.orEmpty()
 }
@@ -797,6 +827,7 @@ fun shortfallSaid(scenario: Scenario, reserve: Reserve.Done): String? {
     val why = when (scenario) {
         Scenario.LOST_GAS -> "surfacing without the lost gas"
         Scenario.SHARED -> "two divers sharing ${upToSaid(short.maxOf { it.value.upTo })}"
+        Scenario.BAILOUT -> "bailing out to the surface"
     }
     return short.joinToString("; ") { (key, kept) ->
         // A gauge the plan has already run below nought is empty, not a negative pressure.

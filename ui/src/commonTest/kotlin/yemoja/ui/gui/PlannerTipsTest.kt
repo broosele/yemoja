@@ -7,8 +7,8 @@ import kotlin.test.assertTrue
 class PlannerTipsTest {
 
     @Test
-    fun `every reserve scenario is named as a reserve`() {
-        for (scenario in Scenario.entries) {
+    fun `every reserve scenario the window shows is named as a reserve`() {
+        for (scenario in Scenario.entries - Scenario.BAILOUT) {
             assertTrue(tipOf(scenario).startsWith("Reserve for "), "${scenario.label}: ${tipOf(scenario)}")
         }
     }

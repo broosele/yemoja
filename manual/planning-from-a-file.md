@@ -122,15 +122,24 @@ your diluent holds it.
 | `setpoint_high` | The setpoint from there on, the way up included, in bar; 1.3 if left out |
 | `setpoint_switch_depth` | Where the descent changes to the high setpoint, in metres; 6 if left out |
 | `diluent` | The cylinder the diluent comes from, by its number; 1 if left out |
+| `bailout_reserve` | Whether the bailout reserve is tried, `true` or `false`; `true` if left out |
 
 A setpoint may be no higher than `po2_max_bottom`. Every line breathes the loop, and the way up
 switches to no cylinder, so a line naming a gas is refused. Where your diluent alone holds more
 oxygen than the setpoint, deep on a rich diluent, the loop breathes the diluent itself, and the
 pO₂ warning says so; a diluent too lean to breathe at the surface is warned of too.
 
-**Not yet:** the gas a rebreather uses, its scrubber, and the bailout reserve. A rebreather case's
-answer leaves out the litres and the reserve rather than giving open-circuit figures that would
-be wrong.
+**The reserve is the bailout.** A rebreather case's one gas-reserve scenario is the loop failing
+at the worst moment and the way up on open circuit, on the cylinders whose `role` is `bailout`
+and no others: not the diluent, and not a deco cylinder. The way up starts on the richest bailout
+its limit allows, switches among them as it rises, and breathes each at its own `sac`, after the
+`problem_solving_time` at that depth, breathed on the bailout already. Each bailout is said to
+keep what it needs at the end of the dive, which the loop leaves it full for. `bailout_reserve`
+switches it on or off, `true` unless it says `false`. With no bailout cylinder it says so, and
+the diluent's cylinder may not be a bailout.
+
+**Not yet:** the gas the loop itself uses, and its scrubber. A rebreather case's answer leaves out
+the litres rather than giving open-circuit figures that would be wrong.
 
 ### Following an earlier case
 
@@ -200,7 +209,7 @@ well:
   shows in `said`, the cylinder and the moment in it, with beside it the `second` it happened
   at, its `severity`, and the number of the cylinder it is about in `gas` where it is about one.
 - `no_flight_seconds` and `desaturation_seconds`.
-- `reserve` — the gas reserve, keyed `lost_gas` and `shared_gas`; a scenario switched off is left
+- `reserve` — the gas reserve, keyed `lost_gas` and `shared_gas`, or `bailout` on a rebreather; a scenario switched off is left
   out. Each holds `said`, the scenario in the sentence the window's contingency line shows;
   `shortfall`, the cylinders that end the dive with less than they keep, in a sentence, or
   nothing; `unchecked`, the cylinders costed in litres only for want of a size or a fill, in a

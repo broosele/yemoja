@@ -319,7 +319,7 @@ Entries here keep their reason, so that a decision already taken is not taken ag
   that comes with it: set, measured and calculated oxygen partial pressures through a
   dive, and the dive modes that distinguish a rebreather from open circuit. *Planning on a
   closed circuit is being built for plan files, and so for the web planner, in two steps*:
-  the schedule on the loop first, `LOGIC-46`, then its gas, scrubber and bailout. The window
+  the schedule on the loop and its bailout reserve first, `LOGIC-46`, then its gas and scrubber. The window
   offers none of it. Logging rebreather dives remains ruled out for the foreseeable future
   rather than for ever — the reason is scope, not principle. It is a different kind of diving
   with its own safety surface, and supporting it badly would be worse than not supporting it.

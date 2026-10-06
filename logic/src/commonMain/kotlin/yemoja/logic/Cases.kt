@@ -166,6 +166,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
         is Boolean -> written
         else -> return Made.Wrong("$name gas_switch_stops should be true or false, but was $written")
     }
+    val bailoutReserve = when (val written = (members["bailout_reserve"] as? Stored.Leaf)?.value) {
+        null -> true
+        is Boolean -> written
+        else -> return Made.Wrong("$name bailout_reserve should be true or false, but was $written")
+    }
     val sharedGasReserve = when (val written = (members["shared_gas_reserve"] as? Stored.Leaf)?.value) {
         null -> true
         is Boolean -> written
@@ -217,6 +222,7 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             setpointSwitchDepth = textOf(members["setpoint_switch_depth"]) ?: Planned().setpointSwitchDepth,
             diluent = diluent,
             sharedScenario = sharedGasReserve,
+            bailoutScenario = bailoutReserve,
         ),
     )
 }

@@ -603,7 +603,9 @@ class ReserveTest {
         shaping.problemMinutes = "soon"
 
         assertIs<Worked.Done>(workedOf(ready(shaping)))
-        for (scenario in Scenario.entries) {
+        // A rebreather's bailout is not tried on open circuit.
+        assertNull(reckoned(shaping).scenarios[Scenario.BAILOUT])
+        for (scenario in Scenario.entries - Scenario.BAILOUT) {
             val wrong = assertIs<Reckoning.Wrong>(reckoned(shaping).scenarios[scenario])
             assertTrue(wrong.reason.startsWith("Problem solving time should be"), wrong.reason)
         }
