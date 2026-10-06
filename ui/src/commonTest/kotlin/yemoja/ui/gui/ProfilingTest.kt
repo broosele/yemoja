@@ -319,6 +319,18 @@ class ConditionsOfTest {
     }
 
     @Test
+    fun `a gas exactly at END max is not red`() {
+        // Air at 10.5 metres of fresh water reads a hair past 10.5 once turned into pressure and back.
+        val shaping = planned(Segment("10.5"), Segment("10.5", duration = "5"))
+        shaping.water = "fresh"
+        shaping.narcoticDepth = "10.5"
+        val described = shaping.described()
+        val conditions = assertNotNull(conditionsOf(described).first)
+
+        assertTrue(ready(shaping).legs.none { gasWrongFor(it, described, conditions) })
+    }
+
+    @Test
     fun `how deep a cylinder may go is the model's figure at its role's limit`() {
         val shaping = planned(*FORTY)
         val conditions = assertNotNull(conditionsOf(shaping.described()).first)

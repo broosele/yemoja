@@ -614,7 +614,8 @@ private fun walked(
             setpoints += it
         }
         narcotic += equivalent
-        if (equivalent > run.mostNarcoticDepth && !stupefied) {
+        val past = equivalent > run.mostNarcoticDepth + NARCOTIC_TOLERANCE
+        if (past && !stupefied) {
             findings += Finding(
                 point.second,
                 Severity.WARNING,
@@ -623,7 +624,7 @@ private fun walked(
                 breathing.keyAt(point.second),
             )
         }
-        stupefied = equivalent > run.mostNarcoticDepth
+        stupefied = past
     }
     safetyStopFinding(depths, safetyStop)?.let { findings += it }
     run.closedCircuit?.let { loop ->
@@ -682,10 +683,12 @@ private fun narcoticDepthOf(
     if (breath is Inspiration.OpenCircuit) {
         return equivalentNarcoticDepth(metres, breath.gas, oxygenNarcotic, density, surface)
     }
+    // Each share is of the dry breath, as a mix's fractions are: counted with oxygen, everything but
+    // the helium is narcotic, so a loop on air has the END of its depth, as air does.
     val ambient = ambientAt(metres, density, surface)
     val dry = (ambient - WATER_VAPOUR).coerceAtLeast(0.0)
-    val nitrogen = if (dry > 0) breath.nitrogen(ambient) / dry else 0.0
-    val narcotic = if (oxygenNarcotic) nitrogen + breath.oxygen(ambient) / ambient else nitrogen / Gas.AIR.fractionN2
+    if (dry <= 0) return 0.0
+    val narcotic = if (oxygenNarcotic) 1 - breath.helium(ambient) / dry else breath.nitrogen(ambient) / dry / Gas.AIR.fractionN2
     return depthAt(narcotic * ambient, density, surface)
 }
 
@@ -970,9 +973,11 @@ internal class Climbed(val points: List<Pair<Int, Double>>, val switches: List<P
  * The ascent a plan is completed with and the one a lost-gas reserve is costed on both come from
  * here, so they cannot disagree about where a stop goes.
  *
- * **A richer gas is switched to where the ascent stops anyway**: at a stop the model owes, or at
- * the surface. Where [switchStops] says so, the ascent also stops at the deepest depth on the
- * stops' grid where a richer gas it may choose comes within its own limit, and every switch it
+ * **A richer gas is switched to where the ascent stops anyway**: at a stop the model owes and the
+ * ascent holds, or at the surface. A stop that clears on arriving is not one, and the ascent rises
+ * on past it on the gas it came with.
+ *
+ * Where [switchStops] says so, the ascent also stops at the deepest depth on the stops' grid where a richer gas it may choose comes within its own limit, and every switch it
  * makes is held at least a minute before it rises: a stop owed there that is longer counts, and
  * one that is shorter, down to none, is lengthened to the minute. Without it a dive owing no stop
  * deeper than that depth passes it and stays on its bottom gas. `LOGIC-35`.
@@ -1006,6 +1011,14 @@ internal fun climbed(
     } ?: 0
     // The second a switch made at this depth has been held long enough, where switch stops are asked for.
     var switchHeldUntil = Int.MIN_VALUE
+    // A switch found on arriving, without switch stops, made only if the ascent holds there.
+    var pending: String? = null
+    // The depth it starts from is one it may hold too, so a richer gas there waits as one arrived at does.
+    if (!switchStops && metres > 0) {
+        val ambient = ambientAt(metres, density, surface)
+        breathing.richestAt(ambient)?.takeIf { it != breathed && breathing.worthSwitching(breathed, it, ambient) }
+            ?.let { pending = it }
+    }
 
     while (metres > 0) {
         if (second - from.second > LONGEST_ASCENT) return null
@@ -1046,6 +1059,15 @@ internal fun climbed(
             else -> SECONDS_IN_MINUTE.toInt()
         }
         if (safety != null && target == metres && metres == safety.metres) owed -= seconds
+        // A switch found on arriving is made where the ascent holds, at the start of the hold, and
+        // dropped where it rises straight on.
+        pending?.let { richest ->
+            if (target == metres) {
+                switches += second to richest
+                breathed = richest
+            }
+            pending = null
+        }
         tissues = tissues.breathing(
             breathing.inspirationOf(breathed, from.second.toDouble()),
             ambient,
@@ -1058,9 +1080,13 @@ internal fun climbed(
         val arrived = ambientAt(metres, density, surface)
         breathing.richestAt(arrived)?.let { richest ->
             if (richest != breathed && breathing.worthSwitching(breathed, richest, arrived)) {
-                switches += second to richest
-                breathed = richest
-                if (switchStops && metres > 0) switchHeldUntil = second + SWITCH_SECONDS
+                if (switchStops || metres <= 0) {
+                    switches += second to richest
+                    breathed = richest
+                    if (metres > 0) switchHeldUntil = second + SWITCH_SECONDS
+                } else {
+                    pending = richest
+                }
             }
         }
     }
@@ -1609,6 +1635,12 @@ const val LEAST_OXYGEN = 0.18
  * to [MOST_OXYGEN], and a plan starts from it.
  */
 const val MOST_NARCOTIC_DEPTH = 50.0
+
+/**
+ * How far past its limit an END may read before it is past it, in metres: a micrometre, far below
+ * anything shown, so that a depth turned into pressure and back is not judged by its rounding.
+ */
+internal const val NARCOTIC_TOLERANCE = 1e-6
 
 private const val SECONDS_IN_MINUTE = 60.0
 

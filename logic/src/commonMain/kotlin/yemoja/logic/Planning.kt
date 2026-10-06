@@ -1010,7 +1010,7 @@ fun tooNarcoticFor(leg: Leg, shaping: Planned, conditions: Conditions?): Boolean
         conditions.density,
         conditions.atmosphericPressure,
     )
-    return equivalent > conditions.narcoticDepth
+    return equivalent > conditions.narcoticDepth + NARCOTIC_TOLERANCE
 }
 
 /**

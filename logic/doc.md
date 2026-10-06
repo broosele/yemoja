@@ -729,7 +729,12 @@ To settle when we discuss architecture and features:
   richer source it may choose is within its limit, switches, and holds sixty seconds. A stop owed
   at that depth counts towards the minute rather than adding to it, and one owing less, down to
   none, is lengthened to it. That last case is the stop the model asks for and clears on arriving:
-  it was first taken to cover the switch, and held it for no time at all. A safety stop at the
+  it was first taken to cover the switch, and held it for no time at all. Without the ask, a switch
+  waits for a stop the ascent holds: one that clears on arriving is passed on the gas the ascent
+  came with, and the gas is switched to at the first stop it does hold. A review found the ascent
+  switching at a depth it then rose straight from, which no diver does. The depth an ascent starts from is
+  treated as one arrived at. Every ascent follows the rule, the time to surface and the gas
+  reserves' ways up included, so both move a little. A safety stop at the
   switch depth counts the minute towards its own time. A
   plan keeps the choice as `gas_switch_stops`, beside `last_stop`, and the gas reserves' ascents
   follow it so that they climb as the plan does. `DATA-129`, `LOGIC-40`.

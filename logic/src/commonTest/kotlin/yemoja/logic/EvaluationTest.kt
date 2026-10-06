@@ -634,17 +634,51 @@ class EvaluationTest {
     @Test
     fun `a switch at the first stop owed is held a minute when asked, even where the stop owes none`() {
         // Thirty minutes at forty metres owes its first stop at twenty-one, EAN50's own depth, and
-        // that stop clears on arriving: off, the ascent switches there and rises at once.
+        // that stop clears on arriving: off, the ascent rises past it on air and switches at the
+        // first stop it holds.
         val run = airAndDeco(40.0, 30, Gas.parse("EAN50"))
         val passing = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
         val stopping = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0, switchStops = true))
         fun switchedAt(ascent: Ascended.Done): Double =
             ascent.depth.single { it.first == ascent.switches.single().first }.second
 
-        assertEquals(21.0, switchedAt(passing))
-        assertEquals(0, heldIn(run, passing, 21.0), "off, the switch costs no time")
+        assertEquals(18.0, switchedAt(passing), "off, no switch where nothing is held: ${passing.depth}")
+        assertEquals(0, heldIn(run, passing, 21.0))
+        assertTrue(heldIn(run, passing, 18.0) > 0, "the stop it switches at is one it holds")
         assertEquals(21.0, switchedAt(stopping))
         assertEquals(60, heldIn(run, stopping, 21.0), "on, it is held its minute: ${stopping.depth}")
+    }
+
+    @Test
+    fun `without switch stops every switch below the surface is made where the ascent then holds`() {
+        for ((metres, minutes) in listOf(40.0 to 25, 40.0 to 30, 50.0 to 25, 45.0 to 35, 30.0 to 20, 60.0 to 20)) {
+            for (deco in listOf(Gas.parse("EAN50"), Gas.parse("EAN80"), Gas(100, 0))) {
+                val run = airAndDeco(metres, minutes, deco)
+                val ascent = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+                assertTrue(
+                    ascent.switches.any { (second, _) -> ascent.depth.single { it.first == second }.second > 0.0 },
+                    "$metres m for $minutes min on $deco switches below the surface: ${ascent.switches}",
+                )
+                for ((second, _) in ascent.switches) {
+                    val at = ascent.depth.single { it.first == second }.second
+                    if (at <= 0.0) continue
+                    val next = ascent.depth.first { it.first > second }
+                    assertEquals(at, next.second, "$metres m for $minutes min on $deco: switched at $at m and left it, ${ascent.depth}")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `an ascent starting where a richer gas is breathable switches there if it holds`() {
+        // Forty minutes at forty metres, then a level at twenty-one on air, EAN50 carried: the stop
+        // owed there holds, so the switch is made at the start of it rather than a minute in.
+        val bottom = airAndDeco(40.0, 40, Gas.parse("EAN50"))
+        val run = bottom.withDepth(bottom.depth + listOf(2527 to 21.0), bottom.switches)
+        val ascent = assertIs<Ascended.Done>(completeAscent(run, 9.0, 3.0))
+
+        assertEquals(21.0, ascent.depth.first().second, "a stop held where the plan ends: ${ascent.depth}")
+        assertEquals(2527 to "g2", ascent.switches.first())
     }
 
     @Test
@@ -1069,6 +1103,65 @@ class EvaluationTest {
         assertTrue(deep.any { it.what == "pO₂ too high" }, "air holds 1.69 bar at seventy metres: $deep")
         assertTrue(lean.any { it.what == "Diluent hypoxic at the surface" && it.second == 0 }, "$lean")
         assertTrue(deep.none { it.what == "Diluent hypoxic at the surface" })
+    }
+
+    @Test
+    fun `a loop's END is read from its own shares of the dry breath`() {
+        fun endOnLoop(diluent: Gas, oxygenNarcotic: Boolean): Double {
+            val series = done(
+                Run(
+                    depth = listOf(0 to 0.0, 134 to 40.0, 600 to 40.0),
+                    sources = mapOf("g1" to Source(diluent)),
+                    gradientFactorLow = 1.0,
+                    gradientFactorHigh = 1.0,
+                    oxygenNarcotic = oxygenNarcotic,
+                    closedCircuit = ClosedCircuit("g1", 0.7, 1.3, 6.0),
+                ),
+            ).narcoticDepth
+            return (series.valueAt(series.size - 1) as Element.Usable).value as Double
+        }
+
+        assertEquals(40.0, endOnLoop(Gas.AIR, oxygenNarcotic = true), 1e-9, "a loop on air is as narcotic as air")
+        assertTrue(endOnLoop(Gas.AIR, oxygenNarcotic = false) < 40.0, "less nitrogen than air at 1.3")
+        assertTrue(endOnLoop(Gas.parse("TMX18/45"), oxygenNarcotic = true) < endOnLoop(Gas.AIR, oxygenNarcotic = true))
+    }
+
+    @Test
+    fun `a loop holding its diluent has the END open circuit gives the diluent`() {
+        // TMX10/50 at ninety metres holds 1.01 bar of oxygen, past a setpoint of 0.7, so the loop
+        // breathes the diluent itself there.
+        val series = done(
+            Run(
+                depth = listOf(0 to 0.0, 300 to 90.0, 600 to 90.0),
+                sources = mapOf("g1" to Source(Gas.parse("TMX10/50"))),
+                gradientFactorLow = 1.0,
+                gradientFactorHigh = 1.0,
+                closedCircuit = ClosedCircuit("g1", 0.7, 0.7, 6.0),
+            ),
+        ).narcoticDepth
+        val end = (series.valueAt(series.size - 1) as Element.Usable).value as Double
+
+        assertEquals(equivalentNarcoticDepth(90.0, Gas.parse("TMX10/50")), end, 1e-9)
+    }
+
+    @Test
+    fun `an END exactly at its limit is not past it`() {
+        // Air's END is its depth, and turned into pressure and back it can read a hair past it:
+        // 10.5 metres of fresh water comes back a few femtometres deeper.
+        fun endFindings(metres: Double, limit: Double): List<Finding> = done(
+            Run(
+                depth = listOf(0 to 0.0, 60 to metres, 600 to metres),
+                sources = mapOf("g1" to Source(Gas.AIR)),
+                gradientFactorLow = 1.0,
+                gradientFactorHigh = 1.0,
+                density = 1000.0,
+                mostNarcoticDepth = limit,
+            ),
+        ).findings.filter { it.what == "END too deep" }
+
+        assertTrue(equivalentNarcoticDepth(10.5, Gas.AIR, density = 1000.0) > 10.5, "the rounding this guards against")
+        assertTrue(endFindings(10.5, 10.5).isEmpty(), "air at 10.5 metres against a 10.5-metre limit")
+        assertEquals(1, endFindings(10.5, 10.4).size)
     }
 
     @Test
