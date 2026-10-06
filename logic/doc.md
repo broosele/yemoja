@@ -1483,7 +1483,13 @@ To settle when we discuss architecture and features:
   moment. Only the cylinders the plan gives the bailout role are breathed, as the user set it: a
   deco cylinder carried beside the loop is not a bailout, and the diluent is the loop's. The way
   up starts on the richest bailout its limit allows, switches among them, and breathes each at its
-  own SAC; the problem-solving time is spent on the bailout. Lost gas and sharing are not tried on
+  own SAC.
+
+  *Amended:* **the loop fails with a CO₂ hit, held at depth.** The user set a CO₂ hit factor, four
+  times SAC, and a CO₂ hit time, ten minutes, for a rebreather plan in place of the stress factor
+  and the problem-solving time. The time is spent at the depth the loop failed, on the bailout at
+  that factor, loading the tissues as `LOGIC-40`'s problem-solving time does. The way up after it
+  is at the usual SAC. Lost gas and sharing are not tried on
   a loop. The loop breathes no cylinder of its own here, so a bailout ends the dive as filled.
 
   **Left to the second step**: the gas the loop uses and the scrubber. Until then a rebreather

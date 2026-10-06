@@ -110,6 +110,10 @@ data class Planned(
     val diluent: Int = 0,
     /** Whether a rebreather plan's gas reserve tries a failed loop, bailing out. */
     val bailoutScenario: Boolean = true,
+    /** Times their usual SAC a bailout is breathed at during a CO₂ hit, on a rebreather. */
+    val co2HitFactor: String = "4",
+    /** Minutes a CO₂ hit holds the bailout at the depth it happened, on a rebreather. */
+    val co2HitMinutes: String = "10",
     /** Whether oxygen counts as narcotic in the equivalent narcotic depth. */
     val oxygenNarcotic: Boolean = true,
     val descentRate: String = "",
@@ -647,15 +651,16 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
     // A rebreather's one scenario is its bailout, on the bailout cylinders alone.
     if (conditions.loop != null) {
         if (!shaping.bailoutScenario) return Reckoned(mapOf(Scenario.BAILOUT to null))
-        if (problem == null) {
-            return Reckoned(
-                mapOf(
-                    Scenario.BAILOUT to
-                        Reckoning.Wrong(numberWrong("Problem solving time", "0 minutes or more", shaping.problemMinutes)),
-                ),
-            )
-        }
-        val bailout = when (val reserve = bailoutReserve(done.whole, conditions.ascentRate, conditions.lastStop, problem, conditions.switchStops)) {
+        // On a loop the CO₂ hit stands where the stress factor and the problem-solving time stand on open circuit.
+        val hit = co2HitSecondsOf(shaping) ?: return Reckoned(
+            mapOf(Scenario.BAILOUT to Reckoning.Wrong(numberWrong("CO₂ hit time", "0 minutes or more", shaping.co2HitMinutes))),
+        )
+        val factor = shaping.co2HitFactor.trim().toDoubleOrNull()?.takeIf { it >= 1 } ?: return Reckoned(
+            mapOf(Scenario.BAILOUT to Reckoning.Wrong(numberWrong("CO₂ hit factor", "1 or more", shaping.co2HitFactor))),
+        )
+        val bailout = when (
+            val reserve = bailoutReserve(done.whole, conditions.ascentRate, conditions.lastStop, hit, factor, conditions.switchStops)
+        ) {
             is Reserve.Done -> Reckoning.Done(reserve)
             // A bailout lacking a rate is named with everything each bailout lacks, and no other cylinder.
             is Reserve.Refused -> Reckoning.Wrong(
@@ -790,10 +795,17 @@ fun scenarioSaid(scenario: Scenario, reserve: Reserve.Done, shaping: Planned): S
         Scenario.SHARED -> "two divers sharing " + (held?.let { "$it at depth, then " } ?: "") +
                 "${upToSaid(kept.maxOf { it.value.upTo })}, each at ${shaping.stressFactor.trim()} × SAC"
 
-        Scenario.BAILOUT -> (held?.let { "$it at depth, then " } ?: "") + "bailing out to the surface at normal SAC"
+        Scenario.BAILOUT -> (
+            co2HitSecondsOf(shaping)?.takeIf { it > 0 }
+                ?.let { "a CO₂ hit of ${clockOf(it)} at depth at ${shaping.co2HitFactor.trim()} × SAC, then " } ?: ""
+            ) + "bailing out to the surface at normal SAC"
     }
     return "${needs.joinToString(" and ")} for $assumed" + worsts.singleOrNull()?.let { ", worst at $it" }.orEmpty()
 }
+
+/** The CO₂ hit time [shaping] asks for, in whole seconds, or null where it will not read. */
+fun co2HitSecondsOf(shaping: Planned): Int? =
+    shaping.co2HitMinutes.trim().toDoubleOrNull()?.takeIf { it >= 0 }?.let { (it * SECONDS_IN_MINUTE).roundToInt() }
 
 /** The problem-solving time [shaping] asks for, in whole seconds, or null where it will not read. */
 fun problemSecondsOf(shaping: Planned): Int? =

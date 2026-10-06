@@ -223,6 +223,11 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             diluent = diluent,
             sharedScenario = sharedGasReserve,
             bailoutScenario = bailoutReserve,
+            co2HitFactor = textOf(members["co2_hit_factor"]) ?: Planned().co2HitFactor,
+            // In seconds, as every time in a plan file is, and in minutes as the plan holds it.
+            co2HitMinutes = textOf(members["co2_hit_time"])?.let { written ->
+                written.toDoubleOrNull()?.let { plain(it / 60.0) } ?: written
+            } ?: Planned().co2HitMinutes,
         ),
     )
 }

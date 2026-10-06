@@ -426,14 +426,26 @@ class BailoutReserveTest {
     }
 
     @Test
-    fun `the worst moment is the end of the bottom, and time solving the problem costs more`() {
-        val run = loop(mapOf("g2" to bailout("AIR")))
-        val prompt = assertIs<Reserve.Done>(bailoutReserve(run, 9.0, 3.0)).kept.getValue("g2")
-        val held = assertIs<Reserve.Done>(bailoutReserve(run, 9.0, 3.0, problemSolvingSeconds = 120)).kept.getValue("g2")
+    fun `the worst moment is the end of the bottom`() {
+        val prompt = assertIs<Reserve.Done>(bailoutReserve(loop(mapOf("g2" to bailout("AIR"))), 9.0, 3.0)).kept.getValue("g2")
 
         assertEquals(1800, prompt.second)
         assertEquals(40.0, prompt.metres)
-        assertTrue(held.litres > prompt.litres + 2 * 20.0 * ambientAt(40.0, NOMINAL_DENSITY, SEA_LEVEL) - 1e-6)
+    }
+
+    @Test
+    fun `a CO2 hit is breathed at its factor at depth, and the way up after it at the usual rate`() {
+        // Ten minutes at forty metres at four times twenty litres a minute, and nothing else changed
+        // but the stops those ten minutes owe.
+        val run = loop(mapOf("g2" to bailout("AIR", volume = 24.0)))
+        fun kept(seconds: Int, factor: Double): Kept =
+            assertIs<Reserve.Done>(bailoutReserve(run, 9.0, 3.0, co2HitSeconds = seconds, co2HitFactor = factor)).kept.getValue("g2")
+        val atForty = ambientAt(40.0, NOMINAL_DENSITY, SEA_LEVEL)
+        val calm = kept(600, 1.0)
+        val hit = kept(600, 4.0)
+
+        assertEquals(3 * 20.0 * 10 * atForty, hit.needed - calm.needed, 1e-6, "only the time held costs the factor")
+        assertTrue(calm.needed > kept(0, 1.0).needed + 20.0 * 10 * atForty, "the ten minutes load the tissues as well")
     }
 
     @Test

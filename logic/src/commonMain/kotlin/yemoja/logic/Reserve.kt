@@ -175,17 +175,22 @@ fun sharedGasReserve(
  * a plan's *bailout* role makes them. The way up starts on the richest of them its own limit allows
  * at the moment's depth, or the leanest where none is allowed, switches among them as an open-circuit
  * ascent does, and is breathed at each one's own `sac`. The tissues up to the moment are the loop's.
- * The [problemSolvingSeconds] at that depth are breathed on the bailout already, the loop being
- * gone. Every moment is tried, as [lostGasReserve] tries them.
+ * Every moment is tried, as [lostGasReserve] tries them.
+ *
+ * **The loop fails with a CO₂ hit.** The [co2HitSeconds] are spent at that depth on the bailout,
+ * breathed at [co2HitFactor] times its `sac` and loading the tissues as they go. The way up after
+ * them is at the usual rate.
  */
 fun bailoutReserve(
     run: Run,
     metresAMinute: Double,
     lastStop: Double,
-    problemSolvingSeconds: Int = 0,
+    co2HitSeconds: Int = 0,
+    co2HitFactor: Double = 1.0,
     switchStops: Boolean = false,
 ): Reserve {
-    checkAscent(metresAMinute, lastStop, problemSolvingSeconds)
+    require(co2HitFactor >= 1) { "a CO₂ hit factor should be 1 or more, but was $co2HitFactor" }
+    checkAscent(metresAMinute, lastStop, co2HitSeconds)
     if (run.closedCircuit == null) return Reserve.Refused("A bailout is from a rebreather, and this dive is on open circuit")
     val breathing = breathedBy(run) ?: return Reserve.Refused("nothing says what is breathed")
     val bailouts = run.sources.filterValues { !it.ascentMayChoose }.keys
@@ -204,9 +209,10 @@ fun bailoutReserve(
             breathed,
             escape,
             open,
-            Ascending(metresAMinute, lastStop, problemSolvingSeconds, switchStops),
+            Ascending(metresAMinute, lastStop, co2HitSeconds, switchStops),
             factor = 1.0,
             handoff = 0.0,
+            heldFactor = co2HitFactor,
         )
     }
 }
@@ -260,6 +266,8 @@ private fun heldThenClimbed(
     ascending: Ascending,
     factor: Double,
     handoff: Double,
+    /** Times its usual rate the time held is breathed at, where it differs from the climb's [factor]. */
+    heldFactor: Double = factor,
 ): Cost {
     val ambient = ambientAt(metres, run.density, run.surface)
     val held = if (metres > 0) ascending.problemSolvingSeconds else 0
@@ -282,7 +290,7 @@ private fun heldThenClimbed(
     if (up !is Cost.Litres || held == 0) return up
     val rate = run.sources.getValue(breathed).sac ?: return Cost.Unknown(breathed)
     val litres = LinkedHashMap(up.litres)
-    litres[breathed] = (litres[breathed] ?: 0.0) + rate * factor * held / SECONDS_IN_MINUTE * ambient
+    litres[breathed] = (litres[breathed] ?: 0.0) + rate * heldFactor * held / SECONDS_IN_MINUTE * ambient
     return Cost.Litres(litres, up.upTo)
 }
 

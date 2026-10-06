@@ -213,7 +213,14 @@ class CalculatedTest {
 
         assertEquals(setOf(Scenario.BAILOUT), schedule.reserves.keys, "no lost gas and no sharing on a loop")
         assertEquals(setOf("2"), bailout.kept.keys, "the bailout alone, not the deco cylinder")
-        assertTrue(bailout.said.startsWith("Gas 2 reserve needs to be ") && "bailing out to the surface at normal SAC" in bailout.said, bailout.said)
+        assertTrue(bailout.said.startsWith("Gas 2 reserve needs to be "), bailout.said)
+        assertTrue("for a CO₂ hit of 10:00 at depth at 4 × SAC, then bailing out to the surface at normal SAC" in bailout.said, bailout.said)
+        assertEquals(
+            "CO₂ hit factor should be 1 or more, not \"0.5\"",
+            assertIs<ReserveAnswer.Refused>(
+                assertIs<Calculated.Done>(calculated(loop.copy(co2HitFactor = "0.5"))).schedule.reserves.getValue(Scenario.BAILOUT),
+            ).reason,
+        )
         val off = assertIs<Calculated.Done>(calculated(loop.copy(bailoutScenario = false))).schedule
         assertTrue(off.reserves.isEmpty())
     }

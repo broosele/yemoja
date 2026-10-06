@@ -140,6 +140,9 @@ class CasesTest {
         assertEquals(0, plain.diluent)
         assertEquals("oc", oneOf("""{"runtime": [{"depth": 40}]}""").planned.diveMode)
         assertEquals(true, plain.bailoutScenario)
+        assertEquals(listOf("4", "10"), listOf(plain.co2HitFactor, plain.co2HitMinutes))
+        val hit = oneOf("""{"runtime": [{"depth": 40}], "co2_hit_factor": 3, "co2_hit_time": 300}""").planned
+        assertEquals(listOf("3", "5"), listOf(hit.co2HitFactor, hit.co2HitMinutes), "the time in seconds, as a file writes it")
         assertEquals(false, oneOf("""{"runtime": [{"depth": 40}], "bailout_reserve": false}""").planned.bailoutScenario)
         assertEquals(
             "case 1 diluent should be a cylinder's number, not first",
