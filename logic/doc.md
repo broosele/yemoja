@@ -1318,13 +1318,13 @@ To settle when we discuss architecture and features:
   table's forty-two rows, seventeen are the same dive location as a place in Rijkswaterstaat's
   model list and take its position: Burghsluis, De Hoek, Flaauwers, Irenehoeve, Katshoek,
   Kristersnol, Levensstrijd, Plompe Toren, Putti's Place, Schelphoek, St Annaland, Strijenham,
-  Vuilnisbelt, Zeelandbrug, Zoetersbout, Zonneschijn and Zuidbout. Eight more may match a place
-  and want confirming: both rows of Gorishoek, Kulkenol, Stavenisse, Wemeldinge, Bergsche
-  Diepsluis, Zierikzee and Katshaven Zuid. Seventeen have no position from any source free to use,
-  and are left out until one is given: Anna Jacobapolder, Dijkval, Goese Sas, Goudswaardweg,
-  Hoogeweg, Kattendijke, Kleine Stelle, Lange Pier, Linda, Nieuwe Sluis, Noordbout, Oostnol
-  Wissenkerke, Paal 51-52, De Val, Westnol, Wissenkerke and Zuidweg. Positions from the diving
-  guides' maps were not taken, those maps being someone else's work.
+  Vuilnisbelt, Zeelandbrug, Zoetersbout, Zonneschijn and Zuidbout. Three more have positions the
+  author gave: Anna Jacobapolder, Bergsche Diepsluis and Goudswaardweg. Seven may match a model
+  place and want confirming: both rows of Gorishoek, Kulkenol, Stavenisse, Wemeldinge, Zierikzee
+  and Katshaven Zuid. Fifteen have no position from any source free to use, and are left out until
+  one is given: Dijkval, Goese Sas, Hoogeweg, Kattendijke, Kleine Stelle, Lange Pier, Linda, Nieuwe
+  Sluis, Noordbout, Oostnol Wissenkerke, Paal 51-52, De Val, Westnol, Wissenkerke and Zuidweg.
+  Positions from the diving guides' maps were not taken, those maps being someone else's work.
 
   **The current comes from a second service, at the dive site itself.** The WaterWebservices
   predict no current. The data service behind Rijkswaterstaat's RWsOS viewer does: its Scaldis-Oost
@@ -1379,7 +1379,7 @@ To settle when we discuss architecture and features:
     low water written `-0:45` or `no dive`, the number of the club's footnote or nothing, and
     latitude and longitude. The offsets and footnotes are the club's, from its page on the tides,
     last updated in April 2026, used with its permission; the positions are those of the matching
-    places in `scaldis-oost.txt`. Unlike the rest of `logic/tides/` they are someone else's work,
+    places in `scaldis-oost.txt`, and where there is none, the author's. Unlike the rest of `logic/tides/` they are someone else's work,
     and the root licence says so.
 
   **The network is reached through two functions**, `postJson` for the WaterWebservices and

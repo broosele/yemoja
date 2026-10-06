@@ -1,6 +1,9 @@
+Anna Jacobapolder	-0:40	-0:15	2	51.643556	4.100167
+Bergsche Diepsluis	-0:45	-0:20	1	51.516617	4.172617
 Burghsluis	no dive	-0:30		51.67348	3.75733
 De Hoek	0:00	0:00		51.52478	3.98926
 Flaauwers	-0:40	-0:20		51.67608	3.84715
+Goudswaardweg	-0:35	-0:10	1	51.640761	4.079108
 Irenehoeve	no dive	+0:05		51.60254	4.03192
 Katshoek	no dive	0:00		51.5642	3.89954
 Kristersnol (Borredamme)	-0:50	-0:25		51.65769	3.87832
