@@ -183,6 +183,7 @@ fun Yemoja(onReading: (Underway?) -> Unit = {}) {
             },
             today = ::today,
             tides = { tideCalculators(::bundled) },
+            logbookAt = { _ -> remembered.getString(FOLDER, null)?.let { whereIs(context, Uri.parse(it)) } },
             ask = { question ->
                 // Waited for on the thread that asked, which is a download's own, while the
                 // screen's thread shows the question. Asked from the screen's thread there would
@@ -379,6 +380,31 @@ private fun openedIn(
  */
 private fun nameOf(context: Context, tree: Uri): String? =
     calledOf(context, DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree)))
+
+/**
+ * Where the granted folder [tree] is, as a reader would recognise it.
+ *
+ * The phone's own storage names a folder by its path there, so that is said: `Documents/logbook on
+ * this phone`. Any other provider's ids are its own, Google Drive's a string of letters, so the
+ * folder's name is said with the app that provides it: `logbook on Drive`.
+ */
+private fun whereIs(context: Context, tree: Uri): String? {
+    val id = DocumentsContract.getTreeDocumentId(tree)
+    if (tree.authority == PHONE_STORAGE) {
+        val (volume, path) = id.split(':', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+        val on = if (volume == "primary") "this phone" else "the card in this phone"
+        return if (path.isEmpty()) on else "$path on $on"
+    }
+    val name = nameOf(context, tree) ?: return null
+    val provider = runCatching {
+        val manager = context.packageManager
+        manager.resolveContentProvider(tree.authority ?: "", 0)?.applicationInfo?.loadLabel(manager)?.toString()
+    }.getOrNull()
+    return if (provider.isNullOrBlank()) name else "$name on $provider"
+}
+
+/** The provider of the phone's own storage, whose document ids are a volume and a path. */
+private const val PHONE_STORAGE = "com.android.externalstorage.documents"
 
 /** What [document] is called by its provider, or absent where the provider will not say. */
 private fun calledOf(context: Context, document: Uri): String? {

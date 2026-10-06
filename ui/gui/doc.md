@@ -1549,8 +1549,12 @@ once and corrected. The numbers stay unused rather than being given to something
     reviewed.
   - **On a phone, back leads from any tab's first page to Home**, which its tiles lead from.
 
-  **System is three boxes**, at the author's word. *Logbook*: open, new, and reload, which reads
-  the files again for a change made to them outside the window. *Data*: the download, the one
+  **System is three boxes**, at the author's word. *Logbook*: where the open logbook was opened
+  from, then open, new, and reload, which reads the files again for a change made to them outside
+  the window. Where it was opened from is the folder's path on a desktop; a phone reaches its
+  folder through a grant rather than a path, so it says the path on its own storage, *Documents/
+  logbook on this phone*, and elsewhere the folder's name and the app providing it, *logbook on
+  Drive*. *Data*: the download, the one
   filled button, then import and export, and under them what is under way or waiting, there only
   then (a download, an import and its review, an export's result, an agent's staged changes). On a
   phone the review of what arrived is a page of its own, opened from there and left by back.

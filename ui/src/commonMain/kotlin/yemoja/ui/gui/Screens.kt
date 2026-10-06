@@ -208,6 +208,12 @@ internal class Platform(
      */
     val tides: () -> List<yemoja.logic.TideCalculator> = { emptyList() },
     /**
+     * Where [Universe] was opened from, as a reader would recognise it, or absent where it says
+     * nothing. A desktop's is the folder's path. A phone reaches its folder through a grant rather
+     * than a path, and says what it can of it. `GUI-30`.
+     */
+    val logbookAt: (Universe) -> String? = { it.path },
+    /**
      * Puts [question] to the reader and waits for the answer, or nothing where they give none.
      *
      * Waits, which is what makes it the platform's: a device that guards itself asks for a code
@@ -1142,6 +1148,7 @@ private fun System(
             // Three boxes: the logbook itself, what goes into it and out of it, and the settings,
             // each saying why a greyed deed in it is greyed. `GUI-30`.
             Inset("Logbook") {
+                universe?.let(platform.logbookAt)?.let { Aside("Opened from $it") }
                 DeedRow(LOGBOOK_DEEDS, deeds, running, universe != null)
                 when {
                     reloading -> Aside("Reading the logbook again…")
