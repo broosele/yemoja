@@ -1316,7 +1316,7 @@ private fun Graph(done: Worked.Done, shaping: Shaping, reckoned: Reckoned?) {
     val events = done.whole.switches.map { (second, key) ->
         Event(second / SECONDS_IN_MINUTE, tanks[key] ?: key, Marking.SWITCH)
     }
-    Graphed(depth, runOverlaysOf(done.evaluated, tanks), events, planned = true, chosenFor = null)
+    Graphed(depth, runOverlaysOf(done.evaluated, tanks), events, planned = true, chosenFor = null, legend = true)
 }
 
 /** What the graph and its click box call the way up with a gas lost. */

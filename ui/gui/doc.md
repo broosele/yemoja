@@ -775,6 +775,11 @@ once and corrected. The numbers stay unused rather than being given to something
   there first, and reads in the click box as *Lost way up*. The sharing scenario is not drawn,
   ending at the deco gas rather than at the surface. `LOGIC-40`.
 
+  **A legend under the graph names each line drawn**, with a short sample of how it is drawn: the
+  depth, the ceiling where there is one, the lost-gas way up *as the reserve is costed*, and the
+  right axis's line, *on the right axis*. Added on 2026-10-06 at the author's word, after the
+  website's planner had one. A recording's graph has none.
+
   A cylinder that falls short is also a warning in the list beneath, saying which scenario it falls
   short in and in the names the model's own warnings use, so *Gas 1 runs out* and *Gas 1 is empty*
   read as one cylinder. Which cylinder the lost-gas scenario loses is a choice of one cylinder on

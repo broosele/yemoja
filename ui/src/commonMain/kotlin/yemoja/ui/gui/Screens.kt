@@ -89,6 +89,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import kotlin.math.roundToInt
@@ -3621,6 +3622,8 @@ internal fun Graphed(
     chosenFor: Any?,
     /** How far other graphs set beside this one reach, so that all are drawn to one scale. */
     span: Reach? = null,
+    /** Whether each line drawn is named under the graph, with a sample of how it is drawn. */
+    legend: Boolean = false,
 ) {
     var picked by remember(chosenFor) { mutableStateOf(0) }
     var picking by remember { mutableStateOf(false) }
@@ -3673,8 +3676,89 @@ internal fun Graphed(
             }
         }
     }
+    if (legend) Legend(depth, overlay, planned)
     Spacer(modifier = Modifier.height(GAP))
 }
+
+/**
+ * What each line on the graph is, under it: a short sample drawn as [Chart] draws the line, and
+ * its name. Only what is drawn is named, so a plan with no ceiling names none. `GUI-43`.
+ */
+@Composable
+private fun Legend(depth: List<Line>, overlay: Overlay?, planned: Boolean) {
+    val ink = MaterialTheme.colorScheme.primary
+    val stop = MaterialTheme.colorScheme.tertiary
+    val other = MaterialTheme.colorScheme.error
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(start = AXIS),
+        horizontalArrangement = Arrangement.spacedBy(GAP * 2),
+    ) {
+        for ((kind, name) in legendOf(depth, overlay)) {
+            val (colour, width) = when (kind) {
+                Drawn.DEPTH -> ink to LINE_WIDTH
+                Drawn.WAY -> stop to LINE_WIDTH
+                Drawn.THIN -> stop to THIN
+                Drawn.RIGHT -> other to THIN
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HALF)) {
+                Spacer(
+                    modifier = Modifier.width(SAMPLE).height(GLYPH).drawBehind {
+                        val stroke = width.toPx()
+                        val effect = when {
+                            kind == Drawn.WAY -> PathEffect.dashPathEffect(floatArrayOf(stroke, stroke * 2))
+                            kind == Drawn.DEPTH && planned ->
+                                PathEffect.dashPathEffect(floatArrayOf(stroke * 3, stroke * 3))
+                            else -> null
+                        }
+                        val middle = size.height / 2
+                        drawLine(colour, Offset(0f, middle), Offset(size.width, middle), stroke, pathEffect = effect)
+                    },
+                )
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Each line [Chart] draws from [depth] and [overlay], as the legend names it, in the order drawn.
+ *
+ * A line with no points is not drawn and not named. A dotted line is a way the dive might go, and
+ * the planner's is the one its reserve is costed on.
+ */
+internal fun legendOf(depth: List<Line>, overlay: Overlay?): List<Pair<Drawn, String>> = buildList {
+    for (line in depth) {
+        if (line.points.isEmpty()) continue
+        when {
+            line.main -> add(Drawn.DEPTH to line.label)
+            line.dotted -> add(Drawn.WAY to "${line.label}, as the reserve is costed")
+            else -> add(Drawn.THIN to line.label)
+        }
+    }
+    if (overlay != null) add(Drawn.RIGHT to "${overlay.title}, on the right axis")
+}
+
+/** Drawn is how [Chart] draws a line, which its sample in the legend copies. */
+internal enum class Drawn {
+    /** The main depth line, thick, dashed for a plan. */
+    DEPTH,
+
+    /** A way the dive might go, dotted. */
+    WAY,
+
+    /** Another depth line, the ceiling, thin. */
+    THIN,
+
+    /** The right axis's line, thin and in its own colour. */
+    RIGHT,
+}
+
+/** How long a legend's sample of a line is. */
+private val SAMPLE = 24.dp
 
 /**
  * The graph: the depth lines against a grid, the overlay's line in its own colour with its own
