@@ -211,6 +211,36 @@ class TalkingTest {
 }
 
 /*
+ * How the relay is started, from the source tree and from an installed copy. `API-4`.
+ */
+class RelayArgumentsTest {
+
+    @Test
+    fun `a java is told the classes and the entry, then the command`() {
+        assertEquals(
+            listOf("-cp", "a.jar;b.jar", "yemoja.ui.MainKt", "api", "4711"),
+            relayArguments("C:\\jdk\\bin\\java.exe", "a.jar;b.jar", "yemoja.ui.MainKt", 4711),
+        )
+        assertEquals(
+            listOf("-cp", "a.jar", "yemoja.ui.MainKt", "api", "4711"),
+            relayArguments("/usr/lib/jvm/bin/java", "a.jar", "yemoja.ui.MainKt", 4711),
+        )
+    }
+
+    @Test
+    fun `the installed launcher is given the command alone, since it knows the rest`() {
+        assertEquals(
+            listOf("api", "4711"),
+            relayArguments("C:\\Program Files\\Yemoja\\Yemoja.exe", "x", "yemoja.ui.MainKt", 4711),
+        )
+        assertEquals(
+            listOf("api", "4711"),
+            relayArguments("/opt/yemoja/bin/Yemoja", "x", "yemoja.ui.MainKt", 4711),
+        )
+    }
+}
+
+/*
  * Which permission requests are the window's own tools, and so allowed. `API-5`, `GUI-38`.
  */
 class OursTest {

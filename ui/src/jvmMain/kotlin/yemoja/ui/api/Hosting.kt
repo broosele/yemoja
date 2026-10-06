@@ -334,13 +334,7 @@ class Hosted(
     private fun relaying(port: Int): McpServer.Stdio = McpServer.Stdio(
         name = NAME,
         command = javaOf(),
-        args = listOf(
-            "-cp",
-            System.getProperty("java.class.path"),
-            ENTRY,
-            "api",
-            port.toString(),
-        ),
+        args = relayArguments(javaOf(), System.getProperty("java.class.path"), ENTRY, port),
         // The token goes in the environment rather than the arguments, which other programs on
         // the machine can read.
         env = listOf(EnvVariable(TOKEN, socket.token)),
@@ -639,6 +633,33 @@ private fun linesOf(reader: BufferedReader): Flow<String> = flow {
     }
 }.flowOn(Dispatchers.IO)
 
-/** The java this application is running on, which is what runs the relay beside it. */
+/**
+ * The program this application is running in, which is what runs the relay beside it.
+ *
+ * A `java` from the source tree, or the installer's own launcher in an installed copy.
+ */
 private fun javaOf(): String =
     ProcessHandle.current().info().command().orElse("java")
+
+/**
+ * What [program] is given to start the relay to [port].
+ *
+ * A Java executable is told where the classes are and which to run. The installer's launcher
+ * must not be: it knows both already, and hands everything it is given to the application, which
+ * read `-cp` as a command it did not know and exited before an agent could reach a single tool.
+ * An installed runtime holds no `java.exe` to use instead. `API-4`.
+ */
+internal fun relayArguments(
+    program: String,
+    classPath: String,
+    entry: String,
+    port: Int,
+): List<String> {
+    val name = program.substringAfterLast('/').substringAfterLast('\\')
+        .substringBeforeLast('.').lowercase()
+    val relay = listOf("api", port.toString())
+    return if (name in JAVAS) listOf("-cp", classPath, entry) + relay else relay
+}
+
+/** What a Java executable is called, without an ending. */
+private val JAVAS = setOf("java", "javaw")
