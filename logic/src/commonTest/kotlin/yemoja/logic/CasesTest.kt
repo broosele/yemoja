@@ -139,6 +139,17 @@ class CasesTest {
         assertEquals(listOf(null, 2, LOOP), case.segments.map { it.gas })
         val plain = oneOf("""{"runtime": [{"depth": 40}], "dive_mode": "ccr"}""").planned
         assertEquals(listOf("0.7", "1.3", "6"), listOf(plain.setpointLow, plain.setpointHigh, plain.setpointSwitchDepth))
+        assertEquals(
+            listOf(Breathed("air", Role.DILUENT), Breathed("O2", Role.RICH)),
+            plain.gases,
+            "a rebreather case naming no cylinders breathes air on the loop and draws on oxygen",
+        )
+        val bailout = oneOf(
+            """{"runtime": [{"depth": 40, "gas": 1}], "dive_mode": "ccr", "gases": [{"gas": "EAN50", "role": "bailout"}]}""",
+        ).planned
+        assertEquals(listOf(Role.BAILOUT, Role.DILUENT, Role.RICH), bailout.gases.map { it.role }, "after the cylinders given, whose numbers stay")
+        assertEquals(listOf(Role.DILUENT, Role.RICH), case.gases.map { it.role }.filter { it == Role.DILUENT || it == Role.RICH }, "none added where given")
+        assertEquals(1, oneOf("""{"runtime": [{"depth": 40}]}""").planned.gases.size, "open circuit adds nothing")
         assertEquals("oc", oneOf("""{"runtime": [{"depth": 40}]}""").planned.diveMode)
         assertEquals(true, plain.bailoutScenario)
         assertEquals(listOf("4", "10"), listOf(plain.co2HitFactor, plain.co2HitMinutes))

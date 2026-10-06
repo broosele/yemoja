@@ -127,7 +127,9 @@ your diluent holds it.
 
 **Two roles belong to the loop.** The cylinder whose `role` is `diluent` is the loop's diluent,
 and a rebreather case has exactly one. One whose `role` is `rich` is its oxygen, which nothing
-counts yet. No line breathes either: a line chooses `loop` or a `bottom`, `deco` or `bailout`
+counts yet. A rebreather case that gives no diluent breathes `air` as one, and one that gives
+no `rich` cylinder draws on `O2`: each is added after the cylinders you gave, so their numbers stay
+as you wrote them. No line breathes either: a line chooses `loop` or a `bottom`, `deco` or `bailout`
 cylinder, which it breathes on open circuit. The first line breathes the loop unless it names a
 cylinder, and every line after breathes what the one above does until it names another, so a
 dive may leave the loop and come back. Gas breathed off the loop is counted as on open circuit.

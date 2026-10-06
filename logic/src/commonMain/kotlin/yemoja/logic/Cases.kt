@@ -123,6 +123,12 @@ private fun plannedOf(members: Map<String, Stored>, name: String): Made {
             sac = textOf(held["sac"]).orEmpty(),
         )
     }
+    // A rebreather case the loop's cylinders were left out of breathes air as its diluent and draws
+    // on oxygen, added after the cylinders given so that their numbers stay as written. `LOGIC-46`.
+    if (textOf(members["dive_mode"])?.trim() == CLOSED_CIRCUIT) {
+        if (gases.none { it.role == Role.DILUENT }) gases += Breathed("air", Role.DILUENT)
+        if (gases.none { it.role == Role.RICH }) gases += Breathed("O2", Role.RICH)
+    }
     val beyond = segments.withIndex().firstOrNull { (_, line) ->
         val gas = line.gas
         gas != null && gas >= gases.ifEmpty { listOf(Breathed()) }.size

@@ -1485,7 +1485,9 @@ To settle when we discuss architecture and features:
   of lines. The way up goes on with what the last line breathed, as the user chose: from the loop it
   switches to nothing; from a cylinder it stays on open circuit and switches as an open-circuit way
   up does. The bailout reserve tries only the moments on the loop, the moment it is left included.
-  A plan on open circuit refuses both roles and the loop, and the window offers neither.
+  A plan on open circuit refuses both roles and the loop, and the window offers neither. A rebreather plan
+  file that names no diluent or no rich cylinder gets an air diluent and an oxygen one, as the user
+  set it, after the cylinders it gave so that a line's cylinder number keeps its meaning.
 
   **The reserve is the bailout**, `bailoutReserve`: the loop failing at each moment in turn and
   the way up on open circuit from the tissues the loop left, as `LOGIC-40`'s scenarios try every
