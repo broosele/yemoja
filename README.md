@@ -313,6 +313,8 @@ Four files carry the actual terms; what follows explains them. Nothing here has 
 checked by a lawyer.
 
 - [LICENSE](LICENSE) — the repository, all rights reserved.
+  One file in it, `logic/tides/cvd.txt`, is the dive club CVD's slack table, used with its
+  permission and not the author's to license. `LOGIC-44`.
 - [manual/LICENSE](manual/LICENSE) — the manuals, CC0.
 - [libraries/LICENSE](libraries/LICENSE) — the shipped data, CC0.
 - [ui/src/commonMain/kotlin/yemoja/ui/icons/LICENSE](ui/src/commonMain/kotlin/yemoja/ui/icons/LICENSE)

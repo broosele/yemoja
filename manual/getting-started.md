@@ -486,7 +486,9 @@ a tide station or a model's place, and a date.
 **Model** is where the figures come from, and Yemoja chooses the most accurate one that covers the
 day. Near most dive sites in the Oosterschelde, from two weeks back to two days ahead, it is
 Rijkswaterstaat's Scaldis-Oost model, which works out the water and the current at the site itself.
-Otherwise, for a day that is over it is what the gauge measured. For today it is what the gauge has
+Near some Oosterschelde sites you can also choose the **CVD slack table**: the moments of least
+current that the Belgian dive club CVD gives for the site, worked out from the predicted high and
+low water at Kats, for any day. Otherwise, for a day that is over it is what the gauge measured. For today it is what the gauge has
 measured so far, followed by the forecast for the rest of the day, and a line above the table
 says until when it is measured. The forecast includes the weather, which the astronomical tide leaves out. For the next two
 days it is that forecast alone. For any other day it is the astronomical tide, the
@@ -496,9 +498,11 @@ models are greyed and the form says it could not reach them.
 
 Under the choices is a line saying which tide station or model place answered and how far it is
 from the site, then a table with a line for each turn of the tide: high or low water, the time, the
-height, and how far the water rose or fell since the turn before. With the Scaldis-Oost model the
-table also has a line for each slack: **Flood begins** when the current turns to run in, and **Ebb
-begins** when it turns to run out. Times are Dutch clock time, summer time
+height, and how far the water rose or fell since the turn before. With the Scaldis-Oost model and the
+CVD slack table, the table also has a line for each slack: **Flood begins** when the current turns
+to run in, and **Ebb begins** when it turns to run out. Where CVD says not to dive at a turn, the
+line reads **Flood: no dive** or **Ebb: no dive**, at the time of the turn at Kats, and a note CVD
+gives about the site is shown above the table. Times are Dutch clock time, summer time
 included. Heights are in metres against NAP, the Dutch reference level, which is close to mean sea
 level. Under the table is the water level through the day, with the forecast part drawn dashed.
 With the Scaldis-Oost model a second plot shows the current in metres a second: flood above the
@@ -509,7 +513,8 @@ turns earlier or later than at the station, sometimes by more than half an hour.
 the current stops, is not the same moment as high or low water either, and a station gives neither
 the slack nor the current. **From the Scaldis-Oost model** they are for the site, but they are a
 model's figures and can be out by half an hour or more, and close to the bottom or in the lee of a
-pier the water runs otherwise. Wind and air pressure also move the
+pier the water runs otherwise. **From the CVD slack table** they are the club's experience at the
+site laid on a prediction for Kats, and the club accepts no liability for them. Wind and air pressure also move the
 real tide away from a prediction. Use local knowledge and a published slack-water table for a dive
 that depends on the current.
 

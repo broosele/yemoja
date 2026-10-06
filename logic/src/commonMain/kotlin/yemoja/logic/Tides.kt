@@ -64,8 +64,12 @@ data class Reading(val at: Moment, val height: Double)
  */
 data class Flow(val at: Moment, val speed: Double)
 
-/** Slack is a moment the current stops and turns, and which way it turns to. */
-data class Slack(val at: Moment, val toFlood: Boolean)
+/**
+ * Slack is a moment the current stops and turns, and which way it turns to.
+ *
+ * [avoid] marks a turn a source says not to dive at, which is kept so the turn is still seen.
+ */
+data class Slack(val at: Moment, val toFlood: Boolean, val avoid: Boolean = false)
 
 /**
  * Tides is what a calculator answers for a site and a day.
@@ -79,7 +83,7 @@ data class Slack(val at: Moment, val toFlood: Boolean)
  * forecast. It is absent where the curve is of one kind throughout.
  *
  * [flows] and [slacks] are the current at the place answering, and empty where a calculator knows
- * only the water's height.
+ * only the water's height. [remark] is what the source adds about the site, or absent.
  *
  * Immutable.
  */
@@ -93,6 +97,7 @@ class Tides(
     val measuredUntil: Moment? = null,
     flows: List<Flow> = emptyList(),
     slacks: List<Slack> = emptyList(),
+    val remark: String? = null,
 ) {
     val extremes: List<Extreme> = extremes.toList()
     val curve: List<Reading> = curve.toList()
@@ -229,8 +234,11 @@ expect fun getJson(url: String): Posted
  */
 fun tideCalculators(text: (path: String) -> String): List<TideCalculator> {
     val waters = watersOf(text("tides/waters.txt"))
-    return listOf(scaldisOostCalculator(placesOf(text("tides/scaldis-oost.txt")), waters)) +
-        rijkswaterstaatCalculators(stationsOf(text("tides/rijkswaterstaat.txt")), waters)
+    val stations = stationsOf(text("tides/rijkswaterstaat.txt"))
+    return listOf(
+        scaldisOostCalculator(placesOf(text("tides/scaldis-oost.txt")), waters),
+        cvdCalculator(slackRowsOf(text("tides/cvd.txt")), stations, waters),
+    ) + rijkswaterstaatCalculators(stations, waters)
 }
 
 /**
@@ -452,16 +460,18 @@ private class RijkswaterstaatAstronomical(private val service: Rijkswaterstaat) 
         )
     }
 
-    /**
-     * The service's extremes carry no mark for high or low, so each is told from the one beside it.
-     *
-     * One alone has nothing beside it and is judged against the datum, which the tide stands either
-     * side of.
-     */
-    private fun turnsOf(turns: List<Reading>): List<Extreme> = turns.mapIndexed { index, turn ->
-        val neighbour = turns.getOrNull(index + 1) ?: turns.getOrNull(index - 1)
-        Extreme(turn.at, turn.height, high = if (neighbour == null) turn.height > 0 else turn.height > neighbour.height)
-    }
+}
+
+/**
+ * The WaterWebservices' extremes carry no mark for high or low, so each is told from the one beside
+ * it.
+ *
+ * One alone has nothing beside it and is judged against the datum, which the tide stands either
+ * side of.
+ */
+private fun turnsOf(turns: List<Reading>): List<Extreme> = turns.mapIndexed { index, turn ->
+    val neighbour = turns.getOrNull(index + 1) ?: turns.getOrNull(index - 1)
+    Extreme(turn.at, turn.height, high = if (neighbour == null) turn.height > 0 else turn.height > neighbour.height)
 }
 
 /**
@@ -956,3 +966,153 @@ fun slacksIn(flows: List<Flow>, least: Double = LEAST_FLOW): List<Slack> {
     }
     return slacks
 }
+
+// --- Slack from a dive club's table of offsets.
+
+/**
+ * SlackRow is one dive site of a club's slack table: where it is, how long before or after a
+ * reference station's high and low water the current is least there, and what the club adds.
+ *
+ * An offset is in seconds, negative before the station's turn, and absent where the club says not
+ * to dive at that turn at all. [remark] is the club's footnote for the site, or absent.
+ */
+data class SlackRow(
+    val name: String,
+    val atHigh: Long?,
+    val atLow: Long?,
+    val remark: String?,
+    val latitude: Double,
+    val longitude: Double,
+)
+
+/**
+ * The rows in [text], which is logic/tides/cvd.txt: one a line, six tab-separated cells.
+ *
+ * The cells are the name, the offsets at high and at low water written `-0:45`, `0:00` or
+ * `+0:05`, or `no dive`, the number of the club's footnote or nothing, and latitude and longitude.
+ */
+fun slackRowsOf(text: String): List<SlackRow> = text.lineSequence()
+    .filter { it.isNotBlank() }
+    .map { line ->
+        val cells = line.split('\t')
+        require(cells.size == 6) { "a row should have six cells, but this line has ${cells.size}: $line" }
+        SlackRow(
+            name = cells[0],
+            atHigh = offsetOf(cells[1]),
+            atLow = offsetOf(cells[2]),
+            remark = cells[3].takeIf { it.isNotBlank() }?.let { CVD_REMARKS[it] ?: error("no footnote $it in the table") },
+            latitude = cells[4].toDouble(),
+            longitude = cells[5].toDouble(),
+        )
+    }
+    .toList()
+
+/** An offset written `-0:45`, in seconds, or absent where it is written `no dive`. */
+private fun offsetOf(written: String): Long? {
+    if (written == NO_DIVE) return null
+    val match = OFFSET.matchEntire(written) ?: error("an offset should be written -0:45 or no dive, not $written")
+    val (sign, hours, minutes) = match.destructured
+    val seconds = hours.toLong() * Time.SECONDS_IN_HOUR + minutes.toLong() * Time.SECONDS_IN_MINUTE
+    return if (sign == "-") -seconds else seconds
+}
+
+private const val NO_DIVE = "no dive"
+
+private val OFFSET = Regex("""([+-]?)(\d+):(\d{2})""")
+
+/** The club's three footnotes, by the number its table gives them, in English. */
+private val CVD_REMARKS = mapOf(
+    "1" to "CVD's table says this site can be dived all day, there being hardly any current.",
+    "2" to "CVD's table says that outside slack this site can be dived inside the harbour or in the " +
+        "lee of the harbour dam.",
+    "3" to "CVD's table says that outside slack this site can be dived, except at spring tide.",
+)
+
+/** The furthest a row may be from a site and still be the one answering for it, in metres. */
+const val ROW_REACH = 750.0
+
+/** The station whose high and low water the club's offsets are counted from. */
+private const val KATS = "kats.zandkreeksluis"
+
+/**
+ * The calculator reading the dive club CVD's slack table, from [rows] as logic/tides/cvd.txt lists
+ * them, [stations] for Kats, and [post] as the way to the WaterWebservices. `LOGIC-44`.
+ */
+fun cvdCalculator(
+    rows: List<SlackRow>,
+    stations: List<Station>,
+    waters: List<Water>,
+    post: (url: String, body: String) -> Posted = ::postJson,
+): TideCalculator = CvdSlackTable(rows, stations.first { it.code == KATS }, Rijkswaterstaat(stations, waters, post))
+
+/**
+ * CvdSlackTable is slack at a dive site as the dive club CVD reckons it: Kats' predicted high and
+ * low water, moved by the minutes the club's divers found the current least at that site.
+ *
+ * The club's table, used with its permission. It ranks with the station's prediction, which it is
+ * built on, and is listed before it, being for the site. A turn the club says not to dive at is
+ * kept, marked, at the time of Kats' turn, so a reader sees the turn and is told to leave it.
+ * `LOGIC-44`.
+ */
+private class CvdSlackTable(
+    private val rows: List<SlackRow>,
+    private val kats: Station,
+    private val service: Rijkswaterstaat,
+) : TideCalculator {
+    override val name: String = "CVD slack table"
+    override val accuracy: Accuracy = Accuracy.LOCAL
+    override val needsNetwork: Boolean = true
+
+    private fun nearest(latitude: Double, longitude: Double): Pair<SlackRow, Double>? =
+        rows.map { it to metresApart(latitude, longitude, it.latitude, it.longitude) }
+            .filter { (_, metres) -> metres <= ROW_REACH }
+            .minByOrNull { (_, metres) -> metres }
+
+    override fun covers(latitude: Double, longitude: Double): Boolean = nearest(latitude, longitude) != null
+
+    /** Any day: Kats' prediction says itself which years it has. */
+    override fun coversDay(day: Date, today: Date): Boolean = true
+
+    override fun tides(latitude: Double, longitude: Double, day: Date): Tidal {
+        val (row, metres) = nearest(latitude, longitude)
+            ?: return Tidal.None("no row of CVD's table within ${ROW_REACH.roundToInt()} m")
+        val turns = when (val read = service.readings(kats, day, "astronomisch", EXTREMES)) {
+            is Series.Offline -> return Tidal.Offline(read.reason)
+            is Series.None -> return Tidal.None(read.reason)
+            is Series.Read -> turnsOf(read.readings)
+        }
+        val curve = when (val read = service.readings(kats, day, "astronomisch", "")) {
+            is Series.Offline -> return Tidal.Offline(read.reason)
+            is Series.None -> emptyList()
+            is Series.Read -> read.readings
+        }
+        val slacks = slacksAt(row, turns)
+        return Tidal.Found(
+            Tides(
+                station = "CVD's ${row.name}, from ${kats.name}",
+                kilometres = metres / METRES_IN_KILOMETRE,
+                datum = DATUM,
+                clock = DUTCH_CLOCK,
+                extremes = turns.filter { it.at.date == day },
+                curve = curve.filter { it.at.date == day },
+                slacks = slacks.filter { it.at.date == day },
+                remark = row.remark,
+            ),
+        )
+    }
+}
+
+/**
+ * The slacks [row] gives for Kats' [turns]: each turn moved by the row's offset for it.
+ *
+ * At high water the flood stops and the ebb begins, and at low water the other way. A turn whose
+ * offset is absent is kept at Kats' own time and marked to be avoided.
+ */
+internal fun slacksAt(row: SlackRow, turns: List<Extreme>): List<Slack> = turns.map { turn ->
+    val offset = if (turn.high) row.atHigh else row.atLow
+    if (offset == null) {
+        Slack(turn.at, toFlood = !turn.high, avoid = true)
+    } else {
+        Slack(turn.at.plusSeconds(offset), toFlood = !turn.high)
+    }
+}.sortedBy { it.at }

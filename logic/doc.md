@@ -1228,6 +1228,7 @@ To settle when we discuss architecture and features:
   | Calculator | Accuracy | Days | Turns of the tide |
   |---|---|---|---|
   | Rijkswaterstaat Scaldis-Oost model | local forecast | thirteen days back to two ahead | found in the ten-minute curve, with the current's slacks |
+  | CVD slack table | local prediction | any Kats' prediction has | Kats' own, with the site's slacks |
   | Rijkswaterstaat gauge | measured | before today | found in the ten-minute curve |
   | Rijkswaterstaat gauge and forecast | local forecast | today and two days on | found in the ten-minute curve |
   | Rijkswaterstaat astronomical tide | local prediction | any the service has computed | the service's own, to the minute |
@@ -1275,8 +1276,29 @@ To settle when we discuss architecture and features:
 
   **What a turn of the tide is not is slack water.** These are the station's high and low water.
   When the current at a site stops is earlier or later by an amount local to the site, and no
-  calculator here knows it. The corrections divers use for the Oosterschelde are somebody's work
-  and are being asked for; they would arrive as a calculator of their own.
+  calculator of the station's knows it.
+
+  **Slack from a club's table is a calculator of its own, `CVD slack table`.** The Belgian dive club
+  CVD publishes a table of Oosterschelde dive sites, each with the minutes before or after Kats'
+  high and low water at which its divers found the current least, and at some turns *do not
+  dive*. The author asked the club and was given permission to use the numbers. The calculator
+  takes Kats' astronomical turns and moves each by the site's offset; a turn the club says not to
+  dive at is kept at Kats' time and marked, so the reader sees it and is told to leave it, and the
+  club's footnote for a site is shown with the answer. It ranks with the station's prediction it
+  is built on and is listed before it, being for the site.
+
+  **The table names sites and gives no positions**, and a calculator matches a site by position,
+  so a row answers only where it has one: the nearest row within 750 metres, `ROW_REACH`. Of the
+  table's forty-two rows, seventeen are the same dive location as a place in Rijkswaterstaat's
+  model list and take its position: Burghsluis, De Hoek, Flaauwers, Irenehoeve, Katshoek,
+  Kristersnol, Levensstrijd, Plompe Toren, Putti's Place, Schelphoek, St Annaland, Strijenham,
+  Vuilnisbelt, Zeelandbrug, Zoetersbout, Zonneschijn and Zuidbout. Eight more may match a place
+  and want confirming: both rows of Gorishoek, Kulkenol, Stavenisse, Wemeldinge, Bergsche
+  Diepsluis, Zierikzee and Katshaven Zuid. Seventeen have no position from any source free to use,
+  and are left out until one is given: Anna Jacobapolder, Dijkval, Goese Sas, Goudswaardweg,
+  Hoogeweg, Kattendijke, Kleine Stelle, Lange Pier, Linda, Nieuwe Sluis, Noordbout, Oostnol
+  Wissenkerke, Paal 51-52, De Val, Westnol, Wissenkerke and Zuidweg. Positions from the diving
+  guides' maps were not taken, those maps being someone else's work.
 
   **The current comes from a second service, at the dive site itself.** The WaterWebservices
   predict no current. The data service behind Rijkswaterstaat's RWsOS viewer does: its Scaldis-Oost
@@ -1327,6 +1349,12 @@ To settle when we discuss architecture and features:
   - `scaldis-oost.txt` — a model place a line, four cells: the service's code, the name, latitude
     and longitude. Taken from the RWsOS service in October 2026, which states no licence; it rests
     on Rijkswaterstaat's general policy that its data is open unless stated otherwise.
+  - `cvd.txt` — a row of CVD's slack table a line, six cells: the name, the offsets at high and at
+    low water written `-0:45` or `no dive`, the number of the club's footnote or nothing, and
+    latitude and longitude. The offsets and footnotes are the club's, from its page on the tides,
+    last updated in April 2026, used with its permission; the positions are those of the matching
+    places in `scaldis-oost.txt`. Unlike the rest of `logic/tides/` they are someone else's work,
+    and the root licence says so.
 
   **The network is reached through two functions**, `postJson` for the WaterWebservices and
   `getJson` for the RWsOS service, which are the JDK's own connection on a JVM and on Android and so

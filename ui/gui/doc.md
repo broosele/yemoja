@@ -418,10 +418,15 @@ once and corrected. The numbers stay unused rather than being given to something
   the figures come from plots the speed alone, and a dip to nought reads the same at both turns.
   `LOGIC-44`.
 
+  **A club's table gives slacks and no current**, so its answer is the table and the level plot.
+  A turn the club says not to dive at is a row of its own, *Flood: no dive* or *Ebb: no dive*, at
+  the reference station's time, and the club's footnote for the site stands above the table.
+
   The line under the plots says what the answer is not, in the form's own words, since the tab's
   waiver is about a decompression model and says nothing of this. Under a station's tide it is the
   station's and not the site's, and high water is not slack; under the model it is a model's figure
-  for the site, which can be out by half an hour.
+  for the site, which can be out by half an hour; under a club's table it is the club's experience
+  laid on a prediction, for which the club accepts no liability.
 
   What is asked is kept while the tab is, `GUI-27`, so looking back at a day asks nobody twice. A
   phone has the same form and the same models, by a permission taken for it, `AND-8`.

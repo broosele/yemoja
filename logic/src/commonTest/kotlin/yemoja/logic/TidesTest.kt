@@ -7,6 +7,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
@@ -636,5 +637,75 @@ class GmtStampTest {
     @Test
     fun `a stamp ending in Z is GMT`() {
         assertEquals(Moment(Date(2026, 10, 3), Time(8, 0, 0)).epochSecond, instantOf("2026-10-03T08:00:00Z"))
+    }
+}
+
+/** Two rows of the club's table: one with a turn not to dive at, one with a footnote. */
+private val ROWS = """
+    Levensstrijd	-0:50	no dive		51.64296	3.88929
+    Zonneschijn	-0:35	+0:05	1	51.6292	4.06568
+""".trimIndent()
+
+/** Kats, the station the club counts from. */
+private val KATS_STATION = "kats.zandkreeksluis\tKats, Zandkreeksluis\t51.543947\t3.865418\taf"
+
+class SlackTableTest {
+
+    private fun table(post: (String, String) -> Posted): TideCalculator =
+        cvdCalculator(slackRowsOf(ROWS), stationsOf(KATS_STATION), watersOf(WATERS), post)
+
+    @Test
+    fun `a row is read with its offsets in seconds, a turn not to dive at, and its footnote`() {
+        val (levensstrijd, zonneschijn) = slackRowsOf(ROWS)
+        assertEquals(-50 * 60L, levensstrijd.atHigh)
+        assertNull(levensstrijd.atLow)
+        assertNull(levensstrijd.remark)
+        assertEquals(5 * 60L, zonneschijn.atLow)
+        assertTrue(zonneschijn.remark!!.contains("all day"), zonneschijn.remark)
+    }
+
+    @Test
+    fun `a site is covered by a row within reach, and not by one further off`() {
+        val table = table(service())
+        assertTrue(table.covers(51.643, 3.889))
+        // A kilometre and a half from Levensstrijd, which is further than the reach.
+        assertFalse(table.covers(51.63, 3.91))
+    }
+
+    @Test
+    fun `slack is each Kats turn moved by the row's offset, and a turn not to dive at is marked`() {
+        val high = Extreme(Moment(DAY, Time(8, 42, 0)), 1.46, true)
+        val low = Extreme(Moment(DAY, Time(14, 45, 0)), -1.3, false)
+        val (levensstrijd, zonneschijn) = slackRowsOf(ROWS)
+        assertEquals(
+            listOf(
+                Slack(Moment(DAY, Time(7, 52, 0)), toFlood = false),
+                Slack(Moment(DAY, Time(14, 45, 0)), toFlood = true, avoid = true),
+            ),
+            slacksAt(levensstrijd, listOf(high, low)),
+        )
+        assertEquals(
+            listOf(
+                Slack(Moment(DAY, Time(8, 7, 0)), toFlood = false),
+                Slack(Moment(DAY, Time(14, 50, 0)), toFlood = true),
+            ),
+            slacksAt(zonneschijn, listOf(high, low)),
+        )
+    }
+
+    @Test
+    fun `the answer is Kats' turns and the row's slacks, named for both, with the footnote`() {
+        val found = assertIs<Tidal.Found>(table(service(EXTREMES to Posted(200, TURNS))).tides(51.6292, 4.06568, DAY))
+        val tides = found.tides
+        assertEquals("CVD's Zonneschijn, from Kats, Zandkreeksluis", tides.station)
+        assertEquals(4, tides.extremes.size)
+        // Kats' 08:42 high water less 35 minutes.
+        assertEquals(Slack(Moment(DAY, Time(8, 7, 0)), toFlood = false), tides.slacks[1])
+        assertEquals(slackRowsOf(ROWS)[1].remark, tides.remark)
+    }
+
+    @Test
+    fun `an offset that is neither minutes nor no dive is refused`() {
+        assertFailsWith<IllegalStateException> { slackRowsOf("Somewhere\tsoon\t0:00\t\t51.6\t3.9") }
     }
 }

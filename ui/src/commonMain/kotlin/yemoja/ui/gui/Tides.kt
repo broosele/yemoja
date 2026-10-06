@@ -133,7 +133,7 @@ internal data class TideRow(val turn: String, val time: String, val height: Stri
  *
  * A turn of the water says when, how high, and how far the water moved since the turn before; the
  * first has no turn before it and so no difference. A slack says when, and which way the current
- * sets after it, and has no height.
+ * sets after it, and has no height. A slack to be avoided says so in place of the way it sets.
  */
 internal fun rowsOf(extremes: List<Extreme>, slacks: List<Slack> = emptyList()): List<TideRow> {
     val turns = extremes.mapIndexed { index, extreme ->
@@ -146,7 +146,12 @@ internal fun rowsOf(extremes: List<Extreme>, slacks: List<Slack> = emptyList()):
         )
     }
     val turnings = slacks.map { slack ->
-        slack.at to TideRow(if (slack.toFlood) "Flood begins" else "Ebb begins", clockOf(slack.at.time), "", "")
+        val turn = when {
+            slack.avoid -> if (slack.toFlood) "Flood: no dive" else "Ebb: no dive"
+            slack.toFlood -> "Flood begins"
+            else -> "Ebb begins"
+        }
+        slack.at to TideRow(turn, clockOf(slack.at.time), "", "")
     }
     return (turns + turnings).sortedBy { it.first }.map { it.second }
 }
@@ -162,6 +167,21 @@ internal const val STATION_CAUTION: String =
     "The station's tide, not the site's: the water at a site turns earlier or later, and slack " +
         "water is not the same moment as high or low water. Wind and air pressure move the real " +
         "tide away from a prediction. Check local knowledge before a dive that depends on it."
+
+/** What the form says under slack reckoned from a club's table of offsets. */
+internal const val TABLE_CAUTION: String =
+    "Slack from a dive club's table: the reference station's predicted high and low water, moved by " +
+        "the minutes its divers found the current least at the site. \"No dive\" marks a turn the club " +
+        "says not to dive at; it is shown at the station's time. The club accepts no liability for " +
+        "deviations, and wind and air pressure move the real tide away from a prediction. Check local " +
+        "knowledge before a dive that depends on it."
+
+/** What the form says under [tides], by what they hold. */
+internal fun cautionOf(tides: Tides): String = when {
+    tides.flows.isNotEmpty() -> MODEL_CAUTION
+    tides.slacks.isNotEmpty() -> TABLE_CAUTION
+    else -> STATION_CAUTION
+}
 
 /** What the form says under a model's tide and current at the site. */
 internal const val MODEL_CAUTION: String =
@@ -329,7 +349,8 @@ private fun TideAnswer(tides: Tides) {
             below = "Ebb",
         )
     }
-    Aside(if (tides.flows.isEmpty()) STATION_CAUTION else MODEL_CAUTION)
+    tides.remark?.let { Aside(it) }
+    Aside(cautionOf(tides))
 }
 
 /** One line of the table, its figures drawn as calculated values are. */

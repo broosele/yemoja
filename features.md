@@ -214,9 +214,12 @@ them.
   model at fifty-eight places, most of them dive locations: how fast it runs, flood and ebb told
   apart, and when it is slack, from two weeks back to two days ahead. `LOGIC-44`.
 
-  What is not built: **slack water away from those places**, and further ahead than the model
-  runs, where the station's turn is all there is and the corrections divers use for the
-  Oosterschelde are being asked for from those who compiled them; **the current anywhere outside
+  **Slack from the dive club CVD's table** is built for the seventeen of its forty-two sites that
+  have a position, used with the club's permission: Kats' predicted high and low water moved by
+  the minutes the club gives for the site, for any day. `LOGIC-44`.
+
+  What is not built: **the other twenty-five rows of that table**, which wait on a position each;
+  **the current anywhere outside
   the Oosterschelde**; **the Westerschelde and the Wadden Sea**, which are tidal and
   not outlined yet; **any water outside the Netherlands**, which waits on a worldwide or a
   regional calculator; and **a tide

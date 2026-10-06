@@ -91,7 +91,8 @@ The map itself — coastlines, lakes, borders, rivers and cities — is Natural 
 The tides are Rijkswaterstaat's: the stations, and the measured, forecast and astronomical
 water levels Yemoja fetches from its WaterWebservices, which it publishes under CC0, and the
 current and water level of its Scaldis-Oost model, which Yemoja fetches from the service behind its
-RWsOS viewer.
+RWsOS viewer. The slack table is the Belgian dive club CVD's, from its page on the tides, used with
+the club's permission.
 
 The gas mix calculation is fitted to published equations of state: Schmidt and Wagner's for
 oxygen, Span and others' for nitrogen, Ortiz-Vega and others' for helium, and the GERG-2008

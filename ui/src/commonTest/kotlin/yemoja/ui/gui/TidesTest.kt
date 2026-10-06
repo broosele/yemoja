@@ -146,6 +146,12 @@ class TidesTest {
     }
 
     @Test
+    fun `a turn not to dive at is said in place of the way the current sets`() {
+        val rows = rowsOf(emptyList(), listOf(Slack(Moment(TODAY, Time(14, 45, 0)), toFlood = true, avoid = true)))
+        assertEquals(listOf(TideRow("Flood: no dive", "14:45", "", "")), rows)
+    }
+
+    @Test
     fun `a height at the datum carries no sign`() {
         assertEquals("0.00", signedOf(0.0))
         assertEquals("0.00", signedOf(-0.004))

@@ -40,6 +40,12 @@ Apache License 2.0, whose full text is beside it:
   ui/src/commonMain/kotlin/yemoja/ui/icons/   Material icons, copied from Google's
                                               material-icons-extended for Compose
 
+One file holds figures that are not the copyright holder's, used with their owner's
+permission and covered by no licence granted here:
+
+  logic/tides/cvd.txt   the dive club CVD's slack offsets and footnotes for
+                        Oosterschelde dive sites
+
 The name "Yemoja" is not covered by any of the above.
 
 
