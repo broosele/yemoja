@@ -1559,7 +1559,10 @@ once and corrected. The numbers stay unused rather than being given to something
   then (a download, an import and its review, an export's result, an agent's staged changes). On a
   phone the review of what arrived is a page of its own, opened from there and left by back.
   *Settings*: the settings themselves, always open, `GUI-42`. **A greyed deed still shows, and says
-  why under its row**: *needs a logbook open*, *already under way* or *not on this device*.
+  why under its row**: *needs a logbook open*, *already under way* or *not on this device*. Each
+  deed explains itself in a tooltip, and the two that choose a logbook say it is a folder, which
+  a reader looking for a single file would otherwise not find: so does the desktop's dialog for
+  each.
 
   **Statistics** opens on *Dives per month* among a few named charts; *Your own* brings back the
   boxes for gathering and the axes, starting from the chart that was shown.

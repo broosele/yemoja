@@ -1639,10 +1639,12 @@ private fun DeedRow(listed: List<Deed>, deeds: Map<Deed, () -> Unit>, running: S
     ) {
         for (deed in listed) {
             val act = deeds[deed]
-            if (deed == Deed.DOWNLOAD) {
-                Button(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
-            } else {
-                OutlinedButton(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+            Explained(deed.tip) {
+                if (deed == Deed.DOWNLOAD) {
+                    Button(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+                } else {
+                    OutlinedButton(onClick = { act?.invoke() }, enabled = act != null) { Text(deed.label) }
+                }
             }
         }
     }

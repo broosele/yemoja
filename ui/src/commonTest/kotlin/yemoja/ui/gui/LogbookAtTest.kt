@@ -8,6 +8,7 @@ import yemoja.logic.Universe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /*
  * Where the System tab says the logbook was opened from. `GUI-30`.
@@ -34,5 +35,19 @@ class LogbookAtTest {
     @Test
     fun `a logbook opened from no folder says nothing`() {
         assertNull(platform.logbookAt(universe(null)))
+    }
+}
+
+/** What System's buttons say of themselves. `GUI-30`. */
+class DeedTipTest {
+
+    @Test
+    fun `every deed explains itself`() {
+        for (deed in Deed.entries) assertTrue(deed.tip.isNotBlank(), "${deed.label} says nothing")
+    }
+
+    @Test
+    fun `the deeds that choose a logbook say it is a folder`() {
+        for (deed in listOf(Deed.OPEN, Deed.NEW)) assertTrue("folder" in deed.tip, deed.tip)
     }
 }

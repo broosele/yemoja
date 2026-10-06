@@ -223,17 +223,46 @@ internal fun spanOf(seconds: Double): String {
  * that what the application is for is one list rather than the part that happens to be built.
  * System lists them. `GUI-30`.
  */
-internal enum class Deed(val label: String) {
-    OPEN("Open logbook"),
-    NEW("New logbook"),
+internal enum class Deed(
+    val label: String,
+    /** What pressing it does, said when the pointer rests on it or a finger holds it. */
+    val tip: String,
+) {
+    // A logbook is a folder of files, and a reader looking for one file finds nothing to open.
+    OPEN(
+        "Open logbook",
+        "Open a logbook you already have. A Yemoja logbook is a folder of files: choose the " +
+            "folder itself, not a file inside it.",
+    ),
+    NEW(
+        "New logbook",
+        "Start a new logbook. Choose an empty folder for it, or make one in the dialog; Yemoja " +
+            "keeps the logbook's files there.",
+    ),
 
     /** Reading the logbook's files again, for a change made to them outside the window. */
-    RELOAD("Reload logbook"),
+    RELOAD(
+        "Reload logbook",
+        "Read the logbook's files again, after they were changed outside Yemoja: by another " +
+            "device through a shared drive, or by hand.",
+    ),
 
     /** What a logbook is fed by after a dive, and so the one filled button. */
-    DOWNLOAD("Download from dive computer"),
-    IMPORT("Import"),
-    EXPORT("Export to UDDF"),
+    DOWNLOAD(
+        "Download from dive computer",
+        "Read the dives a dive computer holds that this logbook does not. You review them before " +
+            "anything is added.",
+    ),
+    IMPORT(
+        "Import",
+        "Bring in dives and what they name from a UDDF file, Diving Log's Logbook.sql or, on a " +
+            "computer, another Yemoja logbook's folder. You review them before anything is added.",
+    ),
+    EXPORT(
+        "Export to UDDF",
+        "Write the whole logbook to one UDDF file, which other dive logbook programs read. " +
+            "Nothing in this logbook changes.",
+    ),
 }
 
 /** The tabs Home has a tile for, in their order: every one but Home itself. `GUI-30`. */
