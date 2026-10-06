@@ -133,7 +133,10 @@ private fun keyOf(scenario: Scenario): String = when (scenario) {
 }
 
 private fun reserveSaid(answer: ReserveAnswer): Stored = when (answer) {
-    is ReserveAnswer.Refused -> Stored.Members(mapOf("refused" to Stored.Leaf(answer.reason)))
+    is ReserveAnswer.Refused -> Stored.Members(
+        mapOf("refused" to Stored.Leaf(answer.reason)) +
+            (if (answer.escape.isEmpty()) emptyMap() else mapOf("escape" to pairsOf(answer.escape))),
+    )
     is ReserveAnswer.Done -> Stored.Members(
         mapOf(
             "said" to Stored.Leaf(answer.said),

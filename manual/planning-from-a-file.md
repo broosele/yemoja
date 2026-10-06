@@ -235,8 +235,9 @@ well:
   by its number, leaving out a cylinder that needs nothing: `litres`, `bar` on its own gauge,
   `end_bar` what the plan leaves on it, `short` where that is less, and `worst_seconds` and
   `worst_m`, the moment that asks it. A scenario
-  that cannot be worked out — a cylinder with no SAC, most often — is an object with only a
-  `refused`, the rest of the plan answered regardless.
+  that cannot be worked out — a cylinder with no SAC, most often — is an object with a
+  `refused`, and an `escape` where its way up could be worked out without its gas, from the moment
+  whose way up is longest; the rest of the plan is answered regardless.
 
 A plan that will not calculate is an object with its `name` and a `refused`. Where the fault is
 in a line of the runtime, it also holds `runtime` with the lines above that one, each as above,

@@ -772,7 +772,9 @@ once and corrected. The numbers stay unused rather than being given to something
   **The lost-gas way up is drawn dotted on the graph**, as the user asked: the scenario costs a way
   up that is a different runtime, and a sentence alone does not show how much longer. It is a depth
   line with no water shaded over it, from the moment asking most of any cylinder, the time held
-  there first, and reads in the click box as *Lost way up*. The sharing scenario is not drawn,
+  there first, and reads in the click box as *Lost way up*. A reserve that cannot be costed, for
+  want of a SAC, still draws it, from the moment whose way up is longest: the way up needs no gas
+  figures, and it is what a missing figure should not hide. The sharing scenario is not drawn,
   ending at the deco gas rather than at the surface. `LOGIC-40`.
 
   **A legend under the graph names each line drawn**, with a short sample of how it is drawn: the

@@ -100,6 +100,19 @@ class LostGasReserveTest {
     }
 
     @Test
+    fun `a reserve with no rate to cost still gives the way up, the longest of them`() {
+        // The way up needs no SAC: only its gas does.
+        val sources = mapOf("g1" to cylinder("AIR", sac = null), "g2" to cylinder("EAN50", volume = 7.0, sac = null))
+        val run = whole(40.0, 25, sources)
+        val costed = whole(40.0, 25, BOTTOM_AND_DECO)
+        val refused = assertIs<Reserve.Refused>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, problemSolvingSeconds = 120))
+        val done = assertIs<Reserve.Done>(lostGasReserve(costed, setOf("g2"), 9.0, 3.0, problemSolvingSeconds = 120))
+
+        assertEquals("g1", refused.source)
+        assertEquals(done.escape, refused.escape, "the same way up the costed reserve draws, here the longest too")
+    }
+
+    @Test
     fun `with the deco gas lost the reserve is bottom gas alone`() {
         val done = lost(whole(40.0, 25, BOTTOM_AND_DECO))
 

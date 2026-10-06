@@ -37,7 +37,15 @@ sealed class Reserve {
     ) : Reserve()
 
     /** Refused is nothing worked out, why, and the source it is about where it is about one. */
-    class Refused(val reason: String, val source: String? = null) : Reserve()
+    class Refused(
+        val reason: String,
+        val source: String? = null,
+        /**
+         * The way up in trouble where it could be worked out though its gas could not, from the
+         * moment whose way up is longest, and empty otherwise.
+         */
+        val escape: List<Pair<Int, Double>> = emptyList(),
+    ) : Reserve()
 }
 
 /**
@@ -273,6 +281,9 @@ class Beyond(val second: Int, val metres: Double, val source: String, val oxygen
 private fun deeper(held: Beyond?, found: Beyond): Beyond =
     if (held == null || found.oxygen - found.most > held.oxygen - held.most) found else held
 
+/** How long [path] takes, in seconds, from its first point to its last. */
+private fun lengthOf(path: List<Pair<Int, Double>>): Int = path.last().first - path.first().first
+
 /** [reserve] with [beyond] said, where it was worked out. */
 private fun withBeyond(reserve: Reserve, beyond: Beyond?): Reserve =
     if (reserve is Reserve.Done) Reserve.Done(reserve.kept, reserve.judged, reserve.escape, beyond) else reserve
@@ -390,10 +401,11 @@ private fun heldThenClimbed(
     val path = listOf(second to metres) + (if (held > 0) listOf(second + held to metres) else emptyList()) + climbed.points
     val up = when (val cost = costOf((second + held) to metres, breathed, climbed, run, factor, handoff)) {
         is Cost.Litres -> Cost.Litres(cost.litres, cost.upTo, path)
-        else -> return cost
+        is Cost.Unknown -> return Cost.Unknown(cost.source, path)
+        Cost.Stuck -> return cost
     }
     if (held == 0) return up
-    val rate = run.sources.getValue(breathed).sac ?: return Cost.Unknown(breathed)
+    val rate = run.sources.getValue(breathed).sac ?: return Cost.Unknown(breathed, path)
     val litres = LinkedHashMap(up.litres)
     litres[breathed] = (litres[breathed] ?: 0.0) + rate * heldFactor * held / SECONDS_IN_MINUTE * ambient
     return Cost.Litres(litres, up.upTo, path)
@@ -433,6 +445,9 @@ private fun reserveOver(
     var tissues = run.carried ?: Tissues.saturated(run.surface)
     var anchor = 0.0
     val kept = LinkedHashMap<String, Moment>()
+    // The first source with no rate, and the longest way up found while it went uncosted.
+    var unknown: String? = null
+    var longest: List<Pair<Int, Double>>? = null
     for ((index, point) in run.depth.withIndex()) {
         val (second, metres) = point
         if (index > 0) {
@@ -442,10 +457,12 @@ private fun reserveOver(
         anchor = firstStopAfter(tissues, anchor, run.model, run.surface)
         val litres = when (val answer = cost(index, second, metres, tissues, anchor)) {
             is Cost.Litres -> answer
-            is Cost.Unknown -> return Reserve.Refused(
-                "Cannot be calculated: SAC missing",
-                answer.source,
-            )
+            // Every moment is still tried, for the way up a missing rate leaves undrawn otherwise.
+            is Cost.Unknown -> {
+                unknown = unknown ?: answer.source
+                if (answer.path.size > 1 && (longest == null || lengthOf(answer.path) > lengthOf(longest!!))) longest = answer.path
+                continue
+            }
             Cost.Stuck -> return Reserve.Refused(
                 "No way up from ${clockOf(second)} within 24 hours",
             )
@@ -463,6 +480,7 @@ private fun reserveOver(
     if (run.depth.isEmpty()) {
         return Reserve.Refused("this recording holds no depths, so nothing can be worked out from it")
     }
+    unknown?.let { return Reserve.Refused("Cannot be calculated: SAC missing", it, longest.orEmpty()) }
     var judged = true
     val answer = kept.mapValues { (key, moment) ->
         val volume = run.sources.getValue(key).volume?.takeIf { it > 0 }
@@ -535,7 +553,11 @@ private sealed class Cost {
     ) : Cost()
 
     /** A source breathed on the way that nobody gave a rate for. */
-    class Unknown(val source: String) : Cost()
+    class Unknown(
+        val source: String,
+        /** The way up that could not be costed, which is still drawn. */
+        val path: List<Pair<Int, Double>> = emptyList(),
+    ) : Cost()
 
     /** A way up that does not reach the surface within a day. */
     data object Stuck : Cost()

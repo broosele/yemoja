@@ -645,7 +645,11 @@ sealed class Reckoning {
 
     class Done(val reserve: Reserve.Done) : Reckoning()
 
-    class Wrong(val reason: String) : Reckoning()
+    class Wrong(
+        val reason: String,
+        /** The way up the scenario would be costed on, where it could be worked out, and empty otherwise. */
+        val escape: List<Pair<Int, Double>> = emptyList(),
+    ) : Reckoning()
 }
 
 /**
@@ -674,6 +678,7 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
         // for every cylinder lacking a rate, so one fix is not followed by the next complaint.
         is Reserve.Refused -> Reckoning.Wrong(
             if (reserve.source == null) reserve.reason else missingSaid(shaping) ?: reserve.reason,
+            reserve.escape,
         )
     }
 
@@ -697,6 +702,7 @@ fun reckonedOf(shaping: Planned, done: Worked.Done, conditions: Conditions): Rec
             // A bailout lacking a rate is named with everything each bailout lacks, and no other cylinder.
             is Reserve.Refused -> Reckoning.Wrong(
                 if (reserve.source == null) reserve.reason else missingSaid(shaping, only = Role.BAILOUT) ?: reserve.reason,
+                reserve.escape,
             )
         }
         return Reckoned(mapOf(Scenario.BAILOUT to bailout))

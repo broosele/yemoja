@@ -257,6 +257,16 @@ class CalculatedTest {
     }
 
     @Test
+    fun `a reserve refused for a missing SAC still answers its way up`() {
+        val gases = listOf(Breathed("air", Role.BOTTOM, size = "24", fill = "232"), Breathed("EAN50", Role.DECO, size = "11", fill = "200"))
+        val schedule = assertIs<Calculated.Done>(calculated(table(gases = gases, low = "30", high = "70").copy(problemMinutes = "2"))).schedule
+        val lost = assertIs<ReserveAnswer.Refused>(schedule.reserves.getValue(Scenario.LOST_GAS))
+
+        assertEquals("Cannot be calculated (missing for Gas 1: SAC)", lost.reason)
+        assertTrue(lost.escape.size > 2 && lost.escape.last().value == 0.0, "${lost.escape.size} points")
+    }
+
+    @Test
     fun `a rebreather plan is refused for what it cannot be`() {
         fun refused(planned: Planned): String = assertIs<Calculated.Refused>(calculated(planned)).reason
         val loop = table(gases = listOf(Breathed("air", Role.DILUENT))).copy(diveMode = "ccr")

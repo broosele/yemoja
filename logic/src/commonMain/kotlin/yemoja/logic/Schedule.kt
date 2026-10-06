@@ -111,7 +111,11 @@ sealed class ReserveAnswer {
         val escape: List<SchedulePoint> = emptyList(),
     ) : ReserveAnswer()
 
-    class Refused(val reason: String) : ReserveAnswer()
+    class Refused(
+        val reason: String,
+        /** The way up, where it could be worked out though its gas could not. */
+        val escape: List<SchedulePoint> = emptyList(),
+    ) : ReserveAnswer()
 }
 
 /**
@@ -296,7 +300,7 @@ private fun warningSaid(finding: Finding): String {
 }
 
 private fun reserveAnswerOf(scenario: Scenario, reckoning: Reckoning, planned: Planned): ReserveAnswer = when (reckoning) {
-    is Reckoning.Wrong -> ReserveAnswer.Refused(reckoning.reason)
+    is Reckoning.Wrong -> ReserveAnswer.Refused(reckoning.reason, reckoning.escape.map { (second, metres) -> SchedulePoint(second, metres) })
     is Reckoning.Done -> {
         ReserveAnswer.Done(
             said = scenarioSaid(scenario, reckoning.reserve, planned),

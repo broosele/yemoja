@@ -1309,7 +1309,7 @@ private fun Graph(done: Worked.Done, shaping: Shaping, reckoned: Reckoned?) {
     val depth = listOfNotNull(
         Line("Depth", done.whole.depth.map { (second, metres) -> Point(second / SECONDS_IN_MINUTE, metres) }),
         ceilingLineOf(done.evaluated),
-        reckoned?.done?.get(Scenario.LOST_GAS)?.escape?.takeIf { it.isNotEmpty() }?.let { escape ->
+        escapeOf(reckoned?.scenarios?.get(Scenario.LOST_GAS))?.let { escape ->
             Line(ESCAPE, escape.map { (second, metres) -> Point(second / SECONDS_IN_MINUTE, metres) }, main = false, dotted = true)
         },
     )
@@ -1318,6 +1318,13 @@ private fun Graph(done: Worked.Done, shaping: Shaping, reckoned: Reckoned?) {
     }
     Graphed(depth, runOverlaysOf(done.evaluated, tanks), events, planned = true, chosenFor = null, legend = true)
 }
+
+/** The way up [reckoning] was costed on, or would have been where its gas could not be, or null. */
+private fun escapeOf(reckoning: Reckoning?): List<Pair<Int, Double>>? = when (reckoning) {
+    is Reckoning.Done -> reckoning.reserve.escape
+    is Reckoning.Wrong -> reckoning.escape
+    null -> null
+}?.takeIf { it.isNotEmpty() }
 
 /** What the graph and its click box call the way up with a gas lost. */
 private const val ESCAPE = "Lost way up"
