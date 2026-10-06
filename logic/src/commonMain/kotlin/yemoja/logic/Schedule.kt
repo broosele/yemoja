@@ -245,7 +245,12 @@ private fun scheduleOf(planned: Planned, ready: Shaped.Ready, done: Worked.Done,
         noFlightSeconds = done.evaluated.noFlight,
         desaturationSeconds = done.evaluated.desaturation,
         gasUsedLitres = done.evaluated.gasUsed.mapKeys { numberedOf(it.key) },
-        warnings = done.evaluated.findings.map { Warning(it.second, it.severity, warningSaid(it), it.source?.let(::numberedOf)) },
+        // A way up in trouble with nothing breathable is warned of with what the dive itself breathes.
+        warnings = done.evaluated.findings.map { Warning(it.second, it.severity, warningSaid(it), it.source?.let(::numberedOf)) } +
+            reckoned.done.mapNotNull { (scenario, reserve) ->
+                val beyond = reserve.beyond ?: return@mapNotNull null
+                beyondSaid(scenario, reserve)?.let { Warning(beyond.second, Severity.WARNING, it, numberedOf(beyond.source)) }
+            },
         reserves = reckoned.scenarios.mapNotNull { (scenario, reckoning) ->
             reckoning?.let { scenario to reserveAnswerOf(scenario, it, planned) }
         }.toMap(),

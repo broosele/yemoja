@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import yemoja.logic.beyondSaid
 import yemoja.logic.OPEN_CIRCUIT_ROLES
 import yemoja.logic.SEA_LEVEL_SAID
 import yemoja.logic.Breathed
@@ -382,6 +383,7 @@ internal fun PlanForm(
             }
             for ((scenario, reserve) in reckoned?.done.orEmpty()) {
                 shortfallSaid(scenario, reserve)?.let { Warning(it, wrong = true) }
+                beyondSaid(scenario, reserve)?.let { Warning(it, wrong = true) }
             }
             reckoned?.let { uncheckedSaid(it, planned) }?.let { Warning(it, wrong = false) }
         }

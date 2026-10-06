@@ -292,8 +292,12 @@ scenario.
 
 The worst moment is often the end of the bottom. Losing your deco gas just before you would have
 switched to it can be worse: from there the plan breathes no more bottom gas, but without the deco
-gas the whole way up is on it. A bailout cylinder is breathed on the way
-up when gas is lost, since trouble is what it is carried for. A cylinder with no SAC cannot be
+gas the whole way up is on it. So can the moment on the way up just shallower than a deco gas's or a
+bailout's own limit, from where it is breathed the whole way, and Yemoja tries that depth as well
+as the plan's own points. A bailout cylinder is breathed on the way
+up when gas is lost, since trouble is what it is carried for. Where no gas you have left may be
+breathed at the depth trouble starts, the reserve is worked out on the leanest anyway, and Yemoja
+warns of it at the deepest such moment. A cylinder with no SAC cannot be
 costed, and one with no size or fill can be costed in litres but not checked against what it holds.
 
 ## What the model does not know

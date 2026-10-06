@@ -859,6 +859,24 @@ private fun upToSaid(metres: Double?): String =
     if (metres == null || metres <= 0) "to the surface" else "to ${plain((metres * 10).roundToInt() / 10.0)} m"
 
 /**
+ * Where [scenario]'s way up has no gas left within its oxygen limit, the deepest such moment in a
+ * sentence, as a warning says it, or null where every moment has one.
+ *
+ * Example: `Gas 3 pO₂ too high bailing out: 1.48 bar against the 1.40 bar allowed, no bailout being
+ * breathable at 60 m at 22:14`.
+ */
+fun beyondSaid(scenario: Scenario, reserve: Reserve.Done): String? {
+    val beyond = reserve.beyond ?: return null
+    val (doing, left) = when (scenario) {
+        Scenario.BAILOUT -> "bailing out" to "no bailout"
+        Scenario.LOST_GAS -> "surfacing without the lost gas" to "no gas left"
+        Scenario.SHARED -> "sharing" to "no gas"
+    }
+    return "${gasLabelOf(gasIndexOf(beyond.source))} pO₂ too high $doing: ${bar(beyond.oxygen)} against the " +
+        "${bar(beyond.most)} allowed, $left being breathable at ${plain(beyond.metres, 1)} m at ${clockOf(beyond.second)}"
+}
+
+/**
  * The cylinders that end the dive with less than [scenario] keeps, and what they end with, or null
  * where none does.
  *

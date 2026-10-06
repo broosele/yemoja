@@ -1575,7 +1575,7 @@ private fun metres(depth: Double): String {
 }
 
 /** A pressure as a finding says it, to a hundredth of a bar. */
-private fun bar(pressure: Double): String {
+internal fun bar(pressure: Double): String {
     val hundredths = (pressure * 100).toLong()
     return "${hundredths / 100}.${(hundredths % 100).toString().padStart(2, '0')} bar"
 }

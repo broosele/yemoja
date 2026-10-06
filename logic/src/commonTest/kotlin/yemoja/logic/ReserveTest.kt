@@ -87,6 +87,19 @@ class LostGasReserveTest {
     }
 
     @Test
+    fun `a lost gas leaving nothing breathable at depth is said, on the leanest gas left`() {
+        // At fifty metres EAN32 is 1.92 bar against 1.6, and losing the trimix leaves only it.
+        val sources = mapOf("g1" to cylinder("TMX18/45"), "g2" to cylinder("EAN32"))
+        val run = whole(50.0, 15, sources)
+        val beyond = assertNotNull(lost(run, lost = setOf("g1")).beyond)
+
+        assertEquals("g2", beyond.source)
+        assertEquals(50.0, beyond.metres)
+        assertTrue(beyond.oxygen > beyond.most)
+        assertNull(lost(run, lost = setOf("g2")).beyond, "the trimix is breathable there")
+    }
+
+    @Test
     fun `with the deco gas lost the reserve is bottom gas alone`() {
         val done = lost(whole(40.0, 25, BOTTOM_AND_DECO))
 
@@ -459,6 +472,72 @@ class BailoutReserveTest {
 
         assertEquals(3 * 20.0 * 10 * atForty, hit.needed - calm.needed, 1e-6, "only the time held costs the factor")
         assertTrue(calm.needed > kept(0, 1.0).needed + 20.0 * 10 * atForty, "the ten minutes load the tissues as well")
+    }
+
+    @Test
+    fun `a bailout is tried where it becomes breathable on the way up, not only at the plan's points`() {
+        // Thirty minutes at thirty metres rises straight past the depth EAN50 comes within 1.4 bar,
+        // and failing just there is the dearest moment for it: from there it is breathed all the way.
+        val ean50 = Source(Gas.parse("EAN50"), sac = 20.0, volume = 11.0, fill = 200.0, mostOxygen = 1.4, ascentMayChoose = false)
+        val sources = mapOf(
+            "g1" to Source(Gas.AIR),
+            "g2" to Source(Gas.AIR, sac = 20.0, volume = 24.0, fill = 232.0, mostOxygen = 1.4, ascentMayChoose = false),
+            "g3" to ean50,
+        )
+        val bottom = Run(
+            depth = listOf(0 to 0.0, 100 to 30.0, 1900 to 30.0),
+            sources = sources,
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+            closedCircuit = ClosedCircuit("g1", 0.7, 1.3, 6.0),
+        )
+        val ascent = assertIs<Ascended.Done>(completeAscent(bottom, 9.0, 3.0))
+        val run = Run(bottom.depth + ascent.depth, sources, 0.3, 0.7, bottom.switches, closedCircuit = bottom.closedCircuit)
+        val limit = assertNotNull(maximumOperatingDepth(ean50.gas, ean50.mostOxygen, run.density, run.surface))
+        val worst = assertIs<Reserve.Done>(bailoutReserve(run, 9.0, 3.0)).kept.getValue("g3")
+
+        assertTrue(run.depth.none { it.second == worst.metres }, "not one of the plan's own depths: ${worst.metres}")
+        assertEquals(limit, worst.metres, 0.2, "the depth EAN50 becomes breathable")
+        assertTrue(worst.metres <= limit, "on the side it may be breathed: ${worst.metres} against $limit")
+    }
+
+    @Test
+    fun `the points added where a limit is crossed change nothing the plan breathes`() {
+        val run = loop(mapOf("g2" to bailout("AIR", 24.0), "g3" to bailout("EAN50", 11.0)))
+        val sampled = run.sampledAtLimits()
+        fun done(of: Run): Evaluated.Done = assertIs<Evaluated.Done>(evaluate(of))
+
+        assertTrue(sampled.depth.size > run.depth.size)
+        for (number in 1..Tissues.COMPARTMENTS) {
+            assertEquals(done(run).surfacing.nitrogenIn(number), done(sampled).surfacing.nitrogenIn(number), 1e-9)
+        }
+        assertEquals(done(run).oxygen.percentCns, done(sampled).oxygen.percentCns, 1e-9)
+    }
+
+    @Test
+    fun `a way up with nothing breathable says where, on the leanest it is costed on`() {
+        // At sixty metres TMX21/35 is 1.48 bar against 1.4, and EAN50 further still.
+        val deep = Run(
+            depth = listOf(0 to 0.0, 200 to 60.0, 1200 to 60.0),
+            sources = mapOf(
+                "g1" to Source(Gas.parse("TMX10/50")),
+                "g2" to Source(Gas.parse("TMX21/35"), sac = 20.0, volume = 24.0, fill = 232.0, mostOxygen = 1.4, ascentMayChoose = false),
+                "g3" to Source(Gas.parse("EAN50"), sac = 20.0, volume = 11.0, fill = 200.0, mostOxygen = 1.4, ascentMayChoose = false),
+            ),
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+            closedCircuit = ClosedCircuit("g1", 0.7, 1.3, 6.0),
+        )
+        val ascent = assertIs<Ascended.Done>(completeAscent(deep, 9.0, 3.0))
+        val whole = Run(deep.depth + ascent.depth, deep.sources, 0.3, 0.7, deep.switches, closedCircuit = deep.closedCircuit)
+        val beyond = assertNotNull(assertIs<Reserve.Done>(bailoutReserve(whole, 9.0, 3.0)).beyond)
+
+        assertEquals("g2", beyond.source, "the leanest")
+        assertEquals(60.0, beyond.metres)
+        assertTrue(beyond.oxygen > beyond.most, "${beyond.oxygen} against ${beyond.most}")
+        assertNull(assertIs<Reserve.Done>(bailoutReserve(loop(mapOf("g2" to bailout("AIR"))), 9.0, 3.0)).beyond, "air at forty is within 1.6")
     }
 
     @Test

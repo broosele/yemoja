@@ -608,6 +608,19 @@ To settle when we discuss architecture and features:
   A deco gas lost just before the switch to it can cost more, and a multi-level plan has no single
   bottom to name, so every point is tried, which costs about a millisecond.
 
+  *Amended:* **and every depth where a source's limits are crossed.** A way up starts on what its
+  depth allows, so which source it starts on changes only at a source's deepest and shallowest
+  depths, and the moment just shallower than a deco gas's or a bailout's limit can be the dearest of
+  all for it: from there it is breathed the whole way. A rise from thirty metres to a stop at nine
+  passed that depth untried, and a review found an EAN50 bailout kept up to a fifth too little. A
+  point is now added on each side of every second the run crosses such a depth, on its own straight
+  line, so nothing the plan breathes changes. `Run.sampledAtLimits`.
+
+  **A way up with nothing breathable is said.** Where no source left is within its oxygen limit at
+  the moment's depth, the way up is still costed on the leanest, a way up being owed regardless,
+  and the deepest such moment comes back as `Reserve.Done.beyond` and is warned of with the
+  plan's own warnings. A bailout too rich for the depth the loop can fail at was costed silently.
+
   *Amended:* **a reserve is gas kept at the end of the dive, and each cylinder has its own worst
   moment.** The reserve was what a cylinder must hold at the moment the way up cost most, which
   read as a minimum the gauge must never go below, though a plan surfaces with less as a matter of

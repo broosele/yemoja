@@ -243,6 +243,20 @@ class CalculatedTest {
     }
 
     @Test
+    fun `a bailout past its limit where the loop can fail is warned of with the plan's warnings`() {
+        val gases = listOf(
+            Breathed("TMX10/50", Role.DILUENT),
+            Breathed("TMX21/35", Role.BAILOUT, size = "24", fill = "232", sac = "20"),
+        )
+        val plan = table(metres = "60", stay = "20", gases = gases, low = "30", high = "70").copy(diveMode = "ccr", problemMinutes = "2")
+        val schedule = assertIs<Calculated.Done>(calculated(plan)).schedule
+        val warning = schedule.warnings.single { "bailing out" in it.said }
+
+        assertTrue(warning.said.startsWith("Gas 2 pO₂ too high bailing out: 1.48 bar against the 1.40 bar allowed"), warning.said)
+        assertEquals("2", warning.gas)
+    }
+
+    @Test
     fun `a rebreather plan is refused for what it cannot be`() {
         fun refused(planned: Planned): String = assertIs<Calculated.Refused>(calculated(planned)).reason
         val loop = table(gases = listOf(Breathed("air", Role.DILUENT))).copy(diveMode = "ccr")

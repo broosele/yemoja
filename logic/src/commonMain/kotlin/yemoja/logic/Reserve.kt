@@ -29,6 +29,11 @@ sealed class Reserve {
          * depth, the time held at depth first; empty where no source keeps anything.
          */
         val escape: List<Pair<Int, Double>> = emptyList(),
+        /**
+         * The deepest moment no source left may be breathed within its own oxygen limit, so the way
+         * up is costed on the leanest of them anyway, or null where every moment has one.
+         */
+        val beyond: Beyond? = null,
     ) : Reserve()
 
     /** Refused is nothing worked out, why, and the source it is about where it is about one. */
@@ -96,11 +101,15 @@ fun lostGasReserve(
     val kept = run.sources.keys - lost
     if (kept.isEmpty()) return Reserve.Refused("At least one gas should remain")
     val emergency = breathing.choosing(kept)
-    return reserveOver(run, breathing) { index, second, metres, tissues, anchor ->
+    val sampled = run.sampledAtLimits()
+    var beyond: Beyond? = null
+    val reserve = reserveOver(sampled, breathing) { index, second, metres, tissues, anchor ->
         val ambient = ambientAt(metres, run.density, run.surface)
         val breathed = breathing.keyAt(second).takeIf { it in kept }
             ?: emergency.richestAt(ambient)
-            ?: kept.minBy { breathing.mixes.getValue(it).fractionO2 }
+            ?: kept.minBy { breathing.mixes.getValue(it).fractionO2 }.also { leanest ->
+                beyond = deeper(beyond, Beyond(second, metres, leanest, breathing.mixes.getValue(leanest).fractionO2 * ambient, breathing.mostOxygenOf(leanest)))
+            }
         heldThenClimbed(
             second,
             metres,
@@ -109,12 +118,13 @@ fun lostGasReserve(
             anchor,
             breathed,
             emergency,
-            run,
+            sampled,
             Ascending(metresAMinute, lastStop, problemSolvingSeconds, switchStops),
             factor = 1.0,
             handoff = 0.0,
         )
     }
+    return withBeyond(reserve, beyond)
 }
 
 /**
@@ -153,7 +163,8 @@ fun sharedGasReserve(
     val handoff = deco.mapNotNull { key ->
         run.sources[key]?.let { maximumOperatingDepth(it.gas, it.mostOxygen, run.density, run.surface) }
     }.maxOrNull()?.coerceAtLeast(0.0) ?: 0.0
-    return reserveOver(run, breathing) { index, second, metres, tissues, anchor ->
+    val sampled = run.sampledAtLimits()
+    return reserveOver(sampled, breathing) { index, second, metres, tissues, anchor ->
         if (metres <= handoff) return@reserveOver Cost.Litres(emptyMap(), metres)
         val shared = breathing.keyAt(second)
         heldThenClimbed(
@@ -164,7 +175,7 @@ fun sharedGasReserve(
             anchor,
             shared,
             breathing.choosing(setOf(shared)),
-            run,
+            sampled,
             Ascending(metresAMinute, lastStop, problemSolvingSeconds, switchStops),
             factor = SHARING * stressFactor,
             handoff = handoff,
@@ -202,13 +213,17 @@ fun bailoutReserve(
     val drawn = run.closedCircuit.rich + run.closedCircuit.diluent
     val bailouts = run.sources.filterKeys { it !in drawn }.filterValues { !it.ascentMayChoose }.keys
     if (bailouts.isEmpty()) return Reserve.Refused("No bailout: give a cylinder the bailout role")
-    val open = run.onOpenCircuit()
+    val sampled = run.sampledAtLimits()
+    val open = sampled.onOpenCircuit()
     val escape = breathedBy(open)?.choosing(bailouts) ?: return Reserve.Refused("nothing says what is breathed")
-    return reserveOver(run, breathing) { index, second, metres, tissues, anchor ->
+    var beyond: Beyond? = null
+    val reserve = reserveOver(sampled, breathing) { index, second, metres, tissues, anchor ->
         // Off the loop there is no loop to lose.
         if (!breathing.onLoopAt(second)) return@reserveOver Cost.Litres(emptyMap(), metres)
         val ambient = ambientAt(metres, run.density, run.surface)
-        val breathed = escape.richestAt(ambient) ?: bailouts.minBy { escape.mixes.getValue(it).fractionO2 }
+        val breathed = escape.richestAt(ambient) ?: bailouts.minBy { escape.mixes.getValue(it).fractionO2 }.also { leanest ->
+            beyond = deeper(beyond, Beyond(second, metres, leanest, escape.mixes.getValue(leanest).fractionO2 * ambient, escape.mostOxygenOf(leanest)))
+        }
         heldThenClimbed(
             second,
             metres,
@@ -224,6 +239,7 @@ fun bailoutReserve(
             heldFactor = co2HitFactor,
         )
     }
+    return withBeyond(reserve, beyond)
 }
 
 /** [this] with its rebreather taken away and everything else kept, for a way up on open circuit. */
@@ -243,6 +259,82 @@ private fun Run.onOpenCircuit(): Run = Run(
     mostNarcoticDepth = mostNarcoticDepth,
     oxygenNarcotic = oxygenNarcotic,
 )
+
+/**
+ * Beyond is a moment a reserve's way up has no source within its oxygen limit: when, how deep, the
+ * leanest source it is costed on anyway, and the oxygen it breathes against what it is held to, in
+ * bar.
+ *
+ * Immutable.
+ */
+class Beyond(val second: Int, val metres: Double, val source: String, val oxygen: Double, val most: Double)
+
+/** Whichever of [held] and [found] breathes further past its limit, [held] where they are equal. */
+private fun deeper(held: Beyond?, found: Beyond): Beyond =
+    if (held == null || found.oxygen - found.most > held.oxygen - held.most) found else held
+
+/** [reserve] with [beyond] said, where it was worked out. */
+private fun withBeyond(reserve: Reserve, beyond: Beyond?): Reserve =
+    if (reserve is Reserve.Done) Reserve.Done(reserve.kept, reserve.judged, reserve.escape, beyond) else reserve
+
+/**
+ * [this] with a point added on each side of every second its depth crosses the limits of a source:
+ * the deepest depth its oxygen allows and the shallowest. `LOGIC-40`.
+ *
+ * A way up in trouble starts on what the moment's depth allows, so which source it starts on
+ * changes only at those depths. Tried only at the run's own points, a rise from thirty metres to a
+ * stop at nine passes the depth a deco gas becomes breathable untried, and that can be the
+ * dearest moment of all for that gas. The points lie on the run's own straight lines, so the
+ * tissues and the gas breathed come out as they were.
+ */
+internal fun Run.sampledAtLimits(): Run {
+    val limits = sources.values.flatMap { source ->
+        listOfNotNull(
+            maximumOperatingDepth(source.gas, source.mostOxygen, density, surface),
+            minimumOperatingDepth(source.gas, source.leastOxygen, density, surface),
+        )
+    }.distinct()
+    val points = ArrayList<Pair<Int, Double>>()
+    for ((index, point) in depth.withIndex()) {
+        if (index > 0) {
+            val (was, from) = depth[index - 1]
+            val (second, metres) = point
+            val crossings = mutableSetOf<Int>()
+            for (limit in limits) {
+                if (metres == from || limit <= minOf(from, metres) || limit >= maxOf(from, metres)) continue
+                val at = was + (limit - from) / (metres - from) * (second - was)
+                // Both seconds either side, and the ones around a crossing that falls on a second,
+                // so one point is shallower than the limit whichever way the run goes.
+                val below = kotlin.math.floor(at).toInt()
+                val above = kotlin.math.ceil(at).toInt()
+                val around = if (below == above) listOf(below - 1, below, below + 1) else listOf(below, above)
+                for (whole in around) {
+                    if (whole > was && whole < second) crossings += whole
+                }
+            }
+            for (whole in crossings.sorted()) points += whole to from + (metres - from) * (whole - was) / (second - was)
+        }
+        points += point
+    }
+    if (points.size == depth.size) return this
+    return Run(
+        depth = points,
+        sources = sources,
+        gradientFactorLow = gradientFactorLow,
+        gradientFactorHigh = gradientFactorHigh,
+        switches = switches,
+        density = density,
+        surface = surface,
+        carried = carried,
+        oxygenCarried = oxygenCarried,
+        safetyStop = safetyStop,
+        ascentRate = ascentRate,
+        lastStop = lastStop,
+        mostNarcoticDepth = mostNarcoticDepth,
+        oxygenNarcotic = oxygenNarcotic,
+        closedCircuit = closedCircuit,
+    )
+}
 
 /** Ascending is how a way up in trouble is made: how fast, how shallow the last stop, how long first. */
 private class Ascending(
