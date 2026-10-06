@@ -107,6 +107,8 @@ sealed class ReserveAnswer {
         val shortfall: String?,
         /** The cylinders costed in litres only, having no size or no fill, in a sentence, or absent where every one is judged. */
         val unchecked: String?,
+        /** The way up in trouble from the moment asking most, each a second and a depth in metres. */
+        val escape: List<SchedulePoint> = emptyList(),
     ) : ReserveAnswer()
 
     class Refused(val reason: String) : ReserveAnswer()
@@ -305,6 +307,7 @@ private fun reserveAnswerOf(scenario: Scenario, reckoning: Reckoning, planned: P
                     worstMetres = kept.metres,
                 )
             },
+            escape = reckoning.reserve.escape.map { (second, metres) -> SchedulePoint(second, metres) },
         )
     }
 }

@@ -34,6 +34,11 @@ internal class Line(
     val points: List<Point>,
     val main: Boolean = true,
     val stepped: Boolean = false,
+    /**
+     * Whether the line is a way the dive might go rather than the way it went: drawn dotted, with
+     * no water shaded over it.
+     */
+    val dotted: Boolean = false,
 )
 
 /**

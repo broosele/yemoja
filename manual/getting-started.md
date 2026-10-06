@@ -389,6 +389,9 @@ to be, what the scenario assumes, and its worst moment. The switch on the *Lost*
 lost, your first deco gas unless you choose another; choose *None* to leave that scenario out.
 The switch on the *Buddy out of gas* line is a tick; untick it to leave that one out. Change a setting and the lines change
 with it. [The decompression model](decompression.md#planning-a-dive) explains both scenarios.
+The way up the *Lost* line is worked out on is drawn on the graph as a dotted line: from its worst
+moment, the time held there, and the stops it owes without the gas you lost, so you can see how
+much longer that dive would be.
 
 Under that are the gases, a line for each cylinder: the mix, its role, its size, what it
 was filled to, and your breathing rate. Yemoja shows how deep the mix may be breathed, and what the

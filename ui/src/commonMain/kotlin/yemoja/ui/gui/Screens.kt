@@ -3772,11 +3772,16 @@ private fun Chart(
                 }
 
                 val fill = main?.let { areaOf(it) }
-                val ceilings = depth.filter { !it.main }.mapNotNull { areaOf(it) }
+                val ceilings = depth.filter { !it.main && !it.dotted }.mapNotNull { areaOf(it) }
                 val minutes = ticksOf(0.0, lastMinute, 6)
                 val depths = ticksOf(0.0, depthHigh, 5)
                 val overs = if (overlay == null) emptyList() else ticksOf(overLow, overHigh, 4)
                 val thin = Stroke(THIN.toPx())
+                // Short dots, so a way the dive might go reads apart from a dashed plan.
+                val dotted = Stroke(
+                    width = LINE_WIDTH.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(LINE_WIDTH.toPx(), LINE_WIDTH.toPx() * 2)),
+                )
                 val dashes = LINE_WIDTH.toPx() * 3
                 val thick = if (!planned) Stroke(LINE_WIDTH.toPx()) else Stroke(
                     width = LINE_WIDTH.toPx(),
@@ -3810,7 +3815,12 @@ private fun Chart(
                     for (ceiling in ceilings) drawPath(ceiling, forbidden)
                     for ((index, line) in depth.withIndex()) {
                         val colour = if (line.main) ink else stop
-                        drawPath(depthPaths[index], colour, style = if (line.main) thick else thin)
+                        val style = when {
+                            line.dotted -> dotted
+                            line.main -> thick
+                            else -> thin
+                        }
+                        drawPath(depthPaths[index], colour, style = style)
                     }
                     for (path in overPaths) drawPath(path, other, style = thin)
                     // A switch is a dot on the line and an alarm a triangle, each with its word

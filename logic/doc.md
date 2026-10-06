@@ -1496,6 +1496,10 @@ To settle when we discuss architecture and features:
   up starts on the richest bailout its limit allows, switches among them, and breathes each at its
   own SAC.
 
+  **Each reserve keeps the way up it was costed on**, `Reserve.Done.escape`: from the moment
+  asking most of any source, the time held there first, to the surface. A front end draws it, the
+  user having asked to see the different runtime a lost gas and a bailout make.
+
   *Amended:* **the loop fails with a CO₂ hit, held at depth.** The user set a CO₂ hit factor, four
   times SAC, and a CO₂ hit time, ten minutes, for a rebreather plan in place of the stress factor
   and the problem-solving time. The time is spent at the depth the loop failed, on the bailout at

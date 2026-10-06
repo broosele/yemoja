@@ -227,6 +227,8 @@ well:
 - `no_flight_seconds` and `desaturation_seconds`.
 - `reserve` — the gas reserve, keyed `lost_gas` and `shared_gas`, or `bailout` on a rebreather; a scenario switched off is left
   out. Each holds `said`, the scenario in the sentence the window's contingency line shows;
+  `escape`, the way up it is costed on, from the moment asking most of any cylinder, as pairs of a
+  second and a depth in metres, the time held there first;
   `shortfall`, the cylinders that end the dive with less than they keep, in a sentence, or
   nothing; `unchecked`, the cylinders costed in litres only for want of a size or a fill, in a
   sentence, or nothing; and `kept`, what each cylinder should still hold at the end of the dive,

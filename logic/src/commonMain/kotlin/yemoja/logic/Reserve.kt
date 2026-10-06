@@ -24,6 +24,11 @@ sealed class Reserve {
         val kept: Map<String, Kept>,
         /** Whether every source in [kept] has a size and a fill, so that its gauge can be judged. */
         val judged: Boolean,
+        /**
+         * The way up in trouble from the moment asking most of any source, each a second and a
+         * depth, the time held at depth first; empty where no source keeps anything.
+         */
+        val escape: List<Pair<Int, Double>> = emptyList(),
     ) : Reserve()
 
     /** Refused is nothing worked out, why, and the source it is about where it is about one. */
@@ -290,12 +295,16 @@ private fun heldThenClimbed(
         before,
         ascending.switchStops,
     ) ?: return Cost.Stuck
-    val up = costOf((second + held) to metres, breathed, climbed, run, factor, handoff)
-    if (up !is Cost.Litres || held == 0) return up
+    val path = listOf(second to metres) + (if (held > 0) listOf(second + held to metres) else emptyList()) + climbed.points
+    val up = when (val cost = costOf((second + held) to metres, breathed, climbed, run, factor, handoff)) {
+        is Cost.Litres -> Cost.Litres(cost.litres, cost.upTo, path)
+        else -> return cost
+    }
+    if (held == 0) return up
     val rate = run.sources.getValue(breathed).sac ?: return Cost.Unknown(breathed)
     val litres = LinkedHashMap(up.litres)
     litres[breathed] = (litres[breathed] ?: 0.0) + rate * heldFactor * held / SECONDS_IN_MINUTE * ambient
-    return Cost.Litres(litres, up.upTo)
+    return Cost.Litres(litres, up.upTo, path)
 }
 
 /** How many divers breathe from one cylinder while it is shared. */
@@ -355,7 +364,7 @@ private fun reserveOver(
             val most = kept[key]?.extra
             // A tie goes to the later moment, being nearer the end the reserve is held at.
             if (most == null || extra >= most - TIE) {
-                kept[key] = Moment(second, metres, litres.upTo, needed, extra)
+                kept[key] = Moment(second, metres, litres.upTo, needed, extra, litres.path)
             }
         }
     }
@@ -381,7 +390,7 @@ private fun reserveOver(
             needed = moment.needed,
         )
     }
-    return Reserve.Done(answer, judged)
+    return Reserve.Done(answer, judged, kept.values.maxByOrNull { it.extra }?.path.orEmpty())
 }
 
 /**
@@ -412,13 +421,26 @@ private fun usedAfter(run: Run, breathing: Breathing): List<Map<String, Double>>
  * Moment is one point of a run, what a way up from it takes from one source, and how much of that
  * the plan would not have breathed anyway.
  */
-private class Moment(val second: Int, val metres: Double, val upTo: Double, val needed: Double, val extra: Double)
+private class Moment(
+    val second: Int,
+    val metres: Double,
+    val upTo: Double,
+    val needed: Double,
+    val extra: Double,
+    /** The way up from it. */
+    val path: List<Pair<Int, Double>>,
+)
 
 /** Cost is what a way up takes from each source, or why it cannot be counted. */
 private sealed class Cost {
 
     /** The litres each source gives up, and how deep the way up was costed to. */
-    class Litres(val litres: Map<String, Double>, val upTo: Double) : Cost()
+    class Litres(
+        val litres: Map<String, Double>,
+        val upTo: Double,
+        /** The way up as a second and a depth each, the time held first, and empty where there is none. */
+        val path: List<Pair<Int, Double>> = emptyList(),
+    ) : Cost()
 
     /** A source breathed on the way that nobody gave a rate for. */
     class Unknown(val source: String) : Cost()

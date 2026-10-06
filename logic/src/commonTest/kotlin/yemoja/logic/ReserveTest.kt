@@ -74,6 +74,19 @@ class LostGasReserveTest {
     }
 
     @Test
+    fun `the way up the reserve is costed on is kept, from its worst moment to the surface`() {
+        val run = whole(40.0, 25, BOTTOM_AND_DECO)
+        val done = assertIs<Reserve.Done>(lostGasReserve(run, setOf("g2"), 9.0, 3.0, problemSolvingSeconds = 120))
+        val air = done.kept.getValue("g1")
+
+        assertEquals(air.second to air.metres, done.escape.first(), "it starts where the reserve is worst")
+        assertEquals(air.second + 120 to air.metres, done.escape[1], "and holds there first")
+        assertEquals(0.0, done.escape.last().second, "and surfaces")
+        assertTrue(done.escape.last().first > run.depth.last().first, "later than the plan, on bottom gas alone")
+        assertTrue(lost(whole(18.0, 30, AIR_ONLY), lost = emptySet()).escape.isEmpty(), "nothing kept, nothing drawn")
+    }
+
+    @Test
     fun `with the deco gas lost the reserve is bottom gas alone`() {
         val done = lost(whole(40.0, 25, BOTTOM_AND_DECO))
 

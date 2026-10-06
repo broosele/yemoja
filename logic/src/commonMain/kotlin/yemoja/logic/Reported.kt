@@ -139,6 +139,7 @@ private fun reserveSaid(answer: ReserveAnswer): Stored = when (answer) {
             "said" to Stored.Leaf(answer.said),
             "shortfall" to Stored.Leaf(answer.shortfall),
             "unchecked" to Stored.Leaf(answer.unchecked),
+            "escape" to pairsOf(answer.escape),
             "kept" to Stored.Members(
                 answer.kept.mapValues { (_, kept) ->
                     Stored.Members(

@@ -215,6 +215,9 @@ class CalculatedTest {
 
         assertEquals(setOf(Scenario.BAILOUT), schedule.reserves.keys, "no lost gas and no sharing on a loop")
         assertEquals(setOf("2"), bailout.kept.keys, "the bailout alone, not the deco cylinder")
+        assertEquals(bailout.kept.getValue("2").worstSeconds, bailout.escape.first().second, "the bailout's way up, from its worst moment")
+        assertEquals(bailout.kept.getValue("2").worstSeconds + 600, bailout.escape[1].second, "the CO₂ hit held first")
+        assertEquals(0.0, bailout.escape.last().value)
         assertTrue(bailout.said.startsWith("Gas 2 reserve needs to be "), bailout.said)
         assertTrue("for a CO₂ hit of 10:00 at depth at 4 × SAC, then bailing out to the surface at normal SAC" in bailout.said, bailout.said)
         assertEquals(

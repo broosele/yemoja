@@ -769,6 +769,12 @@ once and corrected. The numbers stay unused rather than being given to something
   phrase is the rule said once, where it applies, rather than in a paragraph they would have to go
   looking for. Both start on, since a reserve nobody asked for protects nobody.
 
+  **The lost-gas way up is drawn dotted on the graph**, as the user asked: the scenario costs a way
+  up that is a different runtime, and a sentence alone does not show how much longer. It is a depth
+  line with no water shaded over it, from the moment asking most of any cylinder, the time held
+  there first, and reads in the click box as *Lost way up*. The sharing scenario is not drawn,
+  ending at the deco gas rather than at the surface. `LOGIC-40`.
+
   A cylinder that falls short is also a warning in the list beneath, saying which scenario it falls
   short in and in the names the model's own warnings use, so *Gas 1 runs out* and *Gas 1 is empty*
   read as one cylinder. Which cylinder the lost-gas scenario loses is a choice of one cylinder on

@@ -386,7 +386,7 @@ internal fun PlanForm(
             reckoned?.let { uncheckedSaid(it, planned) }?.let { Warning(it, wrong = false) }
         }
     }
-    if (done != null) Graph(done, shaping)
+    if (done != null) Graph(done, shaping, reckoned)
 }
 
 /**
@@ -1297,19 +1297,28 @@ private fun Figure(label: String, said: String, tip: String) {
     }
 }
 
-/** The whole dive drawn as a recording is: depth, the ceiling over it, and the switches on it. */
+/**
+ * The whole dive drawn as a recording is: depth, the ceiling over it, and the switches on it, with
+ * the way up the lost-gas reserve is costed on dotted beside it.
+ */
 @Composable
-private fun Graph(done: Worked.Done, shaping: Shaping) {
+private fun Graph(done: Worked.Done, shaping: Shaping, reckoned: Reckoned?) {
     val tanks = tanksOf(shaping.described())
     val depth = listOfNotNull(
         Line("Depth", done.whole.depth.map { (second, metres) -> Point(second / SECONDS_IN_MINUTE, metres) }),
         ceilingLineOf(done.evaluated),
+        reckoned?.done?.get(Scenario.LOST_GAS)?.escape?.takeIf { it.isNotEmpty() }?.let { escape ->
+            Line(ESCAPE, escape.map { (second, metres) -> Point(second / SECONDS_IN_MINUTE, metres) }, main = false, dotted = true)
+        },
     )
     val events = done.whole.switches.map { (second, key) ->
         Event(second / SECONDS_IN_MINUTE, tanks[key] ?: key, Marking.SWITCH)
     }
     Graphed(depth, runOverlaysOf(done.evaluated, tanks), events, planned = true, chosenFor = null)
 }
+
+/** What the graph and its click box call the way up with a gas lost. */
+private const val ESCAPE = "Lost way up"
 
 // A kept, local copy: the same 60.0 the model's own file uses, for the one place left here that
 // turns a second into a minute for the graph's own axis.
