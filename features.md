@@ -166,6 +166,11 @@ them.
 - **FEAT-13 — Export to other applications' formats.** UDDF is written: the whole logbook,
   from the System tab, and read back by the importer. What goes and what is not written yet is
   under *What is built* in [logic/uddf.md](logic/uddf.md). No other format is written.
+- **FEAT-31 — Plugins.** Adding tide sources, site libraries and tables without a new release,
+  as files with a manifest, and making a new kind of extension one class to write. Built-in
+  extension points and data plugins only, never code from others. How a plugin is got and
+  installed, and the open question of where it lives, is `LOGIC-47` in
+  [logic/doc.md](logic/doc.md).
 - **FEAT-14 — Editing ids.** For advanced users, carrying the rename cost
   described in [data/json/doc.md](data/json/doc.md).
 - **FEAT-29 — Navigating to a dive site.** A link on a dive site that opens it in a map

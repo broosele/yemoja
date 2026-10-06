@@ -500,6 +500,32 @@ To settle when we discuss architecture and features:
 
    `LOGIC-5` narrows this considerably: with one operation at a time there is nothing to
    race, so *live* costs only what it costs to hold, not what it costs to protect.
+- **LOGIC-47 — How Yemoja is extended: plugins.** Open, for later, at the author's word. The
+   tides are the pattern: `TideCalculator` is an interface, each calculator says what it covers,
+   and the window offers whichever cover the site. `FEAT-31`.
+
+   **Two levels, and not a third.** First, built-in extension points: one small interface per
+   kind of extension, a tide source, a calculator, an importer, and one registry listing them,
+   so adding one is a class and a line. Second, data plugins: a file holding a manifest and
+   data, a set of tide stations with their constituents, a site library, a cylinder table, a
+   tide service described by its address and how its answer reads, loaded and checked against
+   a format as `libraries/` is. Nothing in one executes, so it reaches every platform, an App
+   Store's included. Code from others, loaded at runtime, is ruled out: it would be a safety
+   question beside the planner, a licence question beside an application that is not open,
+   and an interface to keep stable for strangers.
+
+   **How a user gets one.** A file handed over, a `.yemoja-plugin`, added under *System* through
+   the platform's picker; and later, once there are plugins worth listing, a catalogue the
+   application reads from the website or the releases and installs from. Installing shows what
+   the manifest says it adds, what network it reaches, its version and its licence, refuses a
+   malformed one with the reason, and lists it with *Remove* and a switch. A newer version is
+   added over the older. A plugin the catalogue offers is one the project distributes, so it
+   passes the check `libraries/` does: no terms that would bind.
+
+   **What is open is where an installed plugin lives.** Per device, in the application's own
+   data, installed on each computer and phone apart. Or per logbook, in a `plugins/` folder
+   inside it, travelling with it: a logbook on a shared drive brings its plugins to the phone
+   and to everyone who opens it, at the price of a logbook folder holding more than its dives.
 
 ## Settled
 
