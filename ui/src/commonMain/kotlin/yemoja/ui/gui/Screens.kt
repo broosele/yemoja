@@ -2249,7 +2249,7 @@ private fun YearRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(LINE).clickable(onClick = onToggle),
+            modifier = Modifier.width(toggleWidth()).height(LINE).clickable(onClick = onToggle),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -2690,7 +2690,7 @@ internal fun BranchLine(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(LINE)
+            modifier = Modifier.width(toggleWidth()).height(LINE)
                 .let { if (open == null) it else it.clickable(onClick = onToggle) },
             contentAlignment = Alignment.Center,
         ) {
@@ -4200,6 +4200,17 @@ private val THIN = 1.dp
 /** How much of the water colour a river carries, so it reads as a line and not a canal. */
 private const val RIVER = 0.6f
 internal val LINE = 28.dp
+
+/**
+ * How wide the arrow that folds a row is pressed: the row's height with a pointer, and a finger's
+ * width on a phone, where the arrow alone sat so close to the year that a press meant to unfold it
+ * chose the year instead. `PHONE-2`.
+ */
+@Composable
+private fun toggleWidth(): Dp = if (LocalCompact.current) FINGER else LINE
+
+/** The narrowest a phone's press target is, as Material asks of one. */
+private val FINGER = 48.dp
 internal val INDENT = 16.dp
 internal val GAP = 12.dp
 internal val HALF = 4.dp

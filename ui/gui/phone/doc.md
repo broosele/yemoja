@@ -79,6 +79,11 @@ Anything specific to one mobile OS — that goes in that platform's own doc.
   was left out for a day and came back: the role decides the pO₂ a cylinder is held to, whether the
   ascent may choose it, and which cylinder the contingency loses and goes to, and a phone could
   plan no bailout without it.
+
+  **The arrow that folds a year, a region or a trip is pressed across 48 dp**, a finger's width,
+  where a pointer gets the row's height of 28. With the arrow alone, a press meant to unfold a year
+  landed on the year beside it and chose it, showing the year's figures instead; found by the
+  author on a phone.
 - **PHONE-3 — Tablets.** *Settled:* **the desktop's layout.** A tablet is treated as a small
   desktop, side by side whichever way it is held. Choosing by width was the alternative, and
   costs a layout that changes under the reader when a tablet is turned.
