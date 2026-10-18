@@ -2269,8 +2269,10 @@ To settle when we discuss architecture and features:
   *Amended, at the author's word:* **where the recording has neither, Yemoja's model answers.**
   A recording that says nothing either way left `deco` empty on nearly half of one real logbook.
   The depths are run through the model at the gradient factors the profile names, and where it
-  says nothing, at the values a new plan starts from before anybody changes them, 30/70 in salt
-  water. A ceiling below the surface at any moment means yes. What the computer recorded still
+  says nothing, at the values a new plan starts from before anybody changes them, 30/70. A
+  recording that gives no density is taken at 1020 kg/m³, the EN 13319 figure most computers turn
+  pressure into depth with, as SAC takes it too, at the author's word: it turns a recorded depth
+  back into the pressure that was measured. A ceiling below the surface at any moment means yes. What the computer recorded still
   wins wherever it recorded anything, and a written answer wins over both.
 
   The built-in values rather than the user's settings, because a derived field cannot reach the

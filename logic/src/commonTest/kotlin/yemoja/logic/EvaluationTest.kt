@@ -65,6 +65,22 @@ private const val DEEP = """"depth": [[0, 0], [90, 40], [1800, 40], [1900, 0]]""
 class EvaluationTest {
 
     @Test
+    fun `a recording that gives no density is worked out at the one most computers use`() {
+        fun recording(density: String): Item = profile(
+            logbook(
+                "dive/d#0.json" to """{"gas_sources": {$AIR}, "profiles": {"a": {$density
+                    "depth": [[0, 0], [60, 40], [1500, 40], [1560, 0]]}}}""",
+            )["d#0"]!!,
+            "a",
+        )
+        val assumed = assertIs<Evaluated.Done>(assumedOf(recording("")))
+        val written = assertIs<Evaluated.Done>(
+            assumedOf(recording(""""density": $NOMINAL_DENSITY,""")),
+        )
+        assertEquals(values(written.ceiling), values(assumed.ceiling), "taken at $NOMINAL_DENSITY")
+    }
+
+    @Test
     fun `a shallow half hour needs no stop, and says how long it could have stayed`() {
         val evaluated = done(planned(SHALLOW))
 

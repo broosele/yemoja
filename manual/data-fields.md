@@ -506,8 +506,8 @@ that into a depth using the density it was set for, so every depth here has a wa
 baked into it already. That is why `water_type` sits on the recording rather than only on
 the site: it says what the numbers were made with, and without it Yemoja cannot work back
 to pressure — which is what decompression actually needs. A profile with no `density` can
-still be read and drawn. What is worked out from it takes a density of its own: SAC takes 1020,
-and the model, which answers only `deco` for such a profile, takes salt water at 1030.
+still be read and drawn. What is worked out from it takes 1020, the EN 13319 figure most computers turn
+pressure into depth with: SAC, and the model, which answers only `deco` for such a profile.
 
 Changing `water_type` afterwards does not change the depths that were written down. It
 changes what they mean, and Yemoja will say so and offer to convert them.

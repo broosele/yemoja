@@ -403,7 +403,7 @@ private fun runOf(profile: Item, seen: Set<Item>, assumed: Boolean = false): Run
         return RunResult.Refused("$named is not the model built here, which is $BUHLMANN", Refusal.UNASKED)
     }
     val density = (profile.single<Double>("density") as? Result.Usable)?.value
-        ?: ASSUMED_DENSITY.takeIf { assumed }
+        ?: NOMINAL_DENSITY.takeIf { assumed }
         ?: return RunResult.Refused(
             "this recording should say whether the water was salt or fresh, without which a depth is not a pressure",
             Refusal.UNASKED,
@@ -430,8 +430,8 @@ private fun runOf(profile: Item, seen: Set<Item>, assumed: Boolean = false): Run
 
 /**
  * What the model makes of [profile], taking what the recording does not say from Yemoja's own
- * defaults: the gradient factors a new plan starts from, salt water, and this model whatever the
- * computer ran.
+ * defaults: the gradient factors a new plan starts from, [NOMINAL_DENSITY], and this model
+ * whatever the computer ran.
  *
  * **For an answer the recording never gave, and nothing else.** A logged dive's `deco` is the
  * computer's where it recorded one; this is the fallback for a recording that holds neither stops
@@ -444,8 +444,6 @@ internal fun assumedOf(profile: Item): Evaluated =
         is RunResult.Run -> evaluate(made.run)
     }
 
-/** The density taken for a recording that does not say what water it was in: salt. */
-private const val ASSUMED_DENSITY = 1030.0
 
 /** RunResult is a profile turned into a run, or why it could not be. */
 private sealed class RunResult {
