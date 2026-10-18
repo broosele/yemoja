@@ -153,8 +153,8 @@ private val GAS_CONFIGURATIONS = setOf("back mounted", "sidemount", "pony", "sta
  * GasSource is one thing breathed from on a dive, under a key on that dive or on one of its
  * profiles.
  *
- * A dive's are what was breathed, and every recording of that dive shares them. A profile keeps
- * its own only where it is a plan, two plans for one dive being free to assume different gases.
+ * A recording keeps what its computer said and a plan what it assumes. A dive's are derived from
+ * its primary profile's until the user writes its own. `RECON-7`.
  *
  * Absent so far: nothing of its own.
  */
@@ -600,7 +600,7 @@ private val TAGS = setOf(
 internal val DIVE: ItemDescription = ItemDescription(
     "dive",
     listOf(
-        // The dive's start, from the primary profile and in GMT. Correctable, as everything
+        // The dive's start, from the primary profile and in local time. Correctable, as everything
         // else a recording gives is: the computer was there and the user was busy, and a
         // recording can still be wrong.
         DateDescription("start_date", role = Role.Overrideable(::divesStartDate)),

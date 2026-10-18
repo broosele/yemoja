@@ -25,8 +25,9 @@ import yemoja.data.WholeNumberDescription
 /**
  * Medical is a person's health details, kept together rather than scattered through the item.
  *
- * Yemoja does not work out whether one is still valid. How long a check counts for depends on
- * who is asking — the agency, the operator, the country — rather than on the examination.
+ * The model does not work out whether one is still valid. How long a check counts for depends on
+ * who is asking — the agency, the operator, the country — rather than on the examination. Home
+ * takes a year from the last check to warn by, which is a reminder rather than a ruling. `GUI-34`.
  */
 private val MEDICAL = ItemDescription(
     "medical",

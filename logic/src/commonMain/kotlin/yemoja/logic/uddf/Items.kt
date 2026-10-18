@@ -111,8 +111,8 @@ internal fun gearIn(tag: Tag): Map<String, Stored> {
 /**
  * A `trippart`, which is where everything of a trip lands.
  *
- * A trip carries the same fields whether or not it has a parent, so the part is the item and the
- * `trip` above it is one too where it names anything of its own. `uddf.md`.
+ * A trip carries the same fields whether or not it has a parent, so the part is the item. The
+ * `trip` above it is not read, so a leg comes in with no parent. `uddf.md`.
  */
 internal fun tripIn(tag: Tag, ours: Map<String, String>): Map<String, Stored> {
     val fields = LinkedHashMap<String, Stored>()

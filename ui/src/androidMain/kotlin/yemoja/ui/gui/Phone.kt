@@ -346,7 +346,7 @@ private fun openedIn(
     // one written before manifests were. `GUI-30`.
     val holds = granted.isFile(LogbookReader.MANIFEST) || granted.isFolder("dive") || granted.isFile("dive.json")
     if (making && holds) {
-        return Opening.Refused("$called already holds a Yemoja logbook. Open it with Open logbook instead.")
+        return Opening.Refused("$called already holds a Yemoja logbook, so open it instead.")
     }
     if (!making && !holds) {
         return Opening.Refused(
