@@ -2067,7 +2067,11 @@ once and corrected. The numbers stay unused rather than being given to something
   since the box of their statistics under it is; a dive's primary recording is marked with a
   star on its tab and put first among them, being the one every figure on the dive comes from,
   while what is stored keeps the order it was written in — putting one first on a screen must
-  not rewrite a file; and a rating out of ten reads as five stars, two points to a star and an
+  not rewrite a file. Another recording's tab offers *Use as primary*, which names it the dive's
+  primary there and then, so the choice is made where the recordings are compared rather than in
+  the edit form's fold; not on a plan where the dive has a recording, a plan not standing for a
+  dive made. Added on 2026-10-18 at the author's word, who could not find the field in the fold;
+  and a rating out of ten reads as five stars, two points to a star and an
   odd rating ending in a half, and the number is not shown.
 
   **A tab takes the short form of what it names.** A keyed entry with no name of its own is

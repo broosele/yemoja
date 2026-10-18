@@ -3333,6 +3333,17 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
     }
     Inset(inset.label, beside = tabs) {
         Spacer(modifier = Modifier.height(HALF))
+        if (dive != null && primaryOffered(entries, at, pointedEntryOf(item, inset.name))) {
+            val changer = LocalChanger.current
+            val key = entries[at].first
+            TextButton(
+                onClick = {
+                    val made = changer.change(listOf(Change.Write(item, "primary_profile", Stored.Leaf("*$key"))))
+                    // The primary is shown first, so the tab that was open is now the first.
+                    if (made is Outcome.Done) open = 0
+                },
+            ) { Text("Use as primary") }
+        }
         // A recording is drawn before it is read: the graph is what it is for.
         val entry = entries[at].second
         val drawn = depthLinesOf(entry).isNotEmpty()
@@ -3357,6 +3368,20 @@ private fun KeyedInset(inset: OwnedItemDescription, item: Item, onFollow: (Strin
             TextButton(onClick = { opener(Bound.Editing(dive, key)) }) { Text("Edit plan") }
         }
     }
+}
+
+/**
+ * Whether the profile open at [at] among [entries] may be made its dive's primary, [primary] being
+ * the one that is.
+ *
+ * Only where there is a choice, and not a plan where the dive has a recording: what a dive is
+ * worked from is what was dived where anything was. Among the plans of a dive not made, any of
+ * them may be the main one. `GUI-16`.
+ */
+internal fun primaryOffered(entries: List<Pair<String, Item>>, at: Int, primary: Int?): Boolean {
+    if (entries.size < 2 || at == primary) return false
+    val recorded = entries.any { !isPlanned(it.second) }
+    return !(recorded && isPlanned(entries[at].second))
 }
 
 /**
