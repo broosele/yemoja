@@ -126,8 +126,9 @@ Nothing inside an item mentions its id, and changing one does not change
 anything the item says about itself.
 
 **What an id may contain** is narrow, because it is also a file name: lowercase
-letters `a` to `z`, digits, and `_`, `-` and `.`. Nothing else, and no accented or
-non-Latin letters. It may not start or end with `_`, `-` or `.`.
+letters `a` to `z`, digits, and `_`, `-` and `.`, and one `#` before the index that tells two
+items of the same name apart — `2026-02-23#0`, `anna_de_vries#1`. Nothing else, and no accented
+or non-Latin letters. It may not start or end with `_`, `-` or `.`.
 
 That looks mean, and it is deliberate. An id is a file name on Windows, macOS, Linux,
 Android and iPhone, and those disagree: two of them treat `Anna` and `anna` as the same
@@ -273,7 +274,7 @@ though no depth needs that many.
 
 Two things follow. A value finer than its unit allows is rounded when it is saved, so
 Yemoja cannot keep precision your units cannot express — a depth written in feet is kept
-to a tenth of a foot. And converting into a unit that does not divide evenly can move the
+to a thousandth of a foot. And converting into a unit that does not divide evenly can move the
 last digit once, the first time Yemoja writes a value it read from somewhere else; after
 that the file stays as it is.
 

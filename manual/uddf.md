@@ -33,7 +33,7 @@ Four things do not, and they are the ones to remember:
 - **Your own labels** on a dive.
 
 Several more come back subtly changed rather than missing — a site's kind, an address,
-where a site sits. Each of those is explained under its own subject below, with everything
+how warm you were. Each of those is explained under its own subject below, with everything
 else.
 
 ## Not written yet
@@ -46,8 +46,8 @@ reads it tell the difference. UDDF has an element of its own for a dive plan, wh
 honest way to send one, and Yemoja does not write it yet. The export says how many plans it left
 behind.
 
-Some other things this chapter says survive are **not written yet**, and will come back empty if
-you export and import again:
+Some other things are **not carried yet in either direction**: Yemoja neither writes them nor
+reads them from a file, so they come back empty if you export and import again:
 
 - a person's insurance,
 - a piece of gear's service records,
@@ -73,12 +73,16 @@ open it in a text editor — 200 bar reads as 20000000 — but that is all it is
 
 **Kept, unchanged, both ways.** The dive number, the date and time, the deepest point, the
 coldest water, visibility, air temperature, how the current was, your rating out of ten,
-your notes, which site it was, and how you fared for warmth. A time zone written after the
+your notes, and which site it was. A time zone written after the
 time becomes the dive's time zone offset, and goes back out the same way.
 
 Two of those deserve a note. **Current** uses the same six steps in both formats, so it
 crosses over exactly rather than being squeezed into a different scale. **Rating** is 1 to
 10 in both.
+
+**How you fared for warmth** comes back one step warmer if you were `warm`. UDDF has one word
+for both `warm` and `too warm`, and reading it back gives `too warm`. The other answers cross
+over unchanged.
 
 **Repetitive dives are kept**, in a different shape. UDDF groups dives that follow each
 other closely and marks where a group starts; your logbook instead has each dive name the
@@ -96,9 +100,7 @@ converting between them is arithmetic. Your surface intervals come out right.
 
 **Lost on import.** UDDF can carry a few things this logbook does not keep: how hard you
 were working, what went wrong, equipment that failed, the kind of platform you dived from,
-and the purpose of the dive. Where the file has them, they are folded into the dive's
-notes rather than dropped, so you can read them even though nothing sorts or searches on
-them.
+and the purpose of the dive. They are not read, so the file's own copy is the only one.
 
 ## The recording
 
@@ -136,8 +138,9 @@ it is lost coming in and never written going out.
 **A shape difference, which is not a loss but is worth knowing.** Your logbook keeps each
 measurement as its own series with its own times, because a computer samples temperature
 far less often than depth. UDDF instead stores one list of instants, each carrying every
-measurement at once. Exporting therefore has to fill in the gaps, and it does so along a
-straight line between the samples either side.
+measurement at once. Exporting writes each measurement at the instants it was taken, and
+fills in the depth at the others along a straight line between the samples either side. Only
+the depth is filled in: a temperature appears only where one was measured.
 
 **An exported file will contain depth figures your computer never measured.** They are
 honest interpolations and they are what the format requires; nothing is invented that
@@ -156,8 +159,8 @@ fractions out of the name rather than treating it as a label, so the two convert
 32, because whole percentages are all a mix is written in here — which is how mixes are
 named, analysed and labelled on a cylinder.
 
-**Lost on export.** Argon and hydrogen. UDDF can describe them and this logbook cannot, so
-the question does not arise in that direction.
+**Lost on import.** Argon and hydrogen. UDDF can describe them and this logbook cannot, so
+only the oxygen and helium of a mix are read.
 
 **And one that is easy to miss.** When you switch gas, your logbook records which
 *cylinder* you moved to. UDDF records which *mix*. If you dived two cylinders of the same
@@ -179,25 +182,16 @@ level, how deep it gets, what the bottom is made of, your rating and your notes.
 **Lost on import.** The shallowest the site gets, which this logbook deliberately does not
 record.
 
-**Three that come back changed.**
-
 **What kind of place it is** goes out coarser than it came in. UDDF joins pairs this
 logbook keeps apart — ocean with sea, lake with quarry, cave with cavern. Every value can
 be written out; reading it back cannot tell which half you chose, so a sea may return as
 an ocean.
 
-**The water type** of the site is not recoverable. Your logbook says salt, fresh or the
-standard figure; UDDF writes a density instead. Each of the three has a density so going
-out is exact, but an arbitrary density cannot say which of three a diver picked, and most
-real ones match none of them.
-
-**Where the site is.** Your logbook places a site in regions, and a region can sit inside
-several larger ones — a French bay is in France and in the Mediterranean at once. UDDF
-gives three lines of text: country, province, location. Going out, one region has to be
-chosen as the country and one as the province, out of a shape that does not label them.
-Coming back, three strings have to be matched against the regions you already have, or new
-ones made. This is the least reliable part of the round trip, and it is worth checking
-after an import.
+**The water type and where the site is** are not carried yet, as listed under
+*Not written yet* above. Your logbook places a site in regions, and a region can sit
+inside several larger ones — a French bay is in France and in the Mediterranean at once. UDDF
+gives three lines of text instead, country, province and location, and a file's three lines are
+not read. After importing, place each site in its regions yourself.
 
 ## Wrecks
 
@@ -209,7 +203,7 @@ wrote about her travels in the site's notes.
 
 ## People
 
-**Kept, both ways.** Names, birthday, contact details, insurance, and notes.
+**Kept, both ways.** Names, birthday, contact details, and notes.
 
 **Address is lossy on the return leg only.** Your logbook keeps an address as you wrote
 it; UDDF splits it into street, town, postcode and country. Going out, it cannot be taken
@@ -223,11 +217,13 @@ takes the date of the most recent one and loses the rest. Exporting produces a s
 examination with no doctor and no result. Blood group, height and weight have nowhere to
 go there at all.
 
-**Qualifications lose their certificate number on import, and their instructor and dives
+**Qualifications lose their link to a certification on import, and their instructor and dives
 on export.** Your logbook records a course as something you did — with an instructor, and
 the dives that earned it — pointing at a qualification that a supplied library describes.
-UDDF puts the qualification and your holding of it in one place, with a certificate
-number. Neither side has room for all of the other's.
+UDDF puts the qualification and your holding of it in one place, in words. Coming in, the
+certificate number is kept, and the level and the organisation are written into the course's
+notes, for you to point the course at the qualification they name. Neither side has room for
+all of the other's.
 
 **Lost on export.** Emergency contacts. UDDF has nowhere to put them.
 
@@ -250,7 +246,7 @@ element. Anything that does not — an ABC item you called a `flipper` — is wr
 `variouspieces` with your own word for it in the notes, so a person reading the file still
 learns what it was. No program will sort on it, but nothing is silently dropped.
 
-**Kept, both ways.** Make, model, serial number, and service records.
+**Kept, both ways.** Make, model and serial number.
 
 **Lost on import.** What you paid, and rebreather equipment.
 
@@ -260,15 +256,15 @@ attribute everything to you, whether or not it is yours.
 
 ## Trips and operators
 
-**Kept, both ways.** A trip's name, dates, where it went, who ran it, and the dives on it.
-Trips with legs survive too: your logbook makes each leg a trip naming the larger one, and
-UDDF has the same two levels.
+**Kept, both ways.** A trip's name, dates, who ran it, and the dives on it.
 
-**Watch out for the same dive centre appearing twice.** UDDF can describe an operator in
-two ways: as a thing in its own right with an identity, or written out inside a trip with
-no identity at all. Where a file uses the second, two trips with the same centre are two
-descriptions with nothing saying they are the same place, and importing them gives you two
-operators. Where a file offers both, Yemoja takes the one with an identity.
+**Trips with legs lose the larger trip.** Your logbook makes each leg a trip naming the larger
+one, and UDDF has the same two levels, a trip holding its parts. Only the parts are read, each
+as a trip of its own, so after a round trip the legs are there and the trip they made up is not.
+
+**An operator needs an identity to come in.** UDDF can describe an operator in two ways: as a
+thing in its own right with an identity, or written out inside a trip with no identity at all.
+Only the first is read, so a trip whose operator is written out inside it comes in with none.
 
 **Lost on export.** What sort of operation it is — dive centre, club, resort, boat,
 liveaboard. UDDF separates a dive base from a boat structurally instead, which does not

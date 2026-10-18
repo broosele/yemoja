@@ -177,8 +177,9 @@ All three can be corrected where the calculation is wrong.
   latest dive in this logbook that began earlier, plans left out. The clock needs no judgement,
   so it is worked out for every dive; whether the dive before still counts for the gas you
   carried is what `previous_dive` says. Nothing is calculated for the first dive in the
-  logbook. Where `previous_dive` names a dive that is not in this logbook, or that ended after
-  this one began, the interval is shown as something that cannot be calculated. Write it
+  logbook. Where `previous_dive` names a dive that is not in this logbook, or where the dive
+  it is worked from ended after this one began, the interval is shown as something that cannot be
+  calculated. Write it
   yourself for a dive whose predecessor is not in this logbook — an imported dive often knows
   the interval without knowing the dive.
 - `dive_trip` (reference) — the trip this dive was part of. Where a trip has legs, name
@@ -309,7 +310,8 @@ that is the only record of it.
   what tells two computers of one model apart, and what `dive_computer` is calculated from:
   put the same serial on the gear item and every recording from that computer finds it.
   Spelling does not matter — case, dashes and spaces are ignored, and a serial the maker prints
-  in hexadecimal matches the number the device reports.
+  in hexadecimal matches the number the device reports. A serial is taken as hexadecimal only
+  where it holds one of the letters `a` to `f`, so one written in digits alone is read as decimal.
 - `fingerprint` (list of text) — what the computer knows this recording by, written as
   hexadecimal. It is put there by a download and is not for reading: its whole use is that
   the next download can hand it back and be given only the dives made since. Nothing else
@@ -346,8 +348,8 @@ that is the only record of it.
   The correction moves the date as well as the time where it has to: two minutes past
   midnight, with two hours coming off, is late the previous evening.
 
-- `duration` (number, derived) — how long it ran, from its last sample. Correct it where the
-  recording stopped before you surfaced.
+- `duration` (number, derived) — how long it ran, from its last sample, and a download writes
+  what the computer said. Correct it where the recording stopped before you surfaced.
 - `max_depth` (number, derived) — the deepest sample this recording took. Worth correcting: a
   dive computer usually reports a better figure than its own samples, which it takes only every
   few seconds, and a download writes what the computer said.
@@ -360,8 +362,10 @@ that is the only record of it.
   metre unless the file says otherwise. Fresh is 1000 and `en13319` is exactly 1020, both of
   them fixed. Salt is whatever the computer was set to, so it comes from the `salt_density` of
   the gear item in `dive_computer`, or 1030 where there is no computer, no item for it, or no
-  figure on it. Nothing is calculated where `water_type` is not written, which is the case for
-  a recording imported from UDDF. Write it in yourself if you know better.
+  figure on it. A download writes the density the computer reports, where it reports one, and
+  that figure stands in place of all of these. Nothing is worked out where `water_type` is not
+  written, which is the case for a recording imported from UDDF. Write it in yourself if you know
+  better.
 - `atmospheric_pressure` (number) — the air above this run, and **absolute**: about 1 bar at
   sea level, less up a mountain. Unlike a cylinder's pressure this is not what any gauge reads
   against; it is the pressure itself. A download writes what the computer measured, and a plan
@@ -425,8 +429,10 @@ that is the only record of it.
   Most Shearwaters report the starting gas on the first sample of the dive and that is what is
   written. A computer that reports only its changes writes just the switch to a deco gas, and a
   computer that reports nothing leaves the series out; either way the gas you started on is not
-  recorded, and it is worth writing in, since without it Yemoja's model will not work the dive
-  out.
+  recorded. A dive on one cylinder needs nothing more, since there is only one gas it can have
+  been. On more than one it is worth writing in: Yemoja's model takes the first switch's gas for
+  the start only where that switch comes within a minute of going under, and otherwise will not
+  work the dive out.
 
   A reading naming the gas you were already on is dropped, being a repeat rather than a change.
   A dive your computer cut in two brings one along at the second stretch's start.
@@ -499,7 +505,8 @@ that into a depth using the density it was set for, so every depth here has a wa
 baked into it already. That is why `water_type` sits on the recording rather than only on
 the site: it says what the numbers were made with, and without it Yemoja cannot work back
 to pressure — which is what decompression actually needs. A profile with no `density` can
-still be read and drawn; nothing can be calculated from it.
+still be read and drawn. What is worked out from it takes a density of its own: SAC takes 1020,
+and the model, which answers only `deco` for such a profile, takes salt water at 1030.
 
 Changing `water_type` afterwards does not change the depths that were written down. It
 changes what they mean, and Yemoja will say so and offer to convert them.
@@ -579,7 +586,7 @@ same way there.
 - `sac` (number, derived) — how much gas you breathed from this source, as litres a minute at
   the surface's pressure, over the time you were breathing it. Taken from the primary profile's
   `sac`, and counting a long stretch for more than a short one. Where the recording holds no
-  pressures, it is calculated from the source's `start_pressure` and `end_pressure` instead: the
+  pressures for this source, it is calculated from the source's `start_pressure` and `end_pressure` instead: the
   drop times the `volume`, over the dive's duration at its average depth. A dive on more than one
   source needs its gas switches for that, to say which was breathed when, and gets no figure where
   a source no switch names came back emptier than it went. Write it yourself where neither gives
@@ -649,7 +656,8 @@ A piece of equipment. A dive computer is gear like anything else you own.
 
 - `salt_density` (number) — for a dive computer, how heavy it takes salt water to be, in
   kilograms per cubic metre unless the file says otherwise. Look it up in the computer's own
-  manual and write it once.
+  manual and write it once. It is used only for a recording whose download did not say, since a
+  download writes the computer's own figure into the recording's `density`.
 
   It matters because **a computer never measures depth**. It measures the pressure around it
   and divides by an assumed density, so the figure the maker chose is baked into every depth
@@ -887,7 +895,7 @@ emergency contacts, and yourself. They need not be divers.
   under *Course* below.
 - `dives` (list of references, derived) — the dives this person was a buddy on, which
   follows from each dive's `buddies`. On the person the logbook belongs to, this is every
-  dive in it.
+  dive in it but the planned ones.
 - `remarks` (multiline text) — whatever you want to keep about them that has no
   field of its own.
 

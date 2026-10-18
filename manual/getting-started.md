@@ -10,12 +10,12 @@ in [data-fields.md](data-fields.md).
 With no logbook open, the window shows only **Home**, **Calculations**, **System** and
 **Manuals**, and Home offers two buttons.
 
-- **Create a new Yemoja logbook** asks for a folder, and one that does not exist yet may be typed. The new
-  logbook comes with what Yemoja ships already in it — the regions of the world, the agencies'
-  certifications and a catalogue of generic gear — and nothing of yours. A folder that already holds a logbook is refused rather than written over.
 - **Open an existing Yemoja logbook** asks for a folder holding one. On a computer, a folder with no logbook files
   in it opens as an empty logbook; on a phone it is refused, and **Create** is the way to start
   one there.
+- **Create a new Yemoja logbook** asks for a folder, and one that does not exist yet may be typed. The new
+  logbook comes with what Yemoja ships already in it — the regions of the world, the agencies'
+  certifications and a catalogue of generic gear — and nothing of yours. A folder that already holds a logbook is refused rather than written over.
 
 The folder can also be named when Yemoja is started, and it then opens straight away. Otherwise
 Yemoja opens the logbook you had open last, and an update does not change that.
@@ -26,14 +26,14 @@ the one that saves a file last is what is kept.
 
 **Tell Yemoja which person you are.** A new logbook names nobody, and until it knows, it cannot
 say which medical and which insurance are yours to be warned about, or which certifications are.
-Add yourself on the Community tab, then press the **person** button on your card. It writes
+Add yourself on the Community tab, then press the **This is me** button, the round figure on your card. It writes
 you into `yemoja.json` as the logbook's `user`, which
 [data-format.md](data-format.md) describes; press it on somebody else to move it.
 
 ## Home
 
-**The top of the screen** counts your dives, the places you dived and the time you spent
-underwater.
+**The top of the screen** greets you and counts your dives, the places you dived and the time you
+spent underwater. Until Yemoja knows which person you are, it says how to tell it instead.
 
 **Warnings** come next, when something is due. A red box holds what has already lapsed, and a
 yellow one what falls due within a month:
@@ -62,7 +62,7 @@ Yemoja logbook** for an empty folder.
 - **Gear** lists your equipment by category and then by kind. Anything with no category sits at
   the top.
 - **Community** holds people, operators and certifications, each on a small tab of its own. You
-  are marked among the people, and the tab opens on you.
+  are marked among the people, and on a computer the tab opens on you.
 - **Locations** holds the regions of the world as a tree, the sites in the one chosen, and a
   map of it with your sites marked. The tree ends with **No region** where a site names none,
   which is where a site you have just made waits until you say where it is. **Hide
@@ -193,7 +193,7 @@ you type.
   **Revert** locks it again and shows the calculation at once, before you save. The box looks the
   same either way, so you can tell at a glance which fields are yours to write and which are
   Yemoja's.
-- **More fields** at the end opens the ones this item has no use for: the settings Yemoja keeps
+- **3 more fields** at the end, counting what it holds, opens the ones this item has no use for: the settings Yemoja keeps
   for itself, and the fields that belong to another kind of gear. Nothing is ever taken away,
   only tucked out of the way.
 - A field with usual answers offers them from its arrow, and anything else may still be typed.
@@ -209,14 +209,14 @@ you type.
   type, no altitude and no place on the map. A trip, an operator and a certification take no
   plain name, so there the only offer is to make the item. The new item
   is made straight away, so cancelling the form leaves it behind. Every type but a dive can be
-  made this way, a dive being named for the day it was made on. A plain name is kept instead
-  where one is allowed: a buddy, an emergency contact, or a dive computer you keep no item for.
+  made this way, a dive being named for the day it was made on.
 - A list has **+ add** and a cross beside each entry.
 - A time is typed as minutes and seconds, `42:30`, or as minutes alone.
 
 On gear, the fields that only mean something for one kind of item are folded away on the rest:
-a serial number and an access code on anything that is not an instrument, a capacity on
-anything that is not a cylinder. They are there under **more fields** when you need them.
+a serial number, an access code and a salt density on anything that is not an instrument, a
+capacity on anything that is not a cylinder. They are there under the **more fields** button when
+you need them.
 
 **Adding a tab** to something an item holds several of, or taking one away with its cross,
 happens at once rather than waiting for Save.
@@ -371,7 +371,7 @@ On the right are the plan's settings, in four groups: *General*, *Gas*, *Algorit
 They start from what you chose in [Settings](settings.md),
 and a change here is for this plan only. A safety stop of 0 minutes means none. The safety stop is
 held on the way up as a minimum, and a longer decompression stop at the same depth counts towards
-it. *Atmospheric pressure*, under *Water*, is the air pressure where you dive, in bar: 1.013 at
+it. *Atmospheric pressure*, under *Water* in *General*, is the air pressure where you dive, in bar: 1.013 at
 sea level, less at altitude, where the same dive owes longer stops. A saved plan keeps it.
 
 The way up switches to a richer gas only where it stops anyway, so a dive whose first stop is

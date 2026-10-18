@@ -16,8 +16,8 @@ over USB or a serial cable, and for one advertising over Bluetooth.
 - **Several found:** you are asked which, with a button for each.
 
 Reading a full computer takes several minutes. System shows how far it has got, and **Cancel**
-gives it up, keeping nothing. You can go to any other tab and carry on meanwhile. Home's tab shows
-a spinning circle in place of its icon while the computer is read, and a tick once it has
+gives it up, keeping nothing. You can go to any other tab and carry on meanwhile. System's tab
+shows a spinning circle in place of its icon while the computer is read, and a tick once it has
 finished.
 
 **Only dives this logbook has not seen come across.** Yemoja remembers where the last download
@@ -35,8 +35,9 @@ the code is remembered there.
 
 ## Looking over what arrived
 
-A download's list is shown when you come to Home after it has finished, and it is made afresh
-each time you come back. Leave it half done to add a dive site, and on your return the site is
+A download's list is shown when you come back to System after it has finished, and it is made
+afresh each time you come back. On a phone, System says how many dives arrived with a **Review**
+button, and the list opens as a page of its own; back leaves it. Leave it half done to add a dive site, and on your return the site is
 there to choose; a dive you took in last time is not offered again. A choice you made and did
 not apply is not kept when you leave.
 
@@ -56,8 +57,10 @@ deep, and which computer recorded it. Each has three choices, one of them alread
   laid over the recording it repeats.
 - **Import as dive N** takes it in as a new dive. The number follows from the boxes above: a
   merged dive takes none, a skipped one takes none, so change one and the numbers below move.
-- **Skip** leaves it out. A skipped dive is offered again each time you come back to Home, until
-  the download is closed. After that, a later download does not bring it back.
+- **Skip** leaves it out. A skipped dive is offered again each time you come back to System, until
+  the download is closed. After that, a later download brings it back only where it is newer than
+  every dive this logbook already holds from that computer, since a download starts where the
+  newest one it knows ended.
 
 A box also says when a dive was pieced together from several recordings, because the computer
 cut it in two, and when it is a dive this logbook already holds.
@@ -70,7 +73,8 @@ position the computer recorded. A dive left at *No site* goes in with none.
 **Nothing happens until you press Apply.** Every choice can be changed until then, and the line
 beside the button counts what it will do — *1 merged, 2 imported, 1 left staged*. Apply works
 down the list and stops at the first thing it cannot do, saying why under that box; what is
-above has landed and what is below is still waiting. **Close** leaves everything waiting.
+above has landed and what is below is still waiting. **Close** puts the download aside without
+taking anything in; downloading again brings back what was not taken in.
 
 What has arrived but not been decided is kept in a folder beside your logbook, with `.import`
 after its name. It is not part of your logbook.
@@ -116,8 +120,8 @@ out of ten, two points a star.
 
 **What Diving Log has a box for and Yemoja does not goes into the dive's remarks**, one labelled
 line each, so nothing you typed is lost: visibility, how you got in, the weather, the boat, the
-divemaster, your suit, the fish you saw and your own fields. Pictures, signatures and stamps are
-left behind, and the import says how many. A site's country goes into its remarks too, since
+divemaster, your suit, the fish you saw and your own fields. Pictures and signatures are left
+behind, and the import says how many of each. A site's country goes into its remarks too, since
 Yemoja's regions come from its own map rather than from what you named them.
 
 Only Diving Log 4.2's database has been checked. A file from another version is read the same

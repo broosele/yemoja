@@ -102,7 +102,7 @@ factor as a proportion.
 | `oxygen_narcotic` | O₂ narcotic, `true` or `false` |
 | `water_type` | `salt` or `fresh` |
 | `atmospheric_pressure` | Atmospheric pressure, in bar |
-| `stress_factor`, `problem_solving_time` | Stress factor, Problem-solving time |
+| `stress_factor`, `problem_solving_time` | Stress factor, Problem solving time |
 | `lost_gas_reserve`, `lost_gas` | The *Lost* scenario's switch, and which cylinder it loses by number, left out for the first deco cylinder |
 | `shared_gas_reserve` | The *Buddy out of gas* scenario's switch |
 
@@ -177,7 +177,8 @@ nitrogen and the oxygen clock the first one leaves behind:
 
 The case followed must come earlier in the file, and must itself calculate: a case following one
 that was refused is refused with it. Chains may be as long as the file: a third case may follow
-the second.
+the second. A `follows` naming no earlier case is a case that cannot be read, which stops the
+whole file, as said under the table below.
 
 ## The table
 
@@ -200,21 +201,32 @@ One row a plan, with these columns:
 **A plan that will not calculate takes a row of its own** with the reason in it, and the others
 are still answered. One bad case in fifty should not cost you the other forty-nine.
 
+**A case that cannot be read stops the whole file.** A field Yemoja cannot make sense of, such as a
+`role` it does not know, a `gas` number with no cylinder, a gradient factor past 1 or a `follows`
+naming no earlier case, stops the command before anything is calculated. The reason is written
+to the error output and no table is written at all. The command ends with exit code 2.
+
 ## The whole answer
 
-`--json` gives an array, one object a plan, holding everything the table holds and these as
-well:
+`--json` gives an array, one object a plan. Times in it are in seconds rather than the table's
+minutes:
+
+- `name`, `max_depth_m`, `deepest_stop_m`, `cns_percent` and `otu`, as in the table.
+- `runtime_seconds` and `stop_seconds`, the table's `runtime_minutes` and `stop_minutes`. The
+  table's `bottom_minutes` has no counterpart: the lines you wrote are in `runtime`, marked.
+- `gas_litres` — litres at the surface from each cylinder, by its number.
 
 - `runtime` — every part of the dive in one list, the lines you wrote and the ones Yemoja
   added, each with `from_m`, `to_m`, `begins_at_seconds`, `seconds`, `direction`, `gas`, and
   `added` saying which it is.
-- `stops` — each held depth in metres and seconds.
+- `stops` — each held depth, deepest first, with its `metres` and `seconds`.
 - `dive_mode` — `oc` or `ccr`, as the case said.
 - `ceiling`, `no_deco_seconds`, `tts_seconds`, `gf99_series`, `end_series`, `setpoint_series`, `po2_series`,
   `cns_series`, `otu_series`, `pressures_bar` — what the model works out through the dive, each written as a series is
   written everywhere: pairs of a second and the value then. The ceiling is the shallowest allowed
   depth in metres, and is empty where the dive owes none. The no-decompression time is in
-  seconds, the stretches already owing a stop left out. The time to surface is in seconds. GF99
+  seconds, with gaps: a stretch already owing a stop is left out, and so is one shallow enough
+  that the limit runs past a day. The time to surface is in seconds. GF99
   is a percentage and may run below nought while a compartment is still taking gas on. The END is
   in metres, on the gas breathed at each moment. The setpoint is in bar, and empty on open
   circuit. The pO₂ is the oxygen breathed, in bar: the mix's on open circuit, and on a rebreather
@@ -239,9 +251,10 @@ well:
   `refused`, and an `escape` where its way up could be worked out without its gas, from the moment
   whose way up is longest; the rest of the plan is answered regardless.
 
-A plan that will not calculate is an object with its `name` and a `refused`. Where the fault is
-in a line of the runtime, it also holds `runtime` with the lines above that one, each as above,
-so a form can still show what they come to while the faulty line is put right, and
+A plan that will not calculate is an object with its `name` and a `refused`. Where the runtime
+could be laid out, it also holds `runtime`, each line as above: the lines above the faulty one
+where the fault is in a line, and every line where it is in a setting or a cylinder. A form can
+then still show what they come to while the fault is put right. It holds
 `needs_duration`, the number of every line that stays at its depth without a duration, so each
 can be marked at once rather than one at a time.
 

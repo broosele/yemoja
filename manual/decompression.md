@@ -11,16 +11,21 @@ water type: what the ceiling was at each moment, how much longer you could have 
 gas each cylinder gave up, what the oxygen clocks reached, how long before you may fly, and what
 it thinks you did wrong. The same questions, asked of a plan, are a dive plan.
 
-**There is no screen for any of it yet.** What you see on a dive's graph is still what your dive
-computer recorded at the time:
+**A dive's page shows both answers**: what your dive computer recorded at the time, and what the
+model makes of the same profile.
 
-- the **NDL** on the graph's right axis is your computer's own no-decompression time;
-- the **stepped line** is the stop your computer set, and the water above it is shaded red
-  while a stop stood;
-- whether a dive was a **decompression dive** is read off those same two recordings, as
+- From your computer: the **NDL** among the lines the graph's right axis can show is its own
+  no-decompression time, and the **stepped line** is the stop it set, with the water above it
+  shaded red while a stop stood.
+- From the model: the **ceiling** is drawn over the depth, and the right axis offers what the
+  model works out, NDL, TTS, GF99, END, pO₂, CNS, OTU and each cylinder's pressure. One your
+  computer also recorded is titled *calculated*, so the two can be told apart. Under the graph
+  are the model's figures, the deepest stop, the gas used, the oxygen clocks and the waits.
+- Whether a dive was a **decompression dive** is read off your computer's recording, and from
+  the model only where the recording holds neither stops nor a no-decompression time, as
   [data-fields.md](data-fields.md) explains under `deco`.
 
-The two answers will sit beside each other rather than one replacing the other. Your computer
+The two answers sit beside each other rather than one replacing the other. Your computer
 decided at the time, with you in the water and with settings this application cannot reproduce;
 Yemoja's is a second opinion arrived at afterwards, and both are honest answers to different
 questions.
@@ -175,8 +180,9 @@ The pair does two different jobs, which is why there are two. GF Low decides how
 the ascent is held back; GF High decides how much loading you are willing to reach the
 surface carrying.
 
-The gradient factors a recording holds are the ones your computer was set to. Yemoja does
-not recalculate a logged dive with them, or with any others.
+The gradient factors a recording holds are the ones your computer was set to, and they are the
+ones Yemoja works a logged dive out with. A recording that holds none is not worked out, except
+to answer `deco`, where Yemoja takes 30/70.
 
 ### The ceiling
 
@@ -206,7 +212,7 @@ settings, so what Yemoja says about a dive you have done does not change when a 
 
 **GF99** is how close your most loaded compartment is to its limit at your current depth, as a
 gradient factor: 0 % is no excess pressure at all, and 100 % is the M-value itself. On the
-bottom it reads 0 %, because your tissues are still taking gas on. It rises on the way up, and
+bottom the graph shows 0 %, because your tissues are still taking gas on. It rises on the way up, and
 a stop holds it near the gradient factor the plan uses there. A figure past your GF high means
 you are closer to the limit than you chose to go.
 
