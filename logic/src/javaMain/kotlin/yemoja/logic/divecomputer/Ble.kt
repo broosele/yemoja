@@ -227,6 +227,11 @@ internal class Connection private constructor(
             try {
                 peripheral.observe(heard) { ready.complete(Unit) }.collect { arrived.put(it) }
             } catch (ended: Exception) {
+                // Said where it is not the connection closing, because a listener that never
+                // started hears nothing and the read then waits for answers that cannot come.
+                if (ended !is kotlinx.coroutines.CancellationException) {
+                    System.err.println("bluetooth: listening ended: $ended")
+                }
                 ready.complete(Unit)
             }
         }
@@ -234,7 +239,12 @@ internal class Connection private constructor(
     }
 
     override fun send(bytes: ByteArray) {
-        runBlocking { peripheral.write(writing, bytes, writeType) }
+        try {
+            runBlocking { peripheral.write(writing, bytes, writeType) }
+        } catch (failed: Exception) {
+            System.err.println("bluetooth: writing failed: $failed")
+            throw failed
+        }
     }
 
     override fun received(milliseconds: Long): ByteArray? =
@@ -271,6 +281,7 @@ internal class Connection private constructor(
                 runBlocking {
                     withTimeoutOrNull(CONNECTING) {
                         peripheral.connect()
+                        largerPackets(peripheral)
                         val services = peripheral.services.first { it != null }.orEmpty()
                         val offered = services.flatMap { service ->
                             service.characteristics.map {
@@ -527,3 +538,13 @@ internal class Custom(private val wire: Wire, private val session: Session = Ses
         private val LIVE = HashSet<Custom>()
     }
 }
+
+/**
+ * Ask [peripheral] for the largest packets the link allows, before anything is said over it.
+ *
+ * A Perdix 2 sends each answer as one packet cut to the size the link has agreed, so at the
+ * smallest, 20 bytes, an answer longer than that loses its end and the read waits for it until it
+ * times out. Windows asks for larger packets on connecting; Android leaves it to the application.
+ * What the desktop platforms do themselves is not asked again.
+ */
+internal expect suspend fun largerPackets(peripheral: Peripheral)

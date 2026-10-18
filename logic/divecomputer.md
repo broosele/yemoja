@@ -299,7 +299,15 @@ Decided and not built, or built and not proven. Each is here rather than in some
   beside them that it stopped and why. Until 2026-10-18 all three read as a computer with nothing
   new: a Perdix 2 on a phone said every dive was in the logbook while its newest was missing. The
   library's errors and warnings also go to the system log as they come, which on a phone is where
-  a failure's detail is found. Why that Perdix read failed is not yet known.
+  a failure's detail is found.
+- **On Android the application asks for larger packets.** That Perdix 2 answered its first
+  question in 18 bytes and its second, the firmware version, in more than 20, and only the first 20
+  arrived: Android connects at the smallest packet, 20 bytes, and leaves asking for more to the
+  application, and the Perdix sends each answer as one packet cut to that size rather than
+  several. Windows asks for larger packets on connecting, which is why the same Perdix read there.
+  Asked for the largest Android allows, the Perdix agreed to 80 bytes and was read whole, on a
+  Pixel 9a on 2026-10-18. The i330R's answers fit in 20 bytes, which is why it read on the phone
+  before this. `largerPackets` asks, on Android alone.
 - **The fix crosses the port, as the dive's first one.** No parser answers the location
   *field*, but the Shearwater driver fills a location *sample*, and a Perdix sends one on nearly
   every dive: always on the first sample, and sometimes a second on the last. So the walk keeps
