@@ -85,9 +85,18 @@ class CasesTest {
         val case = oneOf("""[{"runtime": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.3}]""")
         assertEquals("30", case.planned.gradientLow, "the form's percentage")
         assertEquals(
-            "case 1 gradient_factor_low should be 0 to 1, but was 30",
+            "case 1 gradient_factor_low should be 0.01 to 1, but was 30",
             assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 20}], "gradient_factor_low": 30}""")).reason,
         )
+    }
+
+    @Test
+    fun `a gradient factor under one percent is refused as the file is read`() {
+        assertEquals(
+            "case 1 gradient_factor_high should be 0.01 to 1, but was 0",
+            assertIs<Read.Wrong>(read("""{"runtime": [{"depth": 20}], "gradient_factor_high": 0}""")).reason,
+        )
+        oneOf("""[{"runtime": [{"depth": 20, "duration": 600}], "gradient_factor_low": 0.01}]""")
     }
 
     @Test

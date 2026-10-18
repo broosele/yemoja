@@ -114,7 +114,7 @@ class SettingsTest {
     fun `a value outside the range is refused rather than written`() {
         val (chosen, store) = settings()
         val refused = assertIs<Outcome.Refused>(chosen.choose(Settings.DEFAULT_GRADIENT_FACTOR_LOW, 30.0))
-        assertTrue("GF low should be 0.0 to 1.0, but was 30.0" in refused.reason, refused.reason)
+        assertTrue("GF low should be 0.01 to 1.0, but was 30.0" in refused.reason, refused.reason)
         assertTrue(!store.isFile("settings.json"))
     }
 

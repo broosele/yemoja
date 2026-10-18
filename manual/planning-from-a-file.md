@@ -92,7 +92,7 @@ factor as a proportion.
 
 | Field | The window's name |
 |---|---|
-| `gradient_factor_low`, `gradient_factor_high` | GF low, GF high, from 0 to 1; 0.3 and 0.7 if left out |
+| `gradient_factor_low`, `gradient_factor_high` | GF low, GF high, from 0.01 to 1; 0.3 and 0.7 if left out |
 | `descent_rate`, `ascent_rate` | Descent rate, Ascent rate |
 | `last_stop` | Last stop |
 | `gas_switch_stops` | Gas switches between stops, `true` or `false`; `false` if left out |

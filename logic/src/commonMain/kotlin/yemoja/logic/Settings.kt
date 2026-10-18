@@ -249,11 +249,19 @@ class Settings internal constructor(private val store: FileStore) {
 
     companion object {
 
-        /** The low gradient factor a new plan starts with, from 0 to 1. `GUI-42`. */
-        val DEFAULT_GRADIENT_FACTOR_LOW = NumberSetting("default_gradient_factor_low", "GF low", "", 0.3, 0.0..1.0)
+        /**
+         * What a gradient factor may be, as a proportion: from 0.01 to 1.
+         *
+         * The planner takes one as a percentage from 1, `GUI-41`, so anything less is refused here
+         * too rather than accepted and then refused by the plan it starts.
+         */
+        val GRADIENT_FACTORS: ClosedFloatingPointRange<Double> = 0.01..1.0
 
-        /** The high gradient factor a new plan starts with, from 0 to 1. `GUI-42`. */
-        val DEFAULT_GRADIENT_FACTOR_HIGH = NumberSetting("default_gradient_factor_high", "GF high", "", 0.7, 0.0..1.0)
+        /** The low gradient factor a new plan starts with. `GUI-42`. */
+        val DEFAULT_GRADIENT_FACTOR_LOW = NumberSetting("default_gradient_factor_low", "GF low", "", 0.3, GRADIENT_FACTORS)
+
+        /** The high gradient factor a new plan starts with. `GUI-42`. */
+        val DEFAULT_GRADIENT_FACTOR_HIGH = NumberSetting("default_gradient_factor_high", "GF high", "", 0.7, GRADIENT_FACTORS)
 
         /** How fast a new plan descends, in metres a minute. */
         val DEFAULT_DESCENT_RATE =

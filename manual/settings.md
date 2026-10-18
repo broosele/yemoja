@@ -65,7 +65,7 @@ settings file cannot declare any. Each is named after the field of a plan it fil
 `default_` in front:
 
 - `default_gradient_factor_low`, `default_gradient_factor_high` — the gradient factors a new dive
-  plan starts with, written from 0 to 1. What divers write as 20/80 is `0.2` and `0.8`; the
+  plan starts with, written from 0.01 to 1. What divers write as 20/80 is `0.2` and `0.8`; the
   *Settings* form takes them as percentages, 20 and 80. Without a choice, 30 and 70: a common
   middle setting, and not a recommendation. How conservative a plan is, is yours to decide, so
   set your own.
