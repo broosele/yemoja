@@ -14,7 +14,8 @@ line answers again.
 **A default shows through an empty box, in italics**, the way every value Yemoja works out for
 itself is shown. So you can see at a glance which of your settings you have actually chosen: those
 are in ordinary type. Typing over an italic value chooses it; emptying the box again gives the
-default back.
+default back. A menu or a tick you have chosen has **Revert** under it instead, there being no box
+to empty, and Save then gives the default back the same way.
 
 **These files belong to Yemoja, not to your data.** Everything in `data-format.md` and
 `data-fields.md` is yours — a format that stays readable and that Yemoja promises not to

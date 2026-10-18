@@ -88,6 +88,8 @@ class ShownSettingTest {
         assertEquals("the default", answeredSaid(null, Settings.DEFAULT_ASCENT_RATE))
         assertEquals("the default", answeredSaid(null, Settings.DEFAULT_GRADIENT_FACTOR_LOW))
         assertEquals("not set", answeredSaid(null, Settings.AGENT_COMMAND), "the command has no default")
+        assertEquals("the default", answeredSaid(null, Settings.DEFAULT_WATER_TYPE), "a menu has one")
+        assertEquals("the default", answeredSaid(null, Settings.DEFAULT_OXYGEN_NARCOTIC), "and so has a tick")
         assertEquals("set on this device", answeredSaid(SettingsFile.LOCAL, Settings.AGENT_COMMAND))
     }
 
@@ -123,6 +125,30 @@ class ShownSettingTest {
         settings.choose(Settings.DEFAULT_OXYGEN_NARCOTIC, false)
         choosing.fill(settings)
         assertEquals("false", choosing.typed[Settings.DEFAULT_OXYGEN_NARCOTIC.name])
+    }
+
+    @Test
+    fun `a word or a tick somebody chose is reverted to the default on Save`() {
+        val settings = settings()
+        settings.choose(Settings.DEFAULT_WATER_TYPE, "fresh")
+        settings.choose(Settings.DEFAULT_OXYGEN_NARCOTIC, false)
+        val choosing = Choosing()
+        choosing.fill(settings)
+        choosing.typed[Settings.DEFAULT_WATER_TYPE.name] = REVERTED
+        choosing.typed[Settings.DEFAULT_OXYGEN_NARCOTIC.name] = REVERTED
+        assertEquals("Saved.", saved(settings, choosing))
+        assertEquals(null, settings.answeredBy(Settings.DEFAULT_WATER_TYPE), "the choice is taken away")
+        assertEquals(null, settings.answeredBy(Settings.DEFAULT_OXYGEN_NARCOTIC))
+        assertEquals(false, Settings.DEFAULT_WATER_TYPE.name in choosing.typed, "and the form shows the default")
+    }
+
+    @Test
+    fun `reverting a word nobody chose changes nothing`() {
+        val settings = settings()
+        val choosing = Choosing()
+        choosing.fill(settings)
+        choosing.typed[Settings.DEFAULT_WATER_TYPE.name] = REVERTED
+        assertEquals("Nothing was changed.", saved(settings, choosing))
     }
 
     @Test

@@ -31,6 +31,7 @@ import yemoja.logic.Outcome
 import yemoja.logic.NumberSetting
 import yemoja.logic.Setting
 import yemoja.logic.Settings
+import yemoja.logic.TextSetting
 import yemoja.logic.Universe
 import yemoja.logic.isMinutes
 import yemoja.logic.isPercentage
@@ -199,13 +200,21 @@ private fun SettingLine(setting: Setting, settings: Settings, choosing: Choosing
         )
         is ChoiceSetting -> ChoiceRow(
             setting = setting,
-            chosen = choosing.typed[setting.name] ?: settings.choice(setting),
+            chosen = when (val typed = choosing.typed[setting.name]) {
+                null -> settings.choice(setting)
+                REVERTED -> setting.default
+                else -> typed
+            },
             answered = answered,
             choosing = choosing,
         )
         is FlagSetting -> FlagRow(
             setting = setting,
-            ticked = choosing.typed[setting.name]?.toBooleanStrictOrNull() ?: settings.flag(setting),
+            ticked = when (val typed = choosing.typed[setting.name]) {
+                null -> settings.flag(setting)
+                REVERTED -> setting.default
+                else -> typed.toBooleanStrictOrNull() ?: settings.flag(setting)
+            },
             answered = answered,
             choosing = choosing,
         )
@@ -269,7 +278,8 @@ private fun SettingRow(
  * One setting of a fixed set: what it is called, a menu of its words, and where it came from.
  *
  * [chosen] is the word it holds, which is the application's own until somebody picks one; picked or
- * not is what decides how it reads. `GUI-49`.
+ * not is what decides how it reads. `GUI-49`. A menu has no empty entry to pick, so **Revert** under
+ * a picked word is how the default comes back, as emptying a box does for a number.
  */
 @Composable
 private fun ChoiceRow(
@@ -294,7 +304,7 @@ private fun ChoiceRow(
             Pick(
                 chosen = wordSaid(chosen),
                 options = setting.choices.map { wordSaid(it) },
-                italic = choosing.typed[setting.name] == null,
+                italic = choosing.typed[setting.name].isNullOrEmpty(),
             ) { index ->
                 choosing.typed[setting.name] = setting.choices[index]
                 choosing.said = null
@@ -306,13 +316,16 @@ private fun ChoiceRow(
             color = MaterialTheme.colorScheme.outline,
         )
     }
+    // A line of its own under the box: half the planner's width leaves no room beside the note.
+    RevertSetting(setting, choosing, Modifier.padding(start = settingLabel() + GAP))
 }
 
 /**
  * One yes-or-no setting: what it is called, a tick, and where it came from.
  *
  * [ticked] is what it holds, the application's own until somebody ticks or unticks it. Held in the
- * form as `true` or `false`, as a settings file writes it.
+ * form as `true` or `false`, as a settings file writes it. **Revert** brings the default back, an
+ * unticked box being an answer of its own.
  */
 @Composable
 private fun FlagRow(
@@ -348,7 +361,31 @@ private fun FlagRow(
             color = MaterialTheme.colorScheme.outline,
         )
     }
+    // A line of its own under the box: half the planner's width leaves no room beside the note.
+    RevertSetting(setting, choosing, Modifier.padding(start = settingLabel() + GAP))
 }
+
+/** **Revert** for a menu or a tick somebody chose, which Save then takes away. */
+@Composable
+private fun RevertSetting(setting: Setting, choosing: Choosing, modifier: Modifier = Modifier) {
+    if (choosing.typed[setting.name].isNullOrEmpty()) return
+    TextButton(
+        modifier = modifier,
+        onClick = {
+            choosing.typed[setting.name] = REVERTED
+            choosing.said = null
+        },
+    ) {
+        Text("Revert")
+    }
+}
+
+/**
+ * What a menu or a tick holds in the form once **Revert** is pressed: the choice to be taken away.
+ *
+ * Distinct from nothing at all, which is a setting nobody chose and Save leaves alone.
+ */
+internal const val REVERTED: String = ""
 
 /** A setting's word as a menu shows it: `salt` as *Salt*. */
 internal fun wordSaid(word: String): String = word.replaceFirstChar { it.uppercase() }
@@ -398,7 +435,7 @@ internal const val AGENT_SETUP: String =
  * All or nothing: every box is read before anything is written, so one that will not do leaves the
  * rest as they were rather than half the form saved.
  */
-private fun saved(settings: Settings, choosing: Choosing): String {
+internal fun saved(settings: Settings, choosing: Choosing): String {
     val chosen = LinkedHashMap<NumberSetting, Double?>()
     for (setting in Settings.OFFERED) {
         val typed = choosing.typed[setting.name].orEmpty()
@@ -408,15 +445,24 @@ private fun saved(settings: Settings, choosing: Choosing): String {
             is Entered.Value -> chosen[setting] = read.value
         }
     }
-    val picked = LinkedHashMap<ChoiceSetting, String>()
+    val picked = LinkedHashMap<ChoiceSetting, String?>()
     for (setting in Settings.OFFERED_CHOICES) {
         val typed = choosing.typed[setting.name] ?: continue
-        if (typed != settings.choice(setting)) picked[setting] = typed
+        if (typed == REVERTED) {
+            if (settings.answeredBy(setting) != null) picked[setting] = null
+        } else if (typed != settings.choice(setting)) {
+            picked[setting] = typed
+        }
     }
-    val ticked = LinkedHashMap<FlagSetting, Boolean>()
+    val ticked = LinkedHashMap<FlagSetting, Boolean?>()
     for (setting in Settings.OFFERED_FLAGS) {
-        val typed = choosing.typed[setting.name]?.toBooleanStrictOrNull() ?: continue
-        if (typed != settings.flag(setting)) ticked[setting] = typed
+        val typed = choosing.typed[setting.name] ?: continue
+        if (typed == REVERTED) {
+            if (settings.answeredBy(setting) != null) ticked[setting] = null
+            continue
+        }
+        val read = typed.toBooleanStrictOrNull() ?: continue
+        if (read != settings.flag(setting)) ticked[setting] = read
     }
     val command = choosing.typed[Settings.AGENT_COMMAND.name].orEmpty().trim()
     val commandMoved = command != settings.text(Settings.AGENT_COMMAND).orEmpty()
@@ -485,7 +531,11 @@ internal fun chosenOf(setting: NumberSetting, typed: String): Entered {
 internal fun answeredSaid(file: SettingsFile?, setting: Setting): String = when (file) {
     SettingsFile.LOCAL -> "set on this device"
     SettingsFile.LOGBOOK -> "set in this logbook"
-    null -> if ((setting as? NumberSetting)?.default == null) "not set" else "the default"
+    null -> when (setting) {
+        is NumberSetting -> if (setting.default == null) "not set" else "the default"
+        is TextSetting -> "not set"
+        is ChoiceSetting, is FlagSetting -> "the default"
+    }
 }
 
 /** The unit written after a setting's box. */
