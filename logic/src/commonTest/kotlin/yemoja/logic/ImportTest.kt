@@ -605,6 +605,26 @@ class DiveCylindersTest {
     }
 
     @Test
+    fun `the dive's own cylinders are what its primary recording is worked out with`() {
+        val (_, universe) = holding(
+            """{"gas_sources": {"g1": {"gas_type": "EAN50", "volume": 12}}, "profiles": {"p1": {
+                "water_type": "fresh", "atmospheric_pressure": 1.0, "gradient_factor_low": 0.3,
+                "gradient_factor_high": 0.7, "depth": [[0, 10], [1800, 10]],
+                "pressures": {"g1": [[0, 200], [1800, 170]]},
+                "gas_sources": {"g1": {"gas_type": "AIR"}}, "gas_switches": [[0, "*g1"]]}}}""",
+        )
+        val dive = universe.logbook["d#0"]!!
+        val recording = entry(dive, "profiles", "p1")
+        val sac = (entry(dive, "gas_sources", "g1").single<Double>("sac") as? Result.Usable)?.value
+        val ambient = 1.0 + 1000 * 9.80665 * 10 / 100_000
+        assertEquals(30.0 * 12 / 30 / ambient, sac ?: Double.NaN, 1e-9, "the volume written on the dive")
+        val oxygen = assertIs<Evaluated.Done>(evaluate(recording)).oxygenPressure
+        val breathed = (oxygen.valueAt(0) as Element.Usable).value as Double
+        assertTrue(breathed > 0.5, "EAN50 at ten metres, not the recording's air, but was $breathed")
+        assertEquals("AIR", gasOf(recording), "the recording still says what its computer said")
+    }
+
+    @Test
     fun `a dive that holds its own keeps them`() {
         val (_, universe) = holding(
             two.replace(""""primary_profile": "*p1",""", """"primary_profile": "*p1", "gas_sources": {"g9": {"gas_type": "EAN40"}},"""),

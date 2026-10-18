@@ -9,6 +9,7 @@ import yemoja.data.Stored
 import yemoja.logic.Evaluated
 import yemoja.logic.Refusal
 import yemoja.logic.Severity
+import yemoja.logic.sourcesRootOf
 
 /*
  * What the model says about a run, as a screen needs it: a line to draw over the profile, other
@@ -208,7 +209,7 @@ internal fun ending(pressures: Series): String? {
 /** The gas sources a run breathes from: its own where it keeps any, and the dive's otherwise. */
 @Suppress("UNCHECKED_CAST")
 private fun sourcesOf(dive: Item, profile: Item): Map<String, OwnedItem> {
-    val root = profile.rootOf("gas_sources") ?: dive
+    val root = sourcesRootOf(profile) ?: dive
     val read = (root.read("gas_sources") as? Result.Usable)?.value as? Map<String, Element<Any>>
     return read.orEmpty().mapNotNull { (key, element) ->
         ((element as? Element.Usable)?.value as? OwnedItem)?.let { key to it }

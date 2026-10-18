@@ -1448,8 +1448,7 @@ internal fun breathedBy(run: Run): Breathing? {
 }
 
 /**
- * The sources [profile] breathes from, as a run holds them: its own where it keeps any, and the
- * dive's otherwise.
+ * The sources [profile] breathes from, as a run holds them: those [sourcesRootOf] finds.
  *
  * A source with no `gas_type` is air, that being what a cylinder nobody said anything about holds.
  * Its `sac` is what it is breathed at: written on a plan, and worked out from the pressures of a
@@ -1457,7 +1456,7 @@ internal fun breathedBy(run: Run): Breathing? {
  * nought.
  */
 private fun sourcesOf(profile: Item): Map<String, Source> {
-    val root = profile.rootOf("gas_sources") ?: return emptyMap()
+    val root = sourcesRootOf(profile) ?: return emptyMap()
     return ((root.keyed<OwnedItem>("gas_sources") as? Result.Usable)?.value.orEmpty())
         .mapNotNull { (key, entry) -> (entry as? Element.Usable)?.let { key to it.value } }
         .associate { (key, source) ->

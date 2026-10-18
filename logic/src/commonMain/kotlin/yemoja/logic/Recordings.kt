@@ -97,6 +97,26 @@ internal fun divesSources(dive: Item): Result<Any> {
 }
 
 /**
+ * The item holding the cylinders [profile] is worked out with, or null where nothing from it
+ * outwards declares any.
+ *
+ * **A correction to the primary recording's cylinders is on the dive**, [overriding], so the dive
+ * the user has written cylinders on lends them to its primary recording. The recording still
+ * holds what its computer said, and the dive's set keeps its keys, so its gas switches name the
+ * same cylinders. Any other profile reads its own, or the dive's where it keeps none. `RECON-7`.
+ */
+fun sourcesRootOf(profile: Item): Item? {
+    val dive = (profile as? OwnedItem)?.parent
+    if (dive?.description == Types.DIVE && profile.description == PROFILE && isRecording(profile, emptyList()) &&
+        (primaryProfile(dive) as? Result.Usable)?.value === profile
+    ) {
+        val written = dive.read(SOURCES) as? Result.Usable
+        if (written?.origin == Result.Origin.OVERRIDDEN && !(written.value as? Map<*, *>).isNullOrEmpty()) return dive
+    }
+    return profile.rootOf(SOURCES)
+}
+
+/**
  * [write] as it should land, which is on the dive where it reaches the primary recording's own
  * cylinders, and [write] itself anywhere else.
  *

@@ -47,7 +47,7 @@ internal class Stretch(
  * figure a diver compares against corrects for either.
  */
 internal fun stretchesOf(profile: Item): List<Stretch> {
-    val sources = profile.rootOf("gas_sources")?.let { entriesOf(it, "gas_sources") }
+    val sources = sourcesRootOf(profile)?.let { entriesOf(it, "gas_sources") }
         ?: return emptyList()
     val depth = (profile.read("depth") as? Result.Usable)?.value as? Series ?: return emptyList()
     val switches = (profile.read("gas_switches") as? Result.Usable)?.value as? Series
@@ -143,7 +143,7 @@ internal fun sourcesSac(source: Item): Result<Any> {
  * the time given to the others is then too long. `LOGIC-33`.
  */
 private fun fromEnds(source: Item, key: String, profile: Item): Result<Any> {
-    val sources = profile.rootOf("gas_sources")?.let { entriesOf(it, "gas_sources") }
+    val sources = sourcesRootOf(profile)?.let { entriesOf(it, "gas_sources") }
         ?: return Result.Absent
     val drop = dropOf(source)?.takeIf { it > 0 } ?: return Result.Absent
     val volume = (source.single<Double>("volume") as? Result.Usable)?.value ?: return Result.Absent

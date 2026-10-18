@@ -197,7 +197,8 @@ All three can be corrected where the calculation is wrong.
   profile, which keeps the cylinders its computer reported. Write the dive's own to correct them,
   to name the cylinder you own or to say what each was for: editing one in Yemoja copies them
   all onto the dive with your change, and from then on they are yours rather than the
-  recording's. A download never writes them, so a second computer's recording leaves them alone.
+  recording's, and the primary recording's SAC and decompression are worked out with them. A
+  download never writes them, so a second computer's recording leaves them alone.
 - `name` (text, derived) — the dive's date and its number within that day, as
   `2026-02-23#0`. This is what a dive is listed and linked as.
 - `planned` (true or false, derived) — whether this dive is still ahead of you. True where the

@@ -6,6 +6,7 @@ import yemoja.data.KeyReference
 import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.data.Series
+import yemoja.logic.sourcesRootOf
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.log10
@@ -70,8 +71,8 @@ internal class Event(val minute: Double, val label: String, val marking: Marking
  */
 internal fun eventsOf(dive: Item, profile: Item): List<Event> {
     val marks = ArrayList<Event>()
-    // The run's own cylinders, or the dive's where it keeps none. `RECON-7`.
-    val sources = keyedOf(profile.rootOf("gas_sources") ?: dive, "gas_sources")
+    // The cylinders the run is worked out with. `RECON-7`.
+    val sources = keyedOf(sourcesRootOf(profile) ?: dive, "gas_sources")
     seriesOf(profile, "gas_switches")?.let { switches ->
         for (at in 0..<switches.size) {
             val key = ((switches.valueAt(at) as? Element.Usable)?.value as? KeyReference)?.key
@@ -187,8 +188,8 @@ internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
     seriesOf(profile, "temperature")?.let {
         overlays += Overlay("Temperature", "°C", Line("Temperature", pointsOf(it)))
     }
-    // The run's own cylinders, or the dive's where it keeps none. `RECON-7`.
-    val sources = keyedOf(profile.rootOf("gas_sources") ?: dive, "gas_sources")
+    // The cylinders the run is worked out with. `RECON-7`.
+    val sources = keyedOf(sourcesRootOf(profile) ?: dive, "gas_sources")
     for ((key, series) in keyedSeriesOf(profile, "pressures")) {
         val source = sources[key]?.let { entryLabelOf(key, it) }
         val tank = source ?: key

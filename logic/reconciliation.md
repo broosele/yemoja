@@ -338,8 +338,10 @@ columns mapped by the user rather than guessed.
     primary's, being derived, and so are the cylinders.
   - **The dive's cylinders are derived from its primary profile, and the user's to override.**
     An edit to the cylinders the dive shows copies them all onto the dive with the edit laid on,
-    and from then on they are the user's. Another recording's cylinders are not the dive's, and
-    editing them is refused. A download never writes the dive's own.
+    and from then on they are the user's. The primary recording is then worked out with the
+    dive's, its SAC and its model alike, while it still holds what its computer said. Another
+    recording's cylinders are not the dive's, and editing them is refused. A download never
+    writes the dive's own.
 
   Which fields count is narrower than the rule sounds. It holds for sources that carry no ids,
   a download, a UDDF file and a Diving Log export; another Yemoja logbook's dive is the same item
@@ -347,7 +349,8 @@ columns mapped by the user rather than guessed.
   from it keeps them as the dive's own rather than a recording's.
 
   A dive with no recording yet has no first computer and takes the arrival whole. Built as
-  `recordingOnto` in `Import.kt`, and `divesSources` and `overriding` in `Recordings.kt`.
+  `recordingOnto` in `Import.kt`, and `divesSources`, `sourcesRootOf` and `overriding` in
+  `Recordings.kt`.
 
   Found by doing it: a hundred and two i330R recordings laid onto dives a Perdix had already
   recorded, beside the application rather than through it, for exactly this reason.
