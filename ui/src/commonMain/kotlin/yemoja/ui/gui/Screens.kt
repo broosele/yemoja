@@ -1493,7 +1493,7 @@ private fun arrive(universe: Universe, reading: Reading, changer: Changer) {
     universe.stopImporting()
     val outcome = universe.arrive(read)
     reading.arrived = arrivedIn(universe.importing)
-    reading.said = outcomeOf(outcome, reading.arrived)
+    reading.said = outcomeOf(outcome, reading.arrived) + brokenOffSaid(read.stopped, outcome)
     reading.stage = Stage.DONE
     if (reading.arrived == 0) reading.read = null
     changer.changed()

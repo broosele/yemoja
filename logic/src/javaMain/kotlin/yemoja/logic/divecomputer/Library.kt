@@ -36,6 +36,10 @@ internal interface Libdivecomputer : Library {
 
     fun dc_context_free(context: Pointer?): Int
 
+    fun dc_context_set_loglevel(context: Pointer?, loglevel: Int): Int
+
+    fun dc_context_set_logfunc(context: Pointer?, logfunc: LogCallback, userdata: Pointer?): Int
+
     fun dc_descriptor_iterator_new(iterator: PointerByReference, context: Pointer?): Int
 
     fun dc_iterator_next(iterator: Pointer?, item: PointerByReference): Int
@@ -130,6 +134,19 @@ internal interface Libdivecomputer : Library {
     ): Int
 
     fun dc_parser_destroy(parser: Pointer?): Int
+
+    /** `dc_logfunc_t`: one message the library writes about what it is doing, at its level. */
+    fun interface LogCallback : Callback {
+        fun invoke(
+            context: Pointer?,
+            loglevel: Int,
+            file: String?,
+            line: Int,
+            function: String?,
+            message: String?,
+            userdata: Pointer?,
+        )
+    }
 
     /** `dc_dive_callback_t`: one dive's bytes, and a non-zero answer to carry on. */
     fun interface DiveCallback : Callback {
@@ -235,6 +252,21 @@ internal interface Libdivecomputer : Library {
 
         /** `DC_STATUS_CANCELLED`: given up, by the user rather than by a fault. */
         const val CANCELLED: Int = -10
+
+        /** `DC_STATUS_NODEVICE`: nothing answered where the device was looked for. */
+        const val NODEVICE: Int = -4
+
+        /** `DC_STATUS_NOACCESS`: the device or the system refused the connection. */
+        const val NOACCESS: Int = -5
+
+        /** `DC_STATUS_PROTOCOL`: the device answered something the driver did not expect. */
+        const val PROTOCOL: Int = -8
+
+        /** `DC_STATUS_DATAFORMAT`: what the device sent could not be read. */
+        const val DATAFORMAT: Int = -9
+
+        /** `DC_LOGLEVEL_WARNING`: errors and warnings, and nothing chattier. */
+        const val WARNINGS: Int = 2
     }
 }
 

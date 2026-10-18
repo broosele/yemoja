@@ -30,6 +30,9 @@ private class Counting(private val tokens: List<String> = listOf("aa", "bb")) : 
     /** What to do between the first dive and the second, as a device would between blocks. */
     var between: () -> Unit = {}
 
+    /** Why the read breaks off after its dives, as a link that drops would, or absent where it does not. */
+    var breaksOff: String? = null
+
     override fun recordings(session: Session): Sequence<Recording> {
         offered = session.accessCode("Reef 77")
         resumedFrom = session.resume("77")
@@ -47,6 +50,7 @@ private class Counting(private val tokens: List<String> = listOf("aa", "bb")) : 
             between()
         }
         session.progress(tokens.size * 100L, tokens.size * 100L)
+        breaksOff?.let { session.stopped(it) }
         return held.asSequence()
     }
 }
@@ -96,6 +100,28 @@ class DeviceReadTest {
         read.run()
         val outcome = assertIs<Outcome.Refused>(universe.arrive(read))
         assertTrue("Nothing new" in outcome.reason, outcome.reason)
+    }
+
+    @Test
+    fun `a read that broke off with nothing new says it stopped, not that nothing is new`() {
+        val universe = universe()
+        val device = Counting(listOf("aa")).apply { breaksOff = "after 1 dives: it stopped answering" }
+        val read = universe.readerOf(device)
+        read.run()
+        val outcome = assertIs<Outcome.Refused>(universe.arrive(read))
+        assertTrue("stopped after 1 dives: it stopped answering" in outcome.reason, outcome.reason)
+        assertTrue("Nothing new" !in outcome.reason, outcome.reason)
+    }
+
+    @Test
+    fun `a read that broke off still offers the dives that arrived`() {
+        val universe = universe()
+        val device = Counting().apply { breaksOff = "after 2 dives: the link failed" }
+        val read = universe.readerOf(device)
+        read.run()
+        assertIs<Outcome.Done>(universe.arrive(read))
+        assertEquals(1, assertNotNull(universe.importing).let { arrivedOf(it) }, "bb is offered")
+        assertEquals("after 2 dives: the link failed", read.stopped)
     }
 
     @Test

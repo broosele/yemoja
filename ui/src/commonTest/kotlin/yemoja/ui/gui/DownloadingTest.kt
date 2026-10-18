@@ -357,3 +357,19 @@ class DownloadingTest {
         assertEquals(50.4215, (made.single<Double>("latitude") as yemoja.data.Result.Usable).value)
     }
 }
+
+/** What a download says where it broke off after some dives. */
+class BrokenOffTest {
+
+    @Test
+    fun `a read that broke off beside offered dives says so and how to get the rest`() {
+        val said = brokenOffSaid("after 3 dives: the link failed", yemoja.logic.Outcome.Done())
+        assertEquals(" It stopped after 3 dives: the link failed; download again for the rest.", said)
+    }
+
+    @Test
+    fun `nothing is added where the read finished, or where the refusal already says it`() {
+        assertEquals("", brokenOffSaid(null, yemoja.logic.Outcome.Done()))
+        assertEquals("", brokenOffSaid("after 3 dives: the link failed", yemoja.logic.Outcome.Refused("stopped")))
+    }
+}

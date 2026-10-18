@@ -612,6 +612,14 @@ class Universe(
         }
         val staged = Download.read(fresh.asSequence(), logbook)
         if (staged.allOf(Types.DIVE).isEmpty()) {
+            // A read that broke off has not shown there is nothing new, only that what arrived
+            // was not.
+            read.stopped?.let {
+                return Outcome.Refused(
+                    "The download from ${read.name} stopped $it. None of the dives that arrived is new; " +
+                        "download again for the rest.",
+                )
+            }
             return Outcome.Refused(
                 "Nothing new to download. Every dive on ${read.name} is in this logbook already.",
             )

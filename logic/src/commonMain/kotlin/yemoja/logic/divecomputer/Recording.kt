@@ -204,6 +204,13 @@ interface Session {
     fun progress(done: Long, total: Long) {}
 
     /**
+     * Told why the read broke off, where it did after some dives had arrived. Those dives are
+     * still handed over, a link that drops keeping what it got, as divecomputer.md records; a read
+     * that got none fails instead.
+     */
+    fun stopped(reason: String) {}
+
+    /**
      * Whether the user has given the download up.
      *
      * Asked from the thread doing the reading, between one block and the next, so it may be set

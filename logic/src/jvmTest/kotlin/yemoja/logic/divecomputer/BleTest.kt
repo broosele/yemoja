@@ -300,3 +300,53 @@ class GuardedTest {
         assertContentEquals(bytes(1, 2, 3, 4), session.given?.second)
     }
 }
+
+/** A read that fails says so, rather than reading as a computer with nothing new. */
+class FailedReadTest {
+
+    /** The library's Perdix 2, with a context to open it in, or absent where the library is not here. */
+    private fun perdix(): Pair<Libdivecomputer, Pair<com.sun.jna.Pointer?, com.sun.jna.Pointer?>>? {
+        val library = Libdivecomputer.LOADED ?: return null
+        val context = com.sun.jna.ptr.PointerByReference()
+        if (library.dc_context_new(context) != Libdivecomputer.SUCCESS) return null
+        val iterator = com.sun.jna.ptr.PointerByReference()
+        library.dc_descriptor_iterator_new(iterator, context.value)
+        val item = com.sun.jna.ptr.PointerByReference()
+        var found: com.sun.jna.Pointer? = null
+        while (library.dc_iterator_next(iterator.value, item) == Libdivecomputer.SUCCESS) {
+            if (library.dc_descriptor_get_product(item.value) == "Perdix 2" &&
+                library.dc_descriptor_filter(item.value, Transport.BLE, "Perdix 2") != 0
+            ) {
+                found = item.value
+            }
+        }
+        return found?.let { library to (context.value to it) }
+    }
+
+    @Test
+    fun `a computer that never answers is a failed read, not an empty one`() {
+        val (library, held) = perdix() ?: return
+        val (context, model) = held
+        val silent = Attached(library, context, model, "Perdix 2 over Bluetooth") { session ->
+            Custom(Laid(name = "Perdix 2"), session).opened(library, context)
+        }
+        val failed = kotlin.test.assertFailsWith<ReadFailed> { silent.recordings().toList() }
+        kotlin.test.assertTrue("stopped answering" in failed.message.orEmpty(), failed.message)
+    }
+
+    @Test
+    fun `a computer that cannot be reached is a failed read`() {
+        val (library, held) = perdix() ?: return
+        val (context, model) = held
+        val unreachable = Attached(library, context, model, "Perdix 2 over Bluetooth") { null }
+        val failed = kotlin.test.assertFailsWith<ReadFailed> { unreachable.recordings().toList() }
+        assertEquals("it could not be reached", failed.message)
+    }
+
+    @Test
+    fun `each failure is said in words, a refusal with what to do about it`() {
+        kotlin.test.assertTrue("paired" in statusSaid(Libdivecomputer.NOACCESS))
+        assertEquals("it stopped answering", statusSaid(Libdivecomputer.TIMEOUT))
+        assertEquals("the library answered -99", statusSaid(-99))
+    }
+}

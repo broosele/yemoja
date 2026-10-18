@@ -23,6 +23,11 @@ finished.
 **Only dives this logbook has not seen come across.** Yemoja remembers where the last download
 from each computer stopped, so the next one brings only what you dived since.
 
+**A download that fails says why**: the computer could not be reached, stopped answering, or
+answered something unexpected, with the dive computer library's own words after it. Those words
+are what to send if you report the problem. A download that breaks off partway keeps the dives
+that did arrive and offers them for review; downloading again brings the rest.
+
 **A computer that shows a code before it talks** asks you to type the code it is showing. The
 answer is kept on the gear item for that computer, found by its serial number, so you are not
 asked again. Add the computer as a piece of gear, category `instruments`, with its serial, and

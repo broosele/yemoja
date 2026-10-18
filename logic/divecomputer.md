@@ -293,6 +293,13 @@ Decided and not built, or built and not proven. Each is here rather than in some
   over. What was not got cannot be fetched by resuming, because a device counts from its newest
   dive and the fingerprint says where to stop, not where to start. The older dives take another
   full download that lasts.
+- **A read that fails says why.** A computer that could not be reached, would not open, or broke
+  off before any dive arrived is a failure in words: what libdivecomputer's status means, and the
+  last error the library logged. One that broke off after some dives keeps them, as above, and says
+  beside them that it stopped and why. Until 2026-10-18 all three read as a computer with nothing
+  new: a Perdix 2 on a phone said every dive was in the logbook while its newest was missing. The
+  library's errors and warnings also go to the system log as they come, which on a phone is where
+  a failure's detail is found. Why that Perdix read failed is not yet known.
 - **The fix crosses the port, as the dive's first one.** No parser answers the location
   *field*, but the Shearwater driver fills a location *sample*, and a Perdix sends one on nearly
   every dive: always on the first sample, and sometimes a second on the last. So the walk keeps

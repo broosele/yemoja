@@ -55,6 +55,10 @@ class DeviceRead internal constructor(
     internal var handed: ByteArray? = null
         private set
 
+    /** Why the read broke off after some dives had arrived, or absent where it did not. */
+    var stopped: String? = null
+        private set
+
     /** Whether [handed] is on its gear item yet, which happens once however often it is staged. */
     internal var kept: Boolean = false
 
@@ -79,6 +83,10 @@ class DeviceRead internal constructor(
             }
 
             override fun progress(done: Long, total: Long): Unit = told(done, total)
+
+            override fun stopped(reason: String) {
+                this@DeviceRead.stopped = reason
+            }
 
             override val cancelled: Boolean get() = this@DeviceRead.cancelled
         }

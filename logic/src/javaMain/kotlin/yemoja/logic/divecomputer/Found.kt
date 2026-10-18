@@ -56,6 +56,8 @@ class FoundDevices : Devices, AutoCloseable {
     private fun opened(library: Libdivecomputer): Pointer? {
         val made = PointerByReference()
         if (library.dc_context_new(made) != Libdivecomputer.SUCCESS) return null
+        library.dc_context_set_loglevel(made.value, Libdivecomputer.WARNINGS)
+        library.dc_context_set_logfunc(made.value, Heard.callback, null)
         val iterator = PointerByReference()
         val found = ArrayList<Pointer?>()
         if (library.dc_descriptor_iterator_new(iterator, made.value) == Libdivecomputer.SUCCESS) {
@@ -170,12 +172,16 @@ internal class Attached(
 ) : DiveComputer {
 
     override fun recordings(session: Session): Sequence<Recording> {
-        val stream = open(session) ?: return emptySequence()
+        Heard.clear()
+        // A read that failed is said to have failed. Reported as reading nothing, it read as
+        // every dive being in the logbook already, which is what a Perdix on a phone said.
+        val stream = open(session) ?: throw ReadFailed("it could not be reached${Heard.said()}")
         val device = PointerByReference()
         val opened = library.dc_device_open(device, context, descriptor, stream)
         if (opened != Libdivecomputer.SUCCESS) {
             library.dc_iostream_close(stream)
-            return emptySequence()
+            if (session.cancelled || opened == Libdivecomputer.CANCELLED) return emptySequence()
+            throw ReadFailed("it would not open: ${statusSaid(opened)}${Heard.said()}")
         }
         // Where the last download got to, so the device reports only what came after. `DATA-90`.
         // Told twice: now, knowing only the name, and again once the device has said its serial,
@@ -208,7 +214,7 @@ internal class Attached(
             // of one dive.
             1
         }
-        library.dc_device_foreach(device.value, callback, null)
+        val walked = library.dc_device_foreach(device.value, callback, null)
         library.dc_device_close(device.value)
         library.dc_iostream_close(stream)
         // The library holds the callbacks by address and the JVM only what it can see in use,
@@ -216,8 +222,62 @@ internal class Attached(
         java.lang.ref.Reference.reachabilityFence(events)
         java.lang.ref.Reference.reachabilityFence(cancel)
         java.lang.ref.Reference.reachabilityFence(callback)
-        return if (session.cancelled) emptySequence() else held.asSequence()
+        if (session.cancelled || walked == Libdivecomputer.CANCELLED) return emptySequence()
+        if (walked != Libdivecomputer.SUCCESS) {
+            val reason = "${statusSaid(walked)}${Heard.said()}"
+            if (held.isEmpty()) throw ReadFailed("before any dive arrived: $reason")
+            // What arrived is kept, as a link that drops keeps what it got.
+            session.stopped("after ${held.size} dives: $reason")
+        }
+        return held.asSequence()
     }
+}
+
+/** ReadFailed is thrown when a device could not be read, saying why in words a user can send back. */
+internal class ReadFailed(message: String) : Exception(message)
+
+/** What a `dc_status_t` that is not success means, as a reader would say it. */
+internal fun statusSaid(status: Int): String = when (status) {
+    Libdivecomputer.UNSUPPORTED -> "it asked for something this connection cannot do"
+    Libdivecomputer.NODEVICE -> "nothing answered"
+    Libdivecomputer.NOACCESS -> "the connection was refused, which a computer that must be paired " +
+        "in the system's Bluetooth settings does until it is"
+    Libdivecomputer.IO -> "the link failed"
+    Libdivecomputer.TIMEOUT -> "it stopped answering"
+    Libdivecomputer.PROTOCOL -> "it answered something unexpected"
+    Libdivecomputer.DATAFORMAT -> "what it sent could not be read"
+    else -> "the library answered $status"
+}
+
+/**
+ * Heard is what libdivecomputer last said about a read, its errors and warnings.
+ *
+ * Kept so that a failed read can say what the library said, which is what tells one failure from
+ * another, and written to the system's own log as it comes, where a phone keeps it. One read at a
+ * time, so one place to keep it.
+ */
+internal object Heard {
+    private val lines = ArrayDeque<String>()
+
+    /** Held here so the library's pointer to it outlives every call. */
+    val callback = Libdivecomputer.LogCallback { _, level, _, _, function, message, _ ->
+        val line = listOfNotNull(function, message?.trim()).joinToString(": ")
+        System.err.println("libdivecomputer ${if (level <= 1) "error" else "warning"}: $line")
+        synchronized(lines) {
+            lines.addLast(line)
+            while (lines.size > KEPT) lines.removeFirst()
+        }
+    }
+
+    fun clear() {
+        synchronized(lines) { lines.clear() }
+    }
+
+    /** The last thing the library said, as a sentence's ending, or nothing where it said nothing. */
+    fun said(): String = synchronized(lines) { lines.lastOrNull() }?.let { " (the library said: $it)" } ?: ""
+
+    /** How many of the library's lines are kept: the last is what is said, the rest go to the log. */
+    private const val KEPT = 20
 }
 
 /**

@@ -103,6 +103,15 @@ internal fun outcomeOf(outcome: Outcome, arrived: Int): String = when (outcome) 
 }
 
 /**
+ * What to add where a read broke off after some dives, or nothing where it did not.
+ *
+ * Only beside dives offered for review: a read that offered none already says it stopped. The
+ * dives that arrived are kept, so downloading again fetches the rest.
+ */
+internal fun brokenOffSaid(stopped: String?, outcome: Outcome): String =
+    if (stopped == null || outcome !is Outcome.Done) "" else " It stopped $stopped; download again for the rest."
+
+/**
  * What to say when a look found nothing, which is two different things.
  *
  * A computer that is switched off and a machine that cannot read one at all look identical from
