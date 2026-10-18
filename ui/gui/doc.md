@@ -1363,6 +1363,8 @@ once and corrected. The numbers stay unused rather than being given to something
    what its `follow_up_type` names, or for its own `type`, and a later entry for the same thing
    replaces it. Warning about every dated entry put a regulator on the screen twice, once for an
    inspection already redone. Latest is by `date`, and by `valid_until` where entries give none.
+   The rule is the model's, `standingMaintenances` in `Gear.kt`, so a replaced entry's own
+   `days_left` and `expired` are absent too rather than saying it lapsed.
 
    **What lapsed is never dropped, however long ago.** A cylinder two years out of test is more
    of a problem than one due next week, not less, so only the far future is left out.

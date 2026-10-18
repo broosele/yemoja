@@ -113,4 +113,25 @@ class MaintenanceExpiryTest {
         assertEquals(true, (work(""","valid_until": "${away(-2)}"""").read("expired") as
             Result.Usable).value)
     }
+
+    @Test
+    fun `an inspection done again owes nothing, and the later one carries the clock`() {
+        val set = LogbookReader.read(
+            MemoryFileStore(
+                mapOf(
+                    "gear.json" to """{"steel_12": {"name": "Steel 12", "maintenances": {
+                        "k1": {"type": "visual inspection", "date": "2024-01-10", "valid_until": "${away(-30)}"},
+                        "k2": {"type": "visual inspection", "date": "2025-01-10", "valid_until": "${away(300)}"},
+                        "k3": {"type": "hydrostatic test", "date": "2023-01-10", "valid_until": "${away(-5)}"}}}}""",
+                ),
+            ),
+            Types.ALL,
+        )
+        val entries = (set["steel_12"]!!.keyed<OwnedItem>("maintenances") as Result.Usable).value
+            .mapValues { (it.value as Element.Usable).value }
+        assertEquals(Result.Absent, entries.getValue("k1").read("expired"), "redone, so not expired")
+        assertEquals(Result.Absent, entries.getValue("k1").read("days_left"))
+        assertEquals(false, (entries.getValue("k2").read("expired") as Result.Usable).value)
+        assertEquals(true, (entries.getValue("k3").read("expired") as Result.Usable).value, "another thing owed")
+    }
 }

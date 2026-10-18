@@ -2,12 +2,15 @@ package yemoja.logic
 
 import yemoja.data.BooleanDescription
 import yemoja.data.Cardinality
+import yemoja.data.Date
 import yemoja.data.DateDescription
 import yemoja.data.Dimension
+import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.ItemDescription
 import yemoja.data.NumberDescription
 import yemoja.data.Ordering
+import yemoja.data.OwnedItem
 import yemoja.data.OwnedItemDescription
 import yemoja.data.ReferenceDescription
 import yemoja.data.Result
@@ -67,9 +70,46 @@ private val MAINTENANCE = ItemDescription(
 /** What an item nobody called generic is: one of the user's own. */
 private val ownGear: Result<Any> = Result.Usable(false, Result.Origin.DERIVED)
 
-private fun maintenancesDaysLeft(work: Item): Result<Any> = remaining(work, "valid_until")
+private fun maintenancesDaysLeft(work: Item): Result<Any> =
+    if (superseded(work)) Result.Absent else remaining(work, "valid_until")
 
-private fun maintenancesExpired(work: Item): Result<Any> = passed(work, "valid_until")
+private fun maintenancesExpired(work: Item): Result<Any> =
+    if (superseded(work)) Result.Absent else passed(work, "valid_until")
+
+/** Whether later work on the same gear owes what [work] owed, so that [work] owes nothing. */
+private fun superseded(work: Item): Boolean {
+    val gear = (work as? OwnedItem)?.parent ?: return false
+    return standingMaintenances(gear).none { it === work }
+}
+
+/**
+ * The maintenance entries of [gear] that set a clock, the latest for each thing owed.
+ *
+ * **The latest work counts.** An inspection done again replaces the one before it, which no
+ * longer owes anything: warning about both put an item on the home screen twice, once for work
+ * already redone. What is owed is [owedBy], so a pressure test done does not make an inspection
+ * look current. Latest is by `date`, and by `valid_until` between entries that give no date. An
+ * entry with no `valid_until` starts no clock and is passed over. `GUI-34`.
+ */
+fun standingMaintenances(gear: Item): List<Item> =
+    ((gear.keyed<OwnedItem>("maintenances") as? Result.Usable)?.value.orEmpty())
+        .values.mapNotNull { (it as? Element.Usable)?.value }
+        .filter { dateIn(it, "valid_until") != null }
+        .groupBy { owedBy(it)?.lowercase() }
+        .values
+        .map { owing -> owing.maxWith(LATEST) }
+
+/** What a piece of work sets the clock for: its `follow_up_type` where it names one, else its `type`. */
+fun owedBy(work: Item): String? = textIn(work, "follow_up_type") ?: textIn(work, "type")
+
+/** Later work first by the day it was done, and by when it runs out where no day is given. */
+private val LATEST: Comparator<Item> =
+    compareBy({ dateIn(it, "date") }, { dateIn(it, "valid_until") })
+
+private fun dateIn(item: Item, name: String): Date? = (item.single<Date>(name) as? Result.Usable)?.value
+
+private fun textIn(item: Item, name: String): String? =
+    (item.single<String>(name) as? Result.Usable)?.value?.ifBlank { null }
 
 /** Anything is allowed; these are the ones the manual names. */
 private val GEAR_CATEGORIES = setOf(

@@ -1,12 +1,13 @@
 package yemoja.ui.gui
 
 import yemoja.data.Date
-import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.ItemSet
 import yemoja.data.OwnedItem
 import yemoja.data.Result
 import yemoja.logic.Types
+import yemoja.logic.owedBy
+import yemoja.logic.standingMaintenances
 import yemoja.logic.titleOf
 
 /*
@@ -51,7 +52,7 @@ internal fun owedIn(set: ItemSet, user: Item?, today: Date, notice: Int = NOTICE
     val out = ArrayList<Owed>()
     for (gear in set.allOf(Types.GEAR)) {
         if (genericOf(gear)) continue
-        for (work in standingIn(gear)) {
+        for (work in standingMaintenances(gear)) {
             val ends = dateOf(work, "valid_until") ?: continue
             val left = today.daysUntil(ends).toInt()
             if (left > notice) continue
@@ -75,29 +76,6 @@ internal fun owedIn(set: ItemSet, user: Item?, today: Date, notice: Int = NOTICE
     return out.sortedBy { it.days }
 }
 
-/**
- * The maintenance entries of [gear] that set a clock, the latest for each thing owed.
- *
- * **The latest work counts.** An inspection done again replaces the one before it, which no
- * longer owes anything: warning about both put an item on the home screen twice, once for work
- * already redone. What is owed is what `follow_up_type` names, or the entry's own `type`, so a
- * pressure test done does not make an inspection look current. Latest is by `date`, and by
- * `valid_until` between entries that give no date. An entry with no `valid_until` starts no
- * clock and is passed over. `GUI-34`.
- */
-private fun standingIn(gear: Item): List<Item> =
-    entriesOf(gear, "maintenances")
-        .filter { dateOf(it, "valid_until") != null }
-        .groupBy { oweOf(it)?.lowercase() }
-        .values
-        .map { owing -> owing.maxWith(LATEST) }
-
-/** Later work first by the day it was done, and by when it runs out where no day is given. */
-private val LATEST: Comparator<Item> =
-    compareBy({ dateOf(it, "date") }, { dateOf(it, "valid_until") })
-
-/** What a piece of work sets the clock for: its follow-up where it names one, else itself. */
-private fun oweOf(work: Item): String? = textOf(work, "follow_up_type") ?: textOf(work, "type")
 
 /**
  * What a piece of gear owes, and when: *Twelve steel: pressure test due in 5 days.*
@@ -107,7 +85,7 @@ private fun oweOf(work: Item): String? = textOf(work, "follow_up_type") ?: textO
  * without an article that is wrong for one of them.
  */
 private fun workSaid(gear: Item, work: Item, left: Int): String {
-    val what = oweOf(work) ?: "work"
+    val what = owedBy(work) ?: "work"
     return "${titleOf(gear)}: $what ${dueSaid(left)}."
 }
 
@@ -172,10 +150,6 @@ private fun genericOf(item: Item): Boolean =
 
 private fun ownedIn(item: Item, name: String): OwnedItem? =
     (item.read(name) as? Result.Usable)?.value as? OwnedItem
-
-private fun entriesOf(item: Item, name: String): List<Item> =
-    ((item.keyed<OwnedItem>(name) as? Result.Usable)?.value ?: emptyMap())
-        .values.mapNotNull { (it as? Element.Usable)?.value }
 
 private fun dateOf(item: Item, name: String): Date? =
     (item.single<Date>(name) as? Result.Usable)?.value

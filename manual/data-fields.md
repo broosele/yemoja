@@ -763,8 +763,10 @@ intact.
 - `valid_until` (date) — when the next one falls due. A date, always: where a service
   interval is counted in dives rather than months, calculate roughly when that will fall
   and write it.
-- `days_left` (whole number, derived) — how long until `valid_until`.
-- `expired` (true or false, derived) — whether it has passed.
+- `days_left` (whole number, derived) — how long until `valid_until`. Nothing on an entry that
+  later work has replaced, as described below.
+- `expired` (true or false, derived) — whether it has passed, and likewise nothing on a replaced
+  entry.
 - `follow_up_type` (text) — what falls due then, where it is not the same as `type`. A
   repair that resets the service clock says `service` here; a repair is something that
   happened, not something owed.
