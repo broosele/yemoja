@@ -14,7 +14,6 @@ yourself, whatever becomes of the app.
 - **Few settings exist yet.** What a new plan starts from can be chosen, and the agent's command
   is remembered; units, date formats and the rest cannot be chosen. See [settings.md](settings.md).
 - **Some things are not written to a UDDF file yet**; [uddf.md](uddf.md) lists them.
-- **Locations cannot add or delete a site** from the window.
 
 ## No warranty, and no liability
 
