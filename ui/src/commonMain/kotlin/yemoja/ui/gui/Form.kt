@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Clear
 import yemoja.ui.icons.StarHalf
 import yemoja.ui.icons.StarOutline
 import androidx.compose.material3.Button
@@ -457,7 +458,7 @@ private fun SingleEditor(
             onChoose = { onChange(it, givenOf(kind, it)) },
         )
         Kind.YES_NO -> YesNo(shown) { onChange(it?.toString().orEmpty(), it) }
-        Kind.RATING -> RatingEditor(shown.toIntOrNull()) { onChange(it.toString(), it.toString()) }
+        Kind.RATING -> RatingEditor(shown.toIntOrNull()) { onChange(it?.toString().orEmpty(), it?.toString()) }
         Kind.REFERENCE -> ReferenceEditor(field as ReferenceDescription, item, shown, onChange)
         Kind.LONG_TEXT -> Compact(
             value = shown,
@@ -812,8 +813,8 @@ private fun YesNo(shown: String, onChange: (Boolean?) -> Unit) {
 
 /** Five stars to click, each worth two points, so a click on the third is a six. */
 @Composable
-private fun RatingEditor(rating: Int?, onChange: (Int) -> Unit) {
-    Row {
+private fun RatingEditor(rating: Int?, onChange: (Int?) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         for ((index, star) in starsOf(rating ?: 0).withIndex()) {
             Icon(
                 imageVector = when (star) {
@@ -824,6 +825,15 @@ private fun RatingEditor(rating: Int?, onChange: (Int) -> Unit) {
                 contentDescription = "${(index + 1) * 2} of 10",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(GLYPH + HALF).clickable { onChange((index + 1) * 2) },
+            )
+        }
+        // The way back to no rating, which every other kind of box has in being emptied.
+        if (rating != null) {
+            Icon(
+                imageVector = Icons.Filled.Clear,
+                contentDescription = "No rating",
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = HALF).size(GLYPH).clickable { onChange(null) },
             )
         }
     }
