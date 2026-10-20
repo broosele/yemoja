@@ -59,11 +59,14 @@ import yemoja.logic.tideCalculators
  * decided by the screens, which know nothing about any of this.
  */
 fun gui(named: String? = null): Int {
+    // One for the window, whichever logbook is open: it holds the library's context, and a new
+    // one for each logbook opened leaked the last. Closed when the window is.
+    val devices = FoundDevices()
     // Named, the folder is opened or the command fails. Not named, the logbook opened last is
     // opened where it still reads, and the window opens on the welcome where it does not. `DESK-12`.
     val folder = named ?: lastLogbook()
     val universe = if (folder == null) null else try {
-        Universe.open(folder, FoundDevices(), copiedFrom(folder))
+        Universe.open(folder, devices, copiedFrom(folder))
     } catch (refused: Exception) {
         // A folder that is not a logbook, or a file in it that will not read. There is no window
         // yet to say so in, so it is said where the command was typed.
@@ -119,7 +122,7 @@ fun gui(named: String? = null): Int {
                 deeds = mapOf(
                     Deed.NEW to {
                         chosen("New logbook: choose an empty folder to keep it in", "Create")?.let { where ->
-                            made(where)?.let {
+                            made(where, devices)?.let {
                                 at = where
                                 held = it
                                 rememberLogbook(where)
@@ -128,7 +131,7 @@ fun gui(named: String? = null): Int {
                     },
                     Deed.OPEN to {
                         chosen("Open logbook: choose the folder it is kept in", "Open")?.let { where ->
-                            opened(where)?.let {
+                            opened(where, devices)?.let {
                                 at = where
                                 held = it
                                 rememberLogbook(where)
@@ -142,7 +145,10 @@ fun gui(named: String? = null): Int {
         val density = LocalDensity.current
         val icon = remember { useResource("yemoja.svg") { loadSvgPainter(it, density) } }
         Window(
-            onCloseRequest = ::exitApplication,
+            onCloseRequest = {
+                devices.close()
+                exitApplication()
+            },
             title = if (at == null) "Yemoja" else "Yemoja — $at",
             icon = icon,
             state = rememberWindowState(size = DpSize(1650.dp, 1140.dp)),
@@ -216,8 +222,8 @@ private fun chosen(asking: String, approving: String): String? {
 }
 
 /** A new logbook at [where], or absent where it could not be made and the reader was told. */
-private fun made(where: String): Universe? = try {
-    Universe.create(where, FoundDevices())
+private fun made(where: String, devices: FoundDevices): Universe? = try {
+    Universe.create(where, devices)
 } catch (refused: Exception) {
     warn("$where could not be made into a logbook: ${refused.message}")
     null
@@ -230,8 +236,8 @@ private fun made(where: String): Universe? = try {
  * is what `yemoja gui` does with the same folder. It opens, and its greeting says it holds no
  * dives, which is a truer answer than refusing a folder the reader picked.
  */
-private fun opened(where: String): Universe? = try {
-    Universe.open(where, FoundDevices(), copiedFrom(where))
+private fun opened(where: String, devices: FoundDevices): Universe? = try {
+    Universe.open(where, devices, copiedFrom(where))
 } catch (refused: Exception) {
     warn("$where could not be read: ${refused.message}")
     null
