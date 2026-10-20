@@ -913,7 +913,16 @@ To settle when we discuss architecture and features:
   surface without holding it is warned about where it left the stop's depth, including a dive
   typed all the way up by hand. A run that names an ascent rate is warned about where it rises
   faster, once a crossing. A recording names neither, since what a computer recorded is not a
-  promise anybody made, and is judged as before.
+  promise anybody made, and is judged as before. **A saved plan is judged under what it was
+  planned under** through either door: its oxygen limits by each cylinder's `usage`, its END
+  limit, its safety stop, its ascent rate and its last stop, each read off the profile where the
+  planner wrote it and not promised where it did not. It was judged under the
+  model's own defaults on a dive's page for a while, 1.6 bar on every cylinder and no stop
+  promised, so the page and the planner disagreed about one plan. Settled at the author's word.
+
+  **A surface interval is breathed under the earlier run's air**, through either door: it begins
+  where that run surfaced. One door took the later run's for a while, and two dives at
+  different altitudes crossed the interval two ways. Settled at the author's word.
 
   **The oxygen clocks run beside the compartments**, sampled the same way and given back as a
   percentage and a count. `LOGIC-38` is what they are worked out from.

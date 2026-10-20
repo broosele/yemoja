@@ -413,10 +413,11 @@ private fun runOf(profile: Item, seen: Set<Item>, assumed: Boolean = false): Run
     val carried = carriedInto(profile, surface, seen)
     if (carried is Carried.Refused) return RunResult.Refused(carried.reason, Refusal.FAULTY)
     carried as Carried.From
+    val promises = if ((profile.single<Boolean>("planned") as? Result.Usable)?.value == true) promisesOf(profile) else null
     return RunResult.Run(
         Run(
             depth = depthOf(profile),
-            sources = sourcesOf(profile),
+            sources = sourcesOf(profile, promises),
             gradientFactorLow = low,
             gradientFactorHigh = high,
             switches = switchesOf(profile),
@@ -424,7 +425,49 @@ private fun runOf(profile: Item, seen: Set<Item>, assumed: Boolean = false): Run
             surface = surface,
             carried = carried.tissues,
             oxygenCarried = carried.oxygen,
+            safetyStop = promises?.safetyStop,
+            ascentRate = promises?.ascentRate,
+            lastStop = promises?.lastStop,
+            mostNarcoticDepth = promises?.narcoticDepth ?: MOST_NARCOTIC_DEPTH,
+            oxygenNarcotic = promises?.oxygenNarcotic ?: true,
         ),
+    )
+}
+
+/**
+ * Promises is what a saved plan was planned under, which it is judged against as the planner
+ * judged it: the same limits on every cylinder, the same stop and the same way up. `LOGIC-37`.
+ *
+ * Each is absent where the plan does not say, and the run is then judged as a recording is: a
+ * plan saved before the planner wrote its settings down promised nothing that can be read.
+ *
+ * Immutable.
+ */
+private class Promises(
+    val bottomOxygen: Double?,
+    val decoOxygen: Double?,
+    val leastOxygen: Double?,
+    val narcoticDepth: Double?,
+    val oxygenNarcotic: Boolean?,
+    val ascentRate: Double?,
+    val lastStop: Double?,
+    val safetyStop: SafetyStop?,
+)
+
+/** What [profile], a saved plan, was planned under, where it says. */
+private fun promisesOf(profile: Item): Promises {
+    fun number(name: String): Double? = (profile.single<Double>(name) as? Result.Usable)?.value
+    val seconds = number("safety_stop_duration")?.toInt()
+    val depth = number("safety_stop_depth")
+    return Promises(
+        bottomOxygen = number("po2_max_bottom"),
+        decoOxygen = number("po2_max_deco"),
+        leastOxygen = number("po2_min"),
+        narcoticDepth = number("end_max"),
+        oxygenNarcotic = (profile.single<Boolean>("oxygen_narcotic") as? Result.Usable)?.value,
+        ascentRate = number("ascent_rate")?.takeIf { it > 0 },
+        lastStop = number("last_stop"),
+        safetyStop = if (seconds != null && seconds > 0 && depth != null && depth > 0) SafetyStop(depth, seconds) else null,
     )
 }
 
@@ -1452,18 +1495,22 @@ internal fun breathedBy(run: Run): Breathing? {
  * A source with no `gas_type` is air, that being what a cylinder nobody said anything about holds.
  * Its `sac` is what it is breathed at: written on a plan, and worked out from the pressures of a
  * recording. One that says nothing costs nothing, since a figure nobody gave is not a figure of
- * nought.
+ * nought. On a plan, [promises] say what each is held to by its `usage`, as the planner holds it.
  */
-private fun sourcesOf(profile: Item): Map<String, Source> {
+private fun sourcesOf(profile: Item, promises: Promises? = null): Map<String, Source> {
     val root = sourcesRootOf(profile) ?: return emptyMap()
     return ((root.keyed<OwnedItem>("gas_sources") as? Result.Usable)?.value.orEmpty())
         .mapNotNull { (key, entry) -> (entry as? Element.Usable)?.let { key to it.value } }
         .associate { (key, source) ->
+            val role = roleOf((source.single<String>("usage") as? Result.Usable)?.value)
             key to Source(
                 gas = (source.single<Gas>("gas_type") as? Result.Usable)?.value ?: Gas.AIR,
                 sac = (source.read("sac") as? Result.Usable)?.value as? Double,
                 volume = (source.read("volume") as? Result.Usable)?.value as? Double,
                 fill = (source.single<Double>("start_pressure") as? Result.Usable)?.value,
+                mostOxygen = (if (role == Role.DECO) promises?.decoOxygen else promises?.bottomOxygen) ?: MOST_OXYGEN,
+                ascentMayChoose = promises == null || role == Role.BOTTOM || role == Role.DECO,
+                leastOxygen = promises?.leastOxygen ?: LEAST_OXYGEN,
             )
         }
 }
@@ -1498,7 +1545,7 @@ private fun carriedInto(profile: Item, surface: Double, seen: Set<Item>): Carrie
         ?: return Carried.Refused("$id has no run called ${named.key}")
     val interval = (owner(profile)?.single<Double>("surface_interval") as? Result.Usable)?.value
         ?: return Carried.Refused("nothing says how long the surface interval before this was")
-    return carriedAcross(earlier, interval, surface, seen + profile)
+    return carriedAcross(earlier, interval, seen + profile)
 }
 
 /**
@@ -1508,8 +1555,10 @@ private fun carriedInto(profile: Item, surface: Double, seen: Set<Item>): Carrie
  * A saved plan's evaluation and the planner's both come here, so a plan follows an earlier run the
  * same way whether it is typed or saved.
  */
-private fun carriedAcross(earlier: Item, interval: Double, surface: Double, seen: Set<Item>): Carried =
-    when (val ran = evaluated(earlier, seen)) {
+private fun carriedAcross(earlier: Item, interval: Double, seen: Set<Item>): Carried {
+    // The interval begins where the earlier run surfaced, so it is breathed under that run's air.
+    val surface = (earlier.single<Double>("atmospheric_pressure") as? Result.Usable)?.value ?: SEA_LEVEL
+    return when (val ran = evaluated(earlier, seen)) {
         is Evaluated.Refused -> Carried.Refused("the run before this one: ${ran.reason}")
         is Evaluated.Done -> Carried.From(
             ran.surfacing.breathing(Gas.AIR, surface, surface, interval),
@@ -1517,6 +1566,7 @@ private fun carriedAcross(earlier: Item, interval: Double, surface: Double, seen
             ran.oxygen.resting(interval),
         )
     }
+}
 
 /**
  * Residual is what an earlier run leaves in the tissues and on the oxygen clocks when a later one
@@ -1535,13 +1585,13 @@ sealed class Residual {
  * a run that belongs to no dive yet.
  *
  * [earlier] is evaluated as it would be anywhere, the chain behind it included, and the interval
- * is spent as a saved plan's is. `LOGIC-37`.
+ * is spent as a saved plan's is, under [earlier]'s own air. `LOGIC-37`.
  */
-fun residualAfter(earlier: Item, intervalSeconds: Double, surface: Double = SEA_LEVEL): Residual {
+fun residualAfter(earlier: Item, intervalSeconds: Double): Residual {
     require(intervalSeconds >= 0) {
         "a surface interval should be 0 seconds or more, but was $intervalSeconds"
     }
-    return when (val carried = carriedAcross(earlier, intervalSeconds, surface, emptySet())) {
+    return when (val carried = carriedAcross(earlier, intervalSeconds, emptySet())) {
         is Carried.From -> Residual.Done(carried.tissues, carried.oxygen)
         is Carried.Refused -> Residual.Refused(carried.reason)
     }

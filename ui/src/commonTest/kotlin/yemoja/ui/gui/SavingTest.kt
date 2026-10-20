@@ -11,6 +11,8 @@ import yemoja.data.json.MemoryFileStore
 import yemoja.logic.OPEN_CIRCUIT_ROLES
 import yemoja.logic.SEA_LEVEL_SAID
 import yemoja.logic.Breathed
+import yemoja.logic.roleOf
+import yemoja.logic.usageOf
 import yemoja.logic.Operation
 import yemoja.logic.Outcome
 import yemoja.logic.Role

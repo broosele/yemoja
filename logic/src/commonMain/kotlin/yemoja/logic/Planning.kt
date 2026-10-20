@@ -477,6 +477,16 @@ fun sourceOf(breathed: Breathed, gas: Gas, conditions: Conditions): Source = Sou
     leastOxygen = conditions.leastOxygen,
 )
 
+/** What a cylinder of [role] is for, in the words `usage` uses. */
+fun usageOf(role: Role): String = role.name.lowercase()
+
+/** The role a cylinder `usage` says, or bottom where it says something the planner has no role for. */
+fun roleOf(usage: String?): Role = when (usage?.trim()?.lowercase()) {
+    "deco" -> Role.DECO
+    "bailout" -> Role.BAILOUT
+    else -> Role.BOTTOM
+}
+
 /** The most oxygen a cylinder of [role] is breathed at under [conditions], in bar. */
 fun limitOf(role: Role, conditions: Conditions): Double =
     if (role == Role.DECO) conditions.decoOxygen else conditions.bottomOxygen

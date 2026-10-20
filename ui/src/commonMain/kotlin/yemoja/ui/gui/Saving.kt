@@ -48,6 +48,8 @@ import yemoja.logic.Following
 import yemoja.logic.Outcome
 import yemoja.logic.Planned
 import yemoja.logic.Role
+import yemoja.logic.roleOf
+import yemoja.logic.usageOf
 import yemoja.logic.Run
 import yemoja.logic.NumberSetting
 import yemoja.logic.Segment
@@ -245,16 +247,6 @@ internal fun followingClashOf(shaping: Planned, dive: Item): String? {
         ?: return null
     if (named.id == following.dive) return null
     return "After should be a run of ${named.id}, which this dive already follows, or the plan saved as a new dive"
-}
-
-/** What a cylinder of [role] is for, in the words `usage` uses. */
-internal fun usageOf(role: Role): String = role.name.lowercase()
-
-/** The role a cylinder `usage` says, or bottom where it says something the planner has no role for. */
-internal fun roleOf(usage: String?): Role = when (usage?.trim()?.lowercase()) {
-    "deco" -> Role.DECO
-    "bailout" -> Role.BAILOUT
-    else -> Role.BOTTOM
 }
 
 /** The name a new plan on [dive] starts with: the first `Plan` letter it does not already hold. */

@@ -65,6 +65,17 @@ private const val DEEP = """"depth": [[0, 0], [90, 40], [1800, 40], [1900, 0]]""
 class EvaluationTest {
 
     @Test
+    fun `a saved plan is judged under the limits it was planned under`() {
+        // Air at thirty metres in fresh water under a bar is 0.83 bar of oxygen: within the model's
+        // own 1.6, past the 0.8 this plan was made under.
+        val run = """"po2_max_bottom": 0.8, "depth": [[0, 0], [90, 30], [600, 30], [800, 0]]"""
+        val findings = done(planned(run)).findings
+        assertTrue(findings.any { it.what == "pO₂ too high" && "0.80 bar allowed" in it.how }, "$findings")
+        val lenient = done(planned(""""depth": [[0, 0], [90, 30], [600, 30], [800, 0]]""")).findings
+        assertTrue(lenient.none { it.what == "pO₂ too high" }, "$lenient")
+    }
+
+    @Test
     fun `a recording that gives no density is worked out at the one most computers use`() {
         fun recording(density: String): Item = profile(
             logbook(

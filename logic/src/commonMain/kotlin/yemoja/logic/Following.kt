@@ -149,7 +149,7 @@ fun followedOf(shaping: Planned, universe: Universe?): Followed {
     val run = runOf(logbook, KeyReference(following.key, following.dive))
         ?: return Followed.Wrong("After should name a run of ${titleOf(dive)}")
     val interval = ended.secondsUntil(start)
-    return when (val left = residualAfter(run, interval.toDouble(), SEA_LEVEL)) {
+    return when (val left = residualAfter(run, interval.toDouble())) {
         is Residual.Done -> Followed.After(left, interval, dive, following)
         is Residual.Refused -> Followed.Wrong("${titleOf(dive)}, ${prettyOf(following.key)}: ${left.reason}")
     }
