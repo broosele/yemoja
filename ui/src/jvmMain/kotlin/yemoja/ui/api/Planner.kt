@@ -15,7 +15,7 @@ import java.io.File
 /*
  * The planner as a command: a file of plans in, a table of what they come to out.
  *
- * See ../../../../../../ui/api/doc.md — `API-8`. No logbook is opened and none is needed: this is
+ * See ../../../../../../api/doc.md, `API-8`. No logbook is opened and none is needed: this is
  * `calculated` and nothing else, which is why it can be pointed at a hundred cases at once.
  */
 
@@ -30,6 +30,10 @@ import java.io.File
  */
 internal fun planned(path: String, arguments: List<String>): Int {
     val asJson = "--json" in arguments
+    arguments.firstOrNull { it != "--json" }?.let {
+        System.err.println("$it is not a switch this command knows; only --json is")
+        return 2
+    }
     val file = File(path)
     if (!file.isFile) {
         System.err.println("$path is not a file")

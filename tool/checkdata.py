@@ -91,6 +91,8 @@ def manual_vocabularies():
     word nobody would write, which is the safe direction to be wrong in. A range is
     read only from the exact phrase "from N to M".
     """
+    if not os.path.isfile(MANUAL):
+        sys.exit('%s is missing, and it is the source of truth for the fields' % MANUAL)
     text = io.open(MANUAL, encoding='utf-8').read()
     sets, ranges, current, bullet, field, kind = {}, {}, None, None, None, None
     # Prose inside a bullet backticks other fields while explaining itself. Those are
@@ -542,7 +544,10 @@ class Checker:
 
 
 def load(path):
-    return json.load(io.open(path, encoding='utf-8'))
+    try:
+        return json.load(io.open(path, encoding='utf-8'))
+    except ValueError as refused:
+        sys.exit('%s is not JSON: %s' % (path, refused))
 
 
 def check_logbook(checker, folder):

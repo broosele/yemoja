@@ -84,7 +84,7 @@ private fun heading(said: String): List<Line> =
  * Exhaustive over the kinds, so a kind added below is a compiler error here rather than a field
  * this view has nothing to say about.
  */
-private fun kindOf(field: FieldDescription): String = when (field) {
+internal fun kindOf(field: FieldDescription): String = when (field) {
     is TextDescription -> if (field.fixedSet != null) "fixed set" else "text"
     is MultilineTextDescription -> "multiline text"
     is NumberDescription -> "number"
@@ -294,10 +294,16 @@ private fun markIf(chosen: Boolean): Set<Style> = if (chosen) setOf(Style.SELECT
  */
 private fun broken(value: Span, mentions: List<Mention> = emptyList(), chosen: Int = -1):
     List<Line> {
+    // Each line with where it starts in the text, so a two-character break moves the next line's
+    // mentions by two and not one.
+    val starts = ArrayList<Pair<Int, String>>()
     var from = 0
-    return value.text.split("\r\n", "\n", "\r").map { line ->
-        val at = from
-        from += line.length + 1
+    for (found in BREAKS.findAll(value.text)) {
+        starts += from to value.text.substring(from, found.range.first)
+        from = found.range.last + 1
+    }
+    starts += from to value.text.substring(from)
+    return starts.map { (at, line) ->
         Line(listOf(Span("  ")) + marked(line, value.styles, mentions, at, chosen))
     }
 }
@@ -435,3 +441,6 @@ internal fun chooserLines(
         Line(listOf(Span("  " + mark + said, here)))
     }
 }
+
+/** A line break as a file may write one. */
+private val BREAKS = Regex("\r\n|\n|\r")

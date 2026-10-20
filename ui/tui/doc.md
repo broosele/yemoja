@@ -46,9 +46,7 @@ nothing would object. Taking them from the set makes that unsayable.
 The list is worked out once per tab and kept until the set says it has changed. A sort key can
 be worked out from a whole profile, so listing on every keystroke would walk the logbook to
 redraw one row. Nothing announces a change — `DATA-6` — so the set carries a number that moves
-when an item is added or taken out, and the list is kept against that. A field edited does not
-move it, so a list whose order turns on an edited field is stale until the tab is left and come
-back to; closing that properly is `TUI-3`'s to do.
+on every change, an edit included, and the list is kept against that.
 
 **The bottom row says what the keys do**, and says what they do *here*: the list and an open
 field answer to different things, so a reader is told the ones in front of them rather than
@@ -162,7 +160,7 @@ here says so or offers to give up. That is what this screen owes next: the port 
 as they are read, and nothing yet paints between them.
 
 **One prompt takes one path, and what is there says how it is read.** A folder is another Yemoja
-logbook and a file is a UDDF document. Asking which would be putting a question to somebody who
+logbook, and a file is a UDDF document or a Diving Log database. Asking which would be putting a question to somebody who
 already knows what they are pointing at, and the answer is on the disk. Nothing after that
 differs: both arrive as a set of items and both are reviewed the same way.
 

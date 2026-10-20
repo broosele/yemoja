@@ -142,6 +142,10 @@ def check_glossary(root):
         if not source:
             continue
         checked += 1
+        if not os.path.isfile(os.path.join(root, source)):
+            print('GLOSSARY', term, '-> source missing:', source)
+            missing += 1
+            continue
         text = io.open(os.path.join(root, source), encoding='utf-8').read().lower()
         if term.lower().strip('`<>') not in text.replace('`', ''):
             print('GLOSSARY', term, '-> not found in', source)

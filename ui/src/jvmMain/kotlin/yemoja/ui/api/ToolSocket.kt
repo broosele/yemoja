@@ -99,7 +99,10 @@ class ToolSocket(private val tools: Tools, private val onto: CoroutineContext) {
     private suspend fun hold(connection: Socket) {
         connection.use {
             val input = it.getInputStream()
+            // A connection that never says the token is let go of, rather than holding a thread.
+            it.soTimeout = TOKEN_PATIENCE
             if (lineOf(input) != token) return
+            it.soTimeout = 0
             val ended = CompletableDeferred<Unit>()
             val session = serve(
                 toolServer(tools, onto),
@@ -139,7 +142,15 @@ fun relay(port: Int, token: String, input: InputStream, output: OutputStream): I
         val upward = it.getOutputStream()
         upward.write((token + "\n").toByteArray())
         upward.flush()
-        val downward = Thread { copy(it.getInputStream(), output) }
+        // The window closing ends the command too: closing what is being read wakes the read.
+        val downward = Thread {
+            copy(it.getInputStream(), output)
+            try {
+                input.close()
+            } catch (ignored: java.io.IOException) {
+                // Already closed, which is what was wanted.
+            }
+        }
         downward.isDaemon = true
         downward.start()
         copy(input, upward)
@@ -172,6 +183,9 @@ private const val BLOCK = 8 * 1024
 
 /** How long the other direction is given to notice the socket closed, in milliseconds. */
 private const val LETTING_GO = 2_000L
+
+/** How long a connection has to say the token, in milliseconds. */
+private const val TOKEN_PATIENCE = 5_000
 
 /** The first line [from] gives, without its ending, or absent where it gives none. */
 private fun lineOf(from: InputStream): String? {

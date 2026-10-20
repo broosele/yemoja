@@ -388,7 +388,7 @@ class StagingToolsTest {
     fun `a value the field refuses is refused, in the field's own words`() {
         val (_, tools) = writing()
         assertEquals(
-            "rating should be within 1..10",
+            "rating should be within 1..10, but was 11",
             reason(tools.stageSet("2026-06-01#0", "rating", "11")),
         )
     }

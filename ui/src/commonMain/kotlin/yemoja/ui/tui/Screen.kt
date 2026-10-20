@@ -126,7 +126,7 @@ class Screen(
     private var message: String? = null
 
     // Whether delete has been pressed once on what the cursor is on. Nothing can be undone yet,
-    // there being no journal -- `FEAT-4` -- so removing an item asks, and any other key answers
+    // there being no journal, `FEAT-4`, so removing an item asks, and any other key answers
     // no. `TUI-6` refused a confirmation for quitting, where nothing is lost by pressing again.
     private var confirming: Boolean = false
 
@@ -162,7 +162,7 @@ class Screen(
 
     // What each tab last listed, and which revision of the universe it was. Sorting reads every
     // sort key, and a key can be worked out from a whole profile, so doing it per keypress would
-    // walk the logbook to redraw one row. Nothing is announced -- `DATA-6` -- so the universe
+    // walk the logbook to redraw one row. Nothing is announced, `DATA-6`, so the universe
     // carries a number that moves on every change, and this is kept against it.
     private val listed = HashMap<ItemDescription, List<ReferenceableItem>>()
 
@@ -263,6 +263,7 @@ class Screen(
      * press from the other. `TUI-7`.
      */
     fun press(key: Key): Boolean {
+        val saidBefore = message
         when (mode()) {
             Mode.SOURCING -> sourceKey(key)
             Mode.MERGING -> mergedKey(key)
@@ -271,7 +272,8 @@ class Screen(
             Mode.BROWSING -> browsedKey(key)
         }
         if (key != Key.DELETE) confirming = false
-        if (sourcing == null && key != Key.INSERT) message = null
+        // A message the key just pressed set stays; one from an earlier key is cleared.
+        if (sourcing == null && message === saidBefore) message = null
         if (!opened) {
             within = 0
             chosenEntry = 0
@@ -995,8 +997,8 @@ class Screen(
      * Come one step back out, and do nothing where there is nothing to come out of.
      *
      * **Escape never leaves.** It used to, where nothing was open, which made one key too many
-     * out of a step back the mildest thing a reader does. Leaving is [Key.QUIT]'s, and that
-     * works from wherever the reader is.
+     * out of a step back the mildest thing a reader does. Leaving is [Key.QUIT]'s from the list,
+     * and ctrl-C's from anywhere.
      */
     private fun close() {
         if (!opened) return
@@ -1412,12 +1414,6 @@ class Screen(
     }
 
     /**
-     * What is being typed, with a cursor after it, and why it will not do.
-     *
-     * The refusal is shown where the value is rather than on the bar, because it is about what
-     * is on the screen and because a bar too narrow for it would drop it silently.
-     */
-    /**
      * The choices, with whatever is being typed on the *other* row, and why it will not do.
      *
      * The refusal goes under the rows for the reason it goes under a typed value: it is about
@@ -1430,6 +1426,12 @@ class Screen(
         return lines + Line(listOf(Span(""))) + Line(listOf(Span("  ! " + why)))
     }
 
+    /**
+     * What is being typed, with a cursor after it, and why it will not do.
+     *
+     * The refusal is shown where the value is rather than on the bar, because it is about what
+     * is on the screen and because a bar too narrow for it would drop it silently.
+     */
     private fun typedLines(ends: Ends.Value?): List<Line> {
         val at = suggesting
         val here = if (at == null) setOf(Style.SELECTED) else emptySet()
@@ -1722,18 +1724,15 @@ class Screen(
          */
         private const val QUITS = "[q] quit"
 
-        /** What a line break is shown as, which is how a file writes one. */
-        // Enough to recognise the one wanted, and few enough to leave the typed line in view
-        // on a short terminal. What is past them is reached by typing more of the id.
-        // The two an import can come from. One row for two formats: a path is named and what
+        // The two an import can come from. One row for three formats: a path is named and what
         // is there says how it is read. The other opens onto what is attached.
         private val SOURCES = listOf("a logbook folder, a UDDF file or a Diving Log database", "a dive computer")
 
         private const val NO_DEVICE = "no dive computer is attached, or none can be reached."
 
+        // Enough to recognise the one wanted, and few enough to leave the typed line in view
+        // on a short terminal. What is past them is reached by typing more of the id.
         private const val MOST_SUGGESTIONS = 8
-
-        private const val ESCAPED = "\\n"
 
         private const val LEAST_LIST_WIDTH = 12
 

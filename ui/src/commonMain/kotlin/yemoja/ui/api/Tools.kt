@@ -32,6 +32,7 @@ import yemoja.logic.Staging
 import yemoja.logic.Types
 import yemoja.ui.gui.PROFILES
 import yemoja.logic.Universe
+import yemoja.ui.tui.kindOf
 import yemoja.logic.calculated
 import yemoja.logic.casesOf
 import yemoja.logic.fieldAt
@@ -41,22 +42,23 @@ import yemoja.logic.saidOf
 /*
  * What an agent can ask of a logbook, before any protocol carries the asking.
  *
- * See ../../../../../../api/doc.md — `API-4` and `API-5`.
+ * See ../../../../../../api/doc.md, `API-4` and `API-5`.
  */
 
 /**
  * Reply is what one tool answered: JSON for the agent to read, and whether it is a refusal.
  *
- * Every reply carries the Universe's revision, so an agent can tell that what it read earlier may
- * be out of date. `API-4`.
+ * A reply to a reading carries the Universe's revision, so an agent can tell that what it read
+ * earlier may be out of date. `API-4`.
  *
  * Immutable.
  */
 data class Reply(val text: String, val refused: Boolean = false)
 
 /**
- * Tools is what an agent is given: `describe`, `list`, `get`, `series` and `aggregate` to read
- * with, and `stage_set`, `stage_add`, `stage_delete` and `staged` to propose a change with.
+ * Tools is what an agent is given: `guide`, `describe`, `list`, `get`, `series`, `aggregate`,
+ * `files` and `plan` to read and reckon with, and `stage_set`, `stage_add`, `stage_delete`,
+ * `create_plan` and `staged` to propose a change with.
  *
  * **Nothing here changes the logbook.** A write tool stages, and what is staged happens only when
  * somebody looks at it and applies it. `RECON-8`.
@@ -135,8 +137,11 @@ class Tools(
         val from = if (cursor == null) {
             0
         } else {
-            val (revision, offset) = cursor.split(':').mapNotNull { it.toIntOrNull() }
-                .takeIf { it.size == 2 }
+            val parts = cursor.split(':')
+            val (revision, offset) = parts.map { it.toIntOrNull() }
+                .takeIf { parts.size == 2 && it.all { part -> part != null } }
+                ?.filterNotNull()
+                ?.takeIf { it[1] >= 0 }
                 ?: return refused("cursor should be one a listing handed out, but was $cursor")
             if (revision != universe.revision) {
                 return refused(
@@ -218,6 +223,12 @@ class Tools(
                         ?: return refused("$name should have a series under $key, but has none")
                     return samplesOf(path, field, series)
                 }
+
+                field.cardinality == Cardinality.SERIES ->
+                    return refused("$path should end at $name, which is the series")
+
+                field.cardinality == Cardinality.KEYED_SERIES ->
+                    return refused("$path should name an entry of $name, which holds a series under each key")
 
                 else -> return refused("$path should end at a series, but $name is not one")
             }
@@ -336,18 +347,23 @@ class Tools(
             // half a plan waiting to be applied is worse than none. Where it had something, that
             // is the agent's earlier work and stays; the refusal says what did not go.
             val clean = staging.staged.none { it.id == dive }
-            fun refused(done: Outcome.Refused): Outcome {
+            fun takenBack(done: Outcome.Refused): Outcome {
                 if (clean) staging.drop(dive)
                 return done
             }
             for ((path, value) in leavesOf(profile, "$PROFILES.${made.key}", made.fields)) {
                 val done = staging.set(dive, path, value)
-                if (done is Outcome.Refused) return@staging refused(done)
+                if (done is Outcome.Refused) return@staging takenBack(done)
             }
             // A dive with no profile until now works from this one, as `onDiveOf` has it.
             if (first) {
                 val done = staging.set(dive, "primary_profile", "*${made.key}")
-                if (done is Outcome.Refused) return@staging refused(done)
+                if (done is Outcome.Refused) return@staging takenBack(done)
+            }
+            // What the plan says of the dive itself, which a plan following another dive has.
+            for ((name, value) in made.dive) {
+                val done = staging.set(dive, name, value)
+                if (done is Outcome.Refused) return@staging takenBack(done)
             }
             Outcome.Done()
         }
@@ -627,21 +643,6 @@ class Tools(
                 "from what was there before your edit, so do not mix the two in one answer.",
         )
     }
-}
-
-/** What a field is, in the words `manual/data-fields.md` uses for it. */
-private fun kindOf(field: FieldDescription): String = when (field) {
-    is NumberDescription -> "number"
-    is WholeNumberDescription -> "whole number"
-    is TextDescription -> "text"
-    is MultilineTextDescription -> "multiline text"
-    is DateDescription -> "date"
-    is TimeDescription -> "time"
-    is BooleanDescription -> "yes or no"
-    is GasDescription -> "gas mix"
-    is KeyReferenceDescription -> "key reference"
-    is ReferenceDescription -> "reference"
-    is OwnedItemDescription -> "owned item"
 }
 
 private val HOLDS: Map<Cardinality, String> = mapOf(

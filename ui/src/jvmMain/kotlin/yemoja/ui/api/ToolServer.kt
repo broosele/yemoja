@@ -17,6 +17,7 @@ import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
@@ -179,7 +180,7 @@ fun toolServer(tools: Tools, onto: CoroutineContext): Server {
     ) { request ->
         val id = request.text("id").orEmpty()
         val path = request.text("path").orEmpty()
-        val value = request.arguments?.get("value")?.let { storedOf(it) }
+        val value = request.arguments?.get("value")?.takeIf { it !is JsonNull }?.let { storedOf(it) }
         carried(onto) { tools.stageSet(id, path, value) }
     }
 

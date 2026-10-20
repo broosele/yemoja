@@ -39,6 +39,8 @@ def ran_for(dive):
 
 def main(folder, write):
     at = os.path.join(folder, 'dive')
+    if not os.path.isdir(at):
+        sys.exit('%s has no dive folder' % folder)
     paths = [os.path.join(at, name) for name in sorted(os.listdir(at)) if name.endswith('.json')]
     written, dropped, owed = 0, 0, []
     for path in paths:

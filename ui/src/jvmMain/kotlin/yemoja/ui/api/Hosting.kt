@@ -105,11 +105,11 @@ class Hosted(
 
     private var running: Process? = null
 
-    private val complaints = ArrayDeque<String>()
+    private val complaints = java.util.concurrent.ConcurrentLinkedDeque<String>()
 
     private var talking: ClientSession? = null
 
-    private val refusals = ArrayList<String>()
+    private val refusals = java.util.concurrent.CopyOnWriteArrayList<String>()
 
     private val calls = Calls()
 
@@ -322,7 +322,7 @@ class Hosted(
     private fun listen(process: Process) {
         val reading = Thread {
             process.errorStream.bufferedReader().forEachLine {
-                if (complaints.size >= COMPLAINTS) complaints.removeFirst()
+                if (complaints.size >= COMPLAINTS) complaints.pollFirst()
                 complaints.addLast(it)
             }
         }

@@ -21,7 +21,7 @@ internal fun prompted(terminal: Terminal, raw: RawModeScope, question: String): 
     val typed = StringBuilder()
     while (true) {
         val row = terminal.size.height.coerceAtLeast(Screen.LEAST_HEIGHT)
-        print("[$row;1H[2K$question $typed")
+        print("\u001B[$row;1H\u001B[2K$question $typed")
         System.out.flush()
         val event = raw.readKeyOrNull() ?: return null
         when {

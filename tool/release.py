@@ -31,7 +31,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def version():
     with open(os.path.join(ROOT, "gradle.properties"), encoding="utf-8") as held:
-        return re.search(r"^release=(\S+)$", held.read(), re.M).group(1)
+        found = re.search(r"^release=(\S+)$", held.read(), re.M)
+    if found is None:
+        sys.exit("gradle.properties names no release")
+    return found.group(1)
 
 
 def token():
@@ -78,6 +81,8 @@ def main(notes_file):
     pushed = subprocess.run(["git", "branch", "-r", "--contains", head], capture_output=True, cwd=ROOT).stdout.decode()
     if "origin/main" not in pushed:
         sys.exit(f"{head[:7]} is not pushed: push it first")
+    if not os.path.isfile(notes_file):
+        sys.exit(f"{notes_file} is not a file")
     with open(notes_file, encoding="utf-8") as held:
         notes = held.read()
     draft = call("POST", f"https://api.github.com/repos/{REPO}/releases", {
