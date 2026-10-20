@@ -660,7 +660,7 @@ class Screen(
 
             is Standing.Entries -> added(at.ends)
             is Standing.Empty -> owned(at.ends)
-            is Standing.Collection -> keyedEntry(at.field, at.held)
+            is Standing.Collection -> keyedEntry(at.field)
             is Standing.Owned, is Standing.Nowhere -> Unit
         }
     }
@@ -711,7 +711,7 @@ class Screen(
             is Standing.Items -> deleted()
             is Standing.Entries ->
                 if (onEntry(at.ends)) write(at.ends, listed(at.ends, "")) else Unit
-            is Standing.Collection -> if (at.at != null) unkeyedEntry(at.field, at.held)
+            is Standing.Collection -> if (at.at != null) unkeyedEntry(at.field)
             is Standing.Owned -> {
                 holder().change(Operation.EDIT, Change.Write(at.owner, at.field.name, null))
                 chosenEntry = 0
@@ -753,10 +753,10 @@ class Screen(
      * its type's fallback — `profile`, `gas` — exactly as a hand-made item becomes
      * `unknown_person`, and like an id it is not renamed when the entry is filled in.
      */
-    private fun keyedEntry(field: FieldDescription, held: List<Pair<String, Any>>) {
+    private fun keyedEntry(field: FieldDescription) {
         val owner = itemAt(path.size - 1) ?: return
         val within = (field as? OwnedItemDescription)?.description ?: return
-        val written = writtenEntries(held) { true }
+        val written = writtenEntries(owner, field) { true }
         val empty = ItemReader.read(within, Stored.Members(emptyMap()), set, Units.DEFAULT)
         val key = freeName(within.proposedId?.invoke(empty) ?: within.name) { it in written }
         written[key] = Stored.Members(emptyMap())
@@ -765,24 +765,34 @@ class Screen(
     }
 
     /** Takes the entry under the chosen key out, and moves to whatever is left. */
-    private fun unkeyedEntry(field: FieldDescription, held: List<Pair<String, Any>>) {
+    private fun unkeyedEntry(field: FieldDescription) {
         val owner = itemAt(path.size - 1) ?: return
         val going = path.last().second ?: return
-        val kept = writtenEntries(held) { it != going }
+        val kept = writtenEntries(owner, field) { it != going }
         holder().change(Operation.EDIT, Change.Write(owner, field.name, Stored.Members(kept)))
         path[path.size - 1] = field to kept.keys.firstOrNull()
         chosenEntry = 0
     }
 
-    /** The entries [held] whose key [keeping] accepts, back in the form a file holds them in. */
+    /**
+     * The entries of [field] on [owner] whose key [keeping] accepts, back in the form a file holds
+     * them in. One that would not read goes back as it was written, rather than being dropped
+     * for being unreadable.
+     */
+    @Suppress("UNCHECKED_CAST")
     private fun writtenEntries(
-        held: List<Pair<String, Any>>,
+        owner: Item,
+        field: FieldDescription,
         keeping: (String) -> Boolean,
     ): LinkedHashMap<String, Stored> {
         val out = LinkedHashMap<String, Stored>()
-        for ((key, entry) in held) {
+        val held = (owner.read(field.name) as? Result.Usable)?.value as? Map<String, Element<Any>>
+        for ((key, entry) in held.orEmpty()) {
             if (!keeping(key)) continue
-            if (entry is Item) out[key] = ItemWriter.write(entry, Units.DEFAULT)
+            when (entry) {
+                is Element.Usable -> (entry.value as? Item)?.let { out[key] = ItemWriter.write(it, Units.DEFAULT) }
+                is Element.Unusable -> out[key] = entry.raw
+            }
         }
         return out
     }
