@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import yemoja.data.ItemSet
 import yemoja.logic.Import
@@ -128,6 +130,8 @@ internal fun applied(
     into: ItemSet,
     reviewing: Reviewing,
     told: (done: Int, of: Int) -> Unit = { _, _ -> },
+    /** Runs a write where the logbook is edited, which the window makes its own thread. */
+    write: (() -> Outcome) -> Outcome = { it() },
 ): Taken {
     reviewing.refusedAt = null
     reviewing.refusal = null
@@ -140,10 +144,11 @@ internal fun applied(
         val dive = arrivingIn(import, into, nextNumberIn(into), only = id).firstOrNull() ?: continue
         val decision = decisionOf(dive, reviewing)
         if (decision == Decision.SKIP) continue
-        val placed = if (dive.fix == null) Outcome.Done() else placed(import, dive, reviewing)
-        val done = when (placed) {
-            is Outcome.Refused -> placed
-            is Outcome.Done -> takeIn(import, dive, dive.onto.takeIf { decision == Decision.MERGE })
+        val done = write {
+            when (val placed = if (dive.fix == null) Outcome.Done() else placed(import, dive, reviewing)) {
+                is Outcome.Refused -> placed
+                is Outcome.Done -> takeIn(import, dive, dive.onto.takeIf { decision == Decision.MERGE })
+            }
         }
         when (done) {
             is Outcome.Refused -> {
@@ -233,9 +238,21 @@ internal fun Arrived(
                 onClick = {
                     applying = 0 to shown.size
                     scope.launch {
-                        // What follows the dives, the rest of what arrived, is taken in there too.
+                        // The comparing runs off the screen's thread, being slow on a long
+                        // download, and each write comes back onto it, which is the thread the
+                        // logbook is read on: a window reading a logbook as another thread edits
+                        // it would see it half changed. `GUI-52`.
+                        val screen = coroutineContext
                         withContext(Dispatchers.Default) {
-                            after(applied(import, universe.logbook, reviewing) { done, of -> applying = done to of })
+                            val taken = applied(
+                                import,
+                                universe.logbook,
+                                reviewing,
+                                told = { done, of -> applying = done to of },
+                                write = { change -> runBlocking(screen) { change() } },
+                            )
+                            // What follows the dives, the rest of what arrived, is taken in there too.
+                            runBlocking(screen) { after(taken) }
                         }
                         applying = null
                         changer.changed()
