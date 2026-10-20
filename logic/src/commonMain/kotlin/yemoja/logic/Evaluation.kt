@@ -574,31 +574,31 @@ private fun walked(
             )
         }
         above = point.metres < allowed
-        val oxygen = breathing.inspirationAt(point.second.toDouble()).oxygen(ambient)
-        oxygenPressures += oxygen
+        val breathedOxygen = breathing.inspirationAt(point.second.toDouble()).oxygen(ambient)
+        oxygenPressures += breathedOxygen
         val most = breathing.mostOxygenOf(breathing.keyAt(point.second))
-        if (oxygen > most && !rich) {
+        if (breathedOxygen > most && !rich) {
             findings += Finding(
                 point.second,
                 Severity.WARNING,
                 "pO₂ too high",
-                "${bar(oxygen)} against the ${bar(most)} allowed; stay shallower on it",
+                "${bar(breathedOxygen)} against the ${bar(most)} allowed; stay shallower on it",
                 breathing.keyAt(point.second),
             )
         }
-        rich = oxygen > most
+        rich = breathedOxygen > most
         // A hypoxic mix breathed too shallow, once a crossing as a rich one breathed too deep is.
         val least = breathing.leastOxygenOf(breathing.keyAt(point.second))
-        if (oxygen < least && !lean) {
+        if (breathedOxygen < least && !lean) {
             findings += Finding(
                 point.second,
                 Severity.WARNING,
                 "pO₂ too low",
-                "${bar(oxygen)} against the ${bar(least)} needed; stay deeper on it",
+                "${bar(breathedOxygen)} against the ${bar(least)} needed; stay deeper on it",
                 breathing.keyAt(point.second),
             )
         }
-        lean = oxygen < least
+        lean = breathedOxygen < least
         // Too narcotic, once a crossing as a mix too rich is.
         val equivalent = narcoticDepthOf(
             breathing.inspirationAt(point.second.toDouble()),
@@ -633,7 +633,7 @@ private fun walked(
             findings += Finding(
                 0,
                 Severity.WARNING,
-                "Diluent hypoxic at the surface",
+                "diluent hypoxic at the surface",
                 "${bar(atSurface)} against the ${bar(least)} needed; a flush near the surface would not keep a diver conscious",
                 loop.diluent,
             )
@@ -899,8 +899,8 @@ fun completeAscent(run: Run, metresAMinute: Double, lastStop: Double, switchStop
 }
 
 /**
- * Where [run]'s gradient factors are anchored by its last point, walked as [evaluate] walks it, or
- * nought where nothing has been owed.
+ * The pressure [run]'s gradient factors are anchored at by its last point, in bar, walked as
+ * [evaluate] walks it, or nought where nothing has been owed.
  *
  * An ascent finished from part-way up takes this, so it is the rest of the ascent the run began.
  */
@@ -951,7 +951,8 @@ internal class From(
     val metres: Double,
     val breathed: String,
     /**
-     * The depth the gradient factors are anchored at so far, or nought where nothing has been owed.
+     * The pressure the gradient factors are anchored at so far, in bar, or nought where nothing
+     * has been owed.
      *
      * An ascent begun part-way through a dive takes the dive's anchor. Started from nought, it
      * would anchor at its own starting point, shallower than the dive's first stop, and hold
@@ -1557,7 +1558,7 @@ fun residualAfter(earlier: Item, intervalSeconds: Double, surface: Double = SEA_
  * The same crossing as a saved plan's, for a run that was never saved: a chained case of a plan
  * file comes here, its earlier case already evaluated, so nothing is evaluated twice. `LOGIC-43`.
  */
-fun residualAfter(ran: Evaluated.Done, surface: Double, intervalSeconds: Double): Residual.Done {
+fun residualAfter(ran: Evaluated.Done, intervalSeconds: Double, surface: Double): Residual.Done {
     require(intervalSeconds >= 0) {
         "a surface interval should be 0 seconds or more, but was $intervalSeconds"
     }

@@ -199,7 +199,7 @@ fun calculatedAll(cases: List<Case>): List<Calculated> {
             answered += Answered(Calculated.Refused(reason), null)
             continue
         }
-        val left = residualAfter(earlier.evaluated, earlier.whole.surface, follows.intervalSeconds)
+        val left = residualAfter(earlier.evaluated, follows.intervalSeconds, earlier.whole.surface)
         answered += answeredOf(case.planned, left)
     }
     return answered.map { it.answer }

@@ -505,6 +505,8 @@ sealed class Shaped {
  * starts from what its earlier case left. `LOGIC-43`.
  */
 fun shapedOf(shaping: Planned, universe: Universe? = null, residual: Residual.Done? = null): Shaped {
+    // The window and a plan file both keep one cylinder; a caller of the library may not.
+    if (shaping.gases.isEmpty()) return Shaped.Wrong("a plan needs at least one cylinder", emptyList())
     val (conditions, unreadable) = conditionsOf(shaping)
     val (legs, wrong) = laidOf(
         shaping.segments,
@@ -1054,8 +1056,6 @@ fun breaksCeiling(leg: Leg, above: Set<Int>): Boolean = above.any {
 /** The runtime a line is shown with: the whole minute it ends in, counted up. */
 fun runtimeSaid(leg: Leg): String = "${ceil(leg.ends / SECONDS_IN_MINUTE).toInt()}:"
 
-// clockOf already exists in Evaluation.kt, in this same package, and reads the same way.
-
 /** A rate to a tenth of a metre a minute. */
 fun rateSaid(rate: Double): String = plain((rate * 10).roundToInt() / 10.0)
 
@@ -1082,7 +1082,7 @@ private fun gasOf(typed: String): Gas? = try {
 
 /** A percentage from 1 to 100 as a proportion, or absent where [typed] is not one. `GUI-41`. */
 private fun percentageOf(typed: String): Double? =
-    typed.trim().removeSuffix("%").trim().toDoubleOrNull()?.takeIf { it >= 1 && it <= PERCENT }
+    typed.trim().removeSuffix("%").trim().toDoubleOrNull()?.takeIf { it in 1.0..PERCENT }
         ?.let { it / PERCENT }
 
 private fun positiveOf(typed: String): Double? = typed.trim().toDoubleOrNull()?.takeIf { it > 0 }

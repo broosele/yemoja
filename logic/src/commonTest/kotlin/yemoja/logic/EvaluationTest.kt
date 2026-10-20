@@ -1117,8 +1117,8 @@ class EvaluationTest {
         val lean = done(loopRun(Gas.parse("TMX10/70"), metres = 70.0, minutes = 10)).findings
 
         assertTrue(deep.any { it.what == "pO₂ too high" }, "air holds 1.69 bar at seventy metres: $deep")
-        assertTrue(lean.any { it.what == "Diluent hypoxic at the surface" && it.second == 0 }, "$lean")
-        assertTrue(deep.none { it.what == "Diluent hypoxic at the surface" })
+        assertTrue(lean.any { it.what == "diluent hypoxic at the surface" && it.second == 0 }, "$lean")
+        assertTrue(deep.none { it.what == "diluent hypoxic at the surface" })
     }
 
     @Test
