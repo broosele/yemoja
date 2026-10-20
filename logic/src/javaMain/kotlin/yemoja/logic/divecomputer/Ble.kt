@@ -42,6 +42,9 @@ internal val LISTENING: Duration = 4.seconds
 /** How long a connection is given to come up and to report its services. */
 private val CONNECTING: Duration = 15.seconds
 
+/** How long a wait without limit sleeps between looking for the link's end, in milliseconds. */
+private const val SLICE = 500L
+
 /**
  * Every dive computer advertising itself now, matched by the name it advertises.
  *
@@ -192,8 +195,14 @@ internal interface Wire {
      */
     fun send(bytes: ByteArray)
 
-    /** The next notification, or absent when none arrived within [milliseconds]. */
+    /**
+     * The next notification, or absent when none arrived within [milliseconds], or when the link
+     * has ended; negative waits as long as the link lasts.
+     */
     fun received(milliseconds: Long): ByteArray?
+
+    /** Whether the link has ended, after which nothing more will be received. */
+    val ended: Boolean get() = false
 
     /** A characteristic read directly, by its UUID, or absent where the device has none. */
     fun readOther(characteristic: Uuid): ByteArray?
@@ -218,6 +227,10 @@ internal class Connection private constructor(
 
     private val arrived = LinkedBlockingQueue<ByteArray>()
 
+    @Volatile
+    override var ended: Boolean = false
+        private set
+
     private val writing: Characteristic =
         characteristicOf(chosen.service, chosen.writing)
 
@@ -228,13 +241,16 @@ internal class Connection private constructor(
         peripheral.scope.launch {
             try {
                 peripheral.observe(heard) { ready.complete(Unit) }.collect { arrived.put(it) }
-            } catch (ended: Exception) {
+            } catch (failed: Exception) {
                 // Said where it is not the connection closing, because a listener that never
                 // started hears nothing and the read then waits for answers that cannot come.
-                if (ended !is kotlinx.coroutines.CancellationException) {
-                    System.err.println("bluetooth: listening ended: $ended")
+                if (failed !is kotlinx.coroutines.CancellationException) {
+                    System.err.println("bluetooth: listening ended: $failed")
                 }
                 ready.complete(Unit)
+            } finally {
+                // The link is gone, however it went, and a read waiting on it is told so.
+                ended = true
             }
         }
         return ready
@@ -249,8 +265,14 @@ internal class Connection private constructor(
         }
     }
 
-    override fun received(milliseconds: Long): ByteArray? =
-        if (milliseconds < 0) arrived.take() else arrived.poll(milliseconds, TimeUnit.MILLISECONDS)
+    override fun received(milliseconds: Long): ByteArray? {
+        if (milliseconds >= 0) return arrived.poll(milliseconds, TimeUnit.MILLISECONDS)
+        // A wait without limit, in slices, so that a link that ends under it ends the wait too.
+        while (true) {
+            arrived.poll(SLICE, TimeUnit.MILLISECONDS)?.let { return it }
+            if (ended) return arrived.poll()
+        }
+    }
 
     override fun readOther(characteristic: Uuid): ByteArray? {
         val services = peripheral.services.value ?: return null
@@ -416,7 +438,7 @@ internal class Custom(private val wire: Wire, private val session: Session = Ses
                 else -> (until - System.currentTimeMillis()).coerceAtLeast(0)
             }
             if (milliseconds > 0 && left == 0L) break
-            val more = wire.received(left) ?: if (milliseconds == 0) break else continue
+            val more = wire.received(left) ?: if (milliseconds == 0 || wire.ended) break else continue
             pending.addAll(more.asList())
         }
         return pending.size >= wanted
@@ -438,7 +460,13 @@ internal class Custom(private val wire: Wire, private val session: Session = Ses
             pending.subList(0, given).clear()
         }
         actual?.setLong(0, given.toLong())
-        return if (came) SUCCESS else Libdivecomputer.TIMEOUT
+        // A link that has ended is not a device slow to answer: the library says so rather
+        // than waiting out every read to come.
+        return when {
+            came -> SUCCESS
+            wire.ended -> Libdivecomputer.IO
+            else -> Libdivecomputer.TIMEOUT
+        }
     }
 
     internal fun write(data: Pointer?, size: Long, actual: Pointer?): Int {

@@ -222,9 +222,17 @@ internal class Attached(
         val cancel = Libdivecomputer.CancelCallback { if (session.cancelled) 1 else 0 }
         library.dc_device_set_cancel(device.value, cancel, null)
         val held = ArrayList<Recording>()
+        var unreadable = 0
+        // The model's own name for the recording to be filed under, not the transport it came by:
+        // one computer read over two is one computer. `LOGIC-23`.
+        val model = listOfNotNull(
+            library.dc_descriptor_get_vendor(descriptor),
+            library.dc_descriptor_get_product(descriptor),
+        ).joinToString(" ")
         val callback = Libdivecomputer.DiveCallback { data, size, fingerprint, fsize, _ ->
             val known = hexOf(fingerprint, fsize)
-            recordingOf(library, device.value, data, size, name, serial, known)?.let { held += it }
+            recordingOf(library, device.value, data, size, model, serial, known)?.let { held += it }
+                ?: unreadable++
             // Non-zero carries on; a download that stopped at the first dive would be a download
             // of one dive.
             1
@@ -238,6 +246,9 @@ internal class Attached(
         Reference.reachabilityFence(cancel)
         Reference.reachabilityFence(callback)
         if (session.cancelled || walked == Libdivecomputer.CANCELLED) return emptySequence()
+        if (walked == Libdivecomputer.SUCCESS && unreadable > 0) {
+            session.stopped("$unreadable of ${held.size + unreadable} dives could not be read, and were left out${Heard.said()}")
+        }
         if (walked != Libdivecomputer.SUCCESS) {
             val reason = "${statusSaid(walked)}${Heard.said()}"
             if (held.isEmpty()) throw ReadFailed("before any dive arrived: $reason")
@@ -369,13 +380,13 @@ private fun readingOf(
     name: String,
     serial: String?,
     fingerprint: String?,
-): Recording {
+): Recording? {
     val clock = CDateTime()
     val when_ = library.dc_parser_get_datetime(parser, clock) == Libdivecomputer.SUCCESS
     val salinity = fieldOf(library, parser, Field.SALINITY, CSalinity())
     val model = fieldOf(library, parser, Field.DECOMODEL, CDecoModel())
     val (gases, sourceOfMix) = sourcesOf(mixesOf(library, parser), tanksOf(library, parser))
-    val walked = walkedOf(library, parser)
+    val walked = walkedOf(library, parser) ?: return null
     return Recording(
         computer = name,
         serial = serial,
@@ -488,10 +499,13 @@ internal fun sourcesOf(
 /** A mix as divers write one, which is what the model holds: the data layer's own spelling. */
 private fun gasOf(mix: CGasMix): String = Gas(mix.oxygen, mix.helium).toString()
 
-/** Every reading through the dive, in the order the device recorded them. */
-private fun walkedOf(library: Libdivecomputer, parser: Pointer?): Walked {
+/**
+ * Every reading through the dive, in the order the device recorded them, or absent where the
+ * walk failed part way: half a dive's samples read as a dive that ended early.
+ */
+private fun walkedOf(library: Libdivecomputer, parser: Pointer?): Walked? {
     val walked = Walked()
-    library.dc_parser_samples_foreach(parser, walked, null)
+    if (library.dc_parser_samples_foreach(parser, walked, null) != Libdivecomputer.SUCCESS) return null
     return walked
 }
 

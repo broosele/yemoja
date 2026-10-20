@@ -305,7 +305,9 @@ object DivingLog {
             sources[freeName("gas") { it in sources }] = Stored.Members(fields)
         }
         add(row)
+        // Seeded with the main cylinder, which a tank row may repeat as it repeats another.
         val seen = HashSet<List<Double?>>()
+        seen += TANK_VALUES.map { row.real(it) }
         for (tank in tanks.sortedBy { it.number("SortOrd") ?: it.number("ID") }) {
             val values = TANK_VALUES.map { tank.real(it) }
             if (values.take(3).all { it == null } || !seen.add(values)) continue
