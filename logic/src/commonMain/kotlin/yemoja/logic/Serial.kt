@@ -13,8 +13,8 @@ package yemoja.logic
  * reports its serial as a number and its maker prints it as they please, so a spelling that is
  * all digits is also read as a decimal number and one holding a hexadecimal letter as a
  * hexadecimal one, and the two are compared as numbers: `001124` and `1124` are one, and so are
- * `1787924901` and `6A9191A5`. A hexadecimal spelling that happens to hold only digits is the
- * one case this misses.
+ * `1787924901` and `6A9191A5`, and two hexadecimal spellings as numbers too, so `0A1` and `A1`
+ * are one. A hexadecimal spelling that happens to hold only digits is the one case this misses.
  */
 internal fun sameSerial(a: String, b: String): Boolean {
     val left = bare(a)
@@ -24,8 +24,11 @@ internal fun sameSerial(a: String, b: String): Boolean {
     val leftDecimal = decimalOf(left)
     val rightDecimal = decimalOf(right)
     if (leftDecimal != null && leftDecimal == rightDecimal) return true
-    return (leftDecimal != null && leftDecimal == hexadecimalOf(right)) ||
-        (rightDecimal != null && rightDecimal == hexadecimalOf(left))
+    val leftHexadecimal = hexadecimalOf(left)
+    val rightHexadecimal = hexadecimalOf(right)
+    if (leftHexadecimal != null && leftHexadecimal == rightHexadecimal) return true
+    return (leftDecimal != null && leftDecimal == rightHexadecimal) ||
+        (rightDecimal != null && rightDecimal == leftHexadecimal)
 }
 
 /** Letters and digits only, in one case. */
