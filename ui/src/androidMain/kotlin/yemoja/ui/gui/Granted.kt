@@ -362,8 +362,10 @@ internal class GrantedFileStore(
             Document.COLUMN_SIZE,
         )
         val paging = if (offset == 0) null else Bundle().apply { putInt(ContentResolver.QUERY_ARG_OFFSET, offset) }
+        // Nothing back is the provider gone, a cloud drive's app stopped, not a folder with nothing
+        // in it: read as empty, an open logbook looked like no logbook at all.
         val rows = resolver.query(children, asked, paging, null)
-            ?: return Page(0, 0, false, -1, null, null, null)
+            ?: throw FileStoreMissing("$path could not be listed: its provider did not answer")
         var kept = false
         try {
             var count = 0
