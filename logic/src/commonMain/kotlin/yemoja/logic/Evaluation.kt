@@ -3,6 +3,7 @@ package yemoja.logic
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToLong
 
 import yemoja.data.Element
 import yemoja.data.Gas
@@ -1636,13 +1637,13 @@ fun clockOf(second: Int): String =
  * without a tenth where there is none: `9 m`, `8.4 m`.
  */
 private fun metres(depth: Double): String {
-    val tenths = (depth * 10).toLong()
+    val tenths = (depth * 10).roundToLong()
     return if (tenths % 10 == 0L) "${tenths / 10} m" else "${tenths / 10}.${tenths % 10} m"
 }
 
 /** A pressure as a finding says it, to a hundredth of a bar. */
 internal fun bar(pressure: Double): String {
-    val hundredths = (pressure * 100).toLong()
+    val hundredths = (pressure * 100).roundToLong()
     return "${hundredths / 100}.${(hundredths % 100).toString().padStart(2, '0')} bar"
 }
 
@@ -1701,10 +1702,10 @@ private const val WHOLE_CLOCK = 100.0
 /**
  * The pressure inside an aircraft, in bar.
  *
- * Eight thousand feet, which is the cabin altitude aircraft are held to and what a diver is really
- * asking about when they ask when they may fly.
+ * Eight thousand feet in the standard atmosphere, which is the cabin altitude aircraft are held
+ * to and what a diver is really asking about when they ask when they may fly.
  */
-private const val CABIN = 0.7565
+private const val CABIN = 0.7526
 
 /** The step a stop is taken on, in metres: three, six, nine, as a diver counts them. */
 private const val STOP_STEP = 3.0

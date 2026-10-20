@@ -252,7 +252,7 @@ class CalculatedTest {
         val schedule = assertIs<Calculated.Done>(calculated(plan)).schedule
         val warning = schedule.warnings.single { "bailing out" in it.said }
 
-        assertTrue(warning.said.startsWith("Gas 2 pO₂ too high bailing out: 1.48 bar against the 1.40 bar allowed"), warning.said)
+        assertTrue(warning.said.startsWith("Gas 2 pO₂ too high bailing out: 1.49 bar against the 1.40 bar allowed"), warning.said)
         assertEquals("2", warning.gas)
     }
 

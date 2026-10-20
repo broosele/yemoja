@@ -1,5 +1,6 @@
 package yemoja.ui.gui
 
+import kotlin.math.roundToLong
 import yemoja.data.Element
 import yemoja.data.Item
 import yemoja.data.OwnedItem
@@ -191,7 +192,7 @@ private fun atSaid(second: Int): String =
 
 /** A depth to a tenth of a metre, which is as fine as a stop is ever read. */
 private fun metresSaid(depth: Double): String {
-    val tenths = (depth * 10).toLong()
+    val tenths = (depth * 10).roundToLong()
     return "${tenths / 10}.${tenths % 10} m"
 }
 
