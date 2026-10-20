@@ -2153,7 +2153,8 @@ Kept with their identifiers so earlier discussion still resolves.
 
 - **DATA-88 — How many digits a measurement is written with.** *Settled:* **each unit carries
   its own precision, in decimal places, and the same figure governs showing a value and
-  storing one.** The figure is 0, 3, 6 or 9. No trailing zeros, and never an exponent.
+  storing one.** The figure is 0, 3, 6 or 9. No trailing zeros, and never an exponent. A half
+  rounds away from nought, as a person rounds.
 
   Converting a number into a unit and back is exact only to about the sixteenth digit, so a
   value written straight from a double gains a tail on every save. Rounding at the unit's

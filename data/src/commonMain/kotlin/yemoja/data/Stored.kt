@@ -53,3 +53,16 @@ sealed class Stored {
         override fun toString(): String = "Elements$elements"
     }
 }
+
+/**
+ * Digits is a number as a file wrote it that this machine cannot hold: a whole one past 64 bits,
+ * or a fraction past the largest double.
+ *
+ * Carried as text so that it is judged where fields are judged and written back as it came,
+ * unquoted, rather than as the text it is not. `DATA-77`.
+ *
+ * Immutable.
+ */
+data class Digits(val text: String) {
+    override fun toString(): String = text
+}

@@ -296,9 +296,9 @@ smaller half of a job already begun.
 double, because a whole number field must refuse `7.0` while a number field accepts `7`,
 and the fixtures are full of whole-looking numbers in number fields. Nothing is needed to
 carry the distinction: the two are different types already. **A number this machine cannot
-hold** — a whole one past 64 bits, a fraction past the largest double — is kept as the text it
-was written as, so it is judged where fields are judged rather than stopping the file, and its
-digits go back unchanged. A field expecting a whole number refuses it; one expecting a number reads
+hold** — a whole one past 64 bits, a fraction past the largest double — is kept as the digits it
+was written as, `Digits`, so it is judged where fields are judged rather than stopping the file,
+and its digits go back unchanged and unquoted. A field expecting a whole number refuses it; one expecting a number reads
 it if it can. It was refused in the reader once, which cost the whole logbook for one field,
 against `DATA-77`.
 

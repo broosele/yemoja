@@ -226,7 +226,11 @@ sealed class ValueDescription(
 private fun written(value: Double, decimals: Int): String {
     if (value == 0.0 || !value.isFinite()) return "0"
     val scale = 10.0.pow(decimals)
-    return plain((round(value * scale) / scale).toString())
+    // Away from nought on a half, as a person rounds: `round` goes to the even digit, which made
+    // 0.0025 into 0.002 and 0.0035 into 0.004.
+    val scaled = value * scale
+    val whole = if (scaled < 0) -floor(-scaled + 0.5) else floor(scaled + 0.5)
+    return plain((whole / scale).toString())
 }
 
 /**
@@ -288,6 +292,7 @@ class NumberDescription(
             // `"NaN"` and `"Infinity"` parse and are not numbers anybody measured: kept unusable
             // they go back to the file as written, where a usable one was saved as nought.
             is String -> given.trim().toDoubleOrNull()?.takeIf { it.isFinite() }
+            is Digits -> return Result.Unusable(Stored.Leaf(given), "$name is $given, which is too large to hold")
             else -> null
         } ?: return Result.Unusable(Stored.Leaf(given), "$name should be a number")
         return resultOf(units.toDefault(dimension, written), given, overrides)

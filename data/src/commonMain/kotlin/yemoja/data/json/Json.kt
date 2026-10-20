@@ -1,5 +1,6 @@
 package yemoja.data.json
 
+import yemoja.data.Digits
 import yemoja.data.Stored
 
 /**
@@ -112,6 +113,7 @@ private fun leaf(value: Any?): String = when (value) {
     is Boolean -> value.toString()
     is String -> quoted(value)
     is Double -> number(value)
+    is Digits -> value.text
     else -> value.toString()
 }
 
@@ -403,15 +405,14 @@ private class Reader(private val text: String) {
             readDigits(atLeastOne = true)
         }
         val written = text.substring(start, at)
-        // A number this machine cannot hold is kept as the text it was written as rather than
-        // stopping the whole file: the field judges it, and the digits survive being written
-        // back. `DATA-77`.
+        // A number this machine cannot hold is kept as the digits it was written as rather than
+        // stopping the whole file: the field judges it, and the digits go back unquoted. `DATA-77`.
         if (fractional) {
             val value = written.toDoubleOrNull()?.takeIf { it.isFinite() }
-                ?: return Stored.Leaf(written)
+                ?: return Stored.Leaf(Digits(written))
             return Stored.Leaf(value)
         }
-        return Stored.Leaf(written.toLongOrNull() ?: written)
+        return Stored.Leaf(written.toLongOrNull() ?: Digits(written))
     }
 
     private fun readDigits(atLeastOne: Boolean) {
