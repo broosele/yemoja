@@ -251,7 +251,11 @@ read, the two oxygen clocks, how long before you may fly, and a list of what it 
 above the ceiling, a cylinder that runs out, a mix too rich for the depth it is breathed at, a mix
 with too little oxygen for it. **The CNS clock is not defined above 1.6 bar**: the published
 limits stop there, so past it the clock runs no faster than it does at 1.6, and the objection
-beside it is the answer rather than the figure.
+beside it is the answer rather than the figure. **The CNS clock gives nothing back under water**:
+below the lowest published limit it holds where it is, and it recovers only on the surface,
+halving every ninety minutes. That ninety minutes is the convention dive computers and planners
+follow between dives rather than a measured figure, so treat a second dive's starting figure as
+an estimate.
 
 **Planning a second dive of the day** means telling the plan which earlier run you are carrying
 gas from, and the model then carries your tissues across the surface interval into it. Two plans

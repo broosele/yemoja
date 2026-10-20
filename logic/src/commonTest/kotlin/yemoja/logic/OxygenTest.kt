@@ -45,14 +45,15 @@ class OxygenTest {
     }
 
     @Test
-    fun `little enough oxygen spends nothing, and gives back what was spent`() {
+    fun `little enough oxygen spends nothing, and the surface gives back what was spent`() {
         near(0.0, steady(0.5, 600.0).percentCns)
         val spent = steady(1.4, 150.0)
         near(100.0, spent.percentCns)
 
-        val recovered = spent.breathing(0.21, 0.21, 90 * MINUTE)
+        val recovered = spent.resting(90 * MINUTE)
         near(50.0, recovered.percentCns, "ninety minutes gives back half")
-        near(25.0, recovered.breathing(0.21, 0.21, 90 * MINUTE).percentCns)
+        near(25.0, recovered.resting(90 * MINUTE).percentCns)
+        near(100.0, spent.breathing(0.21, 0.21, 90 * MINUTE).percentCns, "and under water nothing is given back")
     }
 
     @Test

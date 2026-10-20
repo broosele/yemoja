@@ -1514,11 +1514,7 @@ private fun carriedAcross(earlier: Item, interval: Double, surface: Double, seen
         is Evaluated.Done -> Carried.From(
             ran.surfacing.breathing(Gas.AIR, surface, surface, interval),
             // The clock runs backwards on the surface, which is what a surface interval is for.
-            ran.oxygen.breathing(
-                surface * Gas.AIR.fractionO2,
-                surface * Gas.AIR.fractionO2,
-                interval,
-            ),
+            ran.oxygen.resting(interval),
         )
     }
 
@@ -1565,11 +1561,7 @@ fun residualAfter(ran: Evaluated.Done, intervalSeconds: Double, surface: Double)
     return Residual.Done(
         ran.surfacing.breathing(Gas.AIR, surface, surface, intervalSeconds),
         // The clock runs backwards on the surface, which is what a surface interval is for.
-        ran.oxygen.breathing(
-            surface * Gas.AIR.fractionO2,
-            surface * Gas.AIR.fractionO2,
-            intervalSeconds,
-        ),
+        ran.oxygen.resting(intervalSeconds),
     )
 }
 

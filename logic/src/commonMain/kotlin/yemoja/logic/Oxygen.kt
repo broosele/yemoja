@@ -29,22 +29,34 @@ class OxygenClock private constructor(
 ) {
 
     /**
-     * This clock after [seconds] of breathing oxygen whose partial pressure goes from [from] to
-     * [to], in bar.
+     * This clock after [seconds] under water breathing oxygen whose partial pressure goes from
+     * [from] to [to], in bar.
      *
      * The pressure is taken as its average over the stretch, which is exact for a stop and close
-     * enough on an ascent, a minute of which spans a tenth of a bar.
+     * enough on an ascent, a minute of which spans a tenth of a bar. **Nothing is given back under
+     * water**: below the lowest limit the clock holds, and only [resting] moves it down. `LOGIC-38`.
      */
     fun breathing(from: Double, to: Double, seconds: Double): OxygenClock {
         require(seconds >= 0) { "seconds should be 0 or more, but was $seconds" }
         if (seconds == 0.0) return this
         val minutes = seconds / SECONDS_IN_MINUTE
         val oxygen = (from + to) / 2
-        val spent = limitFor(oxygen)?.let { percentCns + minutes / it * 100 }
-            ?: decayed(percentCns, minutes)
+        val spent = limitFor(oxygen)?.let { percentCns + minutes / it * 100 } ?: percentCns
         val taken = if (oxygen <= OTU_FLOOR) otu
         else otu + minutes * ((oxygen - OTU_FLOOR) / OTU_FLOOR).pow(OTU_POWER)
         return OxygenClock(spent, taken)
+    }
+
+    /**
+     * This clock after [seconds] on the surface, where the central nervous system's recovers.
+     *
+     * Half of what it holds is given back every ninety minutes, which is the convention dive
+     * computers and planners follow between dives. The lungs' count is a dose taken, and stays.
+     * `LOGIC-38`.
+     */
+    fun resting(seconds: Double): OxygenClock {
+        require(seconds >= 0) { "seconds should be 0 or more, but was $seconds" }
+        return OxygenClock(decayed(percentCns, seconds / SECONDS_IN_MINUTE), otu)
     }
 
     override fun toString(): String = "CNS ${percentCns.toInt()}%, OTU ${otu.toInt()}"
@@ -73,12 +85,7 @@ private fun limitFor(partialPressure: Double): Double? {
     return past.second + (next.second - past.second) * across
 }
 
-/**
- * What is left of [percent] after [minutes] of breathing little enough oxygen to recover.
- *
- * The clock runs backwards on the surface, halving what it holds every ninety minutes, which is
- * the figure the same tables give for recovery between dives.
- */
+/** What is left of [percent] after [minutes] on the surface, halving every ninety minutes. */
 private fun decayed(percent: Double, minutes: Double): Double =
     percent * exp(-ln(2.0) / CNS_HALF_TIME * minutes)
 

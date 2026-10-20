@@ -689,9 +689,13 @@ To settle when we discuss architecture and features:
   willing to say, and an evaluation already raises a finding at that pressure, which is more use
   than a made-up number past it.
 
-  **The clock runs backwards on the surface**, halving what it holds every ninety minutes, which
-  is what makes a second dive's figure less than two firsts. The lungs' count does not: it is a
-  dose taken, and a surface interval does not untake it.
+  **The clock runs backwards on the surface, and nowhere else**, halving what it holds every
+  ninety minutes, which is what makes a second dive's figure less than two firsts. Under water
+  below the lowest limit it holds: nothing is spent and nothing is given back, which is how the
+  published method and the computers that follow it have it. It did give back at depth for a
+  while, on a lean mix or a shallow stop, which was more lenient than any of them. The ninety
+  minutes is a convention rather than a measured figure, and the manual says so. The lungs' count
+  does not run backwards at all: it is a dose taken, and a surface interval does not untake it.
 
   Nothing here is stored, as nothing the model says is. A recording's own `cns` and `otu` are what
   its computer said, kept as recorded, and the two answers sit beside each other — `LOGIC-6`'s rule
