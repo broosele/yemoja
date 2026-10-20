@@ -694,7 +694,12 @@ private fun divesId(dive: Item): Result<Any> {
 }
 
 private fun divesStartDate(dive: Item): Result<Any> =
-    fromProfile(dive) { began(it)?.let { moment -> dateOf(moment) } ?: Result.Absent }
+    fromProfile(dive) { profile ->
+        // The day alone where the recording gives no time, the offset then having nothing to move.
+        began(profile)?.let { moment -> dateOf(moment) }
+            ?: (profile.single<Date>("start_date") as? Result.Usable)?.let { Result.Usable(it.value, Result.Origin.DERIVED) }
+            ?: Result.Absent
+    }
 
 private fun divesStartTime(dive: Item): Result<Any> =
     fromProfile(dive) { began(it)?.let { moment -> timeOf(moment) } ?: Result.Absent }

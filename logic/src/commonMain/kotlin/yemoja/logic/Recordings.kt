@@ -192,10 +192,13 @@ private const val PRIMARY = "primary_profile"
  * recording saying 09:00 began at 07:00. The correction moves the date as well as the time where
  * it has to, so two minutes past midnight with two hours coming off is late the previous evening.
  * `LOGIC-32`.
+ *
+ * Absent where the recording gives no time: a date alone is a day, not a moment, and midnight
+ * stood in for the time for a while, giving a dive a start nobody recorded.
  */
 internal fun began(profile: Item): Moment? {
     val date = (profile.single<Date>("start_date") as? Result.Usable)?.value ?: return null
-    val time = (profile.single<Time>("start_time") as? Result.Usable)?.value ?: Time(0, 0, 0)
+    val time = (profile.single<Time>("start_time") as? Result.Usable)?.value ?: return null
     val offset = (profile.single<Double>("recorded_time_offset") as? Result.Usable)?.value ?: 0.0
     return Moment(date, time).plusSeconds(-offset.toLong())
 }

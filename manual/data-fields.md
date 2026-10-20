@@ -131,7 +131,8 @@ All three can be corrected where the calculation is wrong.
 - `start_date` (date, derived) — the day the dive began, in the local time where it was made.
   From the primary profile, corrected by its `recorded_time_offset`, or from you.
 - `start_time` (time, derived) — when you went in, in local time. The dive's times are all
-  local, and shown as they are.
+  local, and shown as they are. Nothing where the recording gives a day and no time, and the
+  surface intervals to and from the dive then cannot be worked out either.
 - `duration` (number, derived) — how long the dive lasted, in seconds unless the file says
   otherwise. From the primary profile, or written by you where there is no recording. It is what
   says when the dive ended, there being no field for that.
@@ -152,7 +153,9 @@ All three can be corrected where the calculation is wrong.
   no `decostop`, `no_deco_time` decides: reaching zero means yes, and never reaching it means
   no. Most computers write stops only when there are stops, which is why the second reading
   matters. A zero before the first positive value is ignored: some computers read zero at the
-  surface before they have calculated anything, and a dive cannot begin in deco.
+  surface before they have calculated anything, and a dive cannot begin in deco. A series that
+  is zero throughout reads as no, the computer having seen no deco, rather than as a computer
+  that never computed one.
 
   Where the recording has neither, Yemoja's own decompression model answers: it runs the
   depths at the gradient factors the recording names, or at 30/70 where it says nothing, and says yes if it would have held you to a stop at any moment. Those are Yemoja's
