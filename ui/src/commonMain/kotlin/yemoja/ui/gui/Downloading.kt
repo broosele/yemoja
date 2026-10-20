@@ -77,7 +77,7 @@ internal fun progressOf(done: Long, total: Long): String? = when {
 }
 
 /** [bytes] in whole kilobytes, rounded up so that a started transfer never shows nought. */
-private fun kilobytesOf(bytes: Long): Long = (bytes + BYTES_A_KILOBYTE - 1) / BYTES_A_KILOBYTE
+fun kilobytesOf(bytes: Long): Long = (bytes + BYTES_A_KILOBYTE - 1) / BYTES_A_KILOBYTE
 
 private const val BYTES_A_KILOBYTE = 1000L
 
@@ -295,15 +295,6 @@ internal fun gluedIn(dive: Item): Int =
 
 private fun tokensIn(profile: Item): Int =
     ((profile.list<String>("fingerprint") as? Result.Usable)?.value)?.size ?: 1
-
-@Suppress("UNCHECKED_CAST")
-private fun keyedOf(item: Item, field: String): Map<String, OwnedItem> {
-    if (item.description[field] == null) return emptyMap()
-    val read = (item.read(field) as? Result.Usable)?.value as? Map<String, Element<Any>>
-    return read.orEmpty().mapNotNull { (key, element) ->
-        ((element as? Element.Usable)?.value as? OwnedItem)?.let { key to it }
-    }.toMap()
-}
 
 /**
  * The number the next dive taken in gets: one past the highest the logbook holds.

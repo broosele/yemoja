@@ -168,7 +168,7 @@ internal class GrantedFileStore(
         val names = partsOf(path)
         val folder = folderId(names.dropLast(1).joinToString("/")) ?: return
         val entry = childrenOf(folder)[names.last()] ?: return
-        DocumentsContract.deleteDocument(resolver, uriOf(entry.id))
+        if (!DocumentsContract.deleteDocument(resolver, uriOf(entry.id))) error("$path could not be deleted")
         listed[folder]?.let { listed[folder] = it - names.last() }
         listed.remove(entry.id)
     }

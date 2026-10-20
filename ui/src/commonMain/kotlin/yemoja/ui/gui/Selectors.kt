@@ -25,6 +25,10 @@ import yemoja.logic.wasMade
 /** One item a selector offers: what it is called, and how to reach it. */
 internal class Chosen(val id: String, val title: String, val item: ReferenceableItem)
 
+/** [held] as [set] holds it now, or absent where it no longer does. */
+internal fun chosenAgain(set: ItemSet, held: Chosen): Chosen? =
+    set[held.id]?.let { Chosen(held.id, titleOf(it), it) }
+
 /** The dives of [set] that were made, in the order it holds them. `GUI-39`. */
 internal fun divesMadeIn(set: ItemSet): List<ReferenceableItem> =
     set.allOf(Types.DIVE).filter { wasMade(it) }

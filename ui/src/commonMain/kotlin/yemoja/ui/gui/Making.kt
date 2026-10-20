@@ -105,7 +105,11 @@ private const val NOTHING_HERE = "Nothing on this tab is added, edited or delete
 private const val FORM_OPEN = "Save or cancel the form first."
 
 /** What the button that makes one is called: *Add a dive*, *Add a person*. */
-internal fun makeSaid(type: ItemDescription): String = "Add a " + labelOf(type).lowercase()
+internal fun makeSaid(type: ItemDescription): String {
+    val what = labelOf(type).lowercase()
+    val article = if (what.first() in "aeiou") "an" else "a"
+    return "Add $article $what"
+}
 
 /**
  * Every type a tab can make, the one being looked at first.

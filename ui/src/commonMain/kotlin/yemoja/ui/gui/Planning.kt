@@ -15,9 +15,8 @@ import yemoja.logic.sourcesRootOf
  * What the model says about a run, as a screen needs it: a line to draw over the profile, other
  * lines for the right axis, figures to read beside it, and the findings in words.
  *
- * Worked out without a screen. The arithmetic is the logic layer's — `LOGIC-37` — and none of it
- * is repeated here: this turns one answer into what a reader sees, and turns an ascent into the
- * changes that write it down.
+ * Worked out without a screen. The arithmetic is the logic layer's, `LOGIC-37`, and none of it
+ * is repeated here: this turns one answer into what a reader sees.
  *
  * See ../../../../../../gui/doc.md — `GUI-40`.
  */
@@ -128,7 +127,7 @@ internal fun runFiguresOf(
     for ((key, litres) in evaluated.gasUsed) {
         val tank = tanks[key] ?: key
         val left = evaluated.pressures[key]?.let { ending(it) }
-        val said = "${litres.toInt()} l" + if (left == null) "" else ", ending at $left"
+        val said = "${litres.toInt()} L" + if (left == null) "" else ", ending at $left"
         figures += worked("$tank used", said)
     }
     figures += worked("CNS", "${evaluated.oxygen.percentCns.toInt()}%")
@@ -141,8 +140,8 @@ internal fun runFiguresOf(
 /**
  * What the model objects to, each as a line: when it happened, and what it is.
  *
- * A finding about a cylinder is named by [tanks], falling back to the key the run holds it by,
- * which is what a reader of a dive already sees on its gas sources. Each is labelled with what is
+ * A finding about a cylinder is named by [tanks], falling back to the key the run holds it by.
+ * Each is labelled with what is
  * wrong and says what to do and when, as *Deco ceiling violation: stay below 10.7 m at 26:01*.
  * Nothing where it objects to nothing, which is what a plan is adjusted until it says. A warning reads as a value that would
  * not read does, in the error colour, because both are the screen telling a reader that something
@@ -216,22 +215,3 @@ private fun sourcesOf(dive: Item, profile: Item): Map<String, OwnedItem> {
     }.toMap()
 }
 
-/** What a series holds, as a file writes it, so an ascent can be added to the end of it. */
-private fun samplesOf(profile: Item, field: String): List<Stored> {
-    val series = (profile.read(field) as? Result.Usable)?.value as? Series ?: return emptyList()
-    return (0..<series.size).mapNotNull { at ->
-        val value = (series.valueAt(at) as? Element.Usable)?.value ?: return@mapNotNull null
-        sample(series.secondAt(at), if (value is Double) value else value.toString())
-    }
-}
-
-private fun sample(second: Int, value: Any): Stored =
-    Stored.Elements(listOf(Stored.Leaf(second), Stored.Leaf(value)))
-
-/** A series as points, its seconds as minutes and each value scaled. */
-private fun pointsOf(series: Series, scale: Double = 1.0): List<Point> =
-    (0..<series.size).mapNotNull { at ->
-        val value = (series.valueAt(at) as? Element.Usable)?.value as? Number
-            ?: return@mapNotNull null
-        Point(series.secondAt(at) / 60.0, value.toDouble() * scale)
-    }

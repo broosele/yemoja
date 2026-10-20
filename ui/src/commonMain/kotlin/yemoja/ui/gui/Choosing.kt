@@ -504,8 +504,10 @@ internal fun chosenOf(setting: NumberSetting, typed: String): Entered {
     val number = text.toDoubleOrNull()
         ?: return Entered.Wrong("${setting.label} should be a number, but was \"${typed.trim()}\"")
     if (isPercentage(setting)) {
-        if (number < 1 || number > PERCENT) {
-            return Entered.Wrong("${setting.label} is a percentage from 1 to 100, but was $text")
+        if (number !in LEAST_PERCENT..PERCENT) {
+            return Entered.Wrong(
+                "${setting.label} is a percentage from ${plain(LEAST_PERCENT)} to ${plain(PERCENT)}, but was $text",
+            )
         }
         return Entered.Value(number / PERCENT)
     }
@@ -557,6 +559,9 @@ internal fun plain(value: Double, decimals: Int = 3): String {
 }
 
 private const val PERCENT = 100.0
+
+/** The least a gradient factor may be typed as, in percent. `GUI-41`. */
+private const val LEAST_PERCENT = 1.0
 
 private const val SECONDS_IN_MINUTE = 60.0
 

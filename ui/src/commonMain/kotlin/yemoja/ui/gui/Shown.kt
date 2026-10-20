@@ -46,9 +46,6 @@ import kotlin.math.roundToLong
 internal fun labelOf(type: ItemDescription): String =
     type.name.replace('_', ' ').replaceFirstChar { it.uppercase() }
 
-// titleOf moved to the logic layer, `LOGIC-37`, alongside the rest of the plan model that needed
-// it; imported above rather than redefined here.
-
 /**
  * The fields of [type] an item view shows: all of them but the ones the screen around it
  * already shows, and, unless [editing], but the ones the type keeps for the machinery or solely
@@ -559,11 +556,11 @@ private val SYMBOLS: Map<Dimension, String> = mapOf(
     Dimension.LENGTH to "m",
     Dimension.TEMPERATURE to "°C",
     Dimension.MASS to "kg",
-    Dimension.VOLUME to "l",
+    Dimension.VOLUME to "L",
     Dimension.PRESSURE to "bar",
     Dimension.DENSITY to "kg/m³",
     Dimension.ANGLE to "°",
-    Dimension.FLOW to "l/min",
+    Dimension.FLOW to "L/min",
     Dimension.SPEED to "m/min",
 )
 
@@ -593,10 +590,7 @@ internal fun clockOf(seconds: Double): String {
 }
 
 /** [number] to at most [decimals] places, trailing zeros dropped. */
-private fun rounded(number: Double, decimals: Int): String {
-    val text = "%.${decimals}f".format(number)
-    return if ('.' in text) text.trimEnd('0').trimEnd('.') else text
-}
+private fun rounded(number: Double, decimals: Int): String = plain(number, decimals)
 
 /** How many decimals a screen shows of each dimension, where fewer than the file's are wanted. */
 private val DECIMALS: Map<Dimension, Int> = mapOf(
@@ -644,17 +638,17 @@ internal fun joined(entries: List<Part>): List<Part> {
     return parts
 }
 
-/** The entries of a list, or that somebody wrote a list with nothing in it. */
+/** The entries of a list, which [shownOf] has already found to hold some. */
 @Suppress("UNCHECKED_CAST")
-private fun listed(value: Any, within: Item): List<Part> {
-    val entries = (value as List<Element<Any>>).map {
-        when (it) {
-            is Element.Usable -> one(it.value, within) ?: Part(it.value.toString())
-            is Element.Unusable -> Part("!")
-        }
-    }
-    return if (entries.isEmpty()) plain(EMPTY) else joined(entries)
-}
+private fun listed(value: Any, within: Item): List<Part> =
+    joined(
+        (value as List<Element<Any>>).map {
+            when (it) {
+                is Element.Usable -> one(it.value, within) ?: Part(it.value.toString())
+                is Element.Unusable -> Part("!")
+            }
+        },
+    )
 
 @Suppress("UNCHECKED_CAST")
 private fun keyedIn(value: Any): Map<String, Element<Any>> =
@@ -666,6 +660,3 @@ private fun filledIn(item: OwnedItem): Int =
 
 private fun counted(many: Int, one: String, several: String = one + "s"): String =
     "$many " + if (many == 1) one else several
-
-/** A list somebody wrote with nothing in it, which is not a field nobody wrote. */
-private const val EMPTY = "(empty)"

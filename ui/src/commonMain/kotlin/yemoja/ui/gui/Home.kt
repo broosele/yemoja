@@ -228,7 +228,7 @@ internal enum class Deed(
     /** What pressing it does, said when the pointer rests on it or a finger holds it. */
     val tip: String,
 ) {
-    // A logbook is a folder of files, and a reader looking for one file finds nothing to open.
+    /** A logbook is a folder of files, and a reader looking for one file finds nothing to open. */
     OPEN(
         "Open logbook",
         "Open a logbook you already have. A Yemoja logbook is a folder of files: choose the " +

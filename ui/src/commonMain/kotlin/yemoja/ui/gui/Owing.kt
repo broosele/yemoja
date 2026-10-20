@@ -19,7 +19,7 @@ import yemoja.logic.titleOf
 /** How much notice an obligation is given before it falls due, in days. A month for all. `LOGIC-7`. */
 internal const val NOTICE = 31
 
-/** How long a medical is taken to run, in days short of the calendar. `GUI-34`. */
+/** How long a medical is taken to run, in months. `GUI-34`. */
 internal const val MEDICAL_MONTHS = 12
 
 /**

@@ -240,11 +240,11 @@ internal fun sacSolved(
             at(Figure.SAC) * at(Figure.DURATION) * ambient(at(Figure.DEPTH)) / drop
         }
         Figure.START -> {
-            if (at(Figure.SIZE) == 0.0) return Answer.Wrong("a cylinder of nought litres holds no gas")
+            if (at(Figure.SIZE) == 0.0) return Answer.Wrong("Cylinder size should be more than 0 L, not 0")
             at(Figure.END) + at(Figure.SAC) * at(Figure.DURATION) * ambient(at(Figure.DEPTH)) / at(Figure.SIZE)
         }
         Figure.END -> {
-            if (at(Figure.SIZE) == 0.0) return Answer.Wrong("a cylinder of nought litres holds no gas")
+            if (at(Figure.SIZE) == 0.0) return Answer.Wrong("Cylinder size should be more than 0 L, not 0")
             at(Figure.START) - at(Figure.SAC) * at(Figure.DURATION) * ambient(at(Figure.DEPTH)) / at(Figure.SIZE)
         }
     }
@@ -267,8 +267,10 @@ internal fun ndlAsked(depth: String, gas: String, gradientHigh: String, descentR
         return Answer.Wrong(refused.message ?: gasWrong(gas))
     }
     val high = gradientHigh.trim().removeSuffix("%").trim().toDoubleOrNull()
-        ?.takeIf { it >= 1 && it <= PERCENT }
-        ?: return Answer.Wrong("GF high should be 1 to 100 %, not \"${gradientHigh.trim()}\"")
+        ?.takeIf { it in LEAST_PERCENT..PERCENT }
+        ?: return Answer.Wrong(
+            "GF high should be ${plain(LEAST_PERCENT)} to ${plain(PERCENT)} %, not \"${gradientHigh.trim()}\"",
+        )
     // The high factor alone: a limit is the moment a stop becomes owed, which is the high
     // factor's question, and the low one only says how deep a first stop is taken. `LOGIC-37`.
     val seconds = noDecompressionLimit(metres, breathed, high / PERCENT, descentRate)
@@ -569,8 +571,9 @@ private fun SacForm(working: Working) {
 private fun NdlForm(working: Working, settings: Settings?) {
     // The factor the user chose, the first time the form opens; typed over freely after that.
     remember(working, settings) {
-        if (!working.prefilled && settings != null) {
-            working.gradientHigh = shownOf(Settings.DEFAULT_GRADIENT_FACTOR_HIGH, settings.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH))
+        if (!working.prefilled) {
+            val chosen = settings?.number(Settings.DEFAULT_GRADIENT_FACTOR_HIGH) ?: Settings.DEFAULT_GRADIENT_FACTOR_HIGH.default
+            working.gradientHigh = shownOf(Settings.DEFAULT_GRADIENT_FACTOR_HIGH, chosen)
             working.prefilled = true
         }
         working
@@ -757,6 +760,9 @@ private fun depthOf(bar: Double): Double = depthAt(bar, NOMINAL_DENSITY, SEA_LEV
 private const val SECONDS_IN_MINUTE = 60.0
 
 private const val PERCENT = 100.0
+
+/** The least a gradient factor may be typed as, in percent. `GUI-41`. */
+private const val LEAST_PERCENT = 1.0
 
 /** Tenths of a metre in a metre, which is as fine as these forms give a depth. */
 private const val TENTHS = 10.0

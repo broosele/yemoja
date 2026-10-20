@@ -342,19 +342,20 @@ private fun openedIn(
     val called = nameOf(context, tree) ?: "this folder"
     val staging = DiskFileStore(context.filesDir.resolve("import").path)
     val proposing = DiskFileStore(context.filesDir.resolve("proposed").path)
-    // Asked of the folder before anything is fetched: a logbook is its manifest, or the dives of
-    // one written before manifests were. `GUI-30`.
-    val holds = granted.isFile(LogbookReader.MANIFEST) || granted.isFolder("dive") || granted.isFile("dive.json")
-    if (making && holds) {
-        return Opening.Refused("$called already holds a Yemoja logbook, so open it instead.")
-    }
-    if (!making && !holds) {
-        return Opening.Refused(
-            "$called holds no Yemoja logbook. Choose the folder your logbook is in, or start one " +
-                "there with Create a new Yemoja logbook.",
-        )
-    }
     return try {
+        // Asked of the folder before anything is fetched: a logbook is its manifest, or the dives
+        // of one written before manifests were. `GUI-30`. Inside the try, being the first listing
+        // and so the first thing that can find the folder gone.
+        val holds = granted.isFile(LogbookReader.MANIFEST) || granted.isFolder("dive") || granted.isFile("dive.json")
+        if (making && holds) {
+            return Opening.Refused("$called already holds a Yemoja logbook, so open it instead.")
+        }
+        if (!making && !holds) {
+            return Opening.Refused(
+                "$called holds no Yemoja logbook. Choose the folder your logbook is in, or start one " +
+                    "there with Create a new Yemoja logbook.",
+            )
+        }
         // What the copy lacks is fetched several files at a time, before the reading asks for
         // each in turn. A logbook's own files are all JSON, and nothing else is worth fetching.
         granted.fetchAhead(store.wanting().filter { it.endsWith(".json") }) { done, of -> told(FETCHING, done, of) }
@@ -446,7 +447,8 @@ private fun namedFor(context: Context, document: Uri): Named {
     folder.mkdirs()
     val written = folder.resolve(EXPORT)
     return Named(written.path, calledOf(context, document) ?: "the file") {
-        val to = context.contentResolver.openOutputStream(document, "w")
+        // Truncated as it is written, as the store writes, so a shorter export leaves nothing behind.
+        val to = context.contentResolver.openOutputStream(document, "wt")
             ?: throw IOException("its provider would not take it")
         to.use { write -> written.inputStream().use { it.copyTo(write) } }
         written.delete()

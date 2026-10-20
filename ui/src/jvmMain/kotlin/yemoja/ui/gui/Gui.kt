@@ -24,6 +24,7 @@ import androidx.compose.ui.window.rememberWindowState
 import yemoja.data.Date
 import yemoja.logic.Universe
 import yemoja.logic.divecomputer.FoundDevices
+import yemoja.logic.today
 import yemoja.ui.api.Talking
 import yemoja.ui.api.ToolSocket
 import yemoja.ui.api.Tools
@@ -31,7 +32,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.awt.Desktop
 import java.net.URI
-import java.time.LocalDate
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -158,12 +158,6 @@ fun gui(named: String? = null): Int {
 }
 
 /**
- * A folder the user picks, or absent where they change their mind.
- *
- * Folders only, and one that is not there yet may be typed: making a logbook makes its folder,
- * so a reader should not have to make it first in another application.
- */
-/**
  * A folder or a file to import, or nothing where the reader named none.
  *
  * One dialog for both, since what is there says how it is read: a folder is another Yemoja
@@ -204,6 +198,12 @@ private fun saved(asking: String): String? {
     return if (answer == JOptionPane.YES_OPTION) to else null
 }
 
+/**
+ * A folder the user picks, or absent where they change their mind.
+ *
+ * Folders only, and one that is not there yet may be typed: making a logbook makes its folder,
+ * so a reader should not have to make it first in another application.
+ */
 private fun chosen(asking: String, approving: String): String? {
     val chooser = JFileChooser().apply {
         dialogTitle = asking
@@ -263,12 +263,17 @@ private fun warn(message: String) {
     JOptionPane.showMessageDialog(null, message, "Yemoja", JOptionPane.ERROR_MESSAGE)
 }
 
-/** What day it is here, which the greeting remarks on. */
-private fun today(): Date = LocalDate.now().let { Date(it.year, it.monthValue, it.dayOfMonth) }
-
 /** A link out of the manual, handed to whatever the desktop opens such things with. */
 private fun browse(url: String) {
-    if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI(url))
+    if (!Desktop.isDesktopSupported()) {
+        warn("This desktop offers nothing to open $url with.")
+        return
+    }
+    try {
+        Desktop.getDesktop().browse(URI(url))
+    } catch (refused: Exception) {
+        warn("$url could not be opened: ${refused.message}")
+    }
 }
 
 /**

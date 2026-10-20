@@ -163,7 +163,8 @@ import yemoja.logic.titleOf
 /*
  * The application's screens, which are one definition for both form factors.
  *
- * Reading only. Nothing here changes anything, which is the first version's whole scope.
+ * Reading, and the few deeds a card offers: the edit form's Save, the delete dialog, and the
+ * deeds the System tab runs.
  *
  * The look is the platform's, Material in the application's own colours and nothing else of
  * ours. `GUI-3`. Every colour here is a role from the scheme, never a value, so Palette.kt is
@@ -641,13 +642,6 @@ internal fun Application(universe: Universe?, platform: Platform) {
 }
 
 /**
- * The tabs, across the top.
- *
- * Seven fit comfortably across a desktop window and do not fit across the foot of a phone.
- * `PHONE-5` settled that a phone keeps this a gesture away instead, which is a placement rather
- * than a different set of tabs.
- */
-/**
  * One view whose words can be selected and copied, apart from every other view's.
  *
  * A selection stays inside the view it began in, so a drag down a site's fields does not run on
@@ -775,7 +769,7 @@ private fun TabIcon(tab: Tab, download: Stage) {
  * The tab row as a phone has it: back, the tab open with a menu of the others, then add, edit and
  * delete.
  *
- * Seven tabs do not fit across a phone, so they are a press away rather than in view, `PHONE-5`.
+ * Nine tabs do not fit across a phone, so they are a press away rather than in view, `PHONE-5`.
  * The agent's button is not there, an agent being a program a phone cannot start. `PHONE-1`.
  */
 @Composable
@@ -1032,12 +1026,8 @@ private fun Statistics(set: ItemSet, kept: Kept) {
 }
 
 /**
- * Home: what the logbook comes to in a line, what the application can be asked to do, and any
- * two things a dive answers for, plotted against each other.
- *
- * Nothing is chosen here and nothing is listed. It is the screen a reader meets before they
- * have asked for anything, so it answers the two questions they have not asked yet: how much
- * diving is in here, and what would you like to do.
+ * System: the logbook and its deeds, a download or an import under way, the settings, and the
+ * agent.
  */
 @Composable
 private fun System(
@@ -1125,7 +1115,9 @@ private fun System(
     // A phone shows a review as a page of its own, a few hundred rows being no part of a home
     // screen; back returns to Home. `PHONE-2`.
     val paged = LocalCompact.current
-    if (paged && kept.inReview && !reviewing) kept.inReview = false
+    LaunchedEffect(paged, reviewing) {
+        if (paged && !reviewing) kept.inReview = false
+    }
     if (paged && kept.inReview) {
         Selectable {
             Column(
@@ -1955,6 +1947,12 @@ private fun Subject(
     val set = universe.logbook
     val user = universe.user
     val edition = LocalChanger.current.edition
+    // Reload reads every item afresh, so what was chosen is looked up again by its id: a card
+    // drawing the old object would show the file as it was, and a save on it would reach no file.
+    LaunchedEffect(edition) {
+        kept.chosen?.let { held -> if (set[held.id] !== held.item) kept.chosen = chosenAgain(set, held) }
+        kept.place?.let { held -> if (set[held.id] !== held.item) kept.place = chosenAgain(set, held) }
+    }
     val tree = remember(set, kept.hideUnused, edition) { shownTreeOf(set, kept.hideUnused) }
     // What a tab opens on the first time: Locations on the widest root, which is the world, and
     // Community on the user, whose logbook this is.
@@ -2527,7 +2525,7 @@ private fun Places(
     val place = kept.place
     // The tree scrolls to whatever was chosen elsewhere: unfolding towards a branch a reader
     // cannot see would be answering *where is this* off the bottom of the list. `GUI-26`.
-    LaunchedEffect(place?.id, open, tree) {
+    LaunchedEffect(place?.id, tree) {
         val at = place?.id?.let { held -> pathTo(tree, held) }?.let { lineOf(tree, open, it) }
         if (at != null) kept.tree.scrollToItem(at)
     }
@@ -2772,7 +2770,7 @@ internal fun Line(
 
 // --- The item view.
 
-/** One item, arranged for reading. It never changes anything. */
+/** One item, arranged for reading, with the edit and delete deeds a card offers beside it. */
 @Composable
 private fun ItemView(
     chosen: Chosen,
@@ -3015,13 +3013,6 @@ private fun pathOf(
 }
 
 /**
- * A delete button, red under the pointer, which is the one thing on a card that cannot be undone.
- *
- * Red only while the pointer is on it. A button that is red all the time is a card with an alarm
- * on it, read a hundred times a day and meant once; one that reddens as it is reached for says
- * the same thing at the moment it matters. `GUI-35`.
- */
-/**
  * The **+** on a card: another of what is being looked at, and a menu where the tab makes more
  * than one type.
  *
@@ -3053,6 +3044,13 @@ private fun Adder(makeable: List<ItemDescription>, onAdd: (ItemDescription) -> U
     }
 }
 
+/**
+ * A delete button, red under the pointer, which is the one thing on a card that cannot be undone.
+ *
+ * Red only while the pointer is on it. A button that is red all the time is a card with an alarm
+ * on it, read a hundred times a day and meant once; one that reddens as it is reached for says
+ * the same thing at the moment it matters. `GUI-35`.
+ */
 @Composable
 private fun Deleter(onDelete: () -> Unit, enabled: Boolean = true) {
     val interaction = remember { MutableInteractionSource() }
@@ -3169,7 +3167,8 @@ private fun ItemCard(
     val edition = changer.edition
     val editing = kept.editing == chosen.id
     var refused by remember(chosen) { mutableStateOf<String?>(null) }
-    val draft = remember(chosen) { Draft() }
+    // Afresh for each opening of the form, so a form left by back leaves nothing behind.
+    val draft = remember(chosen, editing) { Draft() }
     Surface(
         modifier = if (scrolls) Modifier.fillMaxSize() else Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -3595,7 +3594,7 @@ private fun WorkedOut(dive: Item, profile: Item, evaluated: Evaluated, onFollow:
         is Evaluated.Refused -> refusedSaidOf(evaluated, planned)?.let { Field(it, onFollow) }
         is Evaluated.Done -> {
             for (figure in workedFiguresOf(dive, profile, evaluated)) Field(figure, onFollow)
-            for (finding in findingsSaidOf(evaluated)) Field(finding, onFollow)
+            for (finding in findingsSaidOf(dive, profile, evaluated)) Field(finding, onFollow)
         }
     }
 }
@@ -4053,8 +4052,7 @@ private fun pathOf(line: Line, x: (Double) -> Float, y: (Double) -> Float): Path
 }
 
 /** A tick's value as a mark reads it: whole where it is whole, else to one decimal. */
-internal fun shortOf(value: Double): String =
-    if (value == value.toLong().toDouble()) value.toLong().toString() else "%.1f".format(value)
+internal fun shortOf(value: Double): String = plain(value, 1)
 
 // --- What every screen shares.
 

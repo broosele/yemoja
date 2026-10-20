@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import yemoja.ui.gui.Underway
+import yemoja.ui.gui.kilobytesOf
 
 /*
  * A dive computer read kept alive while the app is in the background.
@@ -89,14 +90,13 @@ class ReadingService : Service() {
                 .addAction(Notification.Action.Builder(null, "Cancel", cancel).build())
             if (read.total > 0) {
                 builder.setProgress(PERMILLE, (read.done * PERMILLE / read.total).toInt(), false)
-                builder.setContentText("${kilobytes(read.done)} of ${kilobytes(read.total)} kB read")
+                builder.setContentText("${kilobytesOf(read.done)} of ${kilobytesOf(read.total)} kB read")
             } else {
                 builder.setProgress(0, 0, true)
             }
             return builder.build()
         }
 
-        private fun kilobytes(bytes: Long): Long = (bytes + 999) / 1000
 
         private const val CHANNEL = "reading"
         private const val SHOWN = 1

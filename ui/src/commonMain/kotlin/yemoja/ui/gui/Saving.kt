@@ -56,6 +56,7 @@ import yemoja.logic.Shaped
 import yemoja.logic.Start
 import yemoja.logic.Types
 import yemoja.logic.Universe
+import yemoja.ui.api.FIRST_PLAN
 import yemoja.logic.Worked
 import yemoja.logic.durationOf
 import yemoja.logic.freeName
@@ -103,7 +104,7 @@ internal class Saving {
     var bound: Bound? by mutableStateOf(null)
 
     /** What the plan will be called on the dive it is added to, typed over freely. */
-    var name: String by mutableStateOf(yemoja.ui.api.FIRST_PLAN)
+    var name: String by mutableStateOf(FIRST_PLAN)
 
     var said: String? by mutableStateOf(null)
 
@@ -124,7 +125,7 @@ internal fun Saving.isChanged(shaping: Shaping, settings: Settings?): Boolean =
 /** Empties the planner to a new plan, bound to no dive and called by the first name. `GUI-54`. */
 internal fun Saving.startNew(shaping: Shaping, settings: Settings?) {
     bound = null
-    name = yemoja.ui.api.FIRST_PLAN
+    name = FIRST_PLAN
     said = null
     shaping.startAfresh(settings)
     kept = shaping.described()

@@ -93,7 +93,7 @@ internal class Tab(
 /**
  * Every tab, in the order they are offered, which is also the order of Home's tiles.
  *
- * The order runs from what a diver came for to what the application needs of itself: the
+ * The order runs from what the user came for to what the application needs of itself: the
  * logbook first, then what is worked out and counted from it, then the machinery, and last how
  * all of it works.
  */

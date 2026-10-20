@@ -245,7 +245,7 @@ private fun TableView(table: Block.Table, onFollow: (String) -> Unit) {
         HorizontalDivider()
         for ((n, row) in table.rows.withIndex()) {
             val low = MaterialTheme.colorScheme.surfaceContainerLow
-            val stripe = if (n % 2 == 1) low else Transparent
+            val stripe = if (n % 2 == 1) low else TRANSPARENT
             Row(modifier = Modifier.fillMaxWidth().background(stripe)) {
                 for (cell in row) {
                     Text(
@@ -292,6 +292,6 @@ private fun styled(spans: List<Span>, onFollow: (String) -> Unit): AnnotatedStri
 private val PROSE: TextStyle
     @Composable get() = MaterialTheme.typography.bodyLarge
 
-private val Transparent = androidx.compose.ui.graphics.Color.Transparent
+private val TRANSPARENT = androidx.compose.ui.graphics.Color.Transparent
 private val PAGE = 720.dp
 private val MARK = 24.dp

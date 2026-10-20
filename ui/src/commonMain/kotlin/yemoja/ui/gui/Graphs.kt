@@ -192,8 +192,8 @@ internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
     val sources = keyedOf(sourcesRootOf(profile) ?: dive, "gas_sources")
     for ((key, series) in keyedSeriesOf(profile, "pressures")) {
         val source = sources[key]?.let { entryLabelOf(key, it) }
-        val tank = source ?: key
-        overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)), gas = source ?: prettyOf(key))
+        val tank = source ?: prettyOf(key)
+        overlays += Overlay("$tank pressure", "bar", Line(tank, pointsOf(series)), gas = tank)
     }
     seriesOf(profile, "no_deco_time")?.let {
         val stops = seriesOf(profile, "decostop")?.let { series -> pointsOf(series) }.orEmpty()
@@ -202,7 +202,7 @@ internal fun overlaysOf(dive: Item, profile: Item): List<Overlay> {
         overlays += Overlay("NDL", "min", stretches.map { stretch -> Line("NDL", stretch) })
     }
     // Worked out rather than recorded, from the pressure of whichever cylinder was breathed.
-    seriesOf(profile, "sac")?.let { overlays += Overlay("SAC", "l/min", Line("SAC", pointsOf(it))) }
+    seriesOf(profile, "sac")?.let { overlays += Overlay("SAC", "L/min", Line("SAC", pointsOf(it))) }
     seriesOf(profile, "cns")?.let { overlays += Overlay("CNS", "%", Line("CNS", pointsOf(it))) }
     seriesOf(profile, "otu")?.let { overlays += Overlay("OTU", "", Line("OTU", pointsOf(it))) }
     return overlays
@@ -337,7 +337,7 @@ internal fun ticksOf(low: Double, high: Double, wanted: Int): List<Double> {
 // what is asked for a graph is asked of any keyed entry, a gas source among them.
 
 @Suppress("UNCHECKED_CAST")
-private fun keyedOf(item: Item, field: String): Map<String, OwnedItem> {
+internal fun keyedOf(item: Item, field: String): Map<String, OwnedItem> {
     if (item.description[field] == null) return emptyMap()
     val read = (item.read(field) as? Result.Usable)?.value as? Map<String, Element<Any>>
     return read.orEmpty().mapNotNull { (key, element) ->
@@ -363,7 +363,7 @@ private fun keyedSeriesOf(profile: Item, field: String): Map<String, Series> {
  * A series as points, its seconds as minutes and each value scaled; a sample that would not
  * read is left out.
  */
-private fun pointsOf(series: Series, scale: Double = 1.0): List<Point> =
+internal fun pointsOf(series: Series, scale: Double = 1.0): List<Point> =
     (0..<series.size).mapNotNull { at ->
         val value = (series.valueAt(at) as? Element.Usable)?.value as? Number
             ?: return@mapNotNull null

@@ -176,6 +176,23 @@ internal class Shaping {
     val folded = mutableStateSetOf<String>()
 }
 
+/** Answered is what the model makes of a plan as typed: its shape, its run and its gas reserve. */
+private class Answered(
+    val shaped: Shaped,
+    val worked: Worked?,
+    val conditions: Conditions?,
+    val reckoned: Reckoned?,
+)
+
+private fun answeredOf(planned: Planned, universe: Universe?): Answered {
+    val shaped = shapedOf(planned, universe)
+    val worked = (shaped as? Shaped.Ready)?.let { workedOf(it) }
+    val done = worked as? Worked.Done
+    val conditions = conditionsOf(planned).first
+    val reckoned = if (done != null && conditions != null) reckonedOf(planned, done, conditions) else null
+    return Answered(shaped, worked, conditions, reckoned)
+}
+
 /** Fills every setting of the plan from [settings], or from the defaults where there is no logbook. */
 internal fun Shaping.prefill(settings: Settings?) {
     fun shown(setting: NumberSetting): String =
@@ -313,13 +330,15 @@ internal fun PlanForm(
         if (!shaping.prefilled) shaping.prefill(settings)
         shaping
     }
-    // The form as a plan, read once: everything below asks the same description the same question.
     val planned = shaping.described()
-    val shaped = shapedOf(planned, universe)
-    val worked = (shaped as? Shaped.Ready)?.let { workedOf(it) }
+    // Worked out once an edit, never once a repaint: it walks the whole run and costs every
+    // moment of it. `LOGIC-37`.
+    val answered = remember(planned, universe) { answeredOf(planned, universe) }
+    val shaped = answered.shaped
+    val worked = answered.worked
     val done = worked as? Worked.Done
-    val conditions = conditionsOf(planned).first
-    val reckoned = if (done != null && conditions != null) reckonedOf(planned, done, conditions) else null
+    val conditions = answered.conditions
+    val reckoned = answered.reckoned
     Heading("Dive plan")
     saving()
     StartRow(shaping, universe, followedOf(planned, universe))

@@ -340,8 +340,8 @@ private fun Unlock(field: FieldDescription, item: Item, offered: Offered, draft:
             onClick = {
                 // What the box was showing, to correct rather than to retype. Nothing where the
                 // calculation had no answer, which is a box to fill in from empty.
-                val shown = (offered.held as? Result.Usable)?.let { textOf(field, it.value) }
-                draft.put(item, field.name, shown.orEmpty())
+                val shown = (offered.held as? Result.Usable)?.let { textOf(field, it.value) }.orEmpty()
+                draft.put(item, field.name, shown, givenOf(kindOf(field), shown))
             },
         ) {
             Text("Override")

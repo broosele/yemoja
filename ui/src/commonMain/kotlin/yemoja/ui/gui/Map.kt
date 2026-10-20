@@ -27,22 +27,22 @@ internal class Outline(val rings: List<DoubleArray>) {
     val north: Double
 
     init {
-        var w = Double.MAX_VALUE
-        var e = -Double.MAX_VALUE
-        var s = Double.MAX_VALUE
-        var n = -Double.MAX_VALUE
+        var westmost = Double.MAX_VALUE
+        var eastmost = -Double.MAX_VALUE
+        var southmost = Double.MAX_VALUE
+        var northmost = -Double.MAX_VALUE
         for (ring in rings) {
             for (at in ring.indices step 2) {
-                w = minOf(w, ring[at])
-                e = maxOf(e, ring[at])
-                s = minOf(s, ring[at + 1])
-                n = maxOf(n, ring[at + 1])
+                westmost = minOf(westmost, ring[at])
+                eastmost = maxOf(eastmost, ring[at])
+                southmost = minOf(southmost, ring[at + 1])
+                northmost = maxOf(northmost, ring[at + 1])
             }
         }
-        west = w
-        east = e
-        south = s
-        north = n
+        west = westmost
+        east = eastmost
+        south = southmost
+        north = northmost
     }
 
     /** How many points, over every ring. */
