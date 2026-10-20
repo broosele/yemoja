@@ -80,7 +80,7 @@ interface FileStore {
      * Puts [text] at [path], making whatever folders it needs and replacing whatever was there.
      *
      * **No temporary file and no rename.** A change interrupted part way through can leave one
-     * file written and the next not, which is a decision deferred rather than an oversight: see
+     * file written and the next not, which is a decision deferred rather than an oversight.
      * `JSON-25`. The one thing refused here is a library, which belongs to the installation and
      * not to the logbook.
      */

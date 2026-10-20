@@ -107,7 +107,8 @@ class ItemSet(
      * still current, and counting the items does not tell it. An edit that changes a dive's date
      * reorders the list without changing how many there are.
      *
-     * It counts additions and removals, not edits to an item's fields, so a view keyed on it is
+     * It counts additions, removals and a change of `user`, not edits to an item's fields, so a
+     * view keyed on it is
      * refreshed by less than every change. `DATA-6` allows that: a view that may be out of date
      * asks again.
      */

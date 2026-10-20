@@ -159,7 +159,7 @@ private fun quoted(text: String): String {
             '\r' -> out.append("\\r")
             '\t' -> out.append("\\t")
             '\b' -> out.append("\\b")
-            '' -> out.append("\\f")
+            '\u000C' -> out.append("\\f")
             else ->
                 if (character < ' ') {
                     out.append("\\u").append(character.code.toString(16).padStart(4, '0'))
@@ -436,7 +436,7 @@ private class Reader(private val text: String) {
     private fun fail(what: String): Nothing {
         var line = 1
         var column = 1
-        for (index in 0 until minOf(at, text.length)) {
+        for (index in 0..<minOf(at, text.length)) {
             if (text[index] == '\n') {
                 line += 1
                 column = 1

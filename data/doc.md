@@ -832,14 +832,16 @@ data/
                   Series.kt        values against time, and one sample of them
                   Stored.kt        what a source holds, before anything judges it
                   Units.kt         what the numbers of one file are written in
-                  json/DiskFileStore.kt  the machine's own files, the one place Okio
-                                   is named
+                  json/CachedFileStore.kt  a slow store read through a copy kept beside it
                   json/FileStore.kt      which files hold a type, and one store in memory
                   json/Json.kt     a JSON text, read into that
                   json/LogbookReader.kt  a folder of them, read into a set of items
                   json/LogbookWriter.kt  a change, written back into those files
                   json/SettingsFiles.kt  where the settings of a logbook are kept
                   sqlite/Sqlite.kt  a SQLite database read table by table, `DATA-130`
+  src/javaMain/kotlin/yemoja/data/
+                  json/DiskFileStore.kt  the machine's own files, the one place Okio
+                                   is named
   src/commonTest/kotlin/yemoja/data/
                   the tests, beside what they cover
 ```

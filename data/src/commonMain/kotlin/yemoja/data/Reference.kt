@@ -9,8 +9,8 @@ package yemoja.data
  * share a name.
  *
  * A reference to an item that is not in the logbook is still a reference. It names someone
- * who has not been entered yet, which is not a fault in the value. See [Referent] and
- * `DATA-66`.
+ * who has not been entered yet, which is not a fault in the value. [Referent] says what one
+ * names. `DATA-66`.
  *
  * Immutable.
  */

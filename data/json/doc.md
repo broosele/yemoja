@@ -262,7 +262,8 @@ dive would renumber its neighbours and break every reference to them.
 
 ## Reading
 
-Everything here is in `src/commonMain/kotlin/yemoja/data/json/`, the two stores included.
+Everything here is in `src/commonMain/kotlin/yemoja/data/json/`, but for `DiskFileStore`, which
+names Okio and so lives in `src/javaMain`.
 `FileStore` and `DiskFileStore` are files rather than JSON, but what they are asked is this
 format's question — which files hold a type, given that one is a `.json` file or a folder of
 them — so they sit with it and not at the layer's root. `DATA-86` argues the dependency.
@@ -448,9 +449,9 @@ To settle when we discuss architecture:
   read from the copy. On the author's logbook in Google Drive, opening went from about 400 ms to
   about 70.
 
-  **The logbook stays the only truth.** A file with no stamp, one not copied, or one whose stamp
-  differs is read from the logbook and copied afresh, and what the application writes is read
-  back as written for as long as it is open. A folder's own date is not used: it moves when files
+  **The logbook stays the only truth.** A file not copied, or one whose stamp differs, is read
+  from the logbook and copied afresh; one with no stamp is read from the logbook and not copied.
+  What the application writes is read back as written for as long as it is open. A folder's own date is not used: it moves when files
   are added or removed, and not reliably when one is edited. A folder whose name begins with a dot
   is not stamped, a logbook under version control holding thousands of files nothing reads. The
   copy is one file kept outside the logbook, in the user's application data on a desktop and in

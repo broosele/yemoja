@@ -355,7 +355,7 @@ class WholeNumberDescription(
 
     override fun validate(value: Any): Validity = when {
         value !is Int -> Validity.Invalid("$name should be a whole number")
-        range != null && value !in range -> Validity.Invalid("$name should be within $range")
+        range != null && value !in range -> Validity.Invalid("$name should be within $range, but was $value")
         else -> Validity.Valid
     }
 }

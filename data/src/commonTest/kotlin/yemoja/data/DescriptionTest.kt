@@ -64,7 +64,7 @@ class FieldDescriptionTest {
         // parse runs validate, so the two can never drift apart.
         val rating = WholeNumberDescription("rating", range = 1..10)
         assertIs<Validity.Invalid>(rating.validate(11))
-        assertEquals("rating should be within 1..10", unusable(rating, "11").reason)
+        assertEquals("rating should be within 1..10, but was 11", unusable(rating, "11").reason)
     }
 }
 

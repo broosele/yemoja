@@ -11,8 +11,8 @@ package yemoja.data.json
  *
  * **The logbook stays the only truth.** A file is taken from the copy only where [stamps] says it
  * has the very stamp it had when it was copied: its date and its size, as one folder listing
- * reports them for every file at once. A file with no stamp, one not copied, or one whose stamp
- * differs is read from the logbook and copied afresh. The copy is one file in [copies], written by
+ * reports them for every file at once. A file not copied, or one whose stamp differs, is read from
+ * the logbook and copied afresh; one with no stamp is read from the logbook and not copied. The copy is one file in [copies], written by
  * [keep] after a logbook has been read; losing it costs one slower opening.
  *
  * Reading a folder's listing is cheap where opening each file is not: a cloud drive's files on a
@@ -57,7 +57,7 @@ class CachedFileStore(
         onRead(path)
         written[path]?.let { return it }
         if (isLibrary(path)) return logbook.readText(path)
-        val stamp = (listed ?: stamps().also { listed = it })[path]
+        val stamp = stamped()[path]
         val copy = held[path]
         if (stamp != null && copy != null && copy.stamp == stamp) return copy.text
         val text = logbook.readText(path)
@@ -77,14 +77,16 @@ class CachedFileStore(
      * For a store that can fetch several files at once, to do so before the reading asks for each
      * in turn. `JSON-28`.
      */
-    fun wanting(): List<String> = wantingOf(listed ?: stamps().also { listed = it })
+    fun wanting(): List<String> = wantingOf(stamped())
 
     /** Every file the listing stamps, which is what a reading of the whole logbook reads at most. */
-    fun listedPaths(): Set<String> = (listed ?: stamps().also { listed = it }).keys
+    fun listedPaths(): Set<String> = stamped().keys
 
-    private fun wantingOf(stamped: Map<String, String>): List<String> {
-        return stamped.filter { (path, stamp) -> path !in written && held[path]?.stamp != stamp }.keys.sorted()
-    }
+    private fun wantingOf(stamped: Map<String, String>): List<String> =
+        stamped.filter { (path, stamp) -> path !in written && held[path]?.stamp != stamp }.keys.sorted()
+
+    /** The listing, taken once and kept until [forget]. */
+    private fun stamped(): Map<String, String> = listed ?: stamps().also { listed = it }
 
     // A file read as bytes is not a logbook's, so it is neither copied nor taken from the copy.
     override fun readBytes(path: String): ByteArray = logbook.readBytes(path)

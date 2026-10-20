@@ -181,7 +181,7 @@ data class Time(val hour: Int, val minute: Int, val second: Int) : Comparable<Ti
  *
  * **Never stored.** The format keeps the two apart so a user can correct one by hand; this is what
  * they become while something is worked out from them, and it is split back before anything is
- * written. See `DATA-75`.
+ * written. `DATA-75`.
  *
  * Immutable, both halves being so.
  */

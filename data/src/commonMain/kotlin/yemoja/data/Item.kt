@@ -135,7 +135,7 @@ sealed class Item(
         }
         if (given == null) return Result.Absent
         // A value already made travels as a leaf, which is what a source hands over for one. A
-        // caller with a whole shape to put in -- an empty owned item, a list -- gives the Stored.
+        // caller with a whole shape to put in, an empty owned item or a list, gives the Stored.
         val held = if (given is Stored) given else Stored.Leaf(given)
         return ItemReader.fieldOf(field, held, this, units)
     }
@@ -153,7 +153,7 @@ sealed class Item(
     inline fun <reified T : Any> list(name: String): Result<List<Element<T>>> =
         readAs(name, Cardinality.LIST, T::class)
 
-    /** Several under keys: `keyed<Item>("profiles")`. */
+    /** Several under keys: `keyed<OwnedItem>("profiles")`. */
     inline fun <reified T : Any> keyed(name: String): Result<Map<String, Element<T>>> =
         readAs(name, Cardinality.KEYED, T::class)
 
@@ -221,7 +221,7 @@ sealed class Item(
     ): Result<R> {
         val field = fieldDescription(name)
         require(field.cardinality == cardinality) {
-            "$name is written as $cardinality, so it should not be read as ${field.cardinality}"
+            "$name is written as ${field.cardinality}, so it should not be read as $cardinality"
         }
         require(field.valueType == type) {
             "$name holds ${field.valueType.simpleName}," +

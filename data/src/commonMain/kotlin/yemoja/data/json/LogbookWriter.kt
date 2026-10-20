@@ -138,7 +138,12 @@ object LogbookWriter {
     /** What is in the file at [path] now, or nothing where there is no file yet. */
     private fun openedOr(store: FileStore, path: String): Pair<Stored.Members, Units> {
         if (!store.isFile(path)) return Stored.Members(emptyMap()) to Units.DEFAULT
-        val read = Json.parse(store.readText(path)) as? Stored.Members
+        val parsed = try {
+            Json.parse(store.readText(path))
+        } catch (refused: JsonFormatException) {
+            throw LogbookFormatException("$path should be JSON: ${refused.message}")
+        }
+        val read = parsed as? Stored.Members
             ?: throw LogbookFormatException("$path should hold a set of fields")
         return read to unitsIn(read)
     }
