@@ -122,6 +122,24 @@ class LostGasReserveTest {
     }
 
     @Test
+    fun `a way up that holds where it begins is costed on the gas it switches to there`() {
+        // The plan rises to five metres and straight on, owing its whole safety stop from the
+        // moment it arrives. The way up from that moment holds there, switches to EAN50 at once,
+        // and breathes it for the whole hold: nothing of the hold is on air.
+        val run = Run(
+            depth = listOf(0 to 0.0, 60 to 12.0, 600 to 12.0, 646 to 5.0, 680 to 0.0),
+            sources = mapOf("g1" to cylinder("AIR", sac = 30.0), "g2" to cylinder("EAN50", volume = 7.0)),
+            gradientFactorLow = 0.3,
+            gradientFactorHigh = 0.7,
+            switches = listOf(0 to "g1"),
+            safetyStop = SafetyStop(5.0, 180),
+        )
+        val kept = lost(run, lost = emptySet())
+        assertTrue(kept.litres("g2") > 60.0, "the hold on EAN50, but kept ${kept.litres("g2")} L")
+        assertEquals(0.0, kept.litres("g1"), "nothing of the hold on air")
+    }
+
+    @Test
     fun `a deco gas kept is breathed on the way up, and saves bottom gas`() {
         val run = whole(40.0, 25, BOTTOM_AND_DECO)
         val gone = lost(run, lost = setOf("g2"))

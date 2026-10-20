@@ -428,8 +428,8 @@ private fun checkAscent(metresAMinute: Double, lastStop: Double, problemSolvingS
  * The reserve [run] needs, trying [cost] at every point and keeping, for each source, the moment
  * that asks most beyond what the plan breathes from there.
  *
- * [cost] is given the point's place, its second and depth, the tissues there and the depth the
- * gradient factors are anchored at so far, and says what a way up from that moment takes from
+ * [cost] is given the point's place, its second and depth, the tissues there and the pressure the
+ * gradient factors are anchored at so far, in bar, and says what a way up from that moment takes from
  * each source.
  */
 private fun reserveOver(
@@ -476,9 +476,6 @@ private fun reserveOver(
                 kept[key] = Moment(second, metres, litres.upTo, needed, extra, litres.path)
             }
         }
-    }
-    if (run.depth.isEmpty()) {
-        return Reserve.Refused("this recording holds no depths, so nothing can be worked out from it")
     }
     unknown?.let { return Reserve.Refused("Cannot be calculated: SAC missing", it, longest.orEmpty()) }
     var judged = true
@@ -569,7 +566,8 @@ private sealed class Cost {
  *
  * A rise that passes [handoff] is costed to where it crosses, read as a straight line as every
  * stretch of a run is. A switch at a second is made on arriving there, so the stretch that ends at
- * it is still breathed from the source before.
+ * it is still breathed from the source before. One at [start]'s own second is made before the
+ * first stretch, as a way up that holds where it begins makes its switch there.
  */
 private fun costOf(
     start: Pair<Int, Double>,
@@ -582,6 +580,7 @@ private fun costOf(
     val litres = LinkedHashMap<String, Double>()
     var key = breathed
     var previous = start
+    climbed.switches.lastOrNull { it.first == start.first }?.let { key = it.second }
     for (next in climbed.points) {
         if (previous.second <= handoff) break
         val point = if (next.second >= handoff) {
