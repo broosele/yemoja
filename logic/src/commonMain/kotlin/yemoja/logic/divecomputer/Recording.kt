@@ -53,7 +53,7 @@ data class Recording(
     val fingerprints: List<String> = emptyList(),
     val began: Date? = null,
     val at: Time? = null,
-    /** Seconds east of UTC, or absent where the device reports no zone. `LOGIC-11`. */
+    /** Seconds east of UTC, or absent where the device reports no zone. `LOGIC-32`. */
     val offset: Int? = null,
     /** Seconds. Written as an override: a computer's own figure beats its recording. `LOGIC-19`. */
     val duration: Double? = null,
@@ -147,10 +147,6 @@ data class Recording(
  * hand dives over one at a time, and a caller *may* stop walking. Neither is promised. The JVM's
  * reads everything before it answers. What says how far it has got, and gives it up, is the
  * session's. `GUI-52`.
- *
- * **A fix is not carried, deliberately.** `LOGIC-18` decided what one is for and no review
- * question exists to land it in, so the port does not ask for it: a field every implementation
- * must fill and nothing reads is a lie waiting to be believed.
  */
 interface DiveComputer {
 

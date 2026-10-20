@@ -612,7 +612,8 @@ internal class Writer(private val set: ItemSet) {
 
     private fun Built.notes(said: String?) {
         if (said.isNullOrBlank()) return
-        tag("notes") { for (line in said.lines()) say("para", line) }
+        // An empty paragraph for a blank line, so two paragraphs come back as two.
+        tag("notes") { for (line in said.lines()) if (line.isEmpty()) tag("para") else say("para", line) }
     }
 
     private fun Built.rated(rating: String?) {

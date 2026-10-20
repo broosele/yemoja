@@ -2,9 +2,12 @@ package yemoja.logic.divecomputer
 
 import com.sun.jna.Memory
 import com.sun.jna.Pointer
+import com.sun.jna.Structure
 import com.sun.jna.ptr.PointerByReference
 import yemoja.data.Date
+import yemoja.data.Gas
 import yemoja.data.Time
+import java.lang.ref.Reference
 
 /*
  * Finding a dive computer and reading it, which is the JVM's answer to the port.
@@ -25,7 +28,7 @@ import yemoja.data.Time
  *
  * The obvious reading of the API is the other way round — ask each of the three hundred and fifty
  * odd models whether it is there — and that is what this did first. It took twenty-six seconds,
- * because each question is a full enumeration of the bus. Two enumerations and a few thousand
+ * because each question is a full enumeration of the bus. Three enumerations and a few thousand
  * comparisons is the same answer in a fraction of a second.
  *
  * Empty where the library is not loaded, which is the same answer as *nothing can be read here*.
@@ -39,6 +42,9 @@ class FoundDevices : Devices, AutoCloseable {
     private var context: Pointer? = null
 
     private var models: List<Pointer?> = emptyList()
+
+    // The USB devices matched to a model, each held by the reader that opens it, freed with this.
+    private val usbDevices = ArrayList<Pointer?>()
 
     // Absent is an answer rather than a fault, and this is how that answer is told apart from
     // finding nothing. `LOGIC-28`.
@@ -77,6 +83,8 @@ class FoundDevices : Devices, AutoCloseable {
         val library = Libdivecomputer.LOADED ?: return
         for (model in models) library.dc_descriptor_free(model)
         models = emptyList()
+        for (device in usbDevices) library.dc_usbhid_device_free(device)
+        usbDevices.clear()
         context?.let { library.dc_context_free(it) }
         context = null
     }
@@ -105,7 +113,12 @@ class FoundDevices : Devices, AutoCloseable {
             said.write()
             val model = models.firstOrNull {
                 library.dc_descriptor_filter(it, Transport.USBHID, said) != 0
-            } ?: continue
+            }
+            if (model == null) {
+                library.dc_usbhid_device_free(device)
+                continue
+            }
+            usbDevices += device
             found += Attached(library, context, model, nameOf(library, model)) {
                 val stream = PointerByReference()
                 if (library.dc_usbhid_open(stream, context, device) == Libdivecomputer.SUCCESS) {
@@ -130,7 +143,9 @@ class FoundDevices : Devices, AutoCloseable {
         val found = ArrayList<DiveComputer>()
         val item = PointerByReference()
         while (library.dc_iterator_next(iterator.value, item) == Libdivecomputer.SUCCESS) {
-            val port = library.dc_serial_device_get_name(item.value) ?: continue
+            val port = library.dc_serial_device_get_name(item.value)
+            library.dc_serial_device_free(item.value)
+            if (port == null) continue
             val model = models.firstOrNull {
                 library.dc_descriptor_filter(it, Transport.SERIAL, port) != 0
             } ?: continue
@@ -188,7 +203,7 @@ internal class Attached(
         // which is what says whose chain this is. The device says it before the first dive, and
         // a later telling replaces an earlier one. `LOGIC-23`.
         fun stopAt(serial: String?) {
-            val known = bytesOf(session.resume(serial)) ?: return
+            val known = bytesOf(session.resume(serial)) ?: ByteArray(0)
             library.dc_device_set_fingerprint(device.value, known, known.size)
         }
         stopAt(null)
@@ -219,9 +234,9 @@ internal class Attached(
         library.dc_iostream_close(stream)
         // The library holds the callbacks by address and the JVM only what it can see in use,
         // so they are kept alive until the device that calls them is closed.
-        java.lang.ref.Reference.reachabilityFence(events)
-        java.lang.ref.Reference.reachabilityFence(cancel)
-        java.lang.ref.Reference.reachabilityFence(callback)
+        Reference.reachabilityFence(events)
+        Reference.reachabilityFence(cancel)
+        Reference.reachabilityFence(callback)
         if (session.cancelled || walked == Libdivecomputer.CANCELLED) return emptySequence()
         if (walked != Libdivecomputer.SUCCESS) {
             val reason = "${statusSaid(walked)}${Heard.said()}"
@@ -285,7 +300,7 @@ internal object Heard {
  *
  * **A density of zero is no figure, not a weightless sea.** The i330R names its water and leaves
  * the number at nothing, and a zero written to the profile would override the density the model
- * works out from the water's name and the computer's own figure. Absent is not zero. `LOGIC-12`.
+ * works out from the water's name and the computer's own figure. Absent is not zero. `LOGIC-14`.
  */
 internal fun waterOf(type: Int, density: Double): Recording.Water =
     Recording.Water(if (type == SALT) "salt" else "fresh", density.takeIf { it > 0 })
@@ -407,7 +422,7 @@ private fun realOf(library: Libdivecomputer, parser: Pointer?, field: Int): Doub
 }
 
 /** A field answered as one of the library's own structs. */
-private fun <T : com.sun.jna.Structure> fieldOf(
+private fun <T : Structure> fieldOf(
     library: Libdivecomputer,
     parser: Pointer?,
     field: Int,
@@ -470,14 +485,8 @@ internal fun sourcesOf(
     return sources to landing
 }
 
-/** A mix as divers write one, which is what the model holds. */
-private fun gasOf(mix: CGasMix): String {
-    val oxygen = (mix.oxygen * 100).toInt()
-    val helium = (mix.helium * 100).toInt()
-    if (helium > 0) return "Tx$oxygen/$helium"
-    if (oxygen in 20..22) return "air"
-    return "EAN$oxygen"
-}
+/** A mix as divers write one, which is what the model holds: the data layer's own spelling. */
+private fun gasOf(mix: CGasMix): String = Gas(mix.oxygen, mix.helium).toString()
 
 /** Every reading through the dive, in the order the device recorded them. */
 private fun walkedOf(library: Libdivecomputer, parser: Pointer?): Walked {
@@ -609,6 +618,8 @@ private object Field {
     const val TANK_COUNT = 10
     const val TANK = 11
     const val DECOMODEL = 13
+
+    // Not asked: the fix comes with the samples, `LOGIC-18`, and this field holds the same one.
     const val LOCATION = 14
 }
 

@@ -111,6 +111,7 @@ private fun onto(first: Recording, next: Recording): Recording {
         averageDepth = meanOf(first, next),
         coldest = colderOf(first.coldest, next.coldest),
         surface = first.surface ?: next.surface,
+        position = first.position ?: next.position,
         gases = gases,
         samples = first.samples + after.filter { it.at > last },
     )

@@ -68,6 +68,8 @@ internal interface Libdivecomputer : Library {
 
     fun dc_usbhid_device_get_pid(device: Pointer?): Short
 
+    fun dc_usbhid_device_free(device: Pointer?)
+
     fun dc_descriptor_filter(descriptor: Pointer?, transport: Int, userdata: Structure?): Int
 
     fun dc_descriptor_filter(descriptor: Pointer?, transport: Int, userdata: String?): Int
@@ -81,6 +83,8 @@ internal interface Libdivecomputer : Library {
     fun dc_serial_open(iostream: PointerByReference, context: Pointer?, name: String): Int
 
     fun dc_serial_device_get_name(device: Pointer?): String?
+
+    fun dc_serial_device_free(device: Pointer?)
 
     fun dc_iostream_close(iostream: Pointer?): Int
 

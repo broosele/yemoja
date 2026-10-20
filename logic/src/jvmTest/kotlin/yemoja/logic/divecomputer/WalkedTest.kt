@@ -190,9 +190,10 @@ class HexTest {
 /** Two arrays as one collection, and which source a switch reported as a mix lands on. */
 class SourcesTest {
 
-    private fun mix(oxygen: Double): CGasMix = CGasMix().also {
+    private fun mix(oxygen: Double, helium: Double = 0.0): CGasMix = CGasMix().also {
         it.oxygen = oxygen
-        it.nitrogen = 1.0 - oxygen
+        it.helium = helium
+        it.nitrogen = 1.0 - oxygen - helium
     }
 
     private fun tank(carrying: Int): CTank = CTank().also {
@@ -225,8 +226,15 @@ class SourcesTest {
     @Test
     fun `with no tanks the mixes are the sources in their own order`() {
         val (sources, landing) = sourcesOf(listOf(mix(0.21), mix(0.32)), emptyList())
-        assertEquals(listOf("air", "EAN32"), sources.map { it.gas })
+        assertEquals(listOf("AIR", "EAN32"), sources.map { it.gas })
         assertEquals(mapOf(0 to 0, 1 to 1), landing)
+    }
+
+    @Test
+    fun `a mix is named by the nearest whole percentage, not the one below it`() {
+        // A driver's 29 / 100.0 is 0.29, and 0.29 * 100 is a shade under 29.
+        val (sources, _) = sourcesOf(listOf(mix(0.29), mix(0.57), mix(0.18, helium = 0.45)), emptyList())
+        assertEquals(listOf("EAN29", "EAN57", "TMX18/45"), sources.map { it.gas })
     }
 
     @Test

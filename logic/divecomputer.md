@@ -68,7 +68,7 @@ being live before they are saved.
 | `TEMPERATURE_MAXIMUM` | — | dropped: neither surface nor bottom |
 | `DIVEMODE` | — | dropped: `LOGIC-10`, as UDDF's is |
 | `DECOMODEL` | `profile.deco_model` and three more | `LOGIC-17` |
-| `LOCATION` | proposes a `dive_site` | not a field: `LOGIC-18` |
+| `LOCATION` | — | not asked: the sample carries the same fix, `LOGIC-18` |
 
 ## The samples
 
@@ -86,7 +86,7 @@ being live before they are saved.
 | `BEARING` | — | dropped |
 | `SETPOINT`, `PPO2` | — | dropped: rebreather, and `FEAT-21` rules those out |
 | `VENDOR` | — | dropped: a maker's own bytes |
-| `LOCATION` | — | dropped: a track, not a position |
+| `LOCATION` | proposes a `dive_site` | `LOGIC-18` |
 
 ## What their structs carry
 

@@ -15,7 +15,6 @@ class FoundTest {
         // Three hundred and fifty-seven models, each asked over two transports. Nothing here
         // needs a dive computer: what is being checked is that asking is safe and terminates.
         val found = FoundDevices().found()
-        assertTrue(found.size >= 0)
         assertTrue(found.all { it.name.isNotEmpty() }, "anything found says what it is")
     }
 

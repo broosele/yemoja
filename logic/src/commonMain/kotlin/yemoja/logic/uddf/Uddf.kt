@@ -366,7 +366,7 @@ object Uddf {
             val key = keys[ref] ?: continue
             if (key == breathing) continue
             breathing = key
-            val when_ = Stored.Leaf(at.toIntOrNull() ?: at)
+            val when_ = Stored.Leaf(secondOf(at))
             points += Stored.Elements(listOf(when_, Stored.Leaf("*$key")))
         }
         return if (points.isEmpty()) null else Stored.Elements(points)
@@ -385,7 +385,7 @@ object Uddf {
         val points = ArrayList<Pair<Int, String>>()
         var until: Int? = null
         for (waypoint in waypoints) {
-            val at = waypoint.text("divetime")?.toDoubleOrNull()?.toInt() ?: continue
+            val at = secondOf(waypoint.text("divetime")) as? Int ?: continue
             val stop = waypoint.all("decostop").firstOrNull { it.attributes["kind"] == "mandatory" }
             val ended = until
             if (ended != null && ended <= at && (stop == null || ended < at)) {
@@ -409,7 +409,7 @@ object Uddf {
     private fun alarmsOf(waypoints: List<Tag>): Stored.Elements? {
         val points = ArrayList<Stored>()
         for (waypoint in waypoints) {
-            val at = waypoint.text("divetime")?.toDoubleOrNull()?.toInt() ?: continue
+            val at = secondOf(waypoint.text("divetime")) as? Int ?: continue
             val alarm = waypoint.text("alarm") ?: continue
             points += Stored.Elements(listOf(Stored.Leaf(at), Stored.Leaf(alarm)))
         }
@@ -426,7 +426,7 @@ object Uddf {
         val by = LinkedHashMap<String, MutableList<Stored>>()
         val only = tanks.values.distinct().singleOrNull()
         for (waypoint in waypoints) {
-            val at = waypoint.text("divetime")?.toDoubleOrNull()?.toInt() ?: continue
+            val at = secondOf(waypoint.text("divetime")) as? Int ?: continue
             for (held in waypoint.all("tankpressure")) {
                 val key = held.attributes["tankref"]?.let { tanks[it] } ?: only ?: continue
                 val value = held.said.trim().ifEmpty { null } ?: continue
@@ -457,7 +457,7 @@ object Uddf {
             // read, because a series refuses one that is not: the times are what holds it
             // together rather than one of the values in it. Where it will not, the text goes in
             // and the refusal says what was written.
-            val when_ = Stored.Leaf(at.toIntOrNull() ?: at)
+            val when_ = Stored.Leaf(secondOf(at))
             points += Stored.Elements(listOf(when_, Stored.Leaf(value)))
         }
         return if (points.isEmpty()) null else Stored.Elements(points)
@@ -534,3 +534,9 @@ object Uddf {
  * rather than made. `uddf.md`.
  */
 class Exported(val text: String, val dives: Int, val leftOut: Int, val plans: Int = 0)
+
+/**
+ * A `divetime` as the file writes it, in whole seconds, or the text itself where it is not a
+ * number, for the series to refuse saying what was written.
+ */
+private fun secondOf(text: String?): Any? = text?.let { it.toDoubleOrNull()?.toInt() ?: it }

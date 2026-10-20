@@ -22,7 +22,7 @@ internal class CDateTime : Structure() {
     @JvmField var minute: Int = 0
     @JvmField var second: Int = 0
 
-    /** Seconds east of UTC, or [NONE] where the device reported no zone. `LOGIC-11`. */
+    /** Seconds east of UTC, or [NONE] where the device reported no zone. `LOGIC-32`. */
     @JvmField var timezone: Int = 0
 
     companion object {

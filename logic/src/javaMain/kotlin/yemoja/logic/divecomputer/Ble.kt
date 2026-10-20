@@ -78,7 +78,7 @@ internal fun advertisingUnder(
         val called = listOfNotNull(vendor, products[at]).joinToString(" ")
         val model = accepted[at]
         found += Attached(library, context, model, "$called over Bluetooth") { session ->
-            Connection.open(advertisement)?.let { Custom(it, session).opened(library, context) }
+            Custom(Connection.open(advertisement), session).opened(library, context)
         }
     }
     return found
@@ -130,6 +130,8 @@ internal data class Offered(
     val characteristic: Uuid,
     val writable: Boolean,
     val notifying: Boolean,
+    /** Whether a write to it may go without an acknowledgement, which is the quicker kind. */
+    val withoutResponse: Boolean = false,
 ) {
     /**
      * Whether the service is one the Bluetooth SIG defined, as opposed to the vendor's own.
@@ -272,12 +274,15 @@ internal class Connection private constructor(
     companion object {
 
         /**
-         * Connect to what [advertisement] came from, or absent where it would not connect, said
-         * nothing in time, or offers nothing this can drive.
+         * Connect to what [advertisement] came from.
+         *
+         * Throws [ReadFailed] saying why where it would not connect, said nothing in time, or
+         * offers nothing this can drive: a failure reported as nothing found read as every dive
+         * being in the logbook already.
          */
-        fun open(advertisement: Advertisement): Connection? {
+        fun open(advertisement: Advertisement): Connection {
             val peripheral = Peripheral(advertisement)
-            return try {
+            val connection = try {
                 runBlocking {
                     withTimeoutOrNull(CONNECTING) {
                         peripheral.connect()
@@ -291,15 +296,13 @@ internal class Connection private constructor(
                                     writable = it.properties.write ||
                                         it.properties.writeWithoutResponse,
                                     notifying = it.properties.notify || it.properties.indicate,
+                                    withoutResponse = it.properties.writeWithoutResponse,
                                 )
                             }
                         }
-                        val chosen = chosenAmong(offered) ?: return@withTimeoutOrNull null
-                        val quick = offered.first { it.characteristic == chosen.writing }
-                        val writeType = if (services.flatMap { it.characteristics }
-                                .first { it.characteristicUuid == quick.characteristic }
-                                .properties.writeWithoutResponse
-                        ) {
+                        val chosen = chosenAmong(offered)
+                            ?: throw ReadFailed("it offers no service this can drive${Heard.said()}")
+                        val writeType = if (offered.first { it.characteristic == chosen.writing }.withoutResponse) {
                             WriteType.WithoutResponse
                         } else {
                             WriteType.WithResponse
@@ -313,11 +316,19 @@ internal class Connection private constructor(
                         connection.listening().await()
                         connection
                     }
-                }.also { if (it == null) peripheral.close() }
+                }
+            } catch (failed: ReadFailed) {
+                peripheral.close()
+                throw failed
             } catch (failed: Exception) {
                 peripheral.close()
-                null
+                throw ReadFailed("it could not be reached: ${failed.message ?: failed::class.simpleName}${Heard.said()}")
             }
+            if (connection == null) {
+                peripheral.close()
+                throw ReadFailed("it did not answer within ${CONNECTING.inWholeSeconds} seconds${Heard.said()}")
+            }
+            return connection
         }
     }
 }
@@ -457,7 +468,7 @@ internal class Custom(private val wire: Wire, private val session: Session = Ses
         }
         GET_PINCODE -> {
             val room = size.toInt()
-            val typed = session.pin(wire.name)
+            val typed = if (data == null || room <= 0) null else session.pin(wire.name)
             when {
                 data == null || room <= 0 -> Libdivecomputer.UNSUPPORTED
                 // Nobody typed one: the download is given up, not failed.

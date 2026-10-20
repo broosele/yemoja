@@ -12,6 +12,7 @@ import yemoja.data.Stored
 import yemoja.data.Units
 import yemoja.logic.DIVE
 import yemoja.logic.Types
+import yemoja.logic.slug
 import yemoja.logic.sameSerial
 import yemoja.logic.freeName
 import yemoja.logic.unknownOf
@@ -173,7 +174,7 @@ object Download {
         /** Whether this was recorded by [computer], with [serial]. */
         fun madeBy(computer: String, serial: String?): Boolean {
             if (serial == null) {
-                val slug = yemoja.logic.slug(computer)
+                val slug = slug(computer)
                 return key == slug || named == slug
             }
             val own = this.serial
@@ -237,7 +238,7 @@ object Download {
     private fun nameOf(profile: Item): String? =
         when (val held = (profile.single<Reference>("dive_computer") as? Result.Usable)?.value) {
             is Reference.Identified -> held.id
-            is Reference.OneOff -> yemoja.logic.slug(held.name)
+            is Reference.OneOff -> slug(held.name)
             null -> null
         }
 
@@ -342,7 +343,7 @@ object Download {
         // The gear item the serial named, which is the same key each time that computer is read.
         // Where the logbook keeps no item for it, the device's own name, which at least says
         // which one it was. `LOGIC-23`.
-        val called = named ?: held.computer?.let { yemoja.logic.slug(it) }?.ifEmpty { null }
+        val called = named ?: held.computer?.let { slug(it) }?.ifEmpty { null }
         return Stored.Members(mapOf((called ?: "profile") to Stored.Members(fields)))
     }
 
@@ -365,15 +366,22 @@ object Download {
                 kept[name] = Stored.Leaf(tolerance)
             }
         }
-        pressuresOf(held)?.let { fields["pressures"] = it }
+        pressuresOf(held)?.let { (series, shrank) ->
+            fields["pressures"] = series
+            // Under `pressure`, which is the name the tolerances carry it by.
+            if (shrank) kept["pressure"] = Stored.Leaf(TOLERANCES.getValue("pressures"))
+        }
         alarmsOf(held)?.let { fields["alarms"] = it }
         gasSwitchesOf(held)?.let { fields["gas_switches"] = it }
         if (kept.isNotEmpty()) fields["tolerances"] = Stored.Members(kept)
         return fields
     }
 
-    /** One series, keyed by the gas source it was read from rather than by a tank. `LOGIC-12`. */
-    private fun pressuresOf(held: Recording): Stored.Members? {
+    /**
+     * One series for each gas source read from, keyed by the source rather than by a tank, and
+     * whether thinning took anything out of any of them. `LOGIC-12`.
+     */
+    private fun pressuresOf(held: Recording): Pair<Stored.Members, Boolean>? {
         val by = LinkedHashMap<Int, MutableList<Pair<Int, Double>>>()
         for (sample in held.samples) {
             for ((which, bar) in sample.pressures) {
@@ -382,10 +390,13 @@ object Download {
         }
         if (by.isEmpty()) return null
         val out = LinkedHashMap<String, Stored>()
+        var shrank = false
         for ((which, points) in by) {
-            out[keyAt(which)] = pointsOf(thinned(points, TOLERANCES.getValue("pressures")))
+            val thin = thinned(points, TOLERANCES.getValue("pressures"))
+            if (thin.size < points.size) shrank = true
+            out[keyAt(which)] = pointsOf(thin)
         }
-        return Stored.Members(out)
+        return Stored.Members(out) to shrank
     }
 
     /**
@@ -517,7 +528,9 @@ internal fun joinedIn(held: Recording): Recording {
     val theirs = held.gases[tank].gas
     if (theirs != null && !theirs.equals(held.gases[gas].gas, ignoreCase = true)) return held
     if (held.samples.any { gas in it.pressures }) return held
-    val switches = held.samples.filter { it.gas != null }
+    val reported = held.samples.filter { it.gas != null }
+    // A dive cut in two reports its gas again at the second stretch, which is a repeat, not a switch.
+    val switches = reported.filterIndexed { index, sample -> index == 0 || sample.gas != reported[index - 1].gas }
     val began = switches.singleOrNull() ?: return held
     if (began.gas != gas || began.at > AT_THE_START) return held
     val one = held.gases[gas].copy(
