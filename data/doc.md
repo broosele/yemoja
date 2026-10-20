@@ -2399,9 +2399,9 @@ Kept with their identifiers so earlier discussion still resolves.
   real sites needed: a quarry with a jetty, a Zeeland site with a rope down the dyke, an indoor
   pool, a reef reached by boat.
 
-  A logbook written before this holds the two fields on its dives. `tool/liftentry.py` reads
-  them, writes each site the entry its dives agree on, drops both fields, and names every dive
-  that disagreed so its remark can be written.
+  A logbook written before this held the two fields on its dives. A script read them, wrote
+  each site the entry its dives agreed on, dropped both fields, and named every dive that
+  disagreed so its remark could be written; it did its work and is gone, history keeping it.
 
 - **DATA-122 — Whether a dive's `details` stays an owned item.** *Settled:* **no: `dive_trip`,
   `operator` and `tags` are the dive's own fields, gathered by a section called *Details*.**
@@ -2417,11 +2417,11 @@ Kept with their identifiers so earlier discussion still resolves.
   `gas_source` is one shape used on a dive and on a profile. Each of those is a namespace doing
   work, which a section cannot do.
 
-  **The cost, paid once.** A file written before this holds `details`, and reading one now fails on
-  a field the dive does not have. `tool/liftdetails.py` lifts the block line by line, leaving the
-  rest of a file as it was written, and says which files held remarks inside it, those having to be
-  folded into the dive's by hand. Nothing is released, so no logbook but the author's and the
-  fixtures had to be moved.
+  **The cost, paid once.** A file written before this held `details`, and reading one now fails on
+  a field the dive does not have. A script lifted the block line by line, leaving the rest of a
+  file as it was written, and said which files held remarks inside it, those having to be folded
+  into the dive's by hand. Nothing was released, so no logbook but the author's and the fixtures
+  had to be moved, and the script is gone, history keeping it.
 
 - **DATA-121 — How a type says which fields belong together, without nesting them.** *Settled:*
   **a type declares sections, each naming the fields it gathers, and a section is never stored.**
