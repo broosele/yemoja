@@ -318,7 +318,7 @@ class StagingTest {
     fun `a value the field would refuse is refused here, in the field's own words`() {
         val staging = stagingOf(diving())
         val refused = staging.set("2026-06-01#0", "rating", 11)
-        assertEquals(Outcome.Refused("rating should be within 1..10"), refused)
+        assertEquals(Outcome.Refused("rating should be within 1..10, but was 11"), refused)
         assertTrue(staging.empty)
     }
 

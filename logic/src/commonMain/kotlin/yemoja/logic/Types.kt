@@ -27,7 +27,7 @@ import yemoja.data.ItemDescription
  * a field that is worked out rather than recorded, wherever what it would be worked out from is
  * not there to work from. Each type says which of its own are missing.
  *
- * The nine here are the ones a logbook stores files of. The eleven an item owns are reached
+ * The eight here are the ones a logbook stores files of. The eleven an item owns are reached
  * through the type that owns them, and are described in that type's file rather than here.
  */
 object Types {

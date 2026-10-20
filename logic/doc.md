@@ -85,7 +85,7 @@ logic/
                   Person.kt       details, environment, gear, profiles and gas sources are
                   Gear.kt         here, a person's medical, insurance and courses here, a
                   DiveSite.kt     piece of gear's buoyancy and maintenances here
-                  DiveTrip.kt   ... nine of them, and every field worked out from each
+                  DiveTrip.kt   ... eight of them, and every field worked out from each
                   Certification.kt
                   Operator.kt
                   Region.kt
@@ -136,10 +136,10 @@ than the first.
 
 That order is what the file's shape costs, and what it buys is visibility. Nearly every
 derivation is `private` now: `divesAverageDepth` is used by the description four lines above it
-and by nothing else, which a reader can see without searching. Only the nine stored descriptions
+and by nothing else, which a reader can see without searching. Only the eight stored descriptions
 and what genuinely crosses a file are `internal`.
 
-`Types.kt` keeps `object Types`, which is the vocabulary a front end names. Each of its nine
+`Types.kt` keeps `object Types`, which is the vocabulary a front end names. Each of its eight
 members is the description written in that type's own file; the eleven owned types are reached
 through the types that own them and are not named there.
 
@@ -319,7 +319,7 @@ a front end may name a type and may not describe one. The proposal runs against 
 which works because an item holds no id — one is made, asked what it should be called, and added
 under the answer.
 
-Eight types propose from `name`, a dive from the day it began, and an item with nothing to go on
+Seven types propose from `name`, a dive from the day it began, and an item with nothing to go on
 falls back to `unknown_person`, which the manual promises. The Universe then takes the first id
 free from the proposal: index zero is left off unless the type proposes one, so a second Anna is
 `anna#1` and a second dive that day is `2026-04-28#1`. **The lowest free, so a deleted item's id

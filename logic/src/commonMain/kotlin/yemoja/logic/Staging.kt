@@ -675,7 +675,7 @@ private fun unreadableIn(name: String, made: Result<Any>): String? {
 }
 
 /**
- * Staged is one half of a staging: copies of items, in a folder of their own.
+ * Half is one half of a staging: copies of items, in a folder of their own.
  *
  * Both halves are ordinary logbooks, so what reads and writes one reads and writes these.
  * Everything is written the moment it is staged, so a staging outlives the window closing the way

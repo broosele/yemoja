@@ -155,8 +155,7 @@ All three can be corrected where the calculation is wrong.
   surface before they have calculated anything, and a dive cannot begin in deco.
 
   Where the recording has neither, Yemoja's own decompression model answers: it runs the
-  depths at the gradient factors the recording names, or at 30/70 in salt water where it says
-  nothing, and says yes if it would have held you to a stop at any moment. Those are Yemoja's
+  depths at the gradient factors the recording names, or at 30/70 where it says nothing, and says yes if it would have held you to a stop at any moment. Those are Yemoja's
   own starting values rather than your planner settings, so changing a setting does not change
   what is said about a dive you have made. That is the model's opinion
   rather than your computer's, which decided at the time with settings Yemoja cannot always

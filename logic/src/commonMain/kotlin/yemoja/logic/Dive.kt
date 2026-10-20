@@ -41,7 +41,6 @@ import yemoja.data.WholeNumberDescription
  * See ../../../../../doc.md — the layer's own document is logic/doc.md.
  */
 
-/** Details is the labels on a dive, and which trip and operator it belonged to. */
 /** Closed: six steps, for a current and for the state of the surface alike. */
 private val STRENGTHS = setOf("none", "very mild", "mild", "moderate", "hard", "very hard")
 
@@ -111,7 +110,7 @@ private fun leadCarried(gear: Item): Result<Any> {
     val lead = items.value
         .mapNotNull { (it as? Element.Usable)?.value as? Reference.Identified }
         .mapNotNull { gear.set[it.id] }
-        .filter { (it.single<String>("category") as? Result.Usable)?.value == WEIGHTS }
+        .filter { it.description == GEAR && (it.single<String>("category") as? Result.Usable)?.value == WEIGHTS }
         .mapNotNull { (it.single<OwnedItem>("buoyancy") as? Result.Usable)?.value }
         .mapNotNull { (it.single<Double>("mass") as? Result.Usable)?.value }
     return Result.Usable(lead.sum(), Result.Origin.DERIVED)
@@ -213,8 +212,8 @@ private val RUNTIME_LINE = ItemDescription(
  *
  * The two are one type because they are the same shape. A plan's depths run to the surface as a
  * recording's do, and what a decompression model says about either is worked out when it is asked
- * for and never stored. What a plan holds that a recording does not is its own gas sources; what a
- * recording holds that a plan does not is everything a device wrote.
+ * for and never stored. Each keeps its own gas sources, `RECON-7`; what a recording holds that a
+ * plan does not is everything a device wrote.
  *
  * Absent so far: nothing of its own.
  */
@@ -525,7 +524,7 @@ private fun profilesComputer(profile: Item): Result<Any> {
 private fun saltDensity(profile: Item): Double {
     val named = profile.single<Reference>("dive_computer") as? Result.Usable
     val id = ((named?.value) as? Reference.Identified)?.id ?: return USUAL_SALT
-    val computer = profile.set[id] ?: return USUAL_SALT
+    val computer = profile.set[id]?.takeIf { it.description == GEAR } ?: return USUAL_SALT
     return (computer.single<Double>("salt_density") as? Result.Usable)?.value ?: USUAL_SALT
 }
 
@@ -580,11 +579,6 @@ private fun cylindersVolume(source: Item): Result<Any> {
 /** The gear category a cylinder is in, without which its capacity means nothing. */
 private const val CYLINDER = "cylinder"
 
-/**
- * Dive is one dive, and the largest thing here.
- *
- * Absent so far: nothing of its own.
- */
 private val TAGS = setOf(
     "wreck",
     "night",
@@ -597,6 +591,11 @@ private val TAGS = setOf(
     "ice",
 )
 
+/**
+ * Dive is one dive, and the largest thing here.
+ *
+ * Absent so far: nothing of its own.
+ */
 internal val DIVE: ItemDescription = ItemDescription(
     "dive",
     listOf(
@@ -702,16 +701,16 @@ private fun divesStartTime(dive: Item): Result<Any> =
 
 private fun divesDuration(dive: Item): Result<Any> = fromProfile(dive, ::profilesDuration)
 
+/** The deepest point the primary recording reached, as it says it, corrected or not. */
+private fun divesMaxDepth(dive: Item): Result<Any> =
+    fromProfile(dive) { profile -> asDerived(profile.single<Double>("max_depth")) }
+
 /**
- * The deepest point a recording reached.
+ * The deepest sample a recording took, or absent where it took none.
  *
  * The largest depth of the `depth` series. A sample that could not be read is passed over: one
  * bad number does not hide how deep the rest of the dive went.
  */
-private fun divesMaxDepth(dive: Item): Result<Any> =
-    fromProfile(dive) { profile -> asDerived(profile.single<Double>("max_depth")) }
-
-/** The deepest sample a recording took, or absent where it took none. */
 private fun profilesMaxDepth(profile: Item): Result<Any> {
     val depth = (profile.read("depth") as? Result.Usable)?.value as? Series
     val deepest = depth?.usable()?.filterIsInstance<Double>()?.maxOrNull() ?: return Result.Absent
@@ -725,8 +724,12 @@ private fun asDerived(read: Result<Double>): Result<Any> = when (read) {
     Result.Absent -> Result.Absent
 }
 
+/** How deep the primary recording was on average, as it says it, corrected or not. */
+private fun divesAverageDepth(dive: Item): Result<Any> =
+    fromProfile(dive) { profile -> asDerived(profile.single<Double>("average_depth")) }
+
 /**
- * How deep a dive was on average, weighted by time.
+ * How deep a recording was on average, weighted by time.
  *
  * **Not the mean of the samples.** A computer records unevenly — often densely on the way
  * down and sparsely at a safety stop — so counting samples would weight a crowded minute the
@@ -737,10 +740,6 @@ private fun asDerived(read: Result<Double>): Result<Any> = when (read) {
  * A sample that could not be read breaks the pair it belongs to and both its intervals are
  * passed over; the rest of the dive is unaffected.
  */
-private fun divesAverageDepth(dive: Item): Result<Any> =
-    fromProfile(dive) { profile -> asDerived(profile.single<Double>("average_depth")) }
-
-/** How deep a recording was on average, weighted by how long it held each depth. */
 private fun profilesAverageDepth(profile: Item): Result<Any> {
     val depth = (profile.read("depth") as? Result.Usable)?.value as? Series
         ?: return Result.Absent
@@ -857,6 +856,9 @@ private fun surfaceInterval(dive: Item): Result<Any> {
             ?: return unusable("a surface interval needs a dive with an id to measure from")
     }
     val namedDive = namedId?.let { dive.set[it] ?: return unusable("$it is not in this logbook") }
+    if (namedDive != null && namedDive.description != DIVE) {
+        return unusable("$namedId is a ${namedDive.description.name} rather than a dive")
+    }
     val back = momentOf(dive, "start_date", "start_time")?.let { absoluteOf(dive, it) }
         ?: return Result.Absent
     val before: Item

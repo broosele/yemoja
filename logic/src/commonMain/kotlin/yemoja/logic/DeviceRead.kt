@@ -44,18 +44,22 @@ class DeviceRead internal constructor(
     var cancelled: Boolean = false
 
     /** Every recording the device handed over, once [run] has returned. */
+    @Volatile
     internal var recordings: List<Recording> = emptyList()
         private set
 
     /** The device's serial, once it has said it. */
+    @Volatile
     internal var serial: String? = null
         private set
 
     /** An access code the device handed over, waiting to be kept on its gear item. */
+    @Volatile
     internal var handed: ByteArray? = null
         private set
 
     /** Why the read broke off after some dives had arrived, or absent where it did not. */
+    @Volatile
     var stopped: String? = null
         private set
 

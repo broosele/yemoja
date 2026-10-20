@@ -57,13 +57,10 @@ internal expect fun fileStoreAt(path: String): FileStore
  * nothing here forwards `get` or `allOf`, and there is nothing to drift out of step with what it
  * forwards.
  *
- * **It delegates and implements nothing**, and so far there is nothing to delegate to. Statistics,
- * decompression and the domain rules are each a service of their own, unbuilt; when they arrive
- * this hands work to them rather than doing any. The smallness is the shape and not a stage of it.
- *
- * Absent so far: an import's candidate set, which is the second thing this is meant to hold and
- * waits on `RECON-2`; the units a user wants shown, which `UI-2` settles as belonging here and
- * which needs somewhere for settings to be read from; and everything computed.
+ * **It is the state and the deeds over it**: the open logbook and its user, [change] and
+ * [reload] with a [revision] that says something moved, the [settings], the staging, an import
+ * under review, an export and a download. Statistics, decompression and the domain rules are
+ * each a service beside it rather than a method on it, `LOGIC-1`, and this hands them nothing.
  *
  * Not immutable: a logbook gains items while it is open, and [change] is how.
  */
@@ -271,6 +268,9 @@ class Universe(
                     val item =
                         ItemReader.read(change.description, nothing(), logbook, Units.DEFAULT)
                     for ((name, given) in change.fields) {
+                        if (change.description[name] == null) {
+                            return Outcome.Refused("${change.description.name} has no field called $name")
+                        }
                         val made = item.prepared(name, given, Units.DEFAULT)
                         if (made is Result.Unusable) return Outcome.Refused(made.reason)
                         item.apply(name, made)
@@ -287,7 +287,9 @@ class Universe(
                     adds += (carried ?: freeId(item, minted)) to item
                 }
 
-                is Change.Delete -> Unit
+                is Change.Delete -> {
+                    if (logbook[change.id] == null) return Outcome.Refused("${change.id} is not in this logbook")
+                }
             }
         }
         // A dive given its second profile names the one it had as primary, in the same change.

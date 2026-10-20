@@ -19,7 +19,7 @@ import yemoja.data.Result
  */
 
 /**
- * How many days are left before [until] on [item], counted from the day the logbook was opened.
+ * How many days are left before [until] on [item], counted against today.
  *
  * Negative once the day has passed, which is what makes `days_left` and `expired` two readings
  * of one fact rather than two calculations.

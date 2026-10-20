@@ -34,7 +34,7 @@ private fun text(item: Item, name: String): String? =
 /**
  * Every type described, the ones inside another item included.
  *
- * `Types.ALL` holds the nine a logbook stores files of. Walking a description that only reaches
+ * `Types.ALL` holds the eight a logbook stores files of. Walking a description that only reaches
  * those checks a claim about every type against half of them, which is how ten owned items came
  * to have no `remarks` while a test said every type had one.
  */

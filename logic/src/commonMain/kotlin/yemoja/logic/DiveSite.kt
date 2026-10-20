@@ -25,11 +25,6 @@ private val ENVIRONMENT_TYPES = setOf(
 )
 
 /**
- * DiveSite is a place dived at.
- *
- * Absent so far: nothing of its own.
- */
-/**
  * How a diver crosses the waterline here.
  *
  * Suggested rather than fixed. A closed list would have to be right the first time and this one
@@ -58,6 +53,11 @@ private val FACILITIES = setOf(
     "food",
 )
 
+/**
+ * DiveSite is a place dived at.
+ *
+ * Absent so far: nothing of its own.
+ */
 internal val DIVE_SITE: ItemDescription = ItemDescription(
     "dive_site",
     listOf(

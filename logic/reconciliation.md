@@ -184,7 +184,7 @@ a tolerance, a duration, a maximum depth — which are three numbers nobody can 
 **Two rules propose, and neither has a number in it.** One that says when it was is proposed by
 **overlapping in time**: an impossibility rather than a tolerance, nobody being on two dives at
 once, so two recordings that overlap are two recordings of one dive. Everything else is proposed
-by **the name its type would give it** — eight of the nine types propose an id from the item's own
+by **the name its type would give it** — seven of the eight types propose an id from the item's own
 `name`, so two logbooks each holding a site called Blue Hole both propose `blue_hole`, and the
 proposal is the name match a reader would make by eye.
 

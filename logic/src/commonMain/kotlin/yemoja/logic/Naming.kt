@@ -64,7 +64,7 @@ fun titleOf(item: Item): String {
 }
 
 /**
- * The id proposed for an item named by its `name` field, which is eight of the nine types.
+ * The id proposed for an item named by its `name` field, which is seven of the eight types.
  *
  * A person's `name` is assembled from the parts, so this works for one who has only a first name
  * and for one whose name was corrected by hand.

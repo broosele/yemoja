@@ -132,7 +132,7 @@ class Import private constructor(
      * two recordings of one dive. What `reconciliation.md` asks for — a start time within a
      * tolerance, a duration, a maximum depth — is three numbers nobody can pick well.
      *
-     * Everything else is matched by **the name its type would give it**. Nine of the ten types
+     * Everything else is matched by **the name its type would give it**. Seven of the eight types
      * propose an id from the item's own `name`, so two logbooks each holding a site called Blue
      * Hole both propose `blue_hole`: the proposal is the name match, and it is the one a reader
      * would make by eye. The index a proposal may carry is left off, saying only where an item
@@ -181,7 +181,7 @@ class Import private constructor(
      * local time has its own `time_zone_offset` taken off. `LOGIC-32`.
      */
     private fun spanOf(item: Item): Pair<Long, Long>? {
-        if (item.description["start_date"] == null) return null
+        if (item.description != Types.DIVE) return null
         val date = (item.read("start_date") as? Result.Usable)?.value as? Date ?: return null
         val time = (item.read("start_time") as? Result.Usable)?.value as? Time ?: return null
         val began = absoluteOf(item, Moment(date, time)).epochSecond

@@ -130,8 +130,12 @@ internal fun overriding(write: Change.Write, plans: List<Item>): Change.Write {
     val dive = (profile as? OwnedItem)?.parent ?: return write
     if ((primaryProfile(dive) as? Result.Usable)?.value !== profile) return write
     if (key == null) return Change.Write(dive, SOURCES, write.given)
+    // From the dive's own set where it already holds one, so the corrections on its other
+    // cylinders survive an edit addressed to the recording's copy.
+    val own = (dive.read(SOURCES) as? Result.Usable)?.takeIf { it.origin == Result.Origin.OVERRIDDEN }
+    val from = if (own != null) dive else profile
     val written = LinkedHashMap(
-        (ItemWriter.write(profile, Units.DEFAULT).members[SOURCES] as? Stored.Members)?.members.orEmpty(),
+        (ItemWriter.write(from, Units.DEFAULT).members[SOURCES] as? Stored.Members)?.members.orEmpty(),
     )
     val entry = LinkedHashMap((written[key] as? Stored.Members)?.members.orEmpty())
     when (val given = write.given) {
