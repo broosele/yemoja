@@ -147,17 +147,18 @@ internal fun deleteAsked(set: ItemSet, ids: Set<String>): String? {
  * the model already carries — a buddy not entered yet looks the same from here — and a reader
  * about to delete a person on forty dives should know before rather than after. `DATA-17`.
  *
- * **Counted as references rather than as the items holding them.** One dive naming a person
- * twice is two references and one item, and *reference* is the word the format uses for the
- * thing being counted.
+ * **Counted as references, and the items holding them counted beside.** One dive naming a person
+ * twice is two references in one item, and the sentence says both, since the names that follow
+ * are the items'. Settled at the author's word.
  */
 internal fun deleteWarned(set: ItemSet, ids: Set<String>): String? {
     val holding = holdersOf(set, ids)
     val many = holding.sumOf { it.second }
     if (many == 0) return null
-    val what = if (many == 1) "One other item names" else "$many other items name"
+    val references = if (many == 1) "One reference" else "$many references"
+    val items = if (holding.size == 1) "one other item" else "${holding.size} other items"
     val going = if (ids.size == 1) "it" else "them"
-    val said = "$what $going, and will be left naming something that is no longer here"
+    val said = "$references to $going, in $items, which will be left naming something that is no longer here"
     if (holding.size > FEW) return "$said."
     return "$said: ${listedOf(holding.map { titleOf(it.first) })}."
 }
