@@ -136,18 +136,28 @@ internal fun applied(
     reviewing.refusedAt = null
     reviewing.refusal = null
     var many = 0
-    val ids = arrivingIn(import, into, nextNumberIn(into)).map { it.id }
+    val all = arrivingIn(import, into, nextNumberIn(into))
+    // The numbers the review showed, read once: a dive lands with the number its row said,
+    // whatever the rows above it were set to, which the walk below would count differently
+    // once a skipped dive is passed over.
+    val numbers = numbersOf(all, reviewing, nextNumberIn(into))
+    val ids = all.map { it.id }
     for ((at, id) in ids.withIndex()) {
         told(at, ids.size)
-        // Read again once the dives before it have landed: the number it would take and the dive
-        // it appears to be both depend on what the logbook holds by now.
+        // Read again once the dives before it have landed: the dive it appears to be depends on
+        // what the logbook holds by now.
         val dive = arrivingIn(import, into, nextNumberIn(into), only = id).firstOrNull() ?: continue
         val decision = decisionOf(dive, reviewing)
         if (decision == Decision.SKIP) continue
         val done = write {
             when (val placed = if (dive.fix == null) Outcome.Done() else placed(import, dive, reviewing)) {
                 is Outcome.Refused -> placed
-                is Outcome.Done -> takeIn(import, dive, dive.onto.takeIf { decision == Decision.MERGE })
+                is Outcome.Done -> takeIn(
+                    import,
+                    dive,
+                    dive.onto.takeIf { decision == Decision.MERGE },
+                    number = numbers.getValue(id),
+                )
             }
         }
         when (done) {
@@ -299,6 +309,11 @@ internal fun numbersOf(arriving: List<Arriving>, reviewing: Reviewing, next: Int
     var number = next
     val out = LinkedHashMap<String, Int>()
     for (dive in arriving) {
+        // A dive that came with its own number keeps it and takes none from the count. `GUI-33`.
+        if (dive.numbered) {
+            out[dive.id] = dive.number
+            continue
+        }
         out[dive.id] = number
         if (decisionOf(dive, reviewing) == Decision.IMPORT) number++
     }

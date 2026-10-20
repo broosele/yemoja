@@ -148,6 +148,8 @@ internal class Arriving(
     val onto: String?,
     val ontoSaid: String?,
     val number: Int,
+    /** Whether [number] is the dive's own, which it keeps, rather than the next one free. */
+    val numbered: Boolean,
     /** The site the device's own fix proposed, waiting to be answered. `LOGIC-18`. */
     val site: String?,
     /**
@@ -228,6 +230,7 @@ internal fun arrivingIn(import: Import, into: ItemSet, next: Int, only: String? 
             onto = onto,
             ontoSaid = onto?.let { into[it] }?.let { saidOf(it) },
             number = own ?: number,
+            numbered = own != null,
             held = import.meeting(id) == Meeting.THE_SAME,
             site = site,
             fix = if (latitude == null || longitude == null) null else placeOf(latitude, longitude),
@@ -318,7 +321,7 @@ internal fun nextNumberIn(set: ItemSet): Int {
  * displace it. Merged onto a dive already held, it keeps that dive's number and its primary,
  * and is given neither.
  */
-internal fun takeIn(import: Import, arriving: Arriving, onto: String?): Outcome {
+internal fun takeIn(import: Import, arriving: Arriving, onto: String?, number: Int = arriving.number): Outcome {
     // A site the fix proposed goes first, so that the dive's reference lands on something —
     // but only where it was answered. An unanswered fix is a question nobody answered rather
     // than a site, and taking it in would put `unknown_dive_site` at a decimal position into
@@ -346,7 +349,7 @@ internal fun takeIn(import: Import, arriving: Arriving, onto: String?): Outcome 
             // is always given one; another logbook's dive arrives with its own and keeps it, and
             // so does one that already names the recording it is worked from. `GUI-33`.
             if (numberOf(dive) == null) {
-                writes += Change.Write(dive, "dive_number", Stored.Leaf(arriving.number))
+                writes += Change.Write(dive, "dive_number", Stored.Leaf(number))
             }
             if (dive.read("primary_profile") !is Result.Usable) {
                 primaryFor(dive)?.let {
